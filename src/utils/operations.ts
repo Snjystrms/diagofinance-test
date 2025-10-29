@@ -138,7 +138,7 @@ export const authOperations = {
 
   // Forgot password
   forgotPassword: async (email: string): Promise<ApiResponse> => {
-    return apiCall('/auth/forgot-password', {
+    return apiCall('/auth/forget-password', {
       method: 'POST',
       body: JSON.stringify({ email }),
     })

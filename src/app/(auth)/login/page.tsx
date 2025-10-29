@@ -3,13 +3,31 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loginSchema, type LoginFormData } from '@/lib/validations';
+import {
+  loginSchema,
+  forgotPasswordSchema,
+  type LoginFormData,
+  type ForgotPasswordFormData,
+} from '@/lib/validations';
 import { useAuthMutations } from '@/hooks/use-auth-mutations';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
 import { ProtectedRoute } from '@/components/protected-route';
 import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
@@ -22,7 +40,7 @@ import toast from 'react-hot-toast';
 // Demo credentials for testing
 const DUMMY_CREDENTIALS = {
   email: 'admin@example.com',
-  password: 'password123'
+  password: 'password123',
 };
 
 // Demo user data
@@ -31,7 +49,7 @@ const DUMMY_USER = {
   name: 'Admin User',
   email: 'admin@example.com',
   type: 'admin' as const,
-  role: 'admin'
+  role: 'admin',
 };
 
 // Demo user data for regular user
@@ -44,18 +62,20 @@ const DUMMY_REGULAR_USER = {
   status: true,
   requires_usdt_transaction: false,
   is_account_active: true,
-  sponsor_id: 'SPONSOR_123'
+  sponsor_id: 'SPONSOR_123',
 };
 
 export default function LoginPage() {
-  const { loginMutation } = useAuthMutations();
+  const { loginMutation, forgotPasswordMutation } = useAuthMutations();
   const { login } = useAuth();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
-  const [useDemoLogin, setUseDemoLogin] = useState(true);
+  const [isForgotPasswordLoading, setIsForgotPasswordLoading] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const [useDemoLogin, setUseDemoLogin] = useState(false); // Changed default to false (API mode)
   const [demoUserType, setDemoUserType] = useState<'admin' | 'user'>('admin');
 
-  const form = useForm<LoginFormData>({
+  const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       email: '',
@@ -63,28 +83,40 @@ export default function LoginPage() {
     },
   });
 
-  const onSubmit = async (data: LoginFormData) => {
+  const forgotPasswordForm = useForm<ForgotPasswordFormData>({
+    resolver: zodResolver(forgotPasswordSchema),
+    defaultValues: {
+      email: '',
+    },
+  });
+
+  const onLoginSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
-    
+
     try {
       if (useDemoLogin) {
         // Demo login implementation
-        if (data.email === DUMMY_CREDENTIALS.email && data.password === DUMMY_CREDENTIALS.password) {
-          // Simulate API delay
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Login with dummy data based on selected user type
-          const demoUser = demoUserType === 'admin' ? DUMMY_USER : DUMMY_REGULAR_USER;
+        if (
+          data.email === DUMMY_CREDENTIALS.email &&
+          data.password === DUMMY_CREDENTIALS.password
+        ) {
+          // fake delay
+          await new Promise((resolve) => setTimeout(resolve, 1000));
+
+          const demoUser =
+            demoUserType === 'admin' ? DUMMY_USER : DUMMY_REGULAR_USER;
           login(demoUser, 'dummy-token-12345');
           toast.success(`Login successful as ${demoUserType}! (Demo mode)`);
           router.push('/dashboard');
         } else {
-          toast.error('Invalid demo credentials. Use admin@example.com / password123');
+          toast.error(
+            'Invalid demo credentials. Use admin@example.com / password123'
+          );
         }
       } else {
         // Real API login
-        const response = await loginMutation.mutateAsync(data);
-        // The loginMutation will handle success/error and navigation
+        await loginMutation.mutateAsync(data);
+        // loginMutation handles success & redirect already
       }
     } catch (error) {
       if (!useDemoLogin) {
@@ -95,93 +127,92 @@ export default function LoginPage() {
     }
   };
 
+  const onForgotPasswordSubmit = async (data: ForgotPasswordFormData) => {
+    setIsForgotPasswordLoading(true);
+
+    try {
+      await forgotPasswordMutation.mutateAsync(data);
+      // mutation shows toast
+    } catch (error) {
+      toast.error('Failed to send reset password link. Please try again.');
+    } finally {
+      setIsForgotPasswordLoading(false);
+    }
+  };
+
   return (
     <ProtectedRoute requireAuth={false}>
-      <div className="min-h-screen flex">
-        {/* Left side - Background Image */}
-        <div className="hidden lg:flex lg:w-2/5 relative bg-background">
+      {/* We enforce layering ourselves */}
+      <div className="relative min-h-screen flex bg-background">
+        {/* Left side background image */}
+        <div className="hidden lg:flex lg:w-2/5 relative bg-background z-0">
           <Image
             src="/loginbackground.png"
             alt="Login background"
             fill
-            className="object-cover"
+            className="object-cover pointer-events-none select-none"
             priority
           />
         </div>
 
-        {/* Right side - Login Form */}
-        <div className="flex-1 flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
+        {/* Right side content */}
+        <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="max-w-md w-full space-y-8">
             <div className="text-center">
               <h2 className="mt-6 text-3xl font-extrabold text-foreground">
-                Sign in to your account
+                {showForgotPassword
+                  ? 'Reset your password'
+                  : 'Sign in to your account'}
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Don't have an account?{' '}
-                <Link href="/register" className="font-medium text-primary hover:text-primary/80">
-                  Sign up
-                </Link>
+                {showForgotPassword
+                  ? 'Enter your email to receive a password reset link'
+                  : (
+                    <>
+                      Don&apos;t have an account?{' '}
+                      <Link
+                        href="/register"
+                        className="font-medium text-primary hover:text-primary/80"
+                      >
+                        Sign up
+                      </Link>
+                    </>
+                  )}
               </p>
-              
-              {/* Demo/API Login Toggle */}
-              <div className="mt-4 flex items-center justify-center space-x-2">
-                <Switch
-                  id="demo-mode"
-                  checked={useDemoLogin}
-                  onCheckedChange={setUseDemoLogin}
-                />
-                <Label htmlFor="demo-mode" className="text-sm">
-                  {useDemoLogin ? 'Demo Mode' : 'API Mode'}
-                </Label>
-              </div>
-              
-              {/* Demo user type selector */}
-              {/* {useDemoLogin && (
-                <div className="mt-4 flex items-center justify-center space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      id="demo-admin"
-                      name="demo-user-type"
-                      value="admin"
-                      checked={demoUserType === 'admin'}
-                      onChange={(e) => setDemoUserType(e.target.value as 'admin' | 'user')}
-                      className="text-primary"
-                    />
-                    <Label htmlFor="demo-admin" className="text-sm">Admin</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="radio"
-                      id="demo-user"
-                      name="demo-user-type"
-                      value="user"
-                      checked={demoUserType === 'user'}
-                      onChange={(e) => setDemoUserType(e.target.value as 'admin' | 'user')}
-                      className="text-primary"
-                    />
-                    <Label htmlFor="demo-user" className="text-sm">User</Label>
-                  </div>
+
+              {/* Demo/API toggle only on login view */}
+              {!showForgotPassword && (
+                <div className="mt-4 flex items-center justify-center space-x-2">
+                  <Switch
+                    id="demo-mode"
+                    checked={useDemoLogin}
+                    onCheckedChange={setUseDemoLogin}
+                  />
+                  <Label htmlFor="demo-mode" className="text-sm">
+                    {useDemoLogin ? 'Demo Mode' : 'API Mode'}
+                  </Label>
                 </div>
-              )} */}
-              
+              )}
+
               {/* Demo login notice */}
-              {useDemoLogin && (
+              {useDemoLogin && !showForgotPassword && (
                 <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
                   <p className="text-sm text-blue-800">
-                    <strong>Demo Mode:</strong> Use <code>admin@example.com</code> / <code>password123</code>
+                    <strong>Demo Mode:</strong> Use{' '}
+                    <code>admin@example.com</code> / <code>password123</code>
                   </p>
                   <p className="text-sm text-blue-700 mt-1">
                     Select user type to see different sidebar navigation
                   </p>
                 </div>
               )}
-              
+
               {/* API login notice */}
-              {!useDemoLogin && (
+              {!useDemoLogin && !showForgotPassword && (
                 <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
                   <p className="text-sm text-green-800">
-                    <strong>API Mode:</strong> Connecting to real backend at <code>/auth/login</code>
+                    <strong>API Mode:</strong> Connecting to real backend at{' '}
+                    <code>/auth/login</code>
                   </p>
                 </div>
               )}
@@ -189,83 +220,158 @@ export default function LoginPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Login</CardTitle>
+                <CardTitle>
+                  {showForgotPassword ? 'Forgot Password' : 'Login'}
+                </CardTitle>
                 <CardDescription>
-                  {useDemoLogin 
-                    ? 'Enter demo credentials to test the application'
-                    : 'Enter your credentials to access your account'
-                  }
+                  {showForgotPassword
+                    ? 'Enter your email to receive a password reset link'
+                    : useDemoLogin
+                      ? 'Enter demo credentials to test the application'
+                      : 'Enter your credentials to access your account'}
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="email" 
-                              placeholder={useDemoLogin ? "admin@example.com" : "Enter your email"} 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+            <CardContent>
+  {showForgotPassword ? (
+    <div key="forgot-form">
+      <Form {...forgotPasswordForm}>
+        <form
+          onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)}
+          className="space-y-4"
+        >
+          <FormField
+            control={forgotPasswordForm.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder="Enter your email"
+                    autoFocus
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-                    <FormField
-                      control={form.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input 
-                              type="password" 
-                              placeholder={useDemoLogin ? "password" : "Enter your password"} 
-                              {...field} 
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isForgotPasswordLoading}
+          >
+            {isForgotPasswordLoading ? (
+              <>
+                <Spinner size="sm" className="mr-2" />
+                Sending Reset Link...
+              </>
+            ) : (
+              'Send Reset Link'
+            )}
+          </Button>
 
-                    <div className="flex items-center justify-between">
-                      <Link
-                        href="/forgot-password"
-                        className="text-sm text-primary hover:text-primary/80"
-                      >
-                        Forgot your password?
-                      </Link>
-                    </div>
+          <div className="text-center">
+            <Button
+              variant="link"
+              type="button"
+              onClick={() => setShowForgotPassword(false)}
+              className="text-primary hover:text-primary/80"
+            >
+              Back to Login
+            </Button>
+          </div>
+        </form>
+      </Form>
+    </div>
+  ) : (
+    <div key="login-form">
+      <Form {...loginForm}>
+        <form
+          onSubmit={loginForm.handleSubmit(onLoginSubmit)}
+          className="space-y-4"
+        >
+          <FormField
+            control={loginForm.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input
+                    type="email"
+                    placeholder={
+                      useDemoLogin
+                        ? 'admin@example.com'
+                        : 'Enter your email'
+                    }
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <>
-                          <Spinner size="sm" className="mr-2" />
-                          {useDemoLogin ? 'Signing in (Demo)...' : 'Signing in...'}
-                        </>
-                      ) : (
-                        'Sign in'
-                      )}
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
+          <FormField
+            control={loginForm.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input
+                    type="password"
+                    placeholder={
+                      useDemoLogin
+                        ? 'password123'
+                        : 'Enter your password'
+                    }
+                    {...field}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="flex items-center justify-between">
+            <Button
+              variant="link"
+              type="button"
+              onClick={() => setShowForgotPassword(true)}
+              className="text-sm text-primary hover:text-primary/80 p-0"
+            >
+              Forgot your password?
+            </Button>
+          </div>
+
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Spinner size="sm" className="mr-2" />
+                {useDemoLogin ? 'Signing in (Demo)...' : 'Signing in...'}
+              </>
+            ) : (
+              'Sign in'
+            )}
+          </Button>
+        </form>
+      </Form>
+    </div>
+  )}
+</CardContent>
+
             </Card>
           </div>
         </div>
       </div>
     </ProtectedRoute>
   );
-} 
+}

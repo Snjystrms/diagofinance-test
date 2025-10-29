@@ -50,6 +50,32 @@ export interface ResetPasswordRequest {
   confirm_password: string;
 }
 
+export interface TwoFactorStatusResponse {
+  user_id: number;
+  email: string;
+  google_2FA_status: boolean;
+  google_2FA_key: string | null;
+}
+
+export interface TwoFactorSetupResponse {
+  user_id: number;
+  secret: string;
+  qrCode: string;
+  otpauthUrl: string;
+  testToken: string;
+  instructions: string[];
+}
+
+export interface TwoFactorVerifyRequest {
+  user_id: number;
+  token: string;
+}
+
+export interface TwoFactorDisableResponse {
+  user_id: number;
+  email: string;
+}
+
 export interface LoginResponse {
   token: string;
   user: {
@@ -145,7 +171,7 @@ export const authApi = {
 
   // Forgot password
   forgotPassword: async (data: ForgotPasswordRequest): Promise<ApiResponse> => {
-    return apiCall('/user/forgot-password', {
+    return apiCall('/user/forget-password', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -156,6 +182,58 @@ export const authApi = {
     return apiCall('/user/reset-password', {
       method: 'POST',
       body: JSON.stringify(data),
+    });
+  },
+
+  // Logout user
+  logout: async (token: string): Promise<ApiResponse> => {
+    return apiCall('/user/logout', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 2FA Status
+  getTwoFactorStatus: async (userId: number, token: string): Promise<ApiResponse<TwoFactorStatusResponse>> => {
+    return apiCall<TwoFactorStatusResponse>(`/user/2fa/status/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 2FA Setup
+  setupTwoFactor: async (userId: number, token: string): Promise<ApiResponse<TwoFactorSetupResponse>> => {
+    return apiCall<TwoFactorSetupResponse>(`/user/2fa/setup/${userId}`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+  },
+
+  // 2FA Verify and Enable
+  verifyAndEnableTwoFactor: async (data: TwoFactorVerifyRequest, token: string): Promise<ApiResponse> => {
+    return apiCall('/user/2fa/verify-and-enable', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(data),
+    });
+  },
+
+  // 2FA Disable
+  disableTwoFactor: async (userId: number, token: string): Promise<ApiResponse<TwoFactorDisableResponse>> => {
+    return apiCall<TwoFactorDisableResponse>(`/user/2fa/disable/${userId}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
     });
   },
 };

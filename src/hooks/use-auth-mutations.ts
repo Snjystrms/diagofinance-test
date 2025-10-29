@@ -83,7 +83,7 @@ export const useAuthMutations = () => {
     mutationFn: (data: ForgotPasswordRequest) => authApi.forgotPassword(data),
     onSuccess: (response) => {
       toast.success(response.message || 'Password reset instructions sent to your email!');
-      router.push('/reset-password');
+      // Stay on the same page so user can see the success message
     },
     onError: (error: Error) => {
       toast.error(error.message || 'Failed to send reset instructions. Please try again.');
@@ -95,6 +95,7 @@ export const useAuthMutations = () => {
     mutationFn: (data: ResetPasswordRequest) => authApi.resetPassword(data),
     onSuccess: (response) => {
       toast.success(response.message || 'Password reset successfully!');
+      // Redirect to login page
       router.push('/login');
     },
     onError: (error: Error) => {
@@ -110,4 +111,4 @@ export const useAuthMutations = () => {
     forgotPasswordMutation,
     resetPasswordMutation,
   };
-}; 
+};

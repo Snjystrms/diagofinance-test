@@ -51,7 +51,7 @@ The application integrates with the following backend APIs:
    - Resends OTP to user's email
    - Available on verify OTP page
 
-5. **POST /user/forgot-password**
+5. **POST /user/forget-password**
    - Sends password reset instructions
    - Redirects to reset password page
 
@@ -102,7 +102,7 @@ src/
 │   │   ├── login/
 │   │   ├── register/
 │   │   ├── verify-otp/
-│   │   ├── forgot-password/
+│   │   ├── forget-password/
 │   │   └── reset-password/
 │   ├── (dashboard)/       # Protected dashboard pages
 │   │   └── dashboard/
