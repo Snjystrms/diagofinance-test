@@ -1,5 +1,5 @@
 // API base URL - replace with your actual backend URL
-const API_BASE_URL = process.env.APIBASEURL || 'http://192.168.1.4:4000';
+const API_BASE_URL = process.env.APIBASEURL || 'http://192.168.1.49:3000';
 
 // Debug: Log the API base URL being used
 console.log('API_BASE_URL:', API_BASE_URL);
@@ -15,16 +15,15 @@ export interface ApiResponse<T = any> {
 }
 
 export interface RegisterRequest {
-  sponsor_id: string;
-  name: string;
-  username: string;
+  first_name: string;
+  last_name: string;
+  country_code: string;
   email: string;
-  mobile: string;
   country: string;
+  mobile: string;
   password: string;
-  transaction_password: string;
   confirm_password: string;
-  confirm_transaction_password: string;
+  referral_code?: string;
 }
 
 export interface LoginRequest {
@@ -33,8 +32,8 @@ export interface LoginRequest {
 }
 
 export interface VerifyOtpRequest {
-  otp: string;
   email: string;
+  otp: string;
 }
 
 export interface ResendOtpRequest {
@@ -159,4 +158,4 @@ export const authApi = {
       body: JSON.stringify(data),
     });
   },
-}; 
+};
