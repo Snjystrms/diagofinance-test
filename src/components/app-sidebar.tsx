@@ -195,222 +195,126 @@ const userNavData = [
     url: "/dashboard",
     icon: Home,
     isActive: true,
-    items: [
-      {
-        title: "Overview",
-        url: "/dashboard",
-      },
-      {
-        title: "Analytics",
-        url: "/analytics",
-      },
-    ],
+    // items: [
+    //   {
+    //     title: "Overview",
+    //     url: "/dashboard",
+    //   },
+    //   {
+    //     title: "Analytics",
+    //     url: "/analytics",
+    //   },
+    // ],
   },
   {
-    title: "Income Management",
-    url: "/income",
+    title: "My wallet",
+    url: "/my_wallet",
     icon: DollarSign,
     items: [
       {
-        title: "Daily Allegiance Income",
-        url: "/daily-allegiance-income",
+        title: "Wallet Overview",
+        url: "/my_wallet/wallet_overview",
       },
       {
-        title: "Royalty Income",
-        url: "/royalty-income",
+        title: "Transactions History",
+        url: "/my_wallet/transactions_history",
       },
     ],
   },
   {
-    title: "Reward Management",
-    url: "/rewards",
+    title: "My Accounts",
+    url: "/my_accounts",
     icon: Award,
     items: [
       {
-        title: "Direct Reward",
-        url: "/direct-reward",
+        title: "Open Trading Account",
+        url: "/my_accounts/open-trading-account",
       },
       {
-        title: "Rank Reward",
-        url: "/rank-reward",
+        title: "Manage Accounts",
+        url: "/my_accounts/manage-accounts",
       },
+      {
+        title: "Accounts Overview",
+        url: "/my_accounts/accounts-overview",
+      },
+      
     ],
   },
   {
-    title: "USDT Wallet",
-    url: "/usdt-wallet",
+    title: "Funds",
+    url: "/funds",
     icon: Wallet,
     items: [
-      {
-        title: "USDT Deposit",
-        url: "/USDT-Deposit",
-      },
-      {
-        title: "USDT Deposit History",
-        url: "/USDT-Deposit-History",
-      },
-      {
-        title: "USDT Wallet Statement",
-        url: "/USDT-Wallet-Statement",
-      },
+    {
+      title: "Deposit Funds",
+      url: "/funds/deposit",
+    },
+    {
+      title: "Withdraw Funds",
+      url: "/funds/withdraw",
+    },
+    {
+      title: "Internal Funds Transfer",
+      url: "/funds/internal-transfer",
+    }
     ],
   },
   {
-    title: "Customer Management",
-    url: "/customers",
+    title: "Social Trading",
+    url: "/social-trading",
     icon: Users,
     items: [
       {
-        title: "All Customers",
-        url: "/customers",
-      },
-      {
-        title: "Add Customer",
-        url: "/customers/add",
+        title: "Copy Trading",
+        url: "/social-trading/copy-trading",
       },
     ],
   },
   {
-    title: "Company Management",
-    url: "/companies",
+    title: "Trading Platforms",
+    url: "/trading_platforms",
     icon: Building2,
-    items: [
-      {
-        title: "All Companies",
-        url: "/companies",
-      },
-      {
-        title: "Add Company",
-        url: "/companies/add",
-      },
-    ],
+    
   },
+ 
+
   {
-    title: "Deals & Sales",
-    url: "/deals",
-    icon: CreditCard,
-    items: [
-      {
-        title: "All Deals",
-        url: "/deals",
-      },
-      {
-        title: "Create Deal",
-        url: "/deals/create",
-      },
-    ],
-  },
-  {
-    title: "Task Management",
-    url: "/tasks",
-    icon: Calendar,
-    items: [
-      {
-        title: "All Tasks",
-        url: "/tasks",
-      },
-      {
-        title: "Create Task",
-        url: "/tasks/create",
-      },
-    ],
-  },
-  {
-    title: "Communication",
-    url: "/emails",
+    title: "My profile",
+    url: "/profile",
     icon: Mail,
     items: [
-      {
-        title: "Emails",
-        url: "/emails",
-      },
-      {
-        title: "Calls",
-        url: "/calls",
-      },
+    {
+      title: "KYC Verification",
+      url: "/profile/kyc-verification",
+    },
+    {
+      title: "View Profile",
+      url: "/profile/view_profile",
+    },
+    {
+      title: "Update Password",
+      url: "/profile/update-password",
+    }
     ],
   },
   {
-    title: "Packages",
-    url: "/packages",
+    title: "Trading Central",
+    url: "/trading-central",
     icon: Package,
     items: [
-      {
-        title: "My Packages",
-        url: "/My-Package",
-      },
-      {
-        title: "Purchased Packages",
-        url: "/Purchased-Package",
-      },
-      {
-        title: "Purchased History",
-        url: "/purchased-history",
-      },
-    ],
-  },
-  {
-    title: "Documents",
-    url: "/documents",
-    icon: FileText,
-    items: [
-      {
-        title: "All Documents",
-        url: "/documents",
-      },
-      {
-        title: "Upload Document",
-        url: "/documents/upload",
-      },
-    ],
-  },
-  {
-    title: "My Team",
-    url: "/my-team",
-    icon: Users,
-    items: [
-      {
-        title: "Direct Referral",
-        url: "/direct-referral",
-      },
-      {
-        title: "My All Team",
-        url: "/my-all-team",
-      },
-      {
-        title: "Level Wise Business",
-        url: "/level-wise-business",
-      },
-    ],
-  },
-  {
-    title: "Kingship Details",
-    url: "/kingship-details",
-    icon: Shield,
-    items: [
-      {
-        title: "KCR Income History",
-        url: "/kcr-income-history",
-      },
-      {
-        title: "KCR Income Eligibility",
-        url: "/kcr-income-eligibility",
-      },
-    ],
-  },
-  {
-    title: "Withdrawal Management",
-    url: "/withdrawal",
-    icon: Wallet,
-    items: [
-      {
-        title: "Withdrawal Request",
-        url: "/withdrawal-request",
-      },
-      {
-        title: "Withdrawal History",
-        url: "/withdrawal-history",
-      },
+    {
+      title: "Analysis Views",
+      url: "/trading-central/analysis-views",
+    },
+    {
+      title: "Featured Ideas",
+      url: "/trading-central/featured-ideas",
+    },
+    {
+      title: "Economic Calendar",
+      url: "/trading-central/economic-calendar",
+    },
     ],
   },
   {
@@ -425,17 +329,6 @@ const userNavData = [
       {
         title: "Ticket History",
         url: "/ticket-history",
-      },
-    ],
-  },
-  {
-    title: "Account Activation",
-    url: "/test-registration-fee",
-    icon: Shield,
-    items: [
-      {
-        title: "Registration Fee",
-        url: "/test-registration-fee",
       },
     ],
   }
@@ -483,7 +376,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     
     switch (user.type) {
       case 'admin':
-        return adminNavData;
+        return userNavData;
       case 'user':
         return userNavData;
       default:
