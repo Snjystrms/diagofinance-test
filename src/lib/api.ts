@@ -1,5 +1,5 @@
 // API base URL - replace with your actual backend URL
-const API_BASE_URL = process.env.APIBASEURL || 'http://192.168.1.49:3000';
+const API_BASE_URL = process.env.APIBASEURL || 'http://192.168.1.13:3000';
 
 // Debug: Log the API base URL being used
 console.log('API_BASE_URL:', API_BASE_URL);
@@ -105,6 +105,13 @@ export interface PendingUser {
   payment_verified: number;
   created_at: string;
 }
+export interface KycUploadResponse {
+  status: number;
+  message: string;
+  model?: string;
+  verification_status?: string;
+}
+
 
 // Generic API function
 async function apiCall<T>(
@@ -235,5 +242,21 @@ export const authApi = {
         'Authorization': `Bearer ${token}`,
       },
     });
+  },
+ uploadProfileDocuments: async (
+    formData: FormData,
+    token: string
+  ): Promise<KycUploadResponse> => {
+    const res = await fetch(`${API_BASE_URL}/user/profile/document`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // no Content-Type here – browser sets multipart boundary
+      } as any,
+      body: formData,
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json?.message || `Upload failed (${res.status})`);
+    return json as KycUploadResponse;
   },
 };
