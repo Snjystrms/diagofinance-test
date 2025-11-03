@@ -115,7 +115,12 @@ const themeSwatches: ThemeSwatch[] = [
     cssVariables: {
       primary: "#1e3a8a",
       secondary: "#3730a3",
-      accent: "#6366f1"
+      accent: "#6366f1",
+      background: "#0f172a",
+      foreground: "#f0f9ff",
+      border: "#334155",
+      muted: "#1e293b",
+      mutedForeground: "#94a3b8"
     }
   },
   {
@@ -126,7 +131,12 @@ const themeSwatches: ThemeSwatch[] = [
     cssVariables: {
       primary: "#14532d",
       secondary: "#166534",
-      accent: "#22c55e"
+      accent: "#22c55e",
+      background: "#f0fdf4",
+      foreground: "#14532d",
+      border: "#bbf7d0",
+      muted: "#dcfce7",
+      mutedForeground: "#166534"
     }
   },
   {
@@ -137,7 +147,12 @@ const themeSwatches: ThemeSwatch[] = [
     cssVariables: {
       primary: "#831843",
       secondary: "#be185d",
-      accent: "#ec4899"
+      accent: "#ec4899",
+      background: "#fdf2f8",
+      foreground: "#831843",
+      border: "#f9a8d4",
+      muted: "#fce7f3",
+      mutedForeground: "#be185d"
     }
   },
   {
@@ -148,7 +163,12 @@ const themeSwatches: ThemeSwatch[] = [
     cssVariables: {
       primary: "#78350f",
       secondary: "#a16207",
-      accent: "#eab308"
+      accent: "#eab308",
+      background: "#fffbeb",
+      foreground: "#78350f",
+      border: "#fde68a",
+      muted: "#fef3c7",
+      mutedForeground: "#a16207"
     }
   },
   {
@@ -159,7 +179,12 @@ const themeSwatches: ThemeSwatch[] = [
     cssVariables: {
       primary: "#581c87",
       secondary: "#7c3aed",
-      accent: "#a855f7"
+      accent: "#a855f7",
+      background: "#faf5ff",
+      foreground: "#581c87",
+      border: "#ddd6fe",
+      muted: "#f3e8ff",
+      mutedForeground: "#7c3aed"
     }
   },
   {
@@ -170,7 +195,12 @@ const themeSwatches: ThemeSwatch[] = [
     cssVariables: {
       primary: "#064e3b",
       secondary: "#047857",
-      accent: "#10b981"
+      accent: "#10b981",
+      background: "#f6fef7",
+      foreground: "#064e3b",
+      border: "#d1fae5",
+      muted: "#dcfce7",
+      mutedForeground: "#047857"
     }
   },
   {
@@ -181,7 +211,12 @@ const themeSwatches: ThemeSwatch[] = [
     cssVariables: {
       primary: "#7f1d1d",
       secondary: "#dc2626",
-      accent: "#f87171"
+      accent: "#f87171",
+      background: "#fff5f5",
+      foreground: "#7f1d1d",
+      border: "#fecaca",
+      muted: "#fee2e2",
+      mutedForeground: "#dc2626"
     }
   },
   {
@@ -208,7 +243,12 @@ const themeSwatches: ThemeSwatch[] = [
     cssVariables: {
       primary: "#f9fafb",
       secondary: "#d1d5db",
-      accent: "#6b7280"
+      accent: "#6b7280",
+      background: "#111827",
+      foreground: "#f9fafb",
+      border: "#374151",
+      muted: "#1f2937",
+      mutedForeground: "#9ca3af"
     }
   },
   {
@@ -219,7 +259,12 @@ const themeSwatches: ThemeSwatch[] = [
     cssVariables: {
       primary: "#f8fafc",
       secondary: "#cbd5e1",
-      accent: "#3b82f6"
+      accent: "#3b82f6",
+      background: "#1e3a8a",
+      foreground: "#f8fafc",
+      border: "#1e40af",
+      muted: "#1e40af",
+      mutedForeground: "#94a3b8"
     }
   },
   {
@@ -230,7 +275,12 @@ const themeSwatches: ThemeSwatch[] = [
     cssVariables: {
       primary: "#f0fdf4",
       secondary: "#bbf7d0",
-      accent: "#10b981"
+      accent: "#10b981",
+      background: "#064e3b",
+      foreground: "#f0fdf4",
+      border: "#065f46",
+      muted: "#065f46",
+      mutedForeground: "#a7f3d0"
     }
   },
   {
@@ -241,7 +291,12 @@ const themeSwatches: ThemeSwatch[] = [
     cssVariables: {
       primary: "#fef2f2",
       secondary: "#fecaca",
-      accent: "#dc2626"
+      accent: "#dc2626",
+      background: "#7f1d1d",
+      foreground: "#fef2f2",
+      border: "#991b1b",
+      muted: "#991b1b",
+      mutedForeground: "#fecaca"
     }
   },
   {
@@ -252,7 +307,12 @@ const themeSwatches: ThemeSwatch[] = [
     cssVariables: {
       primary: "#f0f9ff",
       secondary: "#bae6fd",
-      accent: "#3b82f6"
+      accent: "#3b82f6",
+      background: "#1e3a8a",
+      foreground: "#f0f9ff",
+      border: "#1e40af",
+      muted: "#1e40af",
+      mutedForeground: "#bae6fd"
     }
   },
   {
@@ -326,61 +386,120 @@ interface ThemeCustomizerProps {
   onOpenChange: (open: boolean) => void
 }
 
+/** ---------- Utilities ---------- **/
+
+// Convert #rrggbb to relative luminance (0 = black, 1 = white)
+function hexToLuminance(hex: string): number {
+  const h = hex.replace("#", "")
+  const r = parseInt(h.substring(0, 2), 16) / 255
+  const g = parseInt(h.substring(2, 4), 16) / 255
+  const b = parseInt(h.substring(4, 6), 16) / 255
+  const srgb = [r, g, b].map(c => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)))
+  return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2]
+}
+
+function isDarkTheme(bgHex: string): boolean {
+  try {
+    return hexToLuminance(bgHex) < 0.35
+  } catch {
+    // Fallback heuristic
+    return bgHex.startsWith("#0") || bgHex.startsWith("#1") || bgHex.startsWith("#2") || bgHex.startsWith("#3")
+  }
+}
+
+function writeVariables(target: HTMLElement, vars: ThemeSwatch["cssVariables"]) {
+  // Core variables used by shadcn/ui
+  target.style.setProperty("--primary", vars.primary)
+  target.style.setProperty("--secondary", vars.secondary)
+  target.style.setProperty("--accent", vars.accent)
+
+  target.style.setProperty("--background", vars.background)
+  target.style.setProperty("--card", vars.background)
+  target.style.setProperty("--popover", vars.background)
+  target.style.setProperty("--sidebar", vars.background)
+
+  target.style.setProperty("--foreground", vars.foreground)
+  target.style.setProperty("--card-foreground", vars.foreground)
+  target.style.setProperty("--popover-foreground", vars.foreground)
+  target.style.setProperty("--sidebar-foreground", vars.foreground)
+
+  target.style.setProperty("--border", vars.border)
+  target.style.setProperty("--muted", vars.muted)
+  target.style.setProperty("--muted-foreground", vars.mutedForeground)
+
+  // Back-compat custom vars
+  target.style.setProperty("--color-primary", vars.primary)
+  target.style.setProperty("--color-secondary", vars.secondary)
+  target.style.setProperty("--color-accent", vars.accent)
+}
+
+function clearVariables(target: HTMLElement) {
+  const keys = [
+    "--primary",
+    "--secondary",
+    "--accent",
+    "--background",
+    "--card",
+    "--popover",
+    "--sidebar",
+    "--foreground",
+    "--card-foreground",
+    "--popover-foreground",
+    "--sidebar-foreground",
+    "--border",
+    "--muted",
+    "--muted-foreground",
+    "--color-primary",
+    "--color-secondary",
+    "--color-accent"
+  ]
+  keys.forEach(k => target.style.removeProperty(k))
+}
+
+/** ---------- Component ---------- **/
+
 export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
   const [activeTab, setActiveTab] = useState<"background" | "shortcuts" | "color-theme">("color-theme")
   const [selectedTheme, setSelectedTheme] = useState<string>("default")
+  const [initialTheme, setInitialTheme] = useState<string>("default")
 
   useEffect(() => {
     // Load saved theme from localStorage
     const savedTheme = localStorage.getItem("selected-theme")
-    if (savedTheme) {
-      setSelectedTheme(savedTheme)
-      applyTheme(savedTheme)
-    }
-
-    // Cleanup function to reset theme when component unmounts
-    return () => {
-      if (!localStorage.getItem("selected-theme")) {
-        resetToDefaultTheme()
-      }
-    }
+    const themeToUse = savedTheme || "default"
+    setSelectedTheme(themeToUse)
+    setInitialTheme(themeToUse)
+    applyTheme(themeToUse)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const applyTheme = (themeId: string) => {
     const theme = themeSwatches.find(t => t.id === themeId)
-    if (theme) {
-      const root = document.documentElement
-      
-      // Apply theme to the actual CSS variables used by components
-      root.style.setProperty("--primary", theme.cssVariables.primary)
-      root.style.setProperty("--secondary", theme.cssVariables.secondary)
-      root.style.setProperty("--accent", theme.cssVariables.accent)
-      
-      // Apply background and surface colors
-      root.style.setProperty("--background", theme.cssVariables.background)
-      root.style.setProperty("--card", theme.cssVariables.background)
-      root.style.setProperty("--popover", theme.cssVariables.background)
-      root.style.setProperty("--sidebar", theme.cssVariables.background)
-      
-      // Apply text colors
-      root.style.setProperty("--foreground", theme.cssVariables.foreground)
-      root.style.setProperty("--card-foreground", theme.cssVariables.foreground)
-      root.style.setProperty("--popover-foreground", theme.cssVariables.foreground)
-      root.style.setProperty("--sidebar-foreground", theme.cssVariables.foreground)
-      
-      // Apply border and muted colors
-      root.style.setProperty("--border", theme.cssVariables.border)
-      root.style.setProperty("--muted", theme.cssVariables.muted)
-      root.style.setProperty("--muted-foreground", theme.cssVariables.mutedForeground)
-      
-      // Also set the custom variables for backward compatibility
-      root.style.setProperty("--color-primary", theme.cssVariables.primary)
-      root.style.setProperty("--color-secondary", theme.cssVariables.secondary)
-      root.style.setProperty("--color-accent", theme.cssVariables.accent)
-      
-      // Store in localStorage
-      localStorage.setItem("selected-theme", themeId)
+    if (!theme) return
+
+    const root = document.documentElement
+    const darkContainer = document.querySelector(".dark") as HTMLElement | null
+
+    const dark = isDarkTheme(theme.cssVariables.background)
+
+    // Toggle .dark class to match theme brightness
+    if (dark) {
+      root.classList.add("dark")
+    } else {
+      root.classList.remove("dark")
     }
+
+    // Always clear both scopes first to avoid residuals
+    clearVariables(root)
+    if (darkContainer) clearVariables(darkContainer)
+
+    // Write into the correct scope:
+    // - For dark themes, write into `.dark` (Tailwind/Shadcn resolve vars there)
+    // - For light themes, write into `:root`
+    const target = dark ? (darkContainer || root) : root
+    writeVariables(target, theme.cssVariables)
+
+    localStorage.setItem("selected-theme", themeId)
   }
 
   const handleThemeSelect = (themeId: string) => {
@@ -394,30 +513,16 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
 
   const resetToDefaultTheme = () => {
     const root = document.documentElement
-    // Reset to default shadcn/ui colors
-    root.style.removeProperty("--primary")
-    root.style.removeProperty("--secondary")
-    root.style.removeProperty("--accent")
-    root.style.removeProperty("--background")
-    root.style.removeProperty("--foreground")
-    root.style.removeProperty("--card")
-    root.style.removeProperty("--card-foreground")
-    root.style.removeProperty("--popover")
-    root.style.removeProperty("--popover-foreground")
-    root.style.removeProperty("--sidebar")
-    root.style.removeProperty("--sidebar-foreground")
-    root.style.removeProperty("--border")
-    root.style.removeProperty("--muted")
-    root.style.removeProperty("--muted-foreground")
-    root.style.removeProperty("--color-primary")
-    root.style.removeProperty("--color-secondary")
-    root.style.removeProperty("--color-accent")
+    const darkContainer = document.querySelector(".dark") as HTMLElement | null
+    clearVariables(root)
+    if (darkContainer) clearVariables(darkContainer)
+    // Do not forcibly toggle dark here; respect current app mode
   }
 
   const handleCancel = () => {
-    // Reset to default theme
-    resetToDefaultTheme()
-    setSelectedTheme("default")
+    // Revert to the theme that was active when dialog opened
+    setSelectedTheme(initialTheme)
+    applyTheme(initialTheme)
     onOpenChange(false)
   }
 
@@ -438,11 +543,11 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
                   title={swatch.name}
                 >
                   <div className="w-full h-full rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="w-1/2 h-full float-left"
                       style={{ backgroundColor: swatch.leftColor }}
                     />
-                    <div 
+                    <div
                       className="w-1/2 h-full float-right"
                       style={{ backgroundColor: swatch.rightColor }}
                     />
@@ -461,7 +566,7 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
         return (
           <div className="space-y-4">
             <div className="text-center py-8 text-muted-foreground">
-              <Image className="w-12 h-12 mx-auto mb-4 opacity-50" alt="Background icon" />
+              <Image className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>Background customization coming soon</p>
             </div>
           </div>
@@ -470,7 +575,7 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
         return (
           <div className="space-y-4">
             <div className="text-center py-8 text-muted-foreground">
-              <Link className="w-12 h-12 mx-auto mb-4 opacity-50" alt="Shortcuts icon" />
+              <Link className="w-12 h-12 mx-auto mb-4 opacity-50" />
               <p>Shortcuts customization coming soon</p>
             </div>
           </div>
@@ -481,12 +586,18 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(o) => {
+      if (!o) {
+        // closing: persist current selection as initial
+        setInitialTheme(selectedTheme)
+      }
+      onOpenChange(o)
+    }}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-center">Customize this page</DialogTitle>
         </DialogHeader>
-        
+
         <div className="flex h-[500px]">
           {/* Left Sidebar */}
           <div className="w-48 border-r pr-4">
@@ -495,34 +606,34 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
                 onClick={() => setActiveTab("background")}
                 className={cn(
                   "w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors",
-                  activeTab === "background" 
-                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300" 
+                  activeTab === "background"
+                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
                     : "hover:bg-gray-50 dark:hover:bg-gray-800"
                 )}
               >
-                <Image className="w-4 h-4" alt="Background" />
+                <Image className="w-4 h-4" />
                 <span>Background</span>
               </button>
-              
+
               <button
                 onClick={() => setActiveTab("shortcuts")}
                 className={cn(
                   "w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors",
-                  activeTab === "shortcuts" 
-                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300" 
+                  activeTab === "shortcuts"
+                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
                     : "hover:bg-gray-50 dark:hover:bg-gray-800"
                 )}
               >
-                <Link className="w-4 h-4" alt="Shortcuts" />
+                <Link className="w-4 h-4" />
                 <span>Shortcuts</span>
               </button>
-              
+
               <button
                 onClick={() => setActiveTab("color-theme")}
                 className={cn(
                   "w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors",
-                  activeTab === "color-theme" 
-                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300" 
+                  activeTab === "color-theme"
+                    ? "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
                     : "hover:bg-gray-50 dark:hover:bg-gray-800"
                 )}
               >
@@ -554,4 +665,4 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
       </DialogContent>
     </Dialog>
   )
-} 
+}
