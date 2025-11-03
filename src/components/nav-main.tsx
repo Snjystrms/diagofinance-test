@@ -56,18 +56,19 @@ export function NavMain({
                   <SidebarMenuButton 
                     tooltip={item.title}
                     asChild={!hasSubItems}
-                    className={ "p-3" + (isActive ? " bg-sidebar-accent text-sidebar-accent-foreground" : "")}
+                    size="sm"
+                    className={isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}
                   >
                     {hasSubItems ? (
                       <>
                         {item.icon && <item.icon />}
-                        <span className="text-lg">{item.title}</span>
+                        <span>{item.title}</span>
                         <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
                       </>
                     ) : (
                       <Link href={item.url} className="flex items-center w-full">
                         {item.icon && <item.icon />}
-                        <span className="text-lg">{item.title}</span>
+                        <span>{item.title}</span>
                       </Link>
                     )}
                   </SidebarMenuButton>
@@ -81,10 +82,11 @@ export function NavMain({
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton 
                               asChild
+                              size="sm"
                               className={isSubActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}
                             >
                               <Link href={subItem.url}>
-                                <span className="text-sm">{subItem.title}</span>
+                                <span>{subItem.title}</span>
                               </Link>
                             </SidebarMenuSubButton>
                           </SidebarMenuSubItem>

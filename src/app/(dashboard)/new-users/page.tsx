@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { PendingUser } from "@/lib/api"
-import { userOperations, utilityFunctions } from "@/utils/operations"
+// import { userOperations, utilityFunctions } from "@/utils/operations"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -18,70 +18,70 @@ export default function NewUsersPage() {
   const [loading, setLoading] = useState(true)
   const [actionLoading, setActionLoading] = useState<number | null>(null)
 
-  useEffect(() => {
-    if (token) {
-      fetchPendingTransactions()
-    }
-  }, [token])
+  // useEffect(() => {
+  //   if (token) {
+  //     fetchPendingTransactions()
+  //   }
+  // }, [token])
 
   // console.log(pendingTransactions,"pendingTransactions")
-  const fetchPendingTransactions = async () => {
-    try {
-      setLoading(true)
-      const response = await userOperations.fetchPendingUsers(token!)
-      console.log(response,"response");
-      if (response.success && response.data) {
-        setPendingTransactions(response.data.transactions)
-      }
-    } catch (error) {
-      toast.error("Failed to fetch pending transactions")
-      console.error("Error fetching pending transactions:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
+  // const fetchPendingTransactions = async () => {
+  //   try {
+  //     setLoading(true)
+  //     const response = await userOperations.fetchPendingUsers(token!)
+  //     console.log(response,"response");
+  //     if (response.success && response.data) {
+  //       setPendingTransactions(response.data.transactions)
+  //     }
+  //   } catch (error) {
+  //     toast.error("Failed to fetch pending transactions")
+  //     console.error("Error fetching pending transactions:", error)
+  //   } finally {
+  //     setLoading(false)
+  //   }
+  // }
 
-  const handleApprove = async (userId: number) => {
-    try {
-      setActionLoading(userId)
-      const response = await userOperations.approveUser(userId, token!)
-      if (response.success) {
-        toast.success("User approved successfully")
-        // Remove the approved user from the list
-        setPendingTransactions((prev: PendingUser[]) => prev.filter(user => user.id !== userId))
-      } else {
-        toast.error(response.message || "Failed to approve user")
-      }
-    } catch (error) {
-      toast.error("Failed to approve user")
-      console.error("Error approving user:", error)
-    } finally {
-      setActionLoading(null)
-    }
-  }
+  // const handleApprove = async (userId: number) => {
+  //   try {
+  //     setActionLoading(userId)
+  //     const response = await userOperations.approveUser(userId, token!)
+  //     if (response.success) {
+  //       toast.success("User approved successfully")
+  //       // Remove the approved user from the list
+  //       setPendingTransactions((prev: PendingUser[]) => prev.filter(user => user.id !== userId))
+  //     } else {
+  //       toast.error(response.message || "Failed to approve user")
+  //     }
+  //   } catch (error) {
+  //     toast.error("Failed to approve user")
+  //     console.error("Error approving user:", error)
+  //   } finally {
+  //     setActionLoading(null)
+  //   }
+  // }
 
-  const handleReject = async (userId: number) => {
-    try {
-      setActionLoading(userId)
-      const response = await userOperations.rejectUser(userId, token!)
-      if (response.success) {
-        toast.success("User rejected successfully")
-        // Remove the rejected user from the list
-        setPendingTransactions((prev: PendingUser[]) => prev.filter(user => user.id !== userId))
-      } else {
-        toast.error(response.message || "Failed to reject user")
-      }
-    } catch (error) {
-      toast.error("Failed to reject user")
-      console.error("Error rejecting user:", error)
-    } finally {
-      setActionLoading(null)
-    }
-  }
+  // const handleReject = async (userId: number) => {
+  //   try {
+  //     setActionLoading(userId)
+  //     const response = await userOperations.rejectUser(userId, token!)
+  //     if (response.success) {
+  //       toast.success("User rejected successfully")
+  //       // Remove the rejected user from the list
+  //       setPendingTransactions((prev: PendingUser[]) => prev.filter(user => user.id !== userId))
+  //     } else {
+  //       toast.error(response.message || "Failed to reject user")
+  //     }
+  //   } catch (error) {
+  //     toast.error("Failed to reject user")
+  //     console.error("Error rejecting user:", error)
+  //   } finally {
+  //     setActionLoading(null)
+  //   }
+  // }
 
-  const formatDate = (dateString: string) => {
-    return utilityFunctions.formatDate(dateString)
-  }
+  // const formatDate = (dateString: string) => {
+  //   return utilityFunctions.formatDate(dateString)
+  // }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -112,10 +112,10 @@ export default function NewUsersPage() {
             Manage pending user registrations and approve or reject them
           </p>
         </div>
-        <Button onClick={fetchPendingTransactions} variant="outline">
+        {/* <Button onClick={fetchPendingTransactions} variant="outline">
           <Users className="h-4 w-4 mr-2" />
           Refresh
-        </Button>
+        </Button> */}
       </div>
 
       {/* Stats Cards */}
@@ -239,14 +239,14 @@ export default function NewUsersPage() {
                       </TableCell>
                       <TableCell>
                         <div className="text-sm">
-                          {formatDate(user.created_at)}
+                          {/* {formatDate(user.created_at)} */}
                         </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex space-x-2">
                           <Button
                             size="sm"
-                            onClick={() => handleApprove(user.id)}
+                            // onClick={() => handleApprove(user.id)}
                             disabled={actionLoading === user.id}
                             className="bg-green-600 hover:bg-green-700"
                           >
@@ -260,7 +260,7 @@ export default function NewUsersPage() {
                           <Button
                             size="sm"
                             variant="destructive"
-                            onClick={() => handleReject(user.id)}
+                            // onClick={() => handleReject(user.id)}
                             disabled={actionLoading === user.id}
                           >
                             {actionLoading === user.id ? (
