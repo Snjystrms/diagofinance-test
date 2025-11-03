@@ -251,6 +251,10 @@ const userNavData = [
       url: "/funds/deposit",
     },
     {
+      title: "My Deposit",
+      url: "/funds/my_deposit",
+    },
+    {
       title: "Withdraw Funds",
       url: "/funds/withdraw",
     },

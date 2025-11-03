@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { MainLayout } from "@/components/main-layout";
 import { useAuth } from "@/contexts/auth-context";
+import { submitUSDTDeposit } from "@/utils/operations";
 import { 
   Copy, 
   Hash, 
@@ -18,15 +19,21 @@ import {
   QrCode,
   AlertCircle,
   Shield,
-  DollarSign
+  DollarSign,
+  Upload,
+  X
 } from "lucide-react";
 
 function USDTDepositContent() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
+  const [amount, setAmount] = useState("");
   const [transactionHash, setTransactionHash] = useState("");
+  const [paymentProof, setPaymentProof] = useState<File | null>(null);
+  const [paymentProofPreview, setPaymentProofPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copied, setCopied] = useState(false);
   const [depositStatus, setDepositStatus] = useState("pending"); // pending, submitted, confirmed
+  const [error, setError] = useState<string | null>(null);
 
   // Check if user needs to pay registration fee
   const needsRegistrationFee = user && user.type === 'user' && user.is_account_active === false;
@@ -47,23 +54,85 @@ function USDTDepositContent() {
     }
   };
 
+  const handlePaymentProofChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPaymentProof(file);
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPaymentProofPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemovePaymentProof = () => {
+    setPaymentProof(null);
+    setPaymentProofPreview(null);
+  };
+
   const handleSubmitHash = async () => {
-    if (!transactionHash.trim()) return;
+    setError(null);
+
+    // Validate amount
+    if (!amount.trim()) {
+      setError("Amount is required");
+      return;
+    }
+
+    const amountNum = parseFloat(amount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      setError("Amount must be a valid positive number");
+      return;
+    }
+
+    // Validate that at least one of transaction_hash or payment_proof is provided
+    if (!transactionHash.trim() && !paymentProof) {
+      setError("Either transaction hash or payment proof (screenshot) is required");
+      return;
+    }
+
+    // Validate transaction hash format if provided
+    if (transactionHash.trim() && (!transactionHash.startsWith("0x") || transactionHash.length < 10)) {
+      setError("Invalid transaction hash format");
+      return;
+    }
     
     setIsSubmitting(true);
     
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      // Call API using the function from operations.ts
+      const data = await submitUSDTDeposit(
+        {
+          amount: amount,
+          transaction_hash: transactionHash.trim() || undefined,
+          payment_proof: paymentProof || undefined,
+        },
+        token || undefined
+      );
+
+      if (!data.success) {
+        throw new Error(data.message || "Failed to submit deposit");
+      }
+
       setDepositStatus("submitted");
       setIsSubmitting(false);
-      // After another delay, simulate confirmation
+      
+      // Simulate confirmation after a delay (in real app, this would come from backend)
       setTimeout(() => {
         setDepositStatus("confirmed");
       }, 3000);
-    }, 2000);
+
+    } catch (err) {
+      console.error("Error submitting deposit:", err);
+      setError(err instanceof Error ? err.message : "Failed to submit deposit. Please try again.");
+      setIsSubmitting(false);
+    }
   };
 
-  const isValidHash = transactionHash.startsWith("0x") && transactionHash.length >= 10;
+  const isValidHash = transactionHash.trim() === "" || (transactionHash.startsWith("0x") && transactionHash.length >= 10);
+  const canSubmit = amount.trim() !== "" && parseFloat(amount) > 0 && (transactionHash.trim() !== "" || paymentProof !== null) && isValidHash;
 
   // If user needs registration fee, show different content
   if (needsRegistrationFee) {
@@ -228,10 +297,43 @@ function USDTDepositContent() {
               <CardContent className="space-y-6">
                 {depositStatus === "pending" && (
                   <>
+                    {/* Error Message */}
+                    {error && (
+                      <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-destructive">{error}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Amount Input */}
+                    <div className="space-y-3">
+                      <Label htmlFor="amount" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Amount (USDT) <span className="text-destructive">*</span>
+                      </Label>
+                      <div className="relative">
+                        <DollarSign className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                        <Input
+                          id="amount"
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          value={amount}
+                          onChange={(e) => setAmount(e.target.value)}
+                          className="pl-10 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-purple-500 dark:focus:border-purple-400 rounded-lg"
+                          placeholder="100.00"
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Enter the amount of USDT you deposited (minimum: {minimumAmount})
+                      </p>
+                    </div>
+
                     {/* Transaction Hash Input */}
                     <div className="space-y-3">
                       <Label htmlFor="txhash" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                        Transaction Hash
+                        Transaction Hash <span className="text-gray-400 text-xs">(Optional if screenshot provided)</span>
                       </Label>
                       <div className="relative">
                         <Hash className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
@@ -248,11 +350,73 @@ function USDTDepositContent() {
                       </p>
                     </div>
 
+                    {/* Payment Proof Upload */}
+                    <div className="space-y-3">
+                      <Label htmlFor="payment_proof" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Payment Proof (Screenshot) <span className="text-gray-400 text-xs">(Optional if transaction hash provided)</span>
+                      </Label>
+                      {!paymentProof ? (
+                        <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 hover:border-purple-500 dark:hover:border-purple-400 transition-colors">
+                          <label
+                            htmlFor="payment_proof"
+                            className="flex flex-col items-center justify-center cursor-pointer"
+                          >
+                            <Upload className="h-8 w-8 text-gray-400 mb-2" />
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                              Click to upload or drag and drop
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              PNG, JPG, WEBP up to 5MB
+                            </p>
+                          </label>
+                          <input
+                            id="payment_proof"
+                            type="file"
+                            accept="image/jpeg,image/jpg,image/png,image/webp"
+                            onChange={handlePaymentProofChange}
+                            className="hidden"
+                          />
+                        </div>
+                      ) : (
+                        <div className="relative border-2 border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                          <div className="flex items-center gap-4">
+                            {paymentProofPreview && (
+                              <img
+                                src={paymentProofPreview}
+                                alt="Payment proof preview"
+                                className="w-20 h-20 object-cover rounded-lg"
+                              />
+                            )}
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                                {paymentProof.name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {(paymentProof.size / 1024 / 1024).toFixed(2)} MB
+                              </p>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleRemovePaymentProof}
+                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                      <p className="text-xs text-gray-500">
+                        Upload a screenshot of your transaction (JPEG, PNG, or WebP, max 5MB)
+                      </p>
+                    </div>
+
                     {/* Submit Button */}
                     <Button
                       onClick={handleSubmitHash}
-                      disabled={!isValidHash || isSubmitting}
-                      className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
+                      disabled={!canSubmit || isSubmitting}
+                      className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isSubmitting ? (
                         <>
@@ -262,7 +426,7 @@ function USDTDepositContent() {
                       ) : (
                         <>
                           <ShieldCheck className="h-5 w-5 mr-2" />
-                          Submit Transaction Hash
+                          Submit Deposit
                         </>
                       )}
                     </Button>

@@ -189,3 +189,239 @@ export const authOperations = {
     }, token)
   }
 }
+
+// USDT Deposit Types
+export interface USDTDepositRequest {
+  amount: string
+  transaction_hash?: string
+  payment_proof?: File
+}
+
+export interface USDTDepositResponse {
+  success: boolean
+  message: string
+  data: {
+    amount: number
+    transaction_hash: string | null
+    has_payment_proof: boolean
+    status: string
+    submitted_at: string
+  }
+}
+
+// USDT Deposit Operations
+export async function submitUSDTDeposit(
+  data: USDTDepositRequest,
+  token?: string
+): Promise<USDTDepositResponse> {
+  const url = `${API_BASE_URL}/user/usdt-deposit/submit`
+  
+  // Create FormData for file upload
+  const formData = new FormData()
+  formData.append('amount', data.amount)
+  
+  if (data.transaction_hash) {
+    formData.append('transaction_hash', data.transaction_hash)
+  }
+  
+  if (data.payment_proof) {
+    formData.append('payment_proof', data.payment_proof)
+  }
+
+  const config: RequestInit = {
+    method: 'POST',
+    body: formData,
+    headers: {
+      ...(token && { 'Authorization': `Bearer ${token}` }),
+      // Don't set Content-Type header - browser will set it with boundary for FormData
+    },
+  }
+
+  try {
+    const response = await fetch(url, config)
+    const responseData = await response.json()
+    
+    if (!response.ok) {
+      throw new Error(responseData.message || `HTTP ${response.status}: ${response.statusText}`)
+    }
+    
+    return responseData
+  } catch (error) {
+    console.error('API Error (/user/usdt-deposit/submit):', error)
+    throw new Error(error instanceof Error ? error.message : 'Network error')
+  }
+}
+
+// USDT Deposit Request Status Types
+export interface DepositRequestItem {
+  id: number
+  user_id: number
+  transaction_hash: string | null
+  payment_proof_url: string | null
+  amount: string
+  status: 'pending' | 'approved' | 'rejected'
+  admin_notes: string | null
+  approved_by: number | null
+  approved_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface DepositRequestsResponse {
+  success: boolean
+  data: {
+    requests: DepositRequestItem[]
+    pagination?: {
+      page: number
+      limit: number
+      total: number
+      totalPages: number
+    }
+  }
+}
+
+interface DepositRequestsApiResponse {
+  requests: DepositRequestItem[]
+  pagination?: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
+// Get user deposit requests
+export async function getUserDepositRequests(
+  page: number = 1,
+  limit: number = 10,
+  token?: string
+): Promise<DepositRequestsResponse> {
+  const response = await apiCall<DepositRequestsApiResponse>(
+    `/user/usdt-deposit/user-requests?page=${page}&limit=${limit}`,
+    {
+      method: 'GET',
+    },
+    token
+  )
+  
+  // Ensure we return the correct structure
+  return {
+    success: response.success,
+    data: {
+      requests: response.data?.requests || [],
+      pagination: response.data?.pagination,
+    },
+  } as DepositRequestsResponse
+}
+
+// Withdrawal Types
+export interface WithdrawalRequest {
+  amount: string
+  wallet_address: string
+  chain_id: string
+}
+
+export interface WithdrawalItem {
+  id: number
+  user_id: number
+  amount: number
+  status: 'pending' | 'approved' | 'rejected' | 'processing' | 'completed'
+  wallet_address: string
+  chain_id: string
+  transaction_hash: string | null
+  created_at: string
+  updated_at?: string
+}
+
+export interface WithdrawalResponse {
+  success: boolean
+  message: string
+  data: WithdrawalItem
+}
+
+export interface WithdrawalsResponse {
+  success: boolean
+  data: {
+    withdrawals: WithdrawalItem[]
+    pagination?: {
+      page: number
+      limit: number
+      total: number
+      totalPages: number
+    }
+  }
+}
+
+interface WithdrawalsApiResponse {
+  withdrawals: WithdrawalItem[]
+  pagination?: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
+
+// Create withdrawal request
+export async function createWithdrawalRequest(
+  data: WithdrawalRequest,
+  token?: string
+): Promise<WithdrawalResponse> {
+  return apiCall<WithdrawalItem>('/user/withdrawals', {
+    method: 'POST',
+    body: JSON.stringify(data),
+  }, token) as Promise<WithdrawalResponse>
+}
+
+// Get user withdrawal requests
+export async function getUserWithdrawals(
+  page: number = 1,
+  limit: number = 10,
+  token?: string
+): Promise<WithdrawalsResponse> {
+  try {
+    const response = await apiCall<any>(
+      `/user/withdrawals?page=${page}&limit=${limit}`,
+      {
+        method: 'GET',
+      },
+      token
+    )
+    
+    // Handle different response structures
+    let withdrawals: WithdrawalItem[] = []
+    let pagination = undefined
+
+    if (response.success && response.data) {
+      // Case 1: Data is an object with withdrawals array
+      if (Array.isArray(response.data.withdrawals)) {
+        withdrawals = response.data.withdrawals
+        pagination = response.data.pagination
+      }
+      // Case 2: Data is directly an array
+      else if (Array.isArray(response.data)) {
+        withdrawals = response.data
+      }
+      // Case 3: Data is an object, check if it has a withdrawals property
+      else if (response.data.withdrawals) {
+        withdrawals = Array.isArray(response.data.withdrawals) ? response.data.withdrawals : []
+        pagination = response.data.pagination
+      }
+    } else if (!response.success) {
+      console.error('API returned unsuccessful response:', response)
+      throw new Error(response.message || 'Failed to fetch withdrawals')
+    }
+    
+    // Ensure we return the correct structure
+    return {
+      success: response.success || true,
+      data: {
+        withdrawals: withdrawals,
+        pagination: pagination,
+      },
+    } as WithdrawalsResponse
+  } catch (error) {
+    console.error('Error in getUserWithdrawals:', error)
+    throw error
+  }
+}
