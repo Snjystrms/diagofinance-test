@@ -352,6 +352,66 @@ export interface WithdrawalsResponse {
   }
 }
 
+export const utilityFunctions = {
+  // Format date
+  formatDate: (dateString: string, options?: Intl.DateTimeFormatOptions): string => {
+    const defaultOptions: Intl.DateTimeFormatOptions = {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    }
+    
+    return new Date(dateString).toLocaleDateString('en-US', options || defaultOptions)
+  },
+
+  // Format currency
+  formatCurrency: (amount: number, currency: string = 'USD'): string => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency
+    }).format(amount)
+  },
+
+  // Generate random ID
+  generateRandomId: (length: number = 8): string => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+    let result = ''
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(Math.floor(Math.random() * chars.length))
+    }
+    return result
+  },
+
+  // Debounce function
+  debounce: <T extends (...args: any[]) => any>(
+    func: T,
+    wait: number
+  ): ((...args: Parameters<T>) => void) => {
+    let timeout: NodeJS.Timeout
+    return (...args: Parameters<T>) => {
+      clearTimeout(timeout)
+      timeout = setTimeout(() => func(...args), wait)
+    }
+  },
+
+  // Throttle function
+  throttle: <T extends (...args: any[]) => any>(
+    func: T,
+    limit: number
+  ): ((...args: Parameters<T>) => void) => {
+    let inThrottle: boolean
+    return (...args: Parameters<T>) => {
+      if (!inThrottle) {
+        func(...args)
+        inThrottle = true
+        setTimeout(() => inThrottle = false, limit)
+      }
+    }
+  }
+}
+
 interface WithdrawalsApiResponse {
   withdrawals: WithdrawalItem[]
   pagination?: {

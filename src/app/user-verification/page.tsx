@@ -34,7 +34,7 @@ type ListRow = {
   uuid: string;
   name: string;
   email: string;
-  verification_status: "none" | "full-verified" | "semi-verified" | "pending" | string;
+  kyc_status: "none" | "full-verified" | "semi-verified" | "pending" | "approved" | "rejected" | string;
   submitted_at: string;
   documents: Record<
     DocKey,
@@ -53,7 +53,7 @@ type UserKycDetail = {
     first_name?: string | null;
     last_name?: string | null;
     email: string;
-    verification_status: string;
+    kyc_status: string; // keep for backward compat
   };
   submitted_at: string;
   summary: any;
@@ -66,7 +66,9 @@ type UserKycDetail = {
     }
   >;
   rejection_comments?: Partial<Record<DocKey, string>>;
+  kyc_status?: string; // <-- NEW: top-level kyc_status from API
 };
+
 
 /* ---------------- Helpers ---------------- */
 const fmtDateTime = (s?: string) => {
@@ -81,11 +83,15 @@ const fmtDateTime = (s?: string) => {
 const formatStatusLabel = (v: string) => {
   switch (v) {
     case "full-verified":
-      return "full-verified";      // show exact label
+      return "full-verified";
     case "semi-verified":
       return "semi-verified";
     case "pending":
       return "pending";
+    case "approved":
+      return "approved";
+    case "rejected":
+      return "rejected";
     case "none":
     default:
       return "none";
@@ -110,6 +116,18 @@ const statusPill = (v: string) => {
     case "pending":
       return (
         <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300">
+          {label}
+        </Badge>
+      );
+    case "approved":
+      return (
+        <Badge className="bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300">
+          {label}
+        </Badge>
+      );
+    case "rejected":
+      return (
+        <Badge className="bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300">
           {label}
         </Badge>
       );
@@ -229,12 +247,12 @@ export default function UserVerificationPage() {
         ),
       },
       {
-        id: "verification_status",
-        header: "Status",
-        accessorKey: "verification_status",
-        cell: ({ row }) => statusPill(String(row.original.verification_status)),
+        id: "kyc_status",
+        header: "KYC Status",
+        accessorKey: "kyc_status",
+        cell: ({ row }) => statusPill(String(row.original.kyc_status)),
         meta: {
-          label: "Status",
+          label: "KYC Status",
           variant: "select",
           options: [
             { label: "Pending", value: "pending" },
@@ -325,7 +343,7 @@ const buildReviewPayload = () => {
       // Optimistic refresh
       await loadList();
       refreshRowInList(detail.user.uuid, {
-        verification_status: (res.data as any)?.summary?.verification_status ?? detail.user.verification_status,
+        kyc_status: (res.data as any)?.summary?.kyc_status ?? detail.user.kyc_status,
       });
       setOpen(false);
       setDetail(null);
@@ -406,10 +424,10 @@ const buildReviewPayload = () => {
       >
         <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="flex items-center justify-between w-full">
-              <span>KYC Details</span>
-              {detail ? statusPill(detail.user.verification_status) : null}
-            </DialogTitle>
+          <DialogTitle className="flex items-center justify-between w-full">
+          <span>KYC Details</span>
+          {detail ? statusPill(String(detail.kyc_status)) : null}
+          </DialogTitle>
           </DialogHeader>
 
           {detailLoading ? (
@@ -515,9 +533,6 @@ const buildReviewPayload = () => {
           )}
 
           <DialogFooter className="flex items-center justify-between">
-            <div className="text-xs text-muted-foreground">
-              Files served from: <code className="font-mono">{API_BASE_URL}</code>
-            </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => setOpen(false)}>
                 Close

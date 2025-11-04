@@ -118,14 +118,33 @@ const adminNavData = [
       },
     ],
   },
-  {
-    title: "Package Management",
+  // {
+  //   title: "Package Management",
+  //   url: "/packages",
+  //   icon: Package,
+  //   items: [
+  //     {
+  //       title: "All Packages",
+  //       url: "/all-packages",
+  //     },
+  //     {
+  //       title: "Package Sales",
+  //       url: "/package-sales",
+  //     },
+  //     {
+  //       title: "Package Analytics",
+  //       url: "/package-analytics",
+  //     },
+  //   ],
+  // },
+    {
+    title: "Account Management",
     url: "/packages",
     icon: Package,
     items: [
       {
-        title: "All Packages",
-        url: "/all-packages",
+        title: "All Accounts",
+        url: "/all-accounts",
       },
       {
         title: "Package Sales",

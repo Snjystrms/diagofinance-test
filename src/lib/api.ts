@@ -1,5 +1,7 @@
+// C:\Users\DELL\Desktop\crminhouse\src\lib\api.ts
+
 // API base URL - replace with your actual backend URL
-export const API_BASE_URL = process.env.APIBASEURL || "http://192.168.1.13:3000";
+export const API_BASE_URL = process.env.APIBASEURL || "http://192.168.1.29:3000";
 
 // Debug: Log the API base URL being used
 console.log("API_BASE_URL:", API_BASE_URL);
@@ -113,6 +115,102 @@ export interface KycUploadResponse {
   verification_status?: string;
 }
 
+// ---------- Admin Account Types APIs ----------
+export type AccountTypeUpsertBody = {
+  name: string;
+  spread_from: string;
+  maximum_leverage: string; // display string e.g., "Up to 1:2000 (dynamic)"
+  leverage_type: "fixed" | "dynamic" | string;
+  leverage_value: number;
+  stop_out_level: number;
+  hedge_margin: number;
+  swap_free_option: boolean;
+  base_currency: string; // "$, €, £, ¥"
+  status: boolean;
+};
+
+export interface AccountTypeItem {
+  id: number | string;
+  name: string;
+  spread_from: string;
+  maximum_leverage: string;
+  leverage_type: "fixed" | "dynamic" | string;
+  leverage_value: number;
+  stop_out_level: string | number | null;
+  hedge_margin: string | number | null;
+  swap_free_option: boolean;
+  base_currency: string;
+  status: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// --- helper: turn object to x-www-form-urlencoded ---
+const toFormBody = (obj: Record<string, any>) => {
+  const p = new URLSearchParams();
+  Object.entries(obj).forEach(([k, v]) => {
+    p.set(k, v === null || v === undefined ? "" : String(v));
+  });
+  return p.toString();
+};
+
+export const adminAccountTypesApi = {
+  list: ({
+    token,
+    status,
+    search,
+  }: {
+    token: string;
+    status?: "true" | "false";
+    search?: string;
+  }) => {
+    const qs = new URLSearchParams();
+    if (typeof status !== "undefined") qs.set("status", status);
+    if (search && search.trim()) qs.set("search", search.trim());
+    const endpoint = `/admin/account-types/list${qs.toString() ? `?${qs.toString()}` : ""}`;
+    return apiCall<{
+      accountTypes: AccountTypeItem[];
+      pagination?: any;
+    }>(endpoint, { method: "GET", headers: { Authorization: `Bearer ${token}` } });
+  },
+
+  // ✅ Send x-www-form-urlencoded like Postman
+  create: (body: AccountTypeUpsertBody, token: string) =>
+    apiCall<AccountTypeItem>(`/admin/account-types/create`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+      },
+      body: toFormBody(body),
+    }),
+
+  // (If backend expects urlencoded for update too, keep this.)
+  update: (id: string | number, body: AccountTypeUpsertBody, token: string) =>
+    apiCall<AccountTypeItem>(`/admin/account-types/${id}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "application/json",
+      },
+      body: toFormBody(body),
+    }),
+
+  toggleStatus: (id: string | number, token: string) =>
+    apiCall<AccountTypeItem>(`/admin/account-types/${id}/toggle-status`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  delete: (id: string | number, token: string) =>
+    apiCall(`/admin/account-types/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};
+
 // ---------- Generic helper ----------
 async function apiCall<T>(
   endpoint: string,
@@ -123,14 +221,14 @@ async function apiCall<T>(
   const config: RequestInit = {
     headers: {
       "Content-Type": "application/json",
-      ...(options.headers || {}),
+      ...(options.headers || {}), // options can override Content-Type
     },
     ...options,
   };
 
   const res = await fetch(url, config);
   const json = await res.json().catch(() => ({}));
-  if (!res.ok || json?.success === false) {
+  if (!res.ok || (json && json.success === false)) {
     throw new Error(json?.message || `HTTP ${res.status}`);
   }
   return json;
@@ -218,26 +316,26 @@ export const adminKycApi = {
     }),
 
   /** Review KYC docs: pass { user_uuid, documents: { key: "approved" | "rejected" | "pending" | {status, comment} } } */
-review: async (
-  body: {
-    user_uuid: string;
-    documents: Record<
-      string,
-      | "approved"
-      | "rejected"
-      | "pending"
-      | { status: "approved" | "rejected" | "pending"; comment?: string }
-    >;
+  review: async (
+    body: {
+      user_uuid: string;
+      documents: Record<
+        string,
+        | "approved"
+        | "rejected"
+        | "pending"
+        | { status: "approved" | "rejected" | "pending"; comment?: string }
+      >;
+    },
+    token: string
+  ) => {
+    if (!body.user_uuid) throw new Error("User UUID missing in review body");
+    return apiCall(`/admin/user-management/users/kyc/review`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
   },
-  token: string
-) => {
-  if (!body.user_uuid) throw new Error("User UUID missing in review body");
-  return apiCall(`/admin/user-management/users/kyc/review`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-},
 };
 
 // Common helper for KYC file URLs; adjust the path prefix if backend differs.
