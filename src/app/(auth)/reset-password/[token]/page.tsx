@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { resetPasswordSchema, type ResetPasswordFormData } from '@/lib/validations';
 import { useAuthMutations } from '@/hooks/use-auth-mutations';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { ProtectedRoute } from '@/components/protected-route';
@@ -15,6 +14,7 @@ import { Spinner } from '@/components/ui/spinner';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Key, ArrowLeft } from 'lucide-react';
+import { PasswordInput } from '@/components/password-input';
 
 interface PageProps {
   params: { token: string };
@@ -139,9 +139,9 @@ export default function ResetPasswordPage({ params }: PageProps) {
                         <FormItem>
                           <FormLabel>New Password</FormLabel>
                           <FormControl>
-                            <Input
-                              type="password"
+                            <PasswordInput
                               placeholder="Enter your new password"
+                              autoComplete="new-password"
                               {...field}
                             />
                           </FormControl>
@@ -157,9 +157,9 @@ export default function ResetPasswordPage({ params }: PageProps) {
                         <FormItem>
                           <FormLabel>Confirm New Password</FormLabel>
                           <FormControl>
-                            <Input
-                              type="password"
+                            <PasswordInput
                               placeholder="Confirm your new password"
+                              autoComplete="new-password"
                               {...field}
                             />
                           </FormControl>

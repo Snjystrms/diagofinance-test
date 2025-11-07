@@ -245,14 +245,14 @@ export const adminAccountTypesApi = {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,
-        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: toFormBody(body),
+      body: JSON.stringify(body),
     }),
 
   toggleStatus: (id: number | string, token: string) =>
-    apiCall<{ data: AccountTypeItem }>(`/admin/account-types/${id}/toggle-status`, {
+    apiCall<AccountTypeItem>(`/admin/account-types/${id}/toggle-status`, {
       method: "PATCH",
       headers: { Authorization: `Bearer ${token}` },
       // ⛔ no body here — server decides active/deactivated

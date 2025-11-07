@@ -13,6 +13,7 @@ import { useAuthMutations } from '@/hooks/use-auth-mutations';
 import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/password-input';
 import {
   Card,
   CardContent,
@@ -322,13 +323,13 @@ export default function LoginPage() {
               <FormItem>
                 <FormLabel>Password</FormLabel>
                 <FormControl>
-                  <Input
-                    type="password"
+                  <PasswordInput
                     placeholder={
                       useDemoLogin
                         ? 'password123'
                         : 'Enter your password'
                     }
+                    autoComplete={useDemoLogin ? 'off' : 'current-password'}
                     {...field}
                   />
                 </FormControl>

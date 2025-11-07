@@ -54,6 +54,17 @@ const normalize = (a: AccountTypeItem): AccountTypeRow => ({
   updated_at: a.updated_at,
 });
 
+const coerceBoolean = (value: unknown, fallback = false) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["1", "true", "yes", "on"].includes(normalized)) return true;
+    if (["0", "false", "no", "off", ""].includes(normalized)) return false;
+  }
+  return fallback;
+};
+
 const serialize = (r: Partial<AccountTypeRow>): AccountTypeUpsertBody => ({
   name: r.name && r.name.trim() !== "" ? r.name.trim() : "",
   spread_from: r.spread_from ?? "",
@@ -66,9 +77,9 @@ const serialize = (r: Partial<AccountTypeRow>): AccountTypeUpsertBody => ({
   hedge_margin: Number(
     typeof r.hedge_margin === "string" ? parseFloat(r.hedge_margin) : r.hedge_margin ?? 0
   ),
-  swap_free_option: Boolean(r.swap_free_option),
+  swap_free_option: coerceBoolean(r.swap_free_option, true),
   base_currency: r.base_currency ?? "",
-  status: Boolean(r.status),
+  status: coerceBoolean(r.status, true),
 });
 
 // simple debounce hook
@@ -183,7 +194,7 @@ const fetchList = useCallback(
     try {
       setActionLoadingId(id);
       const toggled = await adminAccountTypesApi.toggleStatus(id, token);
-      const accountData = toggled.data?.data;
+      const accountData = toggled.data as AccountTypeItem | undefined;
       if (!accountData) {
         throw new Error("Invalid response structure from toggle status API");
       }
