@@ -75,7 +75,7 @@ const PaymentProofDialog = ({ paymentProofUrl }: { paymentProofUrl: string | nul
 
   const imageUrl = paymentProofUrl.startsWith('http') 
     ? paymentProofUrl 
-    : `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://192.168.1.13:3000'}${paymentProofUrl}`
+    : `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://192.168.1.29:3000'}${paymentProofUrl}`
 
   return (
     <Dialog>

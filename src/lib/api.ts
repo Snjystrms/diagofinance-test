@@ -1,7 +1,7 @@
 // C:\Users\DELL\Desktop\crminhouse\src\lib\api.ts
 
 // API base URL - replace with your actual backend URL
-export const API_BASE_URL = process.env.APIBASEURL || "http://192.168.1.29:3000";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.29:3000";
 
 // Debug: Log the API base URL being used
 console.log("API_BASE_URL:", API_BASE_URL);
@@ -486,3 +486,216 @@ export const permissionsApi = {
 // Common helper for KYC file URLs; adjust the path prefix if backend differs.
 export const kycFileUrl = (fileName?: string | null) =>
   fileName ? `${API_BASE_URL}/uploads/${encodeURIComponent(fileName)}` : "";
+
+// ---------- Admin USDT Deposit Types ----------
+export interface AdminUSDTDepositRequest {
+  id: number;
+  user_id: number;
+  transaction_hash: string | null;
+  payment_proof_url: string | null;
+  amount: string;
+  status: "pending" | "approved" | "rejected";
+  admin_notes: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  created_at: string;
+  updated_at: string;
+  user?: {
+    id: number;
+    email: string;
+    first_name: string | null;
+    last_name: string | null;
+  };
+}
+
+export interface AdminUSDTDepositListResponse {
+  requests: AdminUSDTDepositRequest[];
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+}
+
+export interface AdminUSDTDepositVerifyRequest {
+  request_id: number;
+  action: "approve" | "reject";
+  admin_notes?: string;
+}
+
+export interface AdminUSDTDepositVerifyResponse {
+  id: number;
+  status: "approved" | "rejected";
+  admin_notes: string | null;
+  approved_by: string;
+  approved_at: string;
+}
+
+// ---------- Admin USDT Deposit APIs ----------
+export const adminUSDTDepositApi = {
+  /** List all USDT deposit requests with pagination */
+  listAll: (page: number = 1, limit: number = 10, token: string) =>
+    apiCall<AdminUSDTDepositListResponse>(
+      `/admin/usdt-deposit/all?page=${page}&limit=${limit}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    ),
+
+  /** Verify (approve/reject) a USDT deposit request */
+  verify: (data: AdminUSDTDepositVerifyRequest, token: string) =>
+    apiCall<AdminUSDTDepositVerifyResponse>(
+      `/admin/usdt-deposit/verify`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }
+    ),
+};
+
+// Helper for deposit payment proof URLs
+export const depositProofUrl = (fileName?: string | null) =>
+  fileName ? `${API_BASE_URL}${fileName}` : "";
+
+// ---------- Account Types ----------
+export interface AccountType {
+  id: number;
+  name: string;
+  spread_from: string;
+  maximum_leverage: string;
+  base_currency: string;
+}
+
+export interface AccountTypesResponse {
+  success: boolean;
+  message: string;
+  data: AccountType[];
+}
+
+// ---------- Account Types APIs ----------
+export const accountTypesApi = {
+  /** Get all active account types */
+  getActive: (token: string) =>
+    apiCall<AccountType[]>(`/admin/account-types/active`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};
+
+// ---------- MT5 Request Types ----------
+export interface MT5RequestCreateRequest {
+  account_type_id: number;
+  leverage_temp: number;
+  currency: string;
+  swap_free: boolean;
+  password: string;
+  confirm_password: string;
+}
+
+export interface MT5RequestResponse {
+  request_id: string;
+  status: string;
+  created_at: string;
+}
+
+// ---------- Admin MT5 Request Types ----------
+export interface MT5Request {
+  uuid: string;
+  status: number; // 0 = pending, 1 = approved, 2 = rejected
+  account_mode: string;
+  leverage: string;
+  currency: string;
+  swap_free: boolean;
+  created_at: string;
+  User: {
+    first_name: string;
+    last_name: string;
+    email: string;
+    mobile: string;
+    userDetail: {
+      country?: string;
+      city?: string;
+    };
+  };
+}
+
+export interface AdminMT5RequestListResponse {
+  requests: MT5Request[];
+  pagination: {
+    current_page: number;
+    total_pages: number;
+    total_requests: number;
+    per_page: number;
+  };
+}
+
+export interface AdminMT5RequestProcessRequest {
+  id: string;
+  status: number; // 1 = approve, 2 = reject
+  rejection_reason?: string;
+}
+
+// ---------- MT5 Request APIs ----------
+export const mt5RequestApi = {
+  /** Create a new MT5 account request */
+  create: (data: MT5RequestCreateRequest, token: string) =>
+    apiCall<MT5RequestResponse>(`/user/mt5-request`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+};
+
+// ---------- Admin MT5 Request APIs ----------
+export const adminMT5RequestApi = {
+  /** Get pending MT5 requests with pagination */
+  getPending: (page: number = 1, perPage: number = 10, token: string) =>
+    apiCall<AdminMT5RequestListResponse>(
+      `/admin/mt5-requests/pending?page=${page}&per_page=${perPage}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    ),
+
+  /** Process (approve/reject) an MT5 request */
+  process: (data: AdminMT5RequestProcessRequest, token: string) =>
+    apiCall(`/admin/mt5-request/process`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+};
+
+// ---------- MT5 Account Types ----------
+export interface MT5Account {
+  id: number;
+  account_type: string;
+  account_id: string;
+  available_balance: string;
+  platform: string;
+  status: string;
+  free_margin: string;
+  equity: string;
+  leverage: string;
+  currency: string;
+}
+
+export interface MT5AccountsResponse {
+  success: boolean;
+  message?: string;
+  data: MT5Account[];
+}
+
+// ---------- MT5 Accounts APIs ----------
+export const mt5AccountsApi = {
+  /** Get all MT5 accounts for the authenticated user */
+  getAll: (token: string) =>
+    apiCall<MT5Account[]>(`/user/internal-transfer/mt5-accounts`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};

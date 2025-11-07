@@ -15,6 +15,7 @@ type AppDataTableProps<TData> = {
   pageCount?: number;             // pass from server when you paginate
   advanced?: boolean;             // toggle advanced toolbar
   actionBar?: React.ReactNode;    // e.g., bulk delete/export on selection
+  getRowId?: (row: TData) => string; // Optional custom row ID getter
 };
 export function AppDataTable<TData>({
   data,
@@ -22,6 +23,7 @@ export function AppDataTable<TData>({
   pageCount = 1,
   advanced = false,
   actionBar,
+  getRowId,
 }: AppDataTableProps<TData>) {
   const { table } = useDataTable<TData>({
     data,
@@ -34,7 +36,7 @@ export function AppDataTable<TData>({
         pageSize: 10 
       } 
     },
-    getRowId: (row: any) => row.id ?? row._id ?? String(Math.random()),
+    getRowId: getRowId || ((row: any) => row.id ?? row._id ?? row.uuid ?? String(Math.random())),
   });
 
   // Standard toolbar

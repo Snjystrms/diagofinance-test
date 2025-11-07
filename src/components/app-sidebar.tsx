@@ -157,6 +157,17 @@ const adminNavData = [
     ],
   },
   {
+    title: "MT5 Account Management",
+    url: "/mt5-account-management",
+    icon: Building2,
+    items: [
+      {
+        title: "User Accounts",
+        url: "/user-accounts",
+      },
+    ],
+  },
+  {
     title: "Support & Tickets",
     url: "/support",
     icon: LifeBuoy,
