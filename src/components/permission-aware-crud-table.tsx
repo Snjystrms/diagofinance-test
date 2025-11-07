@@ -1,9 +1,10 @@
+// C:\Users\DELL\Desktop\crminhouse\src\components\permission-aware-crud-table.tsx
 'use client';
 
 import React, { useState, useMemo } from 'react';
 import { ColumnDef } from '@tanstack/react-table';
 import { Button } from '@/components/ui/button';
-import { Plus, Pencil, Trash2, Eye } from 'lucide-react'; // ✅ Eye added
+import { Plus, Pencil, Trash2, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { AppDataTable } from '@/components/app-data-table';
 import { DeleteDialog } from '@/components/dialogs/delete-dialog';
@@ -22,7 +23,9 @@ export interface PermissionAwareCrudDataTableProps<T extends { id: string }> {
   onAdd: (newItem: Omit<T, 'id'>) => Promise<void>;
   onUpdate: (updatedItem: T) => Promise<void>;
   onDelete: (id: string) => Promise<void>;
-  rowIsReadOnly?: (row: T) => boolean; // ✅ NEW
+  rowIsReadOnly?: (row: T) => boolean;
+  /** ✅ NEW: allow hiding the built-in Add button so we can use an external create button */
+  hideAddButton?: boolean;
 }
 
 export function PermissionAwareCrudDataTable<T extends { id: string }>({
@@ -37,11 +40,12 @@ export function PermissionAwareCrudDataTable<T extends { id: string }>({
   onAdd,
   onUpdate,
   onDelete,
-  rowIsReadOnly, // ✅
+  rowIsReadOnly,
+  hideAddButton = false, // ✅ default false
 }: PermissionAwareCrudDataTableProps<T>) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<T | null>(null);
-  const [localData, setLocalData] = useState<T[]>(initialData);
+  const [localData] = useState<T[]>(initialData);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
@@ -99,64 +103,60 @@ export function PermissionAwareCrudDataTable<T extends { id: string }>({
     }
   };
 
-  // Enhance columns with permission-aware actions
   const enhancedColumns: ColumnDef<T>[] = useMemo(() => [
     ...columns,
     {
       id: "actions",
       header: "Actions",
       cell: ({ row }) => {
-       const ro = rowIsReadOnly?.(row.original) ?? false; // ro = status !== 'pending'
+        const ro = rowIsReadOnly?.(row.original) ?? false;
+        return (
+          <div className="flex justify-end space-x-2">
+            {canWrite(requiredModule) ? (
+              <PermissionGate requiredModule={requiredModule} requiredAction="write">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleEdit(row.original)}
+                  title={ro ? "View" : "Edit"}
+                >
+                  {ro ? <Eye className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
+                </Button>
+              </PermissionGate>
+            ) : ro && canRead(requiredModule) ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleEdit(row.original)}
+                title="View"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            ) : null}
 
-return (
-  <div className="flex justify-end space-x-2">
-    {canWrite(requiredModule) ? (
-      <PermissionGate requiredModule={requiredModule} requiredAction="write">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => handleEdit(row.original)}
-          title={ro ? "View" : "Edit"}
-        >
-          {ro ? <Eye className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}  {/* ✅ Eye if NOT pending */}
-        </Button>
-      </PermissionGate>
-    ) : ro && canRead(requiredModule) ? (
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => handleEdit(row.original)}
-        title="View"
-      >
-        <Eye className="h-4 w-4" />
-      </Button>
-    ) : null}
-
-    <PermissionGate requiredModule={requiredModule} requiredAction="write">
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => handleDeleteClick(row.original.id)}
-        className="text-destructive hover:text-destructive/80"
-        title="Delete"
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
-    </PermissionGate>
-  </div>
-);
+            <PermissionGate requiredModule={requiredModule} requiredAction="write">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleDeleteClick(row.original.id)}
+                className="text-destructive hover:text-destructive/80"
+                title="Delete"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </PermissionGate>
+          </div>
+        );
       },
     },
-  // include rowIsReadOnly/canRead/canWrite in deps for correctness
-  ], [columns, requiredModule, rowIsReadOnly, canRead, canWrite]); // ✅
+  ], [columns, requiredModule, rowIsReadOnly, canRead, canWrite]);
 
-  // Only show data if user has read permission
   if (!canRead(requiredModule)) {
     return (
       <div className="space-y-4">
         <div className="text-center p-8">
           <h2 className="text-2xl font-semibold tracking-tight mb-2">Access Denied</h2>
-        <p className="text-muted-foreground">
+          <p className="text-muted-foreground">
             You don't have permission to view {title.toLowerCase()}.
           </p>
         </div>
@@ -164,7 +164,6 @@ return (
     );
   }
 
-  // Decide if the current dialog should be read-only (e.g., approved row)
   const formIsReadOnly = editingItem ? (rowIsReadOnly?.(editingItem) ?? false) : false;
 
   return (
@@ -177,20 +176,22 @@ return (
           </p>
         </div>
 
-        {/* Add Button - requires write permission */}
-        <PermissionAwareButton
-          requiredModule={requiredModule}
-          requiredAction="write"
-          onClick={() => {
-            setEditingItem(null);
-            setIsFormOpen(true);
-          }}
-          showTooltip={true}
-          tooltipMessage={`You need write permission for ${requiredModule} to add new items`}
-        >
-          <Plus className="mr-2 h-4 w-4" />
-          {addButtonLabel}
-        </PermissionAwareButton>
+        {/* Built-in Add Button (can be hidden) */}
+        {!hideAddButton && (
+          <PermissionAwareButton
+            requiredModule={requiredModule}
+            requiredAction="write"
+            onClick={() => {
+              setEditingItem(null);
+              setIsFormOpen(true);
+            }}
+            showTooltip={true}
+            tooltipMessage={`You need write permission for ${requiredModule} to add new items`}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            {addButtonLabel}
+          </PermissionAwareButton>
+        )}
       </div>
 
       <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
@@ -201,23 +202,19 @@ return (
         />
       </div>
 
-      {/* Show form if:
-         - user CAN WRITE (edit/create), or
-         - the row is read-only BUT user CAN READ (view-only) */}
-      {(canWrite(requiredModule) || (formIsReadOnly && canRead(requiredModule))) && ( // ✅
-       <FormComponent
-  open={isFormOpen}
-  onOpenChange={setIsFormOpen}
-  initialData={editingItem}
-  readOnly={formIsReadOnly} // ✅ view-only when status !== 'pending'
-  onSubmit={(payload: any) => {
-    if (editingItem) return handleUpdate({ ...editingItem, ...payload });
-    return handleAdd(payload);
-  }}
-/>
+      {(canWrite(requiredModule) || (formIsReadOnly && canRead(requiredModule))) && (
+        <FormComponent
+          open={isFormOpen}
+          onOpenChange={setIsFormOpen}
+          initialData={editingItem}
+          readOnly={formIsReadOnly}
+          onSubmit={(payload: any) => {
+            if (editingItem) return handleUpdate({ ...editingItem, ...payload });
+            return handleAdd(payload);
+          }}
+        />
       )}
 
-      {/* Delete Dialog - requires write permission */}
       {canWrite(requiredModule) && (
         <DeleteDialog
           isOpen={isDeleteDialogOpen}

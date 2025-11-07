@@ -118,25 +118,25 @@ const adminNavData = [
       },
     ],
   },
-  // {
-  //   title: "Package Management",
-  //   url: "/packages",
-  //   icon: Package,
-  //   items: [
-  //     {
-  //       title: "All Packages",
-  //       url: "/all-packages",
-  //     },
-  //     {
-  //       title: "Package Sales",
-  //       url: "/package-sales",
-  //     },
-  //     {
-  //       title: "Package Analytics",
-  //       url: "/package-analytics",
-  //     },
-  //   ],
-  // },
+  {
+    title: "Manager Management",
+    url: "/manager",
+    icon: Users,
+    items: [
+      {
+        title: "All Managers",
+        url: "/all-managers",
+      },
+      {
+        title: "Package Sales",
+        url: "/package-sales",
+      },
+      {
+        title: "Package Analytics",
+        url: "/package-analytics",
+      },
+    ],
+  },
     {
     title: "Account Management",
     url: "/packages",

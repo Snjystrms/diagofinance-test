@@ -183,7 +183,11 @@ const fetchList = useCallback(
     try {
       setActionLoadingId(id);
       const toggled = await adminAccountTypesApi.toggleStatus(id, token);
-      const norm = normalize(toggled.data as AccountTypeItem);
+      const accountData = toggled.data?.data;
+      if (!accountData) {
+        throw new Error("Invalid response structure from toggle status API");
+      }
+      const norm = normalize(accountData);
       setData((prev) => prev.map((x) => (x.id === id ? norm : x)));
       toast.success(toggled.message || "Status updated");
     } catch (e: any) {
