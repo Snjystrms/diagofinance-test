@@ -39,4 +39,10 @@ export interface NavItem {
   }[];
 }
 
-export type UserType = "admin" | "user" | "subadmin";
+export type UserType = "admin" | "user" | "subadmin" | "manager";
+
+export interface ManagerPermissionCategory {
+  category: string;
+  permissions: { id: number; name: string }[];
+  count?: number;
+}

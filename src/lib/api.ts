@@ -1,7 +1,7 @@
 // C:\Users\DELL\Desktop\crminhouse\src\lib\api.ts
 
 // API base URL - replace with your actual backend URL
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.29:3000";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.47:3000";
 
 // Debug: Log the API base URL being used
 console.log("API_BASE_URL:", API_BASE_URL);
@@ -81,18 +81,20 @@ export interface TwoFactorDisableResponse {
 export interface LoginResponse {
   token: string;
   user: {
-    id: string;
+    id: string | number;
     name: string;
     email: string;
-    type: "admin" | "user" | "subadmin";
+    type: "admin" | "user" | "subadmin" | "manager";
     mobile?: string;
     status?: boolean;
+    requires_usdt_transaction?: boolean;
     requires_registration_fee?: boolean;
     is_account_active?: boolean;
     sponsor_id?: string;
     role?: string;
     permissions?: Permission[];
   };
+  permissions?: GroupedPermissions[];
 }
 
 export interface PendingUser {

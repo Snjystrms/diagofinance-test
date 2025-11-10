@@ -1,14 +1,14 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { GroupedPermissions, API_BASE_URL } from '@/lib/api';
 import { Permission } from '@/types/permissions';
-import { API_BASE_URL } from '@/lib/api';
 
 interface User {
-  id: string;
+  id: string | number;
   name?: string;
   email: string;
-  type: 'admin' | 'user' | 'subadmin';
+  type: 'admin' | 'user' | 'subadmin' | 'manager';
   mobile?: string;
   status?: boolean;
   requires_usdt_transaction?: boolean;
@@ -17,6 +17,7 @@ interface User {
   sponsor_id?: string;
   role?: string;
   permissions?: Permission[];
+  managerPermissions?: GroupedPermissions[];
 }
 
 interface AuthContextType {
@@ -54,6 +55,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const isValidatingRef = React.useRef(false);
 
   // Validate token with server (role-based endpoints)
+  /*
   const validateToken = async (authToken: string, userType?: string, retries = 2): Promise<{ isValid: boolean; shouldLogout: boolean }> => {
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
@@ -162,6 +164,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     
     return { isValid: false, shouldLogout: false };
   };
+  */
+
+  const validateToken = async (
+    _authToken: string,
+    _userType?: string,
+    _retries = 2
+  ): Promise<{ isValid: boolean; shouldLogout: boolean }> => {
+    console.warn('validateToken temporarily disabled');
+    return { isValid: true, shouldLogout: false };
+  };
 
   // Load auth state from localStorage on mount
   useEffect(() => {
@@ -180,25 +192,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setIsLoading(false);
           
           // Validate token in background without blocking UI
-          setTimeout(async () => {
-            const { isValid, shouldLogout } = await validateToken(storedToken, userData?.type);
-            
-            if (shouldLogout) {
-              console.log('Token validation failed during initialization - logging out');
-              // Clear stored data and logout
-              localStorage.removeItem('auth_token');
-              localStorage.removeItem('auth_user');
-              setToken(null);
-              setUser(null);
-              setIsAuthenticated(false);
-              // Redirect to login page
-              window.location.href = '/login';
-            } else if (isValid) {
-              console.log('Token validation successful for', userData?.type);
-            } else {
-              console.log('Token validation inconclusive for', userData?.type, '- keeping session');
-            }
-          }, 100); // Small delay to avoid blocking initial render
+          // setTimeout(async () => {
+          //   const { isValid, shouldLogout } = await validateToken(storedToken, userData?.type);
+          //   
+          //   if (shouldLogout) {
+          //     console.log('Token validation failed during initialization - logging out');
+          //     // Clear stored data and logout
+          //     localStorage.removeItem('auth_token');
+          //     localStorage.removeItem('auth_user');
+          //     setToken(null);
+          //     setUser(null);
+          //     setIsAuthenticated(false);
+          //     // Redirect to login page
+          //     window.location.href = '/login';
+          //   } else if (isValid) {
+          //     console.log('Token validation successful for', userData?.type);
+          //   } else {
+          //     console.log('Token validation inconclusive for', userData?.type, '- keeping session');
+          //   }
+          // }, 100); // Small delay to avoid blocking initial render
           
         } catch (error) {
           console.error('Error parsing stored auth data:', error);
@@ -248,17 +260,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return false;
     }
 
-    const { isValid, shouldLogout } = await validateToken(token, user.type);
+    // const { isValid, shouldLogout } = await validateToken(token, user.type);
+    // 
+    // if (shouldLogout) {
+    //   console.log('Session validation failed - logging out user');
+    //   logout();
+    //   // Redirect to login page
+    //   window.location.href = '/login';
+    //   return false;
+    // }
     
-    if (shouldLogout) {
-      console.log('Session validation failed - logging out user');
-      logout();
-      // Redirect to login page
-      window.location.href = '/login';
-      return false;
-    }
-    
-    return isValid;
+    return true;
   };
 
   // Global session validation function

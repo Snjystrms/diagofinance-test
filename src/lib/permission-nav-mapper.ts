@@ -8,15 +8,17 @@ import {
   LifeBuoy,
   Settings2,
   BarChart3,
+  BarChart,
   UserCheck,
   Wallet,
   DollarSign,
-  TrendingUp
+  TrendingUp,
 } from "lucide-react";
 // import { Permission, NavItem } from '@/types/permissions';
-import { Permission, NavItem } from "@/types/permissions";
+import { Permission, NavItem, ManagerPermissionCategory } from "@/types/permissions";
 // import { getAllowedModules, hasPermission } from '@/lib/permissions';
 import { getAllowedModules, hasPermission } from "./permissions";
+import { GroupedPermissions } from "@/lib/api";
 
 // Permission-based navigation mapping - Updated to match actual API module names
 const PERMISSION_NAV_MAPPING: Record<string, NavItem> = {
@@ -213,6 +215,172 @@ export function generateSubadminNavigation(permissions: Permission[]): NavItem[]
           items: filteredItems,
         });
       }
+    }
+  });
+
+  return navItems;
+}
+
+// ---------- Manager navigation (category-based) ----------
+
+const MANAGER_PERMISSION_NAV_MAPPING: Record<string, NavItem> = {
+  Bonus: {
+    title: "Bonus Management",
+    url: "/bonus-management",
+    icon: BarChart,
+    items: [
+      { title: "Bonus", url: "/bonus-management" },
+    ],
+  },
+  "E-Mail Management": {
+    title: "E-Mail Management",
+    url: "/email-management",
+    icon: Users,
+    items: [
+      { title: "E-Mail Management", url: "/email-management" },
+    ],
+  },
+  "Group Management": {
+    title: "Account Management",
+    url: "/packages",
+    icon: Package,
+    items: [
+      { title: "All Accounts", url: "/all-accounts" },
+      { title: "Package Sales", url: "/package-sales" },
+      { title: "Package Analytics", url: "/package-analytics" },
+    ],
+  },
+  "IB Management": {
+    title: "IB Management",
+    url: "/ib-management",
+    icon: Users,
+    items: [
+      { title: "All IB", url: "/ib-management" },
+    ],
+  },
+  "Marketing Management": {
+    title: "Marketing Management",
+    url: "/marketing-management",
+    icon: Shield,
+    items: [
+      { title: "Marketing Management", url: "/marketing-management" },
+    ],
+  },
+  "News Management": {
+    title: "News Management",
+    url: "/news-management",
+    icon: Shield,
+    items: [
+      { title: "News Management", url: "/news-management" },
+    ],
+  },
+  Notification: {
+    title: "Notification Management",
+    url: "/notification-management",
+    icon: Shield,
+    items: [
+      { title: "Notification Management", url: "/notification-management" },
+    ],
+  },
+  "Report Management": {
+    title: "Report Management",
+    url: "/report-management",
+    icon: Shield,
+    items: [
+      { title: "Report Management", url: "/report-management" },
+    ],
+  },
+  "Rewards Management": {
+    title: "Reward Management",
+    url: "/reward-management",
+    icon: Shield,
+    items: [
+      { title: "Reward Management", url: "/reward-management" },
+    ],
+  },
+  "Settings Management": {
+    title: "Settings Management",
+    url: "/settings-management",
+    icon: Shield,
+    items: [
+      { title: "Settings Management", url: "/settings-management" },
+    ],
+  },
+  "Sub Admin": {
+    title: "Manager Management",
+    url: "/manager",
+    icon: Users,
+    items: [
+      { title: "All Managers", url: "/all-managers" },
+    ],
+  },
+  "Ticket Management": {
+    title: "Ticket Management",
+    url: "/ticket-management",
+    icon: Shield,
+    items: [
+      { title: "Ticket Management", url: "/ticket-management" },
+    ],
+  },
+  Transaction: {
+    title: "Transaction Management",
+    url: "/transactions",
+    icon: CreditCard,
+    items: [
+      { title: "USDT Transactions", url: "/usdt-transactions" },
+      { title: "Transaction Verification", url: "/transaction-verification" },
+      { title: "Payment History", url: "/payment-history" },
+    ],
+  },
+  "User Management": {
+    title: "User Management",
+    url: "/users",
+    icon: Users,
+    items: [
+      { title: "All Users", url: "/new-users" },
+      { title: "User Verification", url: "/user-verification" },
+      { title: "User Status", url: "/user-status" },
+    ],
+  },
+};
+
+const cloneNavItem = (item: NavItem): NavItem => ({
+  ...item,
+  items: item.items ? item.items.map((sub) => ({ ...sub })) : undefined,
+});
+
+export function generateManagerNavigation(
+  groupedPermissions?: GroupedPermissions[] | ManagerPermissionCategory[]
+): NavItem[] {
+  const navItems: NavItem[] = [
+    {
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: BarChart3,
+      isActive: true,
+      items: [
+        {
+          title: "Overview",
+          url: "/dashboard",
+        },
+      ],
+    },
+  ];
+
+  if (!groupedPermissions) {
+    return navItems;
+  }
+
+  const seen = new Set<string>();
+
+  groupedPermissions.forEach((group) => {
+    const category = group.category;
+    if (!category || seen.has(category)) return;
+
+    const navConfig = MANAGER_PERMISSION_NAV_MAPPING[category];
+    if (navConfig) {
+      navItems.push(cloneNavItem(navConfig));
+      seen.add(category);
     }
   });
 

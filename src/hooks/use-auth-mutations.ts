@@ -40,11 +40,13 @@ export const useAuthMutations = () => {
     onSuccess: (response) => {
       if (response.data) {
         // Extract user data and ensure type is properly set
+        const userType = response.data.user.type || 'user';
         const userData = {
           ...response.data.user,
-          type: response.data.user.type || 'user', // Default to 'user' if type is not specified
+          type: userType,
+          managerPermissions: response.data.permissions ?? (userType === 'manager' ? [] : undefined),
         };
-        
+
         login(userData, response.data.token);
         
         // Show appropriate message based on response status

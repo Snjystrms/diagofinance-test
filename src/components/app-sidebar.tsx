@@ -9,9 +9,7 @@ import {
   Calendar,
   BarChart3,
   Mail,
-  Phone,
   FileText,
-  User,
   Settings2,
   Package,
   Shield,
@@ -23,11 +21,11 @@ import {
   Trophy,
   LifeBuoy,
   Database,
-  BarChart,
   Cog,
   UserCheck,
   UserPlus,
-  Activity
+  Bell,
+  Ticket
 } from "lucide-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -35,6 +33,7 @@ import { NavProjects } from "@/components/nav-projects"
 import { NavUser } from "@/components/nav-user"
 import { TeamSwitcher } from "@/components/team-switcher"
 import { useAuth } from "@/contexts/auth-context"
+import { generateManagerNavigation } from "@/lib/permission-nav-mapper"
 import {
   Sidebar,
   SidebarContent,
@@ -100,41 +99,47 @@ const adminNavData = [
     ],
   },
   {
-    title: "System Analytics",
-    url: "/system-analytics",
-    icon: BarChart,
+    title: "Bonus Management",
+    url: "/bonus-management",
+    icon: Gift,
     items: [
       {
-        title: "Revenue Analytics",
-        url: "/revenue-analytics",
-      },
-      {
-        title: "User Analytics",
-        url: "/user-analytics",
-      },
-      {
-        title: "Performance Metrics",
-        url: "/performance-metrics",
-      },
+        title: "Bonus",
+        url: "/bonus-management",
+      }
     ],
   },
   {
     title: "Manager Management",
     url: "/manager",
-    icon: Users,
+    icon: UserPlus,
     items: [
       {
         title: "All Managers",
         url: "/all-managers",
-      },
+      }
+    ],
+  },
+  {
+    title: "E-Mail Management",
+    url: "/email-management",
+    icon: Mail,
+    items: [
       {
-        title: "Package Sales",
-        url: "/package-sales",
+        title: "E-Mail Management",
+        url: "/email-management",
       },
+    ],
+  },
+  {
+    title: "IB Management",
+    url: "/ib-management",
+    icon: UserCheck,
+    items: [
       {
-        title: "Package Analytics",
-        url: "/package-analytics",
-      },
+        title: "All IB",
+        url: "/ib-management",
+      }
     ],
   },
     {
@@ -159,7 +164,7 @@ const adminNavData = [
   {
     title: "MT5 Account Management",
     url: "/mt5-account-management",
-    icon: Building2,
+    icon: Database,
     items: [
       {
         title: "User Accounts",
@@ -206,13 +211,79 @@ const adminNavData = [
     ],
   },
   {
-    title: "Registration Management",
-    url: "/test-registration-fee",
-    icon: Shield,
+    title: "Marketing Management",
+    url: "/marketing-management",
+    icon: TrendingUp,
     items: [
       {
-        title: "Test Registration Fee",
-        url: "/test-registration-fee",
+        title: "Marketing Management",
+        url: "/marketing-management",
+      },
+    ],
+  },
+  {
+    title: "News Management",
+    url: "/news-management",
+    icon: FileText,
+    items: [
+      {
+        title: "News Management",
+        url: "/news-management",
+      },
+    ],
+  },
+  {
+    title: "Notification Management",
+    url: "/notification-management",
+    icon: Bell,
+    items: [
+      {
+        title: "Notification Management",
+        url: "/notification-management",
+      },
+    ],
+  },
+  {
+    title: "Report Management",
+    url: "/report-management",
+    icon: BarChart3,
+    items: [
+      {
+        title: "Report Management",
+        url: "/report-management",
+      },
+    ],
+  },
+  {
+    title: "Reward Management",
+    url: "/reward-management",
+    icon: Trophy,
+    items: [
+      {
+        title: "Reward Management",
+        url: "/reward-management",
+      },
+    ],
+  },
+  {
+    title: "Settings Management",
+    url: "/settings-management",
+    icon: Settings2,
+    items: [
+      {
+        title: "Settings Management",
+        url: "/settings-management",
+      },
+    ],
+  },
+  {
+    title: "Ticket Management",
+    url: "/ticket-management",
+    icon: Ticket,
+    items: [
+      {
+        title: "Ticket Management",
+        url: "/ticket-management",
       },
     ],
   },
@@ -403,20 +474,20 @@ const crmData = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth();
-  
-  // Get navigation items based on user type
-  const getNavItems = () => {
-    if (!user) return userNavData; // Default to user nav if no user
-    
+
+  const navItems = React.useMemo(() => {
+    if (!user) return userNavData;
+
     switch (user.type) {
-      case 'admin':
+      case "admin":
         return adminNavData;
-      case 'user':
-        return userNavData;
+      case "manager":
+        return generateManagerNavigation(user.managerPermissions);
+      case "user":
       default:
         return userNavData;
     }
-  };
+  }, [user]);
 
   // Get user display info
   const getUserDisplayInfo = () => {
@@ -425,11 +496,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     return {
       name: user.name || user.email || "User",
       email: user.email,
-      avatar: user.type === 'admin' ? "/avatars/admin.svg" : "/avatars/admin.jpg",
+      avatar:
+        user.type === "admin"
+          ? "/avatars/admin.svg"
+          : user.type === "manager"
+            ? "/avatars/admin.svg"
+            : "/avatars/admin.jpg",
     };
   };
 
-  const navItems = getNavItems();
   const userDisplayInfo = getUserDisplayInfo();
 
   // Check if user needs to pay registration fee

@@ -2,7 +2,7 @@
 import { ApiResponse } from '@/lib/api'
 
 // Base API configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://192.168.1.29:3000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://192.168.1.47:3000'
 
 // Personal Information Types
 export interface PersonalInformation {
