@@ -274,13 +274,38 @@ async function apiCall<T>(
 ): Promise<ApiResponse<T>> {
   const url = `${API_BASE_URL}${endpoint}`;
 
+  const { headers: optionHeaders, ...restOptions } = options;
+
+  const normalizedHeaders = (() => {
+    if (!optionHeaders) return {};
+    if (optionHeaders instanceof Headers) {
+      return Object.fromEntries(optionHeaders.entries());
+    }
+    if (Array.isArray(optionHeaders)) {
+      return Object.fromEntries(optionHeaders);
+    }
+    return optionHeaders;
+  })();
+
   const config: RequestInit = {
+    ...restOptions,
     headers: {
       "Content-Type": "application/json",
-      ...(options.headers || {}), // options can override Content-Type
+      ...normalizedHeaders,
     },
-    ...options,
   };
+
+  if (
+    process.env.NODE_ENV !== "production" &&
+    typeof config.body === "string" &&
+    endpoint.startsWith("/user/internal-transfer/")
+  ) {
+    try {
+      console.log("apiCall payload:", endpoint, JSON.parse(config.body));
+    } catch (error) {
+      console.log("apiCall payload (raw):", endpoint, config.body);
+    }
+  }
 
   const res = await fetch(url, config);
   const json = await res.json().catch(() => ({}));
@@ -699,5 +724,64 @@ export const mt5AccountsApi = {
     apiCall<MT5Account[]>(`/user/internal-transfer/mt5-accounts`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
+    }),
+};
+
+// ---------- Internal Transfer APIs ----------
+export interface Mt5ToMt5TransferRequest {
+  from_mt5_account_id: string;
+  to_mt5_account_id: string;
+  amount: number;
+  remarks?: string;
+}
+
+export interface WalletToWalletTransferRequest {
+  from_wallet_type: string;
+  to_wallet_type: string;
+  amount: number;
+  remarks?: string;
+}
+
+export interface WalletToMt5TransferRequest {
+  from_wallet_type: string;
+  to_mt5_account_id: string;
+  amount: number;
+  remarks?: string;
+}
+
+export interface Mt5ToWalletTransferRequest {
+  from_mt5_account_id: string;
+  to_wallet_type: string;
+  amount: number;
+  remarks?: string;
+}
+
+export const internalTransferApi = {
+  mt5ToMt5: (data: Mt5ToMt5TransferRequest, token: string) =>
+    apiCall(`/user/internal-transfer/mt5-to-mt5`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+
+  userWalletToUserWallet: (data: WalletToWalletTransferRequest, token: string) =>
+    apiCall(`/user/internal-transfer/user-to-user`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+
+  userWalletToMt5: (data: WalletToMt5TransferRequest, token: string) =>
+    apiCall(`/user/internal-transfer/user-to-mt5`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+
+  mt5ToUserWallet: (data: Mt5ToWalletTransferRequest, token: string) =>
+    apiCall(`/user/internal-transfer/mt5-to-user`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
     }),
 };
