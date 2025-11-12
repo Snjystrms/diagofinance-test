@@ -111,6 +111,55 @@ export interface PendingUser {
   created_at: string;
 }
 
+export type PaginationMeta = {
+  page?: number;
+  current_page?: number;
+  per_page?: number;
+  limit?: number;
+  total?: number;
+  total_pages?: number;
+  last_page?: number;
+};
+
+export type AdminUsersListApiData = {
+  users?: PendingUser[];
+  items?: PendingUser[];
+  data?:
+    | PendingUser[]
+    | {
+        users?: PendingUser[];
+        items?: PendingUser[];
+        data?: PendingUser[];
+        transactions?: PendingUser[];
+        pagination?: PaginationMeta;
+      };
+  pagination?: PaginationMeta;
+  meta?: {
+    pagination?: PaginationMeta;
+  };
+  total?: number;
+};
+
+export type AdminUsersListParams = {
+  token: string;
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string | number;
+  isApproved?: string | number;
+};
+
+export type AdminUserCreateBody = {
+  first_name: string;
+  last_name: string;
+  email: string;
+  password: string;
+  mobile?: string;
+  country?: string;
+  country_code?: string;
+  referral_code?: string;
+};
+
 export interface KycUploadResponse {
   status: number;
   message: string;
@@ -263,6 +312,64 @@ export const adminAccountTypesApi = {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     }),
+};
+
+// ---------- Admin User Management APIs ----------
+export const adminUsersApi = {
+  list: ({ token, page = 1, limit = 10, search, status, isApproved }: AdminUsersListParams) => {
+    if (!token) {
+      throw new Error("Token is required to fetch admin users");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("page", String(page));
+    qs.set("limit", String(limit));
+
+    if (typeof search === "string" && search.trim()) {
+      qs.set("search", search.trim());
+    }
+
+    if (status !== undefined && status !== null && `${status}` !== "") {
+      qs.set("status", String(status));
+    }
+
+    if (isApproved !== undefined && isApproved !== null && `${isApproved}` !== "") {
+      qs.set("is_approved", String(isApproved));
+    }
+
+    const endpoint = `/admin/user-management/crud/users${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<AdminUsersListApiData>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  create: (body: AdminUserCreateBody, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to create admin user");
+    }
+
+    const sanitizedBody = Object.entries(body).reduce<Record<string, string>>((acc, [key, value]) => {
+      if (value === undefined || value === null) {
+        return acc;
+      }
+
+      const stringValue = typeof value === "string" ? value.trim() : String(value);
+      if (stringValue === "") {
+        return acc;
+      }
+
+      acc[key] = stringValue;
+      return acc;
+    }, {});
+
+    return apiCall(`/admin/user-management/crud/users`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(sanitizedBody),
+    });
+  },
 };
 
 // ---------- Generic helper ----------
@@ -651,6 +758,128 @@ export const mt5RequestApi = {
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }),
+};
+
+// ---------- IB Partner Request APIs ----------
+export interface CreateIbRequestBody {
+  notes?: string;
+}
+
+export const ibRequestsApi = {
+  overview: (token: string) =>
+    apiCall(`/user/ib-request`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  create: (data: CreateIbRequestBody, token: string) =>
+    apiCall(`/user/ib-requests`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+};
+
+// ---------- Admin IB Requests APIs ----------
+export interface AdminIbRequest {
+  id?: number | string;
+  uuid?: string;
+  status?: number;
+  notes?: string | null;
+  admin_comment?: string | null;
+  ib_name?: string | null;
+  created_at?: string;
+  updated_at?: string;
+  user?: {
+    id?: number | string;
+    first_name?: string | null;
+    last_name?: string | null;
+    name?: string | null;
+    email?: string | null;
+    mobile?: string | null;
+    phone?: string | null;
+    country?: string | null;
+    city?: string | null;
+  };
+  User?: AdminIbRequest["user"];
+  applicant?: AdminIbRequest["user"];
+  [key: string]: any;
+}
+
+export interface AdminIbRequestListData {
+  items?: AdminIbRequest[];
+  requests?: AdminIbRequest[];
+  data?:
+    | AdminIbRequest[]
+    | {
+        items?: AdminIbRequest[];
+        data?: AdminIbRequest[];
+        requests?: AdminIbRequest[];
+        pagination?: PaginationMeta;
+        total?: number;
+      };
+  pagination?: PaginationMeta;
+  meta?: {
+    pagination?: PaginationMeta;
+  };
+  total?: number;
+  [key: string]: any;
+}
+
+export interface AdminIbRequestUpdateBody {
+  status: number;
+  ib_name?: string;
+  admin_comment?: string;
+}
+
+export type AdminIbRequestListParams = {
+  token: string;
+  status?: string | number;
+  search?: string;
+  page?: number;
+  perPage?: number;
+};
+
+export const adminIbRequestsApi = {
+  list: ({ token, status, search, page = 1, perPage = 20 }: AdminIbRequestListParams) => {
+    if (!token) {
+      throw new Error("Token is required to fetch IB requests");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("page", String(page));
+    qs.set("per_page", String(perPage));
+
+    if (status !== undefined && status !== null && `${status}`.trim() !== "") {
+      qs.set("status", String(status));
+    }
+
+    if (typeof search === "string" && search.trim()) {
+      qs.set("search", search.trim());
+    }
+
+    const endpoint = `/admin/ib-requests${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<AdminIbRequestListData>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  updateStatus: (id: string | number, body: AdminIbRequestUpdateBody, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to update IB request");
+    }
+
+    if (id === null || id === undefined || `${id}`.trim() === "") {
+      throw new Error("IB request id is required");
+    }
+
+    return apiCall(`/admin/ib-requests/${id}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  },
 };
 
 // ---------- Admin MT5 Request APIs ----------

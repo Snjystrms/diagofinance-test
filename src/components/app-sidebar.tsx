@@ -70,6 +70,10 @@ const adminNavData = [
         url: "/new-users",
       },
       {
+        title: "All Users MT5 Accounts",
+        url: "/all-users-mt5-accounts",
+      },
+      {
         title: "User Verification",
         url: "/user-verification",
       },
@@ -421,6 +425,24 @@ const userNavData = [
       url: "/trading-central/economic-calendar",
     },
     ],
+  },{
+    title: "Become Partner",
+    url: "/become-partner",
+    icon: UserPlus,
+    // items: [
+    //   {
+    //     title: "USDT Transactions",
+    //     url: "/usdt-transactions",
+    //   },
+    //   {
+    //     title: "Transaction Verification",
+    //     url: "/transaction-verification",
+    //   },
+    //   {
+    //     title: "Payment History",
+    //     url: "/payment-history",
+    //   },
+    // ],
   },
   {
     title: "Help & Support",

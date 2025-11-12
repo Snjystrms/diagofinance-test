@@ -313,6 +313,7 @@ export default function UserAccountsPage() {
 
   return (
     <MainLayout>
+      <div className="min-h-screen bg-background">
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -407,6 +408,7 @@ export default function UserAccountsPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      </div>
       </div>
     </MainLayout>
   );
