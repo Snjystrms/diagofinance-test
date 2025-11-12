@@ -114,7 +114,7 @@ export function CrudDataTable<T extends { id: string }>({
     {
         id: "actions",
         cell: ({ row }) => (
-          <div className="flex justify-end space-x-2">
+          <div className="flex justify-start space-x-2">
             <Button
               variant="ghost"
               size="icon"

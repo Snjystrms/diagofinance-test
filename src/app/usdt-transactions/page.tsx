@@ -36,6 +36,20 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { MainLayout } from "@/components/main-layout";
+import { useManagerPermissions } from "@/hooks/use-manager-permissions";
+
+type TransactionStatusOption = {
+  value: string;
+  label: string;
+  featureKey: string;
+  statuses: string[];
+};
+
+const TRANSACTION_STATUS_OPTIONS: TransactionStatusOption[] = [
+  { value: "pending", label: "Pending", featureKey: "pendingDepositList", statuses: ["pending"] },
+  { value: "approved", label: "Approved", featureKey: "approveDepositList", statuses: ["approved"] },
+  { value: "rejected", label: "Rejected", featureKey: "rejectDepositList", statuses: ["rejected"] },
+];
 
 /* ---------------- Helpers ---------------- */
 const fmtDateTime = (s?: string | null) => {
@@ -85,8 +99,45 @@ const statusBadge = (status: string) => {
 
 /* ---------------- Page ---------------- */
 export default function USDTTransactionsPage() {
-  const { token: ctxToken } = useAuth?.() ?? { token: undefined };
-  const token = ctxToken || (typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : "");
+  const authCtx = useAuth?.();
+  const ctxToken = authCtx?.token;
+  const user = authCtx?.user || null;
+  const token =
+    ctxToken ||
+    (typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : "");
+
+  const { isAdmin, isManager, hasFeature, filterFeatureOptions } = useManagerPermissions();
+
+  const statusFeatureOptions = useMemo(
+    () => filterFeatureOptions("transaction", TRANSACTION_STATUS_OPTIONS),
+    [filterFeatureOptions]
+  );
+
+  const allowedStatusValues = useMemo(
+    () => statusFeatureOptions.map((opt) => opt.value),
+    [statusFeatureOptions]
+  );
+
+  const allowedStatusesSet = useMemo(() => {
+    const set = new Set<string>();
+    statusFeatureOptions.forEach((opt) => {
+      opt.statuses.forEach((status) => set.add(status.toLowerCase()));
+    });
+    return set;
+  }, [statusFeatureOptions]);
+
+  const canTakeAction = useMemo(
+    () => hasFeature("transaction", "approveRejectDeposit"),
+    [hasFeature]
+  );
+
+  const canViewStatus = useCallback(
+    (status: string) => {
+      if (isAdmin || !isManager) return true;
+      return allowedStatusesSet.has((status || "").toLowerCase());
+    },
+    [isAdmin, isManager, allowedStatusesSet]
+  );
 
   const [rows, setRows] = useState<AdminUSDTDepositRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -131,36 +182,95 @@ export default function USDTTransactionsPage() {
     loadList();
   }, [loadList]);
 
-  // Filter rows by status
+  useEffect(() => {
+    if (!isManager) return;
+    if (!statusFeatureOptions.length) {
+      if (statusFilter !== "none") {
+        setStatusFilter("none");
+      }
+      return;
+    }
+    if (statusFilter === "none") {
+      setStatusFilter(statusFeatureOptions[0].value);
+      return;
+    }
+    if (statusFilter === "all") {
+      if (statusFeatureOptions.length <= 1) {
+        setStatusFilter(statusFeatureOptions[0].value);
+      }
+      return;
+    }
+    if (!allowedStatusValues.includes(statusFilter)) {
+      setStatusFilter(statusFeatureOptions[0].value);
+    }
+  }, [isManager, statusFeatureOptions, allowedStatusValues, statusFilter]);
+
   const filteredRows = useMemo(() => {
-    if (statusFilter === "all") return rows;
-    return rows.filter((row) => row.status === statusFilter);
-  }, [rows, statusFilter]);
+    if (isAdmin || !isManager) {
+      if (statusFilter === "all") return rows;
+      if (["pending", "approved", "rejected"].includes(statusFilter)) {
+        return rows.filter((row) => row.status === statusFilter);
+      }
+      return rows;
+    }
+    if (!statusFeatureOptions.length || statusFilter === "none") {
+      return [];
+    }
+    if (statusFilter === "all") {
+      return rows.filter((row) => allowedStatusesSet.has((row.status || "").toLowerCase()));
+    }
+    const selectedOption = statusFeatureOptions.find((opt) => opt.value === statusFilter);
+    const allowedForFilter = new Set(
+      (selectedOption?.statuses || []).map((status) => status.toLowerCase())
+    );
+    return rows.filter((row) => allowedForFilter.has((row.status || "").toLowerCase()));
+  }, [rows, statusFilter, isAdmin, isManager, statusFeatureOptions, allowedStatusesSet]);
 
-  const handleApprove = (request: AdminUSDTDepositRequest) => {
-    setSelectedRequest(request);
-    setActionType("approve");
-    setAdminNotes("");
-    setActionDialogOpen(true);
-  };
+  const showAllStatusOption = isAdmin || !isManager || statusFeatureOptions.length > 1;
+  const statusSelectDisabled = isManager && !statusFeatureOptions.length;
 
-  const handleReject = (request: AdminUSDTDepositRequest) => {
-    setSelectedRequest(request);
-    setActionType("reject");
-    setAdminNotes("");
-    setActionDialogOpen(true);
-  };
+  const handleApprove = useCallback(
+    (request: AdminUSDTDepositRequest) => {
+      if (!canTakeAction) {
+        toast.error("You do not have permission to approve deposits");
+        return;
+      }
+      setSelectedRequest(request);
+      setActionType("approve");
+      setAdminNotes("");
+      setActionDialogOpen(true);
+    },
+    [canTakeAction]
+  );
 
-  const handleViewDetails = (request: AdminUSDTDepositRequest) => {
-    setViewingRequest(request);
-    setViewDialogOpen(true);
-  };
+  const handleReject = useCallback(
+    (request: AdminUSDTDepositRequest) => {
+      if (!canTakeAction) {
+        toast.error("You do not have permission to reject deposits");
+        return;
+      }
+      setSelectedRequest(request);
+      setActionType("reject");
+      setAdminNotes("");
+      setActionDialogOpen(true);
+    },
+    [canTakeAction]
+  );
+
+  const handleViewDetails = useCallback(
+    (request: AdminUSDTDepositRequest) => {
+      if (!canViewStatus(request.status)) {
+        toast.error("You do not have permission to view this request");
+        return;
+      }
+      setViewingRequest(request);
+      setViewDialogOpen(true);
+    },
+    [canViewStatus]
+  );
 
   const submitAction = async () => {
     if (!token || !selectedRequest || !actionType) return;
-
-    // For reject, admin notes are recommended but not strictly required based on API
-    // For approve, notes are optional
 
     try {
       setSubmitting(true);
@@ -173,19 +283,22 @@ export default function USDTTransactionsPage() {
         token
       );
 
-      toast.success(res.message || `Deposit request ${actionType === "approve" ? "approved" : "rejected"} successfully`);
-      
-      // Refresh the list
+      toast.success(
+        res.message ||
+          `Deposit request ${actionType === "approve" ? "approved" : "rejected"} successfully`
+      );
+
       await loadList();
-      
-      // Close dialog
+
       setActionDialogOpen(false);
       setSelectedRequest(null);
       setActionType(null);
       setAdminNotes("");
     } catch (e: any) {
       console.error(e);
-      toast.error(e?.message || `Failed to ${actionType === "approve" ? "approve" : "reject"} deposit request`);
+      toast.error(
+        e?.message || `Failed to ${actionType === "approve" ? "approve" : "reject"} deposit request`
+      );
     } finally {
       setSubmitting(false);
     }
@@ -204,16 +317,16 @@ export default function USDTTransactionsPage() {
         header: "User",
         accessorKey: "user",
         cell: ({ row }) => {
-          const user = row.original.user;
-          if (!user) return <span className="text-muted-foreground">—</span>;
+          const userInfo = row.original.user;
+          if (!userInfo) return <span className="text-muted-foreground">—</span>;
           return (
             <div className="space-y-0.5">
               <div className="font-medium">
-                {user.first_name || user.last_name
-                  ? `${user.first_name || ""} ${user.last_name || ""}`.trim()
+                {userInfo.first_name || userInfo.last_name
+                  ? `${userInfo.first_name || ""} ${userInfo.last_name || ""}`.trim()
                   : "—"}
               </div>
-              <div className="text-xs text-muted-foreground">{user.email}</div>
+              <div className="text-xs text-muted-foreground">{userInfo.email}</div>
             </div>
           );
         },
@@ -264,6 +377,7 @@ export default function USDTTransactionsPage() {
         cell: ({ row }) => {
           const request = row.original;
           const isPending = request.status === "pending";
+          const canActOnRequest = canTakeAction && isPending && canViewStatus("pending");
 
           return (
             <div className="flex items-center gap-2">
@@ -275,7 +389,7 @@ export default function USDTTransactionsPage() {
               >
                 <Eye className="h-4 w-4" />
               </Button>
-              {isPending && (
+              {canActOnRequest && (
                 <>
                   <Button
                     variant="ghost"
@@ -302,8 +416,20 @@ export default function USDTTransactionsPage() {
         },
       },
     ],
-    []
+    [handleViewDetails, handleApprove, handleReject, canTakeAction, canViewStatus]
   );
+
+  if (!isAdmin && isManager && !statusFeatureOptions.length) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <p className="text-muted-foreground">
+            You do not have permission to view USDT deposit transactions.
+          </p>
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (loading && rows.length === 0) {
     return (
@@ -335,22 +461,32 @@ export default function USDTTransactionsPage() {
 
         <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
           {/* Status Filter */}
-          <div className="mb-4 flex items-center gap-2">
-            <label htmlFor="status-filter" className="text-sm font-medium">
-              Filter by Status:
-            </label>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Select status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="approved">Approved</SelectItem>
-                <SelectItem value="rejected">Rejected</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          {(!isManager || statusFeatureOptions.length > 0) && (
+            <div className="mb-4 flex items-center gap-2">
+              <label htmlFor="status-filter" className="text-sm font-medium">
+                Filter by Status:
+              </label>
+              <Select
+                value={statusFilter === "none" ? undefined : statusFilter}
+                onValueChange={setStatusFilter}
+                disabled={statusSelectDisabled}
+              >
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  {showAllStatusOption && (
+                    <SelectItem value="all">All</SelectItem>
+                  )}
+                  {statusFeatureOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           <AppDataTable<AdminUSDTDepositRequest>
             data={filteredRows}

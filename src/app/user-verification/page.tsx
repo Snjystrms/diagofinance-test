@@ -25,6 +25,7 @@ import { adminKycApi, API_BASE_URL, kycFileUrl } from "@/lib/api";
 // If you already have auth context, import it. Fallback to localStorage token.
 import { useAuth } from "@/contexts/auth-context";
 import { MainLayout } from "@/components/main-layout";
+import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 
 /* ---------------- Types (based on your response) ---------------- */
 type DocStatusNum = 0 | 1 | 2; // 0 pending, 1 approved, 2 rejected
@@ -68,6 +69,40 @@ type UserKycDetail = {
   rejection_comments?: Partial<Record<DocKey, string>>;
   kyc_status?: string; // <-- NEW: top-level kyc_status from API
 };
+
+type KycStatusOption = {
+  value: string;
+  label: string;
+  featureKey: string | string[];
+  statuses: string[];
+};
+
+const KYC_STATUS_OPTIONS: KycStatusOption[] = [
+  {
+    value: "attention",
+    label: "All (Pending + Rejected)",
+    featureKey: ["pendingDocumentsList", "rejectDocumentList"],
+    statuses: ["pending", "rejected"],
+  },
+  {
+    value: "pending",
+    label: "Pending",
+    featureKey: "pendingDocumentsList",
+    statuses: ["pending"],
+  },
+  {
+    value: "approved",
+    label: "Approved",
+    featureKey: "approveDocumentsList",
+    statuses: ["approved", "full-verified", "semi-verified"],
+  },
+  {
+    value: "rejected",
+    label: "Rejected",
+    featureKey: "rejectDocumentList",
+    statuses: ["rejected"],
+  },
+];
 
 
 /* ---------------- Helpers ---------------- */
@@ -153,9 +188,11 @@ export default function UserVerificationPage() {
   const { token: ctxToken } = useAuth?.() ?? { token: undefined };
   const token = ctxToken || (typeof window !== "undefined" ? localStorage.getItem("token") || "" : "");
 
+  const { isAdmin, isManager, hasFeature, filterFeatureOptions } = useManagerPermissions();
+
   const [rows, setRows] = useState<ListRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<string | number>("attention"); // default to "attention"
+  const [statusFilter, setStatusFilter] = useState<string>("attention");
 
   // modal
   const [open, setOpen] = useState(false);
@@ -171,12 +208,51 @@ export default function UserVerificationPage() {
   });
   const [docComments, setDocComments] = useState<Partial<Record<DocKey, string>>>({});
 
+  const statusFeatureOptions = useMemo(
+    () =>
+      filterFeatureOptions("userManagement", KYC_STATUS_OPTIONS).map((opt) => ({
+        ...opt,
+        normalizedStatuses: opt.statuses.map((status) => status.toLowerCase()),
+      })),
+    [filterFeatureOptions]
+  );
+
+  const allowedStatusValues = useMemo(
+    () => statusFeatureOptions.map((opt) => opt.value),
+    [statusFeatureOptions]
+  );
+
+  const allowedKycStatusesSet = useMemo(() => {
+    const set = new Set<string>();
+    statusFeatureOptions.forEach((opt) => {
+      opt.normalizedStatuses.forEach((status) => set.add(status));
+    });
+    return set;
+  }, [statusFeatureOptions]);
+
+  const canReview = useMemo(
+    () => hasFeature("userManagement", "approveRejectKyc"),
+    [hasFeature]
+  );
+
+  const canViewKycStatus = useCallback(
+    (status: string) => {
+      if (isAdmin || !isManager) return true;
+      return allowedKycStatusesSet.has((status || "").toLowerCase());
+    },
+    [isAdmin, isManager, allowedKycStatusesSet]
+  );
+
   const loadList = useCallback(async () => {
     if (!token) return;
     try {
       setLoading(true);
-      // Use the status filter value for API call
-      const res = await adminKycApi.listPending(statusFilter, token);
+      let apiStatus: string | number = statusFilter;
+      if (statusFilter === "pending") apiStatus = 0;
+      else if (statusFilter === "approved") apiStatus = 1;
+      else if (statusFilter === "rejected") apiStatus = 2;
+
+      const res = await adminKycApi.listPending(apiStatus, token);
       const items = (res?.data as any)?.items ?? [];
       setRows(items as ListRow[]);
     } catch (e: any) {
@@ -191,6 +267,44 @@ export default function UserVerificationPage() {
   useEffect(() => {
     loadList();
   }, [loadList]);
+
+  useEffect(() => {
+    if (!isManager) return;
+    if (!statusFeatureOptions.length) {
+      if (statusFilter !== "none") {
+        setStatusFilter("none");
+      }
+      return;
+    }
+    if (statusFilter === "none") {
+      setStatusFilter(statusFeatureOptions[0].value);
+      return;
+    }
+    if (!allowedStatusValues.includes(statusFilter)) {
+      setStatusFilter(statusFeatureOptions[0].value);
+    }
+  }, [isManager, statusFeatureOptions, allowedStatusValues, statusFilter]);
+
+  const filteredRows = useMemo(() => {
+    if (!isManager) return rows;
+    if (!statusFeatureOptions.length || statusFilter === "none") {
+      return [];
+    }
+    if (statusFilter === "attention") {
+      const option = statusFeatureOptions.find((opt) => opt.value === "attention");
+      const allowedSet = new Set(option ? option.normalizedStatuses : allowedKycStatusesSet);
+      return rows.filter((row) => allowedSet.has((row.kyc_status || "").toLowerCase()));
+    }
+    const option = statusFeatureOptions.find((opt) => opt.value === statusFilter);
+    if (!option) {
+      return rows.filter((row) => allowedKycStatusesSet.has((row.kyc_status || "").toLowerCase()));
+    }
+    const allowedSet = new Set(option.normalizedStatuses);
+    return rows.filter((row) => allowedSet.has((row.kyc_status || "").toLowerCase()));
+  }, [rows, isManager, statusFeatureOptions, statusFilter, allowedKycStatusesSet]);
+
+  const statusSelectDisabled = isManager && !statusFeatureOptions.length;
+  const statusSelectValue = statusFilter === "none" ? undefined : statusFilter;
 
   const openDetail = useCallback(
     async (user_uuid: string) => {
@@ -280,19 +394,25 @@ export default function UserVerificationPage() {
         id: "actions",
         header: "Actions",
         enableSorting: false,
-        cell: ({ row }) => (
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label="View"
-            onClick={() => openDetail(row.original.uuid)}
-          >
-            <Eye className="h-4 w-4" />
-          </Button>
-        ),
+        cell: ({ row }) => {
+          const canView = canViewKycStatus(row.original.kyc_status);
+          return (
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="View"
+              onClick={() => {
+                if (canView) openDetail(row.original.uuid);
+              }}
+              disabled={!canView}
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+          );
+        },
       },
     ],
-    [openDetail]
+    [openDetail, canViewKycStatus]
   );
 
   const refreshRowInList = (user_uuid: string, next?: Partial<ListRow>) => {
@@ -332,6 +452,10 @@ const buildReviewPayload = () => {
 
   const submitReview = async () => {
     if (!token || !detail) return;
+    if (!canReview) {
+      toast.error("You do not have permission to update KYC status");
+      return;
+    }
     const payload = buildReviewPayload();
     if (!payload || Object.keys(payload.documents).length === 0) {
       toast("No changes to submit.");
@@ -355,14 +479,20 @@ const buildReviewPayload = () => {
 
   // Handle status filter change
   const handleStatusFilterChange = (newStatus: string) => {
-    // Map string values to API values
-    let statusValue: string | number = "attention";
-    if (newStatus === "pending") statusValue = 0;
-    else if (newStatus === "approved") statusValue = 1;
-    else if (newStatus === "rejected") statusValue = 2;
-    
-    setStatusFilter(statusValue);
+    setStatusFilter(newStatus);
   };
+
+  if (!isAdmin && isManager && !statusFeatureOptions.length) {
+    return (
+      <MainLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <p className="text-muted-foreground">
+            You do not have permission to view KYC submissions.
+          </p>
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (loading) {
     return (
@@ -390,25 +520,25 @@ const buildReviewPayload = () => {
           <label htmlFor="status-filter" className="text-sm font-medium">
             Filter by Status:
           </label>
-          <Select 
-            value={statusFilter === "attention" ? "attention" : 
-                   statusFilter === 0 ? "pending" : 
-                   statusFilter === 1 ? "approved" : "rejected"}
+          <Select
+            value={statusSelectValue}
             onValueChange={handleStatusFilterChange}
+            disabled={statusSelectDisabled}
           >
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[200px]">
               <SelectValue placeholder="Select status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="attention">All (Pending + Rejected)</SelectItem>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
+              {statusFeatureOptions.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
         
-        <AppDataTable<ListRow> data={rows} columns={columns} pageCount={1} advanced />
+        <AppDataTable<ListRow> data={filteredRows} columns={columns} pageCount={1} advanced />
       </div>
 
       {/* Detail / Review Modal */}
@@ -489,6 +619,7 @@ const buildReviewPayload = () => {
                           className={current === 1 ? "bg-green-600 hover:bg-green-700" : ""}
                           variant={current === 1 ? "default" : "outline"}
                           onClick={() => setDocStatuses((s) => ({ ...s, [k]: 1 }))}
+                          disabled={!canReview}
                         >
                           <CheckCircle2 className="h-4 w-4 mr-1" />
                           Approve
@@ -497,6 +628,7 @@ const buildReviewPayload = () => {
                           size="sm"
                           variant={current === 2 ? "destructive" : "outline"}
                           onClick={() => setDocStatuses((s) => ({ ...s, [k]: 2 }))}
+                          disabled={!canReview}
                         >
                           <XCircle className="h-4 w-4 mr-1" />
                           Reject
@@ -505,6 +637,7 @@ const buildReviewPayload = () => {
                           size="sm"
                           variant={current === 0 ? "default" : "outline"}
                           onClick={() => setDocStatuses((s) => ({ ...s, [k]: 0 }))}
+                          disabled={!canReview}
                         >
                           Set Pending
                         </Button>
@@ -523,6 +656,7 @@ const buildReviewPayload = () => {
                           onChange={(e) =>
                             setDocComments((c) => ({ ...c, [k]: e.target.value }))
                           }
+                          disabled={!canReview}
                         />
                       </div>
                     </div>
@@ -537,7 +671,9 @@ const buildReviewPayload = () => {
               <Button variant="outline" onClick={() => setOpen(false)}>
                 Close
               </Button>
-              <Button onClick={submitReview}>Save Review</Button>
+              <Button onClick={submitReview} disabled={!canReview}>
+                Save Review
+              </Button>
             </div>
           </DialogFooter>
         </DialogContent>

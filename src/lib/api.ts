@@ -150,7 +150,8 @@ export interface ManagerItem {
   total_client?: number;
   created_at?: string;
   updated_at?: string;
-  permissions: { id: number; name: string }[];
+  /** 🔁 Can be flat or grouped; we flatten in page.tsx normalize() */
+  permissions: any;
 }
 
 export type ManagerCreateBody = {
@@ -158,7 +159,6 @@ export type ManagerCreateBody = {
   email: string;
   mobile: string;
   password: string;
-  // optional pre-assignment on create; if not supported by API leave empty
   permissions?: number[];
 };
 
@@ -175,13 +175,13 @@ export type ManagerUpdateBody = {
 export type AccountTypeUpsertBody = {
   name: string;
   spread_from: string;
-  maximum_leverage: string; // display string e.g., "Up to 1:2000 (dynamic)"
+  maximum_leverage: string;
   leverage_type: "fixed" | "dynamic" | string;
   leverage_value: number;
   stop_out_level: number;
   hedge_margin: number;
   swap_free_option: boolean;
-  base_currency: string; // "$, €, £, ¥"
+  base_currency: string;
   status: boolean;
 };
 
@@ -230,7 +230,6 @@ export const adminAccountTypesApi = {
     }>(endpoint, { method: "GET", headers: { Authorization: `Bearer ${token}` } });
   },
 
-  // Send x-www-form-urlencoded like Postman
   create: (body: AccountTypeUpsertBody, token: string) =>
     apiCall<AccountTypeItem>(`/admin/account-types/create`, {
       method: "POST",
@@ -257,7 +256,6 @@ export const adminAccountTypesApi = {
     apiCall<AccountTypeItem>(`/admin/account-types/${id}/toggle-status`, {
       method: "PATCH",
       headers: { Authorization: `Bearer ${token}` },
-      // ⛔ no body here — server decides active/deactivated
     }),
 
   delete: (id: string | number, token: string) =>
@@ -302,7 +300,7 @@ async function apiCall<T>(
   ) {
     try {
       console.log("apiCall payload:", endpoint, JSON.parse(config.body));
-    } catch (error) {
+    } catch {
       console.log("apiCall payload (raw):", endpoint, config.body);
     }
   }
@@ -369,7 +367,7 @@ export const authApi = {
   uploadProfileDocuments: async (formData: FormData, token: string): Promise<KycUploadResponse> => {
     const res = await fetch(`${API_BASE_URL}/user/profile/document`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` } as any, // let browser set multipart boundary
+      headers: { Authorization: `Bearer ${token}` } as any,
       body: formData,
     });
     const json = await res.json().catch(() => ({}));
@@ -379,7 +377,6 @@ export const authApi = {
 };
 
 // ---------- Admin KYC APIs ----------
-/** List pending/attention KYC users (status can be "attention" | 0 | 1 | 2) */
 export const adminKycApi = {
   listPending: (status: string | number, token: string) =>
     apiCall<{
@@ -396,7 +393,6 @@ export const adminKycApi = {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
-  /** Review KYC docs: pass { user_uuid, documents: { key: "approved" | "rejected" | "pending" | {status, comment} } } */
   review: async (
     body: {
       user_uuid: string;
@@ -420,26 +416,17 @@ export const adminKycApi = {
 };
 
 // ---------- Managers APIs ----------
-
-// Partial fix for C:\Users\DELL\Desktop\crminhouse\src\lib\api.ts
-// Replace the encodeManagerUpdate function and the adminManagersApi section
-
-/** helper: encode update body as x-www-form-urlencoded with permissions[] and status as 1/0 */
 const encodeManagerUpdate = (body: ManagerUpdateBody) => {
   const p = new URLSearchParams();
   if (typeof body.name !== "undefined") p.set("name", body.name ?? "");
   if (typeof body.email !== "undefined") p.set("email", body.email ?? "");
   if (typeof body.mobile !== "undefined") p.set("mobile", body.mobile ?? "");
-  
-  // ✅ CRITICAL FIX: Convert boolean to 1/0 for status
   if (typeof body.status !== "undefined") {
     p.set("status", body.status ? "1" : "0");
   }
-
   if (typeof body.password === "string" && body.password.trim()) {
     p.set("password", body.password.trim());
   }
-  
   const ids = Array.isArray(body.permissions) ? body.permissions : [];
   ids.forEach((id) => p.append("permissions[]", String(id)));
   return p.toString();
@@ -452,7 +439,6 @@ export const adminManagersApi = {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
-  // ✅ Create manager — form-encoded, no permissions
   create: (body: ManagerCreateBody, token: string) =>
     apiCall<{ manager: ManagerItem }>(`/admin/manager/create`, {
       method: "POST",
@@ -469,7 +455,6 @@ export const adminManagersApi = {
       }).toString(),
     }),
 
-  // ✅ PATCH status — form-encoded + 1/0
   patchStatus: (id: number | string, status: boolean, token: string) =>
     apiCall<{ manager: ManagerItem }>(`/admin/manager/${id}`, {
       method: "PATCH",
@@ -481,7 +466,6 @@ export const adminManagersApi = {
       body: new URLSearchParams({ status: status ? "1" : "0" }).toString(),
     }),
 
-  // ✅ UPDATE manager — form-encoded + permissions[] + status as 1/0
   update: (id: number | string, body: ManagerUpdateBody, token: string) =>
     apiCall<{ manager: ManagerItem }>(`/admin/manager/${id}`, {
       method: "PUT",
@@ -493,6 +477,12 @@ export const adminManagersApi = {
       body: encodeManagerUpdate(body),
     }),
 
+  detail: (id: number | string, token: string) =>
+    apiCall<{ manager: ManagerItem }>(`/admin/manager/${id}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
   delete: (id: number | string, token: string) =>
     apiCall(`/admin/manager/${id}`, {
       method: "DELETE",
@@ -502,7 +492,6 @@ export const adminManagersApi = {
 
 // ---------- Permissions APIs ----------
 export const permissionsApi = {
-  // server now returns: { success, message, data: { permissions: GroupedPermissions[], total } }
   listAll: (token: string) =>
     apiCall<{ permissions: GroupedPermissions[]; total?: number }>(`/permissions/permissions`, {
       method: "GET",
@@ -510,7 +499,6 @@ export const permissionsApi = {
     }),
 };
 
-// Common helper for KYC file URLs; adjust the path prefix if backend differs.
 export const kycFileUrl = (fileName?: string | null) =>
   fileName ? `${API_BASE_URL}/uploads/${encodeURIComponent(fileName)}` : "";
 
@@ -561,29 +549,20 @@ export interface AdminUSDTDepositVerifyResponse {
 
 // ---------- Admin USDT Deposit APIs ----------
 export const adminUSDTDepositApi = {
-  /** List all USDT deposit requests with pagination */
   listAll: (page: number = 1, limit: number = 10, token: string) =>
-    apiCall<AdminUSDTDepositListResponse>(
-      `/admin/usdt-deposit/all?page=${page}&limit=${limit}`,
-      {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    ),
+    apiCall<AdminUSDTDepositListResponse>(`/admin/usdt-deposit/all?page=${page}&limit=${limit}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
 
-  /** Verify (approve/reject) a USDT deposit request */
   verify: (data: AdminUSDTDepositVerifyRequest, token: string) =>
-    apiCall<AdminUSDTDepositVerifyResponse>(
-      `/admin/usdt-deposit/verify`,
-      {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      }
-    ),
+    apiCall<AdminUSDTDepositVerifyResponse>(`/admin/usdt-deposit/verify`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
 };
 
-// Helper for deposit payment proof URLs
 export const depositProofUrl = (fileName?: string | null) =>
   fileName ? `${API_BASE_URL}${fileName}` : "";
 
@@ -604,7 +583,6 @@ export interface AccountTypesResponse {
 
 // ---------- Account Types APIs ----------
 export const accountTypesApi = {
-  /** Get all active account types */
   getActive: (token: string) =>
     apiCall<AccountType[]>(`/admin/account-types/active`, {
       method: "GET",
@@ -631,7 +609,7 @@ export interface MT5RequestResponse {
 // ---------- Admin MT5 Request Types ----------
 export interface MT5Request {
   uuid: string;
-  status: number; // 0 = pending, 1 = approved, 2 = rejected
+  status: number;
   account_mode: string;
   leverage: string;
   currency: string;
@@ -661,13 +639,12 @@ export interface AdminMT5RequestListResponse {
 
 export interface AdminMT5RequestProcessRequest {
   id: string;
-  status: number; // 1 = approve, 2 = reject
+  status: number;
   rejection_reason?: string;
 }
 
 // ---------- MT5 Request APIs ----------
 export const mt5RequestApi = {
-  /** Create a new MT5 account request */
   create: (data: MT5RequestCreateRequest, token: string) =>
     apiCall<MT5RequestResponse>(`/user/mt5-request`, {
       method: "POST",
@@ -678,7 +655,6 @@ export const mt5RequestApi = {
 
 // ---------- Admin MT5 Request APIs ----------
 export const adminMT5RequestApi = {
-  /** Get pending MT5 requests with pagination */
   getPending: (page: number = 1, perPage: number = 10, token: string) =>
     apiCall<AdminMT5RequestListResponse>(
       `/admin/mt5-requests/pending?page=${page}&per_page=${perPage}`,
@@ -688,7 +664,6 @@ export const adminMT5RequestApi = {
       }
     ),
 
-  /** Process (approve/reject) an MT5 request */
   process: (data: AdminMT5RequestProcessRequest, token: string) =>
     apiCall(`/admin/mt5-request/process`, {
       method: "POST",
@@ -719,7 +694,6 @@ export interface MT5AccountsResponse {
 
 // ---------- MT5 Accounts APIs ----------
 export const mt5AccountsApi = {
-  /** Get all MT5 accounts for the authenticated user */
   getAll: (token: string) =>
     apiCall<MT5Account[]>(`/user/internal-transfer/mt5-accounts`, {
       method: "GET",

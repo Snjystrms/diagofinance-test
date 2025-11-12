@@ -26,6 +26,7 @@ export interface PermissionAwareCrudDataTableProps<T extends { id: string }> {
   rowIsReadOnly?: (row: T) => boolean;
   /** ✅ NEW: allow hiding the built-in Add button so we can use an external create button */
   hideAddButton?: boolean;
+  onFetchItem?: (id: string) => Promise<T>;
 }
 
 export function PermissionAwareCrudDataTable<T extends { id: string }>({
@@ -42,12 +43,14 @@ export function PermissionAwareCrudDataTable<T extends { id: string }>({
   onDelete,
   rowIsReadOnly,
   hideAddButton = false, // ✅ default false
+  onFetchItem,
 }: PermissionAwareCrudDataTableProps<T>) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<T | null>(null);
   const [localData] = useState<T[]>(initialData);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
+  const [isFetchingItemId, setIsFetchingItemId] = useState<string | null>(null);
 
   const { canWrite, canRead } = usePermissions();
 
@@ -79,7 +82,22 @@ export function PermissionAwareCrudDataTable<T extends { id: string }>({
     }
   };
 
-  const handleEdit = (item: T) => {
+  const handleEdit = async (item: T) => {
+    if (onFetchItem) {
+      setIsFetchingItemId(item.id);
+      try {
+        const freshItem = await onFetchItem(item.id);
+        setEditingItem(freshItem);
+        setIsFormOpen(true);
+      } catch (error) {
+        toast.error('Failed to load item details');
+        console.error('Fetch item error:', error);
+      } finally {
+        setIsFetchingItemId(null);
+      }
+      return;
+    }
+
     setEditingItem(item);
     setIsFormOpen(true);
   };
@@ -111,13 +129,14 @@ export function PermissionAwareCrudDataTable<T extends { id: string }>({
       cell: ({ row }) => {
         const ro = rowIsReadOnly?.(row.original) ?? false;
         return (
-          <div className="flex justify-end space-x-2">
+          <div className="flex justify-start space-x-2">
             {canWrite(requiredModule) ? (
               <PermissionGate requiredModule={requiredModule} requiredAction="write">
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={() => handleEdit(row.original)}
+                  disabled={isFetchingItemId === row.original.id}
                   title={ro ? "View" : "Edit"}
                 >
                   {ro ? <Eye className="h-4 w-4" /> : <Pencil className="h-4 w-4" />}
@@ -128,6 +147,7 @@ export function PermissionAwareCrudDataTable<T extends { id: string }>({
                 variant="ghost"
                 size="icon"
                 onClick={() => handleEdit(row.original)}
+                disabled={isFetchingItemId === row.original.id}
                 title="View"
               >
                 <Eye className="h-4 w-4" />
@@ -149,7 +169,7 @@ export function PermissionAwareCrudDataTable<T extends { id: string }>({
         );
       },
     },
-  ], [columns, requiredModule, rowIsReadOnly, canRead, canWrite]);
+  ], [columns, requiredModule, rowIsReadOnly, canRead, canWrite, isFetchingItemId]);
 
   if (!canRead(requiredModule)) {
     return (
@@ -205,7 +225,12 @@ export function PermissionAwareCrudDataTable<T extends { id: string }>({
       {(canWrite(requiredModule) || (formIsReadOnly && canRead(requiredModule))) && (
         <FormComponent
           open={isFormOpen}
-          onOpenChange={setIsFormOpen}
+          onOpenChange={(open: boolean) => {
+            setIsFormOpen(open);
+            if (!open) {
+              setEditingItem(null);
+            }
+          }}
           initialData={editingItem}
           readOnly={formIsReadOnly}
           onSubmit={(payload: any) => {

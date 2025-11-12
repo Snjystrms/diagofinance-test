@@ -35,6 +35,25 @@ export type ManagerRow = {
   permissions: PermissionLite[];
 };
 
+/** ✅ Flatten both possible shapes of permissions:
+ * - flat: [{id,name}]
+ * - grouped: [{category, permissions:[{id,name}]}]
+ */
+const flattenPermissions = (raw: any): { id: number; name: string }[] => {
+  if (!Array.isArray(raw) || raw.length === 0) return [];
+  // Already flat
+  if (raw[0] && typeof raw[0].id === "number") {
+    return raw.map((p: any) => ({ id: p.id, name: p.name }));
+  }
+  // Grouped
+  if (raw[0] && raw[0].category && Array.isArray(raw[0].permissions)) {
+    return raw.flatMap((g: any) =>
+      (g.permissions || []).map((p: any) => ({ id: p.id, name: p.name }))
+    );
+  }
+  return [];
+};
+
 const normalize = (m: ManagerItem): ManagerRow => ({
   id: String(m.id),
   uuid: m.uuid,
@@ -44,17 +63,15 @@ const normalize = (m: ManagerItem): ManagerRow => ({
   status: !!m.status,
   created_at: m.created_at,
   updated_at: m.updated_at,
-  permissions: (m.permissions || []).map((p) => ({ id: p.id, name: p.name })),
+  permissions: flattenPermissions((m as any).permissions),
 });
 
 /** ✅ Robustly normalize any incoming `permissions` into number[] */
 function toIdArray(perms: unknown): number[] {
   if (!perms) return [];
-  // already number[]
   if (Array.isArray(perms) && perms.every((x) => typeof x === "number")) {
     return perms as number[];
   }
-  // array of objects with id
   if (Array.isArray(perms)) {
     const ids = (perms as any[])
       .map((p) => (p && typeof p.id === "number" ? p.id : null))
@@ -83,6 +100,7 @@ export default function AllManagersPage() {
   // View modal state
   const [viewOpen, setViewOpen] = useState(false);
   const [viewItem, setViewItem] = useState<ManagerRow | null>(null);
+  const [viewLoading, setViewLoading] = useState(false);
 
   const buildIndex = (groups: GroupedPermissions[]) => {
     const idx: Record<number, { id: number; name: string; category: string }> = {};
@@ -93,6 +111,19 @@ export default function AllManagersPage() {
     );
     return idx;
   };
+
+  const fetchManagerDetail = useCallback(
+    async (id: string): Promise<ManagerRow> => {
+      if (!token) throw new Error("Missing auth token");
+      const res = await adminManagersApi.detail(id, token);
+      const manager = res?.data?.manager as ManagerItem | undefined;
+      if (!manager) {
+        throw new Error("Manager details unavailable");
+      }
+      return normalize(manager);
+    },
+    [token]
+  );
 
   const fetchPermissions = useCallback(async () => {
     if (!token) return;
@@ -183,7 +214,7 @@ export default function AllManagersPage() {
       }
       console.log("Sending update request with body:", body);
       const res = await adminManagersApi.update(row.id, body, token);
-      
+
       const norm = normalize(res.data!.manager as ManagerItem);
       setData((prev) => prev.map((x) => (x.id === row.id ? norm : x)));
       toast.success("Manager updated successfully");
@@ -198,36 +229,35 @@ export default function AllManagersPage() {
   };
 
   // ✅ Use PATCH endpoint for toggling status
-  const handleToggleStatus = useCallback(async (id: string, desiredStatus: boolean) => {
-    if (!token) return;
-    
-    console.log(`[Toggle] Manager ${id} -> ${desiredStatus}`);
-    
-    try {
-      setActionLoadingId(id);
-      
-      // ✅ Use PATCH endpoint with just the status field
-      // The API accepts any value for status and converts it to boolean internally
-      const res = await adminManagersApi.patchStatus(id, desiredStatus, token);
-      console.log("[Toggle] Response:", res);
-      
-      if (!res.success || !res.data?.manager) {
-        throw new Error(res.message || "Invalid response from server");
+  const handleToggleStatus = useCallback(
+    async (id: string, desiredStatus: boolean) => {
+      if (!token) return;
+
+      console.log(`[Toggle] Manager ${id} -> ${desiredStatus}`);
+
+      try {
+        setActionLoadingId(id);
+
+        const res = await adminManagersApi.patchStatus(id, desiredStatus, token);
+        console.log("[Toggle] Response:", res);
+
+        if (!res.success || !res.data?.manager) {
+          throw new Error(res.message || "Invalid response from server");
+        }
+
+        const updated = normalize(res.data.manager as ManagerItem);
+        setData((prev) => prev.map((x) => (x.id === id ? updated : x)));
+
+        toast.success(`Manager ${updated.status ? "activated" : "deactivated"} successfully`);
+      } catch (e: any) {
+        console.error("[Toggle] Error:", e);
+        toast.error(e?.message || "Failed to update status");
+      } finally {
+        setActionLoadingId(null);
       }
-      
-      const updated = normalize(res.data.manager as ManagerItem);
-      
-      // Update the local state with the response
-      setData((prev) => prev.map((x) => (x.id === id ? updated : x)));
-      
-      toast.success(`Manager ${updated.status ? "activated" : "deactivated"} successfully`);
-    } catch (e: any) {
-      console.error("[Toggle] Error:", e);
-      toast.error(e?.message || "Failed to update status");
-    } finally {
-      setActionLoadingId(null);
-    }
-  }, [token]);
+    },
+    [token]
+  );
 
   // DELETE
   const handleDelete = async (id: string) => {
@@ -247,20 +277,35 @@ export default function AllManagersPage() {
     }
   };
 
+  const handleViewManager = useCallback(
+    async (id: string) => {
+      setViewItem(null);
+      setViewOpen(true);
+      setViewLoading(true);
+      try {
+        const manager = await fetchManagerDetail(id);
+        setViewItem(manager);
+      } catch (error: any) {
+        console.error("View manager error:", error);
+        toast.error(error?.message || "Failed to load manager details");
+        setViewOpen(false);
+      } finally {
+        setViewLoading(false);
+      }
+    },
+    [fetchManagerDetail]
+  );
+
   const columns = useMemo(
     () =>
       getColumns({
         onToggleStatus: handleToggleStatus,
-        onView: (row) => {
-          setViewItem(row);
-          setViewOpen(true);
-        },
+        onView: (row) => handleViewManager(row.id),
         actionLoadingId,
       }) as any,
-    [handleToggleStatus, actionLoadingId]
+    [handleToggleStatus, actionLoadingId, handleViewManager]
   );
 
-  // Build categorized view for the View modal
   const categorizedView: Record<string, PermissionLite[]> = useMemo(() => {
     const cat: Record<string, PermissionLite[]> = {};
     if (!viewItem) return cat;
@@ -327,6 +372,7 @@ export default function AllManagersPage() {
             onUpdate={handleUpdate}
             onDelete={handleDelete}
             rowIsReadOnly={() => false}
+            onFetchItem={fetchManagerDetail}
           />
 
           {/* External Create Dialog */}
@@ -351,13 +397,26 @@ export default function AllManagersPage() {
         </div>
 
         {/* View Modal */}
-        <Dialog open={viewOpen} onOpenChange={setViewOpen}>
+        <Dialog
+          open={viewOpen}
+          onOpenChange={(open) => {
+            setViewOpen(open);
+            if (!open) {
+              setViewItem(null);
+              setViewLoading(false);
+            }
+          }}
+        >
           <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
               <DialogTitle>Manager Details</DialogTitle>
             </DialogHeader>
 
-            {viewItem && (
+            {viewLoading ? (
+              <div className="py-10 flex justify-center">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+              </div>
+            ) : viewItem ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -403,6 +462,10 @@ export default function AllManagersPage() {
                     )}
                   </div>
                 </div>
+              </div>
+            ) : (
+              <div className="py-6 text-center text-sm text-muted-foreground">
+                No manager details available.
               </div>
             )}
           </DialogContent>
