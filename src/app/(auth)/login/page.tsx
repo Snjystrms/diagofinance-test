@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/password-input';
+import { admin2FAApi, authApi } from '@/lib/api';
 import {
   Card,
   CardContent,
@@ -37,6 +38,9 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
+import { ProfileCompletionDialog } from '@/components/profile-completion-dialog';
+import { useEffect } from 'react';
+import { Settings, Scale, FileText } from 'lucide-react';
 
 // Demo credentials for testing
 const DUMMY_CREDENTIALS = {
@@ -75,6 +79,48 @@ export default function LoginPage() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [useDemoLogin, setUseDemoLogin] = useState(false); // Changed default to false (API mode)
   const [demoUserType, setDemoUserType] = useState<'admin' | 'user'>('admin');
+  const [show2FA, setShow2FA] = useState(false);
+  const [twoFACode, setTwoFACode] = useState('');
+  const [pendingLoginData, setPendingLoginData] = useState<{ 
+    email: string; 
+    password: string; 
+    adminId?: string | number;
+    userId?: string | number;
+    userType?: 'admin' | 'user';
+  } | null>(null);
+  const [isVerifying2FA, setIsVerifying2FA] = useState(false);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [incompleteSections, setIncompleteSections] = useState<Array<{
+    key: "personal_information" | "legal_information" | "documents_verification";
+    title: string;
+    message: string;
+    route: string;
+  }>>([]);
+
+  // Check for incomplete profile sections after navigation
+  useEffect(() => {
+    const checkIncompleteSections = () => {
+      const stored = sessionStorage.getItem('incomplete_profile_sections');
+      if (stored) {
+        try {
+          const sections = JSON.parse(stored);
+          if (Array.isArray(sections) && sections.length > 0) {
+            setIncompleteSections(sections);
+            setShowProfileDialog(true);
+            sessionStorage.removeItem('incomplete_profile_sections');
+          }
+        } catch (error) {
+          console.error('Error parsing incomplete sections:', error);
+        }
+      }
+    };
+
+    // Check immediately and also after a short delay to catch navigation
+    checkIncompleteSections();
+    const timer = setTimeout(checkIncompleteSections, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -116,8 +162,26 @@ export default function LoginPage() {
         }
       } else {
         // Real API login
-        await loginMutation.mutateAsync(data);
-        // loginMutation handles success & redirect already
+        const response = await loginMutation.mutateAsync(data);
+        
+        // Check if 2FA is required (for both admin and user)
+        if (response?.requires_2fa || response?.data?.requires_2fa) {
+          const responseData = response.data || {};
+          const userType = (responseData as any)?.type || responseData.user?.type || 'user';
+          const userId = (responseData as any)?.user_id || responseData.user?.id;
+          
+          if (userId) {
+            setPendingLoginData({
+              email: data.email,
+              password: data.password,
+              ...(userType === 'admin' ? { adminId: userId } : { userId: userId }),
+              userType: userType as 'admin' | 'user',
+            });
+            setShow2FA(true);
+            toast.success('Please enter your 2FA code to complete login');
+          }
+        }
+        // Otherwise loginMutation handles success & redirect
       }
     } catch (error) {
       if (!useDemoLogin) {
@@ -125,6 +189,123 @@ export default function LoginPage() {
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handle2FAVerification = async () => {
+    if (!pendingLoginData || !twoFACode || twoFACode.length !== 6) {
+      toast.error('Please enter a valid 6-digit code');
+      return;
+    }
+
+    setIsVerifying2FA(true);
+    try {
+      let response;
+      
+      // Use appropriate API based on user type
+      if (pendingLoginData.userType === 'admin' && pendingLoginData.adminId) {
+        response = await admin2FAApi.verifyLogin2FA({
+          admin_id: pendingLoginData.adminId,
+          token: twoFACode,
+          email: pendingLoginData.email,
+          password: pendingLoginData.password,
+        });
+      } else if (pendingLoginData.userType === 'user' && pendingLoginData.userId) {
+        response = await authApi.verifyLogin2FA({
+          user_id: pendingLoginData.userId,
+          verify_otp: twoFACode,
+        });
+      } else {
+        throw new Error('Invalid login data');
+      }
+
+      if (response.success && response.data) {
+        // Handle response structure - it might be in response.data or response.data.data
+        const responseData = response.data.data || response.data;
+        const token = responseData.token || response.data.token;
+        const userData = responseData.user || response.data.user;
+
+        if (token && userData) {
+          const userType = userData.type || pendingLoginData.userType || 'user';
+          const finalUserData = {
+            id: userData.id,
+            email: userData.email || pendingLoginData.email,
+            type: userType,
+            name: userData.name,
+            mobile: userData.mobile,
+            // Convert status to boolean if it's a number
+            status: typeof userData.status === 'number' ? Boolean(userData.status) : userData.status,
+            requires_usdt_transaction: userData.requires_usdt_transaction,
+            requires_registration_fee: userData.requires_registration_fee,
+            is_account_active: userData.is_account_active,
+            sponsor_id: userData.sponsor_id,
+            role: userData.role,
+            // Exclude permissions as it's a different type structure
+          };
+
+          login(finalUserData, token);
+          toast.success(response.message || 'Login successful!');
+          
+          // Check profile completion for regular users only
+          if (userType === 'user' && !userData.requires_registration_fee) {
+            try {
+              const profileResponse = await authApi.getProfileView(token);
+              if (profileResponse.success && profileResponse.data) {
+                const verificationStatus = profileResponse.data.verification_status;
+                const incomplete: typeof incompleteSections = [];
+                
+                if (verificationStatus.personal_information.status !== "completed") {
+                  incomplete.push({
+                    key: "personal_information",
+                    title: "Personal Information",
+                    message: verificationStatus.personal_information.message || "Please complete your personal information to continue.",
+                    route: "/profile/view_profile#personal",
+                  });
+                }
+                
+                if (verificationStatus.legal_information.status !== "completed") {
+                  incomplete.push({
+                    key: "legal_information",
+                    title: "Legal Information",
+                    message: verificationStatus.legal_information.message || "Please complete your legal information to continue.",
+                    route: "/profile/view_profile#account",
+                  });
+                }
+                
+                if (verificationStatus.documents_verification.status !== "completed") {
+                  incomplete.push({
+                    key: "documents_verification",
+                    title: "Documents Verification",
+                    message: verificationStatus.documents_verification.message || "Please upload and verify your KYC documents to continue.",
+                    route: "/profile/kyc-verification",
+                  });
+                }
+                
+                if (incomplete.length > 0) {
+                  setIncompleteSections(incomplete);
+                  setShowProfileDialog(true);
+                }
+              }
+            } catch (error) {
+              console.error('Failed to check profile completion:', error);
+            }
+          }
+          
+          if (userData.requires_registration_fee) {
+            router.push('/test-registration-fee');
+          } else {
+            router.push('/dashboard');
+          }
+        } else {
+          toast.error('Invalid response from server');
+        }
+      } else {
+        toast.error(response.message || '2FA verification failed');
+      }
+    } catch (error: any) {
+      toast.error(error?.message || '2FA verification failed. Please try again.');
+    } finally {
+      setIsVerifying2FA(false);
     }
   };
 
@@ -222,18 +403,74 @@ export default function LoginPage() {
             <Card>
               <CardHeader>
                 <CardTitle>
-                  {showForgotPassword ? 'Forgot Password' : 'Login'}
+                  {show2FA 
+                    ? 'Two-Factor Authentication' 
+                    : showForgotPassword 
+                      ? 'Forgot Password' 
+                      : 'Login'}
                 </CardTitle>
                 <CardDescription>
-                  {showForgotPassword
-                    ? 'Enter your email to receive a password reset link'
-                    : useDemoLogin
-                      ? 'Enter demo credentials to test the application'
-                      : 'Enter your credentials to access your account'}
+                  {show2FA
+                    ? 'Enter the 6-digit code from your authenticator app'
+                    : showForgotPassword
+                      ? 'Enter your email to receive a password reset link'
+                      : useDemoLogin
+                        ? 'Enter demo credentials to test the application'
+                        : 'Enter your credentials to access your account'}
                 </CardDescription>
               </CardHeader>
             <CardContent>
-  {showForgotPassword ? (
+  {show2FA ? (
+    <div key="2fa-form" className="space-y-4">
+      <div className="text-center">
+        <p className="text-sm text-muted-foreground mb-4">
+          Enter the 6-digit code from your authenticator app
+        </p>
+        
+        <div className="flex justify-center">
+          <div className="w-48">
+            <Input
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={6}
+              value={twoFACode}
+              onChange={(e) => setTwoFACode(e.target.value.replace(/\D/g, ''))}
+              placeholder="123456"
+              className="text-center text-lg tracking-widest"
+              autoFocus
+            />
+          </div>
+        </div>
+      </div>
+      
+      <div className="flex justify-end space-x-2">
+        <Button
+          variant="outline"
+          onClick={() => {
+            setShow2FA(false);
+            setTwoFACode('');
+            setPendingLoginData(null);
+          }}
+        >
+          Cancel
+        </Button>
+        <Button
+          onClick={handle2FAVerification}
+          disabled={isVerifying2FA || twoFACode.length !== 6}
+        >
+          {isVerifying2FA ? (
+            <>
+              <Spinner size="sm" className="mr-2" />
+              Verifying...
+            </>
+          ) : (
+            'Verify & Login'
+          )}
+        </Button>
+      </div>
+    </div>
+  ) : showForgotPassword ? (
     <div key="forgot-form">
       <Form {...forgotPasswordForm}>
         <form
@@ -373,6 +610,22 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
+      
+      {/* Profile Completion Dialog */}
+      <ProfileCompletionDialog
+        open={showProfileDialog}
+        onOpenChange={setShowProfileDialog}
+        incompleteSections={incompleteSections.map(section => ({
+          ...section,
+          icon: section.key === 'personal_information' ? (
+            <Settings className="h-5 w-5 text-orange-600" />
+          ) : section.key === 'legal_information' ? (
+            <Scale className="h-5 w-5 text-orange-600" />
+          ) : (
+            <FileText className="h-5 w-5 text-orange-600" />
+          ),
+        }))}
+      />
     </ProtectedRoute>
   );
 }

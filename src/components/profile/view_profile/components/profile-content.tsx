@@ -1,6 +1,6 @@
 "use client";
 
-import { Shield, Key, Trash2, Loader2 } from "lucide-react";
+import { AlertCircle, Scale, Settings, FileText, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -20,117 +20,149 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
-import { 
-  getPersonalInformation, 
+import { authApi, admin2FAApi, manager2FAApi, type ProfileViewResponse } from "@/lib/api";
+import {
   updatePersonalInformation,
-  getLegalInformation,
   updateLegalInformation,
-  type PersonalInformation,
   type UpdatePersonalInformationRequest,
-  type LegalInformation,
   type UpdateLegalInformationRequest
 } from "@/utils/operations";
+import { TwoFactorModal } from "@/components/two-factor-modal";
 
 export default function ProfileContent() {
-  const { token } = useAuth();
-  const [loading, setLoading] = useState(false);
+  const { token, user } = useAuth();
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [loadingLegalInfo, setLoadingLegalInfo] = useState(false);
   const [savingLegalInfo, setSavingLegalInfo] = useState(false);
-  const [formData, setFormData] = useState<PersonalInformation>({
-    dob: null,
-    address: null,
-    passport_id_number: null,
-    pin_code: null,
-    nationality: null,
-    employment_status: null,
-    tax_number: null,
-    other_id_number: null,
-    client_type: "",
-    country: "",
-    state: null,
-    city: null,
-  });
+  const [profileData, setProfileData] = useState<ProfileViewResponse | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 5;
+  const [twoFactorModalOpen, setTwoFactorModalOpen] = useState(false);
+  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
+  const [isLoading2FAStatus, setIsLoading2FAStatus] = useState(false);
+  const [activeTab, setActiveTab] = useState("personal");
 
-  const [legalInfo, setLegalInfo] = useState({
-    politically_exposed: false,
-    annual_income: 0,
-    source_of_income: "",
-    estimated_net_worth: 0,
-    purpose_of_opening_account: "",
-    estimated_annual_amount: 0,
-  });
-
-  // Load personal information on mount
+  // Load profile data on mount
   useEffect(() => {
-    const loadPersonalInformation = async () => {
+    const loadProfile = async () => {
       if (!token) return;
 
       try {
         setLoading(true);
-        const response = await getPersonalInformation(token);
+        const response = await authApi.getProfileView(token);
         
         if (response.success && response.data) {
-          setFormData({
-            dob: response.data.dob || null,
-            address: response.data.address || null,
-            passport_id_number: response.data.passport_id_number || null,
-            pin_code: response.data.pin_code || null,
-            nationality: response.data.nationality || null,
-            employment_status: response.data.employment_status || null,
-            tax_number: response.data.tax_number || null,
-            other_id_number: response.data.other_id_number || null,
-            client_type: response.data.client_type || "",
-            country: response.data.country || "",
-            state: response.data.state || null,
-            city: response.data.city || null,
-          });
+          setProfileData(response.data);
+          setIs2FAEnabled(response.data.user?.google_2FA_status || false);
         }
       } catch (error) {
-        console.error("Error loading personal information:", error);
-        toast.error(error instanceof Error ? error.message : "Failed to load personal information");
+        console.error("Error loading profile:", error);
+        toast.error(error instanceof Error ? error.message : "Failed to load profile data");
       } finally {
         setLoading(false);
       }
     };
 
-    loadPersonalInformation();
+    loadProfile();
   }, [token]);
 
-  // Load legal information on mount
+  // Check 2FA status when component mounts and when user changes
   useEffect(() => {
-    const loadLegalInformation = async () => {
-      if (!token) return;
+    if (user?.id && token) {
+      checkTwoFactorStatus();
+    }
+  }, [user, token]);
 
-      try {
-        setLoadingLegalInfo(true);
-        const response = await getLegalInformation(token);
-        
-        if (response.success && response.data) {
-          setLegalInfo({
-            politically_exposed: response.data.politically_exposed || false,
-            annual_income: parseFloat(response.data.annual_income) || 0,
-            source_of_income: response.data.source_of_income || "",
-            estimated_net_worth: parseFloat(response.data.estimated_net_worth) || 0,
-            purpose_of_opening_account: response.data.purpose_of_opening_account || "",
-            estimated_annual_amount: parseFloat(response.data.estimated_annual_amount) || 0,
+  // Handle hash routing for tabs
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash.replace('#', '');
+      if (hash === 'personal' || hash === 'account' || hash === 'activity' || hash === 'security') {
+        setActiveTab(hash);
+      }
+      
+      // Listen for hash changes
+      const handleHashChange = () => {
+        const newHash = window.location.hash.replace('#', '');
+        if (newHash === 'personal' || newHash === 'account' || newHash === 'activity' || newHash === 'security') {
+          setActiveTab(newHash);
+        }
+      };
+      
+      window.addEventListener('hashchange', handleHashChange);
+      return () => window.removeEventListener('hashchange', handleHashChange);
+    }
+  }, []);
+
+  const checkTwoFactorStatus = async () => {
+    if (!user?.id || !token) return;
+    
+    setIsLoading2FAStatus(true);
+    
+    try {
+      // Use appropriate API based on user type
+      const isAdmin = user.type === 'admin';
+      const isManager = user.type === 'manager';
+      let response;
+      
+      if (isAdmin) {
+        response = await admin2FAApi.getTwoFactorStatus(user.id, token);
+      } else if (isManager) {
+        response = await manager2FAApi.getTwoFactorStatus(user.id, token);
+      } else {
+        response = await authApi.getTwoFactorStatus(Number(user.id), token);
+      }
+      
+      if (response.success && response.data) {
+        setIs2FAEnabled(response.data.google_2FA_status);
+        // Also update profileData if it exists
+        if (profileData) {
+          setProfileData({
+            ...profileData,
+            user: {
+              ...profileData.user,
+              google_2FA_status: response.data.google_2FA_status,
+            },
           });
         }
-      } catch (error) {
-        console.error("Error loading legal information:", error);
-        toast.error(error instanceof Error ? error.message : "Failed to load legal information");
-      } finally {
-        setLoadingLegalInfo(false);
       }
-    };
+    } catch (error) {
+      console.error('Failed to check 2FA status:', error);
+    } finally {
+      setIsLoading2FAStatus(false);
+    }
+  };
 
-    loadLegalInformation();
-  }, [token]);
+  const handle2FAStatusChange = async () => {
+    // Refresh 2FA status and profile data
+    await checkTwoFactorStatus();
+    // Also reload profile view to get updated data
+    if (token) {
+      try {
+        const response = await authApi.getProfileView(token);
+        if (response.success && response.data) {
+          setProfileData(response.data);
+        }
+      } catch (error) {
+        console.error("Error reloading profile:", error);
+      }
+    }
+    // Dispatch custom event to notify profile-header to refresh
+    window.dispatchEvent(new CustomEvent('2fa-status-changed'));
+  };
 
-  // Handle form submission
+  // Handle personal information submission
   const handleSubmit = async () => {
-    if (!token) {
+    if (!token || !profileData) {
       toast.error("Please log in to update your profile");
       return;
     }
@@ -138,24 +170,29 @@ export default function ProfileContent() {
     try {
       setSaving(true);
       const updateData: UpdatePersonalInformationRequest = {
-        dob: formData.dob || undefined,
-        address: formData.address || undefined,
-        passport_id_number: formData.passport_id_number || undefined,
-        pin_code: formData.pin_code || undefined,
-        nationality: formData.nationality || undefined,
-        employment_status: formData.employment_status || undefined,
-        tax_number: formData.tax_number || undefined,
-        other_id_number: formData.other_id_number || undefined,
-        client_type: formData.client_type || undefined,
-        country: typeof formData.country === "string" ? formData.country : String(formData.country || ""),
-        state: formData.state || undefined,
-        city: formData.city || undefined,
+        dob: profileData.personal_information.dob || undefined,
+        address: profileData.personal_information.address || undefined,
+        passport_id_number: profileData.personal_information.passport_id_number || undefined,
+        pin_code: profileData.personal_information.pin_code || undefined,
+        nationality: profileData.personal_information.nationality || undefined,
+        employment_status: profileData.personal_information.employment_status || undefined,
+        tax_number: profileData.personal_information.tax_number || undefined,
+        other_id_number: profileData.personal_information.other_id_number || undefined,
+        client_type: profileData.personal_information.client_type || undefined,
+        country: profileData.personal_information.country || undefined,
+        state: profileData.personal_information.state || undefined,
+        city: profileData.personal_information.city || undefined,
       };
 
       const response = await updatePersonalInformation(updateData, token);
 
       if (response.success) {
         toast.success(response.message || "Personal information updated successfully");
+        // Reload profile data
+        const profileResponse = await authApi.getProfileView(token);
+        if (profileResponse.success && profileResponse.data) {
+          setProfileData(profileResponse.data);
+        }
       } else {
         toast.error(response.message || "Failed to update personal information");
       }
@@ -169,7 +206,7 @@ export default function ProfileContent() {
 
   // Handle legal information submission
   const handleSaveLegalInformation = async () => {
-    if (!token) {
+    if (!token || !profileData) {
       toast.error("Please log in to update your legal information");
       return;
     }
@@ -177,18 +214,23 @@ export default function ProfileContent() {
     try {
       setSavingLegalInfo(true);
       const updateData: UpdateLegalInformationRequest = {
-        politically_exposed: legalInfo.politically_exposed,
-        annual_income: legalInfo.annual_income || undefined,
-        source_of_income: legalInfo.source_of_income || undefined,
-        estimated_net_worth: legalInfo.estimated_net_worth || undefined,
-        purpose_of_opening_account: legalInfo.purpose_of_opening_account || undefined,
-        estimated_annual_amount: legalInfo.estimated_annual_amount || undefined,
+        politically_exposed: profileData.legal_information.politically_exposed,
+        annual_income: profileData.legal_information.annual_income || undefined,
+        source_of_income: profileData.legal_information.source_of_income || undefined,
+        estimated_net_worth: profileData.legal_information.estimated_net_worth || undefined,
+        purpose_of_opening_account: profileData.legal_information.purpose_of_opening_account || undefined,
+        estimated_annual_amount: profileData.legal_information.estimated_annual_amount || undefined,
       };
 
       const response = await updateLegalInformation(updateData, token);
 
       if (response.success) {
         toast.success(response.message || "Legal information updated successfully");
+        // Reload profile data
+        const profileResponse = await authApi.getProfileView(token);
+        if (profileResponse.success && profileResponse.data) {
+          setProfileData(profileResponse.data);
+        }
       } else {
         toast.error(response.message || "Failed to update legal information");
       }
@@ -200,12 +242,28 @@ export default function ProfileContent() {
     }
   };
 
-  // Handle input changes
-  const handleInputChange = (field: keyof PersonalInformation, value: string | number | null) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  // Handle input changes for personal information
+  const handlePersonalInfoChange = (field: keyof ProfileViewResponse["personal_information"], value: string | null) => {
+    if (!profileData) return;
+    setProfileData({
+      ...profileData,
+      personal_information: {
+        ...profileData.personal_information,
+        [field]: value,
+      },
+    });
+  };
+
+  // Handle input changes for legal information
+  const handleLegalInfoChange = (field: keyof ProfileViewResponse["legal_information"], value: any) => {
+    if (!profileData) return;
+    setProfileData({
+      ...profileData,
+      legal_information: {
+        ...profileData.legal_information,
+        [field]: value,
+      },
+    });
   };
 
   // Format date for input field
@@ -219,40 +277,236 @@ export default function ProfileContent() {
     }
   };
 
-  return (
-    <Tabs defaultValue="personal" className="space-y-6">
-      <TabsList className="grid w-full grid-cols-4">
-        <TabsTrigger value="personal">Personal</TabsTrigger>
-        <TabsTrigger value="account">Legal information </TabsTrigger>
-        <TabsTrigger value="security">Security</TabsTrigger>
-        <TabsTrigger value="notifications">Notifications</TabsTrigger>
-      </TabsList>
+  // Get verification status badge
+  const getStatusBadge = (status: string) => {
+    switch (status.toLowerCase()) {
+      case "completed":
+        return (
+          <Badge className="bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300 border-green-200 dark:border-green-800">
+            Completed
+          </Badge>
+        );
+      case "pending":
+        return (
+          <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-300 border-orange-200 dark:border-orange-800">
+            Pending
+          </Badge>
+        );
+      case "rejected":
+        return (
+          <Badge className="bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300 border-red-200 dark:border-red-800">
+            Rejected
+          </Badge>
+        );
+      default:
+        return (
+          <Badge variant="outline">
+            {status}
+          </Badge>
+        );
+    }
+  };
 
-      {/* Personal Information */}
-      <TabsContent value="personal" className="space-y-6">
-        {loading ? (
-          <Card>
-            <CardContent className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </CardContent>
-          </Card>
-        ) : (
+  // Pagination for login history
+  const totalPages = profileData?.login_history
+    ? Math.ceil(profileData.login_history.length / itemsPerPage)
+    : 0;
+  const paginatedHistory = profileData?.login_history
+    ? profileData.login_history.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage)
+    : [];
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (!profileData) {
+    return (
+      <Card>
+        <CardContent className="p-6">
+          <p className="text-muted-foreground text-center">No profile data available</p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const verificationStatus = profileData.verification_status;
+  const overallStatus = profileData.user.verification_status?.toLowerCase() || "";
+
+  // Determine verification badge based on status
+  const getVerificationBadge = () => {
+    if (overallStatus === "full-verified" || overallStatus === "approved") {
+      return (
+        <Badge className="bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300 border-green-200 dark:border-green-800">
+          Verified
+        </Badge>
+      );
+    }
+    if (overallStatus === "semi-verified") {
+      return (
+        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+          Semi Verified
+        </Badge>
+      );
+    }
+    if (overallStatus === "pending" || overallStatus === "rejected") {
+      return (
+        <Badge variant="destructive" className="ml-2">
+          {overallStatus === "rejected" ? "Rejected" : "Not Verified"}
+        </Badge>
+      );
+    }
+    return (
+      <Badge variant="outline">Pending</Badge>
+    );
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Profile Status Section */}
+      <Card className="border-gray-200 dark:border-gray-700">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-lg flex items-center gap-2">
+                Your Profile Status:
+                {getVerificationBadge()}
+              </CardTitle>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Personal Information Status */}
+            <Card className={`border-2 ${
+              verificationStatus.personal_information.status === "completed"
+                ? "border-green-200 dark:border-green-800"
+                : "border-orange-200 dark:border-orange-800"
+            }`}>
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-lg ${
+                    verificationStatus.personal_information.status === "completed"
+                      ? "bg-green-100 dark:bg-green-950/40"
+                      : "bg-orange-100 dark:bg-orange-950/40"
+                  }`}>
+                    <Scale className={`h-5 w-5 ${
+                      verificationStatus.personal_information.status === "completed"
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-orange-600 dark:text-orange-400"
+                    }`} />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm mb-1">Personal Information</h4>
+                    <p className="text-xs text-muted-foreground">
+                      {verificationStatus.personal_information.message}
+                    </p>
+                    <div className="mt-2">
+                      {getStatusBadge(verificationStatus.personal_information.status)}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Legal Information Status */}
+            <Card className={`border-2 ${
+              verificationStatus.legal_information.status === "completed"
+                ? "border-green-200 dark:border-green-800"
+                : "border-orange-200 dark:border-orange-800"
+            }`}>
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-lg ${
+                    verificationStatus.legal_information.status === "completed"
+                      ? "bg-green-100 dark:bg-green-950/40"
+                      : "bg-orange-100 dark:bg-orange-950/40"
+                  }`}>
+                    <Settings className={`h-5 w-5 ${
+                      verificationStatus.legal_information.status === "completed"
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-orange-600 dark:text-orange-400"
+                    }`} />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm mb-1">Legal Information</h4>
+                    <p className="text-xs text-muted-foreground">
+                      {verificationStatus.legal_information.message}
+                    </p>
+                    <div className="mt-2">
+                      {getStatusBadge(verificationStatus.legal_information.status)}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Documents Verification Status */}
+            <Card className={`border-2 ${
+              verificationStatus.documents_verification.status === "completed"
+                ? "border-green-200 dark:border-green-800"
+                : "border-orange-200 dark:border-orange-800"
+            }`}>
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-lg ${
+                    verificationStatus.documents_verification.status === "completed"
+                      ? "bg-green-100 dark:bg-green-950/40"
+                      : "bg-orange-100 dark:bg-orange-950/40"
+                  }`}>
+                    <FileText className={`h-5 w-5 ${
+                      verificationStatus.documents_verification.status === "completed"
+                        ? "text-green-600 dark:text-green-400"
+                        : "text-orange-600 dark:text-orange-400"
+                    }`} />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-semibold text-sm mb-1">Documents Verification</h4>
+                    <p className="text-xs text-muted-foreground">
+                      {verificationStatus.documents_verification.message}
+                    </p>
+                    <div className="mt-2">
+                      {getStatusBadge(verificationStatus.documents_verification.status)}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="personal">Personal</TabsTrigger>
+          <TabsTrigger value="account">Legal Information</TabsTrigger>
+          <TabsTrigger value="activity">Account Activity</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
+        </TabsList>
+
+        {/* Personal Information */}
+        <TabsContent value="personal" className="space-y-6">
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Page 1: Basic Personal Information */}
+            {/* Basic Personal Information */}
             <Card>
               <CardHeader>
                 <CardTitle>Basic Personal Information</CardTitle>
                 <CardDescription>Update your personal details and identification information.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-6">
+              <CardContent className="space-y-4">
+                <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="dob">Date of Birth</Label>
                     <Input
                       id="dob"
                       type="date"
-                      value={formatDateForInput(formData.dob)}
-                      onChange={(e) => handleInputChange("dob", e.target.value || null)}
+                      value={formatDateForInput(profileData.personal_information.dob)}
+                      onChange={(e) => handlePersonalInfoChange("dob", e.target.value || null)}
                       className="w-full"
                     />
                   </div>
@@ -260,64 +514,69 @@ export default function ProfileContent() {
                     <Label htmlFor="nationality">Nationality</Label>
                     <Input
                       id="nationality"
-                      value={formData.nationality || ""}
-                      onChange={(e) => handleInputChange("nationality", e.target.value || null)}
+                      value={profileData.personal_information.nationality || ""}
+                      onChange={(e) => handlePersonalInfoChange("nationality", e.target.value || null)}
                       className="w-full"
+                      placeholder="Enter nationality"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="passport_id_number">Passport ID Number</Label>
                     <Input
                       id="passport_id_number"
-                      value={formData.passport_id_number || ""}
-                      onChange={(e) => handleInputChange("passport_id_number", e.target.value || null)}
+                      value={profileData.personal_information.passport_id_number || ""}
+                      onChange={(e) => handlePersonalInfoChange("passport_id_number", e.target.value || null)}
                       className="w-full"
+                      placeholder="Enter passport ID number"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="tax_number">Tax Number</Label>
                     <Input
                       id="tax_number"
-                      value={formData.tax_number || ""}
-                      onChange={(e) => handleInputChange("tax_number", e.target.value || null)}
+                      value={profileData.personal_information.tax_number || ""}
+                      onChange={(e) => handlePersonalInfoChange("tax_number", e.target.value || null)}
                       className="w-full"
+                      placeholder="Enter tax number"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="other_id_number">Other ID Number</Label>
                     <Input
                       id="other_id_number"
-                      value={formData.other_id_number || ""}
-                      onChange={(e) => handleInputChange("other_id_number", e.target.value || null)}
+                      value={profileData.personal_information.other_id_number || ""}
+                      onChange={(e) => handlePersonalInfoChange("other_id_number", e.target.value || null)}
                       className="w-full"
+                      placeholder="Enter other ID number"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="pin_code">PIN Code</Label>
                     <Input
                       id="pin_code"
-                      value={formData.pin_code || ""}
-                      onChange={(e) => handleInputChange("pin_code", e.target.value || null)}
+                      value={profileData.personal_information.pin_code || ""}
+                      onChange={(e) => handlePersonalInfoChange("pin_code", e.target.value || null)}
                       className="w-full"
+                      placeholder="Enter PIN code"
                     />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Page 2: Location and Status Information */}
+            {/* Location and Status Information */}
             <Card>
               <CardHeader>
                 <CardTitle>Location and Status Information</CardTitle>
                 <CardDescription>Update your employment status, client type, and location details.</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-6">
+              <CardContent className="space-y-4">
+                <div className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="employment_status">Employment Status</Label>
                     <Select
-                      value={formData.employment_status || ""}
-                      onValueChange={(value) => handleInputChange("employment_status", value || null)}
+                      value={profileData.personal_information.employment_status || ""}
+                      onValueChange={(value) => handlePersonalInfoChange("employment_status", value || null)}
                     >
                       <SelectTrigger id="employment_status" className="w-full">
                         <SelectValue placeholder="Select employment status" />
@@ -334,8 +593,8 @@ export default function ProfileContent() {
                   <div className="space-y-2">
                     <Label htmlFor="client_type">Client Type</Label>
                     <Select
-                      value={formData.client_type || ""}
-                      onValueChange={(value) => handleInputChange("client_type", value || "")}
+                      value={profileData.personal_information.client_type || ""}
+                      onValueChange={(value) => handlePersonalInfoChange("client_type", value || null)}
                     >
                       <SelectTrigger id="client_type" className="w-full">
                         <SelectValue placeholder="Select client type" />
@@ -351,27 +610,30 @@ export default function ProfileContent() {
                     <Label htmlFor="country">Country</Label>
                     <Input
                       id="country"
-                      value={String(formData.country || "")}
-                      onChange={(e) => handleInputChange("country", e.target.value || "")}
+                      value={profileData.personal_information.country || ""}
+                      onChange={(e) => handlePersonalInfoChange("country", e.target.value || null)}
                       className="w-full"
+                      placeholder="Enter country"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="state">State</Label>
                     <Input
                       id="state"
-                      value={formData.state || ""}
-                      onChange={(e) => handleInputChange("state", e.target.value || null)}
+                      value={profileData.personal_information.state || ""}
+                      onChange={(e) => handlePersonalInfoChange("state", e.target.value || null)}
                       className="w-full"
+                      placeholder="Enter state"
                     />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="city">City</Label>
                     <Input
                       id="city"
-                      value={formData.city || ""}
-                      onChange={(e) => handleInputChange("city", e.target.value || null)}
+                      value={profileData.personal_information.city || ""}
+                      onChange={(e) => handlePersonalInfoChange("city", e.target.value || null)}
                       className="w-full"
+                      placeholder="Enter city"
                     />
                   </div>
                   <div className="space-y-2">
@@ -379,8 +641,8 @@ export default function ProfileContent() {
                     <Textarea
                       id="address"
                       placeholder="Enter your full address..."
-                      value={formData.address || ""}
-                      onChange={(e) => handleInputChange("address", e.target.value || null)}
+                      value={profileData.personal_information.address || ""}
+                      onChange={(e) => handlePersonalInfoChange("address", e.target.value || null)}
                       rows={3}
                       className="w-full"
                     />
@@ -389,8 +651,6 @@ export default function ProfileContent() {
               </CardContent>
             </Card>
           </div>
-        )}
-        {!loading && (
           <div className="flex justify-end">
             <Button 
               onClick={handleSubmit} 
@@ -407,18 +667,10 @@ export default function ProfileContent() {
               )}
             </Button>
           </div>
-        )}
-      </TabsContent>
+        </TabsContent>
 
-      {/* Legal Information */}
-      <TabsContent value="account" className="space-y-6">
-        {loadingLegalInfo ? (
-          <Card>
-            <CardContent className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-            </CardContent>
-          </Card>
-        ) : (
+        {/* Legal Information */}
+        <TabsContent value="account" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Legal Information</CardTitle>
@@ -426,266 +678,270 @@ export default function ProfileContent() {
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="politically_exposed">Politically Exposed Person</Label>
-                <p className="text-muted-foreground text-sm">
-                  Are you a politically exposed person (PEP)?
-                </p>
-                <div className="flex items-center gap-4">
-                  <Switch
-                    id="politically_exposed"
-                    checked={legalInfo.politically_exposed}
-                    onCheckedChange={(checked) =>
-                      setLegalInfo((prev) => ({ ...prev, politically_exposed: checked }))
+                <div className="space-y-2">
+                  <Label htmlFor="politically_exposed">Politically Exposed Person</Label>
+                  <p className="text-muted-foreground text-sm">
+                    Are you a politically exposed person (PEP)?
+                  </p>
+                  <div className="flex items-center gap-4">
+                    <Switch
+                      id="politically_exposed"
+                      checked={profileData.legal_information.politically_exposed}
+                      onCheckedChange={(checked) =>
+                        handleLegalInfoChange("politically_exposed", checked)
+                      }
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {profileData.legal_information.politically_exposed ? "Yes" : "No"}
+                    </span>
+                  </div>
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                  <Label htmlFor="annual_income">Annual Income</Label>
+                  <p className="text-muted-foreground text-sm">
+                    Your total annual income
+                  </p>
+                  <Input
+                    id="annual_income"
+                    type="number"
+                    step="0.01"
+                    value={profileData.legal_information.annual_income || ""}
+                    onChange={(e) =>
+                      handleLegalInfoChange("annual_income", e.target.value ? parseFloat(e.target.value) : null)
                     }
+                    className="w-full"
+                    placeholder="Enter annual income"
                   />
-                  <span className="text-sm text-muted-foreground">
-                    {legalInfo.politically_exposed ? "Yes" : "No"}
-                  </span>
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                  <Label htmlFor="source_of_income">Source of Income</Label>
+                  <p className="text-muted-foreground text-sm">
+                    Primary source of your income
+                  </p>
+                  <Input
+                    id="source_of_income"
+                    value={profileData.legal_information.source_of_income || ""}
+                    onChange={(e) =>
+                      handleLegalInfoChange("source_of_income", e.target.value || null)
+                    }
+                    className="w-full"
+                    placeholder="e.g., Employment - Software Developer"
+                  />
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                  <Label htmlFor="estimated_net_worth">Estimated Net Worth</Label>
+                  <p className="text-muted-foreground text-sm">
+                    Your estimated total net worth
+                  </p>
+                  <Input
+                    id="estimated_net_worth"
+                    type="number"
+                    step="0.01"
+                    value={profileData.legal_information.estimated_net_worth || ""}
+                    onChange={(e) =>
+                      handleLegalInfoChange("estimated_net_worth", e.target.value ? parseFloat(e.target.value) : null)
+                    }
+                    className="w-full"
+                    placeholder="Enter estimated net worth"
+                  />
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                  <Label htmlFor="purpose_of_opening_account">Purpose of Opening Account</Label>
+                  <p className="text-muted-foreground text-sm">
+                    Main reason for opening this account
+                  </p>
+                  <Textarea
+                    id="purpose_of_opening_account"
+                    value={profileData.legal_information.purpose_of_opening_account || ""}
+                    onChange={(e) =>
+                      handleLegalInfoChange("purpose_of_opening_account", e.target.value || null)
+                    }
+                    className="w-full"
+                    placeholder="e.g., Forex trading and investment"
+                    rows={3}
+                  />
+                </div>
+                <Separator />
+                <div className="space-y-2">
+                  <Label htmlFor="estimated_annual_amount">Estimated Annual Amount</Label>
+                  <p className="text-muted-foreground text-sm">
+                    Estimated annual transaction amount
+                  </p>
+                  <Input
+                    id="estimated_annual_amount"
+                    type="number"
+                    step="0.01"
+                    value={profileData.legal_information.estimated_annual_amount || ""}
+                    onChange={(e) =>
+                      handleLegalInfoChange("estimated_annual_amount", e.target.value ? parseFloat(e.target.value) : null)
+                    }
+                    className="w-full"
+                    placeholder="Enter estimated annual amount"
+                  />
                 </div>
               </div>
-              <Separator />
-              <div className="space-y-2">
-                <Label htmlFor="annual_income">Annual Income</Label>
-                <p className="text-muted-foreground text-sm">
-                  Your total annual income
-                </p>
-                <Input
-                  id="annual_income"
-                  type="number"
-                  step="0.01"
-                  value={legalInfo.annual_income || ""}
-                  onChange={(e) =>
-                    setLegalInfo((prev) => ({
-                      ...prev,
-                      annual_income: parseFloat(e.target.value) || 0,
-                    }))
-                  }
-                  className="w-full"
-                  placeholder="Enter annual income"
-                />
-              </div>
-              <Separator />
-              <div className="space-y-2">
-                <Label htmlFor="source_of_income">Source of Income</Label>
-                <p className="text-muted-foreground text-sm">
-                  Primary source of your income
-                </p>
-                <Input
-                  id="source_of_income"
-                  value={legalInfo.source_of_income}
-                  onChange={(e) =>
-                    setLegalInfo((prev) => ({ ...prev, source_of_income: e.target.value }))
-                  }
-                  className="w-full"
-                  placeholder="e.g., Employment - Software Developer"
-                />
-              </div>
-              <Separator />
-              <div className="space-y-2">
-                <Label htmlFor="estimated_net_worth">Estimated Net Worth</Label>
-                <p className="text-muted-foreground text-sm">
-                  Your estimated total net worth
-                </p>
-                <Input
-                  id="estimated_net_worth"
-                  type="number"
-                  step="0.01"
-                  value={legalInfo.estimated_net_worth || ""}
-                  onChange={(e) =>
-                    setLegalInfo((prev) => ({
-                      ...prev,
-                      estimated_net_worth: parseFloat(e.target.value) || 0,
-                    }))
-                  }
-                  className="w-full"
-                  placeholder="Enter estimated net worth"
-                />
-              </div>
-              <Separator />
-              <div className="space-y-2">
-                <Label htmlFor="purpose_of_opening_account">Purpose of Opening Account</Label>
-                <p className="text-muted-foreground text-sm">
-                  Main reason for opening this account
-                </p>
-                <Textarea
-                  id="purpose_of_opening_account"
-                  value={legalInfo.purpose_of_opening_account}
-                  onChange={(e) =>
-                    setLegalInfo((prev) => ({ ...prev, purpose_of_opening_account: e.target.value }))
-                  }
-                  className="w-full"
-                  placeholder="e.g., Forex trading and investment"
-                  rows={3}
-                />
-              </div>
-              <Separator />
-              <div className="space-y-2">
-                <Label htmlFor="estimated_annual_amount">Estimated Annual Amount</Label>
-                <p className="text-muted-foreground text-sm">
-                  Estimated annual transaction amount
-                </p>
-                <Input
-                  id="estimated_annual_amount"
-                  type="number"
-                  step="0.01"
-                  value={legalInfo.estimated_annual_amount || ""}
-                  onChange={(e) =>
-                    setLegalInfo((prev) => ({
-                      ...prev,
-                      estimated_annual_amount: parseFloat(e.target.value) || 0,
-                    }))
-                  }
-                  className="w-full"
-                  placeholder="Enter estimated annual amount"
-                />
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button 
-              onClick={handleSaveLegalInformation}
-              disabled={savingLegalInfo}
-              size="lg"
-            >
-              {savingLegalInfo ? (
+            </CardContent>
+            <CardFooter>
+              <Button 
+                onClick={handleSaveLegalInformation}
+                disabled={savingLegalInfo}
+                size="lg"
+              >
+                {savingLegalInfo ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Legal Information"
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+
+        {/* Account Activity Logs */}
+        <TabsContent value="activity" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Account Activity Logs</CardTitle>
+              <CardDescription>Login History</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {profileData.login_history && profileData.login_history.length > 0 ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
+                  <div className="rounded-md border">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Time</TableHead>
+                          <TableHead>IP Address</TableHead>
+                          <TableHead>Browser</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {paginatedHistory.map((log, index) => (
+                          <TableRow key={index}>
+                            <TableCell className="font-medium">{log.date}</TableCell>
+                            <TableCell>{log.time}</TableCell>
+                            <TableCell className="font-mono text-sm">{log.ip_address}</TableCell>
+                            <TableCell>{log.browser}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-4">
+                      <div className="text-sm text-muted-foreground">
+                        Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, profileData.login_history.length)} of {profileData.login_history.length} entries
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                          disabled={currentPage === 1}
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                            <Button
+                              key={page}
+                              variant={currentPage === page ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => setCurrentPage(page)}
+                              className="w-8 h-8 p-0"
+                            >
+                              {page}
+                            </Button>
+                          ))}
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                          disabled={currentPage === totalPages}
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </>
               ) : (
-                "Save Legal Information"
+                <div className="text-center py-8 text-muted-foreground">
+                  No login history available
+                </div>
               )}
-            </Button>
-          </CardFooter>
-        </Card>
-        )}
-      </TabsContent>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      {/* Security Settings */}
-      <TabsContent value="security" className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Security Settings</CardTitle>
-            <CardDescription>Manage your account security and authentication.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label className="text-base">Password</Label>
-                  <p className="text-muted-foreground text-sm">Last changed 3 months ago</p>
+        {/* Security Settings */}
+        <TabsContent value="security" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Security Settings</CardTitle>
+              <CardDescription>Manage your account security and authentication.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-1">
+                    <Label className="text-base">Two-Factor Authentication</Label>
+                    <p className="text-muted-foreground text-sm">
+                      Add an extra layer of security to your account
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {isLoading2FAStatus ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    ) : is2FAEnabled || profileData?.user?.google_2FA_status ? (
+                      <>
+                        <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-300 dark:border-green-800">
+                          Enabled
+                        </Badge>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => setTwoFactorModalOpen(true)}
+                        >
+                          Configure
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Badge variant="outline">Disabled</Badge>
+                        <Button 
+                          variant="default" 
+                          size="sm"
+                          onClick={() => setTwoFactorModalOpen(true)}
+                        >
+                          Enable 2FA
+                        </Button>
+                      </>
+                    )}
+                  </div>
                 </div>
-                <Button variant="outline">
-                  <Key className="mr-2 h-4 w-4" />
-                  Change Password
-                </Button>
               </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label className="text-base">Two-Factor Authentication</Label>
-                  <p className="text-muted-foreground text-sm">
-                    Add an extra layer of security to your account
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
-                    Enabled
-                  </Badge>
-                  <Button variant="outline" size="sm">
-                    Configure
-                  </Button>
-                </div>
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label className="text-base">Login Notifications</Label>
-                  <p className="text-muted-foreground text-sm">
-                    Get notified when someone logs into your account
-                  </p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label className="text-base">Active Sessions</Label>
-                  <p className="text-muted-foreground text-sm">
-                    Manage devices that are logged into your account
-                  </p>
-                </div>
-                <Button variant="outline">
-                  <Shield className="mr-2 h-4 w-4" />
-                  View Sessions
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
-      {/* Notification Settings */}
-      <TabsContent value="notifications" className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Notification Preferences</CardTitle>
-            <CardDescription>Choose what notifications you want to receive.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label className="text-base">Email Notifications</Label>
-                  <p className="text-muted-foreground text-sm">Receive notifications via email</p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label className="text-base">Push Notifications</Label>
-                  <p className="text-muted-foreground text-sm">
-                    Receive push notifications in your browser
-                  </p>
-                </div>
-                <Switch />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label className="text-base">Marketing Emails</Label>
-                  <p className="text-muted-foreground text-sm">
-                    Receive emails about new features and updates
-                  </p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label className="text-base">Weekly Summary</Label>
-                  <p className="text-muted-foreground text-sm">
-                    Get a weekly summary of your activity
-                  </p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              <Separator />
-              <div className="flex items-center justify-between">
-                <div className="space-y-1">
-                  <Label className="text-base">Security Alerts</Label>
-                  <p className="text-muted-foreground text-sm">
-                    Important security notifications (always enabled)
-                  </p>
-                </div>
-                <Switch checked disabled />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </TabsContent>
-    </Tabs>
+      <TwoFactorModal 
+        open={twoFactorModalOpen}
+        onOpenChange={setTwoFactorModalOpen}
+        is2FAEnabled={is2FAEnabled || profileData?.user?.google_2FA_status || false}
+        onStatusChange={handle2FAStatusChange}
+      />
+    </div>
   );
 }

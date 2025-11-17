@@ -22,9 +22,14 @@ import {
   Activity,
   Target,
   BarChart3,
-  PieChart
+  PieChart,
+  Settings,
+  Scale,
+  FileText
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
+import { ProfileCompletionDialog } from "@/components/profile-completion-dialog"
+import { useEffect, useState } from "react"
 
 // Dummy data for charts and statistics
 const monthlyData = [
@@ -100,7 +105,41 @@ const upcomingTasks = [
 ]
 
 export default function DashboardPage() {
-  const user= useAuth();
+  const user = useAuth();
+  const { token } = useAuth();
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [incompleteSections, setIncompleteSections] = useState<Array<{
+    key: "personal_information" | "legal_information" | "documents_verification";
+    title: string;
+    message: string;
+    route: string;
+  }>>([]);
+
+  // Check for incomplete profile sections on mount
+  useEffect(() => {
+    const checkIncompleteSections = () => {
+      const stored = sessionStorage.getItem('incomplete_profile_sections');
+      if (stored) {
+        try {
+          const sections = JSON.parse(stored);
+          if (Array.isArray(sections) && sections.length > 0) {
+            setIncompleteSections(sections);
+            setShowProfileDialog(true);
+            sessionStorage.removeItem('incomplete_profile_sections');
+          }
+        } catch (error) {
+          console.error('Error parsing incomplete sections:', error);
+        }
+      }
+    };
+
+    // Check immediately and also after a short delay
+    checkIncompleteSections();
+    const timer = setTimeout(checkIncompleteSections, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
+
   console.log(user,"user");
   return (
     <ProtectedRoute>
@@ -360,6 +399,22 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+      
+      {/* Profile Completion Dialog */}
+      <ProfileCompletionDialog
+        open={showProfileDialog}
+        onOpenChange={setShowProfileDialog}
+        incompleteSections={incompleteSections.map(section => ({
+          ...section,
+          icon: section.key === 'personal_information' ? (
+            <Settings className="h-5 w-5 text-orange-600" />
+          ) : section.key === 'legal_information' ? (
+            <Scale className="h-5 w-5 text-orange-600" />
+          ) : (
+            <FileText className="h-5 w-5 text-orange-600" />
+          ),
+        }))}
+      />
     </ProtectedRoute>
   )
 }

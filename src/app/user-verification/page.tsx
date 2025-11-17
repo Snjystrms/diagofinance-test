@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Eye, CheckCircle2, XCircle, Calendar, FileText } from "lucide-react";
+import { Eye, CheckCircle2, XCircle, Calendar, FileText, User, Mail, Hash, Clock, AlertCircle, Image as ImageIcon } from "lucide-react";
 
 import { adminKycApi, API_BASE_URL, kycFileUrl } from "@/lib/api";
 // If you already have auth context, import it. Fallback to localStorage token.
@@ -552,128 +552,263 @@ const buildReviewPayload = () => {
           }
         }}
       >
-        <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-          <DialogTitle className="flex items-center justify-between w-full">
-          <span>KYC Details</span>
-          {detail ? statusPill(String(detail.kyc_status)) : null}
-          </DialogTitle>
+        <DialogContent className="sm:max-w-5xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="pb-4 border-b">
+            <DialogTitle className="flex items-center justify-between w-full text-xl">
+              <span className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                KYC Verification Details
+              </span>
+              {detail ? statusPill(String(detail.kyc_status)) : null}
+            </DialogTitle>
           </DialogHeader>
 
           {detailLoading ? (
-            <div className="flex items-center justify-center h-40">
-              <Spinner className="h-6 w-6" />
+            <div className="flex items-center justify-center h-64">
+              <div className="flex flex-col items-center gap-3">
+                <Spinner className="h-8 w-8" />
+                <p className="text-sm text-muted-foreground">Loading KYC details...</p>
+              </div>
             </div>
           ) : !detail ? (
-            <div className="text-sm text-muted-foreground">No data.</div>
+            <div className="flex flex-col items-center justify-center h-64 gap-3">
+              <AlertCircle className="h-12 w-12 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">No KYC data available.</p>
+            </div>
           ) : (
-            <div className="space-y-6">
-              {/* User summary */}
+            <div className="space-y-6 py-4">
+              {/* User summary - Enhanced */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="rounded-lg border p-3">
-                  <p className="text-xs text-muted-foreground">User</p>
-                  <div className="mt-1 text-sm">
-                    <div><span className="text-muted-foreground">Name: </span>{detail.user.name || "—"}</div>
-                    <div><span className="text-muted-foreground">Email: </span>{detail.user.email}</div>
-                    <div><span className="text-muted-foreground">UUID: </span><span className="font-mono">{detail.user.uuid}</span></div>
+                <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-card p-4 shadow-sm">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-950/40">
+                      <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">User Information</p>
+                  </div>
+                  <div className="space-y-2.5">
+                    <div className="flex items-start gap-2">
+                      <User className="h-4 w-4 text-muted-foreground mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">Name</p>
+                        <p className="text-sm font-medium">{detail.user.name || "—"}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Mail className="h-4 w-4 text-muted-foreground mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">Email</p>
+                        <p className="text-sm font-medium break-all">{detail.user.email}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Hash className="h-4 w-4 text-muted-foreground mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">UUID</p>
+                        <p className="text-sm font-mono font-medium">{detail.user.uuid}</p>
+                      </div>
+                    </div>
                   </div>
                 </div>
-                <div className="rounded-lg border p-3">
-                  <p className="text-xs text-muted-foreground">Submitted</p>
-                  <div className="mt-1 flex items-center gap-1 text-sm">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>{fmtDateTime(detail.submitted_at)}</span>
+                <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-card p-4 shadow-sm">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-950/40">
+                      <Clock className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                    </div>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Submission Details</p>
+                  </div>
+                  <div className="space-y-2.5">
+                    <div className="flex items-start gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">Submitted At</p>
+                        <p className="text-sm font-medium">{fmtDateTime(detail.submitted_at)}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <FileText className="h-4 w-4 text-muted-foreground mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-xs text-muted-foreground">Status</p>
+                        <div className="mt-1">
+                          {statusPill(String(detail.kyc_status))}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <Separator />
+              <Separator className="my-6" />
 
-              {/* Documents grid with Approve/Reject */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {(Object.keys(docLabel) as DocKey[]).map((k) => {
-                  const doc = detail.documents?.[k];
-                  const url = kycFileUrl(doc?.file);
-                  const current = docStatuses[k];
-                  return (
-                    <div key={k} className="rounded-lg border p-3 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <div className="font-medium">{docLabel[k]}</div>
-                        <div className="text-xs text-muted-foreground">
-                          Current: {numToWord(doc?.status ?? 0)}
+              {/* Documents grid with Approve/Reject - Enhanced */}
+              <div>
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Document Verification
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Review and approve or reject each submitted document
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {(Object.keys(docLabel) as DocKey[]).map((k) => {
+                    const doc = detail.documents?.[k];
+                    const url = kycFileUrl(doc?.file);
+                    const current = docStatuses[k];
+                    const statusWord = numToWord(doc?.status ?? 0);
+                    const isApproved = current === 1;
+                    const isRejected = current === 2;
+                    const isPending = current === 0;
+                    
+                    return (
+                      <div 
+                        key={k} 
+                        className={`rounded-lg border-2 p-4 space-y-4 transition-all ${
+                          isApproved 
+                            ? "border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20" 
+                            : isRejected
+                            ? "border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20"
+                            : "border-gray-200 dark:border-gray-700 bg-card"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={`p-1.5 rounded-lg ${
+                              isApproved 
+                                ? "bg-green-100 dark:bg-green-950/40" 
+                                : isRejected
+                                ? "bg-red-100 dark:bg-red-950/40"
+                                : "bg-gray-100 dark:bg-gray-800"
+                            }`}>
+                              <ImageIcon className={`h-4 w-4 ${
+                                isApproved 
+                                  ? "text-green-600 dark:text-green-400" 
+                                  : isRejected
+                                  ? "text-red-600 dark:text-red-400"
+                                  : "text-gray-600 dark:text-gray-400"
+                              }`} />
+                            </div>
+                            <div>
+                              <div className="font-semibold text-sm">{docLabel[k]}</div>
+                              <div className="text-xs text-muted-foreground">
+                                Current: <span className="font-medium capitalize">{statusWord}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 p-4 flex items-center justify-center min-h-[200px]">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          {url ? (
+                            <img 
+                              src={url} 
+                              alt={doc?.file} 
+                              className="max-h-64 w-auto object-contain rounded-md shadow-sm" 
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                              <ImageIcon className="h-12 w-12 opacity-50" />
+                              <span className="text-sm">No document uploaded</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Button
+                            size="sm"
+                            className={`${
+                              isApproved 
+                                ? "bg-green-600 hover:bg-green-700 text-white" 
+                                : "hover:bg-green-50 dark:hover:bg-green-950/20"
+                            }`}
+                            variant={isApproved ? "default" : "outline"}
+                            onClick={() => setDocStatuses((s) => ({ ...s, [k]: 1 }))}
+                            disabled={!canReview}
+                          >
+                            <CheckCircle2 className="h-4 w-4 mr-1.5" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            className={`${
+                              isRejected 
+                                ? "bg-red-600 hover:bg-red-700 text-white" 
+                                : "hover:bg-red-50 dark:hover:bg-red-950/20"
+                            }`}
+                            variant={isRejected ? "destructive" : "outline"}
+                            onClick={() => setDocStatuses((s) => ({ ...s, [k]: 2 }))}
+                            disabled={!canReview}
+                          >
+                            <XCircle className="h-4 w-4 mr-1.5" />
+                            Reject
+                          </Button>
+                          <Button
+                            size="sm"
+                            className={`${
+                              isPending 
+                                ? "bg-orange-600 hover:bg-orange-700 text-white" 
+                                : "hover:bg-orange-50 dark:hover:bg-orange-950/20"
+                            }`}
+                            variant={isPending ? "default" : "outline"}
+                            onClick={() => setDocStatuses((s) => ({ ...s, [k]: 0 }))}
+                            disabled={!canReview}
+                          >
+                            <Clock className="h-4 w-4 mr-1.5" />
+                            Pending
+                          </Button>
+                        </div>
+
+                        {/* Comment section - Enhanced */}
+                        <div className="space-y-2">
+                          <label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                            <FileText className="h-3.5 w-3.5" />
+                            Review Comment {isRejected && <span className="text-red-600 dark:text-red-400">*</span>}
+                          </label>
+                          <Textarea
+                            rows={3}
+                            placeholder={isRejected ? "Required: Add rejection reason (e.g., Blurry document, Invalid ID)" : "Add any comments or notes about this document..."}
+                            value={docComments[k] || ""}
+                            onChange={(e) =>
+                              setDocComments((c) => ({ ...c, [k]: e.target.value }))
+                            }
+                            disabled={!canReview}
+                            className={`${
+                              isRejected && !docComments[k] 
+                                ? "border-red-300 dark:border-red-700 focus:border-red-500" 
+                                : ""
+                            }`}
+                          />
+                          {isRejected && !docComments[k] && (
+                            <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                              <AlertCircle className="h-3 w-3" />
+                              Comment is required when rejecting a document
+                            </p>
+                          )}
                         </div>
                       </div>
-
-                      <div className="rounded-md border bg-background p-2 flex items-center justify-center">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        {url ? (
-                          <img src={url} alt={doc?.file} className="max-h-60 w-auto object-contain" />
-                        ) : (
-                          <span className="text-sm text-muted-foreground">No file</span>
-                        )}
-                      </div>
-
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          className={current === 1 ? "bg-green-600 hover:bg-green-700" : ""}
-                          variant={current === 1 ? "default" : "outline"}
-                          onClick={() => setDocStatuses((s) => ({ ...s, [k]: 1 }))}
-                          disabled={!canReview}
-                        >
-                          <CheckCircle2 className="h-4 w-4 mr-1" />
-                          Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={current === 2 ? "destructive" : "outline"}
-                          onClick={() => setDocStatuses((s) => ({ ...s, [k]: 2 }))}
-                          disabled={!canReview}
-                        >
-                          <XCircle className="h-4 w-4 mr-1" />
-                          Reject
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant={current === 0 ? "default" : "outline"}
-                          onClick={() => setDocStatuses((s) => ({ ...s, [k]: 0 }))}
-                          disabled={!canReview}
-                        >
-                          Set Pending
-                        </Button>
-                      </div>
-
-                      {/* Comment (only needed for reject, but allow always) */}
-                      <div className="space-y-1">
-                        <label className="text-xs text-muted-foreground flex items-center gap-1">
-                          <FileText className="h-3 w-3" />
-                          Comment (required if rejecting)
-                        </label>
-                        <Textarea
-                          rows={2}
-                          placeholder="Add a reason if rejected (e.g. Blurry document)"
-                          value={docComments[k] || ""}
-                          onChange={(e) =>
-                            setDocComments((c) => ({ ...c, [k]: e.target.value }))
-                          }
-                          disabled={!canReview}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
           )}
 
-          <DialogFooter className="flex items-center justify-between">
+          <DialogFooter className="flex items-center justify-between pt-4 border-t mt-4">
+            <Button variant="outline" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
             <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setOpen(false)}>
-                Close
-              </Button>
-              <Button onClick={submitReview} disabled={!canReview}>
-                Save Review
-              </Button>
+              {canReview && (
+                <Button 
+                  onClick={submitReview} 
+                  disabled={!canReview || detailLoading}
+                  className="min-w-[120px]"
+                >
+                  <CheckCircle2 className="h-4 w-4 mr-2" />
+                  Save Review
+                </Button>
+              )}
             </div>
           </DialogFooter>
         </DialogContent>

@@ -474,24 +474,24 @@ const crmData = {
       logo: Shield,
       plan: "Enterprise",
     },
-  ],
-  projects: [
-    {
-      name: "Sales Pipeline",
-      url: "/deals",
-      icon: CreditCard,
-    },
-    {
-      name: "Customer Analytics",
-      url: "/analytics",
-      icon: BarChart3,
-    },
-    {
-      name: "Task Management",
-      url: "/tasks",
-      icon: Calendar,
-    },
-  ],
+  ]
+  // projects: [
+  //   {
+  //     name: "Sales Pipeline",
+  //     url: "/deals",
+  //     icon: CreditCard,
+  //   },
+  //   {
+  //     name: "Customer Analytics",
+  //     url: "/analytics",
+  //     icon: BarChart3,
+  //   },
+  //   {
+  //     name: "Task Management",
+  //     url: "/tasks",
+  //     icon: Calendar,
+  //   },
+  // ],
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -555,12 +555,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         ) : (
           <>
             <NavMain items={navItems} />
-            <NavProjects projects={crmData.projects} />
+            {/* <NavProjects projects={crmData.projects} /> */}
           </>
         )}
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={userDisplayInfo} />
+        {/* <NavUser user={userDisplayInfo} /> */}
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

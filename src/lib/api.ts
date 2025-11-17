@@ -12,6 +12,7 @@ export interface ApiResponse<T = any> {
   message: string;
   status?: string;
   requires_usdt_transaction?: boolean;
+  requires_2fa?: boolean;
   data?: T;
   error?: string;
 }
@@ -53,14 +54,18 @@ export interface ResetPasswordRequest {
 }
 
 export interface TwoFactorStatusResponse {
-  user_id: number;
+  user_id?: number;
+  admin_id?: string | number;
+  manager_id?: string | number;
   email: string;
   google_2FA_status: boolean;
   google_2FA_key: string | null;
 }
 
 export interface TwoFactorSetupResponse {
-  user_id: number;
+  user_id?: number;
+  admin_id?: string | number;
+  manager_id?: string | number;
   secret: string;
   qrCode: string;
   otpauthUrl: string;
@@ -69,30 +74,40 @@ export interface TwoFactorSetupResponse {
 }
 
 export interface TwoFactorVerifyRequest {
-  user_id: number;
+  user_id?: number;
+  admin_id?: string | number;
   token: string;
 }
 
 export interface TwoFactorDisableResponse {
-  user_id: number;
+  user_id?: number;
+  admin_id?: string | number;
+  manager_id?: string | number;
   email: string;
 }
 
 export interface LoginResponse {
-  token: string;
-  user: {
+  token?: string;
+  requires_2fa?: boolean;
+  user?: {
     id: string | number;
-    name: string;
+    name?: string;
     email: string;
-    type: "admin" | "user" | "subadmin" | "manager";
+    type?: "admin" | "user" | "subadmin" | "manager";
     mobile?: string;
-    status?: boolean;
+    status?: boolean | number;
     requires_usdt_transaction?: boolean;
     requires_registration_fee?: boolean;
     is_account_active?: boolean;
     sponsor_id?: string;
     role?: string;
     permissions?: Permission[];
+  };
+  data?: {
+    user_id?: string | number;
+    type?: "admin" | "user" | "subadmin" | "manager";
+    token?: string;
+    user?: LoginResponse["user"];
   };
   permissions?: GroupedPermissions[];
 }
@@ -165,6 +180,118 @@ export interface KycUploadResponse {
   message: string;
   model?: string;
   verification_status?: string;
+}
+
+export interface KycDocumentStatus {
+  file: string | null;
+  uploaded: boolean;
+  status: "pending" | "approved" | "rejected" | string;
+  status_code: number;
+  approved: boolean;
+  rejection_comment: string;
+}
+
+export interface KycStatusResponse {
+  success: boolean;
+  data: {
+    kyc: {
+      approved: boolean;
+      status: string;
+      status_code: number;
+      documents_submitted: boolean;
+      documents_approved: boolean;
+    };
+    documents: {
+      poi_front_file?: KycDocumentStatus;
+      poi_back_file?: KycDocumentStatus;
+      poa_front_file?: KycDocumentStatus;
+      poa_back_file?: KycDocumentStatus;
+      other_file?: KycDocumentStatus;
+      [key: string]: KycDocumentStatus | undefined;
+    };
+  };
+}
+
+export interface ProfileViewUser {
+  id: number;
+  uuid: string;
+  name: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  account_id: string;
+  mobile: string;
+  country_code: number;
+  location: string;
+  google_2FA_status: boolean;
+  verification_status: string;
+  verification_status_code: number;
+}
+
+export interface VerificationStatusItem {
+  status: "completed" | "pending" | "rejected";
+  message: string;
+  submitted: boolean;
+  approved?: boolean;
+  rejected?: boolean;
+}
+
+export interface ProfileViewVerificationStatus {
+  personal_information: VerificationStatusItem;
+  legal_information: VerificationStatusItem;
+  documents_verification: VerificationStatusItem;
+}
+
+export interface ProfileViewPersonalInformation {
+  dob: string | null;
+  address: string | null;
+  passport_id_number: string | null;
+  pin_code: string | null;
+  nationality: string | null;
+  employment_status: string | null;
+  tax_number: string | null;
+  other_id_number: string | null;
+  client_type: string | null;
+  country: string | null;
+  state: string | null;
+  city: string | null;
+}
+
+export interface ProfileViewLegalInformation {
+  politically_exposed: boolean;
+  annual_income: number | null;
+  source_of_income: string | null;
+  estimated_net_worth: number | null;
+  purpose_of_opening_account: string | null;
+  estimated_annual_amount: number | null;
+}
+
+export interface ProfileViewKycDocuments {
+  poi_front_file: string | null;
+  poa_front_file: string | null;
+  poa_back_file: string | null;
+  other_file: string | null;
+  poi_front_file_status: number;
+  poa_front_file_status: number;
+  poa_back_file_status: number;
+  other_file_status: number;
+  file_rejection_comment: Record<string, any>;
+}
+
+export interface LoginHistoryItem {
+  date: string;
+  time: string;
+  ip_address: string;
+  browser: string;
+}
+
+export interface ProfileViewResponse {
+  user: ProfileViewUser;
+  verification_status: ProfileViewVerificationStatus;
+  personal_information: ProfileViewPersonalInformation;
+  legal_information: ProfileViewLegalInformation;
+  kyc_documents: ProfileViewKycDocuments;
+  login_history: LoginHistoryItem[];
 }
 
 /** ---------- Permissions types ---------- */
@@ -471,6 +598,13 @@ export const authApi = {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
+  verifyLogin2FA: (data: { user_id: string | number; verify_otp: string }) =>
+    apiCall<LoginResponse>("/user/google-verify-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+
   uploadProfileDocuments: async (formData: FormData, token: string): Promise<KycUploadResponse> => {
     const res = await fetch(`${API_BASE_URL}/user/profile/document`, {
       method: "POST",
@@ -481,6 +615,84 @@ export const authApi = {
     if (!res.ok) throw new Error(json?.message || `Upload failed (${res.status})`);
     return json as KycUploadResponse;
   },
+  getProfileDocumentsStatus: async (token: string): Promise<KycStatusResponse> => {
+    const res = await fetch(`${API_BASE_URL}/user/profile/document`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` } as any,
+    });
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json?.message || `Fetch failed (${res.status})`);
+    return json as KycStatusResponse;
+  },
+
+  getProfileView: (token: string) =>
+    apiCall<ProfileViewResponse>(`/user/profile/view`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};
+
+// ---------- Admin 2FA APIs ----------
+export const admin2FAApi = {
+  getTwoFactorStatus: (adminId: string | number, token: string) =>
+    apiCall<TwoFactorStatusResponse>(`/admin/2fa/status/${adminId}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  setupTwoFactor: (adminId: string | number, token: string) =>
+    apiCall<TwoFactorSetupResponse>(`/admin/2fa/setup/${adminId}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  verifyAndEnableTwoFactor: (data: { admin_id: string | number; token: string }, token: string) =>
+    apiCall("/admin/2fa/verify-and-enable", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+
+  disableTwoFactor: (adminId: string | number, token: string) =>
+    apiCall<TwoFactorDisableResponse>(`/admin/2fa/disable/${adminId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  verifyLogin2FA: (data: { admin_id: string | number; token: string; email: string; password: string }) =>
+    apiCall<LoginResponse>("/admin/2fa/verify-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+};
+
+// ---------- Manager 2FA APIs ----------
+export const manager2FAApi = {
+  getTwoFactorStatus: (managerId: string | number, token: string) =>
+    apiCall<TwoFactorStatusResponse>(`/manager/2fa/status/${managerId}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  setupTwoFactor: (managerId: string | number, token: string) =>
+    apiCall<TwoFactorSetupResponse>(`/manager/2fa/setup/${managerId}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  verifyAndEnableTwoFactor: (data: { manager_id: string | number; token: string }, token: string) =>
+    apiCall("/manager/2fa/verify-and-enable", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+
+  disableTwoFactor: (managerId: string | number, token: string) =>
+    apiCall<TwoFactorDisableResponse>(`/manager/2fa/disable/${managerId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
 };
 
 // ---------- Admin KYC APIs ----------

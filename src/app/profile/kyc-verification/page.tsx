@@ -1,9 +1,15 @@
+// C:\Users\DELL\Desktop\crminhouse\src\app\profile\kyc-verification\page.tsx
 'use client';
 
-import { useMemo, useState } from 'react';
-import toast from 'react-hot-toast';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
-import { authApi } from '@/lib/api';
+import {
+  authApi,
+  type KycStatusResponse,
+  type KycDocumentStatus,
+  kycFileUrl,
+} from '@/lib/api';
+import { toast } from 'react-hot-toast';
 
 import {
   Card,
@@ -18,20 +24,47 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Label } from '@/components/ui/label';
-import { AlertCircle, CheckCircle2, Image as ImageIcon, Upload } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { AlertCircle, CheckCircle2, Upload, FileText, Link as LinkIcon } from 'lucide-react';
 import { MainLayout } from '@/components/main-layout';
 
 type KycPhase = 'draft' | 'under_review' | 'approved';
+
+const isImageName = (name?: string | null) =>
+  !!name && /\.(png|jpe?g)$/i.test(name);
+
+const isPdfName = (name?: string | null) =>
+  !!name && /\.pdf$/i.test(name);
 
 export default function KycVerificationPage() {
   const { token } = useAuth();
 
   const [phase, setPhase] = useState<KycPhase>('draft');
+
+  // Document types
+  const [poiType, setPoiType] = useState('');
+  const [poaType, setPoaType] = useState('');
+  const [otherType, setOtherType] = useState('');
+
+  // Files
   const [poiFrontFile, setPoiFrontFile] = useState<File | null>(null);
   const [poaFrontFile, setPoaFrontFile] = useState<File | null>(null);
   const [poaBackFile, setPoaBackFile] = useState<File | null>(null);
   const [otherFile, setOtherFile] = useState<File | null>(null);
+
   const [uploading, setUploading] = useState(false);
+  const [statusLoading, setStatusLoading] = useState(false);
+  const [kycStatusData, setKycStatusData] = useState<KycStatusResponse['data'] | null>(null);
+
+  // Per-field re-upload stash for rejected docs: key = backend field name
+  const [reuploadFiles, setReuploadFiles] = useState<Record<string, File | null>>({});
+  const [reuploadingKey, setReuploadingKey] = useState<string | null>(null);
 
   const selectedCount = [poiFrontFile, poaFrontFile, poaBackFile, otherFile].filter(Boolean).length;
   const progress = useMemo(
@@ -48,16 +81,19 @@ export default function KycVerificationPage() {
       f.type === 'image/jpeg' ||
       f.type === 'image/jpg' ||
       f.type === 'image/png' ||
+      f.type === 'application/pdf' ||
       f.name.toLowerCase().endsWith('.jpg') ||
       f.name.toLowerCase().endsWith('.jpeg') ||
-      f.name.toLowerCase().endsWith('.png');
+      f.name.toLowerCase().endsWith('.png') ||
+      f.name.toLowerCase().endsWith('.pdf');
+
     if (!okType) {
-      toast.error('Only JPG and PNG files are accepted.');
+      alert('Only JPG, PNG, and PDF files are accepted.');
       return false;
     }
-    const maxBytes = 5 * 1024 * 1024;
+    const maxBytes = 15 * 1024 * 1024;
     if (f.size > maxBytes) {
-      toast.error('Each file must be ≤ 5MB.');
+      alert('Each file must be ≤ 15MB.');
       return false;
     }
     return true;
@@ -76,15 +112,16 @@ export default function KycVerificationPage() {
 
   const canSubmit =
     phase === 'draft' &&
-    !!(poiFrontFile && poaFrontFile && poaBackFile && otherFile);
+    !!(poiFrontFile && poaFrontFile && poaBackFile && otherFile) &&
+    !!(poiType && poaType && otherType);
 
   const submitKycDocuments = async () => {
     if (!token) {
-      toast.error('Not authenticated.');
+      alert('Not authenticated.');
       return;
     }
     if (!canSubmit) {
-      toast.error('Please select all required documents.');
+      alert('Please select all required documents and document types.');
       return;
     }
     try {
@@ -104,17 +141,238 @@ export default function KycVerificationPage() {
       setPhase(next === 'approved' ? 'approved' : 'under_review');
 
       // clear inputs
-      setPoiFrontFile(null);
-      setPoaFrontFile(null);
-      setPoaBackFile(null);
-      setOtherFile(null);
+      resetAll();
+
+      await loadKycStatus();
     } catch (err: any) {
-      toast.error(err?.message || 'Failed to upload documents');
+      alert(err?.message || 'Failed to upload documents');
     } finally {
       setUploading(false);
     }
   };
 
+  const reuploadSingle = async (fieldKey: string) => {
+    const f = reuploadFiles[fieldKey];
+    if (!token) return toast.error('Not authenticated.');
+    if (!f) return toast.error('Please choose a file to upload.');
+    if (!validateImage(f)) return;
+
+    try {
+      setReuploadingKey(fieldKey);
+      const fd = new FormData();
+      // Send only the rejected document’s field
+      fd.append(fieldKey, f);
+      const res = await authApi.uploadProfileDocuments(fd, token);
+      toast.success(res?.message || 'Document re-uploaded successfully');
+      setReuploadFiles((s) => ({ ...s, [fieldKey]: null }));
+      await loadKycStatus();
+    } catch (e: any) {
+      toast.error(e?.message || 'Re-upload failed');
+    } finally {
+      setReuploadingKey(null);
+    }
+  };
+
+  const loadKycStatus = async () => {
+    if (!token) return;
+    try {
+      setStatusLoading(true);
+      const res = await authApi.getProfileDocumentsStatus(token);
+      setKycStatusData(res.data);
+      const status = res.data.kyc.status?.toLowerCase();
+      if (status === 'approved') {
+        setPhase('approved');
+      } else if (status === 'pending') {
+        if (res.data.kyc.documents_submitted) {
+          setPhase('under_review');
+        } else {
+          setPhase('draft');
+        }
+      } else {
+        // treat unknown as draft unless documents_submitted tells otherwise
+        setPhase(res.data.kyc.documents_submitted ? 'under_review' : 'draft');
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err?.message || 'Failed to fetch KYC status');
+    } finally {
+      setStatusLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadKycStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
+  const renderFilePreview = (label: string, fileName?: string | null) => {
+    if (!fileName) return null;
+    const url = kycFileUrl(fileName);
+    if (!url) return null;
+
+    if (isImageName(fileName)) {
+      return (
+        <div className="mt-2">
+          <img
+            src={url}
+            alt={`${label} preview`}
+            className="max-h-40 rounded-md border border-gray-200 dark:border-gray-700"
+          />
+        </div>
+      );
+    }
+
+    if (isPdfName(fileName)) {
+      return (
+        <div className="mt-2 text-sm">
+          <a
+            href={url}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 underline"
+          >
+            <LinkIcon className="w-4 h-4" />
+            View PDF
+          </a>
+        </div>
+      );
+    }
+
+    // Fallback: unknown file type
+    return (
+      <div className="mt-2 text-sm">
+        <a
+          href={url}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 underline"
+        >
+          <FileText className="w-4 h-4" />
+          View File
+        </a>
+      </div>
+    );
+  };
+
+  const renderDocumentStatus = (
+    title: string,
+    fieldKey: string,
+    data?: KycDocumentStatus
+  ) => {
+    if (!data) return null;
+    const badgeVariant =
+      data.status === 'approved'
+        ? 'success'
+        : data.status === 'rejected'
+        ? 'destructive'
+        : 'secondary';
+
+    const onPickRejected =
+      (k: string) =>
+      (e: React.ChangeEvent<HTMLInputElement>) => {
+        const f = e.target.files?.[0] ?? null;
+        if (!validateImage(f)) {
+          e.target.value = '';
+          return;
+        }
+        setReuploadFiles((s) => ({ ...s, [k]: f }));
+      };
+
+    const currentPicked = reuploadFiles[fieldKey] ?? null;
+
+    return (
+      <Card key={title} className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
+        <CardContent className="py-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{title}</h4>
+            <Badge
+              variant={badgeVariant === 'success' ? 'default' : badgeVariant}
+              className={
+                badgeVariant === 'success'
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
+                  : badgeVariant === 'destructive'
+                  ? 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300'
+                  : 'bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-200'
+              }
+            >
+              {data.status.toUpperCase()}
+            </Badge>
+          </div>
+
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            {data.uploaded ? 'File uploaded' : 'File not uploaded'}
+          </p>
+
+          {/* Preview of currently uploaded file (if any) */}
+          {data.file && renderFilePreview(title, data.file)}
+
+          {/* Rejection comment */}
+          {data.rejection_comment && (
+            <div className="text-xs text-red-500 dark:text-red-300 border border-red-200 dark:border-red-800 rounded-md p-2 bg-red-50 dark:bg-red-950/30">
+              {data.rejection_comment}
+            </div>
+          )}
+
+          {/* If rejected → allow re-upload of ONLY this field */}
+          {data.status === 'rejected' && (
+            <div className="mt-2 space-y-2">
+              <div className="flex items-center gap-3">
+                <label htmlFor={`reupload-${fieldKey}`}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                    onClick={() => document.getElementById(`reupload-${fieldKey}`)?.click()}
+                    disabled={reuploadingKey === fieldKey}
+                  >
+                    Choose File
+                  </Button>
+                </label>
+                <Input
+                  id={`reupload-${fieldKey}`}
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                  className="hidden"
+                  onChange={onPickRejected(fieldKey)}
+                  disabled={reuploadingKey === fieldKey}
+                />
+                <Button
+                  onClick={() => reuploadSingle(fieldKey)}
+                  disabled={!currentPicked || reuploadingKey === fieldKey}
+                  className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
+                >
+                  {reuploadingKey === fieldKey ? 'Uploading…' : 'Re-upload'}
+                </Button>
+              </div>
+
+              {/* Selected file name + size before re-upload */}
+              {currentPicked && (
+                <div className="text-xs text-gray-600 dark:text-gray-300">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-4 h-4" />
+                    <span className="truncate max-w-[220px]">{currentPicked.name}</span>
+                    <span>• {(currentPicked.size / 1024 / 1024).toFixed(2)} MB</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const resetAll = () => {
+    setPoiFrontFile(null);
+    setPoaFrontFile(null);
+    setPoaBackFile(null);
+    setOtherFile(null);
+    setPoiType('');
+    setPoaType('');
+    setOtherType('');
+  };
+
+  // Header status pill – visible only after first submission
   const StatusPill = () =>
     phase === 'approved' ? (
       <Badge className="bg-emerald-100 text-emerald-900 hover:bg-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/40">
@@ -126,181 +384,620 @@ export default function KycVerificationPage() {
         <AlertCircle className="h-3.5 w-3.5 mr-1 text-amber-700 dark:text-amber-300" />
         Under Review
       </Badge>
-    ) : (
-      <Badge variant="outline">Draft</Badge>
-    );
+    ) : null;
 
-  const UploadRow = (props: {
-    label: string;
-    hint: string;
+  // ---------- Upload Card Sections ----------
+  const UploadSection = (props: {
+    title: string;
+    description: string;
+    selectValue: string;
+    onSelectChange: (value: string) => void;
+    selectOptions: { value: string; label: string }[];
+    selectPlaceholder: string;
     file: File | null;
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-    onClear: () => void;
+    note: string;
     disabled?: boolean;
   }) => {
-    const { label, hint, file, onChange, onClear, disabled } = props;
+    const {
+      title,
+      description,
+      selectValue,
+      onSelectChange,
+      selectOptions,
+      selectPlaceholder,
+      file,
+      onChange,
+      note,
+      disabled,
+    } = props;
+
     return (
-      
-      <div className={`rounded-lg border p-4 ${disabled ? 'opacity-60' : ''}`}>
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <Label className="text-sm font-medium">{label}</Label>
-            <p className="text-xs text-muted-foreground mt-1">{hint}</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {file && (
-              <Button
-                variant="ghost"
-                size="sm"
-                type="button"
-                onClick={onClear}
-                disabled={disabled}
-              >
-                Clear
-              </Button>
-            )}
-            <div className="relative">
-              <Input
-                type="file"
-                accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-                className="max-w-xs"
-                onChange={onChange}
-                disabled={disabled}
-              />
-            </div>
+      <div className="space-y-4">
+        <div>
+          <Label className="text-base font-semibold text-gray-700 dark:text-gray-200">
+            {title}
+          </Label>
+          <div className="mt-3">
+            <Select
+              value={selectValue}
+              onValueChange={onSelectChange}
+              disabled={disabled}
+            >
+              <SelectTrigger className="w-full max-w-xs bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
+                <SelectValue placeholder={selectPlaceholder} />
+              </SelectTrigger>
+              <SelectContent>
+                {selectOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </div>
 
-        <div className="mt-3">
-          {file ? (
-            <div className="flex items-center gap-2 rounded-md border bg-muted/30 p-2">
-              <ImageIcon className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium truncate">{file.name}</span>
-              <span className="text-xs text-muted-foreground ml-auto">
-                {(file.size / 1024 / 1024).toFixed(2)} MB
-              </span>
+        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-200">
+              {description}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 bg-gray-50 dark:bg-gray-900/50">
+              <div className="flex flex-col items-center justify-center space-y-4">
+                <div className="relative">
+                  <div className="w-16 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                    <FileText className="w-8 h-8 text-blue-500 dark:text-blue-400" />
+                  </div>
+                  <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-400 dark:bg-blue-500 rounded-full flex items-center justify-center">
+                    <svg
+                      className="w-4 h-4 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
+                      />
+                    </svg>
+                  </div>
+                </div>
+
+                {file ? (
+                  <div className="w-full">
+                    <div className="flex items-center justify-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                      <FileText className="w-4 h-4" />
+                      <span className="truncate max-w-xs">{file.name}</span>
+                    </div>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                      {(file.size / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  </div>
+                ) : (
+                  <>
+                    <p className="text-gray-700 dark:text-gray-200 font-medium">
+                      Drop your file here
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <div className="h-px flex-1 bg-gray-300 dark:bg-gray-600" />
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Or</span>
+                      <div className="h-px flex-1 bg-gray-300 dark:bg-gray-600" />
+                    </div>
+                  </>
+                )}
+
+                <label htmlFor={`file-${title}`}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                    disabled={disabled}
+                    onClick={() => document.getElementById(`file-${title}`)?.click()}
+                  >
+                    Browse Files
+                  </Button>
+                </label>
+                <Input
+                  id={`file-${title}`}
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                  className="hidden"
+                  onChange={onChange}
+                  disabled={disabled}
+                />
+
+                <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                  <p>Document Format: JPG, PNG, PDF & 15MB maximum size of the document allowed</p>
+                </div>
+              </div>
             </div>
-          ) : (
-            <div className="text-xs text-muted-foreground">No file chosen yet</div>
-          )}
-        </div>
+
+            <Card className="mt-4 bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700">
+              <CardContent className="pt-4">
+                <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
+                  Note:
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{note}</p>
+              </CardContent>
+            </Card>
+          </CardContent>
+        </Card>
       </div>
     );
   };
 
+  const DualUploadSection = (props: {
+    title: string;
+    description: string;
+    selectValue: string;
+    onSelectChange: (value: string) => void;
+    selectOptions: { value: string; label: string }[];
+    selectPlaceholder: string;
+    frontFile: File | null;
+    backFile: File | null;
+    onFrontChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    onBackChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    note: string;
+    disabled?: boolean;
+  }) => {
+    const {
+      title,
+      description,
+      selectValue,
+      onSelectChange,
+      selectOptions,
+      selectPlaceholder,
+      frontFile,
+      backFile,
+      onFrontChange,
+      onBackChange,
+      note,
+      disabled,
+    } = props;
+
+    return (
+      <div className="space-y-4">
+        <div>
+          <Label className="text-base font-semibold text-gray-700 dark:text-gray-200">
+            {title}
+          </Label>
+          <div className="mt-3">
+            <Select
+              value={selectValue}
+              onValueChange={onSelectChange}
+              disabled={disabled}
+            >
+              <SelectTrigger className="w-full max-w-xs bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
+                <SelectValue placeholder={selectPlaceholder} />
+              </SelectTrigger>
+              <SelectContent>
+                {selectOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          {/* Front Side */}
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                {description} - Front
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 bg-gray-50 dark:bg-gray-900/50">
+                <div className="flex flex-col items-center justify-center space-y-3">
+                  <div className="relative">
+                    <div className="w-12 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-blue-500 dark:text-blue-400" />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-400 dark:bg-blue-500 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-3 h-3 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {frontFile ? (
+                    <div className="w-full text-center">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
+                        {frontFile.name}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {(frontFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm text-gray-700 dark:text-gray-200 font-medium">
+                        Drop your file here
+                      </p>
+                      <div className="flex items-center gap-2 w-full">
+                        <div className="h-px flex-1 bg-gray-300 dark:bg-gray-600" />
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Or</span>
+                        <div className="h-px flex-1 bg-gray-300 dark:bg-gray-600" />
+                      </div>
+                    </>
+                  )}
+
+                  <label htmlFor={`file-front-${title}`}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                      disabled={disabled}
+                      onClick={() => document.getElementById(`file-front-${title}`)?.click()}
+                    >
+                      Browse Files
+                    </Button>
+                  </label>
+                  <Input
+                    id={`file-front-${title}`}
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                    className="hidden"
+                    onChange={onFrontChange}
+                    disabled={disabled}
+                  />
+
+                  <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                    <p className="text-left">Document Format: JPG, PNG, PDF & 15MB maximum</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Back Side */}
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                {description} - Back
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 bg-gray-50 dark:bg-gray-900/50">
+                <div className="flex flex-col items-center justify-center space-y-3">
+                  <div className="relative">
+                    <div className="w-12 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-blue-500 dark:text-blue-400" />
+                    </div>
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-400 dark:bg-blue-500 rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-3 h-3 text-white"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {backFile ? (
+                    <div className="w-full text-center">
+                      <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
+                        {backFile.name}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {(backFile.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm text-gray-700 dark:text-gray-200 font-medium">
+                        Drop your file here
+                      </p>
+                      <div className="flex items-center gap-2 w-full">
+                        <div className="h-px flex-1 bg-gray-300 dark:bg-gray-600" />
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Or</span>
+                        <div className="h-px flex-1 bg-gray-300 dark:bg-gray-600" />
+                      </div>
+                    </>
+                  )}
+
+                  <label htmlFor={`file-back-${title}`}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
+                      disabled={disabled}
+                      onClick={() => document.getElementById(`file-back-${title}`)?.click()}
+                    >
+                      Browse Files
+                    </Button>
+                  </label>
+                  <Input
+                    id={`file-back-${title}`}
+                    type="file"
+                    accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                    className="hidden"
+                    onChange={onBackChange}
+                    disabled={disabled}
+                  />
+
+                  <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400">
+                    <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
+                    <p className="text-left">Document Format: JPG, PNG, PDF & 15MB maximum</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700">
+          <CardContent className="pt-4">
+            <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">Note:</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">{note}</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  // Single switch to enforce "only one UI at a time"
+  const documentsSubmitted = Boolean(kycStatusData?.kyc.documents_submitted);
+  const showStatusUI = documentsSubmitted;      // AFTER submission -> show status
+  const showUploadUI = !documentsSubmitted;     // BEFORE submission -> show upload
+
   return (
     <MainLayout>
-    <Card className="overflow-hidden">
-      <div className="px-6 py-5 border-b bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
-        <div className="flex items-center justify-between">
-          <div>
-            <div className="flex items-center gap-2">
-              <CardTitle>KYC Verification</CardTitle>
-              <StatusPill />
-            </div>
-            <CardDescription className="mt-1">
-              Upload your documents for identity verification. Once submitted, an
-              admin will review your application.
-            </CardDescription>
-          </div>
-          <div className="hidden sm:block">
-            <Progress value={progress} className="h-2 w-48" />
-          </div>
-        </div>
-      </div>
-
-      <CardContent className="space-y-6 pt-6">
-        {phase === 'under_review' && (
-          <div className="rounded-md border p-4 border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-200">
-            <div className="flex items-start gap-2">
-              <AlertCircle className="h-5 w-5 text-amber-700 dark:text-amber-300 mt-0.5" />
-              <div className="space-y-1">
-                <p className="font-medium">Your KYC is under review</p>
-                <p className="text-sm text-amber-800 dark:text-amber-300">
-                  Thanks for submitting your documents. Please wait{' '}
-                  <span className="font-medium">1–2 days</span> for approval.
-                </p>
+      <div className="max-w-full mx-auto">
+        <Card className="overflow-hidden bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-3">
+                  <CardTitle className="text-xl">Document Upload for KYC</CardTitle>
+                  {showStatusUI && <StatusPill />}
+                </div>
+                <CardDescription className="mt-1.5">
+                  {showUploadUI
+                    ? 'Upload your documents for identity verification. Once submitted, an admin will review your application.'
+                    : 'Your KYC submission is being reviewed. Track the status of each document below.'}
+                </CardDescription>
+              </div>
+              <div className="hidden sm:block">
+                <Progress value={progress} className="h-2 w-48" />
               </div>
             </div>
           </div>
-        )}
 
-        {phase === 'approved' && (
-          <div className="rounded-md border p-4 border-emerald-200 bg-emerald-50 text-emerald-900 dark:border-emerald-900/40 dark:bg-emerald-950/30 dark:text-emerald-200">
-            <div className="flex items-start gap-2">
-              <CheckCircle2 className="h-5 w-5 text-emerald-700 dark:text-emerald-300 mt-0.5" />
-              <div className="space-y-1">
-                <p className="font-medium">KYC verified successfully</p>
-                <p className="text-sm text-emerald-800 dark:text-emerald-300">
-                  Your identity has been verified. You’re all set!
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
+          <CardContent className="space-y-8 pt-6">
+            {/* ======== STATUS UI (ONLY AFTER SUBMISSION) ======== */}
+            {showStatusUI && (
+              <>
+                <section className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">KYC Status</h3>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                        Keep track of the review progress for each document.
+                      </p>
+                    </div>
+                    {kycStatusData && (
+                      <Badge
+                        className={
+                          kycStatusData.kyc.status === 'approved'
+                            ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
+                            : kycStatusData.kyc.status === 'rejected'
+                            ? 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300'
+                            : 'bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-200'
+                        }
+                      >
+                        {kycStatusData.kyc.status.toUpperCase()}
+                      </Badge>
+                    )}
+                  </div>
 
-        {/* Upload Rows */}
-        <UploadRow
-          label="Government-issued ID (Front)"
-          hint="Passport, Driver’s License, or National ID (front side)"
-          file={poiFrontFile}
-          onChange={pick(setPoiFrontFile)}
-          onClear={() => setPoiFrontFile(null)}
-          disabled={phase !== 'draft'}
-        />
+                  {statusLoading ? (
+                    <div className="flex items-center justify-center py-6">
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Loading status…</span>
+                    </div>
+                  ) : (
+                    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      {renderDocumentStatus('POI (Front)', 'poi_front_file', kycStatusData?.documents.poi_front_file)}
+                      {renderDocumentStatus('POA (Front)', 'poa_front_file', kycStatusData?.documents.poa_front_file)}
+                      {renderDocumentStatus('POA (Back)', 'poa_back_file', kycStatusData?.documents.poa_back_file)}
+                      {renderDocumentStatus('Other Document', 'other_file', kycStatusData?.documents.other_file)}
+                    </div>
+                  )}
+                </section>
 
-        <UploadRow
-          label="Proof of Address (Front)"
-          hint="Utility bill / bank statement (front side)"
-          file={poaFrontFile}
-          onChange={pick(setPoaFrontFile)}
-          onClear={() => setPoaFrontFile(null)}
-          disabled={phase !== 'draft'}
-        />
+                {phase === 'under_review' && (
+                  <div className="rounded-lg border border-amber-200 dark:border-amber-900/40 p-4 bg-amber-50 dark:bg-amber-950/30">
+                    <div className="flex items-start gap-3">
+                      <AlertCircle className="h-5 w-5 text-amber-700 dark:text-amber-300 mt-0.5 flex-shrink-0" />
+                      <div className="space-y-1">
+                        <p className="font-semibold text-amber-900 dark:text-amber-200">
+                          Your KYC is under review
+                        </p>
+                        <p className="text-sm text-amber-800 dark:text-amber-300">
+                          Thanks for submitting your documents. Please wait{' '}
+                          <span className="font-medium">1–2 days</span> for approval.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
-        <UploadRow
-          label="Proof of Address (Back)"
-          hint="Back side of the same document if applicable"
-          file={poaBackFile}
-          onChange={pick(setPoaBackFile)}
-          onClear={() => setPoaBackFile(null)}
-          disabled={phase !== 'draft'}
-        />
+                {phase === 'approved' && (
+                  <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/40 p-4 bg-emerald-50 dark:bg-emerald-950/30">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-700 dark:text-emerald-300 mt-0.5 flex-shrink-0" />
+                      <div className="space-y-1">
+                        <p className="font-semibold text-emerald-900 dark:text-emerald-200">
+                          KYC verified successfully
+                        </p>
+                        <p className="text-sm text-emerald-800 dark:text-emerald-300">
+                          Your identity has been verified. You're all set!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
 
-        <UploadRow
-          label="Other Supporting Document"
-          hint="Any additional ID or verification proof"
-          file={otherFile}
-          onChange={pick(setOtherFile)}
-          onClear={() => setOtherFile(null)}
-          disabled={phase !== 'draft'}
-        />
+            {/* ======== UPLOAD UI (ONLY BEFORE SUBMISSION) ======== */}
+            {showUploadUI && (
+              <>
+                <UploadSection
+                  title="Proof of Identification (POI)"
+                  description={
+                    poiType
+                      ? (
+                          [
+                            { value: 'driving_licence', label: 'Driving Licence' },
+                            { value: 'passport', label: 'Passport' },
+                            { value: 'national_id', label: 'National ID Card' },
+                            { value: 'voter_id', label: 'Voter ID' },
+                          ].find((opt) => opt.value === poiType)?.label ?? 'Proof of Identification'
+                        )
+                      : 'Proof of Identification'
+                  }
+                  selectValue={poiType}
+                  onSelectChange={setPoiType}
+                  selectOptions={[
+                    { value: 'driving_licence', label: 'Driving Licence' },
+                    { value: 'passport', label: 'Passport' },
+                    { value: 'national_id', label: 'National ID Card' },
+                    { value: 'voter_id', label: 'Voter ID' },
+                  ]}
+                  selectPlaceholder="Select Option"
+                  file={poiFrontFile}
+                  onChange={pick(setPoiFrontFile)}
+                  note="Upload a clear colour copy of the front side of your identification document."
+                  disabled={phase !== 'draft'}
+                />
 
-        <div className="rounded-lg p-4 bg-muted/30">
-          <h4 className="mb-2 font-medium">Why we need these documents?</h4>
-          <p className="text-sm text-muted-foreground">
-            We require these documents to verify your identity and comply with
-            KYC regulations. Your information is securely stored and encrypted.
-          </p>
-        </div>
-      </CardContent>
+                <DualUploadSection
+                  title="Proof of Address (POA)"
+                  description={
+                    poaType
+                      ? (
+                          [
+                            { value: 'bank_statement', label: 'Bank Statement' },
+                            { value: 'utility_bill', label: 'Utility Bill' },
+                            { value: 'local_authority_bill', label: 'Local Authority Bill' },
+                            { value: 'official_document', label: 'Any other Official Document' },
+                          ].find((opt) => opt.value === poaType)?.label ?? 'Proof of Address Document'
+                        )
+                      : 'Proof of Address Document'
+                  }
+                  selectValue={poaType}
+                  onSelectChange={setPoaType}
+                  selectOptions={[
+                    { value: 'bank_statement', label: 'Bank Statement' },
+                    { value: 'utility_bill', label: 'Utility Bill' },
+                    { value: 'local_authority_bill', label: 'Local Authority Bill' },
+                    { value: 'official_document', label: 'Any other Official Document' },
+                  ]}
+                  selectPlaceholder="Select Option"
+                  frontFile={poaFrontFile}
+                  backFile={poaBackFile}
+                  onFrontChange={pick(setPoaFrontFile)}
+                  onBackChange={pick(setPoaBackFile)}
+                  note="Upload both sides of the document. Ensure the document is recent (last 3 months) and clearly legible."
+                  disabled={phase !== 'draft'}
+                />
 
-      <CardFooter className="flex justify-end gap-2 border-t px-6 py-4">
-        <Button onClick={submitKycDocuments} disabled={!canSubmit || uploading}>
-          {uploading ? (
-            <>
-              <Upload className="mr-2 h-4 w-4 animate-pulse" />
-              Uploading…
-            </>
-          ) : (
-            <>
-              <Upload className="mr-2 h-4 w-4" />
-              Submit for Review
-            </>
+                <UploadSection
+                  title="Other Documents"
+                  description={
+                    otherType
+                      ? (
+                          (
+                            [
+                              { value: 'tax_document', label: 'Tax Document' },
+                              { value: 'employment_letter', label: 'Employment Letter' },
+                              { value: 'additional_id', label: 'Additional ID' },
+                              { value: 'other', label: 'Other Supporting Document' },
+                            ].find(opt => opt.value === otherType)?.label
+                          ) || 'Other Supporting Document'
+                        )
+                      : "Other Documents"
+                  }
+                  selectValue={otherType}
+                  onSelectChange={setOtherType}
+                  selectOptions={[
+                    { value: 'tax_document', label: 'Tax Document' },
+                    { value: 'employment_letter', label: 'Employment Letter' },
+                    { value: 'additional_id', label: 'Additional ID' },
+                    { value: 'other', label: 'Other Supporting Document' },
+                  ]}
+                  selectPlaceholder="Select Option"
+                  file={otherFile}
+                  onChange={pick(setOtherFile)}
+                  note="Please note that the Maximum document upload size is 15 MB. This section is optional unless otherwise requested."
+                  disabled={phase !== 'draft'}
+                />
+              </>
+            )}
+          </CardContent>
+
+          {/* Footer: visible ONLY in upload flow */}
+          {showUploadUI && (
+            <CardFooter className="flex justify-end gap-3 border-t border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-900/30">
+              <Button
+                variant="outline"
+                onClick={resetAll}
+                disabled={phase !== 'draft' || uploading}
+                className="border-gray-300 dark:border-gray-600"
+              >
+                Reset All
+              </Button>
+              <Button
+                onClick={submitKycDocuments}
+                disabled={!canSubmit || uploading}
+                className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
+              >
+                {uploading ? (
+                  <>
+                    <Upload className="mr-2 h-4 w-4 animate-pulse" />
+                    Uploading…
+                  </>
+                ) : (
+                  <>
+                    <Upload className="mr-2 h-4 w-4" />
+                    Submit Documents
+                  </>
+                )}
+              </Button>
+            </CardFooter>
           )}
-        </Button>
-      </CardFooter>
-    </Card>
+        </Card>
+      </div>
     </MainLayout>
   );
 }

@@ -17,7 +17,7 @@ import { ThemeCustomizer } from "@/components/theme-customizer"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { authApi } from "@/lib/api"
+import { authApi, admin2FAApi, manager2FAApi } from "@/lib/api"
 import toast from "react-hot-toast"
 import { TwoFactorModal } from "@/components/two-factor-modal"
 
@@ -42,7 +42,18 @@ export function Header() {
     setIsLoading2FAStatus(true);
     
     try {
-      const response = await authApi.getTwoFactorStatus(Number(user.id), token);
+      // Use appropriate API based on user type
+      const isAdmin = user.type === 'admin';
+      const isManager = user.type === 'manager';
+      let response;
+      
+      if (isAdmin) {
+        response = await admin2FAApi.getTwoFactorStatus(user.id, token);
+      } else if (isManager) {
+        response = await manager2FAApi.getTwoFactorStatus(user.id, token);
+      } else {
+        response = await authApi.getTwoFactorStatus(Number(user.id), token);
+      }
       
       if (response.success && response.data) {
         setIs2FAEnabled(response.data.google_2FA_status);
@@ -162,7 +173,9 @@ export function Header() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => router.push('/profile/view_profile')}>
+                Profile
+              </DropdownMenuItem>
               <DropdownMenuItem>Settings</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>

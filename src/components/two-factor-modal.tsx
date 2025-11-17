@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertCircle, ShieldCheck, ShieldX } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
-import { authApi } from '@/lib/api';
+import { authApi, admin2FAApi, manager2FAApi } from '@/lib/api';
 import toast from 'react-hot-toast';
 
 // Custom Alert component since it doesn't exist in the project
@@ -97,7 +97,18 @@ export function TwoFactorModal({
     setError('');
     
     try {
-      const response = await authApi.setupTwoFactor(Number(user.id), token);
+      // Use appropriate API based on user type
+      const isAdmin = user.type === 'admin';
+      const isManager = user.type === 'manager';
+      let response;
+      
+      if (isAdmin) {
+        response = await admin2FAApi.setupTwoFactor(user.id, token);
+      } else if (isManager) {
+        response = await manager2FAApi.setupTwoFactor(user.id, token);
+      } else {
+        response = await authApi.setupTwoFactor(Number(user.id), token);
+      }
       
       if (response.success && response.data) {
         setSetupData({
@@ -124,13 +135,36 @@ export function TwoFactorModal({
     setError('');
     
     try {
-      const response = await authApi.verifyAndEnableTwoFactor(
-        {
-          user_id: Number(user.id),
-          token: verificationCode
-        },
-        token
-      );
+      // Use appropriate API based on user type
+      const isAdmin = user.type === 'admin';
+      const isManager = user.type === 'manager';
+      let response;
+      
+      if (isAdmin) {
+        response = await admin2FAApi.verifyAndEnableTwoFactor(
+          {
+            admin_id: user.id,
+            token: verificationCode
+          },
+          token
+        );
+      } else if (isManager) {
+        response = await manager2FAApi.verifyAndEnableTwoFactor(
+          {
+            manager_id: user.id,
+            token: verificationCode
+          },
+          token
+        );
+      } else {
+        response = await authApi.verifyAndEnableTwoFactor(
+          {
+            user_id: Number(user.id),
+            token: verificationCode
+          },
+          token
+        );
+      }
       
       if (response.success) {
         toast.success('2FA enabled successfully');
@@ -154,7 +188,18 @@ export function TwoFactorModal({
     setError('');
     
     try {
-      const response = await authApi.disableTwoFactor(Number(user.id), token);
+      // Use appropriate API based on user type
+      const isAdmin = user.type === 'admin';
+      const isManager = user.type === 'manager';
+      let response;
+      
+      if (isAdmin) {
+        response = await admin2FAApi.disableTwoFactor(user.id, token);
+      } else if (isManager) {
+        response = await manager2FAApi.disableTwoFactor(user.id, token);
+      } else {
+        response = await authApi.disableTwoFactor(Number(user.id), token);
+      }
       
       if (response.success) {
         toast.success('2FA disabled successfully');

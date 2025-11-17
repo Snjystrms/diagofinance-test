@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Eye, EyeOff } from "lucide-react";
 
 export type ManagerRow = {
   id: string;
@@ -69,6 +70,9 @@ export function ManagerForm({
     permissions: [],
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+
   // Ensure permissions are fetched on open (edit only)
   useEffect(() => {
     if (open && isEdit && (!allPermissions?.length || !groupedPermissions?.length)) {
@@ -98,6 +102,9 @@ export function ManagerForm({
         permissions: [],
       });
     }
+    // Reset password visibility when dialog opens/closes
+    setShowPassword(false);
+    setShowNewPassword(false);
   }, [isEdit, initialData, open]);
 
   const togglePermission = (pid: number, checked: boolean) => {
@@ -192,28 +199,63 @@ export function ManagerForm({
             {!isEdit && (
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={form.password}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  placeholder="SecurePass123!"
-                  required
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={form.password}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    placeholder="SecurePass123!"
+                    required
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
               </div>
             )}
 
             {isEdit && (
               <div className="space-y-2">
                 <Label htmlFor="new-password">New Password</Label>
-                <Input
-                  id="new-password"
-                  type="password"
-                  value={form.password ?? ""}
-                  onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  placeholder="Leave blank to keep current password"
-                  disabled={readOnly}
-                />
+                <div className="relative">
+                  <Input
+                    id="new-password"
+                    type={showNewPassword ? "text" : "password"}
+                    value={form.password ?? ""}
+                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    placeholder="Leave blank to keep current password"
+                    disabled={readOnly}
+                    className="pr-10"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    aria-label={showNewPassword ? "Hide password" : "Show password"}
+                    disabled={readOnly}
+                  >
+                    {showNewPassword ? (
+                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                    )}
+                  </Button>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   Leave blank to keep the existing password.
                 </p>
