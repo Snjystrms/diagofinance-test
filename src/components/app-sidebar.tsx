@@ -142,8 +142,12 @@ const adminNavData = [
     items: [
       {
         title: "All IB",
-        url: "/ib-management",
-      }
+        url: "/all-ib",
+      },
+      {
+        title: "IB Plans",
+        url: "/ib-plans",
+      },
     ],
   },
     {
@@ -313,16 +317,16 @@ const userNavData = [
   },
   {
     title: "My wallet",
-    url: "/my_wallet",
+    url: "/my-wallet",
     icon: DollarSign,
     items: [
       {
         title: "Wallet Overview",
-        url: "/my_wallet/wallet_overview",
+        url: "/my-wallet/wallet-overview",
       },
       {
         title: "Transactions History",
-        url: "/my_wallet/transactions_history",
+        url: "/my-wallet/transactions-history",
       },
     ],
   },

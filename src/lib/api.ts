@@ -809,6 +809,156 @@ export const adminManagersApi = {
     }),
 };
 
+// ---------- Admin Commission Plans APIs ----------
+export interface CommissionPlanRule {
+  id: number;
+  plan_id: number;
+  asset_group: string;
+  asset_group_label: string;
+  level: number;
+  rate_ib: string;
+  rate_sub_ib_1: string;
+  rate_sub_ib_2: string;
+  rate_sub_ib_3: string;
+  rate_sub_ib_4: string;
+  rate_sub_ib_5: string;
+  account_type_filter?: string | null;
+  symbol_filter?: string | null;
+  status: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CommissionPlan {
+  id: number;
+  uuid: string;
+  name: string;
+  description?: string | null;
+  status: string;
+  created_at?: string;
+  updated_at?: string;
+  rules?: CommissionPlanRule[];
+}
+
+export interface CommissionPlanPagination {
+  total_records?: number;
+  current_page?: number;
+  per_page?: number;
+  total_pages?: number;
+}
+
+export interface CommissionPlanListResponseData {
+  plans: CommissionPlan[];
+  pagination?: CommissionPlanPagination;
+}
+
+export type CommissionPlanRuleInput = {
+  asset_group: string;
+  asset_group_label?: string;
+  level: number;
+  rate_ib: number | string;
+  rate_sub_ib_1?: number | string;
+  rate_sub_ib_2?: number | string;
+  rate_sub_ib_3?: number | string;
+  rate_sub_ib_4?: number | string;
+  rate_sub_ib_5?: number | string;
+  account_type_filter?: string | null;
+  symbol_filter?: string | null;
+  status?: string;
+};
+
+export type CommissionPlanUpsertBody = {
+  name: string;
+  description?: string | null;
+  status?: string;
+  rules?: CommissionPlanRuleInput[];
+};
+
+export type CommissionPlanListParams = {
+  token: string;
+  page?: number;
+  limit?: number;
+  includeRules?: boolean;
+  status?: string;
+  search?: string;
+};
+
+export const adminCommissionPlansApi = {
+  list: ({
+    token,
+    page = 1,
+    limit = 20,
+    includeRules = true,
+    status,
+    search,
+  }: CommissionPlanListParams) => {
+    if (!token) {
+      throw new Error("Token is required to fetch commission plans");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("page", String(page));
+    qs.set("limit", String(limit));
+    qs.set("include_rules", includeRules ? "true" : "false");
+    if (status && status.trim()) {
+      qs.set("status", status.trim());
+    }
+    if (search && search.trim()) {
+      qs.set("search", search.trim());
+    }
+
+    const endpoint = `/admin/commission/plans${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<CommissionPlanListResponseData>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  create: (body: CommissionPlanUpsertBody, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to create a commission plan");
+    }
+
+    return apiCall<CommissionPlan>(`/admin/commission/plans`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
+    });
+  },
+
+  update: (planId: number | string, body: CommissionPlanUpsertBody, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to update a commission plan");
+    }
+
+    if (planId === undefined || planId === null || `${planId}` === "") {
+      throw new Error("A valid plan identifier is required to update a commission plan");
+    }
+
+    return apiCall<CommissionPlan>(`/admin/commission/plans/${planId}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
+    });
+  },
+
+  delete: (planId: number | string, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to delete a commission plan");
+    }
+
+    if (planId === undefined || planId === null || `${planId}` === "") {
+      throw new Error("A valid plan identifier is required to delete a commission plan");
+    }
+
+    return apiCall(`/admin/commission/plans/${planId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
+
 // ---------- Permissions APIs ----------
 export const permissionsApi = {
   listAll: (token: string) =>
@@ -1133,6 +1283,89 @@ export interface MT5AccountsResponse {
   data: MT5Account[];
 }
 
+// ---------- Admin MT5 Account Types ----------
+export interface AdminMT5Account {
+  id?: number | string;
+  mt5_id?: string | number;
+  account_id?: string | number;
+  user_id?: number | string;
+  group_id?: number | string;
+  manager_id?: number | string;
+  name?: string;
+  email?: string;
+  mobile?: string;
+  account_type?: string;
+  status?: number | string;
+  balance?: string | number;
+  equity?: string | number;
+  margin?: string | number;
+  free_margin?: string | number;
+  leverage?: string | number;
+  currency?: string;
+  created_at?: string;
+  updated_at?: string;
+  user?: {
+    id?: number | string;
+    name?: string;
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    mobile?: string;
+  };
+  [key: string]: any;
+}
+
+export interface AdminMT5AccountsListParams {
+  token: string;
+  page?: number;
+  limit?: number;
+  search?: string;
+  status?: string | number;
+  user_id?: string | number;
+  group_id?: string | number;
+  manager_id?: string | number;
+}
+
+export interface UpdateMT5AccountRequest {
+  name?: string;
+  email?: string;
+  mobile?: string;
+  leverage?: number;
+  status?: number;
+  self_wallet?: number | string;
+  mt5_id?: string;
+}
+
+export interface CreateMT5AccountRequest {
+  account_type_id: number;
+  account_mode: "demo" | "live";
+  leverage_temp: number;
+  currency: string;
+  swap_free: boolean;
+  password: string;
+  confirm_password: string;
+  user_id: number;
+}
+
+export interface AdminMT5AccountsListResponse {
+  data?: AdminMT5Account[] | {
+    accounts?: AdminMT5Account[];
+    items?: AdminMT5Account[];
+    data?: AdminMT5Account[];
+    mt5_accounts?: AdminMT5Account[];
+    pagination?: PaginationMeta;
+  };
+  accounts?: AdminMT5Account[];
+  items?: AdminMT5Account[];
+  mt5_accounts?: AdminMT5Account[];
+  pagination?: PaginationMeta;
+  meta?: {
+    pagination?: PaginationMeta;
+  };
+  total?: number;
+  [key: string]: any;
+}
+
 // ---------- MT5 Accounts APIs ----------
 export const mt5AccountsApi = {
   getAll: (token: string) =>
@@ -1140,6 +1373,113 @@ export const mt5AccountsApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),
+};
+
+// ---------- Admin MT5 Accounts APIs ----------
+export const adminMT5AccountsApi = {
+  list: ({
+    token,
+    page = 1,
+    limit = 10,
+    search,
+    status,
+    user_id,
+    group_id,
+    manager_id,
+  }: AdminMT5AccountsListParams) => {
+    if (!token) {
+      throw new Error("Token is required to fetch MT5 accounts");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("page", String(page));
+    qs.set("limit", String(limit));
+
+    if (search && search.trim()) {
+      qs.set("search", search.trim());
+    }
+
+    if (status !== undefined && status !== null && `${status}` !== "") {
+      qs.set("status", String(status));
+    }
+
+    if (user_id !== undefined && user_id !== null && `${user_id}` !== "") {
+      qs.set("user_id", String(user_id));
+    }
+
+    if (group_id !== undefined && group_id !== null && `${group_id}` !== "") {
+      qs.set("group_id", String(group_id));
+    }
+
+    if (manager_id !== undefined && manager_id !== null && `${manager_id}` !== "") {
+      qs.set("manager_id", String(manager_id));
+    }
+
+    const endpoint = `/admin/mt5-accounts${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<AdminMT5AccountsListResponse>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  getById: (id: string | number, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to fetch MT5 account");
+    }
+
+    return apiCall<{ data?: AdminMT5Account; account?: AdminMT5Account }>(
+      `/admin/mt5-accounts/${id}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+  },
+
+  update: (id: string | number, data: UpdateMT5AccountRequest, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to update MT5 account");
+    }
+
+    return apiCall<{ data?: AdminMT5Account; account?: AdminMT5Account }>(
+      `/admin/mt5-accounts/${id}`,
+      {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+      }
+    );
+  },
+
+  delete: (id: string | number, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to delete MT5 account");
+    }
+
+    return apiCall<{ success: boolean; message: string }>(
+      `/admin/mt5-accounts/${id}`,
+      {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+  },
+
+  create: (data: CreateMT5AccountRequest, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to create MT5 account");
+    }
+
+    return apiCall<{ data?: AdminMT5Account; account?: AdminMT5Account }>(
+      `/admin/mt5-accounts`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+      }
+    );
+  },
 };
 
 // ---------- Internal Transfer APIs ----------
@@ -1170,6 +1510,104 @@ export interface Mt5ToWalletTransferRequest {
   amount: number;
   remarks?: string;
 }
+
+// Wallet Summary Types
+export interface WalletSummaryWallet {
+  id: number;
+  address: string;
+  balance: number;
+  currency: string;
+  status: string;
+  is_primary: boolean;
+}
+
+export interface WalletSummaryTransaction {
+  id: number;
+  wallet_type: string;
+  type: string;
+  amount: string;
+  description: string;
+  created_at: string;
+}
+
+export interface WalletSummaryData {
+  total_balance: number;
+  wallets: {
+    [key: string]: WalletSummaryWallet;
+  };
+  recent_transactions: WalletSummaryTransaction[];
+}
+
+export interface WalletSummaryResponse {
+  success: boolean;
+  message: string;
+  data: WalletSummaryData;
+}
+
+// Transaction History Types
+export interface Transaction {
+  id: number;
+  external_id: string;
+  type: string;
+  amount: number;
+  currency: string;
+  status: string;
+  status_label: string;
+  reference: string | null;
+  payment_method: string | null;
+  description: string;
+  direction: "credit" | "debit";
+  transfer_mode: string | null;
+  transfer_type: string | null;
+  from_account: string | null;
+  to_account: string | null;
+  created_at: string;
+  source_table: string;
+}
+
+export interface TransactionsData {
+  transactions: Transaction[];
+  pagination: PaginationMeta;
+}
+
+export interface TransactionsResponse {
+  success: boolean;
+  message: string;
+  data: TransactionsData;
+}
+
+export const walletApi = {
+  getSummary: (token: string) =>
+    apiCall<WalletSummaryData>(`/user/wallet/summary`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  getTransactions: (
+    token: string,
+    params?: {
+      page?: number;
+      per_page?: number;
+      transaction_type?: string;
+      wallet_type?: string;
+      limit?: number;
+    }
+  ) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", String(params.page));
+    if (params?.per_page) queryParams.append("per_page", String(params.per_page));
+    if (params?.transaction_type) queryParams.append("transaction_type", params.transaction_type);
+    if (params?.wallet_type) queryParams.append("wallet_type", params.wallet_type);
+    if (params?.limit) queryParams.append("limit", String(params.limit));
+
+    const queryString = queryParams.toString();
+    const url = `/user/transactions${queryString ? `?${queryString}` : ""}`;
+
+    return apiCall<TransactionsData>(url, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
 
 export const internalTransferApi = {
   mt5ToMt5: (data: Mt5ToMt5TransferRequest, token: string) =>
