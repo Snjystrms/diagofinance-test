@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { MainLayout } from "@/components/main-layout";
 import { useAuth } from "@/contexts/auth-context";
-import { withdrawalApi, type WithdrawalResponse } from "@/lib/api";
+import { withdrawalApi, walletApi, type WithdrawalResponse, type WalletSummaryData } from "@/lib/api";
 import {
   Wallet,
   DollarSign,
@@ -18,8 +18,11 @@ import {
   Network,
   Copy,
   ShieldCheck,
-  ExternalLink
+  ExternalLink,
+  RefreshCw,
+  TrendingDown
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -47,9 +50,53 @@ function WithdrawalRequestContent() {
   const [success, setSuccess] = useState(false);
   const [withdrawalData, setWithdrawalData] = useState<any>(null);
   const [copied, setCopied] = useState(false);
+  const [walletData, setWalletData] = useState<WalletSummaryData | null>(null);
+  const [walletLoading, setWalletLoading] = useState(true);
 
   const selectedChain = CHAIN_OPTIONS.find(chain => chain.value === chainId);
   const minimumAmount = 10.00;
+
+  // Fetch wallet balance
+  const fetchWalletSummary = async () => {
+    if (!token) {
+      setWalletLoading(false);
+      return;
+    }
+
+    try {
+      setWalletLoading(true);
+      const response = await walletApi.getSummary(token);
+      
+      if (response.success && response.data) {
+        setWalletData(response.data);
+      }
+    } catch (err) {
+      console.error('Error fetching wallet summary:', err);
+    } finally {
+      setWalletLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWalletSummary();
+  }, [token]);
+
+  // Calculate remaining balance
+  const totalBalance = walletData?.total_balance || 0;
+  const withdrawalAmount = parseFloat(amount) || 0;
+  const remainingBalance = totalBalance - withdrawalAmount;
+  const wallets = walletData ? Object.values(walletData.wallets) : [];
+  const mainWallet = wallets.find(w => w.is_primary) || wallets[0];
+  const currency = mainWallet?.currency || 'USDT';
+
+  const formatAmount = (amount: string | number) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
+    if (isNaN(numAmount)) return '0.00';
+    return numAmount.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 8
+    });
+  };
 
   const handleCopyAddress = async () => {
     if (walletAddress) {
@@ -108,6 +155,12 @@ function WithdrawalRequestContent() {
       return;
     }
 
+    // Validate sufficient balance
+    if (amountNum > totalBalance) {
+      setError(`Insufficient balance. Available: ${formatAmount(totalBalance)} ${currency}`);
+      return;
+    }
+
     // Validate wallet address
     if (!walletAddress.trim()) {
       setError("Wallet address is required");
@@ -144,6 +197,9 @@ function WithdrawalRequestContent() {
       setWithdrawalData(response.data);
       setSuccess(true);
       setIsSubmitting(false);
+      
+      // Refresh wallet balance after successful withdrawal
+      fetchWalletSummary();
       
       // Reset form after successful submission
       setTimeout(() => {
@@ -186,7 +242,87 @@ function WithdrawalRequestContent() {
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-4xl mx-auto space-y-6">
+          {/* Wallet Balance Card */}
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
+            <CardContent className="p-6">
+              {walletLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-6 w-32" />
+                  <Skeleton className="h-10 w-48" />
+                  <Skeleton className="h-4 w-64" />
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                        <Wallet className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-muted-foreground">Available Balance</p>
+                        <div className="flex items-baseline gap-2 mt-1">
+                          <span className="text-3xl font-bold text-foreground">
+                            {formatAmount(totalBalance)}
+                          </span>
+                          <span className="text-lg font-semibold text-muted-foreground">
+                            {currency}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={fetchWalletSummary}
+                      disabled={walletLoading}
+                      className="h-8 w-8 p-0"
+                    >
+                      <RefreshCw className={`h-4 w-4 ${walletLoading ? 'animate-spin' : ''}`} />
+                    </Button>
+                  </div>
+                  
+                  {amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 && (
+                    <div className="pt-4 border-t border-border/50">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium text-muted-foreground">Remaining Balance</span>
+                        </div>
+                        <div className="flex items-baseline gap-2">
+                          <span className={`text-2xl font-bold ${
+                            remainingBalance < 0 
+                              ? 'text-destructive' 
+                              : remainingBalance < minimumAmount 
+                                ? 'text-warning' 
+                                : 'text-emerald-600 dark:text-emerald-400'
+                          }`}>
+                            {formatAmount(remainingBalance)}
+                          </span>
+                          <span className="text-sm font-semibold text-muted-foreground">
+                            {currency}
+                          </span>
+                        </div>
+                      </div>
+                      {remainingBalance < 0 && (
+                        <p className="text-xs text-destructive mt-2 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          Insufficient balance for this withdrawal
+                        </p>
+                      )}
+                      {remainingBalance >= 0 && remainingBalance < minimumAmount && (
+                        <p className="text-xs text-warning mt-2 flex items-center gap-1">
+                          <AlertCircle className="h-3 w-3" />
+                          Remaining balance will be below minimum withdrawal amount
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card className="border-0 shadow-xl bg-card/70 backdrop-blur-sm">
             {/* <CardHeader className="text-center pb-6">
               <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">

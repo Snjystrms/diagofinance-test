@@ -197,10 +197,14 @@ export function AppSidebarV2({ ...props }: React.ComponentProps<typeof Sidebar>)
         <SidebarHeader>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton size="lg" asChild className="md:h-8 md:p-0">
-                <Link href="/dashboard">
-                  <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                    <Command className="size-4" />
+              <SidebarMenuButton 
+                size="lg" 
+                asChild 
+                className={`md:h-12 md:p-0 ${isCollapsed ? 'justify-center' : 'justify-start'}`}
+              >
+                <Link href="/dashboard" className={`flex items-center w-full ${isCollapsed ? 'justify-center' : 'gap-3'}`}>
+                  <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-10 items-center justify-center rounded-lg shrink-0 mx-auto">
+                    <Command className="size-5" />
                   </div>
                   {!isCollapsed && (
                     <div className="grid flex-1 text-left text-sm leading-tight animate-in fade-in-0 slide-in-from-left-2 duration-500">
@@ -215,7 +219,7 @@ export function AppSidebarV2({ ...props }: React.ComponentProps<typeof Sidebar>)
         </SidebarHeader>
         <SidebarContent>
           <SidebarGroup>
-            <SidebarGroupContent className="px-1.5 md:px-0">
+            <SidebarGroupContent className={isCollapsed ? "px-0" : "px-2 md:px-2"}>
               <SidebarMenu>
                 {isAccountInactive ? (
                   <div className="p-4 text-center">
@@ -243,17 +247,18 @@ export function AppSidebarV2({ ...props }: React.ComponentProps<typeof Sidebar>)
                             }
                           }}
                           isActive={activeItem === item.title}
-                          className="px-2.5 md:px-2"
+                          className={`${isCollapsed ? 'justify-center px-0' : 'px-3 gap-3'}`}
+                          size="lg"
                           asChild={!hasSubItems}
                         >
                           {hasSubItems ? (
                             <>
-                              {item.icon && <item.icon className="transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />}
+                              {item.icon && <item.icon className="size-5 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />}
                               {!isCollapsed && <span className="animate-in fade-in-0 slide-in-from-left-2 duration-500">{item.title}</span>}
                             </>
                           ) : (
                             <Link href={item.url}>
-                              {item.icon && <item.icon className="transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />}
+                              {item.icon && <item.icon className="size-5 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />}
                               {!isCollapsed && <span className="animate-in fade-in-0 slide-in-from-left-2 duration-500">{item.title}</span>}
                             </Link>
                           )}

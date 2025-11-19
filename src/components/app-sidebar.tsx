@@ -102,17 +102,17 @@ export const adminNavData = [
       },
     ],
   },
-  {
-    title: "Bonus Management",
-    url: "/bonus-management",
-    icon: Gift,
-    items: [
-      {
-        title: "Bonus",
-        url: "/bonus-management",
-      }
-    ],
-  },
+  // {
+  //   title: "Bonus Management",
+  //   url: "/bonus-management",
+  //   icon: Gift,
+  //   items: [
+  //     {
+  //       title: "Bonus",
+  //       url: "/bonus-management",
+  //     }
+  //   ],
+  // },
   {
     title: "Manager Management",
     url: "/manager",
@@ -124,17 +124,17 @@ export const adminNavData = [
       }
     ],
   },
-  {
-    title: "E-Mail Management",
-    url: "/email-management",
-    icon: Mail,
-    items: [
-      {
-        title: "E-Mail Management",
-        url: "/email-management",
-      },
-    ],
-  },
+  // {
+  //   title: "E-Mail Management",
+  //   url: "/email-management",
+  //   icon: Mail,
+  //   items: [
+  //     {
+  //       title: "E-Mail Management",
+  //       url: "/email-management",
+  //     },
+  //   ],
+  // },
   {
     title: "IB Management",
     url: "/ib-management",
@@ -180,121 +180,121 @@ export const adminNavData = [
       },
     ],
   },
-  {
-    title: "Support & Tickets",
-    url: "/support",
-    icon: LifeBuoy,
-    items: [
-      {
-        title: "All Tickets",
-        url: "/all-tickets",
-      },
-      {
-        title: "Ticket Management",
-        url: "/ticket-management",
-      },
-      {
-        title: "Support Analytics",
-        url: "/support-analytics",
-      },
-    ],
-  },
-  {
-    title: "System Settings",
-    url: "/settings",
-    icon: Cog,
-    items: [
-      {
-        title: "General Settings",
-        url: "/settings",
-      },
-      {
-        title: "Security Settings",
-        url: "/security-settings",
-      },
-      {
-        title: "System Configuration",
-        url: "/system-config",
-      },
-    ],
-  },
-  {
-    title: "Marketing Management",
-    url: "/marketing-management",
-    icon: TrendingUp,
-    items: [
-      {
-        title: "Marketing Management",
-        url: "/marketing-management",
-      },
-    ],
-  },
-  {
-    title: "News Management",
-    url: "/news-management",
-    icon: FileText,
-    items: [
-      {
-        title: "News Management",
-        url: "/news-management",
-      },
-    ],
-  },
-  {
-    title: "Notification Management",
-    url: "/notification-management",
-    icon: Bell,
-    items: [
-      {
-        title: "Notification Management",
-        url: "/notification-management",
-      },
-    ],
-  },
-  {
-    title: "Report Management",
-    url: "/report-management",
-    icon: BarChart3,
-    items: [
-      {
-        title: "Report Management",
-        url: "/report-management",
-      },
-    ],
-  },
-  {
-    title: "Reward Management",
-    url: "/reward-management",
-    icon: Trophy,
-    items: [
-      {
-        title: "Reward Management",
-        url: "/reward-management",
-      },
-    ],
-  },
-  {
-    title: "Settings Management",
-    url: "/settings-management",
-    icon: Settings2,
-    items: [
-      {
-        title: "Settings Management",
-        url: "/settings-management",
-      },
-    ],
-  },
-  {
-    title: "Ticket Management",
-    url: "/ticket-management",
-    icon: Ticket,
-    items: [
-      {
-        title: "Ticket Management",
-        url: "/ticket-management",
-      },
-    ],
-  },
+  // {
+  //   title: "Support & Tickets",
+  //   url: "/support",
+  //   icon: LifeBuoy,
+  //   items: [
+  //     {
+  //       title: "All Tickets",
+  //       url: "/all-tickets",
+  //     },
+  //     {
+  //       title: "Ticket Management",
+  //       url: "/ticket-management",
+  //     },
+  //     {
+  //       title: "Support Analytics",
+  //       url: "/support-analytics",
+  //     },
+  //   ],
+  // },
+  // {
+  //   title: "System Settings",
+  //   url: "/settings",
+  //   icon: Cog,
+  //   items: [
+  //     {
+  //       title: "General Settings",
+  //       url: "/settings",
+  //     },
+  //     {
+  //       title: "Security Settings",
+  //       url: "/security-settings",
+  //     },
+  //     {
+  //       title: "System Configuration",
+  //       url: "/system-config",
+  //     },
+  //   ],
+  // },
+  // {
+  //   title: "Marketing Management",
+  //   url: "/marketing-management",
+  //   icon: TrendingUp,
+  //   items: [
+  //     {
+  //       title: "Marketing Management",
+  //       url: "/marketing-management",
+  //     },
+  //   ],
+  // },
+  // {
+  //   title: "News Management",
+  //   url: "/news-management",
+  //   icon: FileText,
+  //   items: [
+  //     {
+  //       title: "News Management",
+  //       url: "/news-management",
+  //     },
+  //   ],
+  // },
+  // {
+  //   title: "Notification Management",
+  //   url: "/notification-management",
+  //   icon: Bell,
+  //   items: [
+  //     {
+  //       title: "Notification Management",
+  //       url: "/notification-management",
+  //     },
+  //   ],
+  // },
+  // {
+  //   title: "Report Management",
+  //   url: "/report-management",
+  //   icon: BarChart3,
+  //   items: [
+  //     {
+  //       title: "Report Management",
+  //       url: "/report-management",
+  //     },
+  //   ],
+  // },
+  // {
+  //   title: "Reward Management",
+  //   url: "/reward-management",
+  //   icon: Trophy,
+  //   items: [
+  //     {
+  //       title: "Reward Management",
+  //       url: "/reward-management",
+  //     },
+  //   ],
+  // },
+  // {
+  //   title: "Settings Management",
+  //   url: "/settings-management",
+  //   icon: Settings2,
+  //   items: [
+  //     {
+  //       title: "Settings Management",
+  //       url: "/settings-management",
+  //     },
+  //   ],
+  // },
+  // {
+  //   title: "Ticket Management",
+  //   url: "/ticket-management",
+  //   icon: Ticket,
+  //   items: [
+  //     {
+  //       title: "Ticket Management",
+  //       url: "/ticket-management",
+  //     },
+  //   ],
+  // },
 ]
 
 // User Navigation Data
