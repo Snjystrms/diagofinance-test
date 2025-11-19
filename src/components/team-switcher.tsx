@@ -28,7 +28,8 @@ export function TeamSwitcher({
     plan: string
   }[]
 }) {
-  const { isMobile } = useSidebar()
+  const { isMobile, state } = useSidebar()
+  const isCollapsed = state === "collapsed"
   const [activeTeam, setActiveTeam] = React.useState(teams[0])
 
   if (!activeTeam) {
@@ -44,14 +45,18 @@ export function TeamSwitcher({
               size="sm"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-6 items-center justify-center rounded-lg">
-                <activeTeam.logo className="size-3" />
+              <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-6 items-center justify-center rounded-lg transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]">
+                <activeTeam.logo className="size-3 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />
               </div>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{activeTeam.name}</span>
-                <span className="truncate text-xs">{activeTeam.plan}</span>
-              </div>
-              <ChevronsUpDown className="ml-auto size-3" />
+              {!isCollapsed && (
+                <>
+                  <div className="grid flex-1 text-left text-sm leading-tight animate-in fade-in-0 slide-in-from-left-2 duration-500">
+                    <span className="truncate font-medium">{activeTeam.name}</span>
+                    <span className="truncate text-xs">{activeTeam.plan}</span>
+                  </div>
+                  <ChevronsUpDown className="ml-auto size-3 transition-opacity duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />
+                </>
+              )}
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent

@@ -1638,3 +1638,97 @@ export const internalTransferApi = {
       body: JSON.stringify(data),
     }),
 };
+
+// ---------- Withdrawal Types ----------
+export interface WithdrawalRequest {
+  amount: string;
+  wallet_address: string;
+  chain_id: string;
+}
+
+export interface WithdrawalItem {
+  id: number;
+  user_id: number;
+  amount: number;
+  status: "pending" | "approved" | "rejected" | "processing" | "completed";
+  wallet_address: string;
+  chain_id: string;
+  transaction_hash: string | null;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface WithdrawalResponse {
+  success: boolean;
+  message: string;
+  data: WithdrawalItem;
+}
+
+export interface WithdrawalsResponse {
+  success: boolean;
+  data: {
+    withdrawals: WithdrawalItem[];
+    pagination?: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages: number;
+    };
+  };
+}
+
+// ---------- Withdrawal APIs ----------
+export const withdrawalApi = {
+  create: (data: WithdrawalRequest, token: string) =>
+    apiCall<WithdrawalItem>(`/user/withdrawals`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(data),
+    }),
+
+  getUserWithdrawals: (
+    page: number = 1,
+    limit: number = 10,
+    token: string
+  ): Promise<WithdrawalsResponse> => {
+    return apiCall<any>(`/user/withdrawals?page=${page}&limit=${limit}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }).then((response) => {
+      // Handle different response structures
+      let withdrawals: WithdrawalItem[] = [];
+      let pagination = undefined;
+
+      if (response.success && response.data) {
+        // Case 1: Data is an object with withdrawals array
+        if (Array.isArray(response.data.withdrawals)) {
+          withdrawals = response.data.withdrawals;
+          pagination = response.data.pagination;
+        }
+        // Case 2: Data is directly an array
+        else if (Array.isArray(response.data)) {
+          withdrawals = response.data;
+        }
+        // Case 3: Data is an object, check if it has a withdrawals property
+        else if (response.data.withdrawals) {
+          withdrawals = Array.isArray(response.data.withdrawals)
+            ? response.data.withdrawals
+            : [];
+          pagination = response.data.pagination;
+        }
+      } else if (!response.success) {
+        console.error("API returned unsuccessful response:", response);
+        throw new Error(response.message || "Failed to fetch withdrawals");
+      }
+
+      // Ensure we return the correct structure
+      return {
+        success: response.success || true,
+        data: {
+          withdrawals: withdrawals,
+          pagination: pagination,
+        },
+      } as WithdrawalsResponse;
+    });
+  },
+};

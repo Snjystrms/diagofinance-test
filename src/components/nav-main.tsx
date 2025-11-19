@@ -18,6 +18,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar,
 } from "@/components/ui/sidebar"
 
 export function NavMain({
@@ -35,6 +36,8 @@ export function NavMain({
   }[]
 }) {
   const pathname = usePathname()
+  const { state } = useSidebar()
+  const isCollapsed = state === "collapsed"
 
   return (
     <SidebarGroup>
@@ -61,20 +64,22 @@ export function NavMain({
                   >
                     {hasSubItems ? (
                       <>
-                        {item.icon && <item.icon />}
-                        <span>{item.title}</span>
-                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                        {item.icon && <item.icon className="transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />}
+                        {!isCollapsed && <span className="animate-in fade-in-0 slide-in-from-left-2 duration-500">{item.title}</span>}
+                        {!isCollapsed && (
+                          <ChevronRight className="ml-auto transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] group-data-[state=open]/collapsible:rotate-90" />
+                        )}
                       </>
                     ) : (
                       <Link href={item.url} className="flex items-center w-full">
-                        {item.icon && <item.icon />}
-                        <span>{item.title}</span>
+                        {item.icon && <item.icon className="transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />}
+                        {!isCollapsed && <span className="animate-in fade-in-0 slide-in-from-left-2 duration-500">{item.title}</span>}
                       </Link>
                     )}
                   </SidebarMenuButton>
                 </CollapsibleTrigger>
                 {hasSubItems && (
-                  <CollapsibleContent>
+                  <CollapsibleContent className="data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:slide-out-to-top-1 data-[state=open]:slide-in-from-top-1 duration-500">
                     <SidebarMenuSub>
                       {item.items?.map((subItem) => {
                         const isSubActive = pathname === subItem.url

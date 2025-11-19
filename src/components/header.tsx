@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Bell, Search, User, LogOut, Palette, Shield } from "lucide-react"
+import { Bell, Search, User, LogOut, Palette, Shield, Layout } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { ThemeCustomizer } from "@/components/theme-customizer"
+import { SidebarSelector } from "@/components/sidebar-selector"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
 import { SidebarTrigger } from "@/components/ui/sidebar"
@@ -25,6 +26,7 @@ export function Header() {
   const { user, token, logout } = useAuth();
   const router = useRouter();
   const [themeCustomizerOpen, setThemeCustomizerOpen] = useState(false);
+  const [sidebarSelectorOpen, setSidebarSelectorOpen] = useState(false);
   const [twoFactorModalOpen, setTwoFactorModalOpen] = useState(false);
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
   const [isLoading2FAStatus, setIsLoading2FAStatus] = useState(false);
@@ -87,11 +89,15 @@ export function Header() {
     checkTwoFactorStatus();
   };
 
+  const handleSidebarTriggerClick = () => {
+    window.dispatchEvent(new CustomEvent("toggle-nested-sidebar"));
+  };
+
   return (
     <>
       <header className="flex h-16 items-center justify-between border-b bg-card px-4 md:px-6">
         <div className="flex items-center space-x-4">
-          <SidebarTrigger className="-ml-1" />
+          <SidebarTrigger className="-ml-1" onClick={handleSidebarTriggerClick} />
           <div className="relative hidden md:block">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
@@ -133,6 +139,17 @@ export function Header() {
             )}
           </Button>
           
+          {user?.type === 'admin' && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setSidebarSelectorOpen(true)}
+              title="Choose Sidebar Layout"
+              className="relative"
+            >
+              <Layout className="h-4 w-4" />
+            </Button>
+          )}
           <Button 
             variant="ghost" 
             size="icon" 
@@ -189,6 +206,10 @@ export function Header() {
         <ThemeCustomizer 
           open={themeCustomizerOpen} 
           onOpenChange={setThemeCustomizerOpen} 
+        />
+        <SidebarSelector 
+          open={sidebarSelectorOpen} 
+          onOpenChange={setSidebarSelectorOpen} 
         />
       </header>
       

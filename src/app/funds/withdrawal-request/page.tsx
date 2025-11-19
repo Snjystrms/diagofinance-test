@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { MainLayout } from "@/components/main-layout";
 import { useAuth } from "@/contexts/auth-context";
-import { createWithdrawalRequest } from "@/utils/operations";
+import { withdrawalApi, type WithdrawalResponse } from "@/lib/api";
 import {
   Wallet,
   DollarSign,
@@ -49,7 +49,7 @@ function WithdrawalRequestContent() {
   const [copied, setCopied] = useState(false);
 
   const selectedChain = CHAIN_OPTIONS.find(chain => chain.value === chainId);
-  const minimumAmount = "10.00";
+  const minimumAmount = 10.00;
 
   const handleCopyAddress = async () => {
     if (walletAddress) {
@@ -66,20 +66,28 @@ function WithdrawalRequestContent() {
   const validateWalletAddress = (address: string, chain: string): boolean => {
     if (!address.trim()) return false;
     
-    // TRC20 addresses start with T and are 34 characters
+    const trimmedAddress = address.trim();
+    
+    // TRC20 addresses start with T and are typically 34 characters (allow 25-40 for flexibility)
     if (chain === "TRC20") {
-      return address.startsWith("T") && address.length === 34;
+      return trimmedAddress.startsWith("T") && trimmedAddress.length >= 25 && trimmedAddress.length <= 40;
     }
     
-    // ERC20/BEP20 addresses start with 0x and are 42 characters
+    // ERC20/BEP20 addresses start with 0x and are typically 42 characters (allow 30-50 for flexibility)
     if (chain === "ERC20" || chain === "BEP20" || chain === "BSC" || chain === "ETH") {
-      return address.startsWith("0x") && address.length === 42;
+      return trimmedAddress.startsWith("0x") && trimmedAddress.length >= 30 && trimmedAddress.length <= 50;
     }
     
-    return true; // Allow other formats
+    // For other chains, just check minimum length
+    return trimmedAddress.length >= 20;
   };
 
   const handleSubmit = async () => {
+    if (!token) {
+      setError("Authentication required. Please log in again.");
+      return;
+    }
+
     setError(null);
     setSuccess(false);
 
@@ -95,7 +103,7 @@ function WithdrawalRequestContent() {
       return;
     }
 
-    if (amountNum < parseFloat(minimumAmount)) {
+    if (amountNum < minimumAmount) {
       setError(`Minimum withdrawal amount is ${minimumAmount} USDT`);
       return;
     }
@@ -120,13 +128,13 @@ function WithdrawalRequestContent() {
     setIsSubmitting(true);
 
     try {
-      const response = await createWithdrawalRequest(
+      const response = await withdrawalApi.create(
         {
           amount: amount,
           wallet_address: walletAddress.trim(),
           chain_id: chainId,
         },
-        token || undefined
+        token
       );
 
       if (!response.success) {
@@ -150,13 +158,17 @@ function WithdrawalRequestContent() {
     }
   };
 
-  const canSubmit = 
-    amount.trim() !== "" && 
-    parseFloat(amount) >= parseFloat(minimumAmount) && 
-    walletAddress.trim() !== "" && 
-    validateWalletAddress(walletAddress, chainId) &&
-    chainId !== "" &&
-    !isSubmitting;
+  // Button validation - allow button to be enabled with basic checks
+  // Strict validation happens in handleSubmit
+  const amountNum = parseFloat(amount);
+  const isValidAmount = amount.trim() !== "" && !isNaN(amountNum) && amountNum >= minimumAmount && amountNum > 0;
+  const hasWalletAddress = walletAddress.trim().length > 0;
+  const hasChainId = chainId !== "";
+  const hasToken = !!token;
+  const canSubmit = isValidAmount && hasWalletAddress && hasChainId && !isSubmitting && hasToken;
+  
+  // Debug: Uncomment to see validation state
+  // console.log('Validation:', { isValidAmount, hasWalletAddress, hasChainId, hasToken, isSubmitting, canSubmit, amount, walletAddress, chainId });
 
   return (
     <div className="min-h-screen">
@@ -176,7 +188,7 @@ function WithdrawalRequestContent() {
 
         <div className="max-w-4xl mx-auto">
           <Card className="border-0 shadow-xl bg-card/70 backdrop-blur-sm">
-            <CardHeader className="text-center pb-6">
+            {/* <CardHeader className="text-center pb-6">
               <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
                 <Wallet className="h-6 w-6 text-red-600" />
                 Withdrawal Request
@@ -184,7 +196,7 @@ function WithdrawalRequestContent() {
               <CardDescription>
                 Enter your withdrawal details below
               </CardDescription>
-            </CardHeader>
+            </CardHeader> */}
 
             <CardContent className="space-y-6">
               {!success ? (
@@ -282,8 +294,8 @@ function WithdrawalRequestContent() {
                       <AlertCircle className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
                       <p className="text-xs text-gray-500">
                         {chainId === "TRC20" 
-                          ? "TRC20 addresses start with 'T' and are 34 characters long" 
-                          : "ERC20/BEP20 addresses start with '0x' and are 42 characters long"}
+                          ? "TRC20 addresses start with 'T' and are typically 25-40 characters long" 
+                          : "ERC20/BEP20 addresses start with '0x' and are typically 30-50 characters long"}
                       </p>
                     </div>
                   </div>
@@ -343,10 +355,15 @@ function WithdrawalRequestContent() {
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600 dark:text-gray-400">Amount:</span>
                           <span className="font-semibold text-emerald-800 dark:text-emerald-200">
-                            {parseFloat(withdrawalData.amount || amount).toLocaleString('en-US', {
-                              minimumFractionDigits: 2,
-                              maximumFractionDigits: 8
-                            })} USDT
+                            {typeof withdrawalData.amount === 'number' 
+                              ? withdrawalData.amount.toLocaleString('en-US', {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 8
+                                })
+                              : parseFloat(withdrawalData.amount || amount).toLocaleString('en-US', {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 8
+                                })} USDT
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
@@ -365,9 +382,17 @@ function WithdrawalRequestContent() {
                           <span className="text-sm text-gray-600 dark:text-gray-400">Status:</span>
                           <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
                             <Clock className="h-3 w-3 mr-1" />
-                            Pending
+                            {withdrawalData.status || 'Pending'}
                           </Badge>
                         </div>
+                        {withdrawalData.id && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">Request ID:</span>
+                            <span className="font-mono text-sm text-emerald-800 dark:text-emerald-200">
+                              #{withdrawalData.id}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}

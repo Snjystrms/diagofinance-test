@@ -39,7 +39,8 @@ export function NavUser({
     avatar: string
   }
 }) {
-  const { isMobile } = useSidebar()
+  const { isMobile, state } = useSidebar()
+  const isCollapsed = state === "collapsed"
 
   return (
     <SidebarMenu>
@@ -54,11 +55,15 @@ export function NavUser({
                 <AvatarImage src={user.avatar} alt={user.name} />
                 <AvatarFallback className="rounded-lg">CN</AvatarFallback>
               </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-medium">{user.name}</span>
-                <span className="truncate text-xs">{user.email}</span>
-              </div>
-              <ChevronsUpDown className="ml-auto size-3" />
+              {!isCollapsed && (
+                <>
+                  <div className="grid flex-1 text-left text-sm leading-tight animate-in fade-in-0 slide-in-from-left-2 duration-500">
+                    <span className="truncate font-medium">{user.name}</span>
+                    <span className="truncate text-xs">{user.email}</span>
+                  </div>
+                  <ChevronsUpDown className="ml-auto size-3 transition-opacity duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />
+                </>
+              )}
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { MainLayout } from '@/components/main-layout'
 import { useAuth } from '@/contexts/auth-context'
 import { walletApi, type Transaction, type TransactionsData } from '@/lib/api'
@@ -12,25 +12,33 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   RefreshCw,
-  ChevronLeft,
-  ChevronRight,
-  Filter
+  Filter,
+  CheckCircle,
+  XCircle,
+  Calendar,
+  ExternalLink,
+  Plus
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { AppDataTable } from '@/components/app-data-table'
+import { type ColumnDef } from '@tanstack/react-table'
+import { parseAsInteger } from 'nuqs'
+import { useQueryState } from 'nuqs'
+import { useRouter } from 'next/navigation'
 
 export default function TransactionsHistoryPage() {
   const { token } = useAuth()
+  const router = useRouter()
   const [transactionsData, setTransactionsData] = useState<TransactionsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1)
-  const [perPage, setPerPage] = useState(20)
+  // Use URL query params for pagination (synced with data table)
+  const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
+  const [perPage, setPerPage] = useQueryState('perPage', parseAsInteger.withDefault(20))
   
   // Filter state
   const [transactionType, setTransactionType] = useState<string>('all')
@@ -53,7 +61,7 @@ export default function TransactionsHistoryPage() {
         transaction_type?: string
         wallet_type?: string
       } = {
-        page: currentPage,
+        page: page,
         per_page: perPage,
       }
 
@@ -77,41 +85,43 @@ export default function TransactionsHistoryPage() {
     } finally {
       setLoading(false)
     }
-  }, [token, currentPage, perPage, transactionType, walletType])
+  }, [token, page, perPage, transactionType, walletType])
 
   useEffect(() => {
     fetchTransactions()
   }, [fetchTransactions])
 
-  const getTransactionIcon = (direction: string) => {
-    if (direction === 'credit') {
-      return <ArrowDownRight className="h-4 w-4 text-green-600" />
-    } else if (direction === 'debit') {
-      return <ArrowUpRight className="h-4 w-4 text-red-600" />
-    }
-    return <Clock className="h-4 w-4 text-muted-foreground" />
-  }
-
-  const getTransactionColor = (direction: string) => {
-    if (direction === 'credit') {
-      return 'text-green-600 dark:text-green-400'
-    } else if (direction === 'debit') {
-      return 'text-red-600 dark:text-red-400'
-    }
-    return 'text-muted-foreground'
-  }
-
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status.toLowerCase()) {
+  const getStatusBadge = (status: string) => {
+    const statusLower = status.toLowerCase()
+    switch (statusLower) {
       case 'approved':
-        return 'default'
+        return (
+          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-green-300 dark:border-green-800 flex items-center gap-1.5 w-fit px-2.5 py-1">
+            <CheckCircle className="h-3.5 w-3.5" />
+            <span className="text-xs font-medium">Approved</span>
+          </Badge>
+        )
       case 'pending':
-        return 'secondary'
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 border-yellow-300 dark:border-yellow-800 flex items-center gap-1.5 w-fit px-2.5 py-1">
+            <Clock className="h-3.5 w-3.5" />
+            <span className="text-xs font-medium">Pending</span>
+          </Badge>
+        )
       case 'rejected':
       case 'failed':
-        return 'destructive'
+        return (
+          <Badge className="bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 border-red-300 dark:border-red-800 flex items-center gap-1.5 w-fit px-2.5 py-1">
+            <XCircle className="h-3.5 w-3.5" />
+            <span className="text-xs font-medium capitalize">{status}</span>
+          </Badge>
+        )
       default:
-        return 'outline'
+        return (
+          <Badge variant="outline" className="flex items-center gap-1.5 w-fit px-2.5 py-1">
+            <span className="text-xs font-medium capitalize">{status}</span>
+          </Badge>
+        )
     }
   }
 
@@ -123,18 +133,157 @@ export default function TransactionsHistoryPage() {
     })} ${currency}`
   }
 
-  const handlePageChange = (newPage: number) => {
-    setCurrentPage(newPage)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
   const handleFilterChange = () => {
-    setCurrentPage(1) // Reset to first page when filters change
+    setPage(1) // Reset to first page when filters change
   }
 
   const pagination = transactionsData?.pagination
   const totalPages = pagination?.total_pages || pagination?.last_page || 1
-  const currentPageNum = pagination?.current_page || currentPage
+
+  // Define columns for the data table
+  const columns: ColumnDef<Transaction>[] = useMemo(
+    () => [
+      {
+        id: 'type',
+        header: 'Type',
+        accessorKey: 'type',
+        cell: ({ row }) => {
+          const transaction = row.original
+          return (
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-muted rounded-lg flex-shrink-0">
+                {transaction.direction === 'credit' ? (
+                  <ArrowDownRight className="h-4 w-4 text-green-600" />
+                ) : transaction.direction === 'debit' ? (
+                  <ArrowUpRight className="h-4 w-4 text-red-600" />
+                ) : (
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                )}
+              </div>
+              <span className="font-semibold capitalize">
+                {transaction.type.replace(/_/g, ' ')}
+              </span>
+            </div>
+          )
+        },
+      },
+      {
+        id: 'status',
+        header: 'Status',
+        accessorKey: 'status',
+        cell: ({ row }) => {
+          const transaction = row.original
+          return getStatusBadge(transaction.status)
+        },
+      },
+      {
+        id: 'payment_method',
+        header: 'Payment Method',
+        accessorKey: 'payment_method',
+        cell: ({ row }) => {
+          const transaction = row.original
+          return transaction.payment_method ? (
+            <Badge variant="outline" className="text-xs">
+              {transaction.payment_method}
+            </Badge>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )
+        },
+      },
+      {
+        id: 'reference',
+        header: 'Transaction Hash',
+        accessorKey: 'reference',
+        cell: ({ row }) => {
+          const transaction = row.original
+          if (!transaction.reference) {
+            return <span className="text-muted-foreground text-sm">—</span>
+          }
+          return (
+            <div className="flex items-center gap-2 max-w-xs">
+              <code className="text-xs font-mono text-foreground truncate">
+                {transaction.reference}
+              </code>
+              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+            </div>
+          )
+        },
+      },
+      {
+        id: 'description',
+        header: 'Description',
+        accessorKey: 'description',
+        cell: ({ row }) => {
+          const transaction = row.original
+          return (
+            <div className="max-w-md">
+              <p className="text-sm text-foreground truncate">
+                {transaction.description}
+              </p>
+            </div>
+          )
+        },
+      },
+      {
+        id: 'amount',
+        header: 'Amount',
+        accessorKey: 'amount',
+        cell: ({ row }) => {
+          const transaction = row.original
+          return (
+            <div className="text-sm">
+              <span className="text-green-600 dark:text-green-400 font-medium">$</span>
+              <span className="text-foreground font-semibold">
+                {formatAmount(transaction.amount, transaction.currency)}
+              </span>
+            </div>
+          )
+        },
+      },
+      {
+        id: 'from_to',
+        header: 'From / To',
+        cell: ({ row }) => {
+          const transaction = row.original
+          return (
+            <div className="text-sm space-y-1">
+              {transaction.from_account && (
+                <p className="text-muted-foreground">
+                  From: {transaction.from_account}
+                </p>
+              )}
+              {transaction.to_account && (
+                <p className="text-muted-foreground">
+                  To: {transaction.to_account}
+                </p>
+              )}
+              {!transaction.from_account && !transaction.to_account && (
+                <span className="text-muted-foreground">—</span>
+              )}
+            </div>
+          )
+        },
+      },
+      {
+        id: 'created_at',
+        header: 'Created At',
+        accessorKey: 'created_at',
+        cell: ({ row }) => {
+          const transaction = row.original
+          return (
+            <div className="flex items-center gap-2 text-sm">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-foreground">
+                {format(new Date(transaction.created_at), 'MMM dd, yyyy HH:mm')}
+              </span>
+            </div>
+          )
+        },
+      },
+    ],
+    []
+  )
 
   if (loading && !transactionsData) {
     return (
@@ -187,17 +336,21 @@ export default function TransactionsHistoryPage() {
           </div>
 
           {/* Filters */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Filter className="h-5 w-5" />
+          <Card className="border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg">
+                <div className="p-1.5 bg-primary/10 rounded-lg">
+                  <Filter className="h-4 w-4 text-primary" />
+                </div>
                 Filters
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="transaction-type">Transaction Type</Label>
+            <CardContent className="pt-0">
+            <div className="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0">
+             <div className="space-y-2 md:w-1/3">
+                  <Label htmlFor="transaction-type" className="text-sm font-medium">
+                    Transaction Type
+                  </Label>
                   <Select
                     value={transactionType}
                     onValueChange={(value) => {
@@ -205,7 +358,7 @@ export default function TransactionsHistoryPage() {
                       handleFilterChange()
                     }}
                   >
-                    <SelectTrigger id="transaction-type">
+                    <SelectTrigger id="transaction-type" className="h-9">
                       <SelectValue placeholder="All types" />
                     </SelectTrigger>
                     <SelectContent>
@@ -219,8 +372,10 @@ export default function TransactionsHistoryPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="wallet-type">Wallet Type</Label>
+                <div className="space-y-2 md:w-1/3">
+                  <Label htmlFor="wallet-type" className="text-sm font-medium">
+                    Wallet Type
+                  </Label>
                   <Select
                     value={walletType}
                     onValueChange={(value) => {
@@ -228,7 +383,7 @@ export default function TransactionsHistoryPage() {
                       handleFilterChange()
                     }}
                   >
-                    <SelectTrigger id="wallet-type">
+                    <SelectTrigger id="wallet-type" className="h-9">
                       <SelectValue placeholder="All wallets" />
                     </SelectTrigger>
                     <SelectContent>
@@ -240,16 +395,18 @@ export default function TransactionsHistoryPage() {
                   </Select>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="per-page">Items Per Page</Label>
+                <div className="space-y-2 md:w-1/3">
+                  <Label htmlFor="per-page" className="text-sm font-medium">
+                    Items Per Page
+                  </Label>
                   <Select
                     value={String(perPage)}
                     onValueChange={(value) => {
                       setPerPage(Number(value))
-                      setCurrentPage(1)
+                      setPage(1)
                     }}
                   >
-                    <SelectTrigger id="per-page">
+                    <SelectTrigger id="per-page" className="h-9">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -264,7 +421,7 @@ export default function TransactionsHistoryPage() {
             </CardContent>
           </Card>
 
-          {/* Transactions List */}
+          {/* Transactions Table */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -287,131 +444,35 @@ export default function TransactionsHistoryPage() {
               )}
 
               {transactionsData && transactionsData.transactions.length > 0 ? (
-                <>
-                  <div className="space-y-4">
-                    {transactionsData.transactions.map((transaction) => (
-                      <div
-                        key={transaction.id}
-                        className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-4 flex-1 min-w-0">
-                          <div className="p-2 bg-muted rounded-lg flex-shrink-0">
-                            {getTransactionIcon(transaction.direction)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                              <p className="font-semibold capitalize">
-                                {transaction.type.replace(/_/g, ' ')}
-                              </p>
-                              <Badge variant={getStatusBadgeVariant(transaction.status)} className="text-xs">
-                                {transaction.status_label}
-                              </Badge>
-                              {transaction.payment_method && (
-                                <Badge variant="outline" className="text-xs">
-                                  {transaction.payment_method}
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground truncate">
-                              {transaction.description}
-                            </p>
-                            {transaction.reference && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Ref: {transaction.reference}
-                              </p>
-                            )}
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {format(new Date(transaction.created_at), 'MMM dd, yyyy HH:mm:ss')}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right flex-shrink-0 ml-4">
-                          <p className={`font-bold text-lg ${getTransactionColor(transaction.direction)}`}>
-                            {transaction.direction === 'credit' ? '+' : '-'}
-                            {formatAmount(transaction.amount, transaction.currency)}
-                          </p>
-                          {transaction.from_account && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              From: {transaction.from_account}
-                            </p>
-                          )}
-                          {transaction.to_account && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              To: {transaction.to_account}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Pagination */}
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-between mt-6 pt-4 border-t">
-                      <div className="text-sm text-muted-foreground">
-                        Showing page {currentPageNum} of {totalPages} 
-                        {pagination?.total && ` (${pagination.total} total transactions)`}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePageChange(currentPageNum - 1)}
-                          disabled={currentPageNum <= 1 || loading}
-                        >
-                          <ChevronLeft className="h-4 w-4 mr-1" />
-                          Previous
-                        </Button>
-                        <div className="flex items-center gap-1">
-                          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                            let pageNum: number
-                            if (totalPages <= 5) {
-                              pageNum = i + 1
-                            } else if (currentPageNum <= 3) {
-                              pageNum = i + 1
-                            } else if (currentPageNum >= totalPages - 2) {
-                              pageNum = totalPages - 4 + i
-                            } else {
-                              pageNum = currentPageNum - 2 + i
-                            }
-                            return (
-                              <Button
-                                key={pageNum}
-                                variant={currentPageNum === pageNum ? "default" : "outline"}
-                                size="sm"
-                                onClick={() => handlePageChange(pageNum)}
-                                disabled={loading}
-                                className="w-10"
-                              >
-                                {pageNum}
-                              </Button>
-                            )
-                          })}
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handlePageChange(currentPageNum + 1)}
-                          disabled={currentPageNum >= totalPages || loading}
-                        >
-                          Next
-                          <ChevronRight className="h-4 w-4 ml-1" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
+                <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
+                  <AppDataTable<Transaction>
+                    data={transactionsData.transactions}
+                    columns={columns}
+                    pageCount={totalPages}
+                    getRowId={(row) => String(row.id)}
+                  />
+                </div>
+              ) : !loading ? (
                 <div className="text-center py-10">
                   <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                   <h3 className="text-lg font-semibold mb-2">No Transactions Found</h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-muted-foreground mb-6">
                     {transactionType !== 'all' || walletType !== 'all'
                       ? 'Try adjusting your filters to see more results.'
                       : "You haven't made any transactions yet."}
                   </p>
+                  {transactionType === 'all' && walletType === 'all' && (
+                    <Button
+                      onClick={() => router.push('/funds/deposit')}
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Make Your First Deposit
+                    </Button>
+                  )}
                 </div>
-              )}
+              ) : null}
             </CardContent>
           </Card>
 

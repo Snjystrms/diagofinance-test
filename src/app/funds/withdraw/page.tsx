@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { MainLayout } from '@/components/main-layout'
 import { AppDataTable } from '@/components/app-data-table'
 import { useAuth } from '@/contexts/auth-context'
-import { getUserWithdrawals, createWithdrawalRequest, type WithdrawalItem } from '@/utils/operations'
+import { withdrawalApi, type WithdrawalItem } from '@/lib/api'
 import { type ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -283,7 +283,7 @@ export default function WithdrawPage() {
     try {
       setLoading(true)
       setError(null)
-      const response = await getUserWithdrawals(currentPage, currentLimit, token)
+      const response = await withdrawalApi.getUserWithdrawals(currentPage, currentLimit, token)
       
       if (response.success && response.data) {
         const withdrawalsList = response.data.withdrawals || []
@@ -325,19 +325,22 @@ export default function WithdrawPage() {
     return 1
   }, [totalPages, total, perPage])
 
-  // Validate wallet address
+  // Validate wallet address - lenient validation
   const validateWalletAddress = (address: string, chain: string): boolean => {
     if (!address.trim()) return false
     
+    const trimmedAddress = address.trim()
+    
     if (chain === 'TRC20') {
-      return address.startsWith('T') && address.length === 34
+      return trimmedAddress.startsWith('T') && trimmedAddress.length >= 25 && trimmedAddress.length <= 40
     }
     
     if (chain === 'ERC20' || chain === 'BEP20' || chain === 'BSC' || chain === 'ETH') {
-      return address.startsWith('0x') && address.length === 42
+      return trimmedAddress.startsWith('0x') && trimmedAddress.length >= 30 && trimmedAddress.length <= 50
     }
     
-    return true
+    // For other chains, just check minimum length
+    return trimmedAddress.length >= 20
   }
 
   // Handle withdrawal request submission
@@ -383,13 +386,17 @@ export default function WithdrawPage() {
     setIsSubmitting(true)
 
     try {
-      const response = await createWithdrawalRequest(
+      if (!token) {
+        throw new Error('Authentication required')
+      }
+      
+      const response = await withdrawalApi.create(
         {
           amount: withdrawalAmount,
           wallet_address: withdrawalWallet.trim(),
           chain_id: withdrawalChainId,
         },
-        token || undefined
+        token
       )
 
       if (!response.success) {

@@ -19,11 +19,15 @@ import {
   ArrowDownRight,
   RefreshCw,
   Plus,
-  Minus
+  Minus,
+  ArrowLeftRight,
+  Sparkles,
+  Shield
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { Skeleton } from '@/components/ui/skeleton'
+import toast from 'react-hot-toast'
 
 export default function WalletOverviewPage() {
   const { token } = useAuth()
@@ -151,17 +155,25 @@ export default function WalletOverviewPage() {
       <div className="container mx-auto py-10">
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Wallet Overview</h1>
-              <p className="text-muted-foreground mt-2">
-                View your wallet balance and recent transactions
+              <div className="flex items-center gap-3 mb-2">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Wallet className="h-6 w-6 text-primary" />
+                </div>
+                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+                  Wallet Overview
+                </h1>
+              </div>
+              <p className="text-muted-foreground text-base ml-14">
+                Manage your funds and track your transaction history
               </p>
             </div>
             <Button 
               onClick={fetchWalletSummary} 
               variant="outline"
               disabled={loading}
+              className="shadow-sm hover:shadow-md transition-shadow"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
@@ -169,42 +181,95 @@ export default function WalletOverviewPage() {
           </div>
 
           {/* Total Balance Card with Actions */}
-          <div className="grid gap-6 md:grid-cols-3">
-            <Card className="md:col-span-2 bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Wallet className="h-6 w-6 text-primary" />
-                  Total Balance
-                </CardTitle>
-                <CardDescription>Your combined wallet balance</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-4xl font-bold text-primary">
-                  {walletData ? `$${formatAmount(walletData.total_balance)}` : '$0.00'}
+          <div className="grid gap-4 md:grid-cols-5 items-start">
+            <Card className="md:col-span-3 relative overflow-hidden border-none shadow-xl text-white bg-[linear-gradient(135deg,#1d4ed8,#1e3a8a)] dark:bg-[linear-gradient(135deg,#1e3a8a,#111827)] rounded-3xl p-6">
+              <div className="absolute inset-0 opacity-60 dark:opacity-50">
+                <div className="absolute -left-10 -top-16 w-52 h-52 bg-white/10 dark:bg-white/5 rounded-full blur-3xl" />
+                <div className="absolute right-6 top-12 w-40 h-40 bg-white/10 dark:bg-white/5 rounded-full blur-3xl" />
+              </div>
+              <CardHeader className="relative z-10 pb-0 px-0">
+                <p className="uppercase tracking-[0.2em] text-[11px] font-semibold text-white/80">Wallet Balance</p>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <span className="text-4xl font-black leading-tight">
+                    {walletData ? formatAmount(walletData.total_balance) : '0.00'}
+                  </span>
+                  <span className="text-base font-semibold text-white/80">
+                    {mainWallet?.currency || 'USD'}
+                  </span>
                 </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  {mainWallet?.currency || 'USDT'}
-                </p>
+              </CardHeader>
+              <CardContent className="relative z-10 pt-6 pb-4 px-0">
+                <div className="flex items-start justify-between gap-6">
+                  <div className="flex-1">
+                    <p className="text-white/85 text-base font-medium mb-1">Your Safe Wallet</p>
+                    <p className="text-white/75 text-sm leading-relaxed">
+                      Securely store and manage balances across deposits, withdrawals, and transfers in one place.
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-white/70 mt-3">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      <span>Funds available for instant transfers</span>
+                    </div>
+                    <div className="mt-5">
+                      <Button
+                        variant="ghost"
+                        onClick={() => router.push('/funds/internal-transfer')}
+                        className="w-max px-0 text-white/90 hover:text-white flex items-center gap-1 text-sm font-semibold"
+                      >
+                        <ArrowLeftRight className="h-4 w-4" />
+                        <span>Transfer Funds</span>
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center text-white/80 gap-2 flex-shrink-0">
+                    <div className="p-4 rounded-full border-2 border-white/40 bg-white/10 backdrop-blur-sm">
+                      <Shield className="h-12 w-12 text-white" />
+                    </div>
+                    <span className="text-sm">Protected Balance</span>
+                  </div>
+                </div>
               </CardContent>
-              
             </Card>
 
-            {/* Deposit and Withdrawal Actions */}
-            
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Quick Actions</CardTitle>
-                <CardDescription>Manage your funds</CardDescription>
+            {/* Quick Actions Card */}
+            <Card className="md:col-span-2 shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <div className="p-1.5 bg-primary/10 rounded-lg">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                  </div>
+                  Quick Actions
+                </CardTitle>
+                <CardDescription className="text-sm">Manage your funds quickly</CardDescription>
               </CardHeader>
-              <CardContent>
-              <div className="text-sm text-muted-foreground mt-2">
-                Address: {mainWallet?.address || 'N/A'}
-              </div>
-            </CardContent>
               <CardContent className="space-y-3">
+                <div className="p-3 bg-muted/50 rounded-lg border border-border/50 mb-4">
+                  <p className="text-xs font-medium text-muted-foreground mb-1">Wallet Address</p>
+                  <div className="flex items-center gap-2">
+                    <code className="text-xs font-mono text-foreground/80 truncate flex-1">
+                      {mainWallet?.address || 'N/A'}
+                    </code>
+                    {mainWallet?.address && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0"
+                        onClick={() => {
+                          copyToClipboard(mainWallet.address)
+                          toast.success('Address copied!')
+                        }}
+                      >
+                        {copiedAddress === mainWallet.address ? (
+                          <CheckCircle className="h-3.5 w-3.5 text-green-600" />
+                        ) : (
+                          <Copy className="h-3.5 w-3.5" />
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
                 <Button
                   onClick={() => router.push('/funds/deposit')}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-md hover:shadow-lg transition-all duration-300"
                   size="lg"
                 >
                   <Plus className="h-5 w-5 mr-2" />
@@ -212,15 +277,13 @@ export default function WalletOverviewPage() {
                 </Button>
                 <Button
                   onClick={() => router.push('/funds/withdraw')}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white"
+                  className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-md hover:shadow-lg transition-all duration-300"
                   size="lg"
-                  variant="destructive"
                 >
                   <Minus className="h-5 w-5 mr-2" />
                   Withdraw
                 </Button>
               </CardContent>
-             
             </Card>
           </div>
 
@@ -228,66 +291,88 @@ export default function WalletOverviewPage() {
        
 
           {/* Recent Transactions */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
+          <Card className="shadow-lg">
+            <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-transparent">
+              <CardTitle className="flex items-center gap-3 text-xl">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Clock className="h-5 w-5 text-primary" />
+                </div>
                 Recent Transactions
               </CardTitle>
-              <CardDescription>
-                Your latest wallet activity
+              <CardDescription className="text-base mt-1">
+                Your latest wallet activity and transaction history
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="pt-6">
               {walletData && walletData.recent_transactions.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {walletData.recent_transactions.map((transaction) => (
                     <div
                       key={transaction.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                      className="flex items-center justify-between p-5 border-2 rounded-xl hover:border-primary/30 hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent transition-all duration-300 group cursor-pointer shadow-sm hover:shadow-md"
                     >
                       <div className="flex items-center gap-4 flex-1">
-                        <div className="p-2 bg-muted rounded-lg">
+                        <div className={`p-3 rounded-xl transition-all duration-300 ${
+                          transaction.type.includes('deposit') || transaction.type.includes('transfer_in')
+                            ? 'bg-green-100 dark:bg-green-900/20 group-hover:bg-green-200 dark:group-hover:bg-green-900/30'
+                            : transaction.type.includes('withdraw') || transaction.type.includes('transfer_out')
+                            ? 'bg-red-100 dark:bg-red-900/20 group-hover:bg-red-200 dark:group-hover:bg-red-900/30'
+                            : 'bg-muted group-hover:bg-muted/80'
+                        }`}>
                           {getTransactionIcon(transaction.type)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-semibold capitalize">
+                          <div className="flex items-center gap-2 mb-1.5">
+                            <p className="font-semibold text-base capitalize">
                               {transaction.type.replace(/_/g, ' ')}
                             </p>
-                            <Badge variant="outline" className="text-xs">
+                            <Badge 
+                              variant="outline" 
+                              className="text-xs border-primary/20 bg-primary/5"
+                            >
                               {transaction.wallet_type}
                             </Badge>
                           </div>
-                          <p className="text-sm text-muted-foreground truncate">
+                          <p className="text-sm text-muted-foreground truncate mb-1">
                             {transaction.description}
                           </p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {format(new Date(transaction.created_at), 'MMM dd, yyyy HH:mm')}
-                          </p>
+                          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            <span>{format(new Date(transaction.created_at), 'MMM dd, yyyy HH:mm')}</span>
+                          </div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className={`font-bold text-lg ${getTransactionColor(transaction.type)}`}>
+                      <div className="text-right ml-4">
+                        <p className={`font-bold text-xl mb-1 ${getTransactionColor(transaction.type)}`}>
                           {transaction.type.includes('deposit') || transaction.type.includes('transfer_in') 
                             ? '+' 
                             : '-'}
                           ${formatAmount(transaction.amount)}
                         </p>
-                        <p className="text-xs text-muted-foreground">
+                        <Badge variant="secondary" className="text-xs">
                           {mainWallet?.currency || 'USDT'}
-                        </p>
+                        </Badge>
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-10">
-                  <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-lg font-semibold mb-2">No Transactions</h3>
-                  <p className="text-muted-foreground">
-                    You haven't made any transactions yet.
+                <div className="text-center py-16">
+                  <div className="inline-flex p-4 bg-muted rounded-full mb-4">
+                    <Clock className="h-12 w-12 text-muted-foreground" />
+                  </div>
+                  <h3 className="text-xl font-semibold mb-2">No Transactions Yet</h3>
+                  <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                    Your transaction history will appear here once you start making deposits or withdrawals.
                   </p>
+                  <Button
+                    onClick={() => router.push('/funds/deposit')}
+                    variant="outline"
+                    className="gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Make Your First Deposit
+                  </Button>
                 </div>
               )}
             </CardContent>
@@ -308,4 +393,3 @@ export default function WalletOverviewPage() {
     </MainLayout>
   )
 }
-

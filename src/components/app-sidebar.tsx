@@ -43,7 +43,7 @@ import {
 } from "@/components/ui/sidebar"
 
 // Admin Navigation Data
-const adminNavData = [
+export const adminNavData = [
   {
     title: "Dashboard",
     url: "/dashboard",
@@ -298,7 +298,7 @@ const adminNavData = [
 ]
 
 // User Navigation Data
-const userNavData = [
+export const userNavData = [
   {
     title: "Dashboard",
     url: "/dashboard",
@@ -365,6 +365,10 @@ const userNavData = [
     },
     {
       title: "Withdraw Funds",
+      url: "/funds/withdrawal-request",
+    },
+    {
+      title: "Withdraw List",
       url: "/funds/withdraw",
     },
     {
@@ -466,7 +470,7 @@ const userNavData = [
 ]
 
 // CRM Navigation Data
-const crmData = {
+export const crmData = {
   user: {
     name: "Admin User",
     email: "admin@affiliatecrm.com",
