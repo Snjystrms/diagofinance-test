@@ -1,14 +1,14 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useEffect, useState, useCallback, useLayoutEffect } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowUpRight, Handshake, LineChart, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { MainLayout } from "@/components/main-layout";
 import { BecomePartnerCta } from "@/components/become-partner/ib-request-cta";
-
-export const metadata: Metadata = {
-  title: "Become a Partner | CRM Dashboard",
-  description:
-    "Discover the benefits of our Introducing Broker programme and partner with us to grow your business.",
-};
+import { useAuth } from "@/contexts/auth-context";
+import { ibRequestsApi } from "@/lib/api";
+import { Loader2 } from "lucide-react";
 
 const advantages = [
   "Zero sign-up fees and super simple set-up process",
@@ -17,72 +17,126 @@ const advantages = [
 ];
 
 export default function BecomePartnerPage() {
+  const { token } = useAuth();
+  const router = useRouter();
+  const [statusData, setStatusData] = useState<any>(null);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
+
+  const checkStatus = useCallback(async () => {
+    // Show spinner immediately - prevent any content flash
+    setIsCheckingStatus(true);
+    setIsInitialized(false);
+    
+    if (!token) {
+      setIsCheckingStatus(false);
+      setIsInitialized(true);
+      return;
+    }
+
+    try {
+      const response = await ibRequestsApi.getStatus(token);
+      if (response?.data) {
+        setStatusData(response.data);
+        // Redirect to IB dashboard if approved - prevent direct access
+        if (response.data.status_text?.toLowerCase() === "approved") {
+          router.push("/ib-dashboard");
+          return;
+        }
+      }
+    } catch (error) {
+      console.error("Failed to check IB status:", error);
+    } finally {
+      setIsCheckingStatus(false);
+      setIsInitialized(true);
+    }
+  }, [token, router]);
+
+  // Use useLayoutEffect to run synchronously before paint to prevent flash
+  useLayoutEffect(() => {
+    void checkStatus();
+  }, [checkStatus]);
+
+  // Show spinner before API call completes - prevent direct page access
+  // Always show spinner until check is complete and initialized
+  // Render spinner immediately without MainLayout to prevent any flash
+  if (isCheckingStatus || !isInitialized) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-slate-50">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-10 w-10 animate-spin text-indigo-500" />
+          <p className="text-sm font-medium text-slate-600">Checking partner status...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <MainLayout>
     <div className="min-h-screen bg-slate-50 pb-24">
       <section className="bg-white/80">
-        <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6 pb-16 pt-24 md:px-10 lg:px-16">
-          <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-indigo-500">
-            <span className="size-2 rounded-full bg-indigo-500" /> Become a
-            Partner
-          </span>
-          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] lg:items-center">
-            <div className="space-y-6">
-              <h1 className="text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">
-                Become an Introducing Broker & Expand Your Own Business
-              </h1>
-              <p className="text-lg leading-relaxed text-slate-600">
-                Join forces with us and explore new opportunities to grow. Earn
-                more while giving your clients access to secure, transparent,
-                and innovative trading experiences.
-              </p>
-              <BecomePartnerCta className="max-w-xl" />
-            </div>
-            <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-500 via-blue-600 to-sky-500 p-10 text-white shadow-2xl">
-              <div className="absolute -left-16 -top-20 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
-              <div className="absolute -bottom-24 right-0 h-64 w-64 rounded-full bg-cyan-400/30 blur-2xl" />
-              <div className="relative flex flex-col gap-8">
-                <div className="inline-flex max-w-max items-center gap-2 rounded-full bg-white/20 px-4 py-1 text-sm font-semibold backdrop-blur">
-                  <ShieldCheck className="h-4 w-4" aria-hidden="true" />
-                  Premium Experience
-                </div>
-                <p className="text-xl font-semibold leading-relaxed md:text-2xl">
-                  Opportunity to grow and earn more with us through a guided,
-                  data-informed programme built for ambitious partners.
+          <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6 pb-16 pt-24 md:px-10 lg:px-16">
+            <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-indigo-500">
+              <span className="size-2 rounded-full bg-indigo-500" /> Become a
+              Partner
+            </span>
+            <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] lg:items-center">
+              <div className="space-y-6">
+                <h1 className="text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">
+                  Become an Introducing Broker & Expand Your Own Business
+                </h1>
+                <p className="text-lg leading-relaxed text-slate-600">
+                  Join forces with us and explore new opportunities to grow. Earn
+                  more while giving your clients access to secure, transparent,
+                  and innovative trading experiences.
                 </p>
-                <div className="grid gap-5 text-sm md:grid-cols-2 md:text-base">
-                  <div className="rounded-2xl bg-white/10 p-4 backdrop-blur">
-                    <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-white/70">
-                      <LineChart className="h-4 w-4" aria-hidden="true" />
-                      Growth Support
-                    </h3>
-                    <p className="mt-3 text-sm text-white/80">
-                      Access resources, mentorship, and live performance
-                      coaching to scale your business faster.
-                    </p>
+                <BecomePartnerCta className="max-w-xl" />
+              </div>
+              <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-500 via-blue-600 to-sky-500 p-10 text-white shadow-2xl">
+                <div className="absolute -left-16 -top-20 h-56 w-56 rounded-full bg-white/10 blur-3xl" />
+                <div className="absolute -bottom-24 right-0 h-64 w-64 rounded-full bg-cyan-400/30 blur-2xl" />
+                <div className="relative flex flex-col gap-8">
+                  <div className="inline-flex max-w-max items-center gap-2 rounded-full bg-white/20 px-4 py-1 text-sm font-semibold backdrop-blur">
+                    <ShieldCheck className="h-4 w-4" aria-hidden="true" />
+                    Premium Experience
                   </div>
-                  <div className="rounded-2xl bg-white/10 p-4 backdrop-blur">
-                    <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-white/70">
-                      <Handshake className="h-4 w-4" aria-hidden="true" />
-                      Dedicated Team
-                    </h3>
-                    <p className="mt-3 text-sm text-white/80">
-                      Collaborate with a specialised success team that cares
-                      about every referral you bring onboard.
-                    </p>
+                  <p className="text-xl font-semibold leading-relaxed md:text-2xl">
+                    Opportunity to grow and earn more with us through a guided,
+                    data-informed programme built for ambitious partners.
+                  </p>
+                  <div className="grid gap-5 text-sm md:grid-cols-2 md:text-base">
+                    <div className="rounded-2xl bg-white/10 p-4 backdrop-blur">
+                      <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-white/70">
+                        <LineChart className="h-4 w-4" aria-hidden="true" />
+                        Growth Support
+                      </h3>
+                      <p className="mt-3 text-sm text-white/80">
+                        Access resources, mentorship, and live performance
+                        coaching to scale your business faster.
+                      </p>
+                    </div>
+                    <div className="rounded-2xl bg-white/10 p-4 backdrop-blur">
+                      <h3 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-widest text-white/70">
+                        <Handshake className="h-4 w-4" aria-hidden="true" />
+                        Dedicated Team
+                      </h3>
+                      <p className="mt-3 text-sm text-white/80">
+                        Collaborate with a specialised success team that cares
+                        about every referral you bring onboard.
+                      </p>
+                    </div>
                   </div>
-                </div>
-                <div className="inline-flex w-fit items-center gap-3 rounded-full bg-white/15 px-4 py-2 text-sm font-medium text-white/90 backdrop-blur">
-                  <span className="flex size-8 items-center justify-center rounded-full bg-white/20 text-lg font-bold">
-                    $15
-                  </span>
-                  Rebate per lot*
+                  <div className="inline-flex w-fit items-center gap-3 rounded-full bg-white/15 px-4 py-2 text-sm font-medium text-white/90 backdrop-blur">
+                    <span className="flex size-8 items-center justify-center rounded-full bg-white/20 text-lg font-bold">
+                      $15
+                    </span>
+                    Rebate per lot*
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
       <section
         id="partner-benefits"

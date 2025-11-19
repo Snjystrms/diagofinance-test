@@ -505,6 +505,14 @@ async function apiCall<T>(
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
   const url = `${API_BASE_URL}${endpoint}`;
+  
+  // Debug logging for IB status endpoint
+  if (endpoint.includes("ib-requests/status")) {
+    console.log("[apiCall] IB Status endpoint detected:", endpoint);
+    console.log("[apiCall] Full URL:", url);
+    console.log("[apiCall] Method:", options.method || "GET");
+    console.log("[apiCall] Headers:", options.headers);
+  }
 
   const { headers: optionHeaders, ...restOptions } = options;
 
@@ -539,9 +547,28 @@ async function apiCall<T>(
     }
   }
 
+  // Debug logging for IB status endpoint
+  if (endpoint.includes("ib-requests/status")) {
+    console.log("[apiCall] Making fetch request to:", url);
+    console.log("[apiCall] Config:", { method: config.method, headers: config.headers });
+  }
+  
   const res = await fetch(url, config);
+  
+  if (endpoint.includes("ib-requests/status")) {
+    console.log("[apiCall] Response status:", res.status, res.statusText);
+  }
+  
   const json = await res.json().catch(() => ({}));
+  
+  if (endpoint.includes("ib-requests/status")) {
+    console.log("[apiCall] Response JSON:", json);
+  }
+  
   if (!res.ok || (json && json.success === false)) {
+    if (endpoint.includes("ib-requests/status")) {
+      console.error("[apiCall] Request failed:", json?.message || `HTTP ${res.status}`);
+    }
     throw new Error(json?.message || `HTTP ${res.status}`);
   }
   return json;
@@ -1035,6 +1062,95 @@ export const adminUSDTDepositApi = {
 export const depositProofUrl = (fileName?: string | null) =>
   fileName ? `${API_BASE_URL}${fileName}` : "";
 
+// ---------- Admin Withdrawal Types ----------
+export interface AdminWithdrawalRequest {
+  id: number;
+  user_id: number;
+  amount: string;
+  status: "pending" | "approved" | "rejected";
+  remarks: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  created_at: string;
+  updated_at: string;
+  user?: {
+    id: number;
+    email: string;
+    first_name: string | null;
+    last_name: string | null;
+  };
+}
+
+export interface AdminWithdrawalListResponse {
+  success?: boolean;
+  // data can be an array directly or an object with nested properties
+  data?: AdminWithdrawalRequest[] | {
+    withdrawals?: AdminWithdrawalRequest[];
+    data?: AdminWithdrawalRequest[];
+    requests?: AdminWithdrawalRequest[];
+    pagination?: {
+      page: number;
+      limit: number;
+      total: number;
+      totalPages?: number;
+      total_pages?: number;
+    };
+  };
+  withdrawals?: AdminWithdrawalRequest[];
+  requests?: AdminWithdrawalRequest[];
+  // Pagination can be in meta or data.pagination
+  meta?: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages?: number;
+    total_pages?: number;
+  };
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages?: number;
+    total_pages?: number;
+  };
+}
+
+export interface AdminWithdrawalDecisionRequest {
+  action: "approve" | "reject";
+  remarks?: string;
+}
+
+export interface AdminWithdrawalDecisionResponse {
+  id: number;
+  status: "approved" | "rejected";
+  remarks: string | null;
+  approved_by: string;
+  approved_at: string;
+}
+
+// ---------- Admin Withdrawal APIs ----------
+export const adminWithdrawalApi = {
+  listAll: (page: number = 1, limit: number = 10, token: string, status?: string) => {
+    const qs = new URLSearchParams();
+    qs.set("page", String(page));
+    qs.set("limit", String(limit));
+    if (status && status !== "all") {
+      qs.set("status", status);
+    }
+    return apiCall<AdminWithdrawalListResponse>(`/admin/withdrawals?${qs.toString()}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  decision: (id: string | number, data: AdminWithdrawalDecisionRequest, token: string) =>
+    apiCall<AdminWithdrawalDecisionResponse>(`/admin/withdrawals/${id}/decision`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+};
+
 // ---------- Account Types ----------
 export interface AccountType {
   id: number;
@@ -1127,14 +1243,112 @@ export interface CreateIbRequestBody {
   notes?: string;
 }
 
+export interface IbRequestStatus {
+  id?: number;
+  status?: number;
+  admin_comment?: string | null;
+  created_at?: string;
+  created_at_ist?: string;
+}
+
+export interface IbRequestStatusResponse {
+  ib_request: IbRequestStatus | null;
+  is_ib_user?: number | boolean;
+  promote_is_ib_user?: number | boolean;
+  ib_name?: string | null;
+  status_text?: string;
+}
+
+export interface IbDashboardUser {
+  id: number;
+  name: string;
+  partner_id: string;
+  email: string;
+}
+
+export interface IbDashboardWallet {
+  balance: number;
+  currency: string;
+}
+
+export interface IbDashboardRebatesGraph {
+  date: string;
+  rebates: number;
+}
+
+export interface IbDashboardRemainingTime {
+  days: number;
+  days_decimal: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+  formatted: string;
+}
+
+export interface IbDashboardPendingRebates {
+  amount: number;
+  currency: string;
+  remaining_time: IbDashboardRemainingTime;
+  cycle_start: string;
+  cycle_end: string;
+}
+
+export interface IbDashboardEarningSummary {
+  total_earned: number;
+  total_internal_transfers: number;
+  currency: string;
+}
+
+export interface IbDashboardPartnerInfo {
+  ib_plan: string;
+  partner_id: string;
+  referral_link: string;
+  ib_name: string;
+}
+
+export interface IbDashboardResponse {
+  user: IbDashboardUser;
+  partner_wallet: IbDashboardWallet;
+  client_wallet: IbDashboardWallet;
+  today_earning: IbDashboardWallet;
+  rebates_graph: IbDashboardRebatesGraph[];
+  pending_rebates: IbDashboardPendingRebates;
+  earning_summary: IbDashboardEarningSummary;
+  partner_info: IbDashboardPartnerInfo;
+}
+
+export interface IbInternalTransferRequest {
+  amount: number;
+  comment?: string;
+}
+
 export const ibRequestsApi = {
   overview: (token: string) =>
-    apiCall(`/user/ib-request`, {
+    apiCall<IbRequestStatusResponse>(`/user/ib-requests/status`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),
+  getStatus: (token: string) => {
+    console.log("[API] ibRequestsApi.getStatus called with endpoint: /user/ib-requests/status");
+    console.log("[API] Full URL will be:", `${API_BASE_URL}/user/ib-requests/status`);
+    return apiCall<IbRequestStatusResponse>(`/user/ib-requests/status`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
   create: (data: CreateIbRequestBody, token: string) =>
     apiCall(`/user/ib-requests`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+  getDashboard: (token: string) =>
+    apiCall<IbDashboardResponse>(`/user/ib-dashboard`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  internalTransfer: (data: IbInternalTransferRequest, token: string) =>
+    apiCall(`/user/ib-internal-transfer`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(data),

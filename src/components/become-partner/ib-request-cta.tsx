@@ -2,11 +2,11 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
-import { ArrowUpRight, CheckCircle2, Loader2 } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, Loader2, XCircle, Clock } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { useAuth } from "@/contexts/auth-context";
-import { ibRequestsApi } from "@/lib/api";
+import { ibRequestsApi, type IbRequestStatusResponse } from "@/lib/api";
 import { cn } from "@/lib/utils";
 
 interface BecomePartnerCtaProps {
@@ -18,37 +18,58 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
-  const [existingRequest, setExistingRequest] = useState<Record<string, any> | null>(null);
-  const hasSubmitted = Boolean(existingRequest);
+  const [statusData, setStatusData] = useState<IbRequestStatusResponse | null>(null);
+  // Show status if there's an ib_request OR if status_text exists (even if rejected)
+  const hasSubmitted = Boolean(statusData?.ib_request || statusData?.status_text);
 
-  const refreshOverview = useCallback(async () => {
+  const refreshStatus = useCallback(async () => {
     if (!token) {
-      setExistingRequest(null);
+      console.log("[IB Status] No token available, skipping API call");
+      setStatusData(null);
       return;
     }
 
+    console.log("[IB Status] Calling getStatus API with token:", token ? "token exists" : "no token");
     setIsCheckingStatus(true);
     try {
-      const response = await ibRequestsApi.overview(token);
-      const payload = response?.data;
-      if (Array.isArray(payload)) {
-        setExistingRequest(payload[0] ?? null);
-      } else if (payload && typeof payload === "object") {
-        setExistingRequest(payload);
+      console.log("[IB Status] Making API call to /user/ib-requests/status");
+      const response = await ibRequestsApi.getStatus(token);
+      console.log("[IB Status] Full API response:", JSON.stringify(response, null, 2));
+      
+      // The API returns: { success: true, data: { ib_request, status_text, ... } }
+      const data = response?.data;
+      console.log("[IB Status] Extracted data from response.data:", data);
+      console.log("[IB Status] status_text:", data?.status_text);
+      console.log("[IB Status] ib_request:", data?.ib_request);
+      
+      if (data) {
+        // Verify the data structure matches IbRequestStatusResponse
+        if (data.status_text || data.ib_request !== undefined) {
+          console.log("[IB Status] Valid data structure, setting statusData");
+          setStatusData(data);
+        } else {
+          console.warn("[IB Status] Data structure unexpected:", data);
+          setStatusData(null);
+        }
       } else {
-        setExistingRequest(null);
+        console.log("[IB Status] No data in response, setting statusData to null");
+        setStatusData(null);
       }
     } catch (error) {
-      console.error("Failed to load IB request overview:", error);
-      setExistingRequest(null);
+      console.error("[IB Status] Failed to load IB request status:", error);
+      if (error instanceof Error) {
+        console.error("[IB Status] Error message:", error.message);
+        console.error("[IB Status] Error stack:", error.stack);
+      }
+      setStatusData(null);
     } finally {
       setIsCheckingStatus(false);
     }
   }, [token]);
 
   useEffect(() => {
-    void refreshOverview();
-  }, [refreshOverview]);
+    void refreshStatus();
+  }, [refreshStatus]);
 
   const handleSubmit = async () => {
     if (!token) {
@@ -64,12 +85,12 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
       );
       toast.success("Your IB request has been sent. Our team will contact you shortly.");
       setNotes("");
-      await refreshOverview();
+      await refreshStatus();
     } catch (error) {
       const message =
         error instanceof Error
           ? error.message
-          : "We couldn’t submit your request. Please try again.";
+          : "We couldn't submit your request. Please try again.";
       toast.error(message);
     } finally {
       setIsSubmitting(false);
@@ -77,22 +98,15 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
   };
 
   const submittedDetails = useMemo(() => {
-    if (!existingRequest) return null;
+    if (!statusData || !statusData.status_text) return null;
 
-    const status =
-      existingRequest.status ||
-      existingRequest.request_status ||
-      existingRequest.current_status ||
-      "pending";
-
-    const timestamp =
-      existingRequest.created_at ||
-      existingRequest.createdAt ||
-      existingRequest.submitted_at ||
-      existingRequest.requested_at;
+    const statusText = statusData.status_text;
+    const ibRequest = statusData.ib_request;
+    const timestamp = ibRequest?.created_at_ist || ibRequest?.created_at;
 
     let createdLabel: string | null = null;
     if (timestamp) {
+      // Try to parse the IST timestamp first, then fallback to ISO
       const date = new Date(timestamp);
       if (!Number.isNaN(date.getTime())) {
         createdLabel = date.toLocaleString();
@@ -100,11 +114,12 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
     }
 
     return {
-      status: String(status),
-      notes: existingRequest.notes || existingRequest.comment || null,
+      statusText,
+      adminComment: ibRequest?.admin_comment || null,
       createdLabel,
+      status: ibRequest?.status,
     };
-  }, [existingRequest]);
+  }, [statusData]);
 
   if (isCheckingStatus) {
     return (
@@ -115,37 +130,138 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
     );
   }
 
-  return (
-    <div className={cn("space-y-4", className)}>
-      {hasSubmitted && submittedDetails ? (
+  const getStatusDisplay = () => {
+    if (!submittedDetails) return null;
+
+    const { statusText, adminComment, createdLabel } = submittedDetails;
+    const isPending = statusText.toLowerCase() === "pending";
+    const isRejected = statusText.toLowerCase() === "rejected";
+    const isApproved = statusText.toLowerCase() === "approved";
+
+    if (isRejected) {
+      return (
+        <div className="space-y-3 rounded-3xl border border-red-200 bg-red-50/80 px-6 py-6 text-sm text-red-700 shadow-sm">
+          <div className="flex items-start gap-3">
+            <XCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" aria-hidden="true" />
+            <div className="space-y-2">
+              <p className="text-base font-semibold text-red-700">
+                IB Request Rejected
+              </p>
+              <p>
+                Status: <span className="font-medium text-red-800 capitalize">{statusText}</span>
+                {createdLabel ? ` • Submitted on ${createdLabel}` : null}
+              </p>
+              {adminComment ? (
+                <div className="rounded-2xl bg-white/70 px-4 py-3 text-sm text-red-700">
+                  <span className="font-medium">Admin Comment:</span> {adminComment}
+                </div>
+              ) : null}
+              <p>
+                Your IB request has been rejected. If you have questions or would like to reapply,
+                please reach out to partners@crmapp.com with your details.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="inline-flex items-center gap-2 rounded-full border border-red-300 bg-white px-6 py-3 text-sm font-semibold text-red-700 transition hover:border-red-400 hover:text-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-80"
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  Reapply
+                  <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+                </>
+              )}
+            </button>
+            <Link
+              href="#partner-benefits"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+            >
+              Review Benefits
+            </Link>
+          </div>
+        </div>
+      );
+    }
+
+    if (isApproved) {
+      return (
         <div className="space-y-3 rounded-3xl border border-emerald-200 bg-emerald-50/80 px-6 py-6 text-sm text-emerald-700 shadow-sm">
           <div className="flex items-start gap-3">
             <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-500" aria-hidden="true" />
             <div className="space-y-2">
               <p className="text-base font-semibold text-emerald-700">
-                IB request already submitted
+                🎉 IB Request Approved!
               </p>
               <p>
-                Status: <span className="font-medium text-emerald-800 capitalize">{submittedDetails.status}</span>
-                {submittedDetails.createdLabel
-                  ? ` • Submitted on ${submittedDetails.createdLabel}`
-                  : null}
+                Status: <span className="font-medium text-emerald-800 capitalize">{statusText}</span>
+                {createdLabel ? ` • Approved on ${createdLabel}` : null}
               </p>
-              {submittedDetails.notes ? (
-                <p className="rounded-2xl bg-white/70 px-4 py-3 text-sm text-emerald-700">
-                  <span className="font-medium">Your notes:</span> {submittedDetails.notes}
-                </p>
+              {adminComment ? (
+                <div className="rounded-2xl bg-white/70 px-4 py-3 text-sm text-emerald-700">
+                  <span className="font-medium">Admin Comment:</span> {adminComment}
+                </div>
               ) : null}
               <p>
-                Our partner desk will follow up via email. If you need to amend your request,
-                reach out to partners@crmapp.com with your details.
+                Congratulations! Your IB request has been approved. You now have access to the IB dashboard where you can track your earnings, manage clients, and view your performance metrics.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <Link
+              href="/ib-dashboard"
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+            >
+              Go to IB Dashboard
+              <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+            <Link
+              href="#partner-benefits"
+              className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white px-6 py-3 text-sm font-semibold text-emerald-700 transition hover:border-emerald-400 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+            >
+              Review Benefits
+            </Link>
+          </div>
+        </div>
+      );
+    }
+
+    if (isPending) {
+      return (
+        <div className="space-y-3 rounded-3xl border border-amber-200 bg-amber-50/80 px-6 py-6 text-sm text-amber-700 shadow-sm">
+          <div className="flex items-start gap-3">
+            <Clock className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" aria-hidden="true" />
+            <div className="space-y-2">
+              <p className="text-base font-semibold text-amber-700">
+                IB Request Pending
+              </p>
+              <p>
+                Status: <span className="font-medium text-amber-800 capitalize">{statusText}</span>
+                {createdLabel ? ` • Submitted on ${createdLabel}` : null}
+              </p>
+              {adminComment ? (
+                <div className="rounded-2xl bg-white/70 px-4 py-3 text-sm text-amber-700">
+                  <span className="font-medium">Admin Comment:</span> {adminComment}
+                </div>
+              ) : null}
+              <p>
+                Your IB request is currently under review. Our partner desk will follow up via email once a decision has been made.
+                If you need to contact us, reach out to partners@crmapp.com with your details.
               </p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <Link
               href="#partner-benefits"
-              className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white px-6 py-3 text-sm font-semibold text-emerald-700 transition hover:border-emerald-400 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+              className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-white px-6 py-3 text-sm font-semibold text-amber-700 transition hover:border-amber-400 hover:text-amber-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
             >
               Review Benefits
             </Link>
@@ -157,6 +273,55 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
             </Link>
           </div>
         </div>
+      );
+    }
+
+    // Default other status state
+    return (
+      <div className="space-y-3 rounded-3xl border border-emerald-200 bg-emerald-50/80 px-6 py-6 text-sm text-emerald-700 shadow-sm">
+        <div className="flex items-start gap-3">
+          <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-500" aria-hidden="true" />
+          <div className="space-y-2">
+            <p className="text-base font-semibold text-emerald-700">
+              IB request already submitted
+            </p>
+            <p>
+              Status: <span className="font-medium text-emerald-800 capitalize">{statusText}</span>
+              {createdLabel ? ` • Submitted on ${createdLabel}` : null}
+            </p>
+            {adminComment ? (
+              <div className="rounded-2xl bg-white/70 px-4 py-3 text-sm text-emerald-700">
+                <span className="font-medium">Admin Comment:</span> {adminComment}
+              </div>
+            ) : null}
+            <p>
+              Our partner desk will follow up via email. If you need to amend your request,
+              reach out to partners@crmapp.com with your details.
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3">
+          <Link
+            href="#partner-benefits"
+            className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white px-6 py-3 text-sm font-semibold text-emerald-700 transition hover:border-emerald-400 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+          >
+            Review Benefits
+          </Link>
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+          >
+            Back to Dashboard
+          </Link>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className={cn("space-y-4", className)}>
+      {hasSubmitted && submittedDetails ? (
+        getStatusDisplay()
       ) : (
         <>
           <div className="space-y-2">
