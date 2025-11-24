@@ -25,7 +25,18 @@ import {
   Ticket,
   Bell,
   ChevronRight,
-  Circle
+  Circle,
+  TrendingDown,
+  List,
+  ArrowLeftRight,
+  User,
+  Calendar,
+  Lightbulb,
+  History,
+  Shield,
+  Activity,
+  Briefcase,
+  Building2
 } from "lucide-react"
 import { NavUser } from "@/components/nav-user"
 import { Label } from "@/components/ui/label"
@@ -62,24 +73,68 @@ type NavItem = {
 // Helper function to get icon for sub-items based on title
 const getSubItemIcon = (title: string) => {
   const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+    // Dashboard sub-items
     "Overview": Home,
     "Analytics": BarChart3,
+    
+    // User Management sub-items
     "All Users": Users,
     "All Users MT5 Accounts": Database,
-    "User Verification": UserCheck,
-    "User Status": Users,
-    "USDT Transactions": CreditCard,
+    "User Verification": Shield,
+    "User Status": Activity,
+    
+    // Transaction Management sub-items
+    "USDT Transactions": DollarSign,
     "Transaction Verification": FileText,
     "Payment History": Wallet,
-    "Bonus": Gift,
-    "All Managers": UserPlus,
-    "E-Mail Management": Mail,
+    
+    // Manager Management sub-items
+    "All Managers": Briefcase,
+    
+    // IB Management sub-items
     "All IB": UserCheck,
     "IB Plans": Award,
+    
+    // Account Management sub-items
     "All Accounts": Package,
     "Package Sales": TrendingUp,
     "Package Analytics": BarChart3,
+    
+    // MT5 Account Management sub-items
     "User Accounts": Database,
+    
+    // User Navigation - My wallet sub-items
+    "Wallet Overview": Wallet,
+    "Transactions History": History,
+    
+    // User Navigation - My Accounts sub-items
+    "Open Trading Account": Package,
+    "Manage Accounts": Settings2,
+    "Accounts Overview": BarChart3,
+    
+    // User Navigation - Funds sub-items
+    "Deposit Funds": TrendingUp,
+    "My Deposit": Wallet,
+    "Withdraw Funds": TrendingDown,
+    "Withdraw List": List,
+    "Internal Funds Transfer": ArrowLeftRight,
+    
+    // User Navigation - My profile sub-items
+    "KYC Verification": Shield,
+    "View Profile": User,
+    
+    // User Navigation - Trading Central sub-items
+    "Analysis Views": BarChart3,
+    "Featured Ideas": Lightbulb,
+    "Economic Calendar": Calendar,
+    
+    // User Navigation - Help & Support sub-items
+    "Raise Ticket": Ticket,
+    "Ticket History": History,
+    
+    // Legacy/Commented items
+    "Bonus": Gift,
+    "E-Mail Management": Mail,
     "All Tickets": Ticket,
     "Ticket Management": LifeBuoy,
     "Settings": Settings2,
@@ -91,18 +146,32 @@ const getSubItemIcon = (title: string) => {
     return iconMap[title];
   }
   
-  // Try partial matches
+  // Try partial matches as fallback
   const lowerTitle = title.toLowerCase();
-  if (lowerTitle.includes("user")) return Users;
-  if (lowerTitle.includes("transaction") || lowerTitle.includes("payment")) return CreditCard;
-  if (lowerTitle.includes("account") || lowerTitle.includes("package")) return Package;
-  if (lowerTitle.includes("analytics") || lowerTitle.includes("report")) return BarChart3;
-  if (lowerTitle.includes("ticket") || lowerTitle.includes("support")) return LifeBuoy;
+  if (lowerTitle.includes("overview") || lowerTitle.includes("dashboard")) return Home;
+  if (lowerTitle.includes("analytics") || lowerTitle.includes("report") || lowerTitle.includes("analysis")) return BarChart3;
+  if (lowerTitle.includes("user") && !lowerTitle.includes("verification")) return Users;
+  if (lowerTitle.includes("verification") || lowerTitle.includes("verify") || lowerTitle.includes("kyc")) return Shield;
+  if (lowerTitle.includes("status") || lowerTitle.includes("activity")) return Activity;
+  if (lowerTitle.includes("transaction") && !lowerTitle.includes("history")) return DollarSign;
+  if (lowerTitle.includes("payment") || lowerTitle.includes("deposit") || lowerTitle.includes("wallet")) return Wallet;
+  if (lowerTitle.includes("history") || lowerTitle.includes("list")) return History;
+  if (lowerTitle.includes("withdraw")) return TrendingDown;
+  if (lowerTitle.includes("transfer") || lowerTitle.includes("internal")) return ArrowLeftRight;
+  if (lowerTitle.includes("account") && !lowerTitle.includes("mt5")) return Package;
+  if (lowerTitle.includes("mt5") || lowerTitle.includes("database")) return Database;
+  if (lowerTitle.includes("ticket")) return Ticket;
+  if (lowerTitle.includes("support") || lowerTitle.includes("help")) return LifeBuoy;
   if (lowerTitle.includes("email") || lowerTitle.includes("mail")) return Mail;
   if (lowerTitle.includes("bonus") || lowerTitle.includes("reward")) return Gift;
-  if (lowerTitle.includes("setting") || lowerTitle.includes("config")) return Settings2;
+  if (lowerTitle.includes("setting") || lowerTitle.includes("config") || lowerTitle.includes("manage")) return Settings2;
   if (lowerTitle.includes("notification")) return Bell;
-  if (lowerTitle.includes("verification") || lowerTitle.includes("verify")) return UserCheck;
+  if (lowerTitle.includes("manager") || lowerTitle.includes("partner")) return Briefcase;
+  if (lowerTitle.includes("ib") || lowerTitle.includes("plan")) return Award;
+  if (lowerTitle.includes("profile")) return User;
+  if (lowerTitle.includes("calendar")) return Calendar;
+  if (lowerTitle.includes("idea") || lowerTitle.includes("featured")) return Lightbulb;
+  if (lowerTitle.includes("sales") || lowerTitle.includes("trending")) return TrendingUp;
   
   return Circle; // Default icon
 };

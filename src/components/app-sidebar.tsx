@@ -377,23 +377,23 @@ export const userNavData = [
     }
     ],
   },
-  {
-    title: "Social Trading",
-    url: "/social-trading",
-    icon: Users,
-    items: [
-      {
-        title: "Copy Trading",
-        url: "/social-trading/copy-trading",
-      },
-    ],
-  },
-  {
-    title: "Trading Platforms",
-    url: "/trading_platforms",
-    icon: Building2,
+  // {
+  //   title: "Social Trading",
+  //   url: "/social-trading",
+  //   icon: Users,
+  //   items: [
+  //     {
+  //       title: "Copy Trading",
+  //       url: "/social-trading/copy-trading",
+  //     },
+  //   ],
+  // },
+  // {
+  //   title: "Trading Platforms",
+  //   url: "/trading_platforms",
+  //   icon: Building2,
     
-  },
+  // },
  
 
   {
@@ -409,10 +409,10 @@ export const userNavData = [
       title: "View Profile",
       url: "/profile/view_profile",
     },
-    {
-      title: "Update Password",
-      url: "/profile/update-password",
-    }
+    // {
+    //   title: "Update Password",
+    //   url: "/profile/update-password",
+    // }
     ],
   },
   {

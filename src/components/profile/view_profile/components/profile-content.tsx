@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, Scale, Settings, FileText, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { AlertCircle, Scale, Settings, FileText, Loader2, ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 
@@ -13,6 +13,8 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
   SelectContent,
@@ -37,6 +39,7 @@ import {
   type UpdateLegalInformationRequest
 } from "@/utils/operations";
 import { TwoFactorModal } from "@/components/two-factor-modal";
+import { cn } from "@/lib/utils";
 
 export default function ProfileContent() {
   const { token, user } = useAuth();
@@ -50,6 +53,10 @@ export default function ProfileContent() {
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
   const [isLoading2FAStatus, setIsLoading2FAStatus] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [dobDate, setDobDate] = useState<Date | undefined>(undefined);
+  const [dobMonth, setDobMonth] = useState<Date | undefined>(undefined);
+  const [dobValue, setDobValue] = useState("");
 
   // Load profile data on mount
   useEffect(() => {
@@ -63,6 +70,24 @@ export default function ProfileContent() {
         if (response.success && response.data) {
           setProfileData(response.data);
           setIs2FAEnabled(response.data.user?.google_2FA_status || false);
+          
+          // Initialize DOB date state
+          if (response.data.personal_information?.dob) {
+            try {
+              const dobDate = new Date(response.data.personal_information.dob);
+              if (isValidDate(dobDate)) {
+                setDobDate(dobDate);
+                setDobMonth(dobDate);
+                setDobValue(formatDateDisplay(dobDate));
+              }
+            } catch (error) {
+              console.error("Error parsing DOB:", error);
+            }
+          } else {
+            setDobDate(undefined);
+            setDobMonth(undefined);
+            setDobValue("");
+          }
         }
       } catch (error) {
         console.error("Error loading profile:", error);
@@ -275,6 +300,26 @@ export default function ProfileContent() {
     } catch {
       return "";
     }
+  };
+
+  // Format date for display (e.g., "June 01, 2025")
+  const formatDateDisplay = (date: Date | undefined): string => {
+    if (!date) return "";
+    try {
+      return date.toLocaleDateString("en-US", {
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      });
+    } catch {
+      return "";
+    }
+  };
+
+  // Check if date is valid
+  const isValidDate = (date: Date | undefined): boolean => {
+    if (!date) return false;
+    return !isNaN(date.getTime());
   };
 
   // Get verification status badge
@@ -501,14 +546,71 @@ export default function ProfileContent() {
               <CardContent className="space-y-4">
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="dob">Date of Birth</Label>
-                    <Input
-                      id="dob"
-                      type="date"
-                      value={formatDateForInput(profileData.personal_information.dob)}
-                      onChange={(e) => handlePersonalInfoChange("dob", e.target.value || null)}
-                      className="w-full"
-                    />
+                    <Label htmlFor="dob" className="px-1">Date of Birth</Label>
+                    <div className="relative flex gap-2">
+                      <Input
+                        id="dob"
+                        value={dobValue}
+                        placeholder="June 01, 2025"
+                        className="bg-background pr-10"
+                        onChange={(e) => {
+                          const inputValue = e.target.value;
+                          setDobValue(inputValue);
+                          const date = new Date(inputValue);
+                          if (isValidDate(date)) {
+                            setDobDate(date);
+                            setDobMonth(date);
+                            handlePersonalInfoChange("dob", date.toISOString().split("T")[0]);
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "ArrowDown") {
+                            e.preventDefault();
+                            setCalendarOpen(true);
+                          }
+                        }}
+                      />
+                      <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            id="date-picker"
+                            variant="ghost"
+                            className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
+                          >
+                            <CalendarIcon className="size-3.5" />
+                            <span className="sr-only">Select date</span>
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent
+                          className="w-auto overflow-hidden p-0"
+                          align="end"
+                          alignOffset={-8}
+                          sideOffset={10}
+                        >
+                          <Calendar
+                            mode="single"
+                            selected={dobDate}
+                            captionLayout="dropdown"
+                            month={dobMonth}
+                            onMonthChange={setDobMonth}
+                            onSelect={(date) => {
+                              setDobDate(date);
+                              if (date) {
+                                setDobValue(formatDateDisplay(date));
+                                handlePersonalInfoChange("dob", date.toISOString().split("T")[0]);
+                              } else {
+                                setDobValue("");
+                                handlePersonalInfoChange("dob", null);
+                              }
+                              setCalendarOpen(false);
+                            }}
+                            disabled={(date) =>
+                              date > new Date() || date < new Date("1900-01-01")
+                            }
+                          />
+                        </PopoverContent>
+                      </Popover>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="nationality">Nationality</Label>

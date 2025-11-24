@@ -180,14 +180,18 @@ export default function KycVerificationPage() {
       const res = await authApi.getProfileDocumentsStatus(token);
       setKycStatusData(res.data);
       const status = res.data.kyc.status?.toLowerCase();
-      if (status === 'approved') {
+      // Check if KYC is approved (status can be 'approved', 'verified', 'full-verified', or check approved flag)
+      if (status === 'approved' || status === 'verified' || status === 'full-verified' || res.data.kyc.approved) {
         setPhase('approved');
-      } else if (status === 'pending') {
+      } else if (status === 'pending' || status === 'under_review' || status === 'review') {
         if (res.data.kyc.documents_submitted) {
           setPhase('under_review');
         } else {
           setPhase('draft');
         }
+      } else if (status === 'rejected') {
+        // Even if rejected, if documents are submitted, show under_review to allow re-upload
+        setPhase(res.data.kyc.documents_submitted ? 'under_review' : 'draft');
       } else {
         // treat unknown as draft unless documents_submitted tells otherwise
         setPhase(res.data.kyc.documents_submitted ? 'under_review' : 'draft');
@@ -373,18 +377,28 @@ export default function KycVerificationPage() {
   };
 
   // Header status pill – visible only after first submission
-  const StatusPill = () =>
-    phase === 'approved' ? (
+  const StatusPill = () => {
+    const isApproved = kycStatusData?.kyc.approved || 
+                       kycStatusData?.kyc.status?.toLowerCase() === 'approved' ||
+                       kycStatusData?.kyc.status?.toLowerCase() === 'verified' ||
+                       kycStatusData?.kyc.status?.toLowerCase() === 'full-verified';
+    
+    const isUnderReview = kycStatusData?.kyc.status?.toLowerCase() === 'pending' ||
+                          kycStatusData?.kyc.status?.toLowerCase() === 'under_review' ||
+                          kycStatusData?.kyc.status?.toLowerCase() === 'review';
+    
+    return isApproved ? (
       <Badge className="bg-emerald-100 text-emerald-900 hover:bg-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/40">
         <CheckCircle2 className="h-3.5 w-3.5 mr-1 text-emerald-700 dark:text-emerald-300" />
         Verified
       </Badge>
-    ) : phase === 'under_review' ? (
+    ) : isUnderReview ? (
       <Badge className="bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:hover:bg-amber-900/40">
         <AlertCircle className="h-3.5 w-3.5 mr-1 text-amber-700 dark:text-amber-300" />
         Under Review
       </Badge>
     ) : null;
+  };
 
   // ---------- Upload Card Sections ----------
   const UploadSection = (props: {
@@ -784,6 +798,11 @@ export default function KycVerificationPage() {
                 <CardDescription className="mt-1.5">
                   {showUploadUI
                     ? 'Upload your documents for identity verification. Once submitted, an admin will review your application.'
+                    : kycStatusData && (kycStatusData.kyc.approved || 
+                        kycStatusData.kyc.status?.toLowerCase() === 'approved' ||
+                        kycStatusData.kyc.status?.toLowerCase() === 'verified' ||
+                        kycStatusData.kyc.status?.toLowerCase() === 'full-verified')
+                    ? 'Your KYC has been approved. All documents have been verified successfully.'
                     : 'Your KYC submission is being reviewed. Track the status of each document below.'}
                 </CardDescription>
               </div>
@@ -802,20 +821,31 @@ export default function KycVerificationPage() {
                     <div>
                       <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">KYC Status</h3>
                       <p className="text-sm text-gray-500 dark:text-gray-400">
-                        Keep track of the review progress for each document.
+                        {kycStatusData && (kycStatusData.kyc.approved || 
+                          kycStatusData.kyc.status?.toLowerCase() === 'approved' ||
+                          kycStatusData.kyc.status?.toLowerCase() === 'verified' ||
+                          kycStatusData.kyc.status?.toLowerCase() === 'full-verified')
+                          ? 'All submitted documents have been approved. Your KYC is verified.'
+                          : 'Keep track of the review progress for each document.'}
                       </p>
                     </div>
                     {kycStatusData && (
                       <Badge
                         className={
-                          kycStatusData.kyc.status === 'approved'
+                          kycStatusData.kyc.approved ||
+                          kycStatusData.kyc.status?.toLowerCase() === 'approved' ||
+                          kycStatusData.kyc.status?.toLowerCase() === 'verified' ||
+                          kycStatusData.kyc.status?.toLowerCase() === 'full-verified'
                             ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300'
-                            : kycStatusData.kyc.status === 'rejected'
+                            : kycStatusData.kyc.status?.toLowerCase() === 'rejected'
                             ? 'bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300'
                             : 'bg-slate-100 text-slate-800 dark:bg-slate-900 dark:text-slate-200'
                         }
                       >
-                        {kycStatusData.kyc.status.toUpperCase()}
+                        {kycStatusData.kyc.approved || 
+                         kycStatusData.kyc.status?.toLowerCase() === 'full-verified'
+                          ? 'APPROVED'
+                          : kycStatusData.kyc.status?.toUpperCase() || 'PENDING'}
                       </Badge>
                     )}
                   </div>
@@ -834,7 +864,33 @@ export default function KycVerificationPage() {
                   )}
                 </section>
 
-                {phase === 'under_review' && (
+                {kycStatusData && (kycStatusData.kyc.approved || 
+                  kycStatusData.kyc.status?.toLowerCase() === 'approved' ||
+                  kycStatusData.kyc.status?.toLowerCase() === 'verified' ||
+                  kycStatusData.kyc.status?.toLowerCase() === 'full-verified') && (
+                  <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/40 p-4 bg-emerald-50 dark:bg-emerald-950/30">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-700 dark:text-emerald-300 mt-0.5 flex-shrink-0" />
+                      <div className="space-y-1">
+                        <p className="font-semibold text-emerald-900 dark:text-emerald-200">
+                          KYC verified successfully
+                        </p>
+                        <p className="text-sm text-emerald-800 dark:text-emerald-300">
+                          Your identity has been verified. All submitted documents have been approved. You're all set!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {kycStatusData && 
+                 !kycStatusData.kyc.approved &&
+                 kycStatusData.kyc.status?.toLowerCase() !== 'approved' &&
+                 kycStatusData.kyc.status?.toLowerCase() !== 'verified' &&
+                 kycStatusData.kyc.status?.toLowerCase() !== 'full-verified' &&
+                 (kycStatusData.kyc.status?.toLowerCase() === 'pending' || 
+                  kycStatusData.kyc.status?.toLowerCase() === 'under_review' ||
+                  kycStatusData.kyc.status?.toLowerCase() === 'review') && (
                   <div className="rounded-lg border border-amber-200 dark:border-amber-900/40 p-4 bg-amber-50 dark:bg-amber-950/30">
                     <div className="flex items-start gap-3">
                       <AlertCircle className="h-5 w-5 text-amber-700 dark:text-amber-300 mt-0.5 flex-shrink-0" />
@@ -845,22 +901,6 @@ export default function KycVerificationPage() {
                         <p className="text-sm text-amber-800 dark:text-amber-300">
                           Thanks for submitting your documents. Please wait{' '}
                           <span className="font-medium">1–2 days</span> for approval.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {phase === 'approved' && (
-                  <div className="rounded-lg border border-emerald-200 dark:border-emerald-900/40 p-4 bg-emerald-50 dark:bg-emerald-950/30">
-                    <div className="flex items-start gap-3">
-                      <CheckCircle2 className="h-5 w-5 text-emerald-700 dark:text-emerald-300 mt-0.5 flex-shrink-0" />
-                      <div className="space-y-1">
-                        <p className="font-semibold text-emerald-900 dark:text-emerald-200">
-                          KYC verified successfully
-                        </p>
-                        <p className="text-sm text-emerald-800 dark:text-emerald-300">
-                          Your identity has been verified. You're all set!
                         </p>
                       </div>
                     </div>

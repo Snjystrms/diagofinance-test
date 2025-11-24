@@ -131,7 +131,7 @@ const WalletAddressCell = ({ address }: { address: string }) => {
         }}
         title="Copy full address"
       >
-        <Hash className="h-3 w-3" />
+        {/* <Hash className="h-3 w-3" /> */}
       </Button>
     </div>
   )
@@ -215,19 +215,19 @@ const columns: ColumnDef<WithdrawalItem>[] = [
     ),
     cell: ({ row }) => <WalletAddressCell address={row.original.wallet_address} />,
   },
-  {
-    id: 'transaction_hash',
-    accessorKey: 'transaction_hash',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Transaction Hash" />
-    ),
-    cell: ({ row }) => (
-      <TransactionHashCell 
-        hash={row.original.transaction_hash} 
-        chainId={row.original.chain_id}
-      />
-    ),
-  },
+  // {
+  //   id: 'transaction_hash',
+  //   accessorKey: 'transaction_hash',
+  //   header: ({ column }) => (
+  //     <DataTableColumnHeader column={column} title="Transaction Hash" />
+  //   ),
+  //   cell: ({ row }) => (
+  //     <TransactionHashCell 
+  //       hash={row.original.transaction_hash} 
+  //       chainId={row.original.chain_id}
+  //     />
+  //   ),
+  // },
   {
     id: 'created_at',
     accessorKey: 'created_at',

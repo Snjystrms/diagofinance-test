@@ -14,7 +14,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/password-input';
-import { admin2FAApi, authApi } from '@/lib/api';
+import { admin2FAApi, authApi, manager2FAApi } from '@/lib/api';
 import {
   Card,
   CardContent,
@@ -85,8 +85,9 @@ export default function LoginPage() {
     email: string; 
     password: string; 
     adminId?: string | number;
+    managerId?: string | number;
     userId?: string | number;
-    userType?: 'admin' | 'user';
+    userType?: 'admin' | 'user' | 'manager';
   } | null>(null);
   const [isVerifying2FA, setIsVerifying2FA] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
@@ -167,15 +168,25 @@ export default function LoginPage() {
         // Check if 2FA is required (for both admin and user)
         if (response?.requires_2fa || response?.data?.requires_2fa) {
           const responseData = response.data || {};
-          const userType = (responseData as any)?.type || responseData.user?.type || 'user';
-          const userId = (responseData as any)?.user_id || responseData.user?.id;
+          const nestedData = (responseData as any)?.data || responseData;
+          const userType = nestedData?.type || nestedData?.user?.type || nestedData?.admin?.type || nestedData?.manager?.type || 'user';
+          
+          // Extract ID based on user type - check for specific ID fields first
+          let userId: string | number | undefined;
+          if (userType === 'admin') {
+            userId = nestedData?.admin_id || nestedData?.admin?.id || nestedData?.user?.id;
+          } else if (userType === 'manager') {
+            userId = nestedData?.manager_id || nestedData?.manager?.id || nestedData?.user?.id;
+          } else {
+            userId = nestedData?.user_id || nestedData?.user?.id;
+          }
           
           if (userId) {
             setPendingLoginData({
               email: data.email,
               password: data.password,
-              ...(userType === 'admin' ? { adminId: userId } : { userId: userId }),
-              userType: userType as 'admin' | 'user',
+              ...(userType === 'admin' ? { adminId: userId } : userType === 'manager' ? { managerId: userId } : { userId: userId }),
+              userType: userType as 'admin' | 'user' | 'manager',
             });
             setShow2FA(true);
             toast.success('Please enter your 2FA code to complete login');
@@ -206,9 +217,12 @@ export default function LoginPage() {
       if (pendingLoginData.userType === 'admin' && pendingLoginData.adminId) {
         response = await admin2FAApi.verifyLogin2FA({
           admin_id: pendingLoginData.adminId,
-          token: twoFACode,
-          email: pendingLoginData.email,
-          password: pendingLoginData.password,
+          verify_otp: twoFACode,
+        });
+      } else if (pendingLoginData.userType === 'manager' && pendingLoginData.managerId) {
+        response = await manager2FAApi.verifyLogin2FA({
+          manager_id: pendingLoginData.managerId,
+          verify_otp: twoFACode,
         });
       } else if (pendingLoginData.userType === 'user' && pendingLoginData.userId) {
         response = await authApi.verifyLogin2FA({
@@ -221,12 +235,15 @@ export default function LoginPage() {
 
       if (response.success && response.data) {
         // Handle response structure - it might be in response.data or response.data.data
-        const responseData = response.data.data || response.data;
-        const token = responseData.token || response.data.token;
-        const userData = responseData.user || response.data.user;
+        const loginResponse = response.data as any;
+        const responseData = loginResponse.data || loginResponse;
+        const token = responseData.token || loginResponse.token;
+        // Check for admin, manager, or user object in response
+        const userData = responseData.admin || responseData.manager || responseData.user || loginResponse.user || loginResponse.admin || loginResponse.manager;
 
         if (token && userData) {
           const userType = userData.type || pendingLoginData.userType || 'user';
+          // Permissions are on the LoginResponse, not on the nested data object
           const finalUserData = {
             id: userData.id,
             email: userData.email || pendingLoginData.email,
@@ -240,6 +257,7 @@ export default function LoginPage() {
             is_account_active: userData.is_account_active,
             sponsor_id: userData.sponsor_id,
             role: userData.role,
+            managerPermissions: loginResponse.permissions || (userType === 'manager' ? [] : undefined),
             // Exclude permissions as it's a different type structure
           };
 

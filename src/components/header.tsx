@@ -1,9 +1,10 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Bell, Search, User, LogOut, Palette, Shield, Layout } from "lucide-react"
+import { Bell, Search, User, LogOut, Palette, Shield, Layout, Copy } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,6 +31,9 @@ export function Header() {
   const [twoFactorModalOpen, setTwoFactorModalOpen] = useState(false);
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
   const [isLoading2FAStatus, setIsLoading2FAStatus] = useState(false);
+  const [accountId, setAccountId] = useState<string | null>(null);
+  const [profileStatus, setProfileStatus] = useState<string | null>(null);
+  const [dashboardName, setDashboardName] = useState<string | null>(null);
 
   // Check 2FA status when component mounts and when user changes
   useEffect(() => {
@@ -37,6 +41,39 @@ export function Header() {
       checkTwoFactorStatus();
     }
   }, [user, token]);
+
+  useEffect(() => {
+    let isMounted = true;
+    if (!token || user?.type !== "user") {
+      setAccountId(null);
+      setProfileStatus(null);
+      setDashboardName(null);
+      return;
+    }
+
+    const fetchDashboardInfo = async () => {
+      try {
+        const response = await authApi.getUserDashboard(token);
+        if (response.success && response.data && isMounted) {
+          const dashboardUser = response.data.user;
+          const profile = response.data.profile_status;
+          setAccountId(dashboardUser?.account_id ?? null);
+          setProfileStatus(profile?.status ?? null);
+          const displayName =
+            dashboardUser?.name ||
+            [dashboardUser?.first_name, dashboardUser?.last_name].filter(Boolean).join(" ");
+          setDashboardName(displayName || null);
+        }
+      } catch (error) {
+        console.error("Failed to load dashboard header info:", error);
+      }
+    };
+
+    fetchDashboardInfo();
+    return () => {
+      isMounted = false;
+    };
+  }, [token, user?.type]);
 
   const checkTwoFactorStatus = async () => {
     if (!user?.id || !token) return;
@@ -95,26 +132,80 @@ export function Header() {
 
   return (
     <>
-      <header className="flex h-16 items-center justify-between border-b bg-card px-4 md:px-6">
-        <div className="flex items-center space-x-4">
-          <SidebarTrigger className="-ml-1" onClick={handleSidebarTriggerClick} />
-          <div className="relative hidden md:block">
+      <header className="flex h-16 items-center justify-between gap-2 border-b bg-card px-3 sm:px-4 md:px-6 overflow-hidden">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-1 min-w-0 overflow-hidden">
+          <SidebarTrigger className="-ml-1 flex-shrink-0" onClick={handleSidebarTriggerClick} />
+          
+      
+          
+          {/* Search Bar - Desktop */}
+          <div className="relative hidden lg:block flex-shrink-0">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search..."
-              className="pl-8 w-80"
+              className="pl-8 w-64 xl:w-80"
             />
           </div>
         </div>
         
-        <div className="flex items-center space-x-2 md:space-x-4">
-          <div className="relative md:hidden">
+        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+          {/* Search Bar - Mobile/Tablet */}
+          <div className="relative lg:hidden flex-shrink-0">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search..."
-              className="pl-8 w-60"
+              className="pl-8 w-40 sm:w-48 md:w-56"
             />
           </div>
+              {/* Account ID and User Info - Left Side (visible on larger screens) */}
+              {user?.type === "user" && (
+            <div className="hidden xl:flex items-center gap-4 lg:gap-6 flex-shrink-0">
+              {/* Account ID */}
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="min-w-0">
+                  <div className="text-xs text-muted-foreground mb-1 whitespace-nowrap">Account ID</div>
+                  <div className="text-sm lg:text-base font-semibold text-foreground truncate max-w-[140px] lg:max-w-[200px] xl:max-w-none">
+                    {accountId || user.id || "—"}
+                  </div>
+                </div>
+                {accountId && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6 flex-shrink-0"
+                    onClick={() => {
+                      navigator.clipboard.writeText(accountId);
+                      toast.success('Account ID copied to clipboard');
+                    }}
+                    title="Copy Account ID"
+                  >
+                    <Copy className="h-3.5 w-3.5 text-primary" />
+                  </Button>
+                )}
+              </div>
+              
+              {/* User Name and Status */}
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs sm:text-sm font-semibold text-foreground truncate max-w-[120px] lg:max-w-[150px] xl:max-w-none">
+                    {dashboardName || user.name || "User"}
+                  </span>
+                  {profileStatus && (
+                    <Badge
+                      variant={profileStatus.toLowerCase() === "verified" ? "default" : "destructive"}
+                      className={
+                        profileStatus.toLowerCase() === "verified"
+                          ? "text-[10px] sm:text-xs mt-1 w-fit bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-950/40 dark:text-green-300 dark:hover:bg-green-900/40"
+                          : "text-[10px] sm:text-xs mt-1 w-fit"
+                      }
+                    >
+                      {profileStatus.charAt(0).toUpperCase() + profileStatus.slice(1)}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
           
           {/* 2FA Button */}
           <Button 
@@ -122,18 +213,32 @@ export function Header() {
             size="sm" 
             onClick={() => setTwoFactorModalOpen(true)}
             disabled={isLoading2FAStatus}
-            className="flex items-center gap-2"
+            className={`flex items-center gap-1 sm:gap-2 flex-shrink-0 h-8 sm:h-9 px-2 sm:px-3 border rounded-lg ${
+              isLoading2FAStatus 
+                ? "border-muted" 
+                : is2FAEnabled 
+                  ? "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-950/50" 
+                  : "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-950/50"
+            }`}
           >
             {isLoading2FAStatus ? (
               <>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                <span className="text-sm">Loading...</span>
+                <span className="text-xs sm:text-sm hidden sm:inline">Loading...</span>
               </>
             ) : (
               <>
-                <Shield className={`h-4 w-4 ${is2FAEnabled ? 'text-green-500' : 'text-muted-foreground'}`} />
-                <span className="text-sm hidden md:inline">
-                  {is2FAEnabled ? "Secured with 2FA" : "Enable 2FA"}
+                <Shield className={`h-4 w-4 flex-shrink-0 ${
+                  is2FAEnabled 
+                    ? "text-green-600 dark:text-green-400" 
+                    : "text-red-600 dark:text-red-400"
+                }`} />
+                <span className={`text-xs sm:text-sm hidden lg:inline font-medium ${
+                  is2FAEnabled 
+                    ? "text-green-700 dark:text-green-300" 
+                    : "text-red-700 dark:text-red-300"
+                }`}>
+                  {is2FAEnabled ? "Secured with 2FA" : "2FA Not Enabled"}
                 </span>
               </>
             )}
@@ -145,32 +250,38 @@ export function Header() {
               size="icon" 
               onClick={() => setSidebarSelectorOpen(true)}
               title="Choose Sidebar Layout"
-              className="relative"
+              className="relative flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9"
             >
               <Layout className="h-4 w-4" />
             </Button>
           )}
+          
           <Button 
             variant="ghost" 
             size="icon" 
             onClick={() => setThemeCustomizerOpen(true)}
             title="Customize Theme"
-            className="relative"
+            className="relative flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9"
             style={{
               '--tw-ring-color': 'var(--accent, #3b82f6)',
             } as React.CSSProperties}
           >
             <Palette className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="icon" className="relative">
+          
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="relative flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9"
+          >
             <Bell className="h-4 w-4" />
             <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500"></span>
           </Button>
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                <Avatar className="h-8 w-8">
+              <Button variant="ghost" className="relative h-8 w-8 sm:h-9 sm:w-9 rounded-full flex-shrink-0">
+                <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
                   <AvatarImage src="/avatars/01.png" alt="@user" />
                   <AvatarFallback>
                     {user?.name ? user.name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}

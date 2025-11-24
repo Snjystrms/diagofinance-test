@@ -105,11 +105,100 @@ export interface LoginResponse {
   };
   data?: {
     user_id?: string | number;
+    admin_id?: string | number;
+    manager_id?: string | number;
     type?: "admin" | "user" | "subadmin" | "manager";
     token?: string;
     user?: LoginResponse["user"];
+    admin?: LoginResponse["user"];
+    manager?: LoginResponse["user"];
   };
   permissions?: GroupedPermissions[];
+}
+
+export interface UserDashboardProfileChecklistItem {
+  completed: boolean;
+  label: string;
+}
+
+export interface UserDashboardProfileStatus {
+  status: string;
+  status_code?: number;
+  is_verified?: boolean;
+  checklist: Record<
+    "personal_information" | "legal_information" | "documents_verification" | string,
+    UserDashboardProfileChecklistItem | undefined
+  >;
+}
+
+export interface UserDashboardData {
+  user?: {
+    id: number;
+    name?: string;
+    first_name?: string;
+    last_name?: string;
+    email?: string;
+    mobile?: string;
+    account_id?: string;
+    status?: number | boolean;
+  };
+  wallet?: {
+    balance: number;
+    currency: string;
+  };
+  deposits?: {
+    total: number;
+    currency: string;
+  };
+  withdrawals?: {
+    total: number;
+    currency: string;
+  };
+  profile_status?: UserDashboardProfileStatus;
+  account_types?: {
+    total_accounts: number;
+    summary: any[];
+  };
+  mt5_users?: Array<{
+    id: number;
+    uuid: string;
+    name: string;
+    email: string;
+    mt5_id: string | null;
+    account_id: string;
+  }>;
+  latest_news?: any[];
+  rate_configurations?: any[];
+}
+
+export interface TradingAccountSummaryItem {
+  account_type_id: number;
+  account_type_name: string;
+  spread_from: string;
+  maximum_leverage: string;
+  base_currency: string;
+  total_accounts: number;
+  total_balance: number;
+  currency: string;
+  accounts: Array<{
+    id: number;
+    account_id: string;
+    mt5_id: string | null;
+    name: string;
+    balance: number;
+    leverage: number | string;
+    account_mode: string;
+  }>;
+}
+
+export interface TradingAccountsSummaryResponse {
+  summary: TradingAccountSummaryItem[];
+  overall: {
+    total_account_types: number;
+    total_accounts: number;
+    total_balance: number;
+    currency: string;
+  };
 }
 
 export interface PendingUser {
@@ -657,6 +746,32 @@ export const authApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),
+
+  getUserDashboard: (token: string) =>
+    apiCall<UserDashboardData>(`/user/dashboard`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  getTradingAccountsSummary: (token: string) =>
+    apiCall<TradingAccountsSummaryResponse>(`/user/dashboard/trading-accounts-summary`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  getWalletStatistics: (token: string, type: "deposits" | "withdrawals") =>
+    apiCall<{
+      type: string;
+      period: string;
+      statistics: Array<{
+        day: string;
+        date: string;
+        amount: number;
+      }>;
+    }>(`/user/dashboard/wallet-statistics?type=${type}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
 };
 
 // ---------- Admin 2FA APIs ----------
@@ -686,8 +801,8 @@ export const admin2FAApi = {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
-  verifyLogin2FA: (data: { admin_id: string | number; token: string; email: string; password: string }) =>
-    apiCall<LoginResponse>("/admin/2fa/verify-login", {
+  verifyLogin2FA: (data: { admin_id: string | number; verify_otp: string | number }) =>
+    apiCall<LoginResponse>("/admin/google-verify-login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -719,6 +834,13 @@ export const manager2FAApi = {
     apiCall<TwoFactorDisableResponse>(`/manager/2fa/disable/${managerId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  verifyLogin2FA: (data: { manager_id: string | number; verify_otp: string | number }) =>
+    apiCall<LoginResponse>("/manager/google-verify-login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     }),
 };
 
