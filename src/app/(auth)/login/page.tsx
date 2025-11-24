@@ -258,6 +258,7 @@ export default function LoginPage() {
             sponsor_id: userData.sponsor_id,
             role: userData.role,
             managerPermissions: loginResponse.permissions || (userType === 'manager' ? [] : undefined),
+            is_ib_user: typeof userData.is_ib_user === 'number' ? Boolean(userData.is_ib_user) : userData.is_ib_user,
             // Exclude permissions as it's a different type structure
           };
 

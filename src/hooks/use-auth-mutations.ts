@@ -109,6 +109,7 @@ export const useAuthMutations = () => {
             is_account_active: rawUserData.is_account_active,
             sponsor_id: rawUserData.sponsor_id,
             role: rawUserData.role,
+            is_ib_user: typeof rawUserData.is_ib_user === 'number' ? Boolean(rawUserData.is_ib_user) : rawUserData.is_ib_user,
             managerPermissions: response.data.permissions ?? (userType === 'manager' ? [] : undefined),
           };
           

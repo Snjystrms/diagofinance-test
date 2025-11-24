@@ -101,6 +101,7 @@ export interface LoginResponse {
     is_account_active?: boolean;
     sponsor_id?: string;
     role?: string;
+    is_ib_user?: boolean | number;
     permissions?: Permission[];
   };
   data?: {

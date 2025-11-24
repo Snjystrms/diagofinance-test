@@ -18,6 +18,7 @@ interface User {
   role?: string;
   permissions?: Permission[];
   managerPermissions?: GroupedPermissions[];
+  is_ib_user?: boolean;
 }
 
 interface AuthContextType {

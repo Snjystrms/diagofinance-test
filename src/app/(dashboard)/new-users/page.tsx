@@ -56,7 +56,6 @@ import {
   Phone,
   RefreshCw,
   Users,
-  XCircle,
 } from "lucide-react"
 
 const statusOptions = [
@@ -108,41 +107,64 @@ const formatDateTime = (value?: string) => {
   }
 }
 
+// Helper to transform raw API user data to PendingUser format
+const transformUser = (raw: any): PendingUser => {
+  const firstName = raw.first_name || ""
+  const lastName = raw.last_name || ""
+  const name = `${firstName} ${lastName}`.trim() || "—"
+  
+  return {
+    id: raw.id ?? 0,
+    name,
+    email: raw.email || "",
+    username: raw.uuid || raw.username || "",
+    mobile: raw.mobile || "",
+    country: raw.country || "",
+    sponsor_id: raw.sponsor_id || "",
+    status: String(raw.status ?? ""),
+    email_verified: raw.email_verified ?? 0,
+    payment_verified: raw.payment_verified ?? 0,
+    created_at: raw.created_at || "",
+  }
+}
+
 const extractUsers = (payload?: AdminUsersListApiData | null): PendingUser[] => {
   if (!payload) return []
 
-  const ensureArray = (maybeArray: unknown): PendingUser[] =>
-    Array.isArray(maybeArray) ? (maybeArray as PendingUser[]) : []
+  const ensureArray = (maybeArray: unknown): any[] =>
+    Array.isArray(maybeArray) ? maybeArray : []
+
+  const transformArray = (arr: any[]): PendingUser[] => arr.map(transformUser)
 
   const directUsers = ensureArray(payload.users)
-  if (directUsers.length) return directUsers
+  if (directUsers.length) return transformArray(directUsers)
 
   const directItems = ensureArray(payload.items)
-  if (directItems.length) return directItems
+  if (directItems.length) return transformArray(directItems)
 
   if (Array.isArray(payload.data)) {
-    return payload.data as PendingUser[]
+    return transformArray(payload.data)
   }
 
   if (payload.data && typeof payload.data === "object") {
     const nested = payload.data as Record<string, unknown>
     const nestedUsers = ensureArray(nested.users)
-    if (nestedUsers.length) return nestedUsers
+    if (nestedUsers.length) return transformArray(nestedUsers)
 
     const nestedItems = ensureArray(nested.items)
-    if (nestedItems.length) return nestedItems
+    if (nestedItems.length) return transformArray(nestedItems)
 
     const nestedData = ensureArray(nested.data)
-    if (nestedData.length) return nestedData
+    if (nestedData.length) return transformArray(nestedData)
 
     const nestedTransactions = ensureArray(nested.transactions)
-    if (nestedTransactions.length) return nestedTransactions
+    if (nestedTransactions.length) return transformArray(nestedTransactions)
   }
 
   if (payload.meta && typeof payload.meta === "object") {
     const meta = payload.meta as Record<string, unknown>
     const metaData = ensureArray(meta.data)
-    if (metaData.length) return metaData
+    if (metaData.length) return transformArray(metaData)
   }
 
   return []
@@ -695,8 +717,8 @@ export default function NewUsersPage() {
 
           <Card className="shadow-md">
             <CardHeader>
-              <CardTitle>Pending Users</CardTitle>
-              <CardDescription>Review and manage user registration requests.</CardDescription>
+              <CardTitle>Users</CardTitle>
+              <CardDescription>View and manage all users.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 px-3 pb-6 sm:px-6">
               {error && (
@@ -714,13 +736,12 @@ export default function NewUsersPage() {
                       <TableHead>Contact</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Registration Date</TableHead>
-                      <TableHead className="w-[180px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {loading && pendingTransactions.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5}>
+                        <TableCell colSpan={4}>
                           <div className="flex justify-center py-12">
                             <Spinner className="h-6 w-6" />
                           </div>
@@ -728,7 +749,7 @@ export default function NewUsersPage() {
                       </TableRow>
                     ) : pendingTransactions.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={5}>
+                        <TableCell colSpan={4}>
                           <div className="py-10 text-center">
                             <Users className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
                             <p className="text-muted-foreground">
@@ -788,33 +809,11 @@ export default function NewUsersPage() {
                             <TableCell>
                               <div className="text-sm">{formatDateTime(user.created_at)}</div>
                             </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  size="sm"
-                                  className="bg-green-600 hover:bg-green-700"
-                                  disabled
-                                  title="Approval actions coming soon"
-                                >
-                                  <CheckCircle className="mr-2 h-4 w-4" />
-                                  Approve
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  disabled
-                                  title="Approval actions coming soon"
-                                >
-                                  <XCircle className="mr-2 h-4 w-4" />
-                                  Reject
-                                </Button>
-                              </div>
-                            </TableCell>
                           </TableRow>
                         ))}
                         {loading && pendingTransactions.length > 0 && (
                           <TableRow>
-                            <TableCell colSpan={5}>
+                            <TableCell colSpan={4}>
                               <div className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
                                 <Spinner className="h-4 w-4" />
                                 <span>Refreshing…</span>

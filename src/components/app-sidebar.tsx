@@ -437,20 +437,7 @@ export const userNavData = [
     title: "Become Partner",
     url: "/become-partner",
     icon: UserPlus,
-    // items: [
-    //   {
-    //     title: "USDT Transactions",
-    //     url: "/usdt-transactions",
-    //   },
-    //   {
-    //     title: "Transaction Verification",
-    //     url: "/transaction-verification",
-    //   },
-    //   {
-    //     title: "Payment History",
-    //     url: "/payment-history",
-    //   },
-    // ],
+    
   },
   {
     title: "Help & Support",
@@ -515,7 +502,22 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         return generateManagerNavigation(user.managerPermissions);
       case "user":
       default:
-        return userNavData;
+        // Conditionally modify the menu item based on is_ib_user
+        console.log('Sidebar Debug - User:', user);
+        console.log('Sidebar Debug - is_ib_user:', user.is_ib_user);
+        const modifiedUserNavData = userNavData.map((item) => {
+          // Only modify the "Become Partner" item if user is an IB user
+          if (item.title === "Become Partner" && user.is_ib_user === true) {
+            console.log('Sidebar Debug - Changing "Become Partner" to "IB dashboard"');
+            return {
+              ...item,
+              title: "IB dashboard",
+              url: "/ib-dashboard",
+            };
+          }
+          return item;
+        });
+        return modifiedUserNavData;
     }
   }, [user]);
 
