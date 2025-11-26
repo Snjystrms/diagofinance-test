@@ -9,6 +9,17 @@ import { Separator } from "@/components/ui/separator"
 import { Check, Palette, Image, Link } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+interface SidebarThemeOverrides {
+  background?: string
+  foreground?: string
+  primary?: string
+  primaryForeground?: string
+  accent?: string
+  accentForeground?: string
+  border?: string
+  ring?: string
+}
+
 interface ThemeSwatch {
   id: string
   name: string
@@ -23,6 +34,7 @@ interface ThemeSwatch {
     border: string
     muted: string
     mutedForeground: string
+    sidebar?: SidebarThemeOverrides
   }
 }
 
@@ -378,6 +390,58 @@ const themeSwatches: ThemeSwatch[] = [
       muted: "#fdf2f8",
       mutedForeground: "#be185d"
     }
+  },
+  {
+    id: "noir",
+    name: "Noir",
+    leftColor: "#020617",
+    rightColor: "#0f172a",
+    cssVariables: {
+      primary: "#6366f1",
+      secondary: "#8b5cf6",
+      accent: "#22d3ee",
+      background: "#020617",
+      foreground: "#f8fafc",
+      border: "#1e293b",
+      muted: "#0f172a",
+      mutedForeground: "#94a3b8",
+      sidebar: {
+        background: "#050a18",
+        foreground: "#e2e8f0",
+        primary: "#6366f1",
+        primaryForeground: "#f8fafc",
+        accent: "#0f172a",
+        accentForeground: "#e2e8f0",
+        border: "#1f2937",
+        ring: "#4c1d95"
+      }
+    }
+  },
+  {
+    id: "graphite",
+    name: "Graphite",
+    leftColor: "#111827",
+    rightColor: "#1f2937",
+    cssVariables: {
+      primary: "#f97316",
+      secondary: "#fb923c",
+      accent: "#facc15",
+      background: "#0b1120",
+      foreground: "#f8fafc",
+      border: "#1f2937",
+      muted: "#111827",
+      mutedForeground: "#9ca3af",
+      sidebar: {
+        background: "#111827",
+        foreground: "#f8fafc",
+        primary: "#f97316",
+        primaryForeground: "#0b0f19",
+        accent: "#1f2937",
+        accentForeground: "#fde68a",
+        border: "#1f2937",
+        ring: "#fb923c"
+      }
+    }
   }
 ]
 
@@ -413,15 +477,33 @@ function writeVariables(target: HTMLElement, vars: ThemeSwatch["cssVariables"]) 
   target.style.setProperty("--secondary", vars.secondary)
   target.style.setProperty("--accent", vars.accent)
 
+  const sidebarVars = vars.sidebar ?? {}
+  const sidebarBackground = sidebarVars.background ?? vars.background
+  const sidebarForeground = sidebarVars.foreground ?? vars.foreground
+  const sidebarPrimary = sidebarVars.primary ?? vars.primary
+  const sidebarPrimaryForeground = sidebarVars.primaryForeground ?? vars.foreground
+  const sidebarAccent = sidebarVars.accent ?? vars.accent
+  const sidebarAccentForeground =
+    sidebarVars.accentForeground ?? vars.foreground
+  const sidebarBorder = sidebarVars.border ?? vars.border
+  const sidebarRing = sidebarVars.ring ?? vars.border
+
   target.style.setProperty("--background", vars.background)
   target.style.setProperty("--card", vars.background)
   target.style.setProperty("--popover", vars.background)
-  target.style.setProperty("--sidebar", vars.background)
+  target.style.setProperty("--sidebar", sidebarBackground)
 
   target.style.setProperty("--foreground", vars.foreground)
   target.style.setProperty("--card-foreground", vars.foreground)
   target.style.setProperty("--popover-foreground", vars.foreground)
-  target.style.setProperty("--sidebar-foreground", vars.foreground)
+  target.style.setProperty("--sidebar-foreground", sidebarForeground)
+
+  target.style.setProperty("--sidebar-primary", sidebarPrimary)
+  target.style.setProperty("--sidebar-primary-foreground", sidebarPrimaryForeground)
+  target.style.setProperty("--sidebar-accent", sidebarAccent)
+  target.style.setProperty("--sidebar-accent-foreground", sidebarAccentForeground)
+  target.style.setProperty("--sidebar-border", sidebarBorder)
+  target.style.setProperty("--sidebar-ring", sidebarRing)
 
   target.style.setProperty("--border", vars.border)
   target.style.setProperty("--muted", vars.muted)
@@ -446,6 +528,12 @@ function clearVariables(target: HTMLElement) {
     "--card-foreground",
     "--popover-foreground",
     "--sidebar-foreground",
+    "--sidebar-primary",
+    "--sidebar-primary-foreground",
+    "--sidebar-accent",
+    "--sidebar-accent-foreground",
+    "--sidebar-border",
+    "--sidebar-ring",
     "--border",
     "--muted",
     "--muted-foreground",

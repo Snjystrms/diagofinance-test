@@ -22,6 +22,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar"
 import { authApi, admin2FAApi, manager2FAApi } from "@/lib/api"
 import toast from "react-hot-toast"
 import { TwoFactorModal } from "@/components/two-factor-modal"
+import { NotificationInbox } from "@/components/notification-inbox"
 
 export function Header() {
   const { user, token, logout } = useAuth();
@@ -269,14 +270,18 @@ export function Header() {
             <Palette className="h-4 w-4" />
           </Button>
           
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="relative flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9"
-          >
-            <Bell className="h-4 w-4" />
-            <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500"></span>
-          </Button>
+          {user?.type === "user" ? (
+            <NotificationInbox />
+          ) : (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="relative flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9"
+            >
+              <Bell className="h-4 w-4" />
+              <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500"></span>
+            </Button>
+          )}
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -2069,3 +2069,242 @@ export const withdrawalApi = {
     });
   },
 };
+
+// ---------- Notification Types ----------
+export interface NotificationItem {
+  id: number;
+  uuid: string;
+  message: string;
+  isRead: boolean;
+  status: "read" | "unread";
+  createdAt: string;
+  updatedAt: string;
+  timeAgo: string;
+}
+
+export interface NotificationsResponse {
+  notifications: NotificationItem[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    total_pages: number;
+    has_more: boolean;
+  };
+  summary: {
+    total: number;
+    unread: number;
+    read: number;
+  };
+}
+
+export interface UnreadCountResponse {
+  unread_count: number;
+}
+
+export interface MarkAllReadResponse {
+  updated_count: number;
+}
+
+// ---------- Notification APIs ----------
+export const notificationApi = {
+  getNotifications: (token: string, page: number = 1, perPage: number = 20) =>
+    apiCall<NotificationsResponse>(`/user/notifications?page=${page}&per_page=${perPage}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  getUnreadCount: (token: string) =>
+    apiCall<UnreadCountResponse>(`/user/notifications/unread-count`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  markAllAsRead: (token: string) =>
+    apiCall<MarkAllReadResponse>(`/user/notifications/mark-all-read`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  deleteNotification: (id: number, token: string) =>
+    apiCall(`/user/notifications/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  markAsUnread: (id: number, token: string) =>
+    apiCall(`/user/notifications/${id}/unread`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};
+
+// ---------- Ticket Types ----------
+export interface TicketItem {
+  id: number;
+  uuid: string;
+  enquiry_type: number;
+  title: string;
+  description: string;
+  reply_note: string | null;
+  status: number;
+  priority: number;
+  created_at: string;
+  enquiry_type_label?: string;
+}
+
+export interface TicketListResponse {
+  success: boolean;
+  data: TicketItem[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+  };
+}
+
+export interface CreateTicketRequest {
+  title: string;
+  enquiry_type: number;
+  description: string;
+  priority: number;
+}
+
+export interface CreateTicketResponse {
+  success: boolean;
+  message: string;
+  model?: string;
+  data: TicketItem;
+}
+
+// ---------- Ticket APIs ----------
+export const ticketApi = {
+  list: (token: string, page: number = 1, perPage: number = 10) =>
+    apiCall<TicketListResponse>(`/user/ticket/list?page=${page}&per_page=${perPage}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  create: (data: CreateTicketRequest, token: string) =>
+    apiCall<CreateTicketResponse>(`/user/ticket/store`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+};
+
+// ---------- Admin Ticket Types ----------
+export interface AdminTicketUser {
+  id: number;
+  uuid: string;
+  first_name: string | null;
+  last_name: string | null;
+  email: string;
+  sponsor_id?: string | null;
+}
+
+export interface AdminTicketResolver {
+  id: string | number;
+  name: string;
+  email: string;
+}
+
+export interface AdminTicketItem {
+  id: number;
+  uuid: string;
+  user_id: number;
+  title: string;
+  enquiry_type: number;
+  description: string;
+  reply_note: string | null;
+  priority: number;
+  status: number;
+  resolved_by: string | number | null;
+  resolved_at: string | null;
+  admin_notes: string | null;
+  created_at: string;
+  updated_at: string;
+  enquiry_type_label?: string;
+  user?: AdminTicketUser;
+  resolver?: AdminTicketResolver | null;
+}
+
+export interface AdminTicketListPayload {
+  tickets: AdminTicketItem[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+  };
+}
+
+export interface AdminTicketStatsPayload {
+  total: number;
+  open: number;
+  in_progress: number;
+  resolved: number;
+  closed: number;
+}
+
+export interface AdminTicketReplyRequest {
+  reply_note: string;
+  admin_notes?: string;
+}
+
+export interface AdminTicketCloseRequest {
+  resolution_note: string;
+  admin_notes?: string;
+}
+
+export const adminTicketApi = {
+  list: (
+    token: string,
+    params: {
+      page?: number;
+      limit?: number;
+      status?: string | number;
+      search?: string;
+      user_id?: string;
+      enquiry_type?: string;
+      priority?: string;
+    } = {},
+  ) => {
+    const qs = new URLSearchParams();
+    qs.set("page", String(params.page ?? 1));
+    qs.set("limit", String(params.limit ?? 10));
+    if (params.status !== undefined && params.status !== null && params.status !== "all") {
+      qs.set("status", String(params.status));
+    }
+    if (params.search) qs.set("search", params.search);
+    if (params.user_id) qs.set("user_id", params.user_id);
+    if (params.enquiry_type) qs.set("enquiry_type", params.enquiry_type);
+    if (params.priority) qs.set("priority", params.priority);
+
+    return apiCall<AdminTicketListPayload>(`/admin/tickets?${qs.toString()}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  stats: (token: string) =>
+    apiCall<AdminTicketStatsPayload>(`/admin/tickets/statistics`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  reply: (ticketId: string | number, data: AdminTicketReplyRequest, token: string) =>
+    apiCall(`/admin/tickets/${ticketId}/reply`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+
+  close: (ticketId: string | number, data: AdminTicketCloseRequest, token: string) =>
+    apiCall(`/admin/tickets/${ticketId}/close`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+};

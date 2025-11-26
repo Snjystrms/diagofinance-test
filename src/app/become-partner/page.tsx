@@ -38,8 +38,9 @@ export default function BecomePartnerPage() {
       const response = await ibRequestsApi.getStatus(token);
       if (response?.data) {
         setStatusData(response.data);
-        // Redirect to IB dashboard if approved - prevent direct access
-        if (response.data.status_text?.toLowerCase() === "approved") {
+        // Redirect to IB dashboard if approved - check ib_request.status === 1
+        const ibRequest = response.data.ib_request;
+        if (ibRequest && ibRequest.status === 1) {
           router.push("/ib-dashboard");
           return;
         }

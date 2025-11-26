@@ -9,10 +9,17 @@ import { cn } from "@/lib/utils"; // if you don't have cn, replace with a simple
 type Props = Omit<React.ComponentPropsWithoutRef<"input">, "type"> & {
   className?: string;      // wrapper
   inputClassName?: string; // inner input
+  onVisibilityChange?: (visible: boolean) => void;
 };
 
-export function PasswordInput({ className, inputClassName, ...props }: Props) {
+export function PasswordInput({ className, inputClassName, onVisibilityChange, ...props }: Props) {
   const [show, setShow] = React.useState(false);
+
+  const handleToggle = () => {
+    const newShow = !show;
+    setShow(newShow);
+    onVisibilityChange?.(newShow);
+  };
 
   return (
     <div className={cn("relative", className)}>
@@ -27,7 +34,7 @@ export function PasswordInput({ className, inputClassName, ...props }: Props) {
         aria-label={show ? "Hide password" : "Show password"}
         aria-pressed={show}
         onMouseDown={(e) => e.preventDefault()} // keep focus in input
-        onClick={() => setShow((s) => !s)}
+        onClick={handleToggle}
         className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-muted-foreground hover:text-foreground"
       >
         {show ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}

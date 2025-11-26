@@ -349,57 +349,81 @@ export default function DashboardPage() {
         ) : (
         <div className="space-y-6">
           {/* Key Metrics Summary Row */}
-          <div className="grid gap-3 sm:grid-cols-3 mb-4">
-            <Card className="border-2 border-green-500/30 bg-gradient-to-br from-green-500/10 to-emerald-500/5 hover:shadow-lg transition-all duration-300 group">
-              <CardContent className="pt-4 pb-4 px-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Total Deposits</p>
-                    <p className="text-lg font-bold text-green-600 dark:text-green-400">
+          <div className="grid gap-4 sm:grid-cols-3 mb-6">
+            {/* Total Deposits Card */}
+            <Card className="relative overflow-hidden border-2 border-indigo-500/30 hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-indigo-500/10 via-blue-500/5 to-transparent rounded-3xl group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/10 to-blue-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
+              <CardContent className="relative z-10 pt-6 pb-6 px-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                      Total Deposits
+                    </p>
+                    <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">
                       {formatCurrency(
                         dashboardData?.deposits?.total ?? 0,
                         depositsCurrency
                       )}
                     </p>
                   </div>
-                  <div className="p-2 rounded-lg bg-green-500/20 border border-green-500/30 group-hover:scale-110 transition-transform">
-                    <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  <div className="p-3 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-blue-500/20 border border-indigo-500/30 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                    <TrendingUp className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
                   </div>
+                </div>
+                <div className="pt-3 border-t border-indigo-500/20">
+                  <p className="text-xs text-muted-foreground">All time deposits</p>
                 </div>
               </CardContent>
             </Card>
             
-            <Card className="border-2 border-red-500/30 bg-gradient-to-br from-red-500/10 to-rose-500/5 hover:shadow-lg transition-all duration-300 group">
-              <CardContent className="pt-4 pb-4 px-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Total Withdrawals</p>
-                    <p className="text-lg font-bold text-red-600 dark:text-red-400">
+            {/* Total Withdrawals Card */}
+            <Card className="relative overflow-hidden border-2 border-amber-500/30 hover:border-amber-500/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent rounded-3xl group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
+              <CardContent className="relative z-10 pt-6 pb-6 px-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                      Total Withdrawals
+                    </p>
+                    <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
                       {formatCurrency(
                         dashboardData?.withdrawals?.total ?? 0,
                         withdrawalsCurrency
                       )}
                     </p>
                   </div>
-                  <div className="p-2 rounded-lg bg-red-500/20 border border-red-500/30 group-hover:scale-110 transition-transform">
-                    <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                    <TrendingDown className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                   </div>
+                </div>
+                <div className="pt-3 border-t border-amber-500/20">
+                  <p className="text-xs text-muted-foreground">All time withdrawals</p>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/10 to-purple-500/5 hover:shadow-lg transition-all duration-300 group">
-              <CardContent className="pt-4 pb-4 px-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">Trading Accounts</p>
-                    <p className="text-lg font-bold text-primary">
+            {/* Trading Accounts Card */}
+            <Card className="relative overflow-hidden border-2 border-violet-500/30 hover:border-violet-500/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-transparent rounded-3xl group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
+              <CardContent className="relative z-10 pt-6 pb-6 px-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
+                      Trading Accounts
+                    </p>
+                    <p className="text-2xl font-bold text-violet-600 dark:text-violet-400 tabular-nums">
                       {overallAccounts?.total_accounts ?? dashboardData?.account_types?.total_accounts ?? 0}
                     </p>
                   </div>
-                  <div className="p-2 rounded-lg bg-primary/20 border border-primary/30 group-hover:scale-110 transition-transform">
-                    <Building2 className="h-5 w-5 text-primary" />
+                  <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/30 group-hover:scale-110 transition-transform duration-300 shadow-lg">
+                    <Building2 className="h-6 w-6 text-violet-600 dark:text-violet-400" />
                   </div>
+                </div>
+                <div className="pt-3 border-t border-violet-500/20">
+                  <p className="text-xs text-muted-foreground">Active MT5 accounts</p>
                 </div>
               </CardContent>
             </Card>

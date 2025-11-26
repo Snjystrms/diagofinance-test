@@ -180,25 +180,25 @@ export const adminNavData = [
       },
     ],
   },
-  // {
-  //   title: "Support & Tickets",
-  //   url: "/support",
-  //   icon: LifeBuoy,
-  //   items: [
-  //     {
-  //       title: "All Tickets",
-  //       url: "/all-tickets",
-  //     },
-  //     {
-  //       title: "Ticket Management",
-  //       url: "/ticket-management",
-  //     },
-  //     {
-  //       title: "Support Analytics",
-  //       url: "/support-analytics",
-  //     },
-  //   ],
-  // },
+  {
+    title: "Support & Tickets",
+    url: "/support",
+    icon: LifeBuoy,
+    items: [
+      {
+        title: "All Tickets",
+        url: "/all-tickets",
+      },
+      {
+        title: "Ticket Management",
+        url: "/ticket-management",
+      },
+      {
+        title: "Support Analytics",
+        url: "/support-analytics",
+      },
+    ],
+  },
   // {
   //   title: "System Settings",
   //   url: "/settings",
@@ -304,16 +304,16 @@ export const userNavData = [
     url: "/dashboard",
     icon: Home,
     isActive: true,
-    // items: [
-    //   {
-    //     title: "Overview",
-    //     url: "/dashboard",
-    //   },
-    //   {
-    //     title: "Analytics",
-    //     url: "/analytics",
-    //   },
-    // ],
+    items: [
+      {
+        title: "Overview",
+        url: "/dashboard",
+      },
+      {
+        title: "Analytics",
+        url: "/analytics",
+      },
+    ],
   },
   {
     title: "My wallet",

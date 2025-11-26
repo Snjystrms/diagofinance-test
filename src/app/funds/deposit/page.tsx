@@ -1,5 +1,5 @@
 'use client'
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,6 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { MainLayout } from "@/components/main-layout";
 import { useAuth } from "@/contexts/auth-context";
 import { submitUSDTDeposit } from "@/utils/operations";
+import { walletApi, type WalletSummaryData } from "@/lib/api";
+import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Copy, 
   Hash, 
@@ -21,7 +23,9 @@ import {
   Shield,
   DollarSign,
   Upload,
-  X
+  X,
+  RefreshCw,
+  TrendingUp
 } from "lucide-react";
 
 function USDTDepositContent() {
@@ -34,6 +38,58 @@ function USDTDepositContent() {
   const [copied, setCopied] = useState(false);
   const [depositStatus, setDepositStatus] = useState("pending"); // pending, submitted, confirmed
   const [error, setError] = useState<string | null>(null);
+  const [walletData, setWalletData] = useState<WalletSummaryData | null>(null);
+  const [walletLoading, setWalletLoading] = useState(true);
+  const wallets = walletData ? Object.values(walletData.wallets || {}) : [];
+  const primaryWallet = wallets.find((wallet) => wallet.is_primary) || wallets[0];
+  const currency = primaryWallet?.currency || "USDT";
+  const totalBalance = walletData?.total_balance ?? 0;
+  const availableBalance = primaryWallet?.balance ?? totalBalance;
+  const secondaryBalance = wallets
+    .filter((wallet) => wallet.id !== primaryWallet?.id)
+    .reduce((sum, wallet) => sum + wallet.balance, 0);
+  const recentDeposit = walletData?.recent_transactions?.find(
+    (tx) => tx.type?.toLowerCase() === "deposit" || tx.type?.toLowerCase() === "credit"
+  );
+
+  const formatAmount = (value: number) =>
+    value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+
+  const recentDepositAmount = recentDeposit ? parseFloat(recentDeposit.amount || "0") : null;
+  const recentDepositLabel = recentDepositAmount
+    ? `${formatAmount(recentDepositAmount)} ${currency}`
+    : "No recent deposits";
+  const recentDepositDate = recentDeposit
+    ? new Date(recentDeposit.created_at).toLocaleString()
+    : "—";
+
+  const typedAmountNum = parseFloat(amount) || 0;
+  const depositReadiness =
+    availableBalance > 0 ? Math.min(100, Math.round((typedAmountNum / availableBalance) * 100)) : 0;
+
+  const fetchWalletSummary = async () => {
+    if (!token) {
+      setWalletLoading(false);
+      return;
+    }
+
+    try {
+      setWalletLoading(true);
+      const response = await walletApi.getSummary(token);
+      if (response.success && response.data) {
+        setWalletData(response.data);
+      }
+    } catch (fetchError) {
+      console.error("Failed to load wallet summary:", fetchError);
+    } finally {
+      setWalletLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWalletSummary();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   // Check if user needs to pay registration fee
   const needsRegistrationFee = user && user.type === 'user' && user.is_account_active === false;
@@ -197,7 +253,90 @@ function USDTDepositContent() {
           </p>
         </div>
 
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-6xl mx-auto space-y-8">
+          {/* Wallet Summary Card */}
+          <Card className="border-0 shadow-xl bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-emerald-900/10 dark:to-blue-900/10">
+            <CardContent className="p-6">
+              {walletLoading ? (
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-3">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-40" />
+                    <Skeleton className="h-3 w-full" />
+                  </div>
+                  <div className="space-y-3">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-32" />
+                    <Skeleton className="h-3 w-3/4" />
+                  </div>
+                  <div className="space-y-3">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-32" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
+                </div>
+              ) : walletData ? (
+                <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                      <TrendingUp className="h-4 w-4 text-emerald-500" />
+                      Available Balance
+                    </div>
+                    <div className="flex items-end gap-2">
+                      <span className="text-4xl font-bold text-foreground tracking-tight">
+                        {formatAmount(availableBalance)}
+                      </span>
+                      <span className="text-lg font-semibold text-muted-foreground">{currency}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Secondary wallets: {formatAmount(secondaryBalance)} {currency}
+                    </p>
+                  </div>
+
+                  <div className="flex-1 w-full max-w-md">
+                    <div className="flex items-center justify-between text-xs font-medium text-muted-foreground mb-2">
+                      <span>Deposit readiness</span>
+                      <span>{depositReadiness}% of current balance</span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-emerald-500 to-blue-500 transition-all duration-300"
+                        style={{ width: `${depositReadiness}%` }}
+                      />
+                    </div>
+                    <p className="text-[11px] text-muted-foreground mt-2">
+                      Adjust your deposit amount to stay within your available wallet capacity.
+                    </p>
+                  </div>
+
+                  <div className="flex flex-col gap-2 min-w-[220px]">
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">Last Deposit</p>
+                      <p className="text-sm font-semibold text-foreground">{recentDepositLabel}</p>
+                      <p className="text-[11px] text-muted-foreground">{recentDepositDate}</p>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={fetchWalletSummary}
+                      className="self-start gap-2"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                      Refresh balance
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-2 text-sm text-muted-foreground">
+                  <p>Wallet summary not available. Please log in to view your balance.</p>
+                  <Button variant="outline" size="sm" onClick={fetchWalletSummary}>
+                    Retry
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             
             {/* Left Column - QR Code and Details */}

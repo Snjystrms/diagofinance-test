@@ -247,77 +247,123 @@ function WithdrawalRequestContent() {
           <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
             <CardContent className="p-6">
               {walletLoading ? (
-                <div className="space-y-4">
-                  <Skeleton className="h-6 w-32" />
-                  <Skeleton className="h-10 w-48" />
-                  <Skeleton className="h-4 w-64" />
+                <div className="grid gap-4 md:grid-cols-3">
+                  <div className="space-y-3">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-40" />
+                    <Skeleton className="h-3 w-full" />
+                  </div>
+                  <div className="space-y-3">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-32" />
+                    <Skeleton className="h-3 w-3/4" />
+                  </div>
+                  <div className="space-y-3">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-32" />
+                    <Skeleton className="h-3 w-1/2" />
+                  </div>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                        <Wallet className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium text-muted-foreground">Available Balance</p>
-                        <div className="flex items-baseline gap-2 mt-1">
-                          <span className="text-3xl font-bold text-foreground">
-                            {formatAmount(totalBalance)}
-                          </span>
-                          <span className="text-lg font-semibold text-muted-foreground">
-                            {currency}
+                <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                      <Wallet className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                      Available Balance
+                    </div>
+                    <div className="flex items-end gap-2">
+                      <span className="text-4xl font-bold text-foreground tracking-tight">
+                        {formatAmount(totalBalance)}
+                      </span>
+                      <span className="text-lg font-semibold text-muted-foreground">{currency}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Keeping at least {formatAmount(minimumAmount)} {currency} ensures future withdrawals.
+                    </p>
+                  </div>
+
+                  <div className="flex-1 w-full max-w-md">
+                    <div className="flex items-center justify-between text-xs font-medium text-muted-foreground mb-2">
+                      <span>Impact of this withdrawal</span>
+                      <span>
+                        {amountNum > 0
+                          ? `${((amountNum / (totalBalance || 1)) * 100).toFixed(0)}%`
+                          : "0%"}
+                      </span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-300 ${
+                          remainingBalance < 0
+                            ? "bg-destructive"
+                            : remainingBalance < minimumAmount
+                              ? "bg-yellow-500"
+                              : "bg-gradient-to-r from-blue-500 to-indigo-500"
+                        }`}
+                        style={{
+                          width: `${Math.min(100, (amountNum / (totalBalance || 1)) * 100)}%`,
+                        }}
+                      />
+                    </div>
+                    {amount && !isNaN(amountNum) && amountNum > 0 && (
+                      <div className="mt-3 text-xs text-muted-foreground space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span>Remaining balance</span>
+                          <span
+                            className={`font-semibold ${
+                              remainingBalance < 0
+                                ? "text-destructive"
+                                : remainingBalance < minimumAmount
+                                  ? "text-yellow-600"
+                                  : "text-emerald-600 dark:text-emerald-400"
+                            }`}
+                          >
+                            {formatAmount(remainingBalance)} {currency}
                           </span>
                         </div>
+                        {remainingBalance < 0 && (
+                          <p className="text-destructive flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            Insufficient balance for this withdrawal
+                          </p>
+                        )}
+                        {remainingBalance >= 0 && remainingBalance < minimumAmount && (
+                          <p className="text-yellow-600 flex items-center gap-1">
+                            <AlertCircle className="h-3 w-3" />
+                            Remaining balance will be below the minimum withdrawal amount
+                          </p>
+                        )}
                       </div>
+                    )}
+                  </div>
+
+                  <div className="flex flex-col gap-2 min-w-[220px]">
+                    <div>
+                      <p className="text-xs font-medium text-muted-foreground">Last Request</p>
+                      {withdrawalData?.created_at ? (
+                        <>
+                          <p className="text-sm font-semibold text-foreground">
+                            {formatAmount(withdrawalData.amount || amount)} {currency}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {new Date(withdrawalData.created_at).toLocaleString()}
+                          </p>
+                        </>
+                      ) : (
+                        <p className="text-sm text-muted-foreground">No recent withdrawals</p>
+                      )}
                     </div>
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
                       onClick={fetchWalletSummary}
+                      className="self-start gap-2"
                       disabled={walletLoading}
-                      className="h-8 w-8 p-0"
                     >
-                      <RefreshCw className={`h-4 w-4 ${walletLoading ? 'animate-spin' : ''}`} />
+                      <RefreshCw className={`h-4 w-4 ${walletLoading ? "animate-spin" : ""}`} />
+                      Refresh balance
                     </Button>
                   </div>
-                  
-                  {amount && !isNaN(parseFloat(amount)) && parseFloat(amount) > 0 && (
-                    <div className="pt-4 border-t border-border/50">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <TrendingDown className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-sm font-medium text-muted-foreground">Remaining Balance</span>
-                        </div>
-                        <div className="flex items-baseline gap-2">
-                          <span className={`text-2xl font-bold ${
-                            remainingBalance < 0 
-                              ? 'text-destructive' 
-                              : remainingBalance < minimumAmount 
-                                ? 'text-warning' 
-                                : 'text-emerald-600 dark:text-emerald-400'
-                          }`}>
-                            {formatAmount(remainingBalance)}
-                          </span>
-                          <span className="text-sm font-semibold text-muted-foreground">
-                            {currency}
-                          </span>
-                        </div>
-                      </div>
-                      {remainingBalance < 0 && (
-                        <p className="text-xs text-destructive mt-2 flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3" />
-                          Insufficient balance for this withdrawal
-                        </p>
-                      )}
-                      {remainingBalance >= 0 && remainingBalance < minimumAmount && (
-                        <p className="text-xs text-warning mt-2 flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3" />
-                          Remaining balance will be below minimum withdrawal amount
-                        </p>
-                      )}
-                    </div>
-                  )}
                 </div>
               )}
             </CardContent>
