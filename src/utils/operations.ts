@@ -2,7 +2,7 @@
 import { ApiResponse } from '@/lib/api'
 
 // Base API configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://192.168.1.47:3000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://graybulls.com'
 
 // Personal Information Types
 export interface PersonalInformation {
@@ -143,7 +143,7 @@ export const authOperations = {
   },
 
   // Register user
-  register: async (userData: any): Promise<ApiResponse> => {
+  register: async (userData: Record<string, unknown>): Promise<ApiResponse> => {
     return apiCall('/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData),
@@ -385,7 +385,7 @@ export const utilityFunctions = {
   },
 
   // Debounce function
-  debounce: <T extends (...args: any[]) => any>(
+  debounce: <T extends (...args: unknown[]) => unknown>(
     func: T,
     wait: number
   ): ((...args: Parameters<T>) => void) => {
@@ -397,7 +397,7 @@ export const utilityFunctions = {
   },
 
   // Throttle function
-  throttle: <T extends (...args: any[]) => any>(
+  throttle: <T extends (...args: unknown[]) => unknown>(
     func: T,
     limit: number
   ): ((...args: Parameters<T>) => void) => {
@@ -440,7 +440,7 @@ export async function getUserWithdrawals(
   token?: string
 ): Promise<WithdrawalsResponse> {
   try {
-    const response = await apiCall<any>(
+    const response = await apiCall<WithdrawalsResponse>(
       `/user/withdrawals?page=${page}&limit=${limit}`,
       {
         method: 'GET',
@@ -453,19 +453,20 @@ export async function getUserWithdrawals(
     let pagination = undefined
 
     if (response.success && response.data) {
+      const data = response.data as unknown as { withdrawals?: WithdrawalItem[]; pagination?: unknown } | WithdrawalItem[];
       // Case 1: Data is an object with withdrawals array
-      if (Array.isArray(response.data.withdrawals)) {
-        withdrawals = response.data.withdrawals
-        pagination = response.data.pagination
+      if (typeof data === 'object' && !Array.isArray(data) && Array.isArray(data.withdrawals)) {
+        withdrawals = data.withdrawals
+        pagination = data.pagination
       }
       // Case 2: Data is directly an array
-      else if (Array.isArray(response.data)) {
-        withdrawals = response.data
+      else if (Array.isArray(data)) {
+        withdrawals = data
       }
       // Case 3: Data is an object, check if it has a withdrawals property
-      else if (response.data.withdrawals) {
-        withdrawals = Array.isArray(response.data.withdrawals) ? response.data.withdrawals : []
-        pagination = response.data.pagination
+      else if (typeof data === 'object' && !Array.isArray(data) && data.withdrawals) {
+        withdrawals = Array.isArray(data.withdrawals) ? data.withdrawals : []
+        pagination = data.pagination
       }
     } else if (!response.success) {
       console.error('API returned unsuccessful response:', response)
@@ -483,5 +484,32 @@ export async function getUserWithdrawals(
   } catch (error) {
     console.error('Error in getUserWithdrawals:', error)
     throw error
+  }
+}
+
+// User Operations
+export const userOperations = {
+  submitRegistrationFee: async (transactionHash: string, token: string): Promise<ApiResponse> => {
+    return apiCall('/user/registration-fee', {
+      method: 'POST',
+      body: JSON.stringify({ transaction_hash: transactionHash }),
+    }, token)
+  }
+}
+
+// Transaction Operations
+export const transactionOperations = {
+  verifyEmailWithTransaction: async (
+    token: string,
+    hashcode: string,
+    txHash: string
+  ): Promise<ApiResponse> => {
+    return apiCall('/user/verify-email-transaction', {
+      method: 'POST',
+      body: JSON.stringify({
+        hashcode,
+        transaction_hash: txHash,
+      }),
+    }, token)
   }
 }

@@ -144,8 +144,9 @@ export default function KycVerificationPage() {
       resetAll();
 
       await loadKycStatus();
-    } catch (err: any) {
-      alert(err?.message || 'Failed to upload documents');
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to upload documents';
+      alert(errorMessage);
     } finally {
       setUploading(false);
     }
@@ -166,8 +167,9 @@ export default function KycVerificationPage() {
       toast.success(res?.message || 'Document re-uploaded successfully');
       setReuploadFiles((s) => ({ ...s, [fieldKey]: null }));
       await loadKycStatus();
-    } catch (e: any) {
-      toast.error(e?.message || 'Re-upload failed');
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : 'Re-upload failed';
+      toast.error(errorMessage);
     } finally {
       setReuploadingKey(null);
     }
@@ -196,9 +198,10 @@ export default function KycVerificationPage() {
         // treat unknown as draft unless documents_submitted tells otherwise
         setPhase(res.data.kyc.documents_submitted ? 'under_review' : 'draft');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error(err);
-      toast.error(err?.message || 'Failed to fetch KYC status');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch KYC status';
+      toast.error(errorMessage);
     } finally {
       setStatusLoading(false);
     }
@@ -876,7 +879,7 @@ export default function KycVerificationPage() {
                           KYC verified successfully
                         </p>
                         <p className="text-sm text-emerald-800 dark:text-emerald-300">
-                          Your identity has been verified. All submitted documents have been approved. You're all set!
+                          Your identity has been verified. All submitted documents have been approved. You&apos;re all set!
                         </p>
                       </div>
                     </div>

@@ -1,5 +1,6 @@
 "use client"
 
+import * as React from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { ChevronRight, type LucideIcon } from "lucide-react"
@@ -27,7 +28,7 @@ export function NavMain({
   items: {
     title: string
     url: string
-    icon?: LucideIcon
+    icon?: React.ComponentType<Record<string, unknown>> | React.ReactElement | null
     isActive?: boolean
     items?: {
       title: string
@@ -64,7 +65,7 @@ export function NavMain({
                   >
                     {hasSubItems ? (
                       <>
-                        {item.icon && <item.icon className="transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />}
+                        {item.icon && (React.isValidElement(item.icon) ? item.icon : <item.icon className="transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />)}
                         {!isCollapsed && <span className="animate-in fade-in-0 slide-in-from-left-2 duration-500">{item.title}</span>}
                         {!isCollapsed && (
                           <ChevronRight className="ml-auto transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] group-data-[state=open]/collapsible:rotate-90" />
@@ -72,7 +73,7 @@ export function NavMain({
                       </>
                     ) : (
                       <Link href={item.url} className="flex items-center w-full">
-                        {item.icon && <item.icon className="transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />}
+                        {item.icon && (React.isValidElement(item.icon) ? item.icon : <item.icon className="transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />)}
                         {!isCollapsed && <span className="animate-in fade-in-0 slide-in-from-left-2 duration-500">{item.title}</span>}
                       </Link>
                     )}

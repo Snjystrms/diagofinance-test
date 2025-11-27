@@ -7,7 +7,7 @@ import Link from "next/link";
 import { MainLayout } from "@/components/main-layout";
 import { BecomePartnerCta } from "@/components/become-partner/ib-request-cta";
 import { useAuth } from "@/contexts/auth-context";
-import { ibRequestsApi } from "@/lib/api";
+import { ibRequestsApi, type IbRequestStatusResponse } from "@/lib/api";
 import { Loader2 } from "lucide-react";
 
 const advantages = [
@@ -19,7 +19,7 @@ const advantages = [
 export default function BecomePartnerPage() {
   const { token } = useAuth();
   const router = useRouter();
-  const [statusData, setStatusData] = useState<any>(null);
+  const [statusData, setStatusData] = useState<IbRequestStatusResponse | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
 

@@ -75,7 +75,7 @@ const PaymentProofDialog = ({ paymentProofUrl }: { paymentProofUrl: string | nul
 
   const imageUrl = paymentProofUrl.startsWith('http') 
     ? paymentProofUrl 
-    : `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://192.168.1.47:3000'}${paymentProofUrl}`
+    : `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://graybulls.com'}${paymentProofUrl}`
 
   return (
     <Dialog>
@@ -375,7 +375,7 @@ export default function MyDepositPage() {
                   <DollarSign className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                   <h3 className="text-lg font-semibold mb-2">No Deposit Requests</h3>
                   <p className="text-muted-foreground mb-4">
-                    You haven't submitted any deposit requests yet.
+                    You haven&apos;t submitted any deposit requests yet.
                   </p>
                   <Button onClick={() => window.location.href = '/funds/deposit'}>
                     Make a Deposit

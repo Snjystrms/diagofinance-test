@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 interface RowActionsProps {
-  row: any;
+  row: { original: RoyaltyLevel };
   onEdit: (royalty: RoyaltyLevel) => void;
   onDelete: (id: string) => void;
 }

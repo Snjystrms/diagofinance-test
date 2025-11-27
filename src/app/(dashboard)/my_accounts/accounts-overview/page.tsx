@@ -114,7 +114,7 @@ export default function AccountsOverviewPage() {
             <div>
               <h1 className="text-3xl font-bold">Accounts Overview</h1>
               <p className="text-muted-foreground mt-1">
-                Let's have a look at the account types.
+                Let&apos;s have a look at the account types.
               </p>
             </div>
           </div>

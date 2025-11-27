@@ -14,7 +14,7 @@ import { useAuth } from '@/contexts/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/password-input';
-import { admin2FAApi, authApi, manager2FAApi } from '@/lib/api';
+import { admin2FAApi, authApi, manager2FAApi, type GroupedPermissions } from '@/lib/api';
 import {
   Card,
   CardContent,
@@ -78,7 +78,6 @@ export default function LoginPage() {
   const [isForgotPasswordLoading, setIsForgotPasswordLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [useDemoLogin, setUseDemoLogin] = useState(false); // Changed default to false (API mode)
-  const [demoUserType, setDemoUserType] = useState<'admin' | 'user'>('admin');
   const [show2FA, setShow2FA] = useState(false);
   const [twoFACode, setTwoFACode] = useState('');
   const [pendingLoginData, setPendingLoginData] = useState<{ 
@@ -154,10 +153,9 @@ export default function LoginPage() {
           // fake delay
           await new Promise((resolve) => setTimeout(resolve, 1000));
 
-          const demoUser =
-            demoUserType === 'admin' ? DUMMY_USER : DUMMY_REGULAR_USER;
+          const demoUser = DUMMY_USER; // Default to admin for demo
           login(demoUser, 'dummy-token-12345');
-          toast.success(`Login successful as ${demoUserType}! (Demo mode)`);
+          toast.success('Login successful as admin! (Demo mode)');
           router.push('/dashboard');
         } else {
           toast.error(
@@ -171,17 +169,26 @@ export default function LoginPage() {
         // Check if 2FA is required (for both admin and user)
         if (response?.requires_2fa || response?.data?.requires_2fa) {
           const responseData = response.data || {};
-          const nestedData = (responseData as any)?.data || responseData;
-          const userType = nestedData?.type || nestedData?.user?.type || nestedData?.admin?.type || nestedData?.manager?.type || 'user';
+          const nestedData = (responseData as Record<string, unknown>)?.data || responseData;
+          const nestedDataObj = nestedData as Record<string, unknown>;
+          const userType = (nestedDataObj?.type as string | undefined) || 
+            ((nestedDataObj?.user as Record<string, unknown>)?.type as string | undefined) || 
+            ((nestedDataObj?.admin as Record<string, unknown>)?.type as string | undefined) || 
+            ((nestedDataObj?.manager as Record<string, unknown>)?.type as string | undefined) || 'user';
           
           // Extract ID based on user type - check for specific ID fields first
           let userId: string | number | undefined;
           if (userType === 'admin') {
-            userId = nestedData?.admin_id || nestedData?.admin?.id || nestedData?.user?.id;
+            userId = (nestedDataObj?.admin_id as string | number | undefined) || 
+              ((nestedDataObj?.admin as Record<string, unknown>)?.id as string | number | undefined) || 
+              ((nestedDataObj?.user as Record<string, unknown>)?.id as string | number | undefined);
           } else if (userType === 'manager') {
-            userId = nestedData?.manager_id || nestedData?.manager?.id || nestedData?.user?.id;
+            userId = (nestedDataObj?.manager_id as string | number | undefined) || 
+              ((nestedDataObj?.manager as Record<string, unknown>)?.id as string | number | undefined) || 
+              ((nestedDataObj?.user as Record<string, unknown>)?.id as string | number | undefined);
           } else {
-            userId = nestedData?.user_id || nestedData?.user?.id;
+            userId = (nestedDataObj?.user_id as string | number | undefined) || 
+              ((nestedDataObj?.user as Record<string, unknown>)?.id as string | number | undefined);
           }
           
           if (userId) {
@@ -197,7 +204,7 @@ export default function LoginPage() {
         }
         // Otherwise loginMutation handles success & redirect
       }
-    } catch (error) {
+    } catch (_error) {
       if (!useDemoLogin) {
         toast.error('Login failed. Please check your credentials.');
       }
@@ -238,30 +245,35 @@ export default function LoginPage() {
 
       if (response.success && response.data) {
         // Handle response structure - it might be in response.data or response.data.data
-        const loginResponse = response.data as any;
-        const responseData = loginResponse.data || loginResponse;
-        const token = responseData.token || loginResponse.token;
+        const loginResponse = response.data as Record<string, unknown>;
+        const responseData = (loginResponse.data as Record<string, unknown>) || loginResponse;
+        const token = (responseData.token as string) || (loginResponse.token as string);
         // Check for admin, manager, or user object in response
-        const userData = responseData.admin || responseData.manager || responseData.user || loginResponse.user || loginResponse.admin || loginResponse.manager;
+        const userData = (responseData.admin as Record<string, unknown>) || 
+          (responseData.manager as Record<string, unknown>) || 
+          (responseData.user as Record<string, unknown>) || 
+          (loginResponse.user as Record<string, unknown>) || 
+          (loginResponse.admin as Record<string, unknown>) || 
+          (loginResponse.manager as Record<string, unknown>);
 
         if (token && userData) {
-          const userType = userData.type || pendingLoginData.userType || 'user';
+          const userType = (userData.type as string) || pendingLoginData.userType || 'user';
           // Permissions are on the LoginResponse, not on the nested data object
           const finalUserData = {
-            id: userData.id,
-            email: userData.email || pendingLoginData.email,
-            type: userType,
-            name: userData.name,
-            mobile: userData.mobile,
+            id: (userData.id as string | number),
+            email: (userData.email as string) || pendingLoginData.email,
+            type: userType as 'admin' | 'user' | 'manager' | 'subadmin',
+            name: (userData.name as string) || '',
+            mobile: (userData.mobile as string) || undefined,
             // Convert status to boolean if it's a number
-            status: typeof userData.status === 'number' ? Boolean(userData.status) : userData.status,
-            requires_usdt_transaction: userData.requires_usdt_transaction,
-            requires_registration_fee: userData.requires_registration_fee,
-            is_account_active: userData.is_account_active,
-            sponsor_id: userData.sponsor_id,
-            role: userData.role,
-            managerPermissions: loginResponse.permissions || (userType === 'manager' ? [] : undefined),
-            is_ib_user: typeof userData.is_ib_user === 'number' ? Boolean(userData.is_ib_user) : userData.is_ib_user,
+            status: typeof userData.status === 'number' ? Boolean(userData.status) : (userData.status as boolean | undefined),
+            requires_usdt_transaction: userData.requires_usdt_transaction as boolean | undefined,
+            requires_registration_fee: userData.requires_registration_fee as boolean | undefined,
+            is_account_active: userData.is_account_active as boolean | undefined,
+            sponsor_id: (userData.sponsor_id as string) || undefined,
+            role: (userData.role as string) || undefined,
+            managerPermissions: (loginResponse.permissions as GroupedPermissions[] | undefined) || (userType === 'manager' ? [] : undefined),
+            is_ib_user: typeof userData.is_ib_user === 'number' ? Boolean(userData.is_ib_user) : (userData.is_ib_user as boolean | undefined),
             // Exclude permissions as it's a different type structure
           };
 
@@ -324,8 +336,9 @@ export default function LoginPage() {
       } else {
         toast.error(response.message || '2FA verification failed');
       }
-    } catch (error: any) {
-      toast.error(error?.message || '2FA verification failed. Please try again.');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : '2FA verification failed. Please try again.';
+      toast.error(errorMessage);
     } finally {
       setIsVerifying2FA(false);
     }
@@ -337,7 +350,7 @@ export default function LoginPage() {
     try {
       await forgotPasswordMutation.mutateAsync(data);
       // mutation shows toast
-    } catch (error) {
+    } catch (_error) {
       toast.error('Failed to send reset password link. Please try again.');
     } finally {
       setIsForgotPasswordLoading(false);

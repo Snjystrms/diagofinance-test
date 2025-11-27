@@ -20,9 +20,10 @@ export function useManagerPermissions() {
   const permissionNameSet = useMemo(() => {
     if (!isManager) return new Set<string>();
     const set = new Set<string>();
-    const grouped = (user as any)?.managerPermissions ?? [];
-    grouped.forEach((group: any) => {
-      (group?.permissions || []).forEach((perm: any) => {
+    const userExt = user as { managerPermissions?: Array<{ permissions?: Array<{ name?: string }> }> };
+    const grouped = userExt?.managerPermissions ?? [];
+    grouped.forEach((group: { permissions?: Array<{ name?: string }> }) => {
+      (group?.permissions || []).forEach((perm: { name?: string }) => {
         if (perm?.name) {
           set.add(normalizeManagerPermissionName(perm.name));
         }

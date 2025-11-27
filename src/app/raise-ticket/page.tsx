@@ -214,26 +214,27 @@ export default function RaiseTicketPage() {
 
       // Handle different response structures
       let ticketsData: TicketItem[] = [];
-      let paginationData: any = null;
+      let paginationData: { current_page?: number; per_page?: number; total?: number; total_pages?: number; last_page?: number } | null = null;
 
       if (response.success) {
         // Check if response.data is the TicketListResponse object
         if (response.data) {
+          const data = response.data as unknown as Record<string, unknown>;
           // Case 1: response.data is TicketListResponse { success, data, pagination }
-          if (response.data.success !== undefined && Array.isArray(response.data.data)) {
-            ticketsData = response.data.data;
-            paginationData = response.data.pagination;
+          if (data.success !== undefined && Array.isArray(data.data)) {
+            ticketsData = data.data as TicketItem[];
+            paginationData = data.pagination as { current_page?: number; per_page?: number; total?: number; total_pages?: number; last_page?: number } | null;
           }
           // Case 2: response.data is directly the array
           else if (Array.isArray(response.data)) {
-            ticketsData = response.data;
+            ticketsData = response.data as TicketItem[];
             // Try to get pagination from response
-            paginationData = (response as any).pagination;
+            paginationData = (response as unknown as Record<string, unknown>).pagination as { current_page?: number; per_page?: number; total?: number; total_pages?: number; last_page?: number } | null;
           }
           // Case 3: response.data is an object with data property
-          else if (response.data && Array.isArray((response.data as any).data)) {
-            ticketsData = (response.data as any).data;
-            paginationData = (response.data as any).pagination || (response as any).pagination;
+          else if (data && Array.isArray(data.data)) {
+            ticketsData = data.data as TicketItem[];
+            paginationData = (data.pagination || (response as unknown as Record<string, unknown>).pagination) as { current_page?: number; per_page?: number; total?: number; total_pages?: number; last_page?: number } | null;
           }
         }
       }
@@ -277,9 +278,9 @@ export default function RaiseTicketPage() {
           total: ticketsData.length,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to load tickets:", error);
-      toast.error(error?.message || "Failed to load tickets");
+      toast.error(error instanceof Error ? error.message : "Failed to load tickets");
       setTickets([]);
     } finally {
       setLoading(false);
@@ -331,9 +332,9 @@ export default function RaiseTicketPage() {
       } else {
         throw new Error(response.message || "Failed to create ticket");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to create ticket:", error);
-      toast.error(error?.message || "Failed to create ticket");
+      toast.error(error instanceof Error ? error.message : "Failed to create ticket");
     } finally {
       setIsSubmitting(false);
     }

@@ -108,33 +108,33 @@ const formatDateTime = (value?: string) => {
 }
 
 // Helper to transform raw API user data to PendingUser format
-const transformUser = (raw: any): PendingUser => {
+const transformUser = (raw: Record<string, unknown>): PendingUser => {
   const firstName = raw.first_name || ""
   const lastName = raw.last_name || ""
   const name = `${firstName} ${lastName}`.trim() || "—"
   
   return {
-    id: raw.id ?? 0,
+    id: typeof raw.id === 'number' ? raw.id : typeof raw.id === 'string' ? Number(raw.id) || 0 : 0,
     name,
-    email: raw.email || "",
-    username: raw.uuid || raw.username || "",
-    mobile: raw.mobile || "",
-    country: raw.country || "",
-    sponsor_id: raw.sponsor_id || "",
+    email: (raw.email as string) || "",
+    username: (raw.uuid as string) || (raw.username as string) || "",
+    mobile: (raw.mobile as string) || "",
+    country: (raw.country as string) || "",
+    sponsor_id: (raw.sponsor_id as string) || "",
     status: String(raw.status ?? ""),
-    email_verified: raw.email_verified ?? 0,
-    payment_verified: raw.payment_verified ?? 0,
-    created_at: raw.created_at || "",
+    email_verified: typeof raw.email_verified === 'number' ? raw.email_verified : typeof raw.email_verified === 'string' ? Number(raw.email_verified) || 0 : 0,
+    payment_verified: typeof raw.payment_verified === 'number' ? raw.payment_verified : typeof raw.payment_verified === 'string' ? Number(raw.payment_verified) || 0 : 0,
+    created_at: (raw.created_at as string) || "",
   }
 }
 
 const extractUsers = (payload?: AdminUsersListApiData | null): PendingUser[] => {
   if (!payload) return []
 
-  const ensureArray = (maybeArray: unknown): any[] =>
-    Array.isArray(maybeArray) ? maybeArray : []
+  const ensureArray = (maybeArray: unknown): Array<Record<string, unknown>> =>
+    Array.isArray(maybeArray) ? (maybeArray as Array<Record<string, unknown>>) : []
 
-  const transformArray = (arr: any[]): PendingUser[] => arr.map(transformUser)
+  const transformArray = (arr: Array<Record<string, unknown>>): PendingUser[] => arr.map(transformUser)
 
   const directUsers = ensureArray(payload.users)
   if (directUsers.length) return transformArray(directUsers)
@@ -143,7 +143,7 @@ const extractUsers = (payload?: AdminUsersListApiData | null): PendingUser[] => 
   if (directItems.length) return transformArray(directItems)
 
   if (Array.isArray(payload.data)) {
-    return transformArray(payload.data)
+    return transformArray(payload.data as unknown as Array<Record<string, unknown>>)
   }
 
   if (payload.data && typeof payload.data === "object") {

@@ -37,7 +37,7 @@ const normalize = (a: AccountTypeItem): AccountTypeRow => ({
   name: a.name ?? "",
   spread_from: a.spread_from ?? "",
   maximum_leverage: a.maximum_leverage ?? "",
-  leverage_type: (a.leverage_type as any) ?? "",
+  leverage_type: (a.leverage_type as string) ?? "",
   leverage_value: Number(a.leverage_value ?? 0),
   stop_out_level:
     typeof a.stop_out_level === "number"
@@ -69,7 +69,7 @@ const serialize = (r: Partial<AccountTypeRow>): AccountTypeUpsertBody => ({
   name: r.name && r.name.trim() !== "" ? r.name.trim() : "",
   spread_from: r.spread_from ?? "",
   maximum_leverage: r.maximum_leverage ?? "",
-  leverage_type: (r.leverage_type as any) ?? "dynamic",
+  leverage_type: (r.leverage_type as string) ?? "dynamic",
   leverage_value: Number(r.leverage_value ?? 0),
   stop_out_level: Number(
     typeof r.stop_out_level === "string" ? parseFloat(r.stop_out_level) : r.stop_out_level ?? 0
@@ -155,9 +155,9 @@ const fetchList = useCallback(
       setData((prev) => [normalize(created.data as AccountTypeItem), ...prev]);
       toast.success("Account type created");
       return Promise.resolve();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Create error:", e);
-      toast.error(e?.message || "Create failed");
+      toast.error(e instanceof Error ? e.message : "Create failed");
       return Promise.reject(e);
     }
   };
@@ -179,9 +179,10 @@ const fetchList = useCallback(
       setData((prev) => prev.map((x) => (x.id === row.id ? norm : x)));
       toast.success("Account type updated");
       return Promise.resolve();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Update error:", e);
-      toast.error(e?.message || "Update failed");
+      const errorMessage = e instanceof Error ? e.message : "Update failed";
+      toast.error(errorMessage);
       return Promise.reject(e);
     } finally {
       setActionLoadingId(null);
@@ -201,9 +202,10 @@ const fetchList = useCallback(
       const norm = normalize(accountData);
       setData((prev) => prev.map((x) => (x.id === id ? norm : x)));
       toast.success(toggled.message || "Status updated");
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Toggle error:", e);
-      toast.error(e?.message || "Toggle failed");
+      const errorMessage = e instanceof Error ? e.message : "Toggle failed";
+      toast.error(errorMessage);
     } finally {
       setActionLoadingId(null);
     }
@@ -218,9 +220,10 @@ const fetchList = useCallback(
       setData((prev) => prev.filter((x) => x.id !== id));
       toast.success("Account type deleted");
       return Promise.resolve();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Delete error:", e);
-      toast.error(e?.message || "Delete failed");
+      const errorMessage = e instanceof Error ? e.message : "Delete failed";
+      toast.error(errorMessage);
       return Promise.reject(e);
     } finally {
       setActionLoadingId(null);
@@ -228,7 +231,7 @@ const fetchList = useCallback(
   };
 
   const columns = useMemo(
-    () => getColumns({ onToggleStatus: handleToggleStatus, actionLoadingId }) as any,
+    () => getColumns({ onToggleStatus: handleToggleStatus, actionLoadingId }),
     [handleToggleStatus, actionLoadingId]
   );
 
@@ -296,7 +299,7 @@ const fetchList = useCallback(
             description="Create, update, and manage account types"
             requiredModule="account-types"
             onAdd={async (partial) => {
-              const { id: _ignore, ...rest } = partial as any;
+              const { id: _ignore, ...rest } = partial as Partial<AccountTypeRow>;
               return handleAdd(rest as Omit<AccountTypeRow, "id">);
             }}
             onUpdate={handleUpdate}

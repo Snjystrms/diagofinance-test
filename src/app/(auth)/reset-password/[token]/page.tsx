@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { resetPasswordSchema, type ResetPasswordFormData } from '@/lib/validations';
@@ -16,20 +16,18 @@ import Image from 'next/image';
 import { Key, ArrowLeft } from 'lucide-react';
 import { PasswordInput } from '@/components/password-input';
 
-interface PageProps {
-  params: { token: string };
-}
-
-export default function ResetPasswordPage({ params }: PageProps) {
+export default function ResetPasswordPage() {
   const router = useRouter();
+  const params = useParams();
   const { resetPasswordMutation } = useAuthMutations();
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const token = params?.token as string | undefined;
 
   const form = useForm<ResetPasswordFormData>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: {
-      token: params.token,
+      token: token || '',
       password: '',
       confirm_password: '',
     },
@@ -37,10 +35,10 @@ export default function ResetPasswordPage({ params }: PageProps) {
 
   // Set the token from URL params
   useEffect(() => {
-    if (params.token) {
-      form.setValue('token', params.token);
+    if (token) {
+      form.setValue('token', token);
     }
-  }, [params.token, form]);
+  }, [token, form]);
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     setIsLoading(true);

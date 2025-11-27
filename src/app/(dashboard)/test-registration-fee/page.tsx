@@ -214,7 +214,7 @@ const isValidHash = true;
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Find this in your wallet's transaction history or blockchain explorer
+                      Find this in your wallet&apos;s transaction history or blockchain explorer
                     </p>
                   </div>
 
@@ -342,7 +342,7 @@ const isValidHash = true;
         <div className="mt-8 p-6 border-t bg-muted/30 rounded-lg">
           <div className="text-center">
             <p className="text-sm text-muted-foreground mb-3">
-              After payment verification, your account will be activated and you'll have access to all features.
+              After payment verification, your account will be activated and you&apos;ll have access to all features.
             </p>
             <p className="text-xs text-muted-foreground">
               This is a test page for the registration fee UI. In production, this would be integrated with the main application.

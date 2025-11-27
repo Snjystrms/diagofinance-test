@@ -63,7 +63,7 @@ export default function VerificationSuccessPage({ searchParams }: PageProps) {
 
             <Card className="border-2 border-green-200 shadow-lg">
               <CardHeader className="text-center pb-4">
-                <CardTitle className="text-xl text-green-800">What's Next?</CardTitle>
+                <CardTitle className="text-xl text-green-800">What&apos;s Next?</CardTitle>
                 <CardDescription className="text-base">
                   Your registration is now pending admin approval
                 </CardDescription>
@@ -134,7 +134,7 @@ export default function VerificationSuccessPage({ searchParams }: PageProps) {
                   <div className="flex items-start space-x-2">
                     <Shield className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
                     <p className="text-sm text-blue-800">
-                      <strong>Important:</strong> Please wait for admin approval. You'll receive an email notification once your account is approved.
+                      <strong>Important:</strong> Please wait for admin approval. You&apos;ll receive an email notification once your account is approved.
                     </p>
                   </div>
                 </div>

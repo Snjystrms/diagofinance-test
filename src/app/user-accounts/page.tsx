@@ -90,9 +90,10 @@ export default function UserAccountsPage() {
         setRows(res.data.requests || []);
         setPagination(res.data.pagination || pagination);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      toast.error(e?.message || "Failed to load MT5 requests");
+      const errorMessage = e instanceof Error ? e.message : "Failed to load MT5 requests";
+      toast.error(errorMessage);
       setRows([]);
     } finally {
       setLoading(false);
@@ -116,9 +117,10 @@ export default function UserAccountsPage() {
       );
       toast.success("MT5 request approved successfully");
       await loadRequests();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      toast.error(e?.message || "Failed to approve request");
+      const errorMessage = e instanceof Error ? e.message : "Failed to approve request";
+      toast.error(errorMessage);
     } finally {
       setProcessing(null);
     }
@@ -153,9 +155,10 @@ export default function UserAccountsPage() {
       setSelectedRequest(null);
       setRejectionReason("");
       await loadRequests();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      toast.error(e?.message || "Failed to reject request");
+      const errorMessage = e instanceof Error ? e.message : "Failed to reject request";
+      toast.error(errorMessage);
     } finally {
       setProcessing(null);
     }

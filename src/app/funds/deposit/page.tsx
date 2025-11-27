@@ -220,7 +220,7 @@ function USDTDepositContent() {
               </CardHeader>
               <CardContent className="text-center">
                 <p className="text-lg text-muted-foreground mb-6">
-                  After paying the registration fee, you'll be able to make regular USDT deposits and access all platform features.
+                  After paying the registration fee, you&apos;ll be able to make regular USDT deposits and access all platform features.
                 </p>
                 <Button 
                   onClick={() => window.location.href = '/test-registration-fee'}
@@ -485,7 +485,7 @@ function USDTDepositContent() {
                         />
                       </div>
                       <p className="text-xs text-gray-500">
-                        You can find this in your wallet's transaction history or on the blockchain explorer
+                        You can find this in your wallet&apos;s transaction history or on the blockchain explorer
                       </p>
                     </div>
 
@@ -581,7 +581,7 @@ function USDTDepositContent() {
                       Processing Transaction
                     </h3>
                     <p className="text-gray-600 dark:text-gray-400 mb-4">
-                      We're verifying your transaction on the blockchain...
+                      We&apos;re verifying your transaction on the blockchain...
                     </p>
                     <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
                       <p className="text-sm text-blue-800 dark:text-blue-200 break-all">

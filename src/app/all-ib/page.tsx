@@ -40,11 +40,12 @@ const statusFilters = [
 ];
 
 const asStatusCode = (request: AdminIbRequest): number => {
+  const req = request as AdminIbRequest & Record<string, unknown>;
   const candidates = [
     request.status,
-    (request as any).request_status,
-    (request as any).current_status,
-    (request as any).state,
+    req.request_status,
+    req.current_status,
+    req.state,
   ];
 
   for (const candidate of candidates) {
@@ -100,14 +101,15 @@ const formatDateTime = (value?: string | null) => {
 };
 
 const deriveUser = (request: AdminIbRequest) => {
+  const req = request as AdminIbRequest & Record<string, unknown>;
   const user =
     request.user ??
     request.User ??
-    (request as any).applicant ??
-    (request as any).member ??
-    (request as any).customer ??
+    (req.applicant as Record<string, unknown> | undefined) ??
+    (req.member as Record<string, unknown> | undefined) ??
+    (req.customer as Record<string, unknown> | undefined) ??
     null;
-  return (user ?? {}) as Record<string, any>;
+  return (user ?? {}) as Record<string, unknown>;
 };
 
 const deriveFullName = (request: AdminIbRequest) => {
@@ -122,45 +124,49 @@ const deriveFullName = (request: AdminIbRequest) => {
     return pieces[0] as string;
   }
 
+  const req = request as AdminIbRequest & Record<string, unknown>;
   const fallback =
     request.ib_name ??
-    (request as any).full_name ??
-    (request as any).owner_name ??
+    (req.full_name as string | undefined) ??
+    (req.owner_name as string | undefined) ??
     "";
   return fallback || "—";
 };
 
 const deriveEmail = (request: AdminIbRequest) => {
   const user = deriveUser(request);
+  const req = request as AdminIbRequest & Record<string, unknown>;
   return (
-    user?.email ??
-    user?.mail ??
-    (request as any).email ??
-    (request as any).user_email ??
+    (user?.email as string | undefined) ??
+    (user?.mail as string | undefined) ??
+    (req.email as string | undefined) ??
+    (req.user_email as string | undefined) ??
     "—"
   );
 };
 
 const derivePhone = (request: AdminIbRequest) => {
   const user = deriveUser(request);
+  const req = request as AdminIbRequest & Record<string, unknown>;
   return (
-    user?.mobile ??
-    user?.phone ??
-    user?.contact ??
-    (request as any).mobile ??
-    (request as any).phone ??
-    (request as any).contact_number ??
+    (user?.mobile as string | undefined) ??
+    (user?.phone as string | undefined) ??
+    (user?.contact as string | undefined) ??
+    (req.mobile as string | undefined) ??
+    (req.phone as string | undefined) ??
+    (req.contact_number as string | undefined) ??
     "—"
   );
 };
 
 const deriveRequestId = (request: AdminIbRequest) => {
+  const req = request as AdminIbRequest & Record<string, unknown>;
   const candidates = [
     request.id,
     request.uuid,
-    (request as any).ib_request_id,
-    (request as any).request_id,
-    (request as any).request_uuid,
+    req.ib_request_id,
+    req.request_id,
+    req.request_uuid,
   ];
 
   for (const candidate of candidates) {
@@ -175,11 +181,12 @@ const deriveRequestId = (request: AdminIbRequest) => {
 };
 
 const deriveUserNotes = (request: AdminIbRequest) => {
+  const req = request as AdminIbRequest & Record<string, unknown>;
   const candidate =
     request.notes ??
-    (request as any).user_notes ??
-    (request as any).request_notes ??
-    (request as any).comment ??
+    (req.user_notes as string | undefined) ??
+    (req.request_notes as string | undefined) ??
+    (req.comment as string | undefined) ??
     null;
   return candidate && String(candidate).trim().length > 0
     ? String(candidate)
@@ -187,10 +194,11 @@ const deriveUserNotes = (request: AdminIbRequest) => {
 };
 
 const deriveAdminComment = (request: AdminIbRequest) => {
+  const req = request as AdminIbRequest & Record<string, unknown>;
   const candidate =
     request.admin_comment ??
-    (request as any).adminComment ??
-    (request as any).review_comment ??
+    (req.adminComment as string | undefined) ??
+    (req.review_comment as string | undefined) ??
     null;
   return candidate && String(candidate).trim().length > 0
     ? String(candidate)
@@ -257,59 +265,68 @@ export default function IbManagementPage() {
 
       const payload = response?.data;
 
-      const extractItems = (data: any): AdminIbRequest[] => {
+      const extractItems = (data: unknown): AdminIbRequest[] => {
+        const dataObj = data as Record<string, unknown>;
         if (!data) return [];
-        if (Array.isArray(data)) return data;
-        if (Array.isArray(data.items)) return data.items;
-        if (Array.isArray(data.requests)) return data.requests;
-        if (Array.isArray(data.data)) return data.data;
-        if (data.data && Array.isArray(data.data.items)) return data.data.items;
-        if (data.data && Array.isArray(data.data.data)) return data.data.data;
-        if (data.results && Array.isArray(data.results)) return data.results;
+        if (Array.isArray(data)) return data as AdminIbRequest[];
+        if (Array.isArray(dataObj.items)) return dataObj.items as AdminIbRequest[];
+        if (Array.isArray(dataObj.requests)) return dataObj.requests as AdminIbRequest[];
+        if (Array.isArray(dataObj.data)) return dataObj.data as AdminIbRequest[];
+        if (dataObj.data && Array.isArray((dataObj.data as Record<string, unknown>).items)) {
+          return ((dataObj.data as Record<string, unknown>).items as AdminIbRequest[]);
+        }
+        if (dataObj.data && Array.isArray((dataObj.data as Record<string, unknown>).data)) {
+          return ((dataObj.data as Record<string, unknown>).data as AdminIbRequest[]);
+        }
+        if (Array.isArray(dataObj.results)) return dataObj.results as AdminIbRequest[];
         return [];
       };
 
       const items = extractItems(payload);
       setRequests(items);
 
+      const payloadObj = payload as Record<string, unknown>;
       const paginationSource =
-        (payload && payload.pagination) ??
-        (payload && (payload as any).meta?.pagination) ??
-        (payload &&
-          payload.data &&
-          !Array.isArray(payload.data) &&
-          ((payload.data as any).pagination ?? (payload.data as any).meta?.pagination));
+        ((payload && (payloadObj.pagination as Record<string, unknown> | undefined)) ??
+        (payload && ((payloadObj.meta as Record<string, unknown> | undefined)?.pagination as Record<string, unknown> | undefined)) ??
+        ((payload &&
+          payloadObj.data &&
+          !Array.isArray(payloadObj.data)) ? 
+          (((payloadObj.data as Record<string, unknown>).pagination as Record<string, unknown> | undefined) ?? 
+          ((payloadObj.data as Record<string, unknown>).meta as Record<string, unknown> | undefined)?.pagination as Record<string, unknown> | undefined) :
+          undefined));
 
       const total =
-        paginationSource?.total ??
-        paginationSource?.total_items ??
-        paginationSource?.totalRequests ??
-        payload?.total ??
+        (paginationSource?.total as number | undefined) ??
+        (paginationSource?.total_items as number | undefined) ??
+        (paginationSource?.totalRequests as number | undefined) ??
+        (payload?.total as number | undefined) ??
         items.length;
 
       const perPageValue =
-        paginationSource?.per_page ??
-        paginationSource?.perPage ??
-        paginationSource?.limit ??
+        (paginationSource?.per_page as number | undefined) ??
+        (paginationSource?.perPage as number | undefined) ??
+        (paginationSource?.limit as number | undefined) ??
         perPage;
 
       const totalPages =
-        paginationSource?.total_pages ??
-        paginationSource?.last_page ??
+        (paginationSource?.total_pages as number | undefined) ??
+        (paginationSource?.last_page as number | undefined) ??
         (perPageValue ? Math.max(1, Math.ceil(total / perPageValue)) : 1);
 
       setPagination({
         current_page:
-          paginationSource?.current_page ??
-          paginationSource?.page ??
+          (paginationSource?.current_page as number | undefined) ??
+          (paginationSource?.page as number | undefined) ??
           page,
         per_page: perPageValue,
         total_pages: totalPages,
         total,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to load IB requests:", error);
-      toast.error(error?.message || "Failed to load IB requests");
+      const errorMessage = error instanceof Error ? error.message : "Failed to load IB requests";
+      toast.error(errorMessage);
       setRequests([]);
     } finally {
       setLoading(false);
@@ -390,9 +407,10 @@ export default function IbManagementPage() {
 
       closeActionDialog();
       await loadRequests();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to update IB request:", error);
-      toast.error(error?.message || "Failed to update request status");
+      const errorMessage = error instanceof Error ? error.message : "Failed to update request status";
+      toast.error(errorMessage);
     } finally {
       setProcessingId(null);
     }
@@ -492,11 +510,12 @@ export default function IbManagementPage() {
         header: "Created",
         cell: ({ row }) => {
           const request = row.original;
+          const req = request as AdminIbRequest & Record<string, unknown>;
           const createdAt =
             request.created_at ??
-            (request as any).createdAt ??
-            (request as any).submitted_at ??
-            (request as any).requested_at ??
+            (req.createdAt as string | undefined) ??
+            (req.submitted_at as string | undefined) ??
+            (req.requested_at as string | undefined) ??
             null;
 
           return (
@@ -596,7 +615,7 @@ export default function IbManagementPage() {
           const identifier =
             deriveRequestId(row) ??
             row.uuid ??
-            (row as any).request_uuid ??
+            ((row as AdminIbRequest & Record<string, unknown>).request_uuid as string | number | undefined) ??
             `${row.created_at ?? row.ib_name ?? Math.random().toString(36).slice(2)}`;
           return String(identifier);
         }}

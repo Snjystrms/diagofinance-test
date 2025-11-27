@@ -30,26 +30,29 @@ const statusFilters = [
   { label: "Inactive", value: "0" },
 ];
 
-const extractItems = (data: any): AdminMT5Account[] => {
+const extractItems = (data: unknown): AdminMT5Account[] => {
   if (!data) return [];
   
+  const dataObj = data as Record<string, unknown>;
+  
   // If data is already an array, return it
-  if (Array.isArray(data)) return data;
+  if (Array.isArray(data)) return data as AdminMT5Account[];
   
   // Check for mt5_accounts first (most common case based on API response)
-  if (Array.isArray(data.mt5_accounts)) return data.mt5_accounts;
+  if (Array.isArray(dataObj.mt5_accounts)) return dataObj.mt5_accounts as AdminMT5Account[];
   
   // Check for other common array property names
-  if (Array.isArray(data.accounts)) return data.accounts;
-  if (Array.isArray(data.items)) return data.items;
+  if (Array.isArray(dataObj.accounts)) return dataObj.accounts as AdminMT5Account[];
+  if (Array.isArray(dataObj.items)) return dataObj.items as AdminMT5Account[];
   
   // Check nested data structures
-  if (data.data) {
-    if (Array.isArray(data.data)) return data.data;
-    if (data.data && Array.isArray(data.data.mt5_accounts)) return data.data.mt5_accounts;
-    if (data.data && Array.isArray(data.data.accounts)) return data.data.accounts;
-    if (data.data && Array.isArray(data.data.items)) return data.data.items;
-    if (data.data && Array.isArray(data.data.data)) return data.data.data;
+  if (dataObj.data) {
+    const nestedData = dataObj.data as Record<string, unknown>;
+    if (Array.isArray(dataObj.data)) return dataObj.data as AdminMT5Account[];
+    if (nestedData && Array.isArray(nestedData.mt5_accounts)) return nestedData.mt5_accounts as AdminMT5Account[];
+    if (nestedData && Array.isArray(nestedData.accounts)) return nestedData.accounts as AdminMT5Account[];
+    if (nestedData && Array.isArray(nestedData.items)) return nestedData.items as AdminMT5Account[];
+    if (nestedData && Array.isArray(nestedData.data)) return nestedData.data as AdminMT5Account[];
   }
   
   return [];
@@ -137,46 +140,53 @@ export default function AllUsersMT5AccountsPage() {
       const items = extractItems(payload);
       setAccounts(items);
 
+      const payloadObj = payload as unknown as Record<string, unknown> | undefined;
+      const responseObj = response as unknown as Record<string, unknown> | undefined;
       const paginationSource =
-        (payload && payload.pagination) ??
-        (payload && (payload as any).meta?.pagination) ??
+        (payload && (payloadObj?.pagination as Record<string, unknown> | undefined)) ??
+        (payload && ((payloadObj?.meta as Record<string, unknown> | undefined)?.pagination as Record<string, unknown> | undefined)) ??
         (payload &&
-          payload.data &&
-          !Array.isArray(payload.data) &&
-          ((payload.data as any).pagination ?? (payload.data as any).meta?.pagination)) ??
-        (response && (response as any).data?.pagination) ??
-        (response && (response as any).pagination);
+          payloadObj?.data &&
+          !Array.isArray(payloadObj.data) &&
+          (((payloadObj.data as Record<string, unknown>).pagination as Record<string, unknown> | undefined) ?? 
+          ((payloadObj.data as Record<string, unknown>).meta as Record<string, unknown> | undefined)?.pagination as Record<string, unknown> | undefined)) ??
+        (response && ((responseObj?.data as Record<string, unknown> | undefined)?.pagination as Record<string, unknown> | undefined)) ??
+        (response && (responseObj?.pagination as Record<string, unknown> | undefined));
 
+      const paginationObj = paginationSource as Record<string, unknown> | undefined;
+      const payloadTyped = payload as Record<string, unknown> | undefined;
+      
       const total =
-        paginationSource?.total ??
-        paginationSource?.total_items ??
-        paginationSource?.totalAccounts ??
-        payload?.total ??
+        (paginationObj?.total as number | undefined) ??
+        (paginationObj?.total_items as number | undefined) ??
+        (paginationObj?.totalAccounts as number | undefined) ??
+        (payloadTyped?.total as number | undefined) ??
         items.length;
 
       const perPageValue =
-        paginationSource?.per_page ??
-        paginationSource?.perPage ??
-        paginationSource?.limit ??
+        (paginationObj?.per_page as number | undefined) ??
+        (paginationObj?.perPage as number | undefined) ??
+        (paginationObj?.limit as number | undefined) ??
         perPage;
 
       const totalPages =
-        paginationSource?.total_pages ??
-        paginationSource?.last_page ??
+        (paginationObj?.total_pages as number | undefined) ??
+        (paginationObj?.last_page as number | undefined) ??
         (perPageValue ? Math.max(1, Math.ceil(total / perPageValue)) : 1);
 
       setPagination({
         current_page:
-          paginationSource?.current_page ??
-          paginationSource?.page ??
+          (paginationObj?.current_page as number | undefined) ??
+          (paginationObj?.page as number | undefined) ??
           page,
         per_page: perPageValue,
         total_pages: totalPages,
         total,
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to load MT5 accounts:", error);
-      toast.error(error?.message || "Failed to load MT5 accounts");
+      const errorMessage = error instanceof Error ? error.message : "Failed to load MT5 accounts";
+      toast.error(errorMessage);
       setAccounts([]);
     } finally {
       setLoading(false);
@@ -196,9 +206,10 @@ export default function AllUsersMT5AccountsPage() {
       toast.success("MT5 account created successfully");
       setIsCreateDialogOpen(false);
       void loadAccounts(); // Refresh the list
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to create MT5 account:", error);
-      toast.error(error?.message || "Failed to create MT5 account");
+      const errorMessage = error instanceof Error ? error.message : "Failed to create MT5 account";
+      toast.error(errorMessage);
       throw error; // Re-throw to let the dialog handle it
     }
   }, [token, loadAccounts]);
@@ -225,9 +236,10 @@ export default function AllUsersMT5AccountsPage() {
       setIsEditDialogOpen(false);
       setEditingAccount(null);
       void loadAccounts(); // Refresh the list
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to update MT5 account:", error);
-      toast.error(error?.message || "Failed to update MT5 account");
+      const errorMessage = error instanceof Error ? error.message : "Failed to update MT5 account";
+      toast.error(errorMessage);
     }
   }, [token, editingAccount, loadAccounts]);
 
@@ -246,9 +258,10 @@ export default function AllUsersMT5AccountsPage() {
       setIsDeleteDialogOpen(false);
       setAccountToDelete(null);
       void loadAccounts(); // Refresh the list
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to delete MT5 account:", error);
-      toast.error(error?.message || "Failed to delete MT5 account");
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete MT5 account";
+      toast.error(errorMessage);
     }
   }, [token, accountToDelete, loadAccounts]);
 

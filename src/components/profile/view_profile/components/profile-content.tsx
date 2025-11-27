@@ -280,7 +280,7 @@ export default function ProfileContent() {
   };
 
   // Handle input changes for legal information
-  const handleLegalInfoChange = (field: keyof ProfileViewResponse["legal_information"], value: any) => {
+  const handleLegalInfoChange = (field: keyof ProfileViewResponse["legal_information"], value: string | number | boolean | null) => {
     if (!profileData) return;
     setProfileData({
       ...profileData,

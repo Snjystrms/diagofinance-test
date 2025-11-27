@@ -98,12 +98,12 @@ export function CreateAccountDialog({
         search: search.trim(),
       });
       
+      const data = response?.data;
       const userList = 
-        response?.data?.users ||
-        response?.data?.items ||
-        response?.users ||
-        response?.items ||
-        (Array.isArray(response?.data) ? response.data : []) ||
+        (data && 'users' in data ? (data.users as PendingUser[]) : undefined) ||
+        (data && 'items' in data ? (data.items as PendingUser[]) : undefined) ||
+        (Array.isArray(data) ? (data as PendingUser[]) : undefined) ||
+        (data && typeof data === 'object' && 'data' in data && Array.isArray((data as { data?: unknown }).data) ? ((data as { data: PendingUser[] }).data) : undefined) ||
         [];
       
       setUsers(userList);
@@ -205,7 +205,7 @@ export function CreateAccountDialog({
                       className="w-full justify-between"
                     >
                       {selectedUser
-                        ? `${selectedUser.first_name || ""} ${selectedUser.last_name || ""} (ID: ${selectedUser.id})`
+                        ? `${selectedUser.name || ""} (ID: ${selectedUser.id})`
                         : "Search and select user..."}
                       <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
@@ -231,7 +231,7 @@ export function CreateAccountDialog({
                               {users.map((user) => (
                                 <CommandItem
                                   key={user.id}
-                                  value={`${user.first_name} ${user.last_name} ${user.email} ${user.id}`}
+                                  value={`${user.name} ${user.email} ${user.id}`}
                                   onSelect={() => {
                                     setSelectedUser(user);
                                     setFormData({ ...formData, user_id: Number(user.id) });
@@ -247,7 +247,7 @@ export function CreateAccountDialog({
                                   />
                                   <div className="flex flex-col">
                                     <span>
-                                      {user.first_name} {user.last_name}
+                                      {user.name}
                                     </span>
                                     <span className="text-xs text-muted-foreground">
                                       {user.email} • ID: {user.id}

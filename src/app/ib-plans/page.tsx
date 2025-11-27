@@ -161,9 +161,10 @@ export default function IbPlansPage() {
         const payload = response?.data;
         setPlans(payload?.plans ?? []);
         setPagination(payload?.pagination);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Failed to fetch commission plans:", error);
-        toast.error(error?.message || "Failed to load commission plans");
+        const errorMessage = error instanceof Error ? error.message : "Failed to load commission plans";
+        toast.error(errorMessage);
         if (!silent) {
           setPlans([]);
         }
@@ -249,8 +250,9 @@ export default function IbPlansPage() {
           }
           return rule as CommissionPlanRuleInput;
         });
-      } catch (error: any) {
-        setCreateError(error?.message || "Invalid rules JSON.");
+      } catch (error: unknown) {
+        const errorMessage = error instanceof Error ? error.message : "Invalid rules JSON.";
+        setCreateError(errorMessage);
         return;
       }
     }
@@ -270,9 +272,10 @@ export default function IbPlansPage() {
       toast.success("Commission plan created");
       handleCreateDialogChange(false);
       await loadPlans({ silent: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to create commission plan:", error);
-      toast.error(error?.message || "Failed to create commission plan");
+      const errorMessage = error instanceof Error ? error.message : "Failed to create commission plan";
+      toast.error(errorMessage);
     } finally {
       setCreateSubmitting(false);
     }
@@ -290,9 +293,10 @@ export default function IbPlansPage() {
       toast.success(`Deleted plan "${plan.name}"`);
       setDeleteTarget(null);
       await loadPlans({ silent: true });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to delete commission plan:", error);
-      toast.error(error?.message || "Failed to delete commission plan");
+      const errorMessage = error instanceof Error ? error.message : "Failed to delete commission plan";
+      toast.error(errorMessage);
     } finally {
       setDeleteLoading(false);
     }

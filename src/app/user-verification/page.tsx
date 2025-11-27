@@ -57,7 +57,7 @@ type UserKycDetail = {
     kyc_status: string; // keep for backward compat
   };
   submitted_at: string;
-  summary: any;
+  summary: Record<string, unknown>;
   documents: Record<
     DocKey,
     {
@@ -253,11 +253,13 @@ export default function UserVerificationPage() {
       else if (statusFilter === "rejected") apiStatus = 2;
 
       const res = await adminKycApi.listPending(apiStatus, token);
-      const items = (res?.data as any)?.items ?? [];
-      setRows(items as ListRow[]);
-    } catch (e: any) {
+      const data = res?.data as { items?: ListRow[] } | undefined;
+      const items = data?.items ?? [];
+      setRows(items);
+    } catch (e: unknown) {
       console.error(e);
-      toast.error(e?.message || "Failed to load KYC list");
+      const errorMessage = e instanceof Error ? e.message : "Failed to load KYC list";
+      toast.error(errorMessage);
       setRows([]);
     } finally {
       setLoading(false);
@@ -331,9 +333,10 @@ export default function UserVerificationPage() {
           other_file_status: d.documents?.other_file_status?.comment || "",
         };
         setDocComments(initC);
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.error(e);
-        toast.error(e?.message || "Failed to load user KYC");
+        const errorMessage = e instanceof Error ? e.message : "Failed to load user KYC";
+        toast.error(errorMessage);
       } finally {
         setDetailLoading(false);
       }
@@ -427,7 +430,7 @@ const buildReviewPayload = () => {
     return null;
   }
 
-  const docs: Record<string, any> = {};
+  const docs: Record<string, "pending" | "approved" | "rejected" | { status: "pending" | "approved" | "rejected"; comment?: string }> = {};
 
   (Object.keys(docStatuses) as DocKey[]).forEach((k) => {
     const nowNum = docStatuses[k];
@@ -462,18 +465,19 @@ const buildReviewPayload = () => {
       return;
     }
     try {
-      const res = await adminKycApi.review(payload as any, token);
+      const res = await adminKycApi.review(payload, token);
       toast.success(res.message || "Review updated");
       // Optimistic refresh
       await loadList();
       refreshRowInList(detail.user.uuid, {
-        kyc_status: (res.data as any)?.summary?.kyc_status ?? detail.user.kyc_status,
+        kyc_status: ((res.data as { summary?: { kyc_status?: string } })?.summary?.kyc_status) ?? detail.user.kyc_status,
       });
       setOpen(false);
       setDetail(null);
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      toast.error(e?.message || "Failed to submit review");
+      const errorMessage = e instanceof Error ? e.message : "Failed to submit review";
+      toast.error(errorMessage);
     }
   };
 

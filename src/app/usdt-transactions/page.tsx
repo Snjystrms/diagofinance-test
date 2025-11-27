@@ -197,9 +197,10 @@ export default function USDTTransactionsPage() {
       if (res?.data?.pagination) {
         setTotalPages(res.data.pagination.totalPages || 1);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      toast.error(e?.message || "Failed to load deposit requests");
+      const errorMessage = e instanceof Error ? e.message : "Failed to load deposit requests";
+      toast.error(errorMessage);
       setDepositRows([]);
     }
   }, [token, page, perPage]);
@@ -208,17 +209,23 @@ export default function USDTTransactionsPage() {
     if (!token) return;
     try {
       const status = statusFilter !== "all" ? statusFilter : undefined;
-      const res = await adminWithdrawalApi.listAll(page, perPage, token, status) as any;
+      const res = await adminWithdrawalApi.listAll(page, perPage, token, status) as {
+        data?: unknown[] | { withdrawals?: unknown[]; data?: unknown[]; requests?: unknown[]; pagination?: { totalPages?: number; total_pages?: number } };
+        meta?: { total?: number; limit?: number };
+        pagination?: { totalPages?: number; total_pages?: number };
+        withdrawals?: unknown[];
+        requests?: unknown[];
+      };
       // Handle different response structures:
       // 1. {success: true, data: [...], meta: {...}} - data is array directly
       // 2. {success: true, data: {withdrawals: [...], pagination: {...}}} - nested structure
       let withdrawals: AdminWithdrawalRequest[] = [];
       if (Array.isArray(res?.data)) {
-        withdrawals = res.data;
+        withdrawals = res.data as AdminWithdrawalRequest[];
       } else if (res?.data && typeof res.data === 'object') {
-        withdrawals = res.data.withdrawals ?? res.data.data ?? res.data.requests ?? [];
+        withdrawals = (res.data.withdrawals ?? res.data.data ?? res.data.requests ?? []) as AdminWithdrawalRequest[];
       } else {
-        withdrawals = res?.withdrawals ?? res?.requests ?? [];
+        withdrawals = (res?.withdrawals ?? res?.requests ?? []) as AdminWithdrawalRequest[];
       }
       setWithdrawalRows(withdrawals);
       
@@ -227,14 +234,15 @@ export default function USDTTransactionsPage() {
         const total = res.meta.total || 0;
         const limit = res.meta.limit || perPage;
         setTotalPages(Math.ceil(total / limit) || 1);
-      } else if (res?.data?.pagination) {
+      } else if (res?.data && typeof res.data === 'object' && !Array.isArray(res.data) && res.data.pagination) {
         setTotalPages(res.data.pagination.totalPages || res.data.pagination.total_pages || 1);
       } else if (res?.pagination) {
         setTotalPages(res.pagination.totalPages || res.pagination.total_pages || 1);
       }
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      toast.error(e?.message || "Failed to load withdrawal requests");
+      const errorMessage = e instanceof Error ? e.message : "Failed to load withdrawal requests";
+      toast.error(errorMessage);
       setWithdrawalRows([]);
     }
   }, [token, page, perPage, statusFilter]);
@@ -405,11 +413,10 @@ export default function USDTTransactionsPage() {
       setSelectedWithdrawalRequest(null);
       setActionType(null);
       setAdminNotes("");
-    } catch (e: any) {
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : `Failed to ${actionType === "approve" ? "approve" : "reject"} ${activeTab === "deposits" ? "deposit" : "withdrawal"} request`;
+      toast.error(errorMessage);
       console.error(e);
-      toast.error(
-        e?.message || `Failed to ${actionType === "approve" ? "approve" : "reject"} ${activeTab === "deposits" ? "deposit" : "withdrawal"} request`
-      );
     } finally {
       setSubmitting(false);
     }

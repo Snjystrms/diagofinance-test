@@ -45,7 +45,7 @@ export function AccountTypeForm({
         name: initialData.name,
         spread_from: initialData.spread_from,
         maximum_leverage: initialData.maximum_leverage,
-        leverage_type: (initialData.leverage_type as any) || "dynamic",
+        leverage_type: (initialData.leverage_type as string) || "dynamic",
         leverage_value: Number(initialData.leverage_value || 0),
         stop_out_level: initialData.stop_out_level ?? "0.00",
         hedge_margin: initialData.hedge_margin ?? "0.00",
@@ -107,7 +107,7 @@ export function AccountTypeForm({
 
             <div className="space-y-2">
               <Label htmlFor="leverage_type">Leverage Type</Label>
-              <Select value={form.leverage_type} onValueChange={(v: any) => setForm({ ...form, leverage_type: v })} disabled={disabled}>
+              <Select value={form.leverage_type} onValueChange={(v: string) => setForm({ ...form, leverage_type: v })} disabled={disabled}>
                 <SelectTrigger><SelectValue placeholder="dynamic" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="dynamic">dynamic</SelectItem>

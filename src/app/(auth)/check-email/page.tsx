@@ -239,7 +239,7 @@ export default function CheckEmailPage() {
                   <div className="flex items-start space-x-3">
                     <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
                     <p className="text-sm text-muted-foreground">
-                      Look for an email with the subject "Your OTP for Registration"
+                      Look for an email with the subject &quot;Your OTP for Registration&quot;
                     </p>
                   </div>
                   <div className="flex items-start space-x-3">
@@ -253,7 +253,7 @@ export default function CheckEmailPage() {
                 {/* Spam folder notice */}
                 <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
                   <p className="text-sm text-amber-800">
-                    <strong>Tip:</strong> If you don't see the email, check your spam or junk folder.
+                    <strong>Tip:</strong> If you don&apos;t see the email, check your spam or junk folder.
                   </p>
                 </div>
 

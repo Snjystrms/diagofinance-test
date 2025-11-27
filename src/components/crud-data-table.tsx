@@ -167,7 +167,7 @@ export function CrudDataTable<T extends { id: string }>({
   open={isFormOpen}
   onOpenChange={setIsFormOpen}
   initialData={editingItem}
-  onSubmit={(data: any) => {
+  onSubmit={(data: Partial<T>) => {
     if (editingItem) {
       handleUpdate({ ...editingItem, ...data });
     } else {

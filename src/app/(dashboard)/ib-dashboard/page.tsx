@@ -261,7 +261,7 @@ export default function IbDashboardPage() {
           {/* Today's Earnings Card */}
           <Card className="relative overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all duration-300 group bg-card/70 backdrop-blur-sm">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">Today's Earnings</CardTitle>
+              <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">Today&apos;s Earnings</CardTitle>
               <div className="relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-xl blur opacity-50"></div>
                 <div className="relative p-2 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-600 text-white shadow-lg">

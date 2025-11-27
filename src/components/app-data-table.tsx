@@ -8,10 +8,13 @@ import { useDataTable } from "@/hooks/use-data-table";
 // For advanced UI, swap in DataTableAdvancedToolbar with FilterList/SortList
 import { DataTable } from "./data-table/data-table";
 import { DataTableToolbar } from "./data-table/data-table-toolbar";
+import { DataTableAdvancedToolbar } from "./data-table/data-table-advanced-toolbar";
+import { DataTableFilterList } from "./data-table/data-table-filter-list";
+import { DataTableSortList } from "./data-table/data-table-sort-list";
 
 type AppDataTableProps<TData> = {
   data: TData[];
-  columns: ColumnDef<TData, any>[];
+  columns: ColumnDef<TData, unknown>[];
   pageCount?: number;             // pass from server when you paginate
   advanced?: boolean;             // toggle advanced toolbar
   actionBar?: React.ReactNode;    // e.g., bulk delete/export on selection
@@ -36,7 +39,10 @@ export function AppDataTable<TData>({
         pageSize: 10 
       } 
     },
-    getRowId: getRowId || ((row: any) => row.id ?? row._id ?? row.uuid ?? String(Math.random())),
+    getRowId: getRowId || ((row: TData) => {
+      const rowObj = row as Record<string, unknown>;
+      return String(rowObj.id ?? rowObj._id ?? rowObj.uuid ?? Math.random());
+    }),
   });
 
   // Standard toolbar
@@ -48,25 +54,14 @@ export function AppDataTable<TData>({
     );
   }
 
-  // Advanced toolbar - fallback to standard toolbar if advanced components are not available
-  try {
-    const { DataTableAdvancedToolbar } = require("@/components/data-table-advanced-toolbar");
-    const { DataTableFilterList } = require("@/components/data-table-filter-list");
-    const { DataTableSortList } = require("@/components/data-table-sort-list");
-
+  // Advanced toolbar - use advanced components if available
+  if (advanced && DataTableAdvancedToolbar && DataTableFilterList && DataTableSortList) {
     return (
       <DataTable table={table} actionBar={actionBar}>
         <DataTableAdvancedToolbar table={table}>
           <DataTableFilterList table={table} />
           <DataTableSortList table={table} />
         </DataTableAdvancedToolbar>
-      </DataTable>
-    );
-  } catch (error) {
-    console.warn('Advanced table components not found. Falling back to standard toolbar.');
-    return (
-      <DataTable table={table} actionBar={actionBar}>
-        <DataTableToolbar table={table} />
       </DataTable>
     );
   }

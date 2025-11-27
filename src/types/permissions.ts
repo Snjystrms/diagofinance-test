@@ -31,7 +31,7 @@ export interface SubadminPermissionsResponse {
 export interface NavItem {
   title: string;
   url: string;
-  icon: any;
+  icon: React.ComponentType<Record<string, unknown>> | React.ReactElement | null;
   isActive?: boolean;
   items?: {
     title: string;

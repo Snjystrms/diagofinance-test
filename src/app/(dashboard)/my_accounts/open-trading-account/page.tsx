@@ -806,7 +806,7 @@ export default function OpenTradingAccountPage() {
                       Next Steps
                     </p>
                     <p className="text-xs text-blue-700 dark:text-blue-400">
-                      Your account request is being reviewed. You'll receive a notification once approved and ready to use.
+                      Your account request is being reviewed. You&apos;ll receive a notification once approved and ready to use.
                     </p>
                   </div>
                 </div>

@@ -30,7 +30,8 @@ const deriveAccountId = (account: AdminMT5Account) => {
 };
 
 const deriveUserName = (account: AdminMT5Account) => {
-  const user = account.user ?? (account as any).User;
+  const accountExt = account as AdminMT5Account & { User?: { name?: string; first_name?: string; last_name?: string } };
+  const user = account.user ?? accountExt.User;
   if (user) {
     if (user.name) return user.name;
     if (user.first_name || user.last_name) {
@@ -41,12 +42,14 @@ const deriveUserName = (account: AdminMT5Account) => {
 };
 
 const deriveUserEmail = (account: AdminMT5Account) => {
-  const user = account.user ?? (account as any).User;
+  const accountExt = account as AdminMT5Account & { User?: { email?: string } };
+  const user = account.user ?? accountExt.User;
   return user?.email ?? account.email ?? "—";
 };
 
 const deriveUserMobile = (account: AdminMT5Account) => {
-  const user = account.user ?? (account as any).User;
+  const accountExt = account as AdminMT5Account & { User?: { mobile?: string } };
+  const user = account.user ?? accountExt.User;
   return user?.mobile ?? account.mobile ?? "—";
 };
 
@@ -122,7 +125,8 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
     header: ({ column }) => <DataTableColumnHeader column={column} title="Account Type" />,
     cell: ({ row }) => {
       const account = row.original;
-      const accountType = account.account_type ?? (account as any).accountType?.name ?? "—";
+      const accountExt = account as AdminMT5Account & { accountType?: { name?: string } };
+      const accountType = account.account_type ?? accountExt.accountType?.name ?? "—";
       return <Badge variant="outline">{accountType}</Badge>;
     },
     enableColumnFilter: true,
@@ -132,8 +136,11 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
     header: ({ column }) => <DataTableColumnHeader column={column} title="Balance" />,
     cell: ({ row }) => {
       const account = row.original;
-      const balance = account.balance ?? account.available_balance ?? (account as any).self_wallet;
-      const currency = account.currency ?? "USD";
+      const accountExt = account as AdminMT5Account & { self_wallet?: number | string };
+      const balance = (account.balance as string | number | undefined) ?? 
+        (account.available_balance as string | number | undefined) ?? 
+        (accountExt.self_wallet as string | number | undefined);
+      const currency = (account.currency as string) ?? "USD";
       return (
         <div className="flex items-center gap-1">
           <DollarSign className="h-4 w-4 text-green-600" />
@@ -148,8 +155,8 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
     accessorKey: "equity",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Equity" />,
     cell: ({ row }) => {
-      const equity = row.original.equity;
-      const currency = row.original.currency ?? "USD";
+      const equity = row.original.equity as string | number | undefined;
+      const currency = (row.original.currency as string) ?? "USD";
       return (
         <div className="flex items-center gap-1">
           <TrendingUp className="h-4 w-4 text-indigo-600" />

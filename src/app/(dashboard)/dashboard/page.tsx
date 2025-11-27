@@ -140,10 +140,10 @@ export default function DashboardPage() {
         if (withdrawalsStatsResponse.success && withdrawalsStatsResponse.data) {
           setWithdrawalsStatistics(withdrawalsStatsResponse.data.statistics ?? []);
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("Failed to fetch dashboard data:", error);
         if (isMounted) {
-          const message = error?.message || "Unable to load dashboard";
+          const message = error instanceof Error ? error.message : "Unable to load dashboard";
           setDashboardError(message);
           toast.error(message);
         }
@@ -194,7 +194,7 @@ export default function DashboardPage() {
           Dashboard
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Welcome back! Here's what's happening with your business today.
+          Welcome back! Here&apos;s what&apos;s happening with your business today.
         </p>
       </div>
 
@@ -318,7 +318,7 @@ export default function DashboardPage() {
                   </h1>
                 </div>
                 <p className="text-muted-foreground text-sm sm:text-base ml-14">
-                  Welcome back! Here's what's happening with your account today.
+                  Welcome back! Here&apos;s what&apos;s happening with your account today.
                 </p>
               </div>
               <Badge variant="outline" className="px-4 py-2 text-xs font-semibold border-primary/30 bg-primary/5">
@@ -471,7 +471,7 @@ export default function DashboardPage() {
                       <Sparkles className="h-3.5 w-3.5 animate-pulse" />
                       <span className="font-medium">Instant transfers available</span>
                     </div>
-                    <Link href="/my-wallet/transfer-funds" className="inline-block mt-2">
+                    <Link href="/funds/internal-transfer" className="inline-block mt-2">
                       <Button
                         variant="ghost"
                         size="sm"

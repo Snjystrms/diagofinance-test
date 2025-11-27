@@ -15,7 +15,7 @@ export interface PermissionAwareCrudDataTableProps<T extends { id: string }> {
   data: T[];
   columns: ColumnDef<T>[];
   initialData: T[];
-  formComponent: React.ComponentType<any>;
+  formComponent: React.ComponentType<{ open: boolean; onOpenChange: (open: boolean) => void; initialData?: T | null; onSubmit: (data: Partial<T>) => void | Promise<void>; readOnly?: boolean }>;
   title: string;
   description: string;
   addButtonLabel?: string;
@@ -177,7 +177,7 @@ export function PermissionAwareCrudDataTable<T extends { id: string }>({
         <div className="text-center p-8">
           <h2 className="text-2xl font-semibold tracking-tight mb-2">Access Denied</h2>
           <p className="text-muted-foreground">
-            You don't have permission to view {title.toLowerCase()}.
+            You don&apos;t have permission to view {title.toLowerCase()}.
           </p>
         </div>
       </div>
@@ -233,7 +233,7 @@ export function PermissionAwareCrudDataTable<T extends { id: string }>({
           }}
           initialData={editingItem}
           readOnly={formIsReadOnly}
-          onSubmit={(payload: any) => {
+          onSubmit={(payload: Partial<T>) => {
             if (editingItem) return handleUpdate({ ...editingItem, ...payload });
             return handleAdd(payload);
           }}

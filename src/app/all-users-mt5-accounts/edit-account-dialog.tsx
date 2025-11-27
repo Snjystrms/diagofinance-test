@@ -40,8 +40,8 @@ export function EditAccountDialog({
         mobile: account.mobile || "",
         leverage: account.leverage ? Number(account.leverage) : undefined,
         status: account.status !== undefined ? Number(account.status) : 1,
-        self_wallet: account.self_wallet || (account as any).self_wallet || undefined,
-        mt5_id: account.mt5_id || "",
+        self_wallet: (account.self_wallet as string | number | undefined) || undefined,
+        mt5_id: (account.mt5_id as string) || "",
       });
     }
   }, [account]);

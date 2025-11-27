@@ -82,7 +82,7 @@ export function ProfileCompletionDialog({
 
         <DialogFooter className="flex items-center justify-between">
           <Button variant="outline" onClick={handleSkip}>
-            I'll do this later
+            I&apos;ll do this later
           </Button>
           {incompleteSections.length > 0 && (
             <Button

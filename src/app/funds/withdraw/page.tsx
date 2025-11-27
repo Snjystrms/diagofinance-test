@@ -525,7 +525,7 @@ export default function WithdrawPage() {
                   <ArrowUpRight className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                   <h3 className="text-lg font-semibold mb-2">No Withdrawal Requests</h3>
                   <p className="text-muted-foreground mb-4">
-                    You haven't submitted any withdrawal requests yet.
+                    You haven&apos;t submitted any withdrawal requests yet.
                   </p>
                   <Button onClick={() => window.location.href = '/withdrawal-request'}>
                     Request a Withdrawal

@@ -207,9 +207,9 @@ export default function AdminTicketsPage() {
           closed: response.data.closed ?? 0,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to load ticket statistics:", error);
-      toast.error(error?.message || "Failed to load ticket statistics");
+      toast.error(error instanceof Error ? error.message : "Failed to load ticket statistics");
     } finally {
       setStatsLoading(false);
     }
@@ -255,9 +255,9 @@ export default function AdminTicketsPage() {
           total: ticketItems.length,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to load tickets:", error);
-      toast.error(error?.message || "Failed to load tickets");
+      toast.error(error instanceof Error ? error.message : "Failed to load tickets");
       setTickets([]);
     } finally {
       setLoading(false);
@@ -309,9 +309,9 @@ export default function AdminTicketsPage() {
       toast.success("Reply submitted successfully");
       await loadTickets();
       closeDetail();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to submit reply:", error);
-      toast.error(error?.message || "Failed to submit reply");
+      toast.error(error instanceof Error ? error.message : "Failed to submit reply");
     } finally {
       setIsReplying(false);
     }
@@ -335,9 +335,9 @@ export default function AdminTicketsPage() {
       await loadTickets();
       await loadStats();
       closeDetail();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to close ticket:", error);
-      toast.error(error?.message || "Failed to close ticket");
+      toast.error(error instanceof Error ? error.message : "Failed to close ticket");
     } finally {
       setIsClosing(false);
     }
@@ -378,9 +378,9 @@ export default function AdminTicketsPage() {
         await loadStats();
         closeDetail();
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to change status:", error);
-      toast.error(error?.message || "Failed to change status");
+      toast.error(error instanceof Error ? error.message : "Failed to change status");
       setIsChangingStatus(false);
     }
   }, [token, selectedTicket, resolutionNote, closeAdminNotes, loadTickets, loadStats, closeDetail]);

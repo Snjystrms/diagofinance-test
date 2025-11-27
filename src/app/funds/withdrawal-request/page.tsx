@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { MainLayout } from "@/components/main-layout";
 import { useAuth } from "@/contexts/auth-context";
-import { withdrawalApi, walletApi, type WithdrawalResponse, type WalletSummaryData } from "@/lib/api";
+import { withdrawalApi, walletApi, type WithdrawalResponse, type WalletSummaryData, type WithdrawalItem } from "@/lib/api";
 import {
   Wallet,
   DollarSign,
@@ -48,7 +48,7 @@ function WithdrawalRequestContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [withdrawalData, setWithdrawalData] = useState<any>(null);
+  const [withdrawalData, setWithdrawalData] = useState<WithdrawalItem | null>(null);
   const [copied, setCopied] = useState(false);
   const [walletData, setWalletData] = useState<WalletSummaryData | null>(null);
   const [walletLoading, setWalletLoading] = useState(true);
@@ -194,7 +194,7 @@ function WithdrawalRequestContent() {
         throw new Error(response.message || "Failed to create withdrawal request");
       }
 
-      setWithdrawalData(response.data);
+      setWithdrawalData(response.data || null);
       setSuccess(true);
       setIsSubmitting(false);
       

@@ -58,13 +58,7 @@ import {
 import { useAuth } from "@/contexts/auth-context"
 import { generateManagerNavigation } from "@/lib/permission-nav-mapper"
 import { adminNavData, userNavData } from "@/components/app-sidebar"
-
-type NavItem = {
-  title: string;
-  url: string;
-  icon?: React.ComponentType<{ className?: string }>;
-  items?: Array<{ title: string; url: string }>;
-};
+import type { NavItem } from "@/types/permissions"
 
 // Helper function to get icon for sub-items based on title
 const getSubItemIcon = (title: string) => {
@@ -306,7 +300,7 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
                     </p>
                   </div>
                 ) : (
-                  navItems.map((item: NavItem) => {
+                  navItems.map((item) => {
                     const hasSubItems = item.items && item.items.length > 0;
                     const isExpanded = expandedItems.has(item.title);
                     const isActive = activeItem === item.title;
@@ -328,7 +322,7 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
                         >
                           {hasSubItems ? (
                             <>
-                              {item.icon && <item.icon className="size-5 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />}
+                              {item.icon && (React.isValidElement(item.icon) ? item.icon : <item.icon className="size-5 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />)}
                               {!isCollapsed && <span className="animate-in fade-in-0 slide-in-from-left-2 duration-500">{item.title}</span>}
                               {!isCollapsed && (
                                 <ChevronRight className={`ml-auto h-5 w-5 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${isExpanded ? 'rotate-90' : ''}`} />
@@ -336,7 +330,7 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
                             </>
                           ) : (
                             <Link href={item.url}>
-                              {item.icon && <item.icon className="size-5 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />}
+                              {item.icon && (React.isValidElement(item.icon) ? item.icon : <item.icon className="size-5 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />)}
                               {!isCollapsed && <span className="animate-in fade-in-0 slide-in-from-left-2 duration-500">{item.title}</span>}
                             </Link>
                           )}
@@ -380,7 +374,7 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
                   <div className="flex items-center gap-3">
                     {activeNavItem.icon && (
                       <div className="p-2 rounded-lg bg-sidebar-primary/10">
-                        <activeNavItem.icon className="h-5 w-5 text-sidebar-primary" />
+                        {React.isValidElement(activeNavItem.icon) ? activeNavItem.icon : <activeNavItem.icon className="h-5 w-5 text-sidebar-primary" />}
                       </div>
                     )}
                     <div className="text-foreground text-base font-bold">

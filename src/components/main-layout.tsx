@@ -44,6 +44,14 @@ export function MainLayout({ children }: MainLayoutProps) {
     }
   }, [user]);
 
+  // Clear sidebar cookie when switching to two-panel or expanded-panel to ensure it starts collapsed
+  useEffect(() => {
+    if (selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel") {
+      // Clear the sidebar state cookie to force collapsed state
+      document.cookie = "sidebar_state=false; path=/; max-age=0";
+    }
+  }, [selectedSidebar]);
+
   // If user needs to pay registration fee, show modal and disable sidebar
   if (user && user.type === 'user' && user.is_account_active === false) {
     return (
@@ -76,14 +84,6 @@ export function MainLayout({ children }: MainLayoutProps) {
       </div>
     );
   }
-
-  // Clear sidebar cookie when switching to two-panel or expanded-panel to ensure it starts collapsed
-  useEffect(() => {
-    if (selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel") {
-      // Clear the sidebar state cookie to force collapsed state
-      document.cookie = "sidebar_state=false; path=/; max-age=0";
-    }
-  }, [selectedSidebar]);
 
   return (
     <SidebarProvider

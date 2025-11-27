@@ -498,7 +498,7 @@ export default function ManageAccountsPage() {
                   </div>
                   <h3 className="text-xl font-semibold mb-2">No {getTabTitle()} Found</h3>
                   <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                    You don't have any {getTabTitle().toLowerCase()} yet. Create a new account to get started.
+                    You don&apos;t have any {getTabTitle().toLowerCase()} yet. Create a new account to get started.
                   </p>
                   <Button size="lg" asChild className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
                     <Link href="/my_accounts/open-trading-account">
@@ -521,7 +521,7 @@ export default function ManageAccountsPage() {
               </div>
               <h3 className="text-xl font-semibold mb-2">No Trading Accounts</h3>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                You don't have any trading accounts yet. Create your first account to start trading.
+                You don&apos;t have any trading accounts yet. Create your first account to start trading.
               </p>
               <Button size="lg" asChild className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
                 <Link href="/my_accounts/open-trading-account">

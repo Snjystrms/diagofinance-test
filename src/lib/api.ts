@@ -1,13 +1,13 @@
 // C:\Users\DELL\Desktop\crminhouse\src\lib\api.ts
 
 // API base URL - replace with your actual backend URL
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://192.168.1.47:3000";
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://graybulls.com";
 
 // Debug: Log the API base URL being used
 console.log("API_BASE_URL:", API_BASE_URL);
 
 // ---------- Shared Types ----------
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
   status?: string;
@@ -158,7 +158,7 @@ export interface UserDashboardData {
   profile_status?: UserDashboardProfileStatus;
   account_types?: {
     total_accounts: number;
-    summary: any[];
+    summary: Array<Record<string, unknown>>;
   };
   mt5_users?: Array<{
     id: number;
@@ -168,8 +168,8 @@ export interface UserDashboardData {
     mt5_id: string | null;
     account_id: string;
   }>;
-  latest_news?: any[];
-  rate_configurations?: any[];
+  latest_news?: Array<Record<string, unknown>>;
+  rate_configurations?: Array<Record<string, unknown>>;
 }
 
 export interface TradingAccountSummaryItem {
@@ -365,7 +365,7 @@ export interface ProfileViewKycDocuments {
   poa_front_file_status: number;
   poa_back_file_status: number;
   other_file_status: number;
-  file_rejection_comment: Record<string, any>;
+  file_rejection_comment: Record<string, unknown>;
 }
 
 export interface LoginHistoryItem {
@@ -417,7 +417,7 @@ export interface ManagerItem {
   created_at?: string;
   updated_at?: string;
   /** 🔁 Can be flat or grouped; we flatten in page.tsx normalize() */
-  permissions: any;
+  permissions: Record<string, unknown> | Array<Record<string, unknown>>;
 }
 
 export type ManagerCreateBody = {
@@ -468,7 +468,7 @@ export interface AccountTypeItem {
 }
 
 // --- helper: turn object to x-www-form-urlencoded ---
-const toFormBody = (obj: Record<string, any>) => {
+const toFormBody = (obj: Record<string, unknown>) => {
   const p = new URLSearchParams();
   Object.entries(obj).forEach(([k, v]) => {
     p.set(k, v === null || v === undefined ? "" : String(v));
@@ -492,7 +492,7 @@ export const adminAccountTypesApi = {
     const endpoint = `/admin/account-types/list${qs.toString() ? `?${qs.toString()}` : ""}`;
     return apiCall<{
       accountTypes: AccountTypeItem[];
-      pagination?: any;
+      pagination?: PaginationMeta;
     }>(endpoint, { method: "GET", headers: { Authorization: `Bearer ${token}` } });
   },
 
@@ -725,7 +725,7 @@ export const authApi = {
   uploadProfileDocuments: async (formData: FormData, token: string): Promise<KycUploadResponse> => {
     const res = await fetch(`${API_BASE_URL}/user/profile/document`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` } as any,
+      headers: { Authorization: `Bearer ${token}` } as Record<string, string>,
       body: formData,
     });
     const json = await res.json().catch(() => ({}));
@@ -735,7 +735,7 @@ export const authApi = {
   getProfileDocumentsStatus: async (token: string): Promise<KycStatusResponse> => {
     const res = await fetch(`${API_BASE_URL}/user/profile/document`, {
       method: "GET",
-      headers: { Authorization: `Bearer ${token}` } as any,
+      headers: { Authorization: `Bearer ${token}` } as Record<string, string>,
     });
     const json = await res.json().catch(() => ({}));
     if (!res.ok) throw new Error(json?.message || `Fetch failed (${res.status})`);
@@ -849,7 +849,7 @@ export const manager2FAApi = {
 export const adminKycApi = {
   listPending: (status: string | number, token: string) =>
     apiCall<{
-      items: any[];
+      items: Array<Record<string, unknown>>;
       pagination: { current_page: number; per_page: number; total: number; total_pages: number };
     }>(`/admin/user-management/users/kyc/pending?status=${encodeURIComponent(String(status))}`, {
       method: "GET",
@@ -903,7 +903,7 @@ const encodeManagerUpdate = (body: ManagerUpdateBody) => {
 
 export const adminManagersApi = {
   list: (token: string) =>
-    apiCall<{ managers: ManagerItem[]; pagination?: any }>(`/admin/manager/list`, {
+    apiCall<{ managers: ManagerItem[]; pagination?: PaginationMeta }>(`/admin/manager/list`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),
@@ -1501,7 +1501,7 @@ export interface AdminIbRequest {
   };
   User?: AdminIbRequest["user"];
   applicant?: AdminIbRequest["user"];
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface AdminIbRequestListData {
@@ -1521,7 +1521,7 @@ export interface AdminIbRequestListData {
     pagination?: PaginationMeta;
   };
   total?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface AdminIbRequestUpdateBody {
@@ -1649,7 +1649,7 @@ export interface AdminMT5Account {
     email?: string;
     mobile?: string;
   };
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 export interface AdminMT5AccountsListParams {
@@ -1700,7 +1700,7 @@ export interface AdminMT5AccountsListResponse {
     pagination?: PaginationMeta;
   };
   total?: number;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // ---------- MT5 Accounts APIs ----------
@@ -2028,30 +2028,31 @@ export const withdrawalApi = {
     limit: number = 10,
     token: string
   ): Promise<WithdrawalsResponse> => {
-    return apiCall<any>(`/user/withdrawals?page=${page}&limit=${limit}`, {
+    return apiCall<unknown>(`/user/withdrawals?page=${page}&limit=${limit}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }).then((response) => {
       // Handle different response structures
       let withdrawals: WithdrawalItem[] = [];
-      let pagination = undefined;
+      let pagination: { page: number; limit: number; total: number; totalPages: number } | undefined = undefined;
 
       if (response.success && response.data) {
+        const data = response.data as Record<string, unknown>;
         // Case 1: Data is an object with withdrawals array
-        if (Array.isArray(response.data.withdrawals)) {
-          withdrawals = response.data.withdrawals;
-          pagination = response.data.pagination;
+        if (Array.isArray(data.withdrawals)) {
+          withdrawals = data.withdrawals as WithdrawalItem[];
+          pagination = data.pagination as typeof pagination;
         }
         // Case 2: Data is directly an array
         else if (Array.isArray(response.data)) {
-          withdrawals = response.data;
+          withdrawals = response.data as WithdrawalItem[];
         }
         // Case 3: Data is an object, check if it has a withdrawals property
-        else if (response.data.withdrawals) {
-          withdrawals = Array.isArray(response.data.withdrawals)
-            ? response.data.withdrawals
+        else if (data.withdrawals) {
+          withdrawals = Array.isArray(data.withdrawals)
+            ? (data.withdrawals as WithdrawalItem[])
             : [];
-          pagination = response.data.pagination;
+          pagination = data.pagination as typeof pagination;
         }
       } else if (!response.success) {
         console.error("API returned unsuccessful response:", response);

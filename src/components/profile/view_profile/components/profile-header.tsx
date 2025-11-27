@@ -7,14 +7,14 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Phone, MapPin, Shield, Copy, Check } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
-import { authApi } from "@/lib/api";
+import { authApi, type ProfileViewResponse } from "@/lib/api";
 import { Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function ProfileHeader() {
   const { token } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [profileData, setProfileData] = useState<any>(null);
+  const [profileData, setProfileData] = useState<ProfileViewResponse | null>(null);
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
   const [copiedAccountId, setCopiedAccountId] = useState(false);
 

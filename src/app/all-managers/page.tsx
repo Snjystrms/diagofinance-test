@@ -39,17 +39,22 @@ export type ManagerRow = {
  * - flat: [{id,name}]
  * - grouped: [{category, permissions:[{id,name}]}]
  */
-const flattenPermissions = (raw: any): { id: number; name: string }[] => {
+const flattenPermissions = (raw: unknown): { id: number; name: string }[] => {
   if (!Array.isArray(raw) || raw.length === 0) return [];
+  const first = raw[0] as Record<string, unknown> | undefined;
   // Already flat
-  if (raw[0] && typeof raw[0].id === "number") {
-    return raw.map((p: any) => ({ id: p.id, name: p.name }));
+  if (first && typeof first.id === "number") {
+    return raw.map((p: unknown) => {
+      const perm = p as { id: number; name: string };
+      return { id: perm.id, name: perm.name };
+    });
   }
   // Grouped
-  if (raw[0] && raw[0].category && Array.isArray(raw[0].permissions)) {
-    return raw.flatMap((g: any) =>
-      (g.permissions || []).map((p: any) => ({ id: p.id, name: p.name }))
-    );
+  if (first && first.category && Array.isArray(first.permissions)) {
+    return raw.flatMap((g: unknown) => {
+      const group = g as { permissions?: Array<{ id: number; name: string }> };
+      return (group.permissions || []).map((p) => ({ id: p.id, name: p.name }));
+    });
   }
   return [];
 };
@@ -63,7 +68,7 @@ const normalize = (m: ManagerItem): ManagerRow => ({
   status: !!m.status,
   created_at: m.created_at,
   updated_at: m.updated_at,
-  permissions: flattenPermissions((m as any).permissions),
+  permissions: flattenPermissions((m as ManagerItem & { permissions?: unknown }).permissions),
 });
 
 /** ✅ Robustly normalize any incoming `permissions` into number[] */
@@ -73,9 +78,9 @@ function toIdArray(perms: unknown): number[] {
     return perms as number[];
   }
   if (Array.isArray(perms)) {
-    const ids = (perms as any[])
+    const ids = (perms as Array<{ id?: number }>)
       .map((p) => (p && typeof p.id === "number" ? p.id : null))
-      .filter((x) => typeof x === "number") as number[];
+      .filter((x): x is number => typeof x === "number");
     return ids;
   }
   return [];
@@ -129,7 +134,8 @@ export default function AllManagersPage() {
     if (!token) return;
     try {
       const res = await permissionsApi.listAll(token);
-      const groups = ((res?.data as any)?.permissions || []) as GroupedPermissions[];
+      const data = res?.data as { permissions?: GroupedPermissions[] } | undefined;
+      const groups = (data?.permissions || []) as GroupedPermissions[];
       setGroupedPerms(groups);
 
       const flat: PermissionLite[] = groups.flatMap((g) =>
@@ -188,15 +194,16 @@ export default function AllManagersPage() {
       setData((prev) => [created, ...prev]);
       toast.success("Manager created successfully");
       return Promise.resolve();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Create manager error:", e);
-      toast.error(e?.message || "Create failed");
+      const errorMessage = e instanceof Error ? e.message : "Create failed";
+      toast.error(errorMessage);
       return Promise.reject(e);
     }
   };
 
   // UPDATE — ✅ always send permissions as number[]
-  const handleUpdate = async (row: ManagerRow & { password?: string; permissions?: any }) => {
+  const handleUpdate = async (row: ManagerRow & { password?: string; permissions?: unknown }) => {
     if (!token) return Promise.reject();
     try {
       setActionLoadingId(row.id);
@@ -219,9 +226,10 @@ export default function AllManagersPage() {
       setData((prev) => prev.map((x) => (x.id === row.id ? norm : x)));
       toast.success("Manager updated successfully");
       return Promise.resolve();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Update manager error:", e);
-      toast.error(e?.message || "Update failed");
+      const errorMessage = e instanceof Error ? e.message : "Update failed";
+      toast.error(errorMessage);
       return Promise.reject(e);
     } finally {
       setActionLoadingId(null);
@@ -249,9 +257,10 @@ export default function AllManagersPage() {
         setData((prev) => prev.map((x) => (x.id === id ? updated : x)));
 
         toast.success(`Manager ${updated.status ? "activated" : "deactivated"} successfully`);
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.error("[Toggle] Error:", e);
-        toast.error(e?.message || "Failed to update status");
+        const errorMessage = e instanceof Error ? e.message : "Failed to update status";
+        toast.error(errorMessage);
       } finally {
         setActionLoadingId(null);
       }
@@ -268,9 +277,10 @@ export default function AllManagersPage() {
       setData((prev) => prev.filter((x) => x.id !== id));
       toast.success("Manager deleted");
       return Promise.resolve();
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error("Delete manager error:", e);
-      toast.error(e?.message || "Delete failed");
+      const errorMessage = e instanceof Error ? e.message : "Delete failed";
+      toast.error(errorMessage);
       return Promise.reject(e);
     } finally {
       setActionLoadingId(null);
@@ -285,9 +295,10 @@ export default function AllManagersPage() {
       try {
         const manager = await fetchManagerDetail(id);
         setViewItem(manager);
-      } catch (error: any) {
+      } catch (error: unknown) {
         console.error("View manager error:", error);
-        toast.error(error?.message || "Failed to load manager details");
+        const errorMessage = error instanceof Error ? error.message : "Failed to fetch manager detail";
+        toast.error(errorMessage);
         setViewOpen(false);
       } finally {
         setViewLoading(false);
@@ -302,7 +313,7 @@ export default function AllManagersPage() {
         onToggleStatus: handleToggleStatus,
         onView: (row) => handleViewManager(row.id),
         actionLoadingId,
-      }) as any,
+      }),
     [handleToggleStatus, actionLoadingId, handleViewManager]
   );
 
@@ -353,9 +364,9 @@ export default function AllManagersPage() {
             data={data}
             initialData={data}
             columns={columns}
-            formComponent={(props: any) => (
+            formComponent={(props) => (
               <ManagerForm
-                {...props}
+                {...(props as Parameters<typeof ManagerForm>[0])}
                 allPermissions={allPerms}
                 groupedPermissions={groupedPerms}
                 onFetchPermissions={fetchPermissions}
@@ -366,8 +377,9 @@ export default function AllManagersPage() {
             requiredModule="manager"
             hideAddButton={true}
             onAdd={async (partial) => {
-              const { id: _i, uuid: _u, created_at: _c1, updated_at: _c2, ...rest } = partial as any;
-              return handleAdd(rest);
+              const partialRow = partial as Partial<ManagerRow>;
+              const { id: _i, uuid: _u, created_at: _c1, updated_at: _c2, ...rest } = partialRow;
+              return handleAdd(rest as Omit<ManagerRow, 'id' | 'uuid' | 'created_at' | 'updated_at'>);
             }}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
@@ -389,9 +401,9 @@ export default function AllManagersPage() {
                 email: form.email,
                 mobile: form.mobile,
                 password: form.password,
-                status: form.status,
+                status: form.status ?? true,
                 permissions: [],
-              } as any);
+              });
             }}
           />
         </div>
