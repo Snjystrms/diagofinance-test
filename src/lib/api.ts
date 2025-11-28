@@ -1185,6 +1185,95 @@ export const adminUSDTDepositApi = {
 export const depositProofUrl = (fileName?: string | null) =>
   fileName ? `${API_BASE_URL}${fileName}` : "";
 
+// ---------- Binance Pay Deposit Types ----------
+export interface BinanceDepositCreateRequest {
+  amount: number;
+  user_comment?: string;
+}
+
+export interface BinanceDepositCreateResponse {
+  success: boolean;
+  message: string;
+  test_mode?: boolean;
+  data: {
+    deposit_uuid: string;
+    merchant_trade_no: string;
+    prepay_id: string;
+    qr_code_link: string;
+    qr_content: string;
+    checkout_url: string;
+    deeplink: string;
+    universal_url: string;
+    amount: number;
+    currency: string;
+  };
+}
+
+export interface DepositListItem {
+  id: number;
+  uuid: string;
+  amount: string;
+  status: number; // 0: pending, 1: approved, 2: rejected
+  file: string | null;
+  user_comment: string | null;
+  admin_comment: string | null;
+  created_at: string;
+  payment_method_id: number;
+  merchant_trade_no?: string;
+  paymentMethod: {
+    id: number;
+    type: string;
+  };
+}
+
+export interface DepositListResponse {
+  success: boolean;
+  data: DepositListItem[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+  };
+}
+
+export interface BinanceDepositStatusResponse {
+  success: boolean;
+  message: string;
+  data: {
+    deposit_uuid: string;
+    merchant_trade_no: string;
+    deposit_status: number;
+    binance_status: string;
+    transaction_id: string | null;
+    amount: number;
+    currency: string;
+    transaction_time: number;
+  };
+}
+
+// ---------- Binance Pay Deposit APIs ----------
+export const binanceDepositApi = {
+  create: (data: BinanceDepositCreateRequest, token: string) =>
+    apiCall<BinanceDepositCreateResponse>(`/user/deposit/binance/create`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+
+  getList: (page: number = 1, perPage: number = 10, token: string) =>
+    apiCall<DepositListResponse>(`/user/deposit/list?per_page=${perPage}&page=${page}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  getStatus: (merchantTradeNo: string, token: string) =>
+    apiCall<BinanceDepositStatusResponse>(`/user/deposit/binance/status/${merchantTradeNo}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};
+
 // ---------- Admin Withdrawal Types ----------
 export interface AdminWithdrawalRequest {
   id: number;

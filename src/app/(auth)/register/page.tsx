@@ -43,6 +43,30 @@ import { Spinner } from '@/components/ui/spinner';
 import Link from 'next/link';
 import Image from 'next/image';
 
+// Country list with country codes
+const COUNTRIES = [
+  { name: 'United States', code: '+1' },
+  { name: 'India', code: '+91' },
+  { name: 'United Kingdom', code: '+44' },
+  { name: 'Australia', code: '+61' },
+  { name: 'Canada', code: '+1' },
+  { name: 'Germany', code: '+49' },
+  { name: 'France', code: '+33' },
+  { name: 'Japan', code: '+81' },
+  { name: 'China', code: '+86' },
+  { name: 'Brazil', code: '+55' },
+  { name: 'Russia', code: '+7' },
+  { name: 'South Korea', code: '+82' },
+  { name: 'Italy', code: '+39' },
+  { name: 'Spain', code: '+34' },
+  { name: 'Mexico', code: '+52' },
+  { name: 'Indonesia', code: '+62' },
+  { name: 'Turkey', code: '+90' },
+  { name: 'Saudi Arabia', code: '+966' },
+  { name: 'United Arab Emirates', code: '+971' },
+  { name: 'South Africa', code: '+27' },
+] as const;
+
 export default function RegisterPage() {
   const { registerMutation } = useAuthMutations();
   const [isLoading, setIsLoading] = useState(false);
@@ -70,6 +94,8 @@ export default function RegisterPage() {
   const mobile = form.watch('mobile') || '';
   const password = form.watch('password') || '';
   const confirmPassword = form.watch('confirm_password') || '';
+  const country = form.watch('country') || '';
+  const countryCode = form.watch('country_code') || '';
 
   // password strength checklist
   const pwLen = password.length >= 8;
@@ -78,9 +104,19 @@ export default function RegisterPage() {
   const pwNum = /\d/.test(password);
   const pwSpecial = /[^A-Za-z0-9]/.test(password);
 
-  // mobile hints
+  // mobile validation - only digits, exactly 10 digits
   const mobileDigitsOnly = /^\d*$/.test(mobile);
-  const mobileLenOk = mobile.length >= 7 && mobile.length <= 15;
+  const mobileLenOk = mobile.length === 10;
+
+  // Handle country selection - auto-fill country code
+  const handleCountryChange = (selectedCountry: string) => {
+    const countryData = COUNTRIES.find((c) => c.name === selectedCountry);
+    if (countryData) {
+      form.setValue('country', selectedCountry);
+      form.setValue('country_code', countryData.code);
+    }
+  };
+
 
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
@@ -206,11 +242,11 @@ export default function RegisterPage() {
                           </FormControl>
                           <FormMessage />
                           {email && !form.formState.errors.email ? (
-                            <p className="text-xs text-green-600 mt-1">
+                            <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                               Looks like a valid email.
                             </p>
                           ) : email ? (
-                            <FormDescription className="text-red-600">
+                            <FormDescription className="text-destructive">
                               Please enter a valid email address
                               (e.g., name@example.com).
                             </FormDescription>
@@ -223,114 +259,124 @@ export default function RegisterPage() {
                       )}
                     />
 
-                    {/* Three-column row: Country Code + Mobile + Country */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 items-start">
-                      {/* Country Code */}
+                    {/* Country selection - moved after email */}
+                    <FormField
+                      control={form.control}
+                      name="country"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Country</FormLabel>
+                          <Select
+                            onValueChange={(value) => {
+                              handleCountryChange(value);
+                              field.onChange(value);
+                            }}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="h-10 w-full">
+                                <SelectValue placeholder="Select country" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {COUNTRIES.map((country) => (
+                                <SelectItem key={country.name} value={country.name}>
+                                  {country.name} ({country.code})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                          {country && (
+                            <FormDescription>
+                              Country code {countryCode} will be automatically applied
+                            </FormDescription>
+                          )}
+                        </FormItem>
+                      )}
+                    />
+
+                    {/* Country Code (read-only, auto-filled) + Mobile Number */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+                      {/* Country Code - read-only, auto-filled */}
                       <FormField
                         control={form.control}
                         name="country_code"
                         render={({ field }) => (
-                          <FormItem className="space-y-1">
-                            <FormLabel className="leading-none">
-                              Country Code
-                            </FormLabel>
+                          <FormItem>
+                            <FormLabel>Country Code</FormLabel>
                             <FormControl>
                               <Input
                                 placeholder="+1"
-                                {...field}
-                                className="h-10"
+                                readOnly
+                                className="h-10 bg-muted cursor-not-allowed"
+                                value={field.value || countryCode || ''}
+                                onChange={() => {}} // Prevent changes
+                                onBlur={field.onBlur}
+                                name={field.name}
+                                ref={field.ref}
                               />
                             </FormControl>
                             <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-
-                      {/* Mobile with live feedback */}
-                      <FormField
-                        control={form.control}
-                        name="mobile"
-                        render={({ field }) => (
-                          <FormItem className="space-y-1">
-                            <FormLabel className="leading-none">
-                              Mobile Number
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Enter mobile number"
-                                {...field}
-                                inputMode="tel"
-                                maxLength={15}
-                                className="h-10"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                            {mobile ? (
-                              !mobileDigitsOnly || !mobileLenOk ? (
-                                <p className="text-xs text-red-600 mt-1">
-                                  Mobile number must be at least 10
-                                  digits
-                                </p>
-                              ) : (
-                                <p className="text-xs text-green-600 mt-1">
-                                  Mobile looks good.
-                                </p>
-                              )
-                            ) : (
+                            {!country && (
                               <FormDescription>
-                                Digits only, 7–15 characters.
+                                Select a country first
+                              </FormDescription>
+                            )}
+                            {country && countryCode && (
+                              <FormDescription className="text-green-600 dark:text-green-400">
+                                Auto-filled from selected country
                               </FormDescription>
                             )}
                           </FormItem>
                         )}
                       />
 
-                      {/* Country dropdown (static list for now) */}
+                      {/* Mobile with live feedback - numbers only, max 10 digits */}
                       <FormField
                         control={form.control}
-                        name="country"
+                        name="mobile"
                         render={({ field }) => (
-                          <FormItem className="space-y-1">
-                            <FormLabel className="leading-none">
-                              Country
-                            </FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger className="h-10 w-full">
-                                  <SelectValue placeholder="Select country" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                                <SelectItem value="United States">
-                                  United States
-                                </SelectItem>
-                                <SelectItem value="India">
-                                  India
-                                </SelectItem>
-                                <SelectItem value="United Kingdom">
-                                  United Kingdom
-                                </SelectItem>
-                                <SelectItem value="Australia">
-                                  Australia
-                                </SelectItem>
-                                <SelectItem value="Canada">
-                                  Canada
-                                </SelectItem>
-                                <SelectItem value="Germany">
-                                  Germany
-                                </SelectItem>
-                                <SelectItem value="France">
-                                  France
-                                </SelectItem>
-                                <SelectItem value="Japan">
-                                  Japan
-                                </SelectItem>
-                              </SelectContent>
-                            </Select>
+                          <FormItem>
+                            <FormLabel>Mobile Number</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Enter 10-digit mobile number"
+                                inputMode="numeric"
+                                maxLength={10}
+                                className="h-10"
+                                {...field}
+                                onChange={(e) => {
+                                  const value = e.target.value;
+                                  // Remove any non-digit characters
+                                  const digitsOnly = value.replace(/\D/g, '');
+                                  // Limit to 10 digits
+                                  const limited = digitsOnly.slice(0, 10);
+                                  field.onChange(limited);
+                                }}
+                                value={field.value || ''}
+                              />
+                            </FormControl>
                             <FormMessage />
+                            {mobile ? (
+                              !mobileDigitsOnly ? (
+                                <p className="text-xs text-destructive mt-1">
+                                  Only numbers are allowed
+                                </p>
+                              ) : !mobileLenOk ? (
+                                <p className="text-xs text-destructive mt-1">
+                                  Mobile number must be exactly 10 digits
+                                </p>
+                              ) : (
+                                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
+                                  Mobile number looks good.
+                                </p>
+                              )
+                            ) : (
+                              <FormDescription>
+                                Enter 10 digits only (numbers)
+                              </FormDescription>
+                            )}
                           </FormItem>
                         )}
                       />

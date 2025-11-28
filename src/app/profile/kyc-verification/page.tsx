@@ -223,7 +223,7 @@ export default function KycVerificationPage() {
           <img
             src={url}
             alt={`${label} preview`}
-            className="max-h-40 rounded-md border border-gray-200 dark:border-gray-700"
+            className="max-h-40 rounded-md border border-border"
           />
         </div>
       );
@@ -236,7 +236,7 @@ export default function KycVerificationPage() {
             href={url}
             target="_blank"
             rel="noreferrer"
-            className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 underline"
+            className="inline-flex items-center gap-1 text-primary underline hover:text-primary/80"
           >
             <LinkIcon className="w-4 h-4" />
             View PDF
@@ -252,7 +252,7 @@ export default function KycVerificationPage() {
           href={url}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex items-center gap-1 text-blue-600 dark:text-blue-400 underline"
+          className="inline-flex items-center gap-1 text-primary underline hover:text-primary/80"
         >
           <FileText className="w-4 h-4" />
           View File
@@ -288,10 +288,10 @@ export default function KycVerificationPage() {
     const currentPicked = reuploadFiles[fieldKey] ?? null;
 
     return (
-      <Card key={title} className="bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-700">
+      <Card key={title} className="bg-card border-border">
         <CardContent className="py-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{title}</h4>
+            <h4 className="text-sm font-semibold text-foreground">{title}</h4>
             <Badge
               variant={badgeVariant === 'success' ? 'default' : badgeVariant}
               className={
@@ -306,7 +306,7 @@ export default function KycVerificationPage() {
             </Badge>
           </div>
 
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-xs text-muted-foreground">
             {data.uploaded ? 'File uploaded' : 'File not uploaded'}
           </p>
 
@@ -315,7 +315,7 @@ export default function KycVerificationPage() {
 
           {/* Rejection comment */}
           {data.rejection_comment && (
-            <div className="text-xs text-red-500 dark:text-red-300 border border-red-200 dark:border-red-800 rounded-md p-2 bg-red-50 dark:bg-red-950/30">
+            <div className="text-xs text-destructive border border-destructive/20 rounded-md p-2 bg-destructive/10">
               {data.rejection_comment}
             </div>
           )}
@@ -328,7 +328,6 @@ export default function KycVerificationPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                     onClick={() => document.getElementById(`reupload-${fieldKey}`)?.click()}
                     disabled={reuploadingKey === fieldKey}
                   >
@@ -346,7 +345,6 @@ export default function KycVerificationPage() {
                 <Button
                   onClick={() => reuploadSingle(fieldKey)}
                   disabled={!currentPicked || reuploadingKey === fieldKey}
-                  className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
                 >
                   {reuploadingKey === fieldKey ? 'Uploading…' : 'Re-upload'}
                 </Button>
@@ -354,7 +352,7 @@ export default function KycVerificationPage() {
 
               {/* Selected file name + size before re-upload */}
               {currentPicked && (
-                <div className="text-xs text-gray-600 dark:text-gray-300">
+                <div className="text-xs text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <FileText className="w-4 h-4" />
                     <span className="truncate max-w-[220px]">{currentPicked.name}</span>
@@ -432,7 +430,7 @@ export default function KycVerificationPage() {
     return (
       <div className="space-y-4">
         <div>
-          <Label className="text-base font-semibold text-gray-700 dark:text-gray-200">
+          <Label className="text-base font-semibold text-foreground">
             {title}
           </Label>
           <div className="mt-3">
@@ -441,7 +439,7 @@ export default function KycVerificationPage() {
               onValueChange={onSelectChange}
               disabled={disabled}
             >
-              <SelectTrigger className="w-full max-w-xs bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
+              <SelectTrigger className="w-full max-w-xs">
                 <SelectValue placeholder={selectPlaceholder} />
               </SelectTrigger>
               <SelectContent>
@@ -455,20 +453,20 @@ export default function KycVerificationPage() {
           </div>
         </div>
 
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader className="pb-4">
-            <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-200">
+            <CardTitle className="text-sm font-medium text-card-foreground">
               {description}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-8 bg-gray-50 dark:bg-gray-900/50">
+            <div className="border-2 border-dashed border-border rounded-lg p-8 bg-muted/50">
               <div className="flex flex-col items-center justify-center space-y-4">
                 <div className="relative">
-                  <div className="w-16 h-20 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                    <FileText className="w-8 h-8 text-blue-500 dark:text-blue-400" />
+                  <div className="w-16 h-20 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <FileText className="w-8 h-8 text-primary" />
                   </div>
-                  <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-blue-400 dark:bg-blue-500 rounded-full flex items-center justify-center">
+                  <div className="absolute -bottom-1 -right-1 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
                     <svg
                       className="w-4 h-4 text-white"
                       fill="none"
@@ -487,23 +485,23 @@ export default function KycVerificationPage() {
 
                 {file ? (
                   <div className="w-full">
-                    <div className="flex items-center justify-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
+                    <div className="flex items-center justify-center gap-2 text-sm font-medium text-foreground mb-2">
                       <FileText className="w-4 h-4" />
                       <span className="truncate max-w-xs">{file.name}</span>
                     </div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
+                    <p className="text-xs text-muted-foreground text-center">
                       {(file.size / 1024 / 1024).toFixed(2)} MB
                     </p>
                   </div>
                 ) : (
                   <>
-                    <p className="text-gray-700 dark:text-gray-200 font-medium">
+                    <p className="text-foreground font-medium">
                       Drop your file here
                     </p>
                     <div className="flex items-center gap-3">
-                      <div className="h-px flex-1 bg-gray-300 dark:bg-gray-600" />
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Or</span>
-                      <div className="h-px flex-1 bg-gray-300 dark:bg-gray-600" />
+                      <div className="h-px flex-1 bg-border" />
+                      <span className="text-sm text-muted-foreground">Or</span>
+                      <div className="h-px flex-1 bg-border" />
                     </div>
                   </>
                 )}
@@ -512,7 +510,6 @@ export default function KycVerificationPage() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                     disabled={disabled}
                     onClick={() => document.getElementById(`file-${title}`)?.click()}
                   >
@@ -528,19 +525,19 @@ export default function KycVerificationPage() {
                   disabled={disabled}
                 />
 
-                <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex items-start gap-2 text-xs text-muted-foreground">
                   <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                   <p>Document Format: JPG, PNG, PDF & 15MB maximum size of the document allowed</p>
                 </div>
               </div>
             </div>
 
-            <Card className="mt-4 bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700">
+            <Card className="mt-4 bg-muted/50 border-border">
               <CardContent className="pt-4">
-                <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">
+                <p className="text-sm font-semibold text-foreground mb-1">
                   Note:
                 </p>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{note}</p>
+                <p className="text-sm text-muted-foreground">{note}</p>
               </CardContent>
             </Card>
           </CardContent>
@@ -581,7 +578,7 @@ export default function KycVerificationPage() {
     return (
       <div className="space-y-4">
         <div>
-          <Label className="text-base font-semibold text-gray-700 dark:text-gray-200">
+          <Label className="text-base font-semibold text-foreground">
             {title}
           </Label>
           <div className="mt-3">
@@ -590,7 +587,7 @@ export default function KycVerificationPage() {
               onValueChange={onSelectChange}
               disabled={disabled}
             >
-              <SelectTrigger className="w-full max-w-xs bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-600">
+              <SelectTrigger className="w-full max-w-xs">
                 <SelectValue placeholder={selectPlaceholder} />
               </SelectTrigger>
               <SelectContent>
@@ -606,20 +603,20 @@ export default function KycVerificationPage() {
 
         <div className="grid md:grid-cols-2 gap-4">
           {/* Front Side */}
-          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <Card className="bg-card border-border">
             <CardHeader className="pb-4">
-              <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-200">
+              <CardTitle className="text-sm font-medium text-card-foreground">
                 {description} - Front
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 bg-gray-50 dark:bg-gray-900/50">
+              <div className="border-2 border-dashed border-border rounded-lg p-6 bg-muted/50">
                 <div className="flex flex-col items-center justify-center space-y-3">
                   <div className="relative">
-                    <div className="w-12 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-blue-500 dark:text-blue-400" />
+                    <div className="w-12 h-16 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-primary" />
                     </div>
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-400 dark:bg-blue-500 rounded-full flex items-center justify-center">
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
                       <svg
                         className="w-3 h-3 text-white"
                         fill="none"
@@ -638,22 +635,22 @@ export default function KycVerificationPage() {
 
                   {frontFile ? (
                     <div className="w-full text-center">
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
+                      <p className="text-sm font-medium text-foreground truncate">
                         {frontFile.name}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-muted-foreground">
                         {(frontFile.size / 1024 / 1024).toFixed(2)} MB
                       </p>
                     </div>
                   ) : (
                     <>
-                      <p className="text-sm text-gray-700 dark:text-gray-200 font-medium">
+                      <p className="text-sm text-foreground font-medium">
                         Drop your file here
                       </p>
                       <div className="flex items-center gap-2 w-full">
-                        <div className="h-px flex-1 bg-gray-300 dark:bg-gray-600" />
-                        <span className="text-xs text-gray-500 dark:text-gray-400">Or</span>
-                        <div className="h-px flex-1 bg-gray-300 dark:bg-gray-600" />
+                        <div className="h-px flex-1 bg-border" />
+                        <span className="text-xs text-muted-foreground">Or</span>
+                        <div className="h-px flex-1 bg-border" />
                       </div>
                     </>
                   )}
@@ -663,7 +660,6 @@ export default function KycVerificationPage() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                       disabled={disabled}
                       onClick={() => document.getElementById(`file-front-${title}`)?.click()}
                     >
@@ -679,7 +675,7 @@ export default function KycVerificationPage() {
                     disabled={disabled}
                   />
 
-                  <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="flex items-start gap-2 text-xs text-muted-foreground">
                     <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
                     <p className="text-left">Document Format: JPG, PNG, PDF & 15MB maximum</p>
                   </div>
@@ -689,20 +685,20 @@ export default function KycVerificationPage() {
           </Card>
 
           {/* Back Side */}
-          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <Card className="bg-card border-border">
             <CardHeader className="pb-4">
-              <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-200">
+              <CardTitle className="text-sm font-medium text-card-foreground">
                 {description} - Back
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 bg-gray-50 dark:bg-gray-900/50">
+              <div className="border-2 border-dashed border-border rounded-lg p-6 bg-muted/50">
                 <div className="flex flex-col items-center justify-center space-y-3">
                   <div className="relative">
-                    <div className="w-12 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-lg flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-blue-500 dark:text-blue-400" />
+                    <div className="w-12 h-16 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-primary" />
                     </div>
-                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-blue-400 dark:bg-blue-500 rounded-full flex items-center justify-center">
+                    <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
                       <svg
                         className="w-3 h-3 text-white"
                         fill="none"
@@ -721,22 +717,22 @@ export default function KycVerificationPage() {
 
                   {backFile ? (
                     <div className="w-full text-center">
-                      <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate">
+                      <p className="text-sm font-medium text-foreground truncate">
                         {backFile.name}
                       </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                      <p className="text-xs text-muted-foreground">
                         {(backFile.size / 1024 / 1024).toFixed(2)} MB
                       </p>
                     </div>
                   ) : (
                     <>
-                      <p className="text-sm text-gray-700 dark:text-gray-200 font-medium">
+                      <p className="text-sm text-foreground font-medium">
                         Drop your file here
                       </p>
                       <div className="flex items-center gap-2 w-full">
-                        <div className="h-px flex-1 bg-gray-300 dark:bg-gray-600" />
-                        <span className="text-xs text-gray-500 dark:text-gray-400">Or</span>
-                        <div className="h-px flex-1 bg-gray-300 dark:bg-gray-600" />
+                        <div className="h-px flex-1 bg-border" />
+                        <span className="text-xs text-muted-foreground">Or</span>
+                        <div className="h-px flex-1 bg-border" />
                       </div>
                     </>
                   )}
@@ -746,7 +742,6 @@ export default function KycVerificationPage() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30"
                       disabled={disabled}
                       onClick={() => document.getElementById(`file-back-${title}`)?.click()}
                     >
@@ -762,7 +757,7 @@ export default function KycVerificationPage() {
                     disabled={disabled}
                   />
 
-                  <div className="flex items-start gap-2 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="flex items-start gap-2 text-xs text-muted-foreground">
                     <AlertCircle className="w-3 h-3 mt-0.5 flex-shrink-0" />
                     <p className="text-left">Document Format: JPG, PNG, PDF & 15MB maximum</p>
                   </div>
@@ -772,10 +767,10 @@ export default function KycVerificationPage() {
           </Card>
         </div>
 
-        <Card className="bg-gray-50 dark:bg-gray-900/50 border-gray-200 dark:border-gray-700">
+        <Card className="bg-muted/50 border-border">
           <CardContent className="pt-4">
-            <p className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-1">Note:</p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">{note}</p>
+            <p className="text-sm font-semibold text-foreground mb-1">Note:</p>
+            <p className="text-sm text-muted-foreground">{note}</p>
           </CardContent>
         </Card>
       </div>
@@ -790,8 +785,8 @@ export default function KycVerificationPage() {
   return (
     <MainLayout>
       <div className="max-w-full mx-auto">
-        <Card className="overflow-hidden bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
-          <div className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30">
+        <Card className="overflow-hidden bg-card border-border shadow-sm">
+          <div className="px-6 py-5 border-b border-border bg-gradient-to-r from-primary/5 to-primary/10">
             <div className="flex items-center justify-between">
               <div>
                 <div className="flex items-center gap-3">
@@ -822,8 +817,8 @@ export default function KycVerificationPage() {
                 <section className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100">KYC Status</h3>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
+                      <h3 className="text-lg font-semibold text-foreground">KYC Status</h3>
+                      <p className="text-sm text-muted-foreground">
                         {kycStatusData && (kycStatusData.kyc.approved || 
                           kycStatusData.kyc.status?.toLowerCase() === 'approved' ||
                           kycStatusData.kyc.status?.toLowerCase() === 'verified' ||
@@ -855,7 +850,7 @@ export default function KycVerificationPage() {
 
                   {statusLoading ? (
                     <div className="flex items-center justify-center py-6">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Loading status…</span>
+                      <span className="text-sm text-muted-foreground">Loading status…</span>
                     </div>
                   ) : (
                     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -1011,19 +1006,17 @@ export default function KycVerificationPage() {
 
           {/* Footer: visible ONLY in upload flow */}
           {showUploadUI && (
-            <CardFooter className="flex justify-end gap-3 border-t border-gray-200 dark:border-gray-700 px-6 py-4 bg-gray-50 dark:bg-gray-900/30">
+            <CardFooter className="flex justify-end gap-3 border-t border-border px-6 py-4 bg-muted/30">
               <Button
                 variant="outline"
                 onClick={resetAll}
                 disabled={phase !== 'draft' || uploading}
-                className="border-gray-300 dark:border-gray-600"
               >
                 Reset All
               </Button>
               <Button
                 onClick={submitKycDocuments}
                 disabled={!canSubmit || uploading}
-                className="bg-blue-600 hover:bg-blue-700 text-white dark:bg-blue-500 dark:hover:bg-blue-600"
               >
                 {uploading ? (
                   <>

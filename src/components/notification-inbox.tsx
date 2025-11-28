@@ -212,10 +212,7 @@ export function NotificationInbox() {
                 return (
                   <div
                     key={n.id}
-                    className={cn(
-                      "flex w-full items-start gap-3 border-b px-3 py-3 hover:bg-accent transition-colors group",
-                      !n.isRead && "bg-accent/50"
-                    )}
+                    className="flex w-full items-start gap-3 border-b px-3 py-3 group"
                   >
                     <button
                       onClick={() => !n.isRead && markAsRead(n.id)}
@@ -233,7 +230,7 @@ export function NotificationInbox() {
                             "text-sm break-words",
                             !n.isRead
                               ? "font-semibold text-foreground"
-                              : "text-foreground/80"
+                              : "text-foreground"
                           )}
                         >
                           {n.message}
@@ -258,23 +255,6 @@ export function NotificationInbox() {
           </div>
         </Tabs>
 
-        {/* Footer */}
-        {filtered.length > 0 && (
-          <div className="px-3 py-2 text-center border-t">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="w-full"
-              onClick={() => {
-                setIsOpen(false);
-                // Navigate to full notifications page if exists
-                // router.push('/notifications');
-              }}
-            >
-              View all notifications
-            </Button>
-          </div>
-        )}
       </PopoverContent>
     </Popover>
   );

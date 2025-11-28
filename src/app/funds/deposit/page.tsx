@@ -5,11 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { MainLayout } from "@/components/main-layout";
 import { useAuth } from "@/contexts/auth-context";
 import { submitUSDTDeposit } from "@/utils/operations";
-import { walletApi, type WalletSummaryData } from "@/lib/api";
+import { walletApi, binanceDepositApi, type WalletSummaryData, type BinanceDepositCreateResponse } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
+import toast from "react-hot-toast";
 import { 
   Copy, 
   Hash, 
@@ -30,6 +33,7 @@ import {
 
 function USDTDepositContent() {
   const { user, token } = useAuth();
+  const [activeTab, setActiveTab] = useState<"local" | "crypto">("local");
   const [amount, setAmount] = useState("");
   const [transactionHash, setTransactionHash] = useState("");
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
@@ -40,6 +44,11 @@ function USDTDepositContent() {
   const [error, setError] = useState<string | null>(null);
   const [walletData, setWalletData] = useState<WalletSummaryData | null>(null);
   const [walletLoading, setWalletLoading] = useState(true);
+  
+  // Binance deposit state
+  const [binanceAmount, setBinanceAmount] = useState("");
+  const [binanceComment, setBinanceComment] = useState("");
+  const [isSubmittingBinance, setIsSubmittingBinance] = useState(false);
   const wallets = walletData ? Object.values(walletData.wallets || {}) : [];
   const primaryWallet = wallets.find((wallet) => wallet.is_primary) || wallets[0];
   const currency = primaryWallet?.currency || "USDT";
@@ -126,6 +135,61 @@ function USDTDepositContent() {
   const handleRemovePaymentProof = () => {
     setPaymentProof(null);
     setPaymentProofPreview(null);
+  };
+
+  const handleBinanceSubmit = async () => {
+    setError(null);
+
+    if (!binanceAmount.trim()) {
+      setError("Amount is required");
+      return;
+    }
+
+    const amountNum = parseFloat(binanceAmount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      setError("Amount must be a valid positive number");
+      return;
+    }
+
+    if (!token) {
+      setError("Authentication required");
+      return;
+    }
+
+    setIsSubmittingBinance(true);
+
+    try {
+      const response = await binanceDepositApi.create(
+        {
+          amount: amountNum,
+          user_comment: binanceComment.trim() || undefined,
+        },
+        token
+      );
+
+      if (!response.success || !response.data) {
+        throw new Error(response.message || "Failed to create Binance deposit");
+      }
+
+      // apiCall returns ApiResponse<T>, and based on the console log, response.data is already the nested data object
+      // So response.data contains qr_content directly, not response.data.data
+      const depositData = (response.data as unknown) as BinanceDepositCreateResponse['data'];
+      
+      // Get qr_content, checkout_url, or universal_url (in order of preference)
+      const qrContent = depositData?.qr_content || depositData?.checkout_url || depositData?.universal_url;
+      
+      if (qrContent) {
+        window.location.href = qrContent;
+      } else {
+        console.error("Binance deposit response data:", JSON.stringify(depositData, null, 2));
+        toast.error("QR code link not available. Please check the console for details.");
+        setIsSubmittingBinance(false);
+      }
+    } catch (err) {
+      console.error("Error creating Binance deposit:", err);
+      setError(err instanceof Error ? err.message : "Failed to create Binance deposit. Please try again.");
+      setIsSubmittingBinance(false);
+    }
   };
 
   const handleSubmitHash = async () => {
@@ -254,7 +318,14 @@ function USDTDepositContent() {
         </div>
 
         <div className="max-w-6xl mx-auto space-y-8">
-          {/* Wallet Summary Card */}
+          {/* Tabs */}
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "local" | "crypto")} className="space-y-6">
+            <TabsList className="grid w-full max-w-md mx-auto grid-cols-2">
+              <TabsTrigger value="local">Local</TabsTrigger>
+              <TabsTrigger value="crypto">Cryptocurrency</TabsTrigger>
+            </TabsList>
+
+            {/* Wallet Summary Card */}
           <Card className="border-0 shadow-xl bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-emerald-900/10 dark:to-blue-900/10">
             <CardContent className="p-6">
               {walletLoading ? (
@@ -337,9 +408,10 @@ function USDTDepositContent() {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            
-            {/* Left Column - QR Code and Details */}
+            <TabsContent value="local" className="space-y-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                {/* Left Column - QR Code and Details */}
             <Card className="border-0 shadow-xl bg-card/70 backdrop-blur-sm">
               <CardHeader className="text-center pb-6">
                 <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
@@ -650,6 +722,152 @@ function USDTDepositContent() {
               </CardContent>
             </Card>
           </div>
+            </TabsContent>
+
+            <TabsContent value="crypto" className="space-y-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {/* Left Column - Binance Info */}
+                <Card className="border-0 shadow-xl bg-card/70 backdrop-blur-sm">
+                  <CardHeader className="text-center pb-6">
+                    <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
+                      <img 
+                        src="https://binance.com/favicon.ico" 
+                        alt="Binance" 
+                        className="h-6 w-6"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                      Binance Pay
+                    </CardTitle>
+                    <CardDescription>
+                      Deposit funds using Binance Pay
+                    </CardDescription>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-6">
+                    <div className="flex justify-center">
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-2xl blur opacity-30 dark:opacity-20"></div>
+                        <div className="relative bg-card rounded-2xl p-6 shadow-lg">
+                          <img
+                            src="https://play-lh.googleusercontent.com/T1_WHAGs5WZePQejNSqqrxZah4uhBvYr698nTCFhXMjMZo5oSCoko5yW2wtmeO1ClRU"
+                            alt="Binance Logo"
+                            className="w-32 h-32 object-contain bg-white rounded-xl"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="50">B</text></svg>';
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 rounded-lg p-4 border border-yellow-200 dark:border-yellow-800">
+                      <div className="text-xs text-yellow-600 dark:text-yellow-400 font-medium mb-2">Processing Time</div>
+                      <div className="font-semibold text-yellow-800 dark:text-yellow-200">Within 1 Business Day</div>
+                    </div>
+
+                    <div className="bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-900/20 dark:to-teal-900/20 rounded-lg p-4 border border-emerald-200 dark:border-emerald-800">
+                      <div className="text-xs text-emerald-600 dark:text-emerald-400 font-medium mb-2">Minimum Deposit</div>
+                      <div className="font-semibold text-emerald-800 dark:text-emerald-200">Unlimited</div>
+                    </div>
+
+                    <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="h-5 w-5 text-warning mt-0.5 flex-shrink-0" />
+                        <div className="text-sm text-warning-foreground">
+                          <p className="font-medium mb-1">Important Information:</p>
+                          <p className="text-xs">
+                            After submitting your deposit request, you will be redirected to Binance Pay to complete the payment.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Right Column - Binance Deposit Form */}
+                <Card className="border-0 shadow-xl bg-card/70 backdrop-blur-sm">
+                  <CardHeader>
+                    <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                      <DollarSign className="h-6 w-6 text-yellow-600" />
+                      Create Deposit
+                    </CardTitle>
+                    <CardDescription>
+                      Enter the amount you want to deposit via Binance Pay
+                    </CardDescription>
+                  </CardHeader>
+
+                  <CardContent className="space-y-6">
+                    {error && (
+                      <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
+                          <p className="text-sm text-destructive">{error}</p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Amount Input */}
+                    <div className="space-y-3">
+                      <Label htmlFor="binance-amount" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        Deposit Amount (USDT) <span className="text-destructive">*</span>
+                      </Label>
+                      <div className="relative">
+                        <DollarSign className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                        <Input
+                          id="binance-amount"
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          value={binanceAmount}
+                          onChange={(e) => setBinanceAmount(e.target.value)}
+                          className="pl-10 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-yellow-500 dark:focus:border-yellow-400 rounded-lg"
+                          placeholder="100.00"
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500">
+                        Enter the amount of USDT you want to deposit
+                      </p>
+                    </div>
+
+                    {/* User Comment Input */}
+                    <div className="space-y-3">
+                      <Label htmlFor="binance-comment" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                        User Comment <span className="text-gray-400 text-xs">(Optional)</span>
+                      </Label>
+                      <Textarea
+                        id="binance-comment"
+                        value={binanceComment}
+                        onChange={(e) => setBinanceComment(e.target.value)}
+                        className="min-h-[100px] border-2 border-gray-200 dark:border-gray-600 focus:border-yellow-500 dark:focus:border-yellow-400 rounded-lg"
+                        placeholder="Add any comments about this deposit..."
+                      />
+                    </div>
+
+                    {/* Submit Button */}
+                    <Button
+                      onClick={handleBinanceSubmit}
+                      disabled={!binanceAmount.trim() || parseFloat(binanceAmount) <= 0 || isSubmittingBinance}
+                      className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-yellow-600 to-orange-600 hover:from-yellow-700 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isSubmittingBinance ? (
+                        <>
+                          <Clock className="h-5 w-5 mr-2 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <ShieldCheck className="h-5 w-5 mr-2" />
+                          Proceed to Deposit
+                        </>
+                      )}
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>

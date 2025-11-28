@@ -13,7 +13,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/auth-context";
-import { Check, ChevronsUpDown } from "lucide-react";
+import { Check, ChevronsUpDown, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CreateMT5AccountRequest, PendingUser, AccountType } from "@/lib/api";
 import { adminUsersApi, accountTypesApi } from "@/lib/api";
@@ -43,7 +43,7 @@ export function CreateAccountDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // User search state
-  const [userSearchOpen, setUserSearchOpen] = useState(false);
+  // const [userSearchOpen, setUserSearchOpen] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [users, setUsers] = useState<PendingUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
@@ -52,9 +52,11 @@ export function CreateAccountDialog({
   // Account type state
   const [accountTypes, setAccountTypes] = useState<AccountType[]>([]);
   const [loadingAccountTypes, setLoadingAccountTypes] = useState(false);
-  const [accountTypeSearchOpen, setAccountTypeSearchOpen] = useState(false);
-  const [accountTypeSearchQuery, setAccountTypeSearchQuery] = useState("");
+  // const [accountTypeSearchOpen, setAccountTypeSearchOpen] = useState(false);
+  // const [accountTypeSearchQuery, setAccountTypeSearchQuery] = useState("");
   const [selectedAccountType, setSelectedAccountType] = useState<AccountType | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Load account types
   useEffect(() => {
@@ -116,7 +118,7 @@ export function CreateAccountDialog({
   }, 300);
 
   useEffect(() => {
-    if (userSearchQuery) {
+    if (userSearchQuery.trim()) {
       debouncedUserSearch(userSearchQuery);
     } else {
       setUsers([]);
@@ -139,7 +141,7 @@ export function CreateAccountDialog({
       setSelectedUser(null);
       setSelectedAccountType(null);
       setUserSearchQuery("");
-      setAccountTypeSearchQuery("");
+      // setAccountTypeSearchQuery("");
       setUsers([]);
     }
   }, [open]);
@@ -194,7 +196,7 @@ export function CreateAccountDialog({
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label>User *</Label>
                 <Popover open={userSearchOpen} onOpenChange={setUserSearchOpen}>
                   <PopoverTrigger asChild>
@@ -262,8 +264,60 @@ export function CreateAccountDialog({
                     </Command>
                   </PopoverContent>
                 </Popover>
-              </div>
+              </div> */}
               <div className="space-y-2">
+  <Label>User *</Label>
+
+  {/* Search input to fetch users */}
+  <Input
+    placeholder="Search users by name, email..."
+    value={userSearchQuery}
+    onChange={(e) => setUserSearchQuery(e.target.value)}
+  />
+
+  {/* Users dropdown */}
+  <Select
+    value={selectedUser?.id ? String(selectedUser.id) : ""}
+    onValueChange={(value) => {
+      const user = users.find((u) => String(u.id) === value) || null;
+      setSelectedUser(user);
+      setFormData((prev) => ({
+        ...prev,
+        user_id: user ? Number(user.id) : 0,
+      }));
+      if (user) {
+        setUserSearchQuery(user.email || user.name || "");
+      }
+    }}
+    disabled={loadingUsers || users.length === 0}
+  >
+    <SelectTrigger className="w-full mt-2">
+      <SelectValue
+        placeholder={
+          loadingUsers
+            ? "Loading users..."
+            : users.length === 0
+            ? "Type above to search users"
+            : "Select user"
+        }
+      />
+    </SelectTrigger>
+    <SelectContent>
+      {users.map((user) => (
+        <SelectItem key={user.id} value={String(user.id)}>
+          <div className="flex flex-col">
+            <span>{user.name}</span>
+            <span className="text-xs text-muted-foreground">
+              {user.email} • ID: {user.id}
+            </span>
+          </div>
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+              </div>
+
+              {/* <div className="space-y-2">
                 <Label>Account Type *</Label>
                 <Popover open={accountTypeSearchOpen} onOpenChange={setAccountTypeSearchOpen}>
                   <PopoverTrigger asChild>
@@ -328,7 +382,45 @@ export function CreateAccountDialog({
                     </Command>
                   </PopoverContent>
                 </Popover>
+              </div> */}
+              <div className="space-y-2">
+  <Label>Account Type *</Label>
+  <Select
+    value={selectedAccountType?.id ? String(selectedAccountType.id) : ""}
+    onValueChange={(value) => {
+      const type = accountTypes.find((t) => String(t.id) === value) || null;
+      setSelectedAccountType(type);
+      setFormData((prev) => ({
+        ...prev,
+        account_type_id: type ? Number(type.id) : 0,
+      }));
+    }}
+    disabled={loadingAccountTypes || accountTypes.length === 0}
+  >
+    <SelectTrigger className="w-full">
+      <SelectValue
+        placeholder={
+          loadingAccountTypes
+            ? "Loading account types..."
+            : "Select account type..."
+        }
+      />
+    </SelectTrigger>
+    <SelectContent>
+      {accountTypes.map((type) => (
+        <SelectItem key={type.id} value={String(type.id)}>
+          <div className="flex flex-col">
+            <span>{type.name}</span>
+            <span className="text-xs text-muted-foreground">
+              Leverage: {type.maximum_leverage} • Spread: {type.spread_from}
+            </span>
+          </div>
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
               </div>
+
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -408,9 +500,10 @@ export function CreateAccountDialog({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="password">Password *</Label>
+                <div className="relative">
                 <Input
                   id="password"
-                  type="password"
+                    type={showPassword ? "text" : "password"}
                   value={formData.password}
                   onChange={(e) =>
                     setFormData({ ...formData, password: e.target.value })
@@ -419,12 +512,23 @@ export function CreateAccountDialog({
                   required
                   minLength={6}
                 />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirm_password">Confirm Password *</Label>
+                <div className="relative">
                 <Input
                   id="confirm_password"
-                  type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                   value={formData.confirm_password}
                   onChange={(e) =>
                     setFormData({ ...formData, confirm_password: e.target.value })
@@ -433,6 +537,16 @@ export function CreateAccountDialog({
                   required
                   minLength={6}
                 />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

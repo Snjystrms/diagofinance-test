@@ -2,14 +2,41 @@ import { z } from 'zod';
 
 // Register form validation schema
 export const registerSchema = z.object({
-  first_name: z.string().min(1, 'First name is required'),
-  last_name: z.string().min(1, 'Last name is required'),
+  first_name: z
+    .string()
+    .min(1, 'First name is required')
+    .min(2, 'First name must be at least 2 characters')
+    .max(50, 'First name must be less than 50 characters')
+    .regex(/^[a-zA-Z\s'-]+$/, 'First name can only contain letters, spaces, hyphens, and apostrophes'),
+  last_name: z
+    .string()
+    .min(1, 'Last name is required')
+    .min(2, 'Last name must be at least 2 characters')
+    .max(50, 'Last name must be less than 50 characters')
+    .regex(/^[a-zA-Z\s'-]+$/, 'Last name can only contain letters, spaces, hyphens, and apostrophes'),
   country_code: z.string().min(1, 'Country code is required'),
-  email: z.string().email('Invalid email address'),
-  mobile: z.string().min(10, 'Mobile number must be at least 10 digits'),
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Invalid email address')
+    .toLowerCase()
+    .refine((email) => email.length <= 100, 'Email must be less than 100 characters'),
+  mobile: z
+    .string()
+    .min(1, 'Mobile number is required')
+    .regex(/^\d+$/, 'Mobile number must contain only digits')
+    .length(10, 'Mobile number must be exactly 10 digits'),
   country: z.string().min(1, 'Country is required'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
-  confirm_password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z
+    .string()
+    .min(1, 'Password is required')
+    .min(8, 'Password must be at least 8 characters')
+    .max(100, 'Password must be less than 100 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
+  confirm_password: z.string().min(1, 'Please confirm your password'),
   referral_code: z.string().optional(),
 }).refine((data) => data.password === data.confirm_password, {
   message: "Passwords don't match",

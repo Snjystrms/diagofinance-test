@@ -365,8 +365,7 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
         return (
           <Sidebar 
             collapsible="none" 
-            className="w-72 border-l border-r flex-shrink-0 hidden md:flex transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] animate-in slide-in-from-left" 
-            style={{ height: '100vh' }}
+            className="w-72 border-l border-r flex-shrink-0 hidden md:flex transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] animate-in slide-in-from-left h-screen sticky top-0" 
           >
             <div className="flex h-full flex-col">
               <SidebarHeader className="gap-2 border-b p-4 bg-gradient-to-r from-sidebar-accent/30 to-sidebar-accent/10">

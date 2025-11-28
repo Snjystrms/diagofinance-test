@@ -123,15 +123,15 @@ export default function CheckEmailPage() {
     return (
       <ProtectedRoute requireAuth={false}>
         <div className="min-h-screen flex">
-          <div className="hidden lg:flex lg:w-2/5 relative bg-background">
-            <Image
-              src="/loginbackground.png"
-              alt="Success background"
-              fill
-              className="object-cover"
-              priority
-            />
-          </div>
+        <div className="hidden lg:flex lg:w-2/5 relative bg-background">
+          <Image
+            src="/loginbackground.png"
+            alt="Success background"
+            fill
+            className="object-contain"
+            priority
+          />
+        </div>
           <div className="flex-1 flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-md w-full space-y-8">
               <div className="text-center">
@@ -161,7 +161,7 @@ export default function CheckEmailPage() {
             src="/loginbackground.png"
             alt="Check email background"
             fill
-            className="object-cover"
+            className="object-contain"
             priority
           />
         </div>
