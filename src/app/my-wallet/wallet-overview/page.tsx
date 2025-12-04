@@ -156,18 +156,21 @@ export default function WalletOverviewPage() {
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Wallet className="h-6 w-6 text-primary" />
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary to-purple-600 rounded-2xl blur opacity-75"></div>
+                <div className="relative flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-r from-primary to-purple-600 text-white shadow-lg">
+                  <Wallet className="h-8 w-8" />
                 </div>
-                <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
                   Wallet Overview
                 </h1>
+                <p className="text-lg text-muted-foreground">
+                  Manage your funds and track your transaction history
+                </p>
               </div>
-              <p className="text-muted-foreground text-base ml-14">
-                Manage your funds and track your transaction history
-              </p>
             </div>
             <Button 
               onClick={fetchWalletSummary} 
@@ -180,20 +183,23 @@ export default function WalletOverviewPage() {
             </Button>
           </div>
 
-          {/* Total Balance Card with Actions */}
-          <div className="grid gap-4 md:grid-cols-5 items-start">
-            <Card className="md:col-span-3 relative overflow-hidden border-none shadow-xl text-white bg-[linear-gradient(135deg,#1d4ed8,#1e3a8a)] dark:bg-[linear-gradient(135deg,#1e3a8a,#111827)] rounded-3xl p-6">
-              <div className="absolute inset-0 opacity-60 dark:opacity-50">
-                <div className="absolute -left-10 -top-16 w-52 h-52 bg-white/10 dark:bg-white/5 rounded-full blur-3xl" />
-                <div className="absolute right-6 top-12 w-40 h-40 bg-white/10 dark:bg-white/5 rounded-full blur-3xl" />
+          {/* Total Balance Card + Quick Actions */}
+          <div className="grid gap-4 md:grid-cols-5 items-stretch">
+            {/* Total Balance Card with Actions */}
+            <Card className="md:col-span-3 relative overflow-hidden border-none shadow-xl text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent rounded-3xl p-6 h-full">
+              <div className="absolute inset-0 opacity-60">
+                <div className="absolute -left-10 -top-16 w-52 h-52 bg-primary-foreground/10 rounded-full blur-3xl" />
+                <div className="absolute right-6 top-12 w-40 h-40 bg-primary-foreground/10 rounded-full blur-3xl" />
               </div>
               <CardHeader className="relative z-10 pb-0 px-0">
-                <p className="uppercase tracking-[0.2em] text-[11px] font-semibold text-white/80">Wallet Balance</p>
+                <p className="uppercase tracking-[0.2em] text-[11px] font-semibold text-primary-foreground/80">
+                  Wallet Balance
+                </p>
                 <div className="flex items-baseline gap-2 mt-2">
                   <span className="text-4xl font-black leading-tight">
                     {walletData ? formatAmount(walletData.total_balance) : '0.00'}
                   </span>
-                  <span className="text-base font-semibold text-white/80">
+                  <span className="text-base font-semibold text-primary-foreground/80">
                     {mainWallet?.currency || 'USD'}
                   </span>
                 </div>
@@ -201,11 +207,13 @@ export default function WalletOverviewPage() {
               <CardContent className="relative z-10 pt-6 pb-4 px-0">
                 <div className="flex items-start justify-between gap-6">
                   <div className="flex-1">
-                    <p className="text-white/85 text-base font-medium mb-1">Your Safe Wallet</p>
-                    <p className="text-white/75 text-sm leading-relaxed">
+                    <p className="text-primary-foreground/85 text-base font-medium mb-1">
+                      Your Safe Wallet
+                    </p>
+                    <p className="text-primary-foreground/75 text-sm leading-relaxed">
                       Securely store and manage balances across deposits, withdrawals, and transfers in one place.
                     </p>
-                    <div className="flex items-center gap-2 text-xs text-white/70 mt-3">
+                    <div className="flex items-center gap-2 text-xs text-primary-foreground/70 mt-3">
                       <Sparkles className="h-3.5 w-3.5" />
                       <span>Funds available for instant transfers</span>
                     </div>
@@ -213,16 +221,16 @@ export default function WalletOverviewPage() {
                       <Button
                         variant="ghost"
                         onClick={() => router.push('/funds/internal-transfer')}
-                        className="w-max px-0 text-white/90 hover:text-white flex items-center gap-1 text-sm font-semibold"
+                        className="w-max px-0 text-primary-foreground/90 hover:text-primary-foreground flex items-center gap-1 text-sm font-semibold"
                       >
                         <ArrowLeftRight className="h-4 w-4" />
                         <span>Transfer Funds</span>
                       </Button>
                     </div>
                   </div>
-                  <div className="flex flex-col items-center text-white/80 gap-2 flex-shrink-0">
-                    <div className="p-4 rounded-full border-2 border-white/40 bg-white/10 backdrop-blur-sm">
-                      <Shield className="h-12 w-12 text-white" />
+                  <div className="flex flex-col items-center text-primary-foreground/80 gap-2 flex-shrink-0">
+                    <div className="p-4 rounded-full border-2 border-primary-foreground/40 bg-primary-foreground/10 backdrop-blur-sm">
+                      <Shield className="h-12 w-12 text-primary-foreground" />
                     </div>
                     <span className="text-sm">Protected Balance</span>
                   </div>
@@ -231,7 +239,7 @@ export default function WalletOverviewPage() {
             </Card>
 
             {/* Quick Actions Card */}
-            <Card className="md:col-span-2 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <Card className="md:col-span-2 shadow-lg hover:shadow-xl transition-shadow duration-300 rounded-3xl h-full flex flex-col">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <div className="p-1.5 bg-primary/10 rounded-lg">
@@ -239,11 +247,15 @@ export default function WalletOverviewPage() {
                   </div>
                   Quick Actions
                 </CardTitle>
-                <CardDescription className="text-sm">Manage your funds quickly</CardDescription>
+                <CardDescription className="text-sm">
+                  Manage your funds quickly
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-3 flex-1 flex flex-col">
                 <div className="p-3 bg-muted/50 rounded-lg border border-border/50 mb-4">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">Wallet Address</p>
+                  <p className="text-xs font-medium text-muted-foreground mb-1">
+                    Wallet Address
+                  </p>
                   <div className="flex items-center gap-2">
                     <code className="text-xs font-mono text-foreground/80 truncate flex-1">
                       {mainWallet?.address || 'N/A'}
@@ -267,28 +279,29 @@ export default function WalletOverviewPage() {
                     )}
                   </div>
                 </div>
-                <Button
-                  onClick={() => router.push('/funds/deposit')}
-                  className="w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white shadow-md hover:shadow-lg transition-all duration-300"
-                  size="lg"
-                >
-                  <Plus className="h-5 w-5 mr-2" />
-                  Deposit
-                </Button>
-                <Button
-                  onClick={() => router.push('/funds/withdraw')}
-                  className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white shadow-md hover:shadow-lg transition-all duration-300"
-                  size="lg"
-                >
-                  <Minus className="h-5 w-5 mr-2" />
-                  Withdraw
-                </Button>
+
+                <div className="space-y-2 mt-auto">
+                  <Button
+                    onClick={() => router.push('/funds/deposit')}
+                    variant="outline"
+                    className="w-full h-10 rounded-xl border-green-500/40 bg-green-50/60 hover:bg-green-100/80 flex items-center justify-center gap-2 text-sm font-semibold text-green-700 dark:text-green-400"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Deposit</span>
+                  </Button>
+
+                  <Button
+                    onClick={() => router.push('/funds/withdraw')}
+                    variant="outline"
+                    className="w-full h-10 rounded-xl border-red-500/40 bg-red-50/60 hover:bg-red-100/80 flex items-center justify-center gap-2 text-sm font-semibold text-red-700 dark:text-red-400"
+                  >
+                    <Minus className="h-4 w-4" />
+                    <span>Withdraw</span>
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </div>
-
-          {/* Wallet Details */}
-       
 
           {/* Recent Transactions */}
           <Card className="shadow-lg">
@@ -312,13 +325,17 @@ export default function WalletOverviewPage() {
                       className="flex items-center justify-between p-5 border-2 rounded-xl hover:border-primary/30 hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent transition-all duration-300 group cursor-pointer shadow-sm hover:shadow-md"
                     >
                       <div className="flex items-center gap-4 flex-1">
-                        <div className={`p-3 rounded-xl transition-all duration-300 ${
-                          transaction.type.includes('deposit') || transaction.type.includes('transfer_in')
-                            ? 'bg-green-100 dark:bg-green-900/20 group-hover:bg-green-200 dark:group-hover:bg-green-900/30'
-                            : transaction.type.includes('withdraw') || transaction.type.includes('transfer_out')
-                            ? 'bg-red-100 dark:bg-red-900/20 group-hover:bg-red-200 dark:group-hover:bg-red-900/30'
-                            : 'bg-muted group-hover:bg-muted/80'
-                        }`}>
+                        <div
+                          className={`p-3 rounded-xl transition-all duration-300 ${
+                            transaction.type.includes('deposit') ||
+                            transaction.type.includes('transfer_in')
+                              ? 'bg-green-100 dark:bg-green-900/20 group-hover:bg-green-200 dark:group-hover:bg-green-900/30'
+                              : transaction.type.includes('withdraw') ||
+                                transaction.type.includes('transfer_out')
+                              ? 'bg-red-100 dark:bg-red-900/20 group-hover:bg-red-200 dark:group-hover:bg-red-900/30'
+                              : 'bg-muted group-hover:bg-muted/80'
+                          }`}
+                        >
                           {getTransactionIcon(transaction.type)}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -326,8 +343,8 @@ export default function WalletOverviewPage() {
                             <p className="font-semibold text-base capitalize">
                               {transaction.type.replace(/_/g, ' ')}
                             </p>
-                            <Badge 
-                              variant="outline" 
+                            <Badge
+                              variant="outline"
                               className="text-xs border-primary/20 bg-primary/5"
                             >
                               {transaction.wallet_type}
@@ -338,14 +355,24 @@ export default function WalletOverviewPage() {
                           </p>
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Clock className="h-3 w-3" />
-                            <span>{format(new Date(transaction.created_at), 'MMM dd, yyyy HH:mm')}</span>
+                            <span>
+                              {format(
+                                new Date(transaction.created_at),
+                                'MMM dd, yyyy HH:mm'
+                              )}
+                            </span>
                           </div>
                         </div>
                       </div>
                       <div className="text-right ml-4">
-                        <p className={`font-bold text-xl mb-1 ${getTransactionColor(transaction.type)}`}>
-                          {transaction.type.includes('deposit') || transaction.type.includes('transfer_in') 
-                            ? '+' 
+                        <p
+                          className={`font-bold text-xl mb-1 ${getTransactionColor(
+                            transaction.type
+                          )}`}
+                        >
+                          {transaction.type.includes('deposit') ||
+                          transaction.type.includes('transfer_in')
+                            ? '+'
                             : '-'}
                           ${formatAmount(transaction.amount)}
                         </p>
@@ -361,9 +388,12 @@ export default function WalletOverviewPage() {
                   <div className="inline-flex p-4 bg-muted rounded-full mb-4">
                     <Clock className="h-12 w-12 text-muted-foreground" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">No Transactions Yet</h3>
+                  <h3 className="text-xl font-semibold mb-2">
+                    No Transactions Yet
+                  </h3>
                   <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                    Your transaction history will appear here once you start making deposits or withdrawals.
+                    Your transaction history will appear here once you start
+                    making deposits or withdrawals.
                   </p>
                   <Button
                     onClick={() => router.push('/funds/deposit')}

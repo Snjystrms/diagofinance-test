@@ -460,169 +460,170 @@ export default function NewUsersPage() {
   return (
     <ProtectedRoute>
       <>
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 px-3 pb-10 md:px-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-            <div className="space-y-1">
-              <h1 className="text-3xl font-bold tracking-tight">New Users</h1>
-              <p className="text-muted-foreground">
-                Review recent registrations, filter by status, and monitor verification progress.
-              </p>
-            </div>
-            <div className="flex w-full flex-col gap-3 rounded-lg border border-border/60 bg-card/60 p-4 shadow-sm lg:w-auto">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-3 pt-8 pb-10 md:px-6 md:pt-12">
+          {/* Centered Title and Description */}
+          <div className="flex flex-col items-center text-center space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight">New Users</h1>
+            <p className="text-muted-foreground max-w-2xl">
+              Review recent registrations, filter by status, and monitor verification progress.
+            </p>
+          </div>
+
+          {/* Filter Section */}
+          <div className="flex w-full flex-col gap-3 rounded-lg border border-border/60 bg-card/60 p-4 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
               <Input
                 value={searchInput}
                 onChange={handleSearchChange}
                 placeholder="Search by name, email, mobile..."
-                  className="w-full min-w-[220px] sm:flex-1 sm:pr-2 lg:w-64"
-                />
-                <Dialog open={createDialogOpen} onOpenChange={handleCreateDialogChange}>
-                  <DialogTrigger asChild>
-                    <Button className="w-full sm:w-auto">
-                      Create User
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <form className="space-y-5" onSubmit={handleCreateUserSubmit}>
-                      <DialogHeader>
-                        <DialogTitle>Create User</DialogTitle>
-                        <DialogDescription>
-                          Add a new user account. Required fields are marked and validations run before submission.
-                        </DialogDescription>
-                      </DialogHeader>
+                className="w-full sm:w-auto sm:min-w-[200px] sm:max-w-[280px]"
+              />
+              <Dialog open={createDialogOpen} onOpenChange={handleCreateDialogChange}>
+                <DialogTrigger asChild>
+                  <Button className="w-full sm:w-auto sm:flex-shrink-0">
+                    Create User
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <form className="space-y-5" onSubmit={handleCreateUserSubmit}>
+                    <DialogHeader>
+                      <DialogTitle>Create User</DialogTitle>
+                      <DialogDescription>
+                        Add a new user account. Required fields are marked and validations run before submission.
+                      </DialogDescription>
+                    </DialogHeader>
 
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="space-y-2">
-                          <Label htmlFor="first_name">First name</Label>
-                          <Input
-                            id="first_name"
-                            name="first_name"
-                            value={createForm.first_name}
-                            onChange={handleCreateInputChange}
-                            autoComplete="given-name"
-                          />
-                          {createErrors.first_name && (
-                            <p className="text-sm text-destructive">{createErrors.first_name}</p>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="last_name">Last name</Label>
-                          <Input
-                            id="last_name"
-                            name="last_name"
-                            value={createForm.last_name}
-                            onChange={handleCreateInputChange}
-                            autoComplete="family-name"
-                          />
-                          {createErrors.last_name && (
-                            <p className="text-sm text-destructive">{createErrors.last_name}</p>
-                          )}
-                        </div>
-                        <div className="space-y-2 sm:col-span-2">
-                          <Label htmlFor="email">Email</Label>
-                          <Input
-                            id="email"
-                            name="email"
-                            type="email"
-                            value={createForm.email}
-                            onChange={handleCreateInputChange}
-                            autoComplete="email"
-                          />
-                          {createErrors.email && (
-                            <p className="text-sm text-destructive">{createErrors.email}</p>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="mobile">Mobile</Label>
-                          <Input
-                            id="mobile"
-                            name="mobile"
-                            value={createForm.mobile}
-                            onChange={handleCreateInputChange}
-                            autoComplete="tel"
-                          />
-                          {createErrors.mobile && (
-                            <p className="text-sm text-destructive">{createErrors.mobile}</p>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="country_code">Country code</Label>
-                          <Input
-                            id="country_code"
-                            name="country_code"
-                            value={createForm.country_code}
-                            onChange={handleCreateInputChange}
-                            autoComplete="off"
-                            maxLength={5}
-                          />
-                        </div>
-                        <div className="space-y-2 sm:col-span-2">
-                          <Label htmlFor="country">Country</Label>
-                          <Input
-                            id="country"
-                            name="country"
-                            value={createForm.country}
-                            onChange={handleCreateInputChange}
-                            autoComplete="country-name"
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="password">Password</Label>
-                          <Input
-                            id="password"
-                            name="password"
-                            type="password"
-                            value={createForm.password}
-                            onChange={handleCreateInputChange}
-                            autoComplete="new-password"
-                          />
-                          {createErrors.password && (
-                            <p className="text-sm text-destructive">{createErrors.password}</p>
-                          )}
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="confirm_password">Confirm password</Label>
-                          <Input
-                            id="confirm_password"
-                            name="confirm_password"
-                            type="password"
-                            value={createForm.confirm_password}
-                            onChange={handleCreateInputChange}
-                            autoComplete="new-password"
-                          />
-                          {createErrors.confirm_password && (
-                            <p className="text-sm text-destructive">{createErrors.confirm_password}</p>
-                          )}
-                        </div>
-                        <div className="space-y-2 sm:col-span-2">
-                          <Label htmlFor="referral_code">Referral code (optional)</Label>
-                          <Input
-                            id="referral_code"
-                            name="referral_code"
-                            value={createForm.referral_code}
-                            onChange={handleCreateInputChange}
-                            autoComplete="off"
-                          />
-                        </div>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="first_name">First name</Label>
+                        <Input
+                          id="first_name"
+                          name="first_name"
+                          value={createForm.first_name}
+                          onChange={handleCreateInputChange}
+                          autoComplete="given-name"
+                        />
+                        {createErrors.first_name && (
+                          <p className="text-sm text-destructive">{createErrors.first_name}</p>
+                        )}
                       </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="last_name">Last name</Label>
+                        <Input
+                          id="last_name"
+                          name="last_name"
+                          value={createForm.last_name}
+                          onChange={handleCreateInputChange}
+                          autoComplete="family-name"
+                        />
+                        {createErrors.last_name && (
+                          <p className="text-sm text-destructive">{createErrors.last_name}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          name="email"
+                          type="email"
+                          value={createForm.email}
+                          onChange={handleCreateInputChange}
+                          autoComplete="email"
+                        />
+                        {createErrors.email && (
+                          <p className="text-sm text-destructive">{createErrors.email}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="mobile">Mobile</Label>
+                        <Input
+                          id="mobile"
+                          name="mobile"
+                          value={createForm.mobile}
+                          onChange={handleCreateInputChange}
+                          autoComplete="tel"
+                        />
+                        {createErrors.mobile && (
+                          <p className="text-sm text-destructive">{createErrors.mobile}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="country_code">Country code</Label>
+                        <Input
+                          id="country_code"
+                          name="country_code"
+                          value={createForm.country_code}
+                          onChange={handleCreateInputChange}
+                          autoComplete="off"
+                          maxLength={5}
+                        />
+                      </div>
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="country">Country</Label>
+                        <Input
+                          id="country"
+                          name="country"
+                          value={createForm.country}
+                          onChange={handleCreateInputChange}
+                          autoComplete="country-name"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Password</Label>
+                        <Input
+                          id="password"
+                          name="password"
+                          type="password"
+                          value={createForm.password}
+                          onChange={handleCreateInputChange}
+                          autoComplete="new-password"
+                        />
+                        {createErrors.password && (
+                          <p className="text-sm text-destructive">{createErrors.password}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm_password">Confirm password</Label>
+                        <Input
+                          id="confirm_password"
+                          name="confirm_password"
+                          type="password"
+                          value={createForm.confirm_password}
+                          onChange={handleCreateInputChange}
+                          autoComplete="new-password"
+                        />
+                        {createErrors.confirm_password && (
+                          <p className="text-sm text-destructive">{createErrors.confirm_password}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2 sm:col-span-2">
+                        <Label htmlFor="referral_code">Referral code (optional)</Label>
+                        <Input
+                          id="referral_code"
+                          name="referral_code"
+                          value={createForm.referral_code}
+                          onChange={handleCreateInputChange}
+                          autoComplete="off"
+                        />
+                      </div>
+                    </div>
 
-                      <DialogFooter>
-                        <DialogClose asChild>
-                          <Button type="button" variant="outline" disabled={creatingUser}>
-                            Cancel
-                          </Button>
-                        </DialogClose>
-                        <Button type="submit" disabled={creatingUser}>
-                          {creatingUser ? "Creating..." : "Create User"}
+                    <DialogFooter>
+                      <DialogClose asChild>
+                        <Button type="button" variant="outline" disabled={creatingUser}>
+                          Cancel
                         </Button>
-                      </DialogFooter>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </div>
-              <div className="flex flex-wrap items-center gap-2 lg:flex-nowrap">
+                      </DialogClose>
+                      <Button type="submit" disabled={creatingUser}>
+                        {creatingUser ? "Creating..." : "Create User"}
+                      </Button>
+                    </DialogFooter>
+                  </form>
+                </DialogContent>
+              </Dialog>
+              <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:ml-auto">
                 <Select value={status || "all"} onValueChange={handleStatusChange}>
-                  <SelectTrigger className="w-full min-w-[140px] lg:w-[150px]">
+                  <SelectTrigger className="w-full sm:w-auto sm:min-w-[140px]">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -634,7 +635,7 @@ export default function NewUsersPage() {
                   </SelectContent>
                 </Select>
                 <Select value={isApproved || "all"} onValueChange={handleApprovalChange}>
-                  <SelectTrigger className="w-full min-w-[160px] lg:w-[180px]">
+                  <SelectTrigger className="w-full sm:w-auto sm:min-w-[160px]">
                     <SelectValue placeholder="Approval" />
                   </SelectTrigger>
                   <SelectContent>
@@ -646,7 +647,7 @@ export default function NewUsersPage() {
                   </SelectContent>
                 </Select>
                 <Select value={String(perPage)} onValueChange={handleLimitChange}>
-                  <SelectTrigger className="w-full min-w-[110px] lg:w-[110px]">
+                  <SelectTrigger className="w-full sm:w-auto sm:min-w-[110px]">
                     <SelectValue placeholder="Per page" />
                   </SelectTrigger>
                   <SelectContent>
@@ -661,7 +662,7 @@ export default function NewUsersPage() {
                   variant="outline"
                   onClick={handleRefresh}
                   disabled={loading}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 w-full sm:w-auto sm:flex-shrink-0"
                 >
                   <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                   Refresh

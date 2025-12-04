@@ -84,8 +84,8 @@ export const getColumns = (opts: {
     header: ({ column }) => <DataTableColumnHeader column={column} title="Created" />,
     cell: ({ row }) => (
       <div className="inline-flex items-center gap-1 text-sm">
-        <CalendarDays className="h-4 w-4 text-amber-600" />
-        <span>{fmtDate(row.original.created_at)}</span>
+        <CalendarDays className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+        <span className="text-foreground">{fmtDate(row.original.created_at)}</span>
       </div>
     ),
   },

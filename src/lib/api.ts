@@ -274,6 +274,7 @@ export interface KycUploadResponse {
 
 export interface KycDocumentStatus {
   file: string | null;
+  url?: string | null;
   uploaded: boolean;
   status: "pending" | "approved" | "rejected" | string;
   status_code: number;
@@ -760,16 +761,17 @@ export const authApi = {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
-  getWalletStatistics: (token: string, type: "deposits" | "withdrawals") =>
+  getWalletStatistics: (token: string, type: "deposits" | "withdrawals", period: number = 30) =>
     apiCall<{
       type: string;
       period: string;
+      days: number;
       statistics: Array<{
         day: string;
         date: string;
         amount: number;
       }>;
-    }>(`/user/dashboard/wallet-statistics?type=${type}`, {
+    }>(`/user/dashboard/wallet-statistics?type=${type}&period=${period}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),
@@ -1219,7 +1221,8 @@ export interface DepositListItem {
   admin_comment: string | null;
   created_at: string;
   payment_method_id: number;
-  merchant_trade_no?: string;
+  merchant_trade_no?: string | null;
+  coinsbuy_deposit_id?: string | null;
   paymentMethod: {
     id: number;
     type: string;
@@ -1261,14 +1264,91 @@ export const binanceDepositApi = {
       body: JSON.stringify(data),
     }),
 
-  getList: (page: number = 1, perPage: number = 10, token: string) =>
-    apiCall<DepositListResponse>(`/user/deposit/list?per_page=${perPage}&page=${page}`, {
+  getList: (page: number = 1, perPage: number = 10, token: string, paymentMethodId?: number) => {
+    const qs = new URLSearchParams();
+    qs.set("per_page", String(perPage));
+    qs.set("page", String(page));
+    if (paymentMethodId !== undefined && paymentMethodId !== null) {
+      qs.set("payment_method_id", String(paymentMethodId));
+    }
+    return apiCall<DepositListResponse>(`/user/deposit/list?${qs.toString()}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
-    }),
+    });
+  },
 
   getStatus: (merchantTradeNo: string, token: string) =>
     apiCall<BinanceDepositStatusResponse>(`/user/deposit/binance/status/${merchantTradeNo}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};
+
+// ---------- CoinsBuy Deposit Types ----------
+export interface CoinsBuyDepositCreateRequest {
+  amount: number;
+}
+
+export interface CoinsBuyDepositCreateResponse {
+  success: boolean;
+  message: string;
+  data: {
+    deposit_uuid: string;
+    coinsbuy_deposit_id: string;
+    tracking_id: string;
+    wallet_id: string;
+    amount: number;
+    label: string;
+    confirmations_needed: number;
+    status: number;
+    payment_page_redirect_url: string;
+    callback_url: string;
+  };
+}
+
+export interface CoinsBuyWebhookRequest {
+  data: {
+    type: string;
+    id: string;
+  };
+}
+
+export interface CoinsBuyWebhookResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface CoinsBuyDepositStatusResponse {
+  success: boolean;
+  message: string;
+  data: {
+    deposit_uuid: string;
+    coinsbuy_deposit_id: string;
+    deposit_status: number;
+    coinsbuy_status: number;
+    confirmations_needed: number;
+    tracking_id: string;
+  };
+}
+
+// ---------- CoinsBuy Deposit APIs ----------
+export const coinsbuyDepositApi = {
+  create: (data: CoinsBuyDepositCreateRequest, token: string) =>
+    apiCall<CoinsBuyDepositCreateResponse>(`/user/deposit/coinsbuy/create`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+
+  triggerWebhook: (data: CoinsBuyWebhookRequest, token: string) =>
+    apiCall<CoinsBuyWebhookResponse>(`/webhook/coinsbuy`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+
+  getStatus: (coinsbuyDepositId: string, token: string) =>
+    apiCall<CoinsBuyDepositStatusResponse>(`/user/deposit/coinsbuy/status/${coinsbuyDepositId}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),

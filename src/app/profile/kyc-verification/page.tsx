@@ -33,6 +33,13 @@ import {
 } from '@/components/ui/select';
 import { AlertCircle, CheckCircle2, Upload, FileText, Link as LinkIcon } from 'lucide-react';
 import { MainLayout } from '@/components/main-layout';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 type KycPhase = 'draft' | 'under_review' | 'approved';
 
@@ -52,6 +59,20 @@ export default function KycVerificationPage() {
   const [poaType, setPoaType] = useState('');
   const [otherType, setOtherType] = useState('');
 
+  // Handler to prevent scroll to top when selecting dropdown options
+  const handleOtherTypeChange = (value: string) => {
+    // Store current scroll position
+    const scrollY = window.scrollY;
+    const scrollX = window.scrollX;
+    setOtherType(value);
+    // Restore scroll position after state update (using double RAF for reliability)
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        window.scrollTo(scrollX, scrollY);
+      });
+    });
+  };
+
   // Files
   const [poiFrontFile, setPoiFrontFile] = useState<File | null>(null);
   const [poaFrontFile, setPoaFrontFile] = useState<File | null>(null);
@@ -65,6 +86,7 @@ export default function KycVerificationPage() {
   // Per-field re-upload stash for rejected docs: key = backend field name
   const [reuploadFiles, setReuploadFiles] = useState<Record<string, File | null>>({});
   const [reuploadingKey, setReuploadingKey] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<{ url: string; label: string } | null>(null);
 
   const selectedCount = [poiFrontFile, poaFrontFile, poaBackFile, otherFile].filter(Boolean).length;
   const progress = useMemo(
@@ -102,12 +124,21 @@ export default function KycVerificationPage() {
   const pick =
     (setter: (f: File | null) => void) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
+      // Store current scroll position
+      const scrollY = window.scrollY;
+      const scrollX = window.scrollX;
       const f = e.target.files?.[0] ?? null;
       if (!validateImage(f)) {
         e.target.value = '';
         return;
       }
       setter(f);
+      // Restore scroll position after state update (using double RAF for reliability)
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.scrollTo(scrollX, scrollY);
+        });
+      });
     };
 
   const canSubmit =
@@ -212,24 +243,30 @@ export default function KycVerificationPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
-  const renderFilePreview = (label: string, fileName?: string | null) => {
-    if (!fileName) return null;
-    const url = kycFileUrl(fileName);
+  const renderFilePreview = (label: string, fileUrl?: string | null, fileName?: string | null) => {
+    // Use URL directly if available, otherwise fallback to constructing from filename
+    const url = fileUrl || (fileName ? kycFileUrl(fileName) : null);
     if (!url) return null;
 
-    if (isImageName(fileName)) {
+    // Determine file type from URL or filename
+    const displayFileName = fileName || url;
+    const isImage = isImageName(displayFileName);
+    const isPdf = isPdfName(displayFileName);
+
+    if (isImage) {
       return (
         <div className="mt-2">
           <img
             src={url}
             alt={`${label} preview`}
-            className="max-h-40 rounded-md border border-border"
+            className="max-h-40 rounded-md border border-border cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => setPreviewImage({ url, label })}
           />
         </div>
       );
     }
 
-    if (isPdfName(fileName)) {
+    if (isPdf) {
       return (
         <div className="mt-2 text-sm">
           <a
@@ -311,7 +348,7 @@ export default function KycVerificationPage() {
           </p>
 
           {/* Preview of currently uploaded file (if any) */}
-          {data.file && renderFilePreview(title, data.file)}
+          {(data.url || data.file) && renderFilePreview(title, data.url, data.file)}
 
           {/* Rejection comment */}
           {data.rejection_comment && (
@@ -987,7 +1024,7 @@ export default function KycVerificationPage() {
                       : "Other Documents"
                   }
                   selectValue={otherType}
-                  onSelectChange={setOtherType}
+                  onSelectChange={handleOtherTypeChange}
                   selectOptions={[
                     { value: 'tax_document', label: 'Tax Document' },
                     { value: 'employment_letter', label: 'Employment Letter' },
@@ -1034,6 +1071,27 @@ export default function KycVerificationPage() {
           )}
         </Card>
       </div>
+
+      {/* Image Preview Dialog */}
+      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>{previewImage?.label}</DialogTitle>
+            <DialogDescription>
+              Click outside or press ESC to close
+            </DialogDescription>
+          </DialogHeader>
+          {previewImage && (
+            <div className="flex items-center justify-center p-4">
+              <img
+                src={previewImage.url}
+                alt={previewImage.label}
+                className="max-w-full max-h-[70vh] object-contain rounded-lg border border-border"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }

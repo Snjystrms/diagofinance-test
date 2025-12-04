@@ -14,6 +14,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Eye, EyeOff } from "lucide-react";
+import { managerSchema, managerCreateSchema } from "@/lib/validations";
+import type { ZodError } from "zod";
 
 export type ManagerRow = {
   id: string;
@@ -72,6 +74,7 @@ export function ManagerForm({
 
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Ensure permissions are fetched on open (edit only)
   useEffect(() => {
@@ -105,6 +108,8 @@ export function ManagerForm({
     // Reset password visibility when dialog opens/closes
     setShowPassword(false);
     setShowNewPassword(false);
+    // Clear errors when dialog opens/closes
+    setErrors({});
   }, [isEdit, initialData, open]);
 
   const togglePermission = (pid: number, checked: boolean) => {
@@ -116,18 +121,139 @@ export function ManagerForm({
     });
   };
 
+  const validateField = (field: string, value: string) => {
+    // Clear error for this field
+    setErrors((prev) => {
+      const newErrors = { ...prev };
+      delete newErrors[field];
+      return newErrors;
+    });
+
+    // Validate based on field type
+    if (field === "name") {
+      if (!value.trim()) {
+        setErrors((prev) => ({ ...prev, name: "Name is required" }));
+        return false;
+      }
+      if (value.trim().length < 2) {
+        setErrors((prev) => ({ ...prev, name: "Name must be at least 2 characters" }));
+        return false;
+      }
+      if (!/^[a-zA-Z\s'-]+$/.test(value)) {
+        setErrors((prev) => ({ ...prev, name: "Name can only contain letters, spaces, hyphens, and apostrophes" }));
+        return false;
+      }
+    } else if (field === "email") {
+      if (!value.trim()) {
+        setErrors((prev) => ({ ...prev, email: "Email is required" }));
+        return false;
+      }
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(value)) {
+        setErrors((prev) => ({ ...prev, email: "Invalid email address" }));
+        return false;
+      }
+    } else if (field === "mobile") {
+      if (!value.trim()) {
+        setErrors((prev) => ({ ...prev, mobile: "Mobile number is required" }));
+        return false;
+      }
+      if (!/^\d+$/.test(value)) {
+        setErrors((prev) => ({ ...prev, mobile: "Mobile number must contain only digits" }));
+        return false;
+      }
+      if (value.length !== 10) {
+        setErrors((prev) => ({ ...prev, mobile: "Mobile number must be exactly 10 digits" }));
+        return false;
+      }
+    } else if (field === "password" && value) {
+      if (value.length < 8) {
+        setErrors((prev) => ({ ...prev, password: "Password must be at least 8 characters" }));
+        return false;
+      }
+      if (!/[A-Z]/.test(value)) {
+        setErrors((prev) => ({ ...prev, password: "Password must contain at least one uppercase letter" }));
+        return false;
+      }
+      if (!/[a-z]/.test(value)) {
+        setErrors((prev) => ({ ...prev, password: "Password must contain at least one lowercase letter" }));
+        return false;
+      }
+      if (!/[0-9]/.test(value)) {
+        setErrors((prev) => ({ ...prev, password: "Password must contain at least one number" }));
+        return false;
+      }
+      if (!/[^A-Za-z0-9]/.test(value)) {
+        setErrors((prev) => ({ ...prev, password: "Password must contain at least one special character" }));
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow letters, spaces, hyphens, and apostrophes
+    if (value === "" || /^[a-zA-Z\s'-]*$/.test(value)) {
+      setForm({ ...form, name: value });
+      validateField("name", value);
+    }
+  };
+
+  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toLowerCase();
+    setForm({ ...form, email: value });
+    validateField("email", value);
+  };
+
+  const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow digits and limit to 10 digits
+    if (value === "" || /^\d+$/.test(value)) {
+      const limitedValue = value.slice(0, 10); // Limit to 10 digits
+      setForm({ ...form, mobile: limitedValue });
+      validateField("mobile", limitedValue);
+    }
+  };
+
+  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setForm({ ...form, password: value });
+    if (value) {
+      validateField("password", value);
+    } else {
+      // Clear password error if field is empty (for edit mode)
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors.password;
+        return newErrors;
+      });
+    }
+  };
+
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!form.name.trim()) return;
-    if (!form.email.trim()) return;
-    if (!form.mobile.trim()) return;
+    // Validate all fields
+    const nameValid = validateField("name", form.name);
+    const emailValid = validateField("email", form.email);
+    const mobileValid = validateField("mobile", form.mobile);
 
     if (isEdit) {
+      let passwordValid = true;
+      if (form.password?.trim()) {
+        passwordValid = validateField("password", form.password);
+      }
+
+      if (!nameValid || !emailValid || !mobileValid || !passwordValid) {
+        return;
+      }
+
       const payload: FormValue = {
         id: form.id,
         name: form.name.trim(),
-        email: form.email.trim(),
+        email: form.email.trim().toLowerCase(),
         mobile: form.mobile.trim(),
         status: !!form.status,
         permissions: form.permissions ?? [],
@@ -138,10 +264,20 @@ export function ManagerForm({
       }
       onSubmit(payload);
     } else {
-      if (!form.password?.trim()) return;
+      if (!form.password?.trim()) {
+        setErrors((prev) => ({ ...prev, password: "Password is required" }));
+        return;
+      }
+
+      const passwordValid = validateField("password", form.password);
+
+      if (!nameValid || !emailValid || !mobileValid || !passwordValid) {
+        return;
+      }
+
       onSubmit({
         name: form.name.trim(),
-        email: form.email.trim(),
+        email: form.email.trim().toLowerCase(),
         mobile: form.mobile.trim(),
         password: form.password.trim(),
       });
@@ -164,11 +300,15 @@ export function ManagerForm({
               <Input
                 id="name"
                 value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                onChange={handleNameChange}
+                onBlur={() => validateField("name", form.name)}
                 placeholder="John Manager"
                 disabled={readOnly}
                 required
               />
+              {errors.name && (
+                <p className="text-sm text-destructive">{errors.name}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -177,23 +317,32 @@ export function ManagerForm({
                 id="email"
                 type="email"
                 value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                onChange={handleEmailChange}
+                onBlur={() => validateField("email", form.email)}
                 placeholder="john.manager@example.com"
                 disabled={readOnly}
                 required
               />
+              {errors.email && (
+                <p className="text-sm text-destructive">{errors.email}</p>
+              )}
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="mobile">Mobile</Label>
               <Input
                 id="mobile"
+                type="tel"
                 value={form.mobile}
-                onChange={(e) => setForm({ ...form, mobile: e.target.value })}
-                placeholder="+1234567890"
+                onChange={handleMobileChange}
+                onBlur={() => validateField("mobile", form.mobile)}
+                placeholder="1234567890"
                 disabled={readOnly}
                 required
               />
+              {errors.mobile && (
+                <p className="text-sm text-destructive">{errors.mobile}</p>
+              )}
             </div>
 
             {!isEdit && (
@@ -204,7 +353,12 @@ export function ManagerForm({
                     id="password"
                     type={showPassword ? "text" : "password"}
                     value={form.password}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    onChange={handlePasswordChange}
+                    onBlur={() => {
+                      if (form.password) {
+                        validateField("password", form.password);
+                      }
+                    }}
                     placeholder="SecurePass123!"
                     required
                     className="pr-10"
@@ -224,6 +378,9 @@ export function ManagerForm({
                     )}
                   </Button>
                 </div>
+                {errors.password && (
+                  <p className="text-sm text-destructive">{errors.password}</p>
+                )}
               </div>
             )}
 
@@ -235,7 +392,12 @@ export function ManagerForm({
                     id="new-password"
                     type={showNewPassword ? "text" : "password"}
                     value={form.password ?? ""}
-                    onChange={(e) => setForm({ ...form, password: e.target.value })}
+                    onChange={handlePasswordChange}
+                    onBlur={() => {
+                      if (form.password) {
+                        validateField("password", form.password);
+                      }
+                    }}
                     placeholder="Leave blank to keep current password"
                     disabled={readOnly}
                     className="pr-10"
@@ -256,6 +418,9 @@ export function ManagerForm({
                     )}
                   </Button>
                 </div>
+                {errors.password && (
+                  <p className="text-sm text-destructive">{errors.password}</p>
+                )}
                 <p className="text-xs text-muted-foreground">
                   Leave blank to keep the existing password.
                 </p>

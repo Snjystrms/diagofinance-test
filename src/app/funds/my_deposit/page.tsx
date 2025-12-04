@@ -5,7 +5,7 @@ import { MainLayout } from '@/components/main-layout'
 import { AppDataTable } from '@/components/app-data-table'
 import { useAuth } from '@/contexts/auth-context'
 import { getUserDepositRequests, type DepositRequestItem } from '@/utils/operations'
-import { binanceDepositApi, type DepositListItem, type BinanceDepositStatusResponse, type DepositListResponse } from '@/lib/api'
+import { binanceDepositApi, coinsbuyDepositApi, type DepositListItem, type BinanceDepositStatusResponse, type CoinsBuyDepositStatusResponse, type DepositListResponse } from '@/lib/api'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import toast from 'react-hot-toast'
 import { type ColumnDef } from '@tanstack/react-table'
@@ -164,55 +164,82 @@ const AdminNotesCell = ({ notes }: { notes: string | null }) => {
   )
 }
 
-// Binance deposit status cell with eye icon
-const BinanceStatusCell = ({ merchantTradeNo, token }: { merchantTradeNo?: string; token: string | null }) => {
-  const [statusData, setStatusData] = useState<BinanceDepositStatusResponse['data'] | null>(null);
+// Deposit status cell with eye icon - handles both Binance Pay and Coinsbuy
+const DepositStatusCell = ({ deposit, token }: { deposit: DepositListItem; token: string | null }) => {
+  const [binanceStatusData, setBinanceStatusData] = useState<BinanceDepositStatusResponse['data'] | null>(null);
+  const [coinsbuyStatusData, setCoinsbuyStatusData] = useState<CoinsBuyDepositStatusResponse['data'] | null>(null);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
 
+  const paymentMethodId = deposit.payment_method_id || deposit.paymentMethod?.id;
+  const isBinancePay = paymentMethodId === 1;
+  const isCoinsbuy = paymentMethodId === 3;
+
   const fetchStatus = async () => {
-    if (!merchantTradeNo || !token) {
-      toast.error('Merchant trade number or authentication token is missing');
+    if (!token) {
+      toast.error('Authentication token is missing');
       return;
     }
     
     setLoading(true);
     try {
-      const response = await binanceDepositApi.getStatus(merchantTradeNo, token);
-      console.log('Binance status response (full):', JSON.stringify(response, null, 2));
-      
-      if (response.success) {
-        // apiCall returns ApiResponse<BinanceDepositStatusResponse>
-        // So response.data is BinanceDepositStatusResponse
-        // BinanceDepositStatusResponse has structure: { success, message, data: { ...status info... } }
-        // So we need to access response.data.data to get the actual status data
+      if (isBinancePay && deposit.merchant_trade_no) {
+        const response = await binanceDepositApi.getStatus(deposit.merchant_trade_no, token);
+        console.log('Binance status response (full):', JSON.stringify(response, null, 2));
         
-        let statusData: BinanceDepositStatusResponse['data'] | null = null;
-        
-        if (response.data) {
-          // Check if response.data has the nested structure (BinanceDepositStatusResponse)
-          if (typeof response.data === 'object' && 'data' in response.data) {
-            const statusResponse = response.data as BinanceDepositStatusResponse;
-            statusData = statusResponse.data;
-          } 
-          // Check if response.data is directly the status data (fallback)
-          else if (typeof response.data === 'object' && 'deposit_uuid' in response.data && 'merchant_trade_no' in response.data) {
-            statusData = response.data as BinanceDepositStatusResponse['data'];
+        if (response.success) {
+          let statusData: BinanceDepositStatusResponse['data'] | null = null;
+          
+          if (response.data) {
+            if (typeof response.data === 'object' && 'data' in response.data) {
+              const statusResponse = response.data as BinanceDepositStatusResponse;
+              statusData = statusResponse.data;
+            } else if (typeof response.data === 'object' && 'deposit_uuid' in response.data && 'merchant_trade_no' in response.data) {
+              statusData = response.data as BinanceDepositStatusResponse['data'];
+            }
           }
-        }
-        
-        if (statusData) {
-          console.log('Status data extracted:', statusData);
-          setStatusData(statusData);
+          
+          if (statusData) {
+            console.log('Status data extracted:', statusData);
+            setBinanceStatusData(statusData);
+          } else {
+            console.error('Could not extract status data. Response structure:', response);
+            toast.error('Status data not available');
+          }
         } else {
-          console.error('Could not extract status data. Response structure:', response);
-          toast.error('Status data not available');
+          toast.error(response.message || 'Failed to fetch status');
+        }
+      } else if (isCoinsbuy && deposit.coinsbuy_deposit_id) {
+        const response = await coinsbuyDepositApi.getStatus(deposit.coinsbuy_deposit_id, token);
+        console.log('Coinsbuy status response (full):', JSON.stringify(response, null, 2));
+        
+        if (response.success) {
+          let statusData: CoinsBuyDepositStatusResponse['data'] | null = null;
+          
+          if (response.data) {
+            if (typeof response.data === 'object' && 'data' in response.data) {
+              const statusResponse = response.data as CoinsBuyDepositStatusResponse;
+              statusData = statusResponse.data;
+            } else if (typeof response.data === 'object' && 'deposit_uuid' in response.data && 'coinsbuy_deposit_id' in response.data) {
+              statusData = response.data as CoinsBuyDepositStatusResponse['data'];
+            }
+          }
+          
+          if (statusData) {
+            console.log('Coinsbuy status data extracted:', statusData);
+            setCoinsbuyStatusData(statusData);
+          } else {
+            console.error('Could not extract status data. Response structure:', response);
+            toast.error('Status data not available');
+          }
+        } else {
+          toast.error(response.message || 'Failed to fetch status');
         }
       } else {
-        toast.error(response.message || 'Failed to fetch status');
+        toast.error('Required information not available for this deposit type');
       }
     } catch (error) {
-      console.error('Error fetching Binance status:', error);
+      console.error('Error fetching deposit status:', error);
       toast.error('Failed to fetch deposit status');
     } finally {
       setLoading(false);
@@ -221,29 +248,40 @@ const BinanceStatusCell = ({ merchantTradeNo, token }: { merchantTradeNo?: strin
 
   const handleOpenChange = (isOpen: boolean) => {
     setOpen(isOpen);
-    if (isOpen && !statusData && merchantTradeNo) {
+    if (isOpen && !binanceStatusData && !coinsbuyStatusData) {
       fetchStatus();
     }
   };
 
-  // Show eye icon even if merchant_trade_no is not available yet
-  // The button will be disabled or show a message when clicked
-  if (!merchantTradeNo) {
+  // Check if we have the required identifier for the payment method
+  const hasRequiredIdentifier = (isBinancePay && deposit.merchant_trade_no) || (isCoinsbuy && deposit.coinsbuy_deposit_id);
+  
+  if (!hasRequiredIdentifier) {
     return (
-      <Button variant="ghost" size="sm" className="h-8" disabled title="Merchant trade number not available yet">
+      <Button variant="ghost" size="sm" className="h-8" disabled title="Status information not available yet">
         <Eye className="h-4 w-4 mr-2 opacity-50" />
         <span className="text-xs text-muted-foreground">N/A</span>
       </Button>
     );
   }
 
-  const getStatusBadge = (status: number, binanceStatus: string) => {
+  const getStatusBadge = (status: number, additionalStatus?: string | number) => {
     if (status === 1) {
       return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">Approved</Badge>;
     } else if (status === 2) {
       return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">Rejected</Badge>;
     }
     return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">Pending</Badge>;
+  };
+
+  const getCoinsbuyStatusText = (status: number) => {
+    const statusMap: Record<number, string> = {
+      0: 'Pending',
+      1: 'Processing',
+      2: 'Confirmed',
+      3: 'Failed',
+    };
+    return statusMap[status] || `Status ${status}`;
   };
 
   return (
@@ -258,48 +296,75 @@ const BinanceStatusCell = ({ merchantTradeNo, token }: { merchantTradeNo?: strin
         <DialogHeader>
           <DialogTitle>Deposit Status</DialogTitle>
           <DialogDescription>
-            Current status of your Binance Pay deposit
+            Current status of your {isBinancePay ? 'Binance Pay' : isCoinsbuy ? 'Coinsbuy' : 'deposit'}
           </DialogDescription>
         </DialogHeader>
         {loading ? (
           <div className="flex items-center justify-center p-8">
             <Clock className="h-6 w-6 animate-spin text-muted-foreground" />
           </div>
-        ) : statusData ? (
+        ) : binanceStatusData ? (
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label className="text-xs text-muted-foreground">Deposit Status</Label>
                 <div className="mt-1">
-                  {getStatusBadge(statusData.deposit_status, statusData.binance_status)}
+                  {getStatusBadge(binanceStatusData.deposit_status, binanceStatusData.binance_status)}
                 </div>
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Binance Status</Label>
-                <div className="mt-1 font-medium">{statusData.binance_status}</div>
+                <div className="mt-1 font-medium">{binanceStatusData.binance_status}</div>
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Amount</Label>
-                <div className="mt-1 font-medium">{statusData.amount} {statusData.currency}</div>
+                <div className="mt-1 font-medium">{binanceStatusData.amount} {binanceStatusData.currency}</div>
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Merchant Trade No</Label>
-                <div className="mt-1 font-mono text-sm">{statusData.merchant_trade_no}</div>
+                <div className="mt-1 font-mono text-sm">{binanceStatusData.merchant_trade_no}</div>
               </div>
-              {statusData.transaction_id && (
+              {binanceStatusData.transaction_id && (
                 <div className="col-span-2">
                   <Label className="text-xs text-muted-foreground">Transaction ID</Label>
-                  <div className="mt-1 font-mono text-sm break-all">{statusData.transaction_id}</div>
+                  <div className="mt-1 font-mono text-sm break-all">{binanceStatusData.transaction_id}</div>
                 </div>
               )}
-              {statusData.transaction_time && (
+              {binanceStatusData.transaction_time && (
                 <div className="col-span-2">
                   <Label className="text-xs text-muted-foreground">Transaction Time</Label>
                   <div className="mt-1 text-sm">
-                    {new Date(statusData.transaction_time).toLocaleString()}
+                    {new Date(binanceStatusData.transaction_time).toLocaleString()}
                   </div>
                 </div>
               )}
+            </div>
+          </div>
+        ) : coinsbuyStatusData ? (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label className="text-xs text-muted-foreground">Deposit Status</Label>
+                <div className="mt-1">
+                  {getStatusBadge(coinsbuyStatusData.deposit_status, coinsbuyStatusData.coinsbuy_status)}
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Coinsbuy Status</Label>
+                <div className="mt-1 font-medium">{getCoinsbuyStatusText(coinsbuyStatusData.coinsbuy_status)}</div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Coinsbuy Deposit ID</Label>
+                <div className="mt-1 font-mono text-sm">{coinsbuyStatusData.coinsbuy_deposit_id}</div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Tracking ID</Label>
+                <div className="mt-1 font-mono text-sm">{coinsbuyStatusData.tracking_id}</div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Confirmations Needed</Label>
+                <div className="mt-1 font-medium">{coinsbuyStatusData.confirmations_needed}</div>
+              </div>
             </div>
           </div>
         ) : (
@@ -487,8 +552,8 @@ const binanceColumns: ColumnDef<DepositListItem>[] = [
     id: 'status_action',
     header: 'Actions',
     cell: ({ row }) => (
-      <BinanceStatusCell 
-        merchantTradeNo={row.original.merchant_trade_no} 
+      <DepositStatusCell 
+        deposit={row.original} 
         token={null} // Will be passed from parent via column mapping
       />
     ),
@@ -666,11 +731,21 @@ export default function MyDepositPage() {
       <div className="container mx-auto py-10">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">My Deposit Requests</h1>
-              <p className="text-muted-foreground mt-2">
-                View and track the status of your USDT deposit requests
-              </p>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <div className="absolute inset-0 bg-gradient-to-r from-primary to-purple-600 rounded-2xl blur opacity-75"></div>
+                <div className="relative flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-r from-primary to-purple-600 text-white shadow-lg">
+                  <DollarSign className="h-8 w-8" />
+                </div>
+              </div>
+              <div>
+                <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
+                  My Deposit Requests
+                </h1>
+                <p className="text-lg text-muted-foreground">
+                  View and track the status of your USDT deposit requests
+                </p>
+              </div>
             </div>
           </div>
 
@@ -737,12 +812,9 @@ export default function MyDepositPage() {
                       return {
                         ...col,
                         cell: ({ row }) => {
-                          // merchant_trade_no will be available in the response soon
-                          // For now, it might be undefined, so we handle that gracefully
-                          const merchantTradeNo = row.original.merchant_trade_no;
                           return (
-                            <BinanceStatusCell 
-                              merchantTradeNo={merchantTradeNo} 
+                            <DepositStatusCell 
+                              deposit={row.original} 
                               token={token}
                             />
                           );

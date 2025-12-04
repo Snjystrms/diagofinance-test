@@ -308,11 +308,7 @@ export const userNavData = [
       {
         title: "Overview",
         url: "/dashboard",
-      },
-      {
-        title: "Analytics",
-        url: "/analytics",
-      },
+      }
     ],
   },
   {
@@ -415,25 +411,26 @@ export const userNavData = [
     // }
     ],
   },
+  // {
+  //   title: "Trading Central",
+  //   url: "/trading-central",
+  //   icon: Package,
+  //   items: [
+  //   {
+  //     title: "Analysis Views",
+  //     url: "/trading-central/analysis-views",
+  //   },
+  //   {
+  //     title: "Featured Ideas",
+  //     url: "/trading-central/featured-ideas",
+  //   },
+  //   {
+  //     title: "Economic Calendar",
+  //     url: "/trading-central/economic-calendar",
+  //   },
+  //   ],
+  // },
   {
-    title: "Trading Central",
-    url: "/trading-central",
-    icon: Package,
-    items: [
-    {
-      title: "Analysis Views",
-      url: "/trading-central/analysis-views",
-    },
-    {
-      title: "Featured Ideas",
-      url: "/trading-central/featured-ideas",
-    },
-    {
-      title: "Economic Calendar",
-      url: "/trading-central/economic-calendar",
-    },
-    ],
-  },{
     title: "Become Partner",
     url: "/become-partner",
     icon: UserPlus,
@@ -447,11 +444,7 @@ export const userNavData = [
       {
         title: "Raise Ticket",
         url: "/raise-ticket",
-      },
-      {
-        title: "Ticket History",
-        url: "/ticket-history",
-      },
+      }
     ],
   }
 ]

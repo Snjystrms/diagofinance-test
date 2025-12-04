@@ -7,7 +7,7 @@ import toast from "react-hot-toast";
 import { AppDataTable } from "@/components/app-data-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
@@ -43,6 +43,7 @@ type ListRow = {
       status: DocStatusNum;
       comment: string;
       file: string;
+      url?: string;
     }
   >;
 };
@@ -64,6 +65,7 @@ type UserKycDetail = {
       status: DocStatusNum;
       comment: string;
       file: string;
+      url?: string;
     }
   >;
   rejection_comments?: Partial<Record<DocKey, string>>;
@@ -207,6 +209,7 @@ export default function UserVerificationPage() {
     other_file_status: 0,
   });
   const [docComments, setDocComments] = useState<Partial<Record<DocKey, string>>>({});
+  const [previewImage, setPreviewImage] = useState<{ url: string; label: string } | null>(null);
 
   const statusFeatureOptions = useMemo(
     () =>
@@ -658,7 +661,7 @@ const buildReviewPayload = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {(Object.keys(docLabel) as DocKey[]).map((k) => {
                     const doc = detail.documents?.[k];
-                    const url = kycFileUrl(doc?.file);
+                    const url = doc?.url || (doc?.file ? kycFileUrl(doc.file) : null);
                     const current = docStatuses[k];
                     const statusWord = numToWord(doc?.status ?? 0);
                     const isApproved = current === 1;
@@ -704,11 +707,20 @@ const buildReviewPayload = () => {
 
                         <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 p-4 flex items-center justify-center min-h-[200px]">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
-                          {url ? (
+                          {url || doc?.url ? (
                             <img 
-                              src={url} 
-                              alt={doc?.file} 
-                              className="max-h-64 w-auto object-contain rounded-md shadow-sm" 
+                              src={doc?.url || url || ''} 
+                              alt={doc?.file || ''} 
+                              className="max-h-64 w-auto object-contain rounded-md shadow-sm cursor-pointer hover:opacity-80 transition-opacity" 
+                              onClick={() => {
+                                const imageUrl = doc?.url || url;
+                                if (imageUrl) {
+                                  setPreviewImage({
+                                    url: imageUrl,
+                                    label: docLabel[k]
+                                  });
+                                }
+                              }}
                             />
                           ) : (
                             <div className="flex flex-col items-center gap-2 text-muted-foreground">
@@ -815,6 +827,27 @@ const buildReviewPayload = () => {
               )}
             </div>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Image Preview Dialog */}
+      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>{previewImage?.label}</DialogTitle>
+            <DialogDescription>
+              Click outside or press ESC to close
+            </DialogDescription>
+          </DialogHeader>
+          {previewImage && (
+            <div className="flex items-center justify-center p-4">
+              <img
+                src={previewImage.url}
+                alt={previewImage.label}
+                className="max-w-full max-h-[70vh] object-contain rounded-lg border border-border"
+              />
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>

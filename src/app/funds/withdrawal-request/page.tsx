@@ -230,16 +230,23 @@ function WithdrawalRequestContent() {
     <div className="min-h-screen">
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="mx-auto flex items-center justify-center w-20 h-20 bg-gradient-to-r from-red-500 to-orange-600 rounded-full mb-4 shadow-lg">
-            <ArrowUpRight className="h-10 w-10 text-white" />
+        <div className="mb-8">
+          <div className="flex items-center gap-4">
+            <div className="relative">
+              <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-600 rounded-2xl blur opacity-75"></div>
+              <div className="relative flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-r from-red-500 to-orange-600 text-white shadow-lg">
+                <ArrowUpRight className="h-8 w-8" />
+              </div>
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
+                Withdraw USDT
+              </h1>
+              <p className="text-lg text-muted-foreground">
+                Request a withdrawal to your external wallet address
+              </p>
+            </div>
           </div>
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
-            Withdraw USDT
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 text-lg max-w-2xl mx-auto">
-            Request a withdrawal to your external wallet address
-          </p>
         </div>
 
         <div className="max-w-4xl mx-auto space-y-6">

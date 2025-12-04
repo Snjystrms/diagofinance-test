@@ -92,6 +92,50 @@ export const tradingAccountSchema = z.object({
   path: ['confirmPassword'],
 });
 
+// Manager form validation schema
+export const managerSchema = z.object({
+  name: z
+    .string()
+    .min(1, 'Name is required')
+    .min(2, 'Name must be at least 2 characters')
+    .max(100, 'Name must be less than 100 characters')
+    .regex(/^[a-zA-Z\s'-]+$/, 'Name can only contain letters, spaces, hyphens, and apostrophes'),
+  email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Invalid email address')
+    .toLowerCase()
+    .refine((email) => email.length <= 100, 'Email must be less than 100 characters'),
+  mobile: z
+    .string()
+    .min(1, 'Mobile number is required')
+    .regex(/^\d+$/, 'Mobile number must contain only digits')
+    .length(10, 'Mobile number must be exactly 10 digits'),
+  password: z
+    .string()
+    .optional()
+    .refine((val) => !val || val.length >= 8, 'Password must be at least 8 characters')
+    .refine((val) => !val || /[A-Z]/.test(val), 'Password must contain at least one uppercase letter')
+    .refine((val) => !val || /[a-z]/.test(val), 'Password must contain at least one lowercase letter')
+    .refine((val) => !val || /[0-9]/.test(val), 'Password must contain at least one number')
+    .refine((val) => !val || /[^A-Za-z0-9]/.test(val), 'Password must contain at least one special character'),
+  status: z.boolean().optional(),
+  permissions: z.array(z.number()).optional(),
+});
+
+// Manager create schema (password required)
+export const managerCreateSchema = managerSchema.extend({
+  password: z
+    .string()
+    .min(1, 'Password is required')
+    .min(8, 'Password must be at least 8 characters')
+    .max(100, 'Password must be less than 100 characters')
+    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+    .regex(/[0-9]/, 'Password must contain at least one number')
+    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
+});
+
 // Type exports
 export type RegisterFormData = z.infer<typeof registerSchema>;
 export type LoginFormData = z.infer<typeof loginSchema>;
@@ -100,3 +144,5 @@ export type ResendOtpFormData = z.infer<typeof resendOtpSchema>;
 export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
 export type TradingAccountFormData = z.infer<typeof tradingAccountSchema>;
+export type ManagerFormData = z.infer<typeof managerSchema>;
+export type ManagerCreateFormData = z.infer<typeof managerCreateSchema>;

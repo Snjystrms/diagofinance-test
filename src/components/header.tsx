@@ -133,11 +133,10 @@ export function Header() {
 
   return (
     <>
-      <header className="flex h-16 items-center justify-between gap-2 border-b bg-card px-3 sm:px-4 md:px-6 overflow-hidden">
+      <header className="flex h-16 items-center gap-2 border-b bg-card px-3 sm:px-4 md:px-6 overflow-hidden">
+        {/* Left Section */}
         <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-1 min-w-0 overflow-hidden">
           <SidebarTrigger className="-ml-1 flex-shrink-0" onClick={handleSidebarTriggerClick} />
-          
-      
           
           {/* Search Bar - Desktop */}
           <div className="relative hidden lg:block flex-shrink-0">
@@ -149,7 +148,36 @@ export function Header() {
           </div>
         </div>
         
-        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+        {/* Center Section - Account ID */}
+        {user?.type === "user" && (
+          <div className="hidden xl:flex items-center justify-center flex-shrink-0">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="min-w-0">
+                <div className="text-xs text-muted-foreground mb-1 whitespace-nowrap text-center">Account ID</div>
+                <div className="text-sm lg:text-base font-semibold text-foreground truncate max-w-[140px] lg:max-w-[200px] xl:max-w-none text-center">
+                  {accountId || user.id || "—"}
+                </div>
+              </div>
+              {accountId && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 flex-shrink-0"
+                  onClick={() => {
+                    navigator.clipboard.writeText(accountId);
+                    toast.success('Account ID copied to clipboard');
+                  }}
+                  title="Copy Account ID"
+                >
+                  <Copy className="h-3.5 w-3.5 text-primary" />
+                </Button>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Right Section */}
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           {/* Search Bar - Mobile/Tablet */}
           <div className="relative lg:hidden flex-shrink-0">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -158,52 +186,26 @@ export function Header() {
               className="pl-8 w-40 sm:w-48 md:w-56"
             />
           </div>
-              {/* Account ID and User Info - Left Side (visible on larger screens) */}
-              {user?.type === "user" && (
-            <div className="hidden xl:flex items-center gap-4 lg:gap-6 flex-shrink-0">
-              {/* Account ID */}
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="min-w-0">
-                  <div className="text-xs text-muted-foreground mb-1 whitespace-nowrap">Account ID</div>
-                  <div className="text-sm lg:text-base font-semibold text-foreground truncate max-w-[140px] lg:max-w-[200px] xl:max-w-none">
-                    {accountId || user.id || "—"}
-                  </div>
-                </div>
-                {accountId && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 flex-shrink-0"
-                    onClick={() => {
-                      navigator.clipboard.writeText(accountId);
-                      toast.success('Account ID copied to clipboard');
-                    }}
-                    title="Copy Account ID"
+          
+          {/* User Name and Status - Only show on larger screens when Account ID is centered */}
+          {user?.type === "user" && (
+            <div className="hidden xl:flex items-center gap-3 min-w-0">
+              <div className="flex flex-col min-w-0">
+                <span className="text-xs sm:text-sm font-semibold text-foreground truncate max-w-[120px] lg:max-w-[150px] xl:max-w-none">
+                  {dashboardName || user.name || "User"}
+                </span>
+                {profileStatus && (
+                  <Badge
+                    variant={profileStatus.toLowerCase() === "verified" ? "default" : "destructive"}
+                    className={
+                      profileStatus.toLowerCase() === "verified"
+                        ? "text-[10px] sm:text-xs mt-1 w-fit bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-950/40 dark:text-green-300 dark:hover:bg-green-900/40"
+                        : "text-[10px] sm:text-xs mt-1 w-fit"
+                    }
                   >
-                    <Copy className="h-3.5 w-3.5 text-primary" />
-                  </Button>
+                    {profileStatus.charAt(0).toUpperCase() + profileStatus.slice(1)}
+                  </Badge>
                 )}
-              </div>
-              
-              {/* User Name and Status */}
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs sm:text-sm font-semibold text-foreground truncate max-w-[120px] lg:max-w-[150px] xl:max-w-none">
-                    {dashboardName || user.name || "User"}
-                  </span>
-                  {profileStatus && (
-                    <Badge
-                      variant={profileStatus.toLowerCase() === "verified" ? "default" : "destructive"}
-                      className={
-                        profileStatus.toLowerCase() === "verified"
-                          ? "text-[10px] sm:text-xs mt-1 w-fit bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-950/40 dark:text-green-300 dark:hover:bg-green-900/40"
-                          : "text-[10px] sm:text-xs mt-1 w-fit"
-                      }
-                    >
-                      {profileStatus.charAt(0).toUpperCase() + profileStatus.slice(1)}
-                    </Badge>
-                  )}
-                </div>
               </div>
             </div>
           )}

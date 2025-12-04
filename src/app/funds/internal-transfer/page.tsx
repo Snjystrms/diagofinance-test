@@ -290,13 +290,18 @@ function InternalTransferContent() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <ArrowLeftRight className="h-6 w-6" />
+        <div className="flex items-center gap-4">
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary to-purple-600 rounded-2xl blur opacity-75"></div>
+            <div className="relative flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-r from-primary to-purple-600 text-white shadow-lg">
+              <ArrowLeftRight className="h-8 w-8" />
+            </div>
           </div>
           <div>
-            <h1 className="text-3xl font-bold">Internal Transfers</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
+              Internal Transfers
+            </h1>
+            <p className="text-lg text-muted-foreground">
               Move funds between your wallets and MT5 trading accounts securely.
             </p>
           </div>
