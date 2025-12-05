@@ -61,7 +61,10 @@ export function NavMain({
                     tooltip={item.title}
                     asChild={!hasSubItems}
                     size="sm"
-                    className={isActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}
+                    className={isActive 
+                      ? "bg-[#ffffff0f] text-sidebar-accent-foreground font-semibold  border-l-[3px] border-sidebar-primary [&>span]:font-semibold [&>svg]:opacity-100" 
+                      : ""
+                    }
                   >
                     {hasSubItems ? (
                       <>
@@ -89,7 +92,10 @@ export function NavMain({
                             <SidebarMenuSubButton 
                               asChild
                               size="sm"
-                              className={isSubActive ? "bg-sidebar-accent text-sidebar-accent-foreground" : ""}
+                              className={isSubActive 
+                                ? "bg-[#ffffff0f] text-sidebar-accent-foreground font-semibold  border-l-[3px] border-sidebar-primary [&>span]:font-semibold" 
+                                : ""
+                              }
                             >
                               <Link href={subItem.url}>
                                 <span>{subItem.title}</span>

@@ -151,27 +151,39 @@ export function Header() {
         {/* Center Section - Account ID */}
         {user?.type === "user" && (
           <div className="hidden xl:flex items-center justify-center flex-shrink-0">
-            <div className="flex items-center gap-2 min-w-0">
-              <div className="min-w-0">
-                <div className="text-xs text-muted-foreground mb-1 whitespace-nowrap text-center">Account ID</div>
-                <div className="text-sm lg:text-base font-semibold text-foreground truncate max-w-[140px] lg:max-w-[200px] xl:max-w-none text-center">
-                  {accountId || user.id || "—"}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <div className="relative flex items-center gap-2.5 px-5 py-2.5 rounded-xl bg-card shadow-sm hover:shadow-md transition-all duration-200">
+                <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+                    <span className="text-xs font-bold text-primary">ID</span>
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <div className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-semibold mb-0.5">
+                      Account
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-base font-bold text-foreground font-mono tracking-wider">
+                        {accountId || user.id || "—"}
+                      </div>
+                      {accountId && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 flex-shrink-0 hover:bg-primary/10 hover:text-primary rounded-md transition-colors"
+                          onClick={() => {
+                            navigator.clipboard.writeText(accountId);
+                            toast.success('Account ID copied to clipboard');
+                          }}
+                          title="Copy Account ID"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-              {accountId && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 flex-shrink-0"
-                  onClick={() => {
-                    navigator.clipboard.writeText(accountId);
-                    toast.success('Account ID copied to clipboard');
-                  }}
-                  title="Copy Account ID"
-                >
-                  <Copy className="h-3.5 w-3.5 text-primary" />
-                </Button>
-              )}
             </div>
           </div>
         )}
@@ -186,29 +198,6 @@ export function Header() {
               className="pl-8 w-40 sm:w-48 md:w-56"
             />
           </div>
-          
-          {/* User Name and Status - Only show on larger screens when Account ID is centered */}
-          {user?.type === "user" && (
-            <div className="hidden xl:flex items-center gap-3 min-w-0">
-              <div className="flex flex-col min-w-0">
-                <span className="text-xs sm:text-sm font-semibold text-foreground truncate max-w-[120px] lg:max-w-[150px] xl:max-w-none">
-                  {dashboardName || user.name || "User"}
-                </span>
-                {profileStatus && (
-                  <Badge
-                    variant={profileStatus.toLowerCase() === "verified" ? "default" : "destructive"}
-                    className={
-                      profileStatus.toLowerCase() === "verified"
-                        ? "text-[10px] sm:text-xs mt-1 w-fit bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-950/40 dark:text-green-300 dark:hover:bg-green-900/40"
-                        : "text-[10px] sm:text-xs mt-1 w-fit"
-                    }
-                  >
-                    {profileStatus.charAt(0).toUpperCase() + profileStatus.slice(1)}
-                  </Badge>
-                )}
-              </div>
-            </div>
-          )}
           
           {/* 2FA Button */}
           <Button 
@@ -287,14 +276,49 @@ export function Header() {
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 sm:h-9 sm:w-9 rounded-full flex-shrink-0">
-                <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
-                  <AvatarImage src="/avatars/01.png" alt="@user" />
-                  <AvatarFallback>
-                    {user?.name ? user.name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
+              {user?.type === "user" ? (
+                <div className="hidden xl:flex items-center gap-3 min-w-0 cursor-pointer">
+                  <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-background via-muted/30 to-background border border-border/60 hover:border-border hover:shadow-lg transition-all duration-300">
+                    <div className="relative flex-shrink-0">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center ring-2 ring-background">
+                        <User className="h-3.5 w-3.5 text-primary" />
+                      </div>
+                      {profileStatus && (
+                        <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${
+                          profileStatus.toLowerCase() === "verified" 
+                            ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" 
+                            : "bg-orange-500"
+                        }`}></div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-semibold text-foreground truncate max-w-[140px] leading-none">
+                          {dashboardName || user.name || "User"}
+                        </span>
+                        {profileStatus && (
+                          <span className={`text-[9px] font-medium mt-0.5 ${
+                            profileStatus.toLowerCase() === "verified"
+                              ? "text-green-600 dark:text-green-400"
+                              : "text-orange-600 dark:text-orange-400"
+                          }`}>
+                            {profileStatus.charAt(0).toUpperCase() + profileStatus.slice(1)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <Button variant="ghost" className="relative h-8 w-8 sm:h-9 sm:w-9 rounded-full flex-shrink-0">
+                  <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
+                    <AvatarImage src="/avatars/01.png" alt="@user" />
+                    <AvatarFallback>
+                      {user?.name ? user.name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              )}
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">
