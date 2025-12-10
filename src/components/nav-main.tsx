@@ -42,7 +42,7 @@ export function NavMain({
 
   return (
     <SidebarGroup>
-      <SidebarGroupLabel>Platform</SidebarGroupLabel>
+      <SidebarGroupLabel className="text-sm">Platform</SidebarGroupLabel>
       <SidebarMenu>
         {items.map((item) => {
           const isActive = pathname === item.url || pathname.startsWith(item.url + '/')
@@ -60,24 +60,24 @@ export function NavMain({
                   <SidebarMenuButton 
                     tooltip={item.title}
                     asChild={!hasSubItems}
-                    size="sm"
+                    size="default"
                     className={isActive 
-                      ? "bg-[#ffffff0f] text-sidebar-accent-foreground font-semibold  border-l-[3px] border-sidebar-primary [&>span]:font-semibold [&>svg]:opacity-100" 
-                      : ""
+                      ? "bg-[#ffffff0f] text-sidebar-accent-foreground font-semibold  border-l-[3px] border-sidebar-primary [&>span]:font-semibold [&>svg]:opacity-100 [&>svg]:size-6" 
+                      : "[&>svg]:size-6"
                     }
                   >
                     {hasSubItems ? (
                       <>
-                        {item.icon && (React.isValidElement(item.icon) ? item.icon : <item.icon className="transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />)}
-                        {!isCollapsed && <span className="animate-in fade-in-0 slide-in-from-left-2 duration-500">{item.title}</span>}
+                        {item.icon && (React.isValidElement(item.icon) ? item.icon : <item.icon className="transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] size-6" />)}
+                        {!isCollapsed && <span className="animate-in fade-in-0 slide-in-from-left-2 duration-500 text-base">{item.title}</span>}
                         {!isCollapsed && (
-                          <ChevronRight className="ml-auto transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] group-data-[state=open]/collapsible:rotate-90" />
+                          <ChevronRight className="ml-auto transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] group-data-[state=open]/collapsible:rotate-90 size-6" />
                         )}
                       </>
                     ) : (
                       <Link href={item.url} className="flex items-center w-full">
-                        {item.icon && (React.isValidElement(item.icon) ? item.icon : <item.icon className="transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />)}
-                        {!isCollapsed && <span className="animate-in fade-in-0 slide-in-from-left-2 duration-500">{item.title}</span>}
+                        {item.icon && (React.isValidElement(item.icon) ? item.icon : <item.icon className="transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] size-6" />)}
+                        {!isCollapsed && <span className="animate-in fade-in-0 slide-in-from-left-2 duration-500 text-base">{item.title}</span>}
                       </Link>
                     )}
                   </SidebarMenuButton>
@@ -91,10 +91,10 @@ export function NavMain({
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton 
                               asChild
-                              size="sm"
+                              size="md"
                               className={isSubActive 
-                                ? "bg-[#ffffff0f] text-sidebar-accent-foreground font-semibold  border-l-[3px] border-sidebar-primary [&>span]:font-semibold" 
-                                : ""
+                                ? "bg-[#ffffff0f] text-sidebar-accent-foreground font-semibold  border-l-[3px] border-sidebar-primary [&>span]:font-semibold text-sm" 
+                                : "text-sm"
                               }
                             >
                               <Link href={subItem.url}>

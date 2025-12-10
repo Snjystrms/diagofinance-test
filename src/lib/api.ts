@@ -1614,6 +1614,51 @@ export interface IbInternalTransferRequest {
   comment?: string;
 }
 
+export interface IbWalletBalance {
+  amount: number;
+  currency: string;
+}
+
+export interface IbWalletEarningSummary {
+  total_earned: number;
+  total_internal_transfers: number;
+  currency: string;
+}
+
+export interface IbWalletTransaction {
+  id?: number;
+  type?: string;
+  amount?: number;
+  currency?: string;
+  description?: string;
+  status?: string;
+  created_at?: string;
+  [key: string]: unknown;
+}
+
+export interface IbWalletTransactions {
+  data: IbWalletTransaction[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
+export interface IbWalletData {
+  wallet_balance: IbWalletBalance;
+  client_wallet: IbWalletBalance;
+  earning_summary: IbWalletEarningSummary;
+  transactions: IbWalletTransactions;
+}
+
+export interface IbWalletResponse {
+  success: boolean;
+  message: string;
+  data: IbWalletData;
+}
+
 export const ibRequestsApi = {
   overview: (token: string) =>
     apiCall<IbRequestStatusResponse>(`/user/ib-requests/status`, {
@@ -1644,6 +1689,11 @@ export const ibRequestsApi = {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(data),
+    }),
+  getIbWallet: (token: string) =>
+    apiCall<IbWalletResponse>(`/user/ib-wallet`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
     }),
 };
 
@@ -1746,6 +1796,204 @@ export const adminIbRequestsApi = {
       method: "PATCH",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(body),
+    });
+  },
+};
+
+// ---------- Admin IB Users APIs ----------
+export interface AdminIbUser {
+  id?: number | string;
+  uuid?: string;
+  name?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  mobile?: string;
+  phone?: string;
+  sponsor_id?: string;
+  ib_name?: string;
+  partner_id?: string;
+  referral_link?: string;
+  status?: number | string;
+  is_ib_user?: boolean | number;
+  created_at?: string;
+  updated_at?: string;
+  [key: string]: unknown;
+}
+
+export interface AdminIbUsersListData {
+  items?: AdminIbUser[];
+  users?: AdminIbUser[];
+  data?:
+    | AdminIbUser[]
+    | {
+        items?: AdminIbUser[];
+        data?: AdminIbUser[];
+        users?: AdminIbUser[];
+        pagination?: PaginationMeta;
+        total?: number;
+      };
+  pagination?: PaginationMeta;
+  meta?: {
+    pagination?: PaginationMeta;
+  };
+  total?: number;
+  [key: string]: unknown;
+}
+
+export type AdminIbUsersListParams = {
+  token: string;
+  page?: number;
+  per_page?: number;
+  search?: string;
+};
+
+export const adminIbUsersApi = {
+  list: ({ token, page = 1, per_page = 10, search }: AdminIbUsersListParams) => {
+    if (!token) {
+      throw new Error("Token is required to fetch IB users");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("page", String(page));
+    qs.set("per_page", String(per_page));
+
+    if (typeof search === "string" && search.trim()) {
+      qs.set("search", search.trim());
+    }
+
+    const endpoint = `/admin/ib-management/ib-users${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<AdminIbUsersListData>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
+
+// ---------- Admin IB User Commissions APIs ----------
+export interface UserCommission {
+  id: number;
+  mt5_user_id: number;
+  mt5_account_id: string;
+  mt5_user_name: string;
+  account_type_id: number;
+  level: string;
+  rate_ib: number;
+  rate_sub_ib_1: number;
+  rate_sub_ib_2: number;
+  rate_sub_ib_3: number;
+  rate_sub_ib_4: number;
+  rate_sub_ib_5: number;
+  status: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserCommissionResponse {
+  success: boolean;
+  data: {
+    user: {
+      id: number;
+      name: string;
+      email: string;
+    };
+    commissions: UserCommission[];
+  };
+}
+
+export type UserCommissionUpdateBody = {
+  commissions: Array<{
+    id?: number;
+    mt5_user_id: number;
+    mt5_account_id: string;
+    account_type_id: number;
+    level: string;
+    rate_ib: number;
+    rate_sub_ib_1: number;
+    rate_sub_ib_2: number;
+    rate_sub_ib_3: number;
+    rate_sub_ib_4: number;
+    rate_sub_ib_5: number;
+    status: boolean;
+  }>;
+};
+
+export const adminIbUserCommissionsApi = {
+  getUserCommissions: (userId: string | number, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to fetch user commissions");
+    }
+
+    if (userId === null || userId === undefined || `${userId}`.trim() === "") {
+      throw new Error("User ID is required to fetch commissions");
+    }
+
+    const endpoint = `/admin/ib-management/user-commissions/${userId}`;
+
+    return apiCall<UserCommissionResponse>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  updateUserCommissions: (userId: string | number, body: UserCommissionUpdateBody, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to update user commissions");
+    }
+
+    if (userId === null || userId === undefined || `${userId}`.trim() === "") {
+      throw new Error("User ID is required to update commissions");
+    }
+
+    const endpoint = `/admin/ib-management/user-commissions/${userId}`;
+
+    return apiCall<UserCommissionResponse>(endpoint, {
+      method: "PUT",
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  },
+
+  patchUserCommission: (userId: string | number, commission: UserCommission, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to update user commission");
+    }
+
+    if (userId === null || userId === undefined || `${userId}`.trim() === "") {
+      throw new Error("User ID is required to update commission");
+    }
+
+    const endpoint = `/admin/ib-management/user-commissions/${userId}`;
+
+    // Format commission data for the API
+    const commissionData = {
+      id: commission.id,
+      mt5_user_id: commission.mt5_user_id,
+      mt5_account_id: commission.mt5_account_id,
+      account_type_id: commission.account_type_id,
+      level: commission.level,
+      rate_ib: commission.rate_ib,
+      rate_sub_ib_1: commission.rate_sub_ib_1,
+      rate_sub_ib_2: commission.rate_sub_ib_2,
+      rate_sub_ib_3: commission.rate_sub_ib_3,
+      rate_sub_ib_4: commission.rate_sub_ib_4,
+      rate_sub_ib_5: commission.rate_sub_ib_5,
+      status: commission.status,
+    };
+
+    return apiCall<UserCommissionResponse>(endpoint, {
+      method: "PATCH",
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        commissions: [commissionData],
+      }),
     });
   },
 };
@@ -2477,4 +2725,402 @@ export const adminTicketApi = {
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }),
+};
+
+// ---------- Admin Deposit Report APIs ----------
+export interface DepositReportItem {
+  id: number | string;
+  name: string;
+  email: string;
+  name_email: string;
+  mt5_id?: string;
+  amount: number | string;
+  payment_method: string;
+  payment_method_id: number | string;
+  note?: string;
+  comment?: string;
+  deposit_proof?: string | null;
+  deposit_proof_file?: string | null;
+  status: number; // 0=pending, 1=approved, 2=rejected
+  status_text: string;
+  date: string;
+  created_at: string;
+  marketing_name?: string | null;
+  approved_rejected_by?: string | null;
+  transaction_hash?: string | null;
+  merchant_trade_no?: string | null;
+  coinsbuy_deposit_id?: string | null;
+}
+
+export interface DepositReportListParams {
+  token: string;
+  status?: number | string; // 0=pending, 1=approved, 2=rejected
+  payment_method_id?: number | string | "all";
+  from_date?: string; // YYYY-MM-DD
+  to_date?: string; // YYYY-MM-DD
+  page?: number;
+  per_page?: number;
+  sort_column?: string;
+  sort_order?: "ASC" | "DESC";
+  search?: string;
+}
+
+export interface DepositReportListPayload {
+  success: boolean;
+  message: string;
+  data: DepositReportItem[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+    from: number;
+    to: number;
+  };
+  filters: {
+    status?: string | null;
+    payment_method_id?: string | null;
+    from_date?: string | null;
+    to_date?: string | null;
+    search?: string | null;
+  };
+}
+
+export const adminDepositReportApi = {
+  list: (params: DepositReportListParams) => {
+    const { token, ...queryParams } = params;
+    if (!token) {
+      throw new Error("Token is required to fetch deposit report");
+    }
+
+    const qs = new URLSearchParams();
+    if (queryParams.page) qs.set("page", String(queryParams.page));
+    if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
+    if (queryParams.status !== undefined && queryParams.status !== null) {
+      qs.set("status", String(queryParams.status));
+    }
+    if (queryParams.payment_method_id && queryParams.payment_method_id !== "all") {
+      qs.set("payment_method_id", String(queryParams.payment_method_id));
+    } else if (queryParams.payment_method_id === "all") {
+      qs.set("payment_method_id", "all");
+    }
+    if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
+    if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
+    if (queryParams.sort_column) qs.set("sort_column", queryParams.sort_column);
+    if (queryParams.sort_order) qs.set("sort_order", queryParams.sort_order);
+    if (queryParams.search) qs.set("search", queryParams.search);
+
+    const endpoint = `/admin/reports/deposit-report${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<DepositReportListPayload>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
+
+// ---------- Admin Withdrawal Report APIs ----------
+export interface WithdrawalReportItem {
+  id: number | string;
+  name?: string;
+  email?: string;
+  name_email?: string;
+  mt5_id?: string;
+  amount: number | string;
+  payment_method?: string;
+  payment_method_id?: number | string;
+  wallet_address?: string | null;
+  chain_id?: string | null;
+  transaction_hash?: string | null;
+  status: number | string; // 0=pending, 1=approved, 2=rejected or "pending" | "approved" | "rejected"
+  status_text?: string;
+  date?: string;
+  created_at: string;
+  updated_at?: string;
+  remarks?: string | null;
+  approved_by?: string | null;
+  approved_at?: string | null;
+}
+
+export interface WithdrawalReportListParams {
+  token: string;
+  status?: number | string | "pending" | "approved" | "rejected"; // 0=pending, 1=approved, 2=rejected
+  payment_method_id?: number | string | "all";
+  from_date?: string; // YYYY-MM-DD
+  to_date?: string; // YYYY-MM-DD
+  page?: number;
+  per_page?: number;
+  sort_column?: string;
+  sort_order?: "ASC" | "DESC";
+  search?: string;
+}
+
+export interface WithdrawalReportListPayload {
+  success: boolean;
+  message: string;
+  data: WithdrawalReportItem[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+    from: number;
+    to: number;
+  };
+  filters?: {
+    status?: string | null;
+    payment_method_id?: string | null;
+    from_date?: string | null;
+    to_date?: string | null;
+    search?: string | null;
+  };
+}
+
+export const adminWithdrawalReportApi = {
+  list: (params: WithdrawalReportListParams) => {
+    const { token, ...queryParams } = params;
+    if (!token) {
+      throw new Error("Token is required to fetch withdrawal report");
+    }
+
+    const qs = new URLSearchParams();
+    if (queryParams.page) qs.set("page", String(queryParams.page));
+    if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
+    if (queryParams.status !== undefined && queryParams.status !== null) {
+      qs.set("status", String(queryParams.status));
+    }
+    if (queryParams.payment_method_id && queryParams.payment_method_id !== "all") {
+      qs.set("payment_method_id", String(queryParams.payment_method_id));
+    } else if (queryParams.payment_method_id === "all") {
+      qs.set("payment_method_id", "all");
+    }
+    if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
+    if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
+    if (queryParams.sort_column) qs.set("sort_column", queryParams.sort_column);
+    if (queryParams.sort_order) qs.set("sort_order", queryParams.sort_order);
+    if (queryParams.search) qs.set("search", queryParams.search);
+
+    const endpoint = `/admin/reports/withdrawal-report${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<WithdrawalReportListPayload>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
+
+// ---------- Admin IB Withdrawal Report APIs ----------
+export interface IbWithdrawalReportItem {
+  id: number | string;
+  name?: string;
+  email?: string;
+  name_email?: string;
+  ib_name?: string;
+  partner_id?: string;
+  amount: number | string;
+  payment_method?: string;
+  payment_method_id?: number | string;
+  wallet_address?: string | null;
+  chain_id?: string | null;
+  transaction_hash?: string | null;
+  status: number | string; // 0=pending, 1=approved, 2=rejected or "pending" | "approved" | "rejected"
+  status_text?: string;
+  date?: string;
+  created_at: string;
+  updated_at?: string;
+  remarks?: string | null;
+  approved_by?: string | null;
+  approved_at?: string | null;
+}
+
+export interface IbWithdrawalReportListParams {
+  token: string;
+  from_date?: string; // YYYY-MM-DD
+  to_date?: string; // YYYY-MM-DD
+  page?: number;
+  per_page?: number;
+}
+
+export interface IbWithdrawalReportListPayload {
+  success: boolean;
+  message: string;
+  data: IbWithdrawalReportItem[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+    from: number;
+    to: number;
+  };
+  filters?: {
+    from_date?: string | null;
+    to_date?: string | null;
+  };
+}
+
+export const adminIbWithdrawalReportApi = {
+  list: (params: IbWithdrawalReportListParams) => {
+    const { token, ...queryParams } = params;
+    if (!token) {
+      throw new Error("Token is required to fetch IB withdrawal report");
+    }
+
+    const qs = new URLSearchParams();
+    if (queryParams.page) qs.set("page", String(queryParams.page));
+    if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
+    if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
+    if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
+
+    const endpoint = `/admin/reports/ib-withdrawal-report${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<IbWithdrawalReportListPayload>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
+
+// ---------- Admin Internal Transfer Report APIs ----------
+export interface InternalTransferReportItem {
+  id: number | string;
+  user_id?: number | string;
+  from_account?: string | null;
+  to_account?: string | null;
+  from_wallet_type?: string | null;
+  to_wallet_type?: string | null;
+  from_mt5_account_id?: string | null;
+  to_mt5_account_id?: string | null;
+  amount: number | string;
+  remarks?: string | null;
+  comment?: string | null;
+  transfer_type?: string | null;
+  transfer_mode?: string | null;
+  status?: number | string;
+  status_text?: string;
+  created_at: string;
+  updated_at?: string;
+  user?: {
+    id?: number | string;
+    name?: string;
+    email?: string;
+  };
+}
+
+export interface InternalTransferReportListParams {
+  token: string;
+  search?: string; // Searches in amount, comments
+  page?: number;
+  per_page?: number;
+}
+
+export interface InternalTransferReportListPayload {
+  success: boolean;
+  message: string;
+  data: InternalTransferReportItem[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+    from: number;
+    to: number;
+  };
+  filters?: {
+    search?: string | null;
+  };
+}
+
+export const adminInternalTransferReportApi = {
+  list: (params: InternalTransferReportListParams) => {
+    const { token, ...queryParams } = params;
+    if (!token) {
+      throw new Error("Token is required to fetch internal transfer report");
+    }
+
+    const qs = new URLSearchParams();
+    if (queryParams.page) qs.set("page", String(queryParams.page));
+    if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
+    if (queryParams.search && queryParams.search.trim()) {
+      qs.set("search", queryParams.search.trim());
+    }
+
+    const endpoint = `/admin/reports/internal-transfer-report${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<InternalTransferReportListPayload>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
+
+// ---------- Admin Login Activity Report APIs ----------
+export interface LoginActivityReportItem {
+  id: number | string;
+  user_id?: number | string;
+  email?: string;
+  name?: string;
+  ip_address?: string;
+  browser?: string;
+  device?: string;
+  platform?: string;
+  user_agent?: string;
+  location?: string;
+  country?: string;
+  city?: string;
+  status?: string | number;
+  login_at?: string;
+  created_at: string;
+  user?: {
+    id?: number | string;
+    name?: string;
+    email?: string;
+  };
+}
+
+export interface LoginActivityReportListParams {
+  token: string;
+  search?: string; // Searches in IP address
+  page?: number;
+  per_page?: number;
+}
+
+export interface LoginActivityReportListPayload {
+  success: boolean;
+  message: string;
+  data: LoginActivityReportItem[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+    from: number;
+    to: number;
+  };
+  filters?: {
+    search?: string | null;
+  };
+}
+
+export const adminLoginActivityReportApi = {
+  list: (params: LoginActivityReportListParams) => {
+    const { token, ...queryParams } = params;
+    if (!token) {
+      throw new Error("Token is required to fetch login activity report");
+    }
+
+    const qs = new URLSearchParams();
+    if (queryParams.page) qs.set("page", String(queryParams.page));
+    if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
+    if (queryParams.search && queryParams.search.trim()) {
+      qs.set("search", queryParams.search.trim());
+    }
+
+    const endpoint = `/admin/reports/login-activity-report${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<LoginActivityReportListPayload>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
 };

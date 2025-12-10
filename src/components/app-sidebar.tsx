@@ -141,13 +141,13 @@ export const adminNavData = [
     icon: UserCheck,
     items: [
       {
-        title: "All IB",
-        url: "/all-ib",
+        title: "IB User",
+        url: "/ib-users",
       },
       {
-        title: "IB Plans",
-        url: "/ib-plans",
-      },
+        title: "Set IB Commission",
+        url: "/set-ib-commission",
+      }
     ],
   },
     {
@@ -196,6 +196,33 @@ export const adminNavData = [
       {
         title: "Support Analytics",
         url: "/support-analytics",
+      },
+    ],
+  },
+  {
+    title: "All Reports",
+    url: "/report-management",
+    icon: BarChart3,
+    items: [
+      {
+        title: "Deposit Report",
+        url: "/report-management",
+      },
+      {
+        title: "Withdrawal Report",
+        url: "/report-management/withdrawal-report",
+      },
+      {
+        title: "IB Withdrawal Report",
+        url: "/report-management/ib-withdrawal-report",
+      },
+      {
+        title: "Internal Transfer Report",
+        url: "/report-management/internal-transfer-report",
+      },
+      {
+        title: "Login Activity Report",
+        url: "/report-management/login-activity-report",
       },
     ],
   },
@@ -248,17 +275,6 @@ export const adminNavData = [
   //     {
   //       title: "Notification Management",
   //       url: "/notification-management",
-  //     },
-  //   ],
-  // },
-  // {
-  //   title: "Report Management",
-  //   url: "/report-management",
-  //   icon: BarChart3,
-  //   items: [
-  //     {
-  //       title: "Report Management",
-  //       url: "/report-management",
   //     },
   //   ],
   // },

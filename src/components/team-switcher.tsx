@@ -42,19 +42,19 @@ export function TeamSwitcher({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
-              size="sm"
+              size="default"
               className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
             >
-              <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-6 items-center justify-center rounded-lg transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]">
-                <activeTeam.logo className="size-3 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />
+              <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-10 items-center justify-center rounded-lg transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]">
+                <activeTeam.logo className="size-5 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />
               </div>
               {!isCollapsed && (
                 <>
-                  <div className="grid flex-1 text-left text-sm leading-tight animate-in fade-in-0 slide-in-from-left-2 duration-500">
+                  <div className="grid flex-1 text-left text-base leading-tight animate-in fade-in-0 slide-in-from-left-2 duration-500">
                     <span className="truncate font-medium">{activeTeam.name}</span>
-                    <span className="truncate text-xs">{activeTeam.plan}</span>
+                    <span className="truncate text-sm">{activeTeam.plan}</span>
                   </div>
-                  <ChevronsUpDown className="ml-auto size-3 transition-opacity duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />
+                  <ChevronsUpDown className="ml-auto size-5 transition-opacity duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />
                 </>
               )}
             </SidebarMenuButton>

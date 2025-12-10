@@ -9,15 +9,7 @@ import { format } from "date-fns";
 import { AppDataTable } from "@/components/app-data-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -27,11 +19,12 @@ import {
 } from "@/components/ui/popover";
 import { CalendarIcon, RefreshCw, Download, Filter, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import * as XLSX from "xlsx";
 
 import {
-  adminDepositReportApi,
-  type DepositReportItem,
-  type DepositReportListPayload,
+  adminIbWithdrawalReportApi,
+  type IbWithdrawalReportItem,
+  type IbWithdrawalReportListPayload,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { MainLayout } from "@/components/main-layout";
@@ -87,14 +80,14 @@ const statusBadge = (status: string | number) => {
 };
 
 /* ---------------- Page ---------------- */
-export default function ReportManagementPage() {
+export default function IbWithdrawalReportPage() {
   const authCtx = useAuth?.();
   const ctxToken = authCtx?.token;
   const token =
     ctxToken ||
     (typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : "");
 
-  const [rows, setRows] = useState<DepositReportItem[]>([]);
+  const [rows, setRows] = useState<IbWithdrawalReportItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage, setPerPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
@@ -102,15 +95,7 @@ export default function ReportManagementPage() {
   const [total, setTotal] = useState(0);
   const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
   
-  // Filters
-  const [statusFilter, setStatusFilter] = useQueryState(
-    "status",
-    parseAsString
-  );
-  const [paymentMethodFilter, setPaymentMethodFilter] = useQueryState(
-    "payment_method_id",
-    parseAsString
-  );
+  // Filters - only date range for IB withdrawal report
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [fromDateStr, setFromDateStr] = useQueryState(
     "from_date",
@@ -118,14 +103,6 @@ export default function ReportManagementPage() {
   );
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [toDateStr, setToDateStr] = useQueryState("to_date", parseAsString);
-  const [sortColumn, setSortColumn] = useQueryState(
-    "sort_column",
-    parseAsString
-  );
-  const [sortOrder, setSortOrder] = useQueryState<"ASC" | "DESC">(
-    "sort_order",
-    parseAsString as any
-  );
 
   // Sync date state with query params
   useEffect(() => {
@@ -173,32 +150,19 @@ export default function ReportManagementPage() {
     try {
       setLoading(true);
 
-      const response = await adminDepositReportApi.list({
+      const response = await adminIbWithdrawalReportApi.list({
         token,
-        // Only pass filter parameters if they are set
-        status:
-          statusFilter && statusFilter !== "all"
-            ? Number(statusFilter)
-            : undefined,
-        payment_method_id:
-          paymentMethodFilter && paymentMethodFilter !== "all"
-            ? paymentMethodFilter
-            : paymentMethodFilter === "all"
-              ? "all"
-              : undefined,
         from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
         to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
         page,
         per_page: perPage,
-        sort_column: sortColumn || undefined,
-        sort_order: sortOrder || undefined,
       });
 
       // The API response structure: { success, message, data: [...], pagination: {...}, filters: {...} }
-      const payload = response as DepositReportListPayload;
+      const payload = (response as unknown) as IbWithdrawalReportListPayload;
       const reportItems = Array.isArray(payload?.data) ? payload.data : [];
       
-      console.log("Report items:", reportItems);
+      console.log("IB Withdrawal report items:", reportItems);
       console.log("Pagination:", payload?.pagination);
       
       setRows(reportItems);
@@ -212,9 +176,9 @@ export default function ReportManagementPage() {
         setTotal(reportItems.length);
       }
     } catch (error: unknown) {
-      console.error("Failed to load deposit report:", error);
+      console.error("Failed to load IB withdrawal report:", error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to load deposit report"
+        error instanceof Error ? error.message : "Failed to load IB withdrawal report"
       );
       setRows([]);
     } finally {
@@ -224,12 +188,8 @@ export default function ReportManagementPage() {
     token,
     page,
     perPage,
-    statusFilter,
-    paymentMethodFilter,
     fromDate,
     toDate,
-    sortColumn,
-    sortOrder,
   ]);
 
   useEffect(() => {
@@ -248,34 +208,102 @@ export default function ReportManagementPage() {
   );
 
   const handleResetFilters = useCallback(() => {
-    setStatusFilter(null);
-    setPaymentMethodFilter(null);
     setFromDate(undefined);
     setToDate(undefined);
-    setSortColumn(null);
-    setSortOrder(null);
     setPage(1);
   }, [
-    setStatusFilter,
-    setPaymentMethodFilter,
-    setSortColumn,
-    setSortOrder,
     setPage,
+  ]);
+
+  const handleExportExcel = useCallback(async () => {
+    if (!token) {
+      toast.error("Authentication required to export data");
+      return;
+    }
+
+    try {
+      toast.loading("Preparing Excel export...", { id: "export-excel" });
+
+      // Fetch all data for export (use a large per_page to get all records)
+      const response = await adminIbWithdrawalReportApi.list({
+        token,
+        from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
+        to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
+        page: 1,
+        per_page: 10000, // Large number to get all records
+      });
+
+      const payload = (response as unknown) as IbWithdrawalReportListPayload;
+      const reportItems = Array.isArray(payload?.data) ? payload.data : [];
+
+      if (reportItems.length === 0) {
+        toast.error("No data to export", { id: "export-excel" });
+        return;
+      }
+
+      // Prepare data for Excel
+      const excelData = reportItems.map((item) => ({
+        ID: item.id,
+        "IB Name": item.ib_name || "—",
+        "Partner ID": item.partner_id || "—",
+        "User Name": item.name || "—",
+        "User Email": item.email || "—",
+        "Amount (USDT)": formatAmount(item.amount),
+        "Payment Method": item.payment_method || "—",
+        "Wallet Address": item.wallet_address || "—",
+        "Chain ID": item.chain_id || "—",
+        "Transaction Hash": item.transaction_hash || "—",
+        Status:
+          item.status === 1 || item.status === "approved"
+            ? "Approved"
+            : item.status === 2 || item.status === "rejected"
+              ? "Rejected"
+              : "Pending",
+        "Created At": fmtDateTime(item.created_at),
+        "Updated At": fmtDateTime(item.updated_at),
+        Remarks: item.remarks || "—",
+        "Approved By": item.approved_by || "—",
+        "Approved At": fmtDateTime(item.approved_at),
+      }));
+
+      // Create workbook and worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "IB Withdrawal Report");
+
+      // Generate filename with current date
+      const filename = `ib-withdrawal-report-${format(new Date(), "yyyy-MM-dd-HHmmss")}.xlsx`;
+
+      // Write file
+      XLSX.writeFile(workbook, filename);
+
+      toast.success(`Exported ${reportItems.length} records to ${filename}`, {
+        id: "export-excel",
+      });
+    } catch (error: unknown) {
+      console.error("Failed to export Excel:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to export Excel file",
+        { id: "export-excel" }
+      );
+    }
+  }, [
+    token,
+    fromDate,
+    toDate,
   ]);
 
   // Count active filters
   const activeFilterCount = useMemo(() => {
     let count = 0;
-    if (statusFilter) count++;
-    if (paymentMethodFilter) count++;
     if (fromDate) count++;
     if (toDate) count++;
-    if (sortColumn) count++;
-    if (sortOrder) count++;
     return count;
-  }, [statusFilter, paymentMethodFilter, fromDate, toDate, sortColumn, sortOrder]);
+  }, [fromDate, toDate]);
 
-  const columns: ColumnDef<DepositReportItem>[] = useMemo(
+  const columns: ColumnDef<IbWithdrawalReportItem>[] = useMemo(
     () => [
       {
         id: "id",
@@ -284,6 +312,22 @@ export default function ReportManagementPage() {
         cell: ({ row }) => (
           <span className="font-mono text-sm">{row.original.id}</span>
         ),
+      },
+      {
+        id: "ib_info",
+        header: "IB Info",
+        accessorKey: "ib_name",
+        cell: ({ row }) => {
+          const ibName = row.original.ib_name;
+          const partnerId = row.original.partner_id;
+          if (!ibName && !partnerId) return <span className="text-muted-foreground">—</span>;
+          return (
+            <div className="space-y-0.5">
+              <div className="font-medium">{ibName || "—"}</div>
+              <div className="text-xs text-muted-foreground">{partnerId ? `ID: ${partnerId}` : "—"}</div>
+            </div>
+          );
+        },
       },
       {
         id: "user",
@@ -319,6 +363,23 @@ export default function ReportManagementPage() {
             <span className="text-sm">{method}</span>
           ) : (
             <span className="text-muted-foreground">—</span>
+          );
+        },
+      },
+      {
+        id: "wallet_address",
+        header: "Wallet Address",
+        accessorKey: "wallet_address",
+        cell: ({ row }) => {
+          const address = row.original.wallet_address;
+          if (!address) return <span className="text-muted-foreground">—</span>;
+          return (
+            <span
+              className="font-mono text-xs max-w-[200px] truncate block"
+              title={String(address)}
+            >
+              {address}
+            </span>
           );
         },
       },
@@ -376,9 +437,9 @@ export default function ReportManagementPage() {
         {/* Header Section */}
         <div className="flex items-center justify-between">
         <div>
-            <h1 className="text-2xl font-semibold">Deposit Report</h1>
+            <h1 className="text-2xl font-semibold">IB Withdrawal Report</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Manage and view deposit transactions
+              Manage and view IB withdrawal transactions
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -411,54 +472,8 @@ export default function ReportManagementPage() {
                     )}
                   </div>
 
-                  {/* Main Filters */}
+                  {/* Main Filters - Date Range Only */}
                   <div className="grid grid-cols-2 gap-4">
-                    {/* Status Filter */}
-                    <div className="space-y-1.5">
-                      <Label htmlFor="status-filter-popover" className="text-xs font-medium text-muted-foreground">
-                        Status
-                      </Label>
-                      <Select
-                        value={statusFilter || undefined}
-                        onValueChange={(value) => {
-                          setStatusFilter(value === "all" ? null : value);
-                          setPage(1);
-                        }}
-                      >
-                        <SelectTrigger id="status-filter-popover" className="h-9">
-                          <SelectValue placeholder="All Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Status</SelectItem>
-                          <SelectItem value="0">Pending</SelectItem>
-                          <SelectItem value="1">Approved</SelectItem>
-                          <SelectItem value="2">Rejected</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Payment Method Filter */}
-                    <div className="space-y-1.5">
-                      <Label htmlFor="payment-method-filter-popover" className="text-xs font-medium text-muted-foreground">
-                        Payment Method
-                      </Label>
-                      <Select
-                        value={paymentMethodFilter || undefined}
-                        onValueChange={(value) => {
-                          setPaymentMethodFilter(value === "all" ? null : value);
-                          setPage(1);
-                        }}
-                      >
-                        <SelectTrigger id="payment-method-filter-popover" className="h-9">
-                          <SelectValue placeholder="All Methods" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Methods</SelectItem>
-                          {/* Add more payment methods as needed */}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
                     {/* From Date */}
                     <div className="space-y-1.5">
                       <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
@@ -522,54 +537,6 @@ export default function ReportManagementPage() {
                     </div>
                   </div>
 
-                  {/* Sort Controls - Separated by border */}
-                  <div className="pt-4 border-t">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="sort-column-popover" className="text-xs font-medium text-muted-foreground">
-                          Sort By
-                        </Label>
-                        <Select
-                          value={sortColumn || undefined}
-                          onValueChange={(value) => {
-                            setSortColumn(value);
-                            setPage(1);
-                          }}
-                        >
-                          <SelectTrigger id="sort-column-popover" className="h-9">
-                            <SelectValue placeholder="Select column" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="created_at">Created At</SelectItem>
-                            <SelectItem value="amount">Amount</SelectItem>
-                            <SelectItem value="status">Status</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label htmlFor="sort-order-popover" className="text-xs font-medium text-muted-foreground">
-                          Order
-                        </Label>
-                        <Select
-                          value={sortOrder || undefined}
-                          onValueChange={(value: "ASC" | "DESC") => {
-                            setSortOrder(value);
-                            setPage(1);
-                          }}
-                        >
-                          <SelectTrigger id="sort-order-popover" className="h-9">
-                            <SelectValue placeholder="Select order" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="ASC">Ascending</SelectItem>
-                            <SelectItem value="DESC">Descending</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-
                   {/* Action Buttons */}
                   <div className="flex items-center justify-end gap-2 pt-2 border-t">
                     <Button
@@ -593,6 +560,16 @@ export default function ReportManagementPage() {
               </PopoverContent>
             </Popover>
 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportExcel}
+              disabled={loading || rows.length === 0}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export Excel
+            </Button>
+
             <Button 
               variant="ghost" 
               size="sm"
@@ -615,7 +592,7 @@ export default function ReportManagementPage() {
             </div>
 
             {/* Data Table */}
-            <AppDataTable<DepositReportItem>
+            <AppDataTable<IbWithdrawalReportItem>
               data={rows}
               columns={columns}
               pageCount={totalPages}
@@ -625,4 +602,6 @@ export default function ReportManagementPage() {
       </div>
     </MainLayout>
   );
-} 
+}
+
+

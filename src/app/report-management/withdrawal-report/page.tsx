@@ -9,7 +9,6 @@ import { format } from "date-fns";
 import { AppDataTable } from "@/components/app-data-table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -27,11 +26,12 @@ import {
 } from "@/components/ui/popover";
 import { CalendarIcon, RefreshCw, Download, Filter, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
+import * as XLSX from "xlsx";
 
 import {
-  adminDepositReportApi,
-  type DepositReportItem,
-  type DepositReportListPayload,
+  adminWithdrawalReportApi,
+  type WithdrawalReportItem,
+  type WithdrawalReportListPayload,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { MainLayout } from "@/components/main-layout";
@@ -87,14 +87,14 @@ const statusBadge = (status: string | number) => {
 };
 
 /* ---------------- Page ---------------- */
-export default function ReportManagementPage() {
+export default function WithdrawalReportPage() {
   const authCtx = useAuth?.();
   const ctxToken = authCtx?.token;
   const token =
     ctxToken ||
     (typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : "");
 
-  const [rows, setRows] = useState<DepositReportItem[]>([]);
+  const [rows, setRows] = useState<WithdrawalReportItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage, setPerPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
@@ -173,12 +173,12 @@ export default function ReportManagementPage() {
     try {
       setLoading(true);
 
-      const response = await adminDepositReportApi.list({
+      const response = await adminWithdrawalReportApi.list({
         token,
         // Only pass filter parameters if they are set
         status:
           statusFilter && statusFilter !== "all"
-            ? Number(statusFilter)
+            ? statusFilter
             : undefined,
         payment_method_id:
           paymentMethodFilter && paymentMethodFilter !== "all"
@@ -195,10 +195,10 @@ export default function ReportManagementPage() {
       });
 
       // The API response structure: { success, message, data: [...], pagination: {...}, filters: {...} }
-      const payload = response as DepositReportListPayload;
+      const payload = (response as unknown) as WithdrawalReportListPayload;
       const reportItems = Array.isArray(payload?.data) ? payload.data : [];
       
-      console.log("Report items:", reportItems);
+      console.log("Withdrawal report items:", reportItems);
       console.log("Pagination:", payload?.pagination);
       
       setRows(reportItems);
@@ -212,9 +212,9 @@ export default function ReportManagementPage() {
         setTotal(reportItems.length);
       }
     } catch (error: unknown) {
-      console.error("Failed to load deposit report:", error);
+      console.error("Failed to load withdrawal report:", error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to load deposit report"
+        error instanceof Error ? error.message : "Failed to load withdrawal report"
       );
       setRows([]);
     } finally {
@@ -263,6 +263,101 @@ export default function ReportManagementPage() {
     setPage,
   ]);
 
+  const handleExportExcel = useCallback(async () => {
+    if (!token) {
+      toast.error("Authentication required to export data");
+      return;
+    }
+
+    try {
+      toast.loading("Preparing Excel export...", { id: "export-excel" });
+
+      // Fetch all data for export (use a large per_page to get all records)
+      const response = await adminWithdrawalReportApi.list({
+        token,
+        status:
+          statusFilter && statusFilter !== "all"
+            ? statusFilter
+            : undefined,
+        payment_method_id:
+          paymentMethodFilter && paymentMethodFilter !== "all"
+            ? paymentMethodFilter
+            : paymentMethodFilter === "all"
+              ? "all"
+              : undefined,
+        from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
+        to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
+        page: 1,
+        per_page: 10000, // Large number to get all records
+        sort_column: sortColumn || undefined,
+        sort_order: sortOrder || undefined,
+      });
+
+      const payload = (response as unknown) as WithdrawalReportListPayload;
+      const reportItems = Array.isArray(payload?.data) ? payload.data : [];
+
+      if (reportItems.length === 0) {
+        toast.error("No data to export", { id: "export-excel" });
+        return;
+      }
+
+      // Prepare data for Excel
+      const excelData = reportItems.map((item) => ({
+        ID: item.id,
+        "User Name": item.name || "—",
+        "User Email": item.email || "—",
+        "Amount (USDT)": formatAmount(item.amount),
+        "Payment Method": item.payment_method || "—",
+        "Wallet Address": item.wallet_address || "—",
+        "Chain ID": item.chain_id || "—",
+        "Transaction Hash": item.transaction_hash || "—",
+        Status:
+          item.status === 1 || item.status === "approved"
+            ? "Approved"
+            : item.status === 2 || item.status === "rejected"
+              ? "Rejected"
+              : "Pending",
+        "Created At": fmtDateTime(item.created_at),
+        "Updated At": fmtDateTime(item.updated_at),
+        "MT5 ID": item.mt5_id || "—",
+        Remarks: item.remarks || "—",
+        "Approved By": item.approved_by || "—",
+        "Approved At": fmtDateTime(item.approved_at),
+      }));
+
+      // Create workbook and worksheet
+      const worksheet = XLSX.utils.json_to_sheet(excelData);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Withdrawal Report");
+
+      // Generate filename with current date
+      const filename = `withdrawal-report-${format(new Date(), "yyyy-MM-dd-HHmmss")}.xlsx`;
+
+      // Write file
+      XLSX.writeFile(workbook, filename);
+
+      toast.success(`Exported ${reportItems.length} records to ${filename}`, {
+        id: "export-excel",
+      });
+    } catch (error: unknown) {
+      console.error("Failed to export Excel:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to export Excel file",
+        { id: "export-excel" }
+      );
+    }
+  }, [
+    token,
+    statusFilter,
+    paymentMethodFilter,
+    fromDate,
+    toDate,
+    sortColumn,
+    sortOrder,
+  ]);
+
   // Count active filters
   const activeFilterCount = useMemo(() => {
     let count = 0;
@@ -275,7 +370,7 @@ export default function ReportManagementPage() {
     return count;
   }, [statusFilter, paymentMethodFilter, fromDate, toDate, sortColumn, sortOrder]);
 
-  const columns: ColumnDef<DepositReportItem>[] = useMemo(
+  const columns: ColumnDef<WithdrawalReportItem>[] = useMemo(
     () => [
       {
         id: "id",
@@ -319,6 +414,23 @@ export default function ReportManagementPage() {
             <span className="text-sm">{method}</span>
           ) : (
             <span className="text-muted-foreground">—</span>
+          );
+        },
+      },
+      {
+        id: "wallet_address",
+        header: "Wallet Address",
+        accessorKey: "wallet_address",
+        cell: ({ row }) => {
+          const address = row.original.wallet_address;
+          if (!address) return <span className="text-muted-foreground">—</span>;
+          return (
+            <span
+              className="font-mono text-xs max-w-[200px] truncate block"
+              title={String(address)}
+            >
+              {address}
+            </span>
           );
         },
       },
@@ -376,9 +488,9 @@ export default function ReportManagementPage() {
         {/* Header Section */}
         <div className="flex items-center justify-between">
         <div>
-            <h1 className="text-2xl font-semibold">Deposit Report</h1>
+            <h1 className="text-2xl font-semibold">Withdrawal Report</h1>
             <p className="text-sm text-muted-foreground mt-0.5">
-              Manage and view deposit transactions
+              Manage and view withdrawal transactions
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -430,9 +542,9 @@ export default function ReportManagementPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="all">All Status</SelectItem>
-                          <SelectItem value="0">Pending</SelectItem>
-                          <SelectItem value="1">Approved</SelectItem>
-                          <SelectItem value="2">Rejected</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -593,6 +705,16 @@ export default function ReportManagementPage() {
               </PopoverContent>
             </Popover>
 
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportExcel}
+              disabled={loading || rows.length === 0}
+            >
+              <Download className="h-4 w-4 mr-2" />
+              Export Excel
+            </Button>
+
             <Button 
               variant="ghost" 
               size="sm"
@@ -615,7 +737,7 @@ export default function ReportManagementPage() {
             </div>
 
             {/* Data Table */}
-            <AppDataTable<DepositReportItem>
+            <AppDataTable<WithdrawalReportItem>
               data={rows}
               columns={columns}
               pageCount={totalPages}
@@ -625,4 +747,6 @@ export default function ReportManagementPage() {
       </div>
     </MainLayout>
   );
-} 
+}
+
+
