@@ -50,7 +50,9 @@ export default function DashboardLayout({
           ? {
               "--sidebar-width": selectedSidebar === "expanded-panel" ? "400px" : "350px",
             } as React.CSSProperties
-          : undefined
+          : {
+              "--sidebar-width": "20rem",
+            } as React.CSSProperties
       }
     >
       {selectedSidebar === "two-panel" ? (
@@ -58,7 +60,7 @@ export default function DashboardLayout({
       ) : selectedSidebar === "expanded-panel" ? (
         <AppSidebarV3 className="hidden md:flex" />
       ) : (
-        <AppSidebar className="hidden md:flex flex-shrink-0" />
+        <AppSidebar className="hidden md:flex flex-shrink-0 " />
       )}
       <SidebarInset>
         <Header />
