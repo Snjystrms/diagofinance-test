@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { ibRequestsApi, type IbDashboardResponse, type IbInternalTransferRequest } from "@/lib/api";
 import { MainLayout } from "@/components/main-layout";
@@ -30,12 +30,42 @@ import {
   BarChart3,
   Loader2,
   ArrowRight,
+  FileText,
+  RefreshCw,
+  Link as LinkIcon,
+  Gem,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { formatCurrency } from "@/lib/format";
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import Link from "next/link";
+
+// Helper function to get time-based greeting
+const getGreeting = () => {
+  const hour = new Date().getHours();
+  if (hour < 12) return "Good Morning!";
+  if (hour < 17) return "Good Afternoon!";
+  return "Good Evening!";
+};
+
+// Helper function to format remaining time
+const formatRemainingTime = (remainingTime: {
+  days: number;
+  days_decimal: number;
+  hours: number;
+  minutes: number;
+  seconds: number;
+}) => {
+  const days = Math.floor(remainingTime.days_decimal * 10) / 10;
+  const hours = String(remainingTime.hours).padStart(2, "0");
+  const minutes = String(remainingTime.minutes).padStart(2, "0");
+  const seconds = String(remainingTime.seconds).padStart(2, "0");
+  return `${days} Days | ${hours}:${minutes}:${seconds}`;
+};
 
 export default function IbDashboardPage() {
-  const { token } = useAuth();
+  const { token, user: authUser } = useAuth();
   const [dashboardData, setDashboardData] = useState<IbDashboardResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -71,6 +101,38 @@ export default function IbDashboardPage() {
   useEffect(() => {
     void fetchDashboard();
   }, [fetchDashboard]);
+
+  // Prepare chart data for rebates graph - must be called before early returns
+  const chartData = useMemo(() => {
+    if (!dashboardData?.rebates_graph) return [];
+    return dashboardData.rebates_graph.map((item) => ({
+      date: item.date,
+      rebates: item.rebates,
+    }));
+  }, [dashboardData?.rebates_graph]);
+
+  const chartConfig: ChartConfig = {
+    rebates: {
+      label: "Rebates",
+      color: "hsl(217, 91%, 60%)",
+    },
+  };
+
+  const maxRebate = useMemo(() => {
+    if (!dashboardData?.rebates_graph || dashboardData.rebates_graph.length === 0) return 30;
+    return Math.max(...dashboardData.rebates_graph.map((r) => r.rebates), 1);
+  }, [dashboardData?.rebates_graph]);
+
+  // Calculate progress percentage for pending rebates cycle
+  const cycleProgress = useMemo(() => {
+    if (!dashboardData?.pending_rebates?.cycle_start || !dashboardData?.pending_rebates?.cycle_end) return 0;
+    const start = new Date(dashboardData.pending_rebates.cycle_start).getTime();
+    const end = new Date(dashboardData.pending_rebates.cycle_end).getTime();
+    const now = new Date().getTime();
+    if (end <= start) return 0;
+    const progress = ((now - start) / (end - start)) * 100;
+    return Math.min(Math.max(progress, 0), 100);
+  }, [dashboardData?.pending_rebates]);
 
   const copyReferralLink = () => {
     if (dashboardData?.partner_info?.referral_link) {
@@ -125,11 +187,20 @@ export default function IbDashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-full w-full p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-gray-900 dark:via-blue-950/20 dark:to-indigo-950/10">
-        <div className="flex items-center justify-center min-h-screen">
+      <div className="min-h-full w-full bg-white dark:bg-gray-900">
+        <div className="bg-gray-900 dark:bg-black px-6 py-4 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-gray-400 text-sm">{getGreeting()}</span>
+              <div className="w-px h-6 bg-blue-500"></div>
+              <span className="text-white font-bold text-lg">{authUser?.name || "Loading..."}</span>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950">
           <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-indigo-500" />
-            <p className="text-sm text-slate-600 dark:text-slate-300">Loading IB dashboard...</p>
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <p className="text-sm text-gray-600 dark:text-gray-300">Loading IB dashboard...</p>
           </div>
         </div>
       </div>
@@ -138,9 +209,18 @@ export default function IbDashboardPage() {
 
   if (error || !dashboardData) {
     return (
-      <div className="min-h-full w-full p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-gray-900 dark:via-blue-950/20 dark:to-indigo-950/10">
-        <div className="flex items-center justify-center min-h-screen">
-          <Card className="max-w-md border-0 shadow-xl bg-card/70 backdrop-blur-sm">
+      <div className="min-h-full w-full bg-white dark:bg-gray-900">
+        <div className="bg-gray-900 dark:bg-black px-6 py-4 shadow-lg">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <span className="text-gray-400 text-sm">{getGreeting()}</span>
+              <div className="w-px h-6 bg-blue-500"></div>
+              <span className="text-white font-bold text-lg">{authUser?.name || "Error"}</span>
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950 p-6">
+          <Card className="max-w-md border-0 shadow-xl bg-white dark:bg-gray-800">
             <CardHeader>
               <CardTitle className="text-xl font-bold">Error</CardTitle>
               <CardDescription>{error || "Failed to load dashboard data"}</CardDescription>
@@ -149,7 +229,7 @@ export default function IbDashboardPage() {
               <Button 
                 onClick={fetchDashboard} 
                 variant="outline"
-                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white border-0"
+                className="bg-blue-600 hover:bg-blue-700 text-white border-0"
               >
                 Retry
               </Button>
@@ -172,349 +252,240 @@ export default function IbDashboardPage() {
   } = dashboardData;
 
   return (
-    <div className="min-h-full w-full p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-gray-900 dark:via-blue-950/20 dark:to-indigo-950/10">
-      {/* Background Decorative Elements */}
-      <div className="fixed inset-0 -z-10 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-full blur-3xl"></div>
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 rounded-full blur-3xl"></div>
+    <div className="min-h-full w-full bg-white dark:bg-gray-900">
+      {/* Dark Header Bar */}
+      <div className="bg-gray-900 dark:bg-black px-6 py-4 shadow-lg">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-gray-400 text-sm">{getGreeting()}</span>
+            <div className="w-px h-6 bg-blue-500"></div>
+            <span className="text-white font-bold text-lg">{user.name}</span>
+          </div>
+          <Button
+            variant="outline"
+            className="bg-blue-100 hover:bg-blue-200 text-gray-900 border-0 rounded-lg font-medium"
+          >
+            IB Agreement <ArrowRight className="h-4 w-4 ml-1" />
+          </Button>
+        </div>
       </div>
 
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 p-8 shadow-xl">
-          <div className="relative z-10">
-            <div className="flex items-start justify-between flex-wrap gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl blur opacity-75"></div>
-                    <div className="relative flex items-center justify-center w-16 h-16 rounded-xl bg-white/20 backdrop-blur-sm text-white shadow-lg">
-                      <BarChart3 className="h-8 w-8" />
+      {/* Main Content */}
+      <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-950 min-h-screen">
+
+        {/* Top Row: Partner Wallet, Today Earning Graph, Pending Rebates */}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Partner Wallet Card - Large with Gradient Background */}
+          <Card className="relative overflow-hidden border-0 shadow-2xl bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600">
+            <CardContent className="p-8">
+              <div className="flex flex-col items-center justify-center text-center space-y-6">
+                <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                  <Wallet className="h-12 w-12 text-white" />
+                </div>
+                <div>
+                  <p className="text-white text-lg font-medium mb-2">Partner Wallet</p>
+                  <p className="text-white text-5xl font-bold">
+                    {formatCurrency(partner_wallet.balance, partner_wallet.currency)}
+                  </p>
+                </div>
+                <div className="flex gap-3 w-full">
+                  <Button
+                    onClick={() => setIsTransferDialogOpen(true)}
+                    variant="outline"
+                    className="flex-1 bg-white/10 hover:bg-white/20 text-white border-white/30 rounded-xl"
+                  >
+                    Transfer Funds
+                  </Button>
+                  <Button
+                    variant="default"
+                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white rounded-xl"
+                    asChild
+                  >
+                    <Link href="/ib-dashboard/wallet">
+                      Transactions History
+                    </Link>
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Today Earning & Rebates Graph Card */}
+          <Card className="border-0 shadow-xl bg-white dark:bg-gray-800">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold text-gray-700 dark:text-gray-300">
+                Today Earning {formatCurrency(today_earning.balance, today_earning.currency)}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              {chartData.length > 0 ? (
+                <ChartContainer config={chartConfig} className="h-[200px] w-full">
+                  <LineChart data={chartData} margin={{ left: 10, right: 10, top: 10, bottom: 10 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                    <XAxis
+                      dataKey="date"
+                      tick={{ fontSize: 10, fill: "#6b7280" }}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      domain={[0, Math.max(maxRebate, 30)]}
+                      tick={{ fontSize: 10, fill: "#6b7280" }}
+                      tickLine={false}
+                      axisLine={false}
+                      label={{ value: "Rebates ($)", angle: -90, position: "insideLeft", style: { textAnchor: "middle", fill: "#6b7280", fontSize: 10 } }}
+                    />
+                    <ChartTooltip
+                      content={<ChartTooltipContent />}
+                      cursor={{ stroke: "#3b82f6", strokeWidth: 1 }}
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="rebates"
+                      stroke="#3b82f6"
+                      strokeWidth={2}
+                      dot={false}
+                      activeDot={{ r: 4 }}
+                    />
+                  </LineChart>
+                </ChartContainer>
+              ) : (
+                <div className="h-[200px] flex items-center justify-center text-gray-400 text-sm">
+                  No data available
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Pending Rebates Card */}
+          <Card className="border-0 shadow-xl bg-white dark:bg-gray-800">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="w-16 h-16 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0">
+                  <Clock className="h-8 w-8 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">Pending Rebates</p>
+                  <p className="text-gray-900 dark:text-white text-3xl font-bold mb-2">
+                    {formatCurrency(pending_rebates.amount, pending_rebates.currency)}
+                  </p>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs mb-3">
+                    Remaining time for Rebate payment
+                  </p>
+                  <p className="text-gray-900 dark:text-white text-xl font-bold mb-4">
+                    {formatRemainingTime(pending_rebates.remaining_time)}
+                  </p>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                      <span>{pending_rebates.cycle_start}</span>
+                      <span>{pending_rebates.cycle_end}</span>
+                    </div>
+                    <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-300"
+                        style={{ width: `${cycleProgress}%` }}
+                      />
                     </div>
                   </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Middle Row: IB Plan & Partner ID, Referral Link */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          {/* IB Plan & Partner ID Card */}
+          <Card className="border-0 shadow-xl bg-white dark:bg-gray-800">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-6">
+                <div className="w-16 h-16 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center flex-shrink-0">
+                  <Gem className="h-8 w-8 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-gray-500 dark:text-gray-400 text-xs font-medium mb-1">IB Plan</p>
+                  <p className="text-blue-600 dark:text-blue-400 text-2xl font-bold mb-4">{partner_info.ib_plan}</p>
+                  <p className="text-gray-500 dark:text-gray-400 text-xs font-medium mb-1">Your Partner ID</p>
+                  <p className="text-blue-600 dark:text-blue-400 text-3xl font-bold">{partner_info.partner_id}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Referral Link Card */}
+          <Card className="border-0 shadow-xl bg-white dark:bg-gray-800">
+            <CardContent className="p-6">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center flex-shrink-0">
+                  <LinkIcon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-gray-700 dark:text-gray-300 font-semibold mb-3">Referral Link</p>
+                  <div className="flex items-center gap-2 mb-3">
+                    <p className="text-blue-500 dark:text-blue-400 text-sm font-mono flex-1 break-all">
+                      {partner_info.referral_link}
+                    </p>
+                    <Button
+                      onClick={copyReferralLink}
+                      variant="outline"
+                      size="sm"
+                      className="bg-blue-100 hover:bg-blue-200 text-gray-900 border-0 rounded-lg whitespace-nowrap"
+                    >
+                      Copy Link
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Bottom Section: Earning Summary */}
+        <div>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Earning Summary</h2>
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* Total Earned Card */}
+            <Card className="border-0 shadow-xl bg-white dark:bg-gray-800">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <DollarSign className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                  </div>
                   <div className="flex-1">
-                    <h1 className="text-4xl font-bold text-white mb-2">
-                      IB Dashboard
-                    </h1>
-                    <p className="text-lg text-white/90 font-medium">
-                      Welcome back, <span className="font-semibold text-white">{user.name}</span>! Track your earnings and performance.
+                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">Total Earned</p>
+                    <p className="text-blue-600 dark:text-blue-400 text-3xl font-bold">
+                      {formatCurrency(earning_summary.total_earned, earning_summary.currency)}
                     </p>
                   </div>
                 </div>
-              </div>
-              <Badge variant="secondary" className="text-sm font-semibold bg-white/20 backdrop-blur-sm text-white border-white/30">
-                Partner ID: {user.partner_id}
-              </Badge>
-            </div>
+              </CardContent>
+            </Card>
+
+            {/* Total Internal Transfers Card */}
+            <Card className="border-0 shadow-xl bg-white dark:bg-gray-800">
+              <CardContent className="p-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
+                    <RefreshCw className="h-6 w-6 text-gray-600 dark:text-gray-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-gray-600 dark:text-gray-400 text-sm font-medium mb-1">Total Internal Transfers</p>
+                    <p className="text-gray-900 dark:text-white text-3xl font-bold">
+                      {formatCurrency(earning_summary.total_internal_transfers, earning_summary.currency)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-        </div>
-
-        {/* Key Metrics */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-          {/* Partner Wallet Card */}
-          <Card className="relative overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all duration-300 group bg-card/70 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">Partner Wallet</CardTitle>
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl blur opacity-50"></div>
-                <div className="relative p-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg">
-                  <Wallet className="h-5 w-5" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-1">
-                {formatCurrency(partner_wallet.balance, partner_wallet.currency)}
-              </div>
-              <p className="text-xs text-muted-foreground mb-4">Available balance</p>
-              <Button
-                onClick={() => setIsTransferDialogOpen(true)}
-                variant="default"
-                size="sm"
-                className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-              >
-                <ArrowRight className="h-4 w-4 mr-2" />
-                Transfer to Client Wallet
-              </Button>
-            </CardContent>
-          </Card>
-
-          {/* Client Wallet Card */}
-          <Card className="relative overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all duration-300 group bg-card/70 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">Client Wallet</CardTitle>
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl blur opacity-50"></div>
-                <div className="relative p-2 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg">
-                  <Wallet className="h-5 w-5" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-1">
-                {formatCurrency(client_wallet.balance, client_wallet.currency)}
-              </div>
-              <p className="text-xs text-muted-foreground">Client funds</p>
-            </CardContent>
-          </Card>
-
-          {/* Today's Earnings Card */}
-          <Card className="relative overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all duration-300 group bg-card/70 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">Today&apos;s Earnings</CardTitle>
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-xl blur opacity-50"></div>
-                <div className="relative p-2 rounded-xl bg-gradient-to-r from-yellow-500 to-orange-600 text-white shadow-lg">
-                  <TrendingUp className="h-5 w-5" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-1">
-                {formatCurrency(today_earning.balance, today_earning.currency)}
-              </div>
-              <p className="text-xs text-muted-foreground">Earned today</p>
-            </CardContent>
-          </Card>
-
-          {/* Total Earned Card */}
-          <Card className="relative overflow-hidden border-0 shadow-xl hover:shadow-2xl transition-all duration-300 group bg-card/70 backdrop-blur-sm">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-sm font-semibold text-gray-700 dark:text-gray-300">Total Earned</CardTitle>
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-pink-600 rounded-xl blur opacity-50"></div>
-                <div className="relative p-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg">
-                  <DollarSign className="h-5 w-5" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-1">
-                {formatCurrency(earning_summary.total_earned, earning_summary.currency)}
-              </div>
-              <p className="text-xs text-muted-foreground">All time earnings</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Partner Info & Referral Link */}
-        <Card className="border-0 shadow-xl bg-card/70 backdrop-blur-sm">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl blur opacity-50"></div>
-                <div className="relative p-2 rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-lg">
-                  <Users className="h-5 w-5" />
-                </div>
-              </div>
-              <div>
-                <CardTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">Partner Information</CardTitle>
-                <CardDescription>Your IB details and referral link</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6 pt-6">
-            <div className="grid gap-6 md:grid-cols-2">
-              <div className="p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800 hover:shadow-md transition-all">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">IB Name</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{partner_info.ib_name}</p>
-              </div>
-              <div className="p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border border-purple-200 dark:border-purple-800 hover:shadow-md transition-all">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">IB Plan</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-gray-100">{partner_info.ib_plan}</p>
-              </div>
-              <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-cyan-50 dark:from-emerald-950/20 dark:to-cyan-950/20 border border-emerald-200 dark:border-emerald-800 hover:shadow-md transition-all">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Partner ID</p>
-                <p className="text-xl font-bold font-mono text-gray-900 dark:text-gray-100">{partner_info.partner_id}</p>
-              </div>
-              <div className="p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border border-amber-200 dark:border-amber-800 hover:shadow-md transition-all">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Email</p>
-                <p className="text-xl font-bold text-gray-900 dark:text-gray-100 break-all">{user.email}</p>
-              </div>
-            </div>
-            <div className="pt-6 mt-6 border-t border-gray-200 dark:border-gray-700">
-              <div className="rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 p-6 border border-blue-200 dark:border-blue-800">
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <p className="text-base font-semibold text-gray-900 dark:text-gray-100">Referral Link</p>
-                    <Badge variant="secondary" className="bg-gradient-to-r from-blue-100 to-indigo-100 dark:from-blue-900/20 dark:to-indigo-900/20 text-blue-800 dark:text-blue-300 text-xs border-0">
-                      Share & Earn
-                    </Badge>
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      readOnly
-                      value={partner_info.referral_link}
-                      className="flex-1 px-4 py-3 border-2 border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 text-sm font-mono text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                    />
-                    <Button 
-                      onClick={copyReferralLink} 
-                      variant="default" 
-                      size="icon"
-                      className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      onClick={() => window.open(partner_info.referral_link, "_blank")}
-                      variant="default"
-                      size="icon"
-                      className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white shadow-lg hover:shadow-xl transition-all duration-200"
-                    >
-                      <ExternalLink className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Share this link with others to start earning commissions
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Pending Rebates */}
-        <Card className="border-0 shadow-xl bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 dark:from-amber-950/20 dark:via-orange-950/20 dark:to-yellow-950/20 backdrop-blur-sm">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-amber-500 to-orange-600 rounded-xl blur opacity-50"></div>
-                <div className="relative p-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg">
-                  <Clock className="h-6 w-6" />
-                </div>
-              </div>
-              <div>
-                <CardTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">Pending Rebates</CardTitle>
-                <CardDescription>Rebates pending for the current cycle</CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-6 pt-6">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="p-6 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg flex-1 min-w-[200px]">
-                <p className="text-sm font-semibold text-white/90 uppercase tracking-wide mb-2">Pending Amount</p>
-                <p className="text-4xl font-bold text-white">
-                  {formatCurrency(pending_rebates.amount, pending_rebates.currency)}
-                </p>
-              </div>
-              <div className="p-6 rounded-xl bg-gradient-to-r from-purple-500 to-pink-600 text-white shadow-lg text-right flex-1 min-w-[200px]">
-                <p className="text-sm font-semibold text-white/90 uppercase tracking-wide mb-2">Time Remaining</p>
-                <p className="text-3xl font-bold text-white">{pending_rebates.remaining_time.formatted}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4 pt-4 border-t border-amber-200 dark:border-amber-800">
-              <div className="flex items-center gap-3 p-4 rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 border border-amber-200 dark:border-amber-800">
-                <div className="p-2 rounded-lg bg-gradient-to-r from-amber-500 to-orange-600 text-white">
-                  <Calendar className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Cycle Period</p>
-                  <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                    {pending_rebates.cycle_start} - {pending_rebates.cycle_end}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Earnings Summary */}
-        <div className="grid gap-6 md:grid-cols-2">
-          {/* Earnings Summary Card */}
-          <Card className="border-0 shadow-xl bg-card/70 backdrop-blur-sm">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl blur opacity-50"></div>
-                  <div className="relative p-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg">
-                    <BarChart3 className="h-5 w-5" />
-                  </div>
-                </div>
-                <div>
-                  <CardTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">Earnings Summary</CardTitle>
-                  <CardDescription>Total earnings and transfers</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4 pt-6">
-              <div className="p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800 hover:shadow-md transition-all">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-r from-blue-500 to-indigo-600 text-white">
-                      <DollarSign className="h-4 w-4" />
-                    </div>
-                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Total Earned</span>
-                  </div>
-                  <span className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                    {formatCurrency(earning_summary.total_earned, earning_summary.currency)}
-                  </span>
-                </div>
-              </div>
-              <div className="p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/20 dark:to-pink-950/20 border border-purple-200 dark:border-purple-800 hover:shadow-md transition-all">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-600 text-white">
-                      <ArrowRight className="h-4 w-4" />
-                    </div>
-                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">Internal Transfers</span>
-                  </div>
-                  <span className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                    {formatCurrency(earning_summary.total_internal_transfers, earning_summary.currency)}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Rebates Graph Card */}
-          <Card className="border-0 shadow-xl bg-card/70 backdrop-blur-sm">
-            <CardHeader className="pb-4">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-green-500 to-emerald-600 rounded-xl blur opacity-50"></div>
-                  <div className="relative p-2 rounded-xl bg-gradient-to-r from-green-500 to-emerald-600 text-white shadow-lg">
-                    <TrendingUp className="h-5 w-5" />
-                  </div>
-                </div>
-                <div>
-                  <CardTitle className="text-xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">Rebates Graph</CardTitle>
-                  <CardDescription>Last 7 days rebates</CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="space-y-4">
-                {(() => {
-                  const maxRebate = Math.max(
-                    ...rebates_graph.map((r) => r.rebates),
-                    1
-                  );
-                  
-                  return rebates_graph.map((item, index) => {
-                    const percentage = Math.min((item.rebates / maxRebate) * 100, 100);
-                    
-                    return (
-                      <div key={index} className="space-y-2">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{item.date}</span>
-                          <span className="text-sm font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent">
-                            {formatCurrency(item.rebates, "USD")}
-                          </span>
-                        </div>
-                        <div className="relative w-full h-3 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
-                          <div
-                            className="h-full bg-gradient-to-r from-green-500 to-emerald-600 rounded-full transition-all duration-500 shadow-md"
-                            style={{ width: `${percentage}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-            </CardContent>
-          </Card>
+          <div className="mt-4">
+            <Link
+              href="/ib-dashboard/wallet"
+              className="text-blue-600 dark:text-blue-400 font-medium hover:underline inline-flex items-center gap-1"
+            >
+              Transactions History <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
 
         {/* Transfer Dialog */}
