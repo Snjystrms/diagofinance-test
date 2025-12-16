@@ -17,6 +17,8 @@ import { ActivityTimeline, type ActivityTimelineItem } from "@/components/activi
 import { ProtectedRoute } from "@/components/protected-route"
 import { DashboardTrendChart } from "@/components/dashboard-trend-chart"
 import { DashboardGrid, type DashboardWidget } from "@/components/dashboard-grid"
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart"
+import { LineChart, Line, CartesianGrid, XAxis, YAxis } from "recharts"
 import { 
   Users, 
   Building2, 
@@ -51,7 +53,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { ProfileCompletionDialog } from "@/components/profile-completion-dialog"
-import { authApi, ibRequestsApi, type TradingAccountSummaryItem, type TradingAccountsSummaryResponse, type UserDashboardData, type IbWalletResponse } from "@/lib/api"
+import { authApi, ibRequestsApi, adminDashboardApi, type TradingAccountSummaryItem, type TradingAccountsSummaryResponse, type UserDashboardData, type IbWalletResponse, type AdminDashboardData } from "@/lib/api"
 import toast from "react-hot-toast"
 
 const formatCurrency = (value?: number, currency: string = "USD") =>
@@ -85,17 +87,20 @@ export default function DashboardPage() {
   }>>([]);
 
   const isUser = user?.type === "user";
+  const isAdmin = user?.type === "admin" || user?.type === "subadmin" || user?.type === "manager";
   const [dashboardData, setDashboardData] = useState<UserDashboardData | null>(null);
+  const [adminDashboardData, setAdminDashboardData] = useState<AdminDashboardData | null>(null);
   const [tradingSummary, setTradingSummary] = useState<TradingAccountsSummaryResponse | null>(null);
   const [ibWalletData, setIbWalletData] = useState<IbWalletResponse | null>(null);
   const [depositsStatistics, setDepositsStatistics] = useState<Array<{ day: string; date: string; amount: number }>>([]);
   const [withdrawalsStatistics, setWithdrawalsStatistics] = useState<Array<{ day: string; date: string; amount: number }>>([]);
-  const [isDashboardLoading, setIsDashboardLoading] = useState(isUser);
+  const [isDashboardLoading, setIsDashboardLoading] = useState(isUser || isAdmin);
   const [isStatisticsLoading, setIsStatisticsLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState<string | null>(null);
   const [statisticsPeriod, setStatisticsPeriod] = useState<7 | 30>(30);
   const [activeTab, setActiveTab] = useState<'mt5-live' | 'mt5-demo' | 'mt4-live' | 'mt4-demo'>('mt5-live');
   const [isCustomDashboard, setIsCustomDashboard] = useState<'normal' | 'custom'>('normal');
+  const [dateRange, setDateRange] = useState<{ start_date?: string; end_date?: string }>({});
 
   // Load dashboard mode preference from localStorage
   useEffect(() => {
@@ -138,7 +143,9 @@ export default function DashboardPage() {
   // Initial dashboard data load (only once on mount or when token changes)
   useEffect(() => {
     if (!isUser || !token) {
+      if (!isAdmin) {
       setIsDashboardLoading(false);
+      }
       return;
     }
 
@@ -167,9 +174,16 @@ export default function DashboardPage() {
           setTradingSummary(tradingResponse.data ?? null);
         }
 
-        // Always set IB wallet data if response exists, even if it's null
-        if (ibWalletResponse?.success) {
-          setIbWalletData(ibWalletResponse);
+        // Always set IB wallet data if response exists
+        // The API returns ApiResponse<IbWalletResponse>, so we need to extract the nested data
+        if (ibWalletResponse?.success && ibWalletResponse.data) {
+          // ibWalletResponse.data is of type IbWalletResponse, which has its own data property
+          const walletResponse = ibWalletResponse.data as IbWalletResponse;
+          if (walletResponse.data) {
+            setIbWalletData(walletResponse);
+          } else {
+            setIbWalletData(null);
+          }
         } else {
           // Clear IB wallet data if not available
           setIbWalletData(null);
@@ -192,7 +206,51 @@ export default function DashboardPage() {
     return () => {
       isMounted = false;
     };
-  }, [isUser, token]);
+  }, [isUser, token, isAdmin]);
+
+  // Admin dashboard data load
+  useEffect(() => {
+    if (!isAdmin || !token) {
+      return;
+    }
+
+    let isMounted = true;
+    const fetchAdminDashboardData = async () => {
+      setIsDashboardLoading(true);
+      setDashboardError(null);
+      try {
+        const response = await adminDashboardApi.getDashboard({
+          token,
+          ...dateRange,
+        });
+
+        if (!isMounted) return;
+
+        if (response.success && response.data) {
+          setAdminDashboardData(response.data);
+        } else {
+          setDashboardError("Failed to load admin dashboard");
+          toast.error("Failed to load admin dashboard");
+        }
+      } catch (error: unknown) {
+        console.error("Failed to fetch admin dashboard data:", error);
+        if (isMounted) {
+          const message = error instanceof Error ? error.message : "Unable to load admin dashboard";
+          setDashboardError(message);
+          toast.error(message);
+        }
+      } finally {
+        if (isMounted) {
+          setIsDashboardLoading(false);
+        }
+      }
+    };
+
+    fetchAdminDashboardData();
+    return () => {
+      isMounted = false;
+    };
+  }, [isAdmin, token, dateRange.start_date, dateRange.end_date]);
 
   // Separate effect for statistics (runs when period changes)
   useEffect(() => {
@@ -797,100 +855,286 @@ export default function DashboardPage() {
     ibWalletData,
   ]);
   
-  // Static Dashboard for Admin/Manager
-  const StaticDashboard = () => (
+  // Admin Dashboard Component
+  const AdminDashboard = () => {
+    const kpis = adminDashboardData?.kpis;
+    const transactionGraph = adminDashboardData?.transaction_graph;
+    const summaryMetrics = adminDashboardData?.summary_metrics;
+
+    // Prepare chart data for transaction graph
+    const chartData = useMemo(() => {
+      if (!transactionGraph?.data) return [];
+      return transactionGraph.data.map((item) => ({
+        date: new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        deposit: item.deposit,
+        withdraw: item.withdraw,
+        ib_withdraw: item.ib_withdraw,
+      }));
+    }, [transactionGraph]);
+
+    const chartConfig: { deposit: { label: string; color: string }; withdraw: { label: string; color: string }; ib_withdraw: { label: string; color: string } } = {
+      deposit: {
+        label: "Deposit",
+        color: "#22c55e",
+      },
+      withdraw: {
+        label: "Withdraw",
+        color: "#ef4444",
+      },
+      ib_withdraw: {
+        label: "IB Withdraw",
+        color: "#3b82f6",
+      },
+    };
+
+    return (
     <div className="min-h-full w-full p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-background via-background to-muted/20">
       {/* Header Section */}
       <div className="mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-          Dashboard
+            Admin Dashboard
         </h1>
         <p className="text-muted-foreground text-sm mt-1">
           Welcome back! Here&apos;s what&apos;s happening with your business today.
         </p>
       </div>
 
-      {/* Stats Cards */}
+        {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <Card className="hover:shadow-md transition-shadow duration-300">
+          <Card className="hover:shadow-md transition-shadow duration-300 border-2 border-indigo-500/30 hover:border-indigo-500/50 bg-gradient-to-br from-indigo-500/10 via-blue-500/5 to-transparent">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
+              <Users className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">$45,231.89</div>
-            <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+              <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{kpis?.total_clients ?? 0}</div>
+              <p className="text-xs text-muted-foreground">All registered clients</p>
           </CardContent>
         </Card>
-        <Card className="hover:shadow-md transition-shadow duration-300">
+          <Card className="hover:shadow-md transition-shadow duration-300 border-2 border-blue-500/30 hover:border-blue-500/50 bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Subscriptions</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Total IB</CardTitle>
+              <Building2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+2350</div>
-            <p className="text-xs text-muted-foreground">+180.1% from last month</p>
+              <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{kpis?.total_ib ?? 0}</div>
+              <p className="text-xs text-muted-foreground">Introducing Brokers</p>
           </CardContent>
         </Card>
-        <Card className="hover:shadow-md transition-shadow duration-300">
+          <Card className="hover:shadow-md transition-shadow duration-300 border-2 border-amber-500/30 hover:border-amber-500/50 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sales</CardTitle>
-            <CreditCard className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Pending Clients</CardTitle>
+              <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+12,234</div>
-            <p className="text-xs text-muted-foreground">+19% from last month</p>
+              <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{kpis?.pending_clients ?? 0}</div>
+              <p className="text-xs text-muted-foreground">Awaiting approval</p>
           </CardContent>
         </Card>
-        <Card className="hover:shadow-md transition-shadow duration-300">
+          <Card className="hover:shadow-md transition-shadow duration-300 border-2 border-green-500/30 hover:border-green-500/50 bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-transparent">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Now</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Active Traders</CardTitle>
+              <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">+573</div>
-            <p className="text-xs text-muted-foreground">+201 since last hour</p>
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{kpis?.active_traders ?? 0}</div>
+              <p className="text-xs text-muted-foreground">Currently trading</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        {/* Active Projects */}
-        <div>
-          <ActiveProjects />
+        {/* Additional KPI Cards Row */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+          <Card className="hover:shadow-md transition-shadow duration-300 border-2 border-green-500/30 hover:border-green-500/50 bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-transparent">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Approved Deposits</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600 dark:text-green-400">{kpis?.approved_deposit ?? 0}</div>
+              <p className="text-xs text-muted-foreground">Total approved</p>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-md transition-shadow duration-300 border-2 border-amber-500/30 hover:border-amber-500/50 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Deposits</CardTitle>
+              <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{kpis?.pending_deposit ?? 0}</div>
+              <p className="text-xs text-muted-foreground">Awaiting approval</p>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-md transition-shadow duration-300 border-2 border-red-500/30 hover:border-red-500/50 bg-gradient-to-br from-red-500/10 via-rose-500/5 to-transparent">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending Withdrawals</CardTitle>
+              <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600 dark:text-red-400">{kpis?.pending_withdraw ?? 0}</div>
+              <p className="text-xs text-muted-foreground">Awaiting processing</p>
+            </CardContent>
+          </Card>
+          <Card className="hover:shadow-md transition-shadow duration-300 border-2 border-purple-500/30 hover:border-purple-500/50 bg-gradient-to-br from-purple-500/10 via-violet-500/5 to-transparent">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pending IB Withdrawals</CardTitle>
+              <Wallet className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{kpis?.pending_ib_withdraw ?? 0}</div>
+              <p className="text-xs text-muted-foreground">IB withdrawal requests</p>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* Additional Cards */}
-        <div className="space-y-4">
-          <Card className="hover:shadow-md transition-shadow duration-300">
+        {/* Transaction Graph */}
+        {transactionGraph && (
+          <Card className="mb-6">
             <CardHeader>
-              <div className="flex items-center gap-2 mb-1">
-                <Activity className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Recent Activity</CardTitle>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg font-bold">Transaction Graph</CardTitle>
+                  <CardDescription>
+                    {transactionGraph.start_date && transactionGraph.end_date
+                      ? `${new Date(transactionGraph.start_date).toLocaleDateString()} - ${new Date(transactionGraph.end_date).toLocaleDateString()}`
+                      : "Transaction overview"}
+                  </CardDescription>
               </div>
-              <CardDescription>Track your recent activities and updates</CardDescription>
+              </div>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Activity feed will appear here</p>
+              {chartData.length > 0 ? (
+                <div className="h-[300px] w-full">
+                  <ChartContainer config={chartConfig} className="h-full w-full">
+                    <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" opacity={0.3} />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                      <ChartTooltip
+                        content={<ChartTooltipContent 
+                          formatter={(value) => formatCurrency(Number(value))}
+                        />}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="deposit"
+                        stroke={chartConfig.deposit.color}
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 4 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="withdraw"
+                        stroke={chartConfig.withdraw.color}
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 4 }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="ib_withdraw"
+                        stroke={chartConfig.ib_withdraw.color}
+                        strokeWidth={2}
+                        dot={false}
+                        activeDot={{ r: 4 }}
+                      />
+                    </LineChart>
+                  </ChartContainer>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  No transaction data available
+                </div>
+              )}
             </CardContent>
           </Card>
-          <Card className="hover:shadow-md transition-shadow duration-300">
+        )}
+
+        {/* Summary Metrics */}
+        {summaryMetrics && (
+          <Card>
             <CardHeader>
-              <div className="flex items-center gap-2 mb-1">
-                <BarChart3 className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">Analytics</CardTitle>
-              </div>
-              <CardDescription>View detailed analytics and insights</CardDescription>
+              <CardTitle className="text-lg font-bold">Summary Metrics</CardTitle>
+              <CardDescription>Financial overview by period</CardDescription>
             </CardHeader>
             <CardContent>
-              <p className="text-sm text-muted-foreground">Analytics dashboard coming soon</p>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-muted-foreground">Daily</h4>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="p-3 rounded-lg bg-muted/50">
+                        <p className="text-xs text-muted-foreground">Deposit</p>
+                        <p className="text-sm font-bold">{formatCurrency(summaryMetrics.daily.deposit)}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/50">
+                        <p className="text-xs text-muted-foreground">Withdraw</p>
+                        <p className="text-sm font-bold">{formatCurrency(summaryMetrics.daily.withdraw)}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/50">
+                        <p className="text-xs text-muted-foreground">IB Withdraw</p>
+                        <p className="text-sm font-bold">{formatCurrency(summaryMetrics.daily.ib_withdraw)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-muted-foreground">Weekly</h4>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="p-3 rounded-lg bg-muted/50">
+                        <p className="text-xs text-muted-foreground">Deposit</p>
+                        <p className="text-sm font-bold">{formatCurrency(summaryMetrics.weekly.deposit)}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/50">
+                        <p className="text-xs text-muted-foreground">Withdraw</p>
+                        <p className="text-sm font-bold">{formatCurrency(summaryMetrics.weekly.withdraw)}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/50">
+                        <p className="text-xs text-muted-foreground">IB Withdraw</p>
+                        <p className="text-sm font-bold">{formatCurrency(summaryMetrics.weekly.ib_withdraw)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold text-muted-foreground">Monthly</h4>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="p-3 rounded-lg bg-muted/50">
+                        <p className="text-xs text-muted-foreground">Deposit</p>
+                        <p className="text-sm font-bold">{formatCurrency(summaryMetrics.monthly.deposit)}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/50">
+                        <p className="text-xs text-muted-foreground">Withdraw</p>
+                        <p className="text-sm font-bold">{formatCurrency(summaryMetrics.monthly.withdraw)}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-muted/50">
+                        <p className="text-xs text-muted-foreground">IB Withdraw</p>
+                        <p className="text-sm font-bold">{formatCurrency(summaryMetrics.monthly.ib_withdraw)}</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2 pt-2 border-t">
+                    <h4 className="text-sm font-semibold">Total</h4>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+                        <p className="text-xs text-muted-foreground">Deposit</p>
+                        <p className="text-sm font-bold text-primary">{formatCurrency(summaryMetrics.total.deposit)}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+                        <p className="text-xs text-muted-foreground">Withdraw</p>
+                        <p className="text-sm font-bold text-primary">{formatCurrency(summaryMetrics.total.withdraw)}</p>
+                      </div>
+                      <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+                        <p className="text-xs text-muted-foreground">IB Withdraw</p>
+                        <p className="text-sm font-bold text-primary">{formatCurrency(summaryMetrics.total.ib_withdraw)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+        )}
     </div>
   );
+  };
 
   return (
     <ProtectedRoute>
@@ -1664,7 +1908,29 @@ export default function DashboardPage() {
           )}
         </div>
       ) : (
-        <StaticDashboard />
+        <>
+          {isDashboardLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="text-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-4 border-current border-t-transparent mx-auto mb-4" />
+                <p className="text-sm text-muted-foreground">Loading admin dashboard...</p>
+              </div>
+            </div>
+          ) : dashboardError ? (
+            <div className="flex items-center justify-center py-12">
+              <Card className="w-full max-w-md">
+                <CardContent className="pt-6">
+                  <div className="text-center">
+                    <p className="text-sm text-destructive mb-2">Error loading dashboard</p>
+                    <p className="text-xs text-muted-foreground">{dashboardError}</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <AdminDashboard />
+          )}
+        </>
       )}
       
       {/* Profile Completion Dialog - Only for users */}

@@ -3236,3 +3236,93 @@ export const adminLoginActivityReportApi = {
     });
   },
 };
+
+// ---------- Admin Dashboard APIs ----------
+export interface AdminDashboardKpis {
+  total_clients: number;
+  total_ib: number;
+  pending_clients: number;
+  approved_deposit: number;
+  pending_deposit: number;
+  pending_withdraw: number;
+  pending_ib_withdraw: number;
+  active_traders: number;
+  ftd_users: number;
+  non_ftd_users: number;
+  pending_ib_request: number;
+  pending_bank_details_request: number;
+}
+
+export interface AdminDashboardTransactionGraphData {
+  date: string;
+  deposit: number;
+  withdraw: number;
+  ib_withdraw: number;
+}
+
+export interface AdminDashboardTransactionGraph {
+  start_date: string;
+  end_date: string;
+  data: AdminDashboardTransactionGraphData[];
+}
+
+export interface AdminDashboardSummaryMetrics {
+  daily: {
+    deposit: number;
+    withdraw: number;
+    ib_withdraw: number;
+  };
+  weekly: {
+    deposit: number;
+    withdraw: number;
+    ib_withdraw: number;
+  };
+  monthly: {
+    deposit: number;
+    withdraw: number;
+    ib_withdraw: number;
+  };
+  total: {
+    deposit: number;
+    withdraw: number;
+    ib_withdraw: number;
+  };
+}
+
+export interface AdminDashboardData {
+  kpis: AdminDashboardKpis;
+  transaction_graph: AdminDashboardTransactionGraph;
+  summary_metrics: AdminDashboardSummaryMetrics;
+}
+
+export interface AdminDashboardResponse {
+  success: boolean;
+  message: string;
+  data: AdminDashboardData;
+}
+
+export interface AdminDashboardParams {
+  token: string;
+  start_date?: string; // YYYY-MM-DD
+  end_date?: string; // YYYY-MM-DD
+}
+
+export const adminDashboardApi = {
+  getDashboard: (params: AdminDashboardParams) => {
+    const { token, start_date, end_date } = params;
+    if (!token) {
+      throw new Error("Token is required to fetch admin dashboard");
+    }
+
+    const qs = new URLSearchParams();
+    if (start_date) qs.set("start_date", start_date);
+    if (end_date) qs.set("end_date", end_date);
+
+    const endpoint = `/admin/dashboard${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<AdminDashboardData>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
