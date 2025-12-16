@@ -1478,8 +1478,7 @@ export interface MT5RequestCreateRequest {
 }
 
 export interface MT5RequestResponse {
-  request_id: string;
-  status: string;
+  account_id: string;
   created_at: string;
 }
 
@@ -1523,7 +1522,7 @@ export interface AdminMT5RequestProcessRequest {
 // ---------- MT5 Request APIs ----------
 export const mt5RequestApi = {
   create: (data: MT5RequestCreateRequest, token: string) =>
-    apiCall<MT5RequestResponse>(`/user/mt5-request`, {
+    apiCall<MT5RequestResponse>(`/user/mt5-account`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -2664,6 +2663,95 @@ export const notificationApi = {
 
   markAsUnread: (id: number, token: string) =>
     apiCall(`/user/notifications/${id}/unread`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};
+
+// ---------- Admin Notification Types ----------
+export interface AdminNotificationItem {
+  id: number;
+  uuid: string;
+  message: string;
+  status: number; // 0: unread, 1: read
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminNotificationsResponse {
+  success: boolean;
+  data: {
+    notifications: AdminNotificationItem[];
+    pagination: {
+      current_page: number;
+      per_page: number;
+      total: number;
+      total_pages: number;
+      has_more: boolean;
+    };
+    summary: {
+      total: number;
+      unread: number;
+      read: number;
+    };
+  };
+}
+
+export interface AdminMarkAllReadResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    updated_count: number;
+  };
+}
+
+export interface AdminUnreadCountResponse {
+  success: boolean;
+  data: {
+    unread_count: number;
+  };
+}
+
+// ---------- Admin Notification APIs ----------
+export const adminNotificationApi = {
+  getNotifications: (
+    token: string,
+    params?: {
+      page?: number;
+      limit?: number;
+      status?: "all" | "unread" | "read";
+      search?: string;
+    }
+  ) => {
+    const qs = new URLSearchParams();
+    if (params?.page) qs.set("page", String(params.page));
+    if (params?.limit) qs.set("limit", String(params.limit));
+    if (params?.status) qs.set("status", params.status);
+    if (params?.search) qs.set("search", params.search);
+
+    return apiCall<AdminNotificationsResponse["data"]>(
+      `/admin/notifications${qs.toString() ? `?${qs.toString()}` : ""}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+  },
+
+  getUnreadCount: (token: string) =>
+    apiCall<AdminUnreadCountResponse["data"]>(`/admin/notifications/unread-count`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  markAsRead: (notificationId: number, token: string) =>
+    apiCall(`/admin/notifications/${notificationId}/read`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  markAllAsRead: (token: string) =>
+    apiCall<AdminMarkAllReadResponse["data"]>(`/admin/notifications/mark-all-read`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}` },
     }),

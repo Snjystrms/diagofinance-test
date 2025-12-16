@@ -164,18 +164,20 @@ export default function OpenTradingAccountPage() {
         const response = await mt5RequestApi.create(mt5RequestData, token);
 
         if (response.success && response.data) {
-          // Store the request data and show success dialog
+          // apiCall returns ApiResponse<MT5RequestResponse>, so response.data is MT5RequestResponse
+          const accountData = response.data as MT5RequestResponse;
+          
+          // Store the account data and show success dialog
           setMt5RequestData({
-            request_id: response.data.request_id,
-            status: response.data.status,
-            created_at: response.data.created_at,
+            account_id: accountData.account_id,
+            created_at: accountData.created_at,
           });
           setIsSuccessDialogOpen(true);
           // Reset form on success
           form.reset();
-          toast.success(response.message || 'MT5 account request created successfully!');
+          toast.success(response.message || 'MT5 account created successfully!');
         } else {
-          throw new Error(response.message || 'Failed to create MT5 account request');
+          throw new Error(response.message || 'Failed to create MT5 account');
         }
       } else {
         // TODO: Implement API calls for other account types (MT4, Demo, etc.)
@@ -718,10 +720,10 @@ export default function OpenTradingAccountPage() {
               </div>
               <div>
                 <DialogTitle className="text-2xl font-bold text-foreground">
-                  Account Request Created!
+                  Account Created Successfully!
                 </DialogTitle>
                 <DialogDescription className="text-base mt-2">
-                  Your MT5 account request has been submitted and is pending approval.
+                  Your MT5 account has been created successfully!
                 </DialogDescription>
               </div>
             </div>
@@ -736,16 +738,16 @@ export default function OpenTradingAccountPage() {
                       <Hash className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <span className="text-sm font-medium text-muted-foreground">Request ID</span>
+                      <span className="text-sm font-medium text-muted-foreground">Account ID</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-mono font-semibold text-foreground">{mt5RequestData.request_id}</span>
+                        <span className="text-sm font-mono font-semibold text-foreground">{mt5RequestData.account_id}</span>
                         <Button
                           variant="ghost"
                           size="icon"
                           className="h-7 w-7 hover:bg-primary/10"
                           onClick={() => {
-                            navigator.clipboard.writeText(mt5RequestData.request_id);
-                            toast.success('Request ID copied to clipboard!');
+                            navigator.clipboard.writeText(mt5RequestData.account_id);
+                            toast.success('Account ID copied to clipboard!');
                           }}
                         >
                           <Copy className="h-3.5 w-3.5" />
@@ -755,27 +757,10 @@ export default function OpenTradingAccountPage() {
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-gradient-to-br from-primary/5 via-purple-500/5 to-transparent rounded-xl border border-primary/20">
-                    <span className="text-sm font-medium text-muted-foreground">Status</span>
-                    <div className="mt-1">
-                      <Badge className={`text-xs font-semibold px-2 py-1 rounded-lg ${
-                        mt5RequestData.status === 'pending' 
-                          ? 'bg-primary/20 text-primary border border-primary/30'
-                          : mt5RequestData.status === 'approved'
-                          ? 'bg-primary/20 text-primary border border-primary/30'
-                          : 'bg-muted text-muted-foreground'
-                      }`}>
-                        {mt5RequestData.status.charAt(0).toUpperCase() + mt5RequestData.status.slice(1)}
-                      </Badge>
-                    </div>
-                  </div>
-                  
-                  <div className="p-4 bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl border border-border">
-                    <span className="text-sm font-medium text-muted-foreground">Created</span>
-                    <div className="mt-1 text-sm font-semibold text-foreground">
-                      {new Date(mt5RequestData.created_at).toLocaleDateString()}
-                    </div>
+                <div className="p-4 bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl border border-border">
+                  <span className="text-sm font-medium text-muted-foreground">Created</span>
+                  <div className="mt-1 text-sm font-semibold text-foreground">
+                    {new Date(mt5RequestData.created_at).toLocaleString()}
                   </div>
                 </div>
               </div>
@@ -790,7 +775,7 @@ export default function OpenTradingAccountPage() {
                       Next Steps
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      Your account request is being reviewed. You&apos;ll receive a notification once approved and ready to use.
+                      Your MT5 account is now active and ready to use. You can start trading immediately.
                     </p>
                   </div>
                 </div>

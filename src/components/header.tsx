@@ -19,7 +19,7 @@ import { SidebarSelector } from "@/components/sidebar-selector"
 import { useAuth } from "@/contexts/auth-context"
 import { useRouter } from "next/navigation"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { authApi, admin2FAApi, manager2FAApi } from "@/lib/api"
+import { authApi, admin2FAApi, manager2FAApi, adminNotificationApi } from "@/lib/api"
 import toast from "react-hot-toast"
 import { TwoFactorModal } from "@/components/two-factor-modal"
 import { NotificationInbox } from "@/components/notification-inbox"
@@ -35,6 +35,8 @@ export function Header() {
   const [accountId, setAccountId] = useState<string | null>(null);
   const [profileStatus, setProfileStatus] = useState<string | null>(null);
   const [dashboardName, setDashboardName] = useState<string | null>(null);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [isLoadingUnreadCount, setIsLoadingUnreadCount] = useState(false);
 
   // Check 2FA status when component mounts and when user changes
   useEffect(() => {
@@ -74,6 +76,34 @@ export function Header() {
     return () => {
       isMounted = false;
     };
+  }, [token, user?.type]);
+
+  // Fetch unread notification count for admin/manager
+  useEffect(() => {
+    if (!token || user?.type === "user") {
+      setUnreadCount(0);
+      return;
+    }
+
+    const fetchUnreadCount = async () => {
+      try {
+        setIsLoadingUnreadCount(true);
+        const response = await adminNotificationApi.getUnreadCount(token);
+        if (response.success && response.data) {
+          setUnreadCount(response.data.unread_count || 0);
+        }
+      } catch (error) {
+        console.error("Failed to load unread notification count:", error);
+        setUnreadCount(0);
+      } finally {
+        setIsLoadingUnreadCount(false);
+      }
+    };
+
+    fetchUnreadCount();
+    // Refresh unread count every 30 seconds
+    const interval = setInterval(fetchUnreadCount, 30000);
+    return () => clearInterval(interval);
   }, [token, user?.type]);
 
   const checkTwoFactorStatus = async () => {
@@ -267,10 +297,16 @@ export function Header() {
             <Button 
               variant="ghost" 
               size="icon" 
+              onClick={() => router.push('/all-notifications')}
               className="relative flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9"
+              title="View all notifications"
             >
               <Bell className="h-4 w-4" />
-              <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500"></span>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-semibold flex items-center justify-center">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              )}
             </Button>
           )}
           

@@ -97,9 +97,10 @@ export default function IbClientsPage() {
         search: search || undefined,
       });
 
-      if (response?.data) {
-        setClients(response.data.clients || []);
-        setClientsPagination(response.data.pagination);
+      if (response?.success && response.data?.data) {
+        const clientsData = response.data.data;
+        setClients(clientsData.clients || []);
+        setClientsPagination(clientsData.pagination);
       } else {
         setClientsError("Failed to load clients data");
       }
@@ -129,9 +130,10 @@ export default function IbClientsPage() {
         search: search || undefined,
       });
 
-      if (response?.data) {
-        setSubIbs(response.data.sub_ibs || []);
-        setSubIbsPagination(response.data.pagination);
+      if (response?.success && response.data?.data) {
+        const subIbsData = response.data.data;
+        setSubIbs(subIbsData.sub_ibs || []);
+        setSubIbsPagination(subIbsData.pagination);
       } else {
         setSubIbsError("Failed to load Sub IBs data");
       }
@@ -161,9 +163,10 @@ export default function IbClientsPage() {
         search: search || undefined,
       });
 
-      if (response?.data) {
-        setRebates(response.data.rebates || []);
-        setRebatesPagination(response.data.pagination);
+      if (response?.success && response.data?.data) {
+        const rebatesData = response.data.data;
+        setRebates(rebatesData.rebates || []);
+        setRebatesPagination(rebatesData.pagination);
       } else {
         setRebatesError("Failed to load rebates data");
       }

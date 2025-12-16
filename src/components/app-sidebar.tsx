@@ -200,6 +200,17 @@ export const adminNavData = [
     ],
   },
   {
+    title: "Notification",
+    url: "/notification",
+    icon: Bell,
+    items: [
+      {
+        title: "All Notifications",
+        url: "/all-notifications",
+      }
+    ],
+  },
+  {
     title: "All Reports",
     url: "/report-management",
     icon: BarChart3,
