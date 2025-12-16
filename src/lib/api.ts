@@ -1659,6 +1659,82 @@ export interface IbWalletResponse {
   data: IbWalletData;
 }
 
+export interface IbSubIb {
+  client_id: string;
+  client_name: string;
+  level: number;
+  lots_traded: number;
+  pending_rebates: number;
+  earned_rebates: number;
+  registration_date: string;
+}
+
+export interface IbSubIbsData {
+  sub_ibs: IbSubIb[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
+export interface IbSubIbsResponse {
+  success: boolean;
+  message: string;
+  data: IbSubIbsData;
+}
+
+export interface IbClient {
+  client_id: string;
+  client_name: string;
+  lots_traded: number;
+  pending_rebates: number;
+  earned_rebates: number;
+  registration_date: string;
+}
+
+export interface IbClientsData {
+  clients: IbClient[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
+export interface IbClientsResponse {
+  success: boolean;
+  message: string;
+  data: IbClientsData;
+}
+
+export interface IbRebate {
+  client_id: string;
+  client_name: string;
+  lots_traded: number;
+  pending_rebates: number;
+  earned_rebates: number;
+  registration_date: string;
+}
+
+export interface IbRebatesData {
+  rebates: IbRebate[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    total_pages: number;
+  };
+}
+
+export interface IbRebatesResponse {
+  success: boolean;
+  message: string;
+  data: IbRebatesData;
+}
+
 export const ibRequestsApi = {
   overview: (token: string) =>
     apiCall<IbRequestStatusResponse>(`/user/ib-requests/status`, {
@@ -1695,6 +1771,42 @@ export const ibRequestsApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),
+  getSubIbs: (token: string, params?: { page?: number; limit?: number; search?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", String(params.page));
+    if (params?.limit) queryParams.append("limit", String(params.limit));
+    if (params?.search) queryParams.append("search", params.search);
+    const queryString = queryParams.toString();
+    const url = `/user/ib-client-summary/sub-ibs${queryString ? `?${queryString}` : ""}`;
+    return apiCall<IbSubIbsResponse>(url, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+  getClients: (token: string, params?: { page?: number; limit?: number; search?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", String(params.page));
+    if (params?.limit) queryParams.append("limit", String(params.limit));
+    if (params?.search) queryParams.append("search", params.search);
+    const queryString = queryParams.toString();
+    const url = `/user/ib-client-summary/clients${queryString ? `?${queryString}` : ""}`;
+    return apiCall<IbClientsResponse>(url, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+  getRebates: (token: string, params?: { page?: number; limit?: number; search?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", String(params.page));
+    if (params?.limit) queryParams.append("limit", String(params.limit));
+    if (params?.search) queryParams.append("search", params.search);
+    const queryString = queryParams.toString();
+    const url = `/user/ib-client-summary/rebates${queryString ? `?${queryString}` : ""}`;
+    return apiCall<IbRebatesResponse>(url, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
 };
 
 // ---------- Admin IB Requests APIs ----------
