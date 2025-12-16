@@ -54,10 +54,6 @@ export const adminNavData = [
         title: "Overview",
         url: "/dashboard",
       },
-      {
-        title: "Analytics",
-        url: "/analytics",
-      },
     ],
   },
   {
