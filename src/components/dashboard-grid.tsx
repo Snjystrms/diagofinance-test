@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import GridLayout, { Layout, ItemCallback } from 'react-grid-layout';
+import GridLayout, { Layout } from 'react-grid-layout';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import toast from 'react-hot-toast';
@@ -165,9 +165,18 @@ export function DashboardGrid({
   );
 
   // Handle layout change (called on drag, resize, or any layout change)
-  const onLayoutChange: ItemCallback = useCallback(
+  const onLayoutChange = useCallback(
     (layout: Layout[]) => {
       // Save layout immediately when it changes (includes resize data: w, h)
+      saveLayouts(layout);
+    },
+    [saveLayouts]
+  );
+
+  // Handle resize stop (layout callback)
+  const onResizeStop = useCallback(
+    (layout: Layout[]) => {
+      // Save layout when resize stops
       saveLayouts(layout);
     },
     [saveLayouts]
@@ -552,7 +561,7 @@ export function DashboardGrid({
         rowHeight={rowHeight}
         width={containerWidth}
         onLayoutChange={onLayoutChange}
-        onResizeStop={onLayoutChange}
+        onResizeStop={onResizeStop}
         isDraggable={true}
         isResizable={isResizeMode}
         resizeHandles={['se', 'sw', 'nw', 'ne', 'w', 'e', 'n', 's']}

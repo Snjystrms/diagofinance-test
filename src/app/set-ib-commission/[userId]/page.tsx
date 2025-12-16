@@ -179,6 +179,7 @@ interface TeamNodeData extends Record<string, unknown> {
   status?: number;
   isRoot?: boolean;
   highlighted?: boolean;
+  userId?: string | number;
 }
 
 type GraphNode = Node<TeamNodeData, 'teamNode'>;

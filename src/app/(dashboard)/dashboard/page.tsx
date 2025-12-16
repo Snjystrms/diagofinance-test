@@ -168,8 +168,8 @@ export default function DashboardPage() {
         }
 
         // Always set IB wallet data if response exists, even if it's null
-        if (ibWalletResponse?.success) {
-          setIbWalletData(ibWalletResponse);
+        if (ibWalletResponse?.success && ibWalletResponse.data) {
+          setIbWalletData(ibWalletResponse.data);
         } else {
           // Clear IB wallet data if not available
           setIbWalletData(null);

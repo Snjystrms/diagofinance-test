@@ -124,7 +124,8 @@ export default function ReportManagementPage() {
   );
   const [sortOrder, setSortOrder] = useQueryState<"ASC" | "DESC">(
     "sort_order",
-    parseAsString as any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    parseAsString.withDefault("ASC") as any
   );
 
   // Sync date state with query params
@@ -195,7 +196,7 @@ export default function ReportManagementPage() {
       });
 
       // The API response structure: { success, message, data: [...], pagination: {...}, filters: {...} }
-      const payload = response as DepositReportListPayload;
+      const payload = response.data as unknown as DepositReportListPayload;
       const reportItems = Array.isArray(payload?.data) ? payload.data : [];
       
       console.log("Report items:", reportItems);

@@ -38,8 +38,10 @@ export default function IbWalletPage() {
       setIsLoading(true);
       setError(null);
       const response = await ibRequestsApi.getIbWallet(token);
-      if (response?.data) {
-        setWalletData(response);
+      // apiCall returns ApiResponse<IbWalletResponse>, so response.data is IbWalletResponse
+      if (response?.success && response.data) {
+        const walletResponse = response.data as IbWalletResponse;
+        setWalletData(walletResponse);
       } else {
         setError("Failed to load wallet data");
       }

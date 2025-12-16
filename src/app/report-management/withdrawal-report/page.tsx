@@ -124,7 +124,8 @@ export default function WithdrawalReportPage() {
   );
   const [sortOrder, setSortOrder] = useQueryState<"ASC" | "DESC">(
     "sort_order",
-    parseAsString as any
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    parseAsString.withDefault("ASC") as any
   );
 
   // Sync date state with query params

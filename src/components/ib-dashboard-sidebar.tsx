@@ -53,8 +53,9 @@ export function IbDashboardSidebar() {
         setDashboardData(dashboardResponse.data)
       }
 
-      if (walletResponse?.data) {
-        setWalletData(walletResponse)
+      if (walletResponse?.success && walletResponse.data) {
+        // apiCall returns ApiResponse<IbWalletResponse>, so walletResponse.data is IbWalletResponse
+        setWalletData(walletResponse.data)
       }
     } catch (err) {
       console.error("Failed to fetch IB data:", err)
