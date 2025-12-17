@@ -26,7 +26,7 @@ export default function TestRegistrationFeePage() {
   const [errorMessage, setErrorMessage] = useState("");
 
   // Registration fee details
-  const depositAddress = "0xcD8d359Fe7086f4AEf9C0549542bBCB72E95f7E0";
+  const depositAddress = "0xcD8d359Fe7086f4AEf9C0549542bBNB72E95f7E0";
   const network = "BNB Smart Chain";
   const registrationFee = "25 USDT";
   const tokenType = "USDT (BEP20)";
