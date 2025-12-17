@@ -1,169 +1,358 @@
-import { MainLayout } from "@/components/main-layout"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { TrendingUp, TrendingDown, DollarSign, Users, Building2, Calendar } from "lucide-react"
+"use client";
 
-export default function AnalyticsPage() {
+import { useState } from "react";
+import { useAuth } from "@/contexts/auth-context";
+import { MainLayout } from "@/components/main-layout";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { toast } from "sonner";
+import { FileImage, Upload, X, Loader2 } from "lucide-react";
+import { adminNewsApi, type NewsCreateBody } from "@/lib/api";
+
+export default function NewsManagementPage() {
+  const { token } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Form state
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [shortDescription, setShortDescription] = useState("");
+  const [status, setStatus] = useState<string>("1");
+  const [imageMode, setImageMode] = useState<"file" | "url">("file");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imageUrl, setImageUrl] = useState("");
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  // Handle file selection
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please select a valid image file");
+        return;
+      }
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Image size must be less than 5MB");
+        return;
+      }
+      setImageFile(file);
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Remove selected file
+  const handleRemoveFile = () => {
+    setImageFile(null);
+    setImagePreview(null);
+  };
+
+  // Handle URL change
+  const handleUrlChange = (url: string) => {
+    setImageUrl(url);
+    if (url) {
+      setImagePreview(url);
+    } else {
+      setImagePreview(null);
+    }
+  };
+
+  // Reset form
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    setShortDescription("");
+    setStatus("1");
+    setImageFile(null);
+    setImageUrl("");
+    setImagePreview(null);
+    setImageMode("file");
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    // Validation
+    if (!title.trim()) {
+      toast.error("Title is required");
+      return;
+    }
+    if (!description.trim()) {
+      toast.error("Description is required");
+      return;
+    }
+    if (!shortDescription.trim()) {
+      toast.error("Short description is required");
+      return;
+    }
+    if (imageMode === "file" && !imageFile) {
+      toast.error("Please select an image file");
+      return;
+    }
+    if (imageMode === "url" && !imageUrl.trim()) {
+      toast.error("Please provide an image URL");
+      return;
+    }
+    if (!token) {
+      toast.error("Authentication required");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const newsData: NewsCreateBody = {
+        title: title.trim(),
+        description: description.trim(),
+        short_description: shortDescription.trim(),
+        status: status,
+        image: imageMode === "file" ? imageFile! : imageUrl.trim(),
+      };
+
+      const response = await adminNewsApi.create(newsData, token);
+
+      if (response.success) {
+        toast.success(response.message || "News created successfully");
+        resetForm();
+      } else {
+        toast.error(response.message || "Failed to create news");
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to create news";
+      toast.error(errorMessage);
+      console.error("Error creating news:", error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <MainLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Analytics</h1>
+          <h1 className="text-3xl font-bold">News Management</h1>
           <p className="text-muted-foreground">
-            Insights and metrics about your business performance.
+            Create and manage news articles for your platform.
           </p>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Revenue Growth</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">+12.5%</div>
-              <p className="text-xs text-muted-foreground">
-                vs last month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Customer Acquisition</CardTitle>
-              <Users className="h-4 w-4 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">+8.2%</div>
-              <p className="text-xs text-muted-foreground">
-                vs last month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Deal Conversion</CardTitle>
-              <DollarSign className="h-4 w-4 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">68%</div>
-              <p className="text-xs text-muted-foreground">
-                +5% vs last month
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Avg Deal Size</CardTitle>
-              <Building2 className="h-4 w-4 text-orange-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">$42,500</div>
-              <p className="text-xs text-muted-foreground">
-                +15% vs last month
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Monthly Revenue</CardTitle>
-              <CardDescription>
-                Revenue trends over the last 12 months
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64 flex items-center justify-center text-muted-foreground">
-                Chart placeholder - Revenue data visualization
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Customer Growth</CardTitle>
-              <CardDescription>
-                New customer acquisition over time
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-64 flex items-center justify-center text-muted-foreground">
-                Chart placeholder - Customer growth visualization
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Performance Metrics</CardTitle>
+            <CardTitle>Create News</CardTitle>
             <CardDescription>
-              Key performance indicators and benchmarks
+              Fill in the details below to create a new news article. You can upload an image file or provide an image URL.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-3">
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Title */}
               <div className="space-y-2">
-                <h3 className="font-medium">Sales Performance</h3>
-                <div className="space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Quota Attainment</span>
-                    <span className="text-sm font-medium">85%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Pipeline Coverage</span>
-                    <span className="text-sm font-medium">3.2x</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Win Rate</span>
-                    <span className="text-sm font-medium">68%</span>
-                  </div>
-                </div>
+                <Label htmlFor="title">
+                  Title <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="title"
+                  placeholder="Breaking News: Market Update"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  required
+                  disabled={isSubmitting}
+                />
               </div>
-              
+
+              {/* Short Description */}
               <div className="space-y-2">
-                <h3 className="font-medium">Customer Metrics</h3>
-                <div className="space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Customer Lifetime Value</span>
-                    <span className="text-sm font-medium">$125,000</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Churn Rate</span>
-                    <span className="text-sm font-medium">2.1%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">NPS Score</span>
-                    <span className="text-sm font-medium">72</span>
-                  </div>
-                </div>
+                <Label htmlFor="short_description">
+                  Short Description <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  id="short_description"
+                  placeholder="Brief summary of the news article"
+                  value={shortDescription}
+                  onChange={(e) => setShortDescription(e.target.value)}
+                  required
+                  disabled={isSubmitting}
+                />
+                <p className="text-sm text-muted-foreground">
+                  A brief summary that will be displayed in news listings.
+                </p>
               </div>
-              
+
+              {/* Description */}
               <div className="space-y-2">
-                <h3 className="font-medium">Operational Metrics</h3>
-                <div className="space-y-1">
-                  <div className="flex justify-between">
-                    <span className="text-sm">Response Time</span>
-                    <span className="text-sm font-medium">2.3 hours</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Task Completion</span>
-                    <span className="text-sm font-medium">94%</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm">Deal Cycle</span>
-                    <span className="text-sm font-medium">45 days</span>
-                  </div>
-                </div>
+                <Label htmlFor="description">
+                  Description <span className="text-red-500">*</span>
+                </Label>
+                <Textarea
+                  id="description"
+                  placeholder="This is the full description of the news article. It can contain detailed information about the news, including multiple paragraphs and formatting."
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  required
+                  disabled={isSubmitting}
+                  rows={6}
+                  className="resize-none"
+                />
+                <p className="text-sm text-muted-foreground">
+                  The full content of the news article.
+                </p>
               </div>
-            </div>
+
+              {/* Image Upload/URL */}
+              <div className="space-y-2">
+                <Label>
+                  Image <span className="text-red-500">*</span>
+                </Label>
+                <Tabs
+                  value={imageMode}
+                  onValueChange={(value) => setImageMode(value as "file" | "url")}
+                  className="w-full"
+                >
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="file">Upload File</TabsTrigger>
+                    <TabsTrigger value="url">Image URL</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="file" className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-4">
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileChange}
+                          disabled={isSubmitting}
+                          className="flex-1"
+                        />
+                      </div>
+                      {imageFile && (
+                        <div className="relative inline-block">
+                          <div className="relative w-48 h-48 border rounded-lg overflow-hidden">
+                            <img
+                              src={imagePreview || ""}
+                              alt="Preview"
+                              className="w-full h-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleRemoveFile}
+                              disabled={isSubmitting}
+                              className="absolute top-2 right-2 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                          <p className="mt-2 text-sm text-muted-foreground">
+                            {imageFile.name}
+                          </p>
+                        </div>
+                      )}
+                      {!imageFile && (
+                        <div className="flex items-center justify-center w-full h-48 border-2 border-dashed rounded-lg border-muted-foreground/25">
+                          <div className="text-center">
+                            <FileImage className="h-12 w-12 mx-auto text-muted-foreground mb-2" />
+                            <p className="text-sm text-muted-foreground">
+                              No image selected
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="url" className="space-y-4">
+                    <div className="space-y-2">
+                      <Input
+                        type="url"
+                        placeholder="https://example.com/images/news-image.jpg"
+                        value={imageUrl}
+                        onChange={(e) => handleUrlChange(e.target.value)}
+                        disabled={isSubmitting}
+                      />
+                      {imageUrl && imagePreview && (
+                        <div className="relative inline-block">
+                          <div className="relative w-48 h-48 border rounded-lg overflow-hidden">
+                            <img
+                              src={imagePreview}
+                              alt="Preview"
+                              className="w-full h-full object-cover"
+                              onError={() => setImagePreview(null)}
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
+
+              {/* Status */}
+              <div className="space-y-2">
+                <Label htmlFor="status">
+                  Status <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={status}
+                  onValueChange={setStatus}
+                  disabled={isSubmitting}
+                >
+                  <SelectTrigger id="status">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">Active</SelectItem>
+                    <SelectItem value="0">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground">
+                  Active news will be visible to users.
+                </p>
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex justify-end gap-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={resetForm}
+                  disabled={isSubmitting}
+                >
+                  Reset
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="mr-2 h-4 w-4" />
+                      Create News
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
           </CardContent>
         </Card>
       </div>
     </MainLayout>
-  )
-} 
+  );
+}

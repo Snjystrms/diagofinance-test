@@ -590,6 +590,71 @@ export const adminUsersApi = {
   },
 };
 
+// ---------- Admin News APIs ----------
+export interface NewsCreateBody {
+  title: string;
+  description: string;
+  short_description: string;
+  image?: File | string; // File for upload or string URL
+  status: string | number; // "1" for active, "0" for inactive
+}
+
+export interface NewsItem {
+  id: number | string;
+  title: string;
+  description: string;
+  short_description: string;
+  image?: string;
+  status: number | string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface NewsCreateResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    news?: NewsItem;
+  };
+}
+
+export const adminNewsApi = {
+  create: (body: NewsCreateBody, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to create news");
+    }
+
+    // If image is a File, use FormData; otherwise use JSON
+    if (body.image instanceof File) {
+      const formData = new FormData();
+      formData.append("title", body.title);
+      formData.append("description", body.description);
+      formData.append("short_description", body.short_description);
+      formData.append("image", body.image);
+      formData.append("status", String(body.status));
+
+      return apiCall<NewsCreateResponse>(`/admin/news/create`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+    } else {
+      // JSON request with image URL
+      return apiCall<NewsCreateResponse>(`/admin/news/create`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: body.title,
+          description: body.description,
+          short_description: body.short_description,
+          image: body.image || "",
+          status: String(body.status),
+        }),
+      });
+    }
+  },
+};
+
 // ---------- Generic helper ----------
 async function apiCall<T>(
   endpoint: string,
@@ -618,12 +683,22 @@ async function apiCall<T>(
     return optionHeaders;
   })();
 
+  // Check if body is FormData - don't set Content-Type for FormData (browser will set it with boundary)
+  const isFormData = restOptions.body instanceof FormData;
+  
+  // Build headers - exclude Content-Type for FormData
+  const finalHeaders: Record<string, string> = { ...normalizedHeaders };
+  if (!isFormData) {
+    finalHeaders["Content-Type"] = "application/json";
+  } else {
+    // Remove Content-Type if it was in normalizedHeaders
+    const { "Content-Type": _, ...headersWithoutContentType } = finalHeaders;
+    Object.assign(finalHeaders, headersWithoutContentType);
+  }
+  
   const config: RequestInit = {
     ...restOptions,
-    headers: {
-      "Content-Type": "application/json",
-      ...normalizedHeaders,
-    },
+    headers: finalHeaders,
   };
 
   if (

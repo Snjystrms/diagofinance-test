@@ -94,7 +94,9 @@ export function MainLayout({ children }: MainLayoutProps) {
           ? {
               "--sidebar-width": selectedSidebar === "expanded-panel" ? "400px" : "350px",
             } as React.CSSProperties
-          : undefined
+          : {
+              "--sidebar-width": "20rem",
+            } as React.CSSProperties
       }
     >
       {selectedSidebar === "two-panel" ? (

@@ -461,8 +461,8 @@ export default function NewUsersPage() {
     <ProtectedRoute>
       <>
         <div className="mx-auto flex w-full max-w-7xl flex-col gap-8 px-3 pt-8 pb-10 md:px-6 md:pt-12">
-          {/* Centered Title and Description */}
-          <div className="flex flex-col items-center text-center space-y-2">
+          {/* Title and Description */}
+          <div className="flex flex-col space-y-2">
             <h1 className="text-3xl font-bold tracking-tight">New Users</h1>
             <p className="text-muted-foreground max-w-2xl">
               Review recent registrations, filter by status, and monitor verification progress.
