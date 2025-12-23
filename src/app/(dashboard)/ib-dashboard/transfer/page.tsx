@@ -145,7 +145,7 @@ export default function TransferPage() {
 
   return (
     <div className="min-h-full w-full bg-gray-50 dark:bg-gray-950 p-6">
-      <div className="max-w-2xl mx-auto space-y-6">
+      <div className="w-full space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
@@ -166,7 +166,7 @@ export default function TransferPage() {
         </div>
 
         {/* Wallet Balance Cards */}
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-6 lg:grid-cols-2">
           <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-600 via-purple-600 to-indigo-600">
             <CardContent className="p-6">
               <div className="flex items-center gap-4">
@@ -200,7 +200,7 @@ export default function TransferPage() {
           </Card>
         </div>
 
-        {/* Transfer Form */}
+        {/* Transfer Form - Full Width */}
         <Card className="border-0 shadow-xl bg-white dark:bg-gray-800">
           <CardHeader>
             <div className="flex items-center gap-4">
@@ -219,43 +219,45 @@ export default function TransferPage() {
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="amount" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Amount
-              </Label>
-              <Input
-                id="amount"
-                type="number"
-                step="0.01"
-                min="0.01"
-                max={partner_wallet.balance}
-                placeholder="Enter amount"
-                value={transferAmount}
-                onChange={(e) => setTransferAmount(e.target.value)}
-                disabled={isTransferring}
-                className="h-12 text-base border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 transition-all rounded-xl"
-              />
-              <div className="flex items-center gap-2 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800">
-                <Wallet className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
-                  Available: <span className="font-bold">{formatCurrency(partner_wallet.balance, partner_wallet.currency)}</span>
-                </p>
+            <div className="grid gap-6 lg:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="amount" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Amount
+                </Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  step="0.01"
+                  min="0.01"
+                  max={partner_wallet.balance}
+                  placeholder="Enter amount"
+                  value={transferAmount}
+                  onChange={(e) => setTransferAmount(e.target.value)}
+                  disabled={isTransferring}
+                  className="h-12 text-base border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 transition-all rounded-xl"
+                />
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20 border border-blue-200 dark:border-blue-800">
+                  <Wallet className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                    Available: <span className="font-bold">{formatCurrency(partner_wallet.balance, partner_wallet.currency)}</span>
+                  </p>
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="comment" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                Comment (Optional)
-              </Label>
-              <Textarea
-                id="comment"
-                placeholder="Transfer from partner wallet to client wallet"
-                value={transferComment}
-                onChange={(e) => setTransferComment(e.target.value)}
-                disabled={isTransferring}
-                rows={3}
-                className="border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 transition-all resize-none rounded-xl"
-              />
+              <div className="space-y-2">
+                <Label htmlFor="comment" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+                  Comment (Optional)
+                </Label>
+                <Textarea
+                  id="comment"
+                  placeholder="Transfer from partner wallet to client wallet"
+                  value={transferComment}
+                  onChange={(e) => setTransferComment(e.target.value)}
+                  disabled={isTransferring}
+                  rows={3}
+                  className="border-2 border-gray-200 dark:border-gray-600 focus:border-blue-500 dark:focus:border-blue-400 focus:ring-2 focus:ring-blue-200 dark:focus:ring-blue-800 transition-all resize-none rounded-xl"
+                />
+              </div>
             </div>
 
             <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
