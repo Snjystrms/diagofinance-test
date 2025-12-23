@@ -1841,7 +1841,7 @@ export const ibRequestsApi = {
       body: JSON.stringify(data),
     }),
   getIbWallet: (token: string) =>
-    apiCall<IbWalletData>(`/user/ib-wallet`, {
+    apiCall<IbWalletResponse>(`/user/ib-wallet`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),
