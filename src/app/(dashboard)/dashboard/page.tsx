@@ -53,7 +53,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { ProfileCompletionDialog } from "@/components/profile-completion-dialog"
-import { authApi, ibRequestsApi, adminDashboardApi, type TradingAccountSummaryItem, type TradingAccountsSummaryResponse, type UserDashboardData, type IbWalletResponse, type AdminDashboardData } from "@/lib/api"
+import { authApi, ibRequestsApi, adminDashboardApi, type TradingAccountSummaryItem, type TradingAccountsSummaryResponse, type UserDashboardData, type IbWalletData, type AdminDashboardData } from "@/lib/api"
 import toast from "react-hot-toast"
 
 const formatCurrency = (value?: number, currency: string = "USD") =>
@@ -91,7 +91,7 @@ export default function DashboardPage() {
   const [dashboardData, setDashboardData] = useState<UserDashboardData | null>(null);
   const [adminDashboardData, setAdminDashboardData] = useState<AdminDashboardData | null>(null);
   const [tradingSummary, setTradingSummary] = useState<TradingAccountsSummaryResponse | null>(null);
-  const [ibWalletData, setIbWalletData] = useState<IbWalletResponse | null>(null);
+  const [ibWalletData, setIbWalletData] = useState<IbWalletData | null>(null);
   const [depositsStatistics, setDepositsStatistics] = useState<Array<{ day: string; date: string; amount: number }>>([]);
   const [withdrawalsStatistics, setWithdrawalsStatistics] = useState<Array<{ day: string; date: string; amount: number }>>([]);
   const [isDashboardLoading, setIsDashboardLoading] = useState(isUser || isAdmin);
@@ -175,15 +175,9 @@ export default function DashboardPage() {
         }
 
         // Always set IB wallet data if response exists
-        // The API returns ApiResponse<IbWalletResponse>, so we need to extract the nested data
+        // The API returns ApiResponse<IbWalletData>, so response.data is IbWalletData
         if (ibWalletResponse?.success && ibWalletResponse.data) {
-          // ibWalletResponse.data is of type IbWalletResponse, which has its own data property
-          const walletResponse = ibWalletResponse.data as IbWalletResponse;
-          if (walletResponse.data) {
-            setIbWalletData(walletResponse);
-          } else {
-            setIbWalletData(null);
-          }
+          setIbWalletData(ibWalletResponse.data);
         } else {
           // Clear IB wallet data if not available
           setIbWalletData(null);
@@ -410,10 +404,10 @@ export default function DashboardPage() {
             <div className="relative z-10 pt-6 pb-6 px-6 h-full flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex-1">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
                       Total Deposits
-                    </p>
+                    </div>
                     <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">
                       {formatCurrency(
                         dashboardData?.deposits?.total ?? 0,
@@ -443,10 +437,10 @@ export default function DashboardPage() {
             <div className="relative z-10 pt-6 pb-6 px-6 h-full flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex-1">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
                       Total Withdrawals
-                    </p>
+                    </div>
                     <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
                       {formatCurrency(
                         dashboardData?.withdrawals?.total ?? 0,
@@ -476,10 +470,10 @@ export default function DashboardPage() {
             <div className="relative z-10 pt-6 pb-6 px-6 h-full flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex-1">
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
                       <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
                       Trading Accounts
-                    </p>
+                    </div>
                     <p className="text-2xl font-bold text-violet-600 dark:text-violet-400 tabular-nums">
                       {overallAccounts?.total_accounts ?? dashboardData?.account_types?.total_accounts ?? 0}
                     </p>
@@ -554,7 +548,7 @@ export default function DashboardPage() {
         defaultLayout: { x: 0, y: 3, w: 4, h: 5, minW: 3, minH: 4 },
       },
       // Partner Wallet Widget (only show if IB wallet data exists)
-      ...(ibWalletData?.data ? [{
+      ...(ibWalletData ? [{
         id: 'partner-wallet',
         title: 'Partner Wallet',
         component: (
@@ -563,14 +557,14 @@ export default function DashboardPage() {
             <div className="relative z-10 pt-6 pb-6 px-6 h-full flex flex-col">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex-1">
-                  <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                     Partner Wallet
-                  </p>
+                  </div>
                   <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 tabular-nums">
                     {formatCurrency(
-                      ibWalletData.data.wallet_balance.amount,
-                      ibWalletData.data.wallet_balance.currency
+                      ibWalletData.wallet_balance.amount,
+                      ibWalletData.wallet_balance.currency
                     )}
                   </p>
                 </div>
@@ -583,8 +577,8 @@ export default function DashboardPage() {
                   <span className="text-muted-foreground">Client Wallet:</span>
                   <span className="font-semibold text-foreground">
                     {formatCurrency(
-                      ibWalletData.data.client_wallet.amount,
-                      ibWalletData.data.client_wallet.currency
+                      ibWalletData.client_wallet.amount,
+                      ibWalletData.client_wallet.currency
                     )}
                   </span>
                 </div>
@@ -592,8 +586,8 @@ export default function DashboardPage() {
                   <span className="text-muted-foreground">Total Earned:</span>
                   <span className="font-semibold text-foreground">
                     {formatCurrency(
-                      ibWalletData.data.earning_summary.total_earned,
-                      ibWalletData.data.earning_summary.currency
+                      ibWalletData.earning_summary.total_earned,
+                      ibWalletData.earning_summary.currency
                     )}
                   </span>
                 </div>
@@ -685,7 +679,7 @@ export default function DashboardPage() {
             </div>
           </div>
         ),
-        defaultLayout: { x: ibWalletData?.data ? 8 : 4, y: 3, w: 4, h: 5, minW: 3, minH: 4 },
+        defaultLayout: { x: ibWalletData ? 8 : 4, y: 3, w: 4, h: 5, minW: 3, minH: 4 },
       },
       // Deposits Chart Widget
       {
@@ -1241,10 +1235,10 @@ export default function DashboardPage() {
                   <CardContent className="relative z-10 pt-6 pb-6 px-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex-1">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
                           <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
                           Total Deposits
-                        </p>
+                        </div>
                         <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">
                           {formatCurrency(
                             dashboardData?.deposits?.total ?? 0,
@@ -1268,10 +1262,10 @@ export default function DashboardPage() {
                   <CardContent className="relative z-10 pt-6 pb-6 px-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex-1">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
                           <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
                           Total Withdrawals
-                        </p>
+                        </div>
                         <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
                           {formatCurrency(
                             dashboardData?.withdrawals?.total ?? 0,
@@ -1295,10 +1289,10 @@ export default function DashboardPage() {
                   <CardContent className="relative z-10 pt-6 pb-6 px-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex-1">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                        <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
                           <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
                           Trading Accounts
-                        </p>
+                        </div>
                         <p className="text-2xl font-bold text-violet-600 dark:text-violet-400 tabular-nums">
                           {overallAccounts?.total_accounts ?? dashboardData?.account_types?.total_accounts ?? 0}
                         </p>
@@ -1378,7 +1372,7 @@ export default function DashboardPage() {
                 </Card>
 
                 {/* Partner Wallet Card - Enhanced */}
-                {ibWalletData?.data && (
+                {ibWalletData && (
                   <Card className="sm:col-span-1 lg:col-span-1 relative overflow-hidden border-2 border-blue-500/30 hover:border-blue-500/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-transparent rounded-3xl group">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
                     <CardHeader className="relative z-10 pb-3 px-6 pt-6">
@@ -1393,10 +1387,10 @@ export default function DashboardPage() {
                       </div>
                       <div className="flex items-baseline gap-2 mt-2">
                         <span className="text-4xl font-extrabold leading-tight drop-shadow-lg text-blue-600 dark:text-blue-400">
-                          {formatAmount(ibWalletData.data.wallet_balance.amount)}
+                          {formatAmount(ibWalletData.wallet_balance.amount)}
                         </span>
                         <span className="text-lg font-bold text-blue-600/80 dark:text-blue-400/80">
-                          {ibWalletData.data.wallet_balance.currency}
+                          {ibWalletData.wallet_balance.currency}
                         </span>
                       </div>
                     </CardHeader>
@@ -1414,8 +1408,8 @@ export default function DashboardPage() {
                               <span className="text-muted-foreground">Client Wallet:</span>
                               <span className="font-semibold text-foreground">
                                 {formatCurrency(
-                                  ibWalletData.data.client_wallet.amount,
-                                  ibWalletData.data.client_wallet.currency
+                                  ibWalletData.client_wallet.amount,
+                                  ibWalletData.client_wallet.currency
                                 )}
                               </span>
                             </div>
@@ -1423,8 +1417,8 @@ export default function DashboardPage() {
                               <span className="text-muted-foreground">Total Earned:</span>
                               <span className="font-semibold text-foreground">
                                 {formatCurrency(
-                                  ibWalletData.data.earning_summary.total_earned,
-                                  ibWalletData.data.earning_summary.currency
+                                  ibWalletData.earning_summary.total_earned,
+                                  ibWalletData.earning_summary.currency
                                 )}
                               </span>
                             </div>

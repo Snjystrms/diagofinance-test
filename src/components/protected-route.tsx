@@ -42,8 +42,8 @@ const MANAGER_CATEGORY_ROUTE_MAP: Record<string, string[]> = {
   'Settings Management': ['/settings-management'],
   'Sub Admin': ['/manager', '/all-managers'],
   'Ticket Management': ['/ticket-management'],
-  Transaction: ['/transactions', '/usdt-transactions', '/transaction-verification', '/payment-history'],
-  'User Management': ['/users', '/new-users', '/user-verification', '/user-status'],
+  Transaction: ['/transactions', '/usdt-transactions'],
+  'User Management': ['/users', '/new-users', '/user-verification'],
 };
 
 const matchesPrefix = (pathname: string, prefixes: string[]) =>

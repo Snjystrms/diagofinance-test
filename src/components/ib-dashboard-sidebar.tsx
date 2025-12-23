@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useAuth } from "@/contexts/auth-context"
-import { ibRequestsApi, type IbDashboardResponse, type IbWalletResponse } from "@/lib/api"
+import { ibRequestsApi, type IbDashboardResponse, type IbWalletData } from "@/lib/api"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { 
   LayoutDashboard, 
@@ -26,7 +26,7 @@ export function IbDashboardSidebar() {
   const { state } = useSidebar()
   const isCollapsed = state === "collapsed"
   const [dashboardData, setDashboardData] = useState<IbDashboardResponse | null>(null)
-  const [walletData, setWalletData] = useState<IbWalletResponse | null>(null)
+  const [walletData, setWalletData] = useState<IbWalletData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   const fetchData = useCallback(async () => {
@@ -54,7 +54,7 @@ export function IbDashboardSidebar() {
       }
 
       if (walletResponse?.success && walletResponse.data) {
-        // apiCall returns ApiResponse<IbWalletResponse>, so walletResponse.data is IbWalletResponse
+        // apiCall returns ApiResponse<IbWalletData>, so walletResponse.data is IbWalletData
         setWalletData(walletResponse.data)
       }
     } catch (err) {
@@ -93,10 +93,10 @@ export function IbDashboardSidebar() {
   const partnerId = dashboardData?.partner_info?.partner_id || dashboardData?.user?.partner_id || "N/A"
   
   // Get wallet data from ib-wallet API (preferred) or fallback to dashboard API
-  const clientWallet = walletData?.data?.client_wallet?.amount ?? dashboardData?.client_wallet?.balance ?? 0
-  const partnerWallet = walletData?.data?.wallet_balance?.amount ?? dashboardData?.partner_wallet?.balance ?? 0
-  const currency = walletData?.data?.client_wallet?.currency ?? 
-                   walletData?.data?.wallet_balance?.currency ?? 
+  const clientWallet = walletData?.client_wallet?.amount ?? dashboardData?.client_wallet?.balance ?? 0
+  const partnerWallet = walletData?.wallet_balance?.amount ?? dashboardData?.partner_wallet?.balance ?? 0
+  const currency = walletData?.client_wallet?.currency ?? 
+                   walletData?.wallet_balance?.currency ?? 
                    dashboardData?.client_wallet?.currency ?? 
                    dashboardData?.partner_wallet?.currency ?? 
                    "USD"
@@ -241,6 +241,7 @@ export function IbDashboardSidebar() {
     </div>
   )
 }
+
 
 
 

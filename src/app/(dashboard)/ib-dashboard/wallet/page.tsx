@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/auth-context";
-import { ibRequestsApi, type IbWalletResponse } from "@/lib/api";
+import { ibRequestsApi, type IbWalletData } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,7 +23,7 @@ import { ArrowLeft } from "lucide-react";
 
 export default function IbWalletPage() {
   const { token } = useAuth();
-  const [walletData, setWalletData] = useState<IbWalletResponse | null>(null);
+  const [walletData, setWalletData] = useState<IbWalletData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,10 +38,9 @@ export default function IbWalletPage() {
       setIsLoading(true);
       setError(null);
       const response = await ibRequestsApi.getIbWallet(token);
-      // apiCall returns ApiResponse<IbWalletResponse>, so response.data is IbWalletResponse
+      // apiCall returns ApiResponse<IbWalletData>, so response.data is IbWalletData
       if (response?.success && response.data) {
-        const walletResponse = response.data as IbWalletResponse;
-        setWalletData(walletResponse);
+        setWalletData(response.data);
       } else {
         setError("Failed to load wallet data");
       }
@@ -148,7 +147,7 @@ export default function IbWalletPage() {
     );
   }
 
-  const { wallet_balance, client_wallet, earning_summary, transactions } = walletData.data;
+  const { wallet_balance, client_wallet, earning_summary, transactions } = walletData;
   const transactionList = transactions?.data || [];
 
   return (
@@ -271,6 +270,7 @@ export default function IbWalletPage() {
     </div>
   );
 }
+
 
 
 

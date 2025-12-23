@@ -73,10 +73,6 @@ export const adminNavData = [
         title: "User Verification",
         url: "/user-verification",
       },
-      {
-        title: "User Status",
-        url: "/user-status",
-      },
     ],
   },
   {
@@ -88,27 +84,19 @@ export const adminNavData = [
         title: "USDT Transactions",
         url: "/usdt-transactions",
       },
-      {
-        title: "Transaction Verification",
-        url: "/transaction-verification",
-      },
-      {
-        title: "Payment History",
-        url: "/payment-history",
-      },
     ],
   },
-  // {
-  //   title: "Bonus Management",
-  //   url: "/bonus-management",
-  //   icon: Gift,
-  //   items: [
-  //     {
-  //       title: "Bonus",
-  //       url: "/bonus-management",
-  //     }
-  //   ],
-  // },
+  {
+    title: "Bonus Management",
+    url: "/bonus-management",
+    icon: Gift,
+    items: [
+      {
+        title: "Bonus",
+        url: "/bonus-management",
+      }
+    ],
+  },
   {
     title: "Manager Management",
     url: "/manager",
@@ -120,22 +108,26 @@ export const adminNavData = [
       }
     ],
   },
-  // {
-  //   title: "E-Mail Management",
-  //   url: "/email-management",
-  //   icon: Mail,
-  //   items: [
-  //     {
-  //       title: "E-Mail Management",
-  //       url: "/email-management",
-  //     },
-  //   ],
-  // },
+  {
+    title: "E-Mail Management",
+    url: "/email-management",
+    icon: Mail,
+    items: [
+      {
+        title: "E-Mail Management",
+        url: "/email-management",
+      },
+    ],
+  },
   {
     title: "IB Management",
     url: "/ib-management",
     icon: UserCheck,
     items: [
+      {
+        title: "All IB",
+        url: "/all-ib",
+      },
       {
         title: "IB User",
         url: "/ib-users",
@@ -165,17 +157,17 @@ export const adminNavData = [
       },
     ],
   },
-  {
-    title: "MT5 Account Management",
-    url: "/mt5-account-management",
-    icon: Database,
-    items: [
-      {
-        title: "User Accounts",
-        url: "/user-accounts",
-      },
-    ],
-  },
+  // {
+  //   title: "MT5 Account Management",
+  //   url: "/mt5-account-management",
+  //   icon: Database,
+  //   items: [
+  //     {
+  //       title: "User Accounts",
+  //       url: "/user-accounts",
+  //     },
+  //   ],
+  // },
   {
     title: "Support & Tickets",
     url: "/support",
@@ -207,6 +199,17 @@ export const adminNavData = [
     ],
   },
   {
+    title: "Notification Management",
+    url: "/notification-management",
+    icon: Bell,
+    items: [
+      {
+        title: "Notification Management",
+        url: "/notification-management",
+      },
+    ],
+  },
+  {
     title: "All Reports",
     url: "/report-management",
     icon: BarChart3,
@@ -233,91 +236,50 @@ export const adminNavData = [
       },
     ],
   },
-  // {
-  //   title: "System Settings",
-  //   url: "/settings",
-  //   icon: Cog,
-  //   items: [
-  //     {
-  //       title: "General Settings",
-  //       url: "/settings",
-  //     },
-  //     {
-  //       title: "Security Settings",
-  //       url: "/security-settings",
-  //     },
-  //     {
-  //       title: "System Configuration",
-  //       url: "/system-config",
-  //     },
-  //   ],
-  // },
-  // {
-  //   title: "Marketing Management",
-  //   url: "/marketing-management",
-  //   icon: TrendingUp,
-  //   items: [
-  //     {
-  //       title: "Marketing Management",
-  //       url: "/marketing-management",
-  //     },
-  //   ],
-  // },
-  // {
-  //   title: "News Management",
-  //   url: "/news-management",
-  //   icon: FileText,
-  //   items: [
-  //     {
-  //       title: "News Management",
-  //       url: "/news-management",
-  //     },
-  //   ],
-  // },
-  // {
-  //   title: "Notification Management",
-  //   url: "/notification-management",
-  //   icon: Bell,
-  //   items: [
-  //     {
-  //       title: "Notification Management",
-  //       url: "/notification-management",
-  //     },
-  //   ],
-  // },
-  // {
-  //   title: "Reward Management",
-  //   url: "/reward-management",
-  //   icon: Trophy,
-  //   items: [
-  //     {
-  //       title: "Reward Management",
-  //       url: "/reward-management",
-  //     },
-  //   ],
-  // },
-  // {
-  //   title: "Settings Management",
-  //   url: "/settings-management",
-  //   icon: Settings2,
-  //   items: [
-  //     {
-  //       title: "Settings Management",
-  //       url: "/settings-management",
-  //     },
-  //   ],
-  // },
-  // {
-  //   title: "Ticket Management",
-  //   url: "/ticket-management",
-  //   icon: Ticket,
-  //   items: [
-  //     {
-  //       title: "Ticket Management",
-  //       url: "/ticket-management",
-  //     },
-  //   ],
-  // },
+  {
+    title: "Marketing Management",
+    url: "/marketing-management",
+    icon: TrendingUp,
+    items: [
+      {
+        title: "Marketing Management",
+        url: "/marketing-management",
+      },
+    ],
+  },
+  {
+    title: "News Management",
+    url: "/news-management",
+    icon: FileText,
+    items: [
+      {
+        title: "News Management",
+        url: "/news-management",
+      },
+    ],
+  },
+  {
+    title: "Reward Management",
+    url: "/reward-management",
+    icon: Trophy,
+    items: [
+      {
+        title: "Reward Management",
+        url: "/reward-management",
+      },
+    ],
+  },
+  {
+    title: "Settings Management",
+    url: "/settings-management",
+    icon: Settings2,
+    items: [
+      {
+        title: "Settings Management",
+        url: "/settings-management",
+      },
+    ],
+  },
 ]
 
 // User Navigation Data

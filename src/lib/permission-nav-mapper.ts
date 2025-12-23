@@ -328,8 +328,6 @@ const MANAGER_PERMISSION_NAV_MAPPING: Record<string, NavItem> = {
     icon: CreditCard,
     items: [
       { title: "USDT Transactions", url: "/usdt-transactions" },
-      { title: "Transaction Verification", url: "/transaction-verification" },
-      { title: "Payment History", url: "/payment-history" },
     ],
   },
   "User Management": {
@@ -339,7 +337,6 @@ const MANAGER_PERMISSION_NAV_MAPPING: Record<string, NavItem> = {
     items: [
       { title: "All Users", url: "/new-users" },
       { title: "User Verification", url: "/user-verification" },
-      { title: "User Status", url: "/user-status" },
     ],
   },
 };
