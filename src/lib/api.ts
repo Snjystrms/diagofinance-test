@@ -1,7 +1,7 @@
 // C:\Users\DELL\Desktop\crminhouse\src\lib\api.ts
 
-// API base URL - replace with your actual backend URL
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "https://graybulls.com";
+// API base URL is configured via .env only
+export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/+$/, "");
 
 // Debug: Log the API base URL being used
 console.log("API_BASE_URL:", API_BASE_URL);
@@ -660,6 +660,10 @@ async function apiCall<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> {
+  if (!API_BASE_URL) {
+    throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+  }
+
   const url = `${API_BASE_URL}${endpoint}`;
   
   // Debug logging for IB status endpoint

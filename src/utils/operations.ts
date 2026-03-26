@@ -1,8 +1,8 @@
 // API Operations for Personal Information
 import { ApiResponse } from '@/lib/api'
 
-// Base API configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://graybulls.com'
+// Base API configuration (from .env only)
+const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/+$/, '')
 
 // Personal Information Types
 export interface PersonalInformation {
@@ -46,6 +46,10 @@ async function apiCall<T>(
   options: RequestInit = {},
   token?: string
 ): Promise<ApiResponse<T>> {
+  if (!API_BASE_URL) {
+    throw new Error('NEXT_PUBLIC_API_BASE_URL is not configured')
+  }
+
   const url = `${API_BASE_URL}${endpoint}`
   
   const config: RequestInit = {

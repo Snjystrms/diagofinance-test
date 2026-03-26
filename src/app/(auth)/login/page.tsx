@@ -35,12 +35,12 @@ import { Spinner } from '@/components/ui/spinner';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { ProfileCompletionDialog } from '@/components/profile-completion-dialog';
 import { useEffect } from 'react';
 import { Settings, Scale, FileText } from 'lucide-react';
-import { LoginAnimatedCharacters } from '@/components/login-animated-characters';
 
 // Demo credentials for testing
 const DUMMY_CREDENTIALS = {
@@ -96,9 +96,6 @@ export default function LoginPage() {
     message: string;
     route: string;
   }>>([]);
-  const [isTyping, setIsTyping] = useState(false);
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
-  const [hasPassword, setHasPassword] = useState(false);
 
   // Check for incomplete profile sections after navigation
   useEffect(() => {
@@ -359,17 +356,20 @@ export default function LoginPage() {
 
   return (
     <ProtectedRoute requireAuth={false}>
-      {/* We enforce layering ourselves */}
-      <div className="relative min-h-screen flex bg-background">
-        {/* Left side animated characters */}
-        <LoginAnimatedCharacters 
-          isTyping={isTyping}
-          isPasswordVisible={isPasswordVisible}
-          hasPassword={hasPassword}
-        />
+      <div className="min-h-screen flex bg-background">
+        {/* Left side - Background / Brand side */}
+        <div className="hidden lg:flex lg:w-2/5 relative bg-background">
+          <Image
+            src="/loginbackground.png"
+            alt="Login background"
+            fill
+            priority
+            className="object-contain"
+          />
+        </div>
 
         {/* Right side content */}
-        <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-md w-full space-y-8">
             <div className="text-center">
               <h2 className="mt-6 text-3xl font-extrabold text-foreground">
@@ -408,7 +408,7 @@ export default function LoginPage() {
               )}
 
               {/* Demo login notice */}
-              {useDemoLogin && !showForgotPassword && (
+              {/* {useDemoLogin && !showForgotPassword && (
                 <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
                   <p className="text-sm text-blue-800">
                     <strong>Demo Mode:</strong> Use{' '}
@@ -418,17 +418,17 @@ export default function LoginPage() {
                     Select user type to see different sidebar navigation
                   </p>
                 </div>
-              )}
+              )} */}
 
               {/* API login notice */}
-              {!useDemoLogin && !showForgotPassword && (
+              {/* {!useDemoLogin && !showForgotPassword && (
                 <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
                   <p className="text-sm text-green-800">
                     <strong>API Mode:</strong> Connecting to real backend at{' '}
                     <code>/auth/login</code>
                   </p>
                 </div>
-              )}
+              )} */}
             </div>
 
             <Card>
@@ -598,13 +598,9 @@ export default function LoginPage() {
                         : 'Enter your password'
                     }
                     autoComplete={useDemoLogin ? 'off' : 'current-password'}
-                    onFocus={() => setIsTyping(true)}
-                    onBlur={() => setIsTyping(false)}
                     onChange={(e) => {
                       field.onChange(e);
-                      setHasPassword(e.target.value.length > 0);
                     }}
-                    onVisibilityChange={(visible) => setIsPasswordVisible(visible)}
                     value={field.value}
                   />
                 </FormControl>

@@ -78,9 +78,12 @@ const PaymentProofDialog = ({ paymentProofUrl }: { paymentProofUrl: string | nul
     )
   }
 
-  const imageUrl = paymentProofUrl.startsWith('http') 
-    ? paymentProofUrl 
-    : `${process.env.NEXT_PUBLIC_API_BASE_URL || 'https://graybulls.com'}${paymentProofUrl}`
+  const apiBaseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/+$/, '')
+  const imageUrl = paymentProofUrl.startsWith('http')
+    ? paymentProofUrl
+    : apiBaseUrl
+      ? `${apiBaseUrl}${paymentProofUrl}`
+      : paymentProofUrl
 
   return (
     <Dialog>
@@ -115,22 +118,25 @@ const TransactionHashCell = ({ hash }: { hash: string | null }) => {
     return <span className="text-muted-foreground text-sm">No hash provided</span>
   }
 
-  const explorerUrl = `https://bscscan.com/tx/${hash}`
+  const txExplorerBaseUrl = (process.env.NEXT_PUBLIC_TX_EXPLORER_BASE_URL || '').replace(/\/+$/, '')
+  const explorerUrl = txExplorerBaseUrl ? `${txExplorerBaseUrl}/tx/${hash}` : null
 
   return (
     <div className="flex items-center gap-2">
       <code className="text-xs font-mono bg-muted px-2 py-1 rounded max-w-[200px] truncate">
         {hash}
       </code>
-      <Button
-        variant="ghost"
-        size="sm"
-        className="h-6 w-6 p-0"
-        onClick={() => window.open(explorerUrl, '_blank')}
-        title="View on BSCScan"
-      >
-        <ExternalLink className="h-3 w-3" />
-      </Button>
+      {explorerUrl ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-6 w-6 p-0"
+          onClick={() => window.open(explorerUrl, '_blank')}
+          title="View transaction explorer"
+        >
+          <ExternalLink className="h-3 w-3" />
+        </Button>
+      ) : null}
     </div>
   )
 }
