@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
 import { MainLayout } from '@/components/main-layout'
 import { AppDataTable } from '@/components/app-data-table'
 import { useAuth } from '@/contexts/auth-context'
@@ -569,119 +570,52 @@ const binanceColumns: ColumnDef<DepositListItem>[] = [
 export default function MyDepositPage() {
   const { token } = useAuth()
   const [activeTab, setActiveTab] = useState<"local" | "crypto">("local")
-  const [depositRequests, setDepositRequests] = useState<DepositRequestItem[]>([])
-  const [binanceDeposits, setBinanceDeposits] = useState<DepositListItem[]>([])
-  const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
   const [perPage, setPerPage] = useQueryState('perPage', parseAsInteger.withDefault(10))
-  const [totalPages, setTotalPages] = useState(1)
-  const [total, setTotal] = useState(0)
 
-  const fetchDepositRequests = async (currentPage: number, currentLimit: number) => {
-    if (!token) {
-      setError('Authentication required')
-      setLoading(false)
-      return
-    }
+  const { data: localDepositsData, isLoading: localLoading } = useQuery({
+    queryKey: ['myDeposits', 'local', token, page, perPage],
+    queryFn: () => getUserDepositRequests(page, perPage, token!),
+    enabled: Boolean(token) && activeTab === 'local',
+    staleTime: 30 * 1000,
+    placeholderData: (prev) => prev,
+  })
 
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await getUserDepositRequests(currentPage, currentLimit, token)
-      
-      if (response.success && response.data) {
-        setDepositRequests(response.data.requests || [])
-        // If pagination info is available, use it; otherwise calculate
-        if (response.data.pagination) {
-          setTotalPages(response.data.pagination.totalPages)
-          setTotal(response.data.pagination.total)
-        } else {
-          // Fallback: assume more pages if we got a full page
-          setTotalPages(response.data.requests.length === currentLimit ? currentPage + 1 : currentPage)
-          setTotal(response.data.requests.length)
-        }
-      } else {
-        setError('Failed to fetch deposit requests')
+  const { data: cryptoDepositsData, isLoading: cryptoLoading } = useQuery({
+    queryKey: ['myDeposits', 'crypto', token, page, perPage],
+    queryFn: () => binanceDepositApi.getList(page, perPage, token!),
+    enabled: Boolean(token) && activeTab === 'crypto',
+    staleTime: 30 * 1000,
+    placeholderData: (prev) => prev,
+  })
+
+  const loading = activeTab === 'local' ? localLoading : cryptoLoading
+
+  const depositRequests: DepositRequestItem[] = localDepositsData?.data?.requests ?? []
+  const localTotalPages = localDepositsData?.data?.pagination?.totalPages ?? 1
+  const localTotal = localDepositsData?.data?.pagination?.total ?? depositRequests.length
+
+  const cryptoRaw = cryptoDepositsData?.data as unknown
+  let binanceDeposits: DepositListItem[] = []
+  let cryptoTotalPages = 1
+  let cryptoTotal = 0
+  if (cryptoRaw) {
+    const lr = cryptoRaw as { data?: DepositListItem[]; pagination?: { last_page?: number; current_page?: number; total?: number } }
+    if (Array.isArray(lr)) {
+      binanceDeposits = lr as DepositListItem[]
+    } else if (Array.isArray(lr.data)) {
+      binanceDeposits = lr.data
+      if (lr.pagination) {
+        cryptoTotalPages = lr.pagination.last_page ?? lr.pagination.current_page ?? 1
+        cryptoTotal = lr.pagination.total ?? binanceDeposits.length
       }
-    } catch (err) {
-      console.error('Error fetching deposit requests:', err)
-      setError(err instanceof Error ? err.message : 'Failed to fetch deposit requests')
-    } finally {
-      setLoading(false)
     }
   }
+  const totalPages = activeTab === 'local' ? localTotalPages : cryptoTotalPages
+  const total = activeTab === 'local' ? localTotal : cryptoTotal
 
-  const fetchBinanceDeposits = async (currentPage: number, currentLimit: number) => {
-    if (!token) {
-      setError('Authentication required')
-      setLoading(false)
-      return
-    }
 
-    try {
-      setLoading(true)
-      setError(null)
-      const response = await binanceDepositApi.getList(currentPage, currentLimit, token)
-      
-      console.log('Binance deposits response:', response)
-      
-      if (response.success && response.data) {
-        // apiCall returns ApiResponse<T>, so response.data is DepositListResponse
-        // DepositListResponse has { success: boolean, data: DepositListItem[], pagination: {...} }
-        const listResponse = response.data as DepositListResponse;
-        
-        // Handle both possible structures:
-        // 1. response.data is DepositListResponse with nested data
-        // 2. response.data is directly the array (if apiCall unwraps it)
-        let deposits: DepositListItem[] = [];
-        let pagination: DepositListResponse['pagination'] | undefined;
-        
-        if (Array.isArray(listResponse)) {
-          // If response.data is directly an array
-          deposits = listResponse;
-        } else if (Array.isArray(listResponse.data)) {
-          // If response.data is DepositListResponse with nested data
-          deposits = listResponse.data;
-          pagination = listResponse.pagination;
-        } else if (Array.isArray((listResponse as unknown as { data?: DepositListItem[] })?.data)) {
-          // Fallback: try to access data property
-          deposits = (listResponse as unknown as { data: DepositListItem[] }).data;
-          pagination = (listResponse as unknown as { pagination?: DepositListResponse['pagination'] }).pagination;
-        }
-        
-        console.log('Binance deposits array:', deposits)
-        console.log('Pagination:', pagination)
-        
-        setBinanceDeposits(deposits)
-        
-        if (pagination) {
-          setTotalPages(pagination.last_page || pagination.current_page)
-          setTotal(pagination.total)
-        } else {
-          setTotalPages(1)
-          setTotal(deposits.length)
-        }
-      } else {
-        setError('Failed to fetch Binance deposits')
-      }
-    } catch (err) {
-      console.error('Error fetching Binance deposits:', err)
-      setError(err instanceof Error ? err.message : 'Failed to fetch Binance deposits')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    if (page && perPage) {
-      if (activeTab === 'local') {
-        fetchDepositRequests(page, perPage)
-      } else {
-        fetchBinanceDeposits(page, perPage)
-      }
-    }
-  }, [page, perPage, token, activeTab])
 
   // Recalculate pageCount based on total
   const pageCount = useMemo(() => {

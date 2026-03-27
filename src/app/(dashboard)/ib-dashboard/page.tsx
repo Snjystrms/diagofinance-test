@@ -37,8 +37,17 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { formatCurrency } from "@/lib/format";
-import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from "@/components/ui/chart";
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import type { ChartConfig } from "@/components/ui/chart";
+import dynamic from "next/dynamic";
+
+const ChartContainer = dynamic(() => import("@/components/ui/chart").then((m) => ({ default: m.ChartContainer })), { ssr: false })
+const ChartTooltip = dynamic(() => import("@/components/ui/chart").then((m) => ({ default: m.ChartTooltip })), { ssr: false })
+const ChartTooltipContent = dynamic(() => import("@/components/ui/chart").then((m) => ({ default: m.ChartTooltipContent })), { ssr: false })
+const LineChart = dynamic(() => import("recharts").then((m) => ({ default: m.LineChart })), { ssr: false })
+const Line = dynamic(() => import("recharts").then((m) => ({ default: m.Line })), { ssr: false })
+const CartesianGrid = dynamic(() => import("recharts").then((m) => ({ default: m.CartesianGrid })), { ssr: false })
+const XAxis = dynamic(() => import("recharts").then((m) => ({ default: m.XAxis })), { ssr: false })
+const YAxis = dynamic(() => import("recharts").then((m) => ({ default: m.YAxis })), { ssr: false })
 import Link from "next/link";
 
 // Helper function to get time-based greeting

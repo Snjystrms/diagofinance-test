@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { AppDataTable } from "@/components/app-data-table";
 import { ColumnDef } from "@tanstack/react-table";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 import { FormDialog } from './dialogs/form-dialog';
 import { DeleteDialog } from './dialogs/delete-dialog';
 import { Pencil, Trash2 } from "lucide-react";

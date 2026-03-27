@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
 import { format } from "date-fns";
 
@@ -27,29 +27,8 @@ import {
   type IbWithdrawalReportListPayload,
 } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
-import { MainLayout } from "@/components/main-layout";
-
-/* ---------------- Helpers ---------------- */
-const fmtDateTime = (s?: string | null) => {
-  if (!s) return "—";
-  try {
-    return new Date(s).toLocaleString();
-  } catch {
-    return s;
-  }
-};
-
-const formatAmount = (amount: string | number) => {
-  try {
-    const num = typeof amount === "string" ? parseFloat(amount) : amount;
-    return num.toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 8,
-    });
-  } catch {
-    return String(amount);
-  }
-};
+import { ReportPageWrapper } from "@/components/report-page-wrapper";
+import { fmtDateTime, formatAmount } from "@/lib/formatters";
 
 const statusBadge = (status: string | number) => {
   const statusStr = String(status);
@@ -421,23 +400,18 @@ export default function IbWithdrawalReportPage() {
     []
   );
 
-  if (loading && rows.length === 0) {
-    return (
-      <MainLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Spinner className="h-8 w-8" />
-        </div>
-      </MainLayout>
-    );
-  }
-
   return (
-    <MainLayout>
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Header Section */}
+    <ReportPageWrapper
+      title="IB Withdrawal Report"
+      description={<></>}
+      isLoading={loading}
+      isEmpty={rows.length === 0}
+      onRefresh={handleRefresh}
+      isRefreshing={loading}
+    >
+      <div className="space-y-4">
         <div className="flex items-center justify-between">
-        <div>
-            <h1 className="text-2xl font-semibold">IB Withdrawal Report</h1>
+          <div>
             <p className="text-sm text-muted-foreground mt-0.5">
               Manage and view IB withdrawal transactions
             </p>
@@ -600,7 +574,7 @@ export default function IbWithdrawalReportPage() {
           </div>
         </div>
       </div>
-    </MainLayout>
+    </ReportPageWrapper>
   );
 }
 

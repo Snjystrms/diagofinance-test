@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Bell, Search, User, LogOut, Palette, Shield, Layout, Copy } from "lucide-react"
+import { useQuery } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -35,8 +36,32 @@ export function Header() {
   const [accountId, setAccountId] = useState<string | null>(null);
   const [profileStatus, setProfileStatus] = useState<string | null>(null);
   const [dashboardName, setDashboardName] = useState<string | null>(null);
-  const [unreadCount, setUnreadCount] = useState<number>(0);
-  const [isLoadingUnreadCount, setIsLoadingUnreadCount] = useState(false);
+
+  // Share the userDashboard data with dashboard page via React Query cache.
+  const { data: userDashboardData } = useQuery({
+    queryKey: ["userDashboard", token],
+    queryFn: () => authApi.getUserDashboard(token!),
+    enabled: Boolean(token) && user?.type === "user",
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  // Admin/manager unread count is fetched ONLY on `/dashboard` page.
+  // Header just reads the cached value (no network calls here).
+  const { data: adminUnreadCountData } = useQuery({
+    queryKey: ["adminUnreadCount", token],
+    queryFn: async () => {
+      if (!token) return 0;
+      const response = await adminNotificationApi.getUnreadCount(token);
+      if (response.success && response.data) {
+        return response.data.unread_count || 0;
+      }
+      return 0;
+    },
+    enabled: false,
+    initialData: 0,
+  });
+  const unreadCount = adminUnreadCountData ?? 0;
 
   // Check 2FA status when component mounts and when user changes
   useEffect(() => {
@@ -45,66 +70,25 @@ export function Header() {
     }
   }, [user, token]);
 
+  // Derive header info from the shared userDashboard React Query cache.
   useEffect(() => {
-    let isMounted = true;
-    if (!token || user?.type !== "user") {
-      setAccountId(null);
-      setProfileStatus(null);
-      setDashboardName(null);
+    if (!userDashboardData?.success || !userDashboardData.data) {
+      if (user?.type !== "user") {
+        setAccountId(null);
+        setProfileStatus(null);
+        setDashboardName(null);
+      }
       return;
     }
-
-    const fetchDashboardInfo = async () => {
-      try {
-        const response = await authApi.getUserDashboard(token);
-        if (response.success && response.data && isMounted) {
-          const dashboardUser = response.data.user;
-          const profile = response.data.profile_status;
-          setAccountId(dashboardUser?.account_id ?? null);
-          setProfileStatus(profile?.status ?? null);
-          const displayName =
-            dashboardUser?.name ||
-            [dashboardUser?.first_name, dashboardUser?.last_name].filter(Boolean).join(" ");
-          setDashboardName(displayName || null);
-        }
-      } catch (error) {
-        console.error("Failed to load dashboard header info:", error);
-      }
-    };
-
-    fetchDashboardInfo();
-    return () => {
-      isMounted = false;
-    };
-  }, [token, user?.type]);
-
-  // Fetch unread notification count for admin/manager
-  useEffect(() => {
-    if (!token || user?.type === "user") {
-      setUnreadCount(0);
-      return;
-    }
-
-    const fetchUnreadCount = async () => {
-      try {
-        setIsLoadingUnreadCount(true);
-        const response = await adminNotificationApi.getUnreadCount(token);
-        if (response.success && response.data) {
-          setUnreadCount(response.data.unread_count || 0);
-        }
-      } catch (error) {
-        console.error("Failed to load unread notification count:", error);
-        setUnreadCount(0);
-      } finally {
-        setIsLoadingUnreadCount(false);
-      }
-    };
-
-    fetchUnreadCount();
-    // Refresh unread count every 30 seconds
-    const interval = setInterval(fetchUnreadCount, 30000);
-    return () => clearInterval(interval);
-  }, [token, user?.type]);
+    const dashboardUser = userDashboardData.data.user;
+    const profile = userDashboardData.data.profile_status;
+    setAccountId(dashboardUser?.account_id ?? null);
+    setProfileStatus(profile?.status ?? null);
+    const displayName =
+      dashboardUser?.name ||
+      [dashboardUser?.first_name, dashboardUser?.last_name].filter(Boolean).join(" ");
+    setDashboardName(displayName || null);
+  }, [userDashboardData, user?.type]);
 
   const checkTwoFactorStatus = async () => {
     if (!user?.id || !token) return;

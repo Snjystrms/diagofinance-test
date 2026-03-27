@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import toast from "react-hot-toast";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
@@ -132,12 +133,7 @@ const priorityBadge = (priority: number) => {
   }
 };
 
-const formatDateTime = (value?: string | null) => {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString();
-};
+import { formatDateTime } from "@/lib/formatters";
 
 const formatEnquiryType = (value: number) => {
   const option = ENQUIRY_OPTIONS.find((opt) => Number(opt.value) === value);
@@ -147,15 +143,7 @@ const formatEnquiryType = (value: number) => {
 export default function AdminTicketsPage() {
   const { token } = useAuth();
 
-  const [tickets, setTickets] = useState<AdminTicketItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [statsLoading, setStatsLoading] = useState(true);
-  const [pagination, setPagination] = useState({
-    current_page: 1,
-    per_page: 10,
-    total_pages: 1,
-    total: 0,
-  });
 
   const [stats, setStats] = useState({
     total: 0,
@@ -215,17 +203,10 @@ export default function AdminTicketsPage() {
     }
   }, [token]);
 
-  const loadTickets = useCallback(async () => {
-    if (!token) {
-      setTickets([]);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-
-      const response = await adminTicketApi.list(token, {
+  const { data: ticketsQueryResult, isLoading: loading } = useQuery({
+    queryKey: ["adminTickets", token, page, perPage, statusFilter, priorityFilter, enquiryFilter, userIdFilter, search],
+    queryFn: async () => {
+      const response = await adminTicketApi.list(token!, {
         page,
         limit: perPage,
         status: statusFilter && statusFilter !== "all" ? statusFilter : undefined,
@@ -234,39 +215,24 @@ export default function AdminTicketsPage() {
         user_id: userIdFilter?.trim() ? userIdFilter.trim() : undefined,
         search: search?.trim() ? search.trim() : undefined,
       });
+      return response?.data;
+    },
+    enabled: Boolean(token),
+    staleTime: 30 * 1000,
+    placeholderData: (prev) => prev,
+  });
 
-      const payload = response?.data;
-      const ticketItems = payload?.tickets ?? [];
-      setTickets(ticketItems);
-
-      const paginationData = payload?.pagination;
-      if (paginationData) {
-        setPagination({
-          current_page: paginationData.current_page ?? page,
-          per_page: paginationData.per_page ?? perPage,
-          total_pages: paginationData.last_page ?? 1,
-          total: paginationData.total ?? ticketItems.length,
-        });
-      } else {
-        setPagination({
-          current_page: page,
-          per_page: perPage,
-          total_pages: 1,
-          total: ticketItems.length,
-        });
+  const tickets = ticketsQueryResult?.tickets ?? [];
+  const pagination = ticketsQueryResult?.pagination
+    ? {
+        current_page: ticketsQueryResult.pagination.current_page ?? page,
+        per_page: ticketsQueryResult.pagination.per_page ?? perPage,
+        total_pages: ticketsQueryResult.pagination.last_page ?? 1,
+        total: ticketsQueryResult.pagination.total ?? tickets.length,
       }
-    } catch (error: unknown) {
-      console.error("Failed to load tickets:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to load tickets");
-      setTickets([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [token, page, perPage, statusFilter, priorityFilter, enquiryFilter, userIdFilter, search]);
+    : { current_page: page, per_page: perPage, total_pages: 1, total: tickets.length };
 
-  useEffect(() => {
-    void loadTickets();
-  }, [loadTickets]);
+  const loadTickets = useCallback(() => {}, []);
 
   useEffect(() => {
     void loadStats();

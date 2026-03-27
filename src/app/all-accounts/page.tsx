@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { MainLayout } from "@/components/main-layout";
@@ -94,8 +95,7 @@ const useDebouncedValue = <T,>(value: T, delay = 400) => {
 
 export default function AllAccountsPage() {
   const { token } = useAuth();
-  const [data, setData] = useState<AccountTypeRow[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const queryClient = useQueryClient();
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   // filters
@@ -105,40 +105,27 @@ export default function AllAccountsPage() {
   // debounced + min-length-3 rule
   const debouncedSearch = useDebouncedValue(search, 450);
   const effectiveSearch =
-    debouncedSearch.trim().length >= 3 ? debouncedSearch.trim() : ""; // only send if >= 3 chars
+    debouncedSearch.trim().length >= 3 ? debouncedSearch.trim() : "";
 
-const fetchList = useCallback(
-  async (overrideSearch?: string) => {
-    if (!token) return;
-    try {
-      setLoading(true);
+  const { data: accountTypesResult, isLoading: loading } = useQuery({
+    queryKey: ["accountTypes", token, statusFilter, effectiveSearch],
+    queryFn: async () => {
       const res = await adminAccountTypesApi.list({
-        token,
+        token: token!,
         status: statusFilter !== "all" ? statusFilter : undefined,
-        // If overrideSearch provided, use it; otherwise decide based on current debounced search
-        search:
-          overrideSearch !== undefined
-            ? (overrideSearch.trim() || undefined)
-            : (debouncedSearch.trim().length >= 3 ? debouncedSearch.trim() : undefined),
+        search: effectiveSearch || undefined,
       });
-      const list = (res?.data?.accountTypes || []) as AccountTypeItem[];
-      setData(list.map(normalize));
-    } catch (err) {
-      console.error("Fetch account types failed:", err);
-      toast.error("Failed to load account types");
-      setData([]);
-    } finally {
-      setLoading(false);
-    }
-  },
-  [token, statusFilter, debouncedSearch]
-);
+      return ((res?.data?.accountTypes || []) as AccountTypeItem[]).map(normalize);
+    },
+    enabled: Boolean(token),
+    staleTime: 60 * 1000,
+    placeholderData: (prev) => prev,
+  });
+  const data = accountTypesResult ?? [];
 
-
-  // refetch when status/search (debounced) changes
-  useEffect(() => {
-    fetchList();
-  }, [fetchList]);
+  const fetchList = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["accountTypes", token] });
+  }, [queryClient, token]);
 
   // CREATE
   const handleAdd = async (payload: Omit<AccountTypeRow, "id">) => {
@@ -151,8 +138,8 @@ const fetchList = useCallback(
     }
     
     try {
-      const created = await adminAccountTypesApi.create(serialize(payload), token);
-      setData((prev) => [normalize(created.data as AccountTypeItem), ...prev]);
+      await adminAccountTypesApi.create(serialize(payload), token);
+      queryClient.invalidateQueries({ queryKey: ["accountTypes", token] });
       toast.success("Account type created");
       return Promise.resolve();
     } catch (e: unknown) {
@@ -174,9 +161,8 @@ const fetchList = useCallback(
     
     try {
       setActionLoadingId(row.id);
-      const updated = await adminAccountTypesApi.update(row.id, serialize(row), token);
-      const norm = normalize(updated.data as AccountTypeItem);
-      setData((prev) => prev.map((x) => (x.id === row.id ? norm : x)));
+      await adminAccountTypesApi.update(row.id, serialize(row), token);
+      queryClient.invalidateQueries({ queryKey: ["accountTypes", token] });
       toast.success("Account type updated");
       return Promise.resolve();
     } catch (e: unknown) {
@@ -195,12 +181,7 @@ const fetchList = useCallback(
     try {
       setActionLoadingId(id);
       const toggled = await adminAccountTypesApi.toggleStatus(id, token);
-      const accountData = toggled.data as AccountTypeItem | undefined;
-      if (!accountData) {
-        throw new Error("Invalid response structure from toggle status API");
-      }
-      const norm = normalize(accountData);
-      setData((prev) => prev.map((x) => (x.id === id ? norm : x)));
+      queryClient.invalidateQueries({ queryKey: ["accountTypes", token] });
       toast.success(toggled.message || "Status updated");
     } catch (e: unknown) {
       console.error("Toggle error:", e);
@@ -217,7 +198,7 @@ const fetchList = useCallback(
     try {
       setActionLoadingId(id);
       await adminAccountTypesApi.delete(id, token);
-      setData((prev) => prev.filter((x) => x.id !== id));
+      queryClient.invalidateQueries({ queryKey: ["accountTypes", token] });
       toast.success("Account type deleted");
       return Promise.resolve();
     } catch (e: unknown) {

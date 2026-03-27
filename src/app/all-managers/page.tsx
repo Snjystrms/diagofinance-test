@@ -2,6 +2,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { MainLayout } from "@/components/main-layout";
@@ -88,19 +89,13 @@ function toIdArray(perms: unknown): number[] {
 
 export default function AllManagersPage() {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
 
-  const [data, setData] = useState<ManagerRow[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   const [createOpen, setCreateOpen] = useState(false);
 
-  // Permissions data
-  const [allPerms, setAllPerms] = useState<PermissionLite[]>([]);
-  const [groupedPerms, setGroupedPerms] = useState<GroupedPermissions[]>([]);
-  const [permIndex, setPermIndex] = useState<
-    Record<number, { id: number; name: string; category: string }>
-  >({});
+  // Permissions data (now populated from React Query - see below)
 
   // View modal state
   const [viewOpen, setViewOpen] = useState(false);
@@ -130,48 +125,38 @@ export default function AllManagersPage() {
     [token]
   );
 
-  const fetchPermissions = useCallback(async () => {
-    if (!token) return;
-    try {
-      const res = await permissionsApi.listAll(token);
-      const data = res?.data as { permissions?: GroupedPermissions[] } | undefined;
-      const groups = (data?.permissions || []) as GroupedPermissions[];
-      setGroupedPerms(groups);
+  const { data: managersResult, isLoading: loading } = useQuery({
+    queryKey: ["managers", token],
+    queryFn: async () => {
+      const res = await adminManagersApi.list(token!);
+      return ((res?.data?.managers || []) as ManagerItem[]).map(normalize);
+    },
+    enabled: Boolean(token),
+    staleTime: 60 * 1000,
+  });
+  const data = managersResult ?? [];
 
-      const flat: PermissionLite[] = groups.flatMap((g) =>
-        (g.permissions || []).map((p) => ({ id: p.id, name: p.name }))
-      );
-      setAllPerms(flat);
-      setPermIndex(buildIndex(groups));
-    } catch (e) {
-      console.error("Fetch permissions failed:", e);
-      toast.error("Failed to load permissions");
-      setGroupedPerms([]);
-      setAllPerms([]);
-      setPermIndex({});
-    }
-  }, [token]);
+  const { data: permissionsResult } = useQuery({
+    queryKey: ["permissions", token],
+    queryFn: async () => {
+      const res = await permissionsApi.listAll(token!);
+      const pd = res?.data as { permissions?: GroupedPermissions[] } | undefined;
+      return (pd?.permissions || []) as GroupedPermissions[];
+    },
+    enabled: Boolean(token),
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const fetchList = useCallback(async () => {
-    if (!token) return;
-    try {
-      setLoading(true);
-      const res = await adminManagersApi.list(token);
-      const list = (res?.data?.managers || []) as ManagerItem[];
-      setData(list.map(normalize));
-    } catch (err) {
-      console.error("Fetch managers failed:", err);
-      toast.error("Failed to load managers");
-      setData([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [token]);
+  const groupedPerms = permissionsResult ?? [];
+  const permIndex = useMemo(() => buildIndex(groupedPerms), [groupedPerms]);
+  const allPerms: PermissionLite[] = useMemo(
+    () => groupedPerms.flatMap((g) => (g.permissions || []).map((p) => ({ id: p.id, name: p.name }))),
+    [groupedPerms]
+  );
 
-  useEffect(() => {
-    fetchList();
-    fetchPermissions();
-  }, [fetchList, fetchPermissions]);
+  const fetchList = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["managers", token] });
+  }, [queryClient, token]);
 
   // CREATE
   const handleAdd = async (
@@ -189,9 +174,8 @@ export default function AllManagersPage() {
         toast.error("Password is required to create manager");
         return Promise.reject(new Error("Password required"));
       }
-      const res = await adminManagersApi.create(body, token);
-      const created = normalize(res.data!.manager as ManagerItem);
-      setData((prev) => [created, ...prev]);
+      await adminManagersApi.create(body, token);
+      queryClient.invalidateQueries({ queryKey: ["managers", token] });
       toast.success("Manager created successfully");
       return Promise.resolve();
     } catch (e: unknown) {
@@ -219,11 +203,8 @@ export default function AllManagersPage() {
       if (trimmedPassword) {
         body.password = trimmedPassword;
       }
-      console.log("Sending update request with body:", body);
-      const res = await adminManagersApi.update(row.id, body, token);
-
-      const norm = normalize(res.data!.manager as ManagerItem);
-      setData((prev) => prev.map((x) => (x.id === row.id ? norm : x)));
+      await adminManagersApi.update(row.id, body, token);
+      queryClient.invalidateQueries({ queryKey: ["managers", token] });
       toast.success("Manager updated successfully");
       return Promise.resolve();
     } catch (e: unknown) {
@@ -253,10 +234,8 @@ export default function AllManagersPage() {
           throw new Error(res.message || "Invalid response from server");
         }
 
-        const updated = normalize(res.data.manager as ManagerItem);
-        setData((prev) => prev.map((x) => (x.id === id ? updated : x)));
-
-        toast.success(`Manager ${updated.status ? "activated" : "deactivated"} successfully`);
+        queryClient.invalidateQueries({ queryKey: ["managers", token] });
+        toast.success("Manager status updated successfully");
       } catch (e: unknown) {
         console.error("[Toggle] Error:", e);
         const errorMessage = e instanceof Error ? e.message : "Failed to update status";
@@ -274,7 +253,7 @@ export default function AllManagersPage() {
     try {
       setActionLoadingId(id);
       await adminManagersApi.delete(id, token);
-      setData((prev) => prev.filter((x) => x.id !== id));
+      queryClient.invalidateQueries({ queryKey: ["managers", token] });
       toast.success("Manager deleted");
       return Promise.resolve();
     } catch (e: unknown) {

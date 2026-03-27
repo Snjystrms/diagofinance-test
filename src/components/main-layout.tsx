@@ -1,9 +1,11 @@
 "use client"
 
 import { AppSidebar } from "@/components/app-sidebar"
-import { AppSidebarV2 } from "@/components/app-sidebar-v2"
-import { AppSidebarV3 } from "@/components/app-sidebar-v3"
 import { Header } from "@/components/header"
+import dynamic from "next/dynamic"
+
+const AppSidebarV2 = dynamic(() => import("@/components/app-sidebar-v2").then((m) => ({ default: m.AppSidebarV2 })), { ssr: false })
+const AppSidebarV3 = dynamic(() => import("@/components/app-sidebar-v3").then((m) => ({ default: m.AppSidebarV3 })), { ssr: false })
 import { RegistrationFeeModal } from "@/components/registration-fee-modal"
 import { useAuth } from "@/contexts/auth-context"
 import {

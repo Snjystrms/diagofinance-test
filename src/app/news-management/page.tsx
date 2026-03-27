@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
+import toast from "react-hot-toast";
 import { FileImage, Upload, X, Loader2 } from "lucide-react";
 import { adminNewsApi, type NewsCreateBody } from "@/lib/api";
 
