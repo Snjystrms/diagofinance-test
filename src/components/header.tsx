@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Bell, Search, User, LogOut, Palette, Shield, Layout, Copy } from "lucide-react"
-import { useQuery } from "@tanstack/react-query"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -14,7 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ThemeCustomizer } from "@/components/theme-customizer"
 import { SidebarSelector } from "@/components/sidebar-selector"
 import { useAuth } from "@/contexts/auth-context"
@@ -24,18 +24,26 @@ import { authApi, admin2FAApi, manager2FAApi, adminNotificationApi } from "@/lib
 import toast from "react-hot-toast"
 import { TwoFactorModal } from "@/components/two-factor-modal"
 import { NotificationInbox } from "@/components/notification-inbox"
+import { useClientCustomization } from "@/contexts/client-customization-context"
 
 export function Header() {
   const { user, token, logout } = useAuth();
+  const queryClient = useQueryClient();
+  const {
+    canCustomizeTheme,
+    canCustomizeSidebar,
+    customizationEnabled,
+    exportPresetSnapshot,
+  } = useClientCustomization();
   const router = useRouter();
   const [themeCustomizerOpen, setThemeCustomizerOpen] = useState(false);
   const [sidebarSelectorOpen, setSidebarSelectorOpen] = useState(false);
   const [twoFactorModalOpen, setTwoFactorModalOpen] = useState(false);
-  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
-  const [isLoading2FAStatus, setIsLoading2FAStatus] = useState(false);
   const [accountId, setAccountId] = useState<string | null>(null);
   const [profileStatus, setProfileStatus] = useState<string | null>(null);
   const [dashboardName, setDashboardName] = useState<string | null>(null);
+  const canManageCustomizer =
+    user?.type === "admin" || user?.type === "subadmin" || user?.type === "manager";
 
   // Share the userDashboard data with dashboard page via React Query cache.
   const { data: userDashboardData } = useQuery({
@@ -43,6 +51,7 @@ export function Header() {
     queryFn: () => authApi.getUserDashboard(token!),
     enabled: Boolean(token) && user?.type === "user",
     staleTime: 5 * 60 * 1000,
+    retry: false,
     refetchOnWindowFocus: false,
   });
 
@@ -63,12 +72,31 @@ export function Header() {
   });
   const unreadCount = adminUnreadCountData ?? 0;
 
-  // Check 2FA status when component mounts and when user changes
-  useEffect(() => {
-    if (user?.id && token) {
-      checkTwoFactorStatus();
-    }
-  }, [user, token]);
+  const { data: is2FAEnabled = false, isFetching: isLoading2FAStatus } = useQuery({
+    queryKey: ["twoFactorStatus", user?.type, user?.id, token],
+    queryFn: async () => {
+      if (!user?.id || !token) return false;
+
+      try {
+        const isAdminLike = user.type === "admin" || user.type === "subadmin";
+        const isManager = user.type === "manager";
+
+        const response = isAdminLike
+          ? await admin2FAApi.getTwoFactorStatus(user.id, token)
+          : isManager
+            ? await manager2FAApi.getTwoFactorStatus(user.id, token)
+            : await authApi.getTwoFactorStatus(Number(user.id), token);
+
+        return response.success && response.data ? Boolean(response.data.google_2FA_status) : false;
+      } catch {
+        return false;
+      }
+    },
+    enabled: Boolean(user?.id && token),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
 
   // Derive header info from the shared userDashboard React Query cache.
   useEffect(() => {
@@ -90,43 +118,17 @@ export function Header() {
     setDashboardName(displayName || null);
   }, [userDashboardData, user?.type]);
 
-  const checkTwoFactorStatus = async () => {
-    if (!user?.id || !token) return;
-    
-    setIsLoading2FAStatus(true);
-    
-    try {
-      // Use appropriate API based on user type
-      const isAdmin = user.type === 'admin';
-      const isManager = user.type === 'manager';
-      let response;
-      
-      if (isAdmin) {
-        response = await admin2FAApi.getTwoFactorStatus(user.id, token);
-      } else if (isManager) {
-        response = await manager2FAApi.getTwoFactorStatus(user.id, token);
-      } else {
-        response = await authApi.getTwoFactorStatus(Number(user.id), token);
-      }
-      
-      if (response.success && response.data) {
-        setIs2FAEnabled(response.data.google_2FA_status);
-      }
-    } catch (error) {
-      console.error('Failed to check 2FA status:', error);
-    } finally {
-      setIsLoading2FAStatus(false);
-    }
-  };
-
   const handleLogout = async () => {
     try {
-      // Call the logout API if we have a token
-      if (token) {
+      // Only user sessions have a matching logout endpoint in the current API layer.
+      if (token && user?.type === "user") {
         await authApi.logout(token);
       }
     } catch (error) {
-      console.error('Logout API error:', error);
+      const message = error instanceof Error ? error.message : "";
+      if (message && !message.toLowerCase().includes("invalid token type")) {
+        console.warn("Logout API failed, completing local logout");
+      }
       // Even if the API call fails, we still want to log out locally
     } finally {
       // Perform local logout regardless of API success
@@ -138,11 +140,21 @@ export function Header() {
 
   const handle2FAStatusChange = () => {
     // Toggle the 2FA status and refresh the status from API
-    checkTwoFactorStatus();
+    void queryClient.invalidateQueries({ queryKey: ["twoFactorStatus"] });
   };
 
   const handleSidebarTriggerClick = () => {
     window.dispatchEvent(new CustomEvent("toggle-nested-sidebar"));
+  };
+
+  const handleExportPreset = async () => {
+    try {
+      await navigator.clipboard.writeText(exportPresetSnapshot());
+      toast.success("Preset snapshot copied to clipboard");
+    } catch (error) {
+      console.error("Failed to copy preset snapshot:", error);
+      toast.error("Unable to copy preset snapshot");
+    }
   };
 
   return (
@@ -250,7 +262,7 @@ export function Header() {
             )}
           </Button>
           
-          {user?.type === 'admin' && (
+          {canManageCustomizer && canCustomizeSidebar && (
             <Button 
               variant="ghost" 
               size="icon" 
@@ -262,18 +274,32 @@ export function Header() {
             </Button>
           )}
           
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => setThemeCustomizerOpen(true)}
-            title="Customize Theme"
-            className="relative flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9"
-            style={{
-              '--tw-ring-color': 'var(--accent, #3b82f6)',
-            } as React.CSSProperties}
-          >
-            <Palette className="h-4 w-4" />
-          </Button>
+          {canCustomizeTheme && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setThemeCustomizerOpen(true)}
+              title="Customize Theme"
+              className="relative flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9"
+              style={{
+                '--tw-ring-color': 'var(--accent, #3b82f6)',
+              } as React.CSSProperties}
+            >
+              <Palette className="h-4 w-4" />
+            </Button>
+          )}
+
+          {customizationEnabled && canManageCustomizer && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleExportPreset}
+              className="hidden lg:inline-flex"
+              title="Copy current preset snapshot"
+            >
+              Export Preset
+            </Button>
+          )}
           
           {user?.type === "user" ? (
             <NotificationInbox />
@@ -332,7 +358,6 @@ export function Header() {
               ) : (
                 <Button variant="ghost" className="relative h-8 w-8 sm:h-9 sm:w-9 rounded-full flex-shrink-0">
                   <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
-                    <AvatarImage src="/avatars/01.png" alt="@user" />
                     <AvatarFallback>
                       {user?.name ? user.name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
                     </AvatarFallback>

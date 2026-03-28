@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { ChevronRight, type LucideIcon } from "lucide-react"
 
 import {
@@ -37,8 +37,28 @@ export function NavMain({
   }[]
 }) {
   const pathname = usePathname()
+  const router = useRouter()
   const { state } = useSidebar()
   const isCollapsed = state === "collapsed"
+
+  React.useEffect(() => {
+    const urls = items.flatMap((item) => [item.url, ...(item.items?.map((subItem) => subItem.url) ?? [])]);
+    const uniqueUrls = Array.from(new Set(urls.filter(Boolean)));
+
+    const prefetchRoutes = () => {
+      uniqueUrls.forEach((url) => {
+        router.prefetch(url)
+      })
+    }
+
+    if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+      const idleId = window.requestIdleCallback(() => prefetchRoutes())
+      return () => window.cancelIdleCallback(idleId)
+    }
+
+    const timeoutId = globalThis.setTimeout(prefetchRoutes, 300)
+    return () => globalThis.clearTimeout(timeoutId)
+  }, [items, router])
 
   return (
     <SidebarGroup>

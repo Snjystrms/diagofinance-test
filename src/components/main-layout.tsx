@@ -13,6 +13,7 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { useState, useEffect } from "react"
+import { useClientCustomization } from "@/contexts/client-customization-context"
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -21,23 +22,7 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const { user } = useAuth();
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
-  const [selectedSidebar, setSelectedSidebar] = useState<string>("default");
-
-  // Load saved sidebar from localStorage
-  useEffect(() => {
-    const savedSidebar = localStorage.getItem("selected-sidebar") || "default";
-    setSelectedSidebar(savedSidebar);
-
-    // Listen for sidebar changes
-    const handleSidebarChange = (event: CustomEvent) => {
-      setSelectedSidebar(event.detail.sidebarId);
-    };
-
-    window.addEventListener('sidebar-changed', handleSidebarChange as EventListener);
-    return () => {
-      window.removeEventListener('sidebar-changed', handleSidebarChange as EventListener);
-    };
-  }, []);
+  const { sidebarId: selectedSidebar } = useClientCustomization();
 
   // Check if user needs to pay registration fee
   useEffect(() => {

@@ -196,6 +196,25 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
     }
   }, [user]);
 
+  React.useEffect(() => {
+    const urls = navItems.flatMap((item) => [item.url, ...(item.items?.map((subItem) => subItem.url) ?? [])]);
+    const uniqueUrls = Array.from(new Set(urls.filter(Boolean)));
+
+    const prefetchRoutes = () => {
+      uniqueUrls.forEach((url) => {
+        router.prefetch(url);
+      });
+    };
+
+    if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+      const idleId = window.requestIdleCallback(() => prefetchRoutes());
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timeoutId = globalThis.setTimeout(prefetchRoutes, 300);
+    return () => globalThis.clearTimeout(timeoutId);
+  }, [navItems, router]);
+
   // Auto-expand item if current path matches
   React.useEffect(() => {
     navItems.forEach((item) => {
@@ -347,8 +366,7 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
           {user && (
             <NavUser user={{
               name: user.name || "User",
-              email: user.email || "user@example.com",
-              avatar: "/avatars/01.png"
+              email: user.email || "user@example.com"
             }} />
           )}
         </SidebarFooter>

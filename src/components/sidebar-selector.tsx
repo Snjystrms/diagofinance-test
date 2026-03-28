@@ -8,6 +8,8 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Check, Layout } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useClientCustomization } from "@/contexts/client-customization-context"
+import type { SidebarId } from "@/lib/client-presets"
 
 interface SidebarOption {
   id: string
@@ -66,27 +68,20 @@ interface SidebarSelectorProps {
 }
 
 export function SidebarSelector({ open, onOpenChange }: SidebarSelectorProps) {
-  const [selectedSidebar, setSelectedSidebar] = useState<string>("default")
-  const [initialSidebar, setInitialSidebar] = useState<string>("default")
+  const { canCustomizeSidebar, sidebarId, setSidebarId } = useClientCustomization()
+  const [selectedSidebar, setSelectedSidebar] = useState<SidebarId>(sidebarId)
+  const [initialSidebar, setInitialSidebar] = useState<SidebarId>(sidebarId)
 
   useEffect(() => {
-    // Load saved sidebar from localStorage
-    const savedSidebar = localStorage.getItem("selected-sidebar")
-    const sidebarToUse = savedSidebar || "default"
-    setSelectedSidebar(sidebarToUse)
-    setInitialSidebar(sidebarToUse)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const applySidebar = (sidebarId: string) => {
-    localStorage.setItem("selected-sidebar", sidebarId)
-    // Dispatch custom event to notify layout to update sidebar
-    window.dispatchEvent(new CustomEvent('sidebar-changed', { detail: { sidebarId } }))
-  }
-
-  const handleSidebarSelect = (sidebarId: string) => {
+    if (!open) return
     setSelectedSidebar(sidebarId)
-    applySidebar(sidebarId)
+    setInitialSidebar(sidebarId)
+  }, [open, sidebarId])
+
+  const handleSidebarSelect = (sidebarId: SidebarId) => {
+    if (!canCustomizeSidebar) return
+    setSelectedSidebar(sidebarId)
+    setSidebarId(sidebarId)
   }
 
   const handleDone = () => {
@@ -94,9 +89,8 @@ export function SidebarSelector({ open, onOpenChange }: SidebarSelectorProps) {
   }
 
   const handleCancel = () => {
-    // Revert to the sidebar that was active when dialog opened
     setSelectedSidebar(initialSidebar)
-    applySidebar(initialSidebar)
+    setSidebarId(initialSidebar)
     onOpenChange(false)
   }
 
@@ -122,9 +116,11 @@ export function SidebarSelector({ open, onOpenChange }: SidebarSelectorProps) {
               {sidebarOptions.map((option) => (
                 <button
                   key={option.id}
-                  onClick={() => handleSidebarSelect(option.id)}
+                  onClick={() => handleSidebarSelect(option.id as SidebarId)}
+                  disabled={!canCustomizeSidebar}
                   className={cn(
-                    "relative p-4 rounded-lg border-2 transition-all duration-200 hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-left",
+                    "relative p-4 rounded-lg border-2 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-left disabled:cursor-not-allowed disabled:opacity-60",
+                    canCustomizeSidebar && "hover:scale-[1.02]",
                     selectedSidebar === option.id
                       ? "border-blue-500 bg-blue-50 dark:bg-blue-950/20"
                       : "border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700"
@@ -161,7 +157,7 @@ export function SidebarSelector({ open, onOpenChange }: SidebarSelectorProps) {
           <Button variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
-          <Button onClick={handleDone}>
+          <Button onClick={handleDone} disabled={!canCustomizeSidebar}>
             Done
           </Button>
         </div>

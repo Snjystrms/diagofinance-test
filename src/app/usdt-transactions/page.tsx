@@ -266,14 +266,6 @@ export default function USDTTransactionsPage() {
   }, [loadList]);
 
   useEffect(() => {
-    if (activeTab === "deposits") {
-      loadDeposits();
-    } else {
-      loadWithdrawals();
-    }
-  }, [activeTab, loadDeposits, loadWithdrawals]);
-
-  useEffect(() => {
     if (!isManager) return;
     if (!statusFeatureOptions.length) {
       if (statusFilter !== "none") {

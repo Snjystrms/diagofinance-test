@@ -71,14 +71,11 @@ import { ProfileCompletionDialog } from "@/components/profile-completion-dialog"
 import { authApi, ibRequestsApi, adminDashboardApi, adminNotificationApi, type TradingAccountSummaryItem, type TradingAccountsSummaryResponse, type UserDashboardData, type IbWalletData, type AdminDashboardData } from "@/lib/api"
 const AdminDashboardView = dynamic(() => import("./admin-dashboard-view").then((m) => ({ default: m.AdminDashboardView })), {
   ssr: false,
-  loading: () => (
-    <div className="flex items-center justify-center py-12">
-      <div className="h-8 w-8 animate-spin rounded-full border-4 border-current border-t-transparent" />
-    </div>
-  ),
+  loading: () => <AdminDashboardSkeleton />,
 })
 import toast from "react-hot-toast"
 import { useQuery } from "@tanstack/react-query"
+import { useClientCustomization } from "@/contexts/client-customization-context"
 
 import { formatCurrency, formatAmount as _formatAmount } from "@/lib/formatters"
 
@@ -98,9 +95,130 @@ const formatLabel = (label?: string) => {
     .join(" ");
 };
 
+function DashboardHeaderSkeleton() {
+  return (
+    <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/80 p-6 shadow-sm">
+      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-transparent" />
+      <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-4">
+          <Skeleton className="h-16 w-16 rounded-2xl" />
+          <div className="space-y-3">
+            <Skeleton className="h-10 w-48" />
+            <Skeleton className="h-5 w-80 max-w-full" />
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-10 w-32 rounded-xl" />
+          <Skeleton className="h-10 w-28 rounded-xl" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function ClientDashboardSkeleton() {
+  return (
+    <div className="space-y-6">
+      <DashboardHeaderSkeleton />
+      <div className="grid gap-4 sm:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <Card key={index} className="overflow-hidden border-2 border-border/50 bg-card/80 shadow-sm">
+            <CardContent className="space-y-4 p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-28" />
+                </div>
+                <Skeleton className="h-12 w-12 rounded-2xl" />
+              </div>
+              <Skeleton className="h-3 w-32" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <div className="grid gap-6 xl:grid-cols-3">
+        <Card className="xl:col-span-2 border-2 border-border/50 bg-card/80">
+          <CardContent className="space-y-4 p-6">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-4 w-64" />
+              </div>
+              <Skeleton className="h-10 w-24 rounded-xl" />
+            </div>
+            <Skeleton className="h-[320px] w-full rounded-2xl" />
+          </CardContent>
+        </Card>
+        <Card className="border-2 border-border/50 bg-card/80">
+          <CardContent className="space-y-4 p-6">
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="flex items-center gap-3 rounded-xl border border-border/50 p-3">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-full" />
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
+      <Card className="border-2 border-border/50 bg-card/80">
+        <CardContent className="space-y-4 p-6">
+          <div className="flex flex-wrap gap-2">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Skeleton key={index} className="h-10 w-28 rounded-xl" />
+            ))}
+          </div>
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <Skeleton key={index} className="h-56 w-full rounded-2xl" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}
+
+function AdminDashboardSkeleton() {
+  return (
+    <div className="space-y-6">
+      <DashboardHeaderSkeleton />
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <Card key={index} className="border border-border/50 bg-card/80">
+            <CardContent className="space-y-4 p-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-20" />
+                </div>
+                <Skeleton className="h-11 w-11 rounded-xl" />
+              </div>
+              <Skeleton className="h-3 w-28" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <div className="grid gap-6 xl:grid-cols-3">
+        <Skeleton className="h-[340px] rounded-2xl xl:col-span-2" />
+        <Skeleton className="h-[340px] rounded-2xl" />
+      </div>
+      <Skeleton className="h-[420px] rounded-2xl" />
+    </div>
+  )
+}
+
 export default function DashboardPage() {
   const auth = useAuth();
   const { user, token } = auth;
+  const { canCustomizeDashboard, getDashboardMode, getDashboardPreset, setDashboardMode } =
+    useClientCustomization();
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [incompleteSections, setIncompleteSections] = useState<Array<{
     key: "personal_information" | "legal_information" | "documents_verification";
@@ -150,21 +268,13 @@ export default function DashboardPage() {
   const [dashboardError, setDashboardError] = useState<string | null>(null);
   const [statisticsPeriod, setStatisticsPeriod] = useState<7 | 30>(30);
   const [activeTab, setActiveTab] = useState<'mt5-live' | 'mt5-demo' | 'mt4-live' | 'mt4-demo'>('mt5-live');
-  const [isCustomDashboard, setIsCustomDashboard] = useState<'normal' | 'custom'>('normal');
   const [dateRange, setDateRange] = useState<{ start_date?: string; end_date?: string }>({});
+  const dashboardArea = isAdmin ? 'admin' : 'client';
+  const isCustomDashboard = getDashboardMode(dashboardArea);
+  const dashboardPreset = getDashboardPreset(dashboardArea);
 
-  // Load dashboard mode preference from localStorage
-  useEffect(() => {
-    const savedMode = localStorage.getItem(`dashboard_mode_${user?.id || 'default'}`);
-    if (savedMode === 'custom' || savedMode === 'normal') {
-      setIsCustomDashboard(savedMode);
-    }
-  }, [user?.id]);
-
-  // Save dashboard mode preference
   const handleDashboardModeChange = (mode: 'normal' | 'custom') => {
-    setIsCustomDashboard(mode);
-    localStorage.setItem(`dashboard_mode_${user?.id || 'default'}`, mode);
+    setDashboardMode(dashboardArea, mode);
   };
 
   // Check for incomplete profile sections on mount
@@ -273,14 +383,11 @@ export default function DashboardPage() {
           setAdminDashboardData(response.data);
         } else {
           setDashboardError("Failed to load admin dashboard");
-          toast.error("Failed to load admin dashboard");
         }
       } catch (error: unknown) {
-        console.error("Failed to fetch admin dashboard data:", error);
         if (isMounted) {
           const message = error instanceof Error ? error.message : "Unable to load admin dashboard";
           setDashboardError(message);
-          toast.error(message);
         }
       } finally {
         if (isMounted) {
@@ -943,27 +1050,28 @@ export default function DashboardPage() {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                {/* Dashboard Mode Toggle */}
-                <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-1 border border-border/50">
-                  <Button
-                    variant={isCustomDashboard === 'normal' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => handleDashboardModeChange('normal')}
-                    className="gap-2"
-                  >
-                    <Grid3x3 className="h-4 w-4" />
-                    <span className="hidden sm:inline">Normal</span>
-                  </Button>
-                  <Button
-                    variant={isCustomDashboard === 'custom' ? 'default' : 'ghost'}
-                    size="sm"
-                    onClick={() => handleDashboardModeChange('custom')}
-                    className="gap-2"
-                  >
-                    <LayoutGrid className="h-4 w-4" />
-                    <span className="hidden sm:inline">Custom</span>
-                  </Button>
-                </div>
+                {canCustomizeDashboard ? (
+                  <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-1 border border-border/50">
+                    <Button
+                      variant={isCustomDashboard === 'normal' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => handleDashboardModeChange('normal')}
+                      className="gap-2"
+                    >
+                      <Grid3x3 className="h-4 w-4" />
+                      <span className="hidden sm:inline">Normal</span>
+                    </Button>
+                    <Button
+                      variant={isCustomDashboard === 'custom' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => handleDashboardModeChange('custom')}
+                      className="gap-2"
+                    >
+                      <LayoutGrid className="h-4 w-4" />
+                      <span className="hidden sm:inline">Custom</span>
+                    </Button>
+                  </div>
+                ) : null}
                 <Badge variant="outline" className="px-4 py-2 text-xs font-semibold border-primary/30 bg-primary/5">
                   <Activity className="h-3 w-3 mr-1.5 text-primary" />
                   Live Data
@@ -973,12 +1081,7 @@ export default function DashboardPage() {
           </div>
 
           {isDashboardLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="h-8 w-8 animate-spin rounded-full border-4 border-current border-t-transparent mx-auto mb-4" />
-              <p className="text-sm text-muted-foreground">Loading dashboard data...</p>
-            </div>
-          </div>
+          <ClientDashboardSkeleton />
         ) : dashboardError ? (
           <div className="flex items-center justify-center py-12">
             <Card className="w-full max-w-md">
@@ -1431,7 +1534,10 @@ export default function DashboardPage() {
             dashboardWidgets.length > 0 && (
               <DashboardGrid
                 widgets={dashboardWidgets}
-                storageKey={`user_${user?.id || 'default'}`}
+                storageKey={`${dashboardArea}_dashboard`}
+                presetLayout={dashboardPreset?.layout}
+                presetHiddenWidgets={dashboardPreset?.hiddenWidgets}
+                editable={canCustomizeDashboard}
                 cols={12}
                 rowHeight={100}
               />
@@ -1672,12 +1778,7 @@ export default function DashboardPage() {
       ) : (
         <>
           {isDashboardLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="text-center">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-current border-t-transparent mx-auto mb-4" />
-                <p className="text-sm text-muted-foreground">Loading admin dashboard...</p>
-              </div>
-            </div>
+            <AdminDashboardSkeleton />
           ) : dashboardError ? (
             <div className="flex items-center justify-center py-12">
               <Card className="w-full max-w-md">

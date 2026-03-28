@@ -348,7 +348,7 @@ export default function AllManagersPage() {
                 {...(props as Parameters<typeof ManagerForm>[0])}
                 allPermissions={allPerms}
                 groupedPermissions={groupedPerms}
-                onFetchPermissions={fetchPermissions}
+                onFetchPermissions={undefined}
               />
             )}
             title="All Managers"

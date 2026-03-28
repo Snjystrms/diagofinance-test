@@ -4,9 +4,10 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { Header } from "@/components/header"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { IbDashboardSidebarWrapper } from "@/components/ib-dashboard-sidebar-wrapper"
-import { useState, useEffect, useMemo } from "react"
+import { useEffect, useMemo } from "react"
 import { usePathname } from "next/navigation"
 import dynamic from "next/dynamic"
+import { useClientCustomization } from "@/contexts/client-customization-context"
 
 const AppSidebarV2 = dynamic(() => import("@/components/app-sidebar-v2").then((m) => ({ default: m.AppSidebarV2 })), { ssr: false })
 const AppSidebarV3 = dynamic(() => import("@/components/app-sidebar-v3").then((m) => ({ default: m.AppSidebarV3 })), { ssr: false })
@@ -18,24 +19,8 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({
   children,
 }: DashboardLayoutProps) {
-  const [selectedSidebar, setSelectedSidebar] = useState<string>("default");
+  const { sidebarId: selectedSidebar } = useClientCustomization();
   const pathname = usePathname();
-
-  // Load saved sidebar from localStorage
-  useEffect(() => {
-    const savedSidebar = localStorage.getItem("selected-sidebar") || "default";
-    setSelectedSidebar(savedSidebar);
-
-    // Listen for sidebar changes
-    const handleSidebarChange = (event: CustomEvent) => {
-      setSelectedSidebar(event.detail.sidebarId);
-    };
-
-    window.addEventListener('sidebar-changed', handleSidebarChange as EventListener);
-    return () => {
-      window.removeEventListener('sidebar-changed', handleSidebarChange as EventListener);
-    };
-  }, []);
 
   // Clear sidebar cookie when switching to two-panel or expanded-panel to ensure it starts collapsed
   useEffect(() => {

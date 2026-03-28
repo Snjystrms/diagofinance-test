@@ -8,6 +8,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { Check, Palette, Image, Link } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useClientCustomization } from "@/contexts/client-customization-context"
 
 interface SidebarThemeOverrides {
   background?: string
@@ -544,73 +545,57 @@ function clearVariables(target: HTMLElement) {
   keys.forEach(k => target.style.removeProperty(k))
 }
 
+export function applyThemeById(themeId: string) {
+  if (typeof document === "undefined") return
+
+  const theme = themeSwatches.find((t) => t.id === themeId) ?? themeSwatches[0]
+  if (!theme) return
+
+  const root = document.documentElement
+  const darkContainer = document.querySelector(".dark") as HTMLElement | null
+  const dark = isDarkTheme(theme.cssVariables.background)
+
+  if (dark) {
+    root.classList.add("dark")
+  } else {
+    root.classList.remove("dark")
+  }
+
+  clearVariables(root)
+  if (darkContainer) clearVariables(darkContainer)
+
+  const target = dark ? (darkContainer || root) : root
+  writeVariables(target, theme.cssVariables)
+}
+
 /** ---------- Component ---------- **/
 
 export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
+  const { canCustomizeTheme, themeId, setThemeId } = useClientCustomization()
   const [activeTab, setActiveTab] = useState<"background" | "shortcuts" | "color-theme">("color-theme")
-  const [selectedTheme, setSelectedTheme] = useState<string>("default")
-  const [initialTheme, setInitialTheme] = useState<string>("default")
+  const [selectedTheme, setSelectedTheme] = useState<string>(themeId)
+  const [initialTheme, setInitialTheme] = useState<string>(themeId)
 
   useEffect(() => {
-    // Load saved theme from localStorage
-    const savedTheme = localStorage.getItem("selected-theme")
-    const themeToUse = savedTheme || "default"
-    setSelectedTheme(themeToUse)
-    setInitialTheme(themeToUse)
-    applyTheme(themeToUse)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  const applyTheme = (themeId: string) => {
-    const theme = themeSwatches.find(t => t.id === themeId)
-    if (!theme) return
-
-    const root = document.documentElement
-    const darkContainer = document.querySelector(".dark") as HTMLElement | null
-
-    const dark = isDarkTheme(theme.cssVariables.background)
-
-    // Toggle .dark class to match theme brightness
-    if (dark) {
-      root.classList.add("dark")
-    } else {
-      root.classList.remove("dark")
-    }
-
-    // Always clear both scopes first to avoid residuals
-    clearVariables(root)
-    if (darkContainer) clearVariables(darkContainer)
-
-    // Write into the correct scope:
-    // - For dark themes, write into `.dark` (Tailwind/Shadcn resolve vars there)
-    // - For light themes, write into `:root`
-    const target = dark ? (darkContainer || root) : root
-    writeVariables(target, theme.cssVariables)
-
-    localStorage.setItem("selected-theme", themeId)
-  }
+    if (!open) return
+    setSelectedTheme(themeId)
+    setInitialTheme(themeId)
+    applyThemeById(themeId)
+  }, [open, themeId])
 
   const handleThemeSelect = (themeId: string) => {
+    if (!canCustomizeTheme) return
     setSelectedTheme(themeId)
-    applyTheme(themeId)
+    setThemeId(themeId)
   }
 
   const handleDone = () => {
     onOpenChange(false)
   }
 
-  const resetToDefaultTheme = () => {
-    const root = document.documentElement
-    const darkContainer = document.querySelector(".dark") as HTMLElement | null
-    clearVariables(root)
-    if (darkContainer) clearVariables(darkContainer)
-    // Do not forcibly toggle dark here; respect current app mode
-  }
-
   const handleCancel = () => {
-    // Revert to the theme that was active when dialog opened
     setSelectedTheme(initialTheme)
-    applyTheme(initialTheme)
+    setThemeId(initialTheme)
     onOpenChange(false)
   }
 
@@ -624,8 +609,10 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
                 <button
                   key={swatch.id}
                   onClick={() => handleThemeSelect(swatch.id)}
+                  disabled={!canCustomizeTheme}
                   className={cn(
-                    "relative w-12 h-12 rounded-full transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+                    "relative w-12 h-12 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                    canCustomizeTheme && "hover:scale-105",
                     selectedTheme === swatch.id && "ring-2 ring-blue-500 ring-offset-2"
                   )}
                   title={swatch.name}
@@ -746,7 +733,7 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
           <Button variant="outline" onClick={handleCancel}>
             Cancel
           </Button>
-          <Button onClick={handleDone}>
+          <Button onClick={handleDone} disabled={!canCustomizeTheme}>
             Done
           </Button>
         </div>
