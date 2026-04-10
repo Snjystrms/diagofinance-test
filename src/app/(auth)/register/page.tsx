@@ -3,17 +3,21 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import Image from 'next/image';
+import Link from 'next/link';
 
+import { COUNTRIES } from '@/lib/countries';
 import { registerSchema, type RegisterFormData } from '@/lib/validations';
-
-// NOTE: we're keeping imports like useAuthMutations / Spinner etc. for UI state,
-// but we're not doing any API logic beyond calling mutateAsync.
 import { useAuthMutations } from '@/hooks/use-auth-mutations';
-
 import { Button } from '@/components/ui/button';
+import {
+  ValidatedFormField,
+  ValidatedPasswordField,
+  ValidatedTextField,
+  sanitizeDigits,
+  sanitizePersonText,
+} from '@/components/forms/validated-fields';
 import { Input } from '@/components/ui/input';
-// import { PasswordInput } from '@/components/password-input';
-import { PasswordInput } from '@/components/password-input';
 import {
   Card,
   CardContent,
@@ -28,7 +32,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from '@/components/ui/form';
 import {
   Select,
@@ -40,42 +43,14 @@ import {
 import { ProtectedRoute } from '@/components/protected-route';
 import { Spinner } from '@/components/ui/spinner';
 
-import Link from 'next/link';
-import Image from 'next/image';
-
-// Country list with country codes
-const COUNTRIES = [
-  { name: 'United States', code: '+1' },
-  { name: 'India', code: '+91' },
-  { name: 'United Kingdom', code: '+44' },
-  { name: 'Australia', code: '+61' },
-  { name: 'Canada', code: '+1' },
-  { name: 'Germany', code: '+49' },
-  { name: 'France', code: '+33' },
-  { name: 'Japan', code: '+81' },
-  { name: 'China', code: '+86' },
-  { name: 'Brazil', code: '+55' },
-  { name: 'Russia', code: '+7' },
-  { name: 'South Korea', code: '+82' },
-  { name: 'Italy', code: '+39' },
-  { name: 'Spain', code: '+34' },
-  { name: 'Mexico', code: '+52' },
-  { name: 'Indonesia', code: '+62' },
-  { name: 'Turkey', code: '+90' },
-  { name: 'Saudi Arabia', code: '+966' },
-  { name: 'United Arab Emirates', code: '+971' },
-  { name: 'South Africa', code: '+27' },
-] as const;
-
 export default function RegisterPage() {
   const { registerMutation } = useAuthMutations();
   const [isLoading, setIsLoading] = useState(false);
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    mode: 'onChange',
-    reValidateMode: 'onChange',
-    criteriaMode: 'all',
+    mode: 'onBlur',
+    reValidateMode: 'onBlur',
     defaultValues: {
       first_name: '',
       last_name: '',
@@ -89,40 +64,18 @@ export default function RegisterPage() {
     },
   });
 
-  // live watches for inline hints / validation feedback
-  const email = form.watch('email') || '';
-  const mobile = form.watch('mobile') || '';
-  const password = form.watch('password') || '';
-  const confirmPassword = form.watch('confirm_password') || '';
-  const country = form.watch('country') || '';
-  const countryCode = form.watch('country_code') || '';
-
-  // password strength checklist
-  const pwLen = password.length >= 8;
-  const pwUpper = /[A-Z]/.test(password);
-  const pwLower = /[a-z]/.test(password);
-  const pwNum = /\d/.test(password);
-  const pwSpecial = /[^A-Za-z0-9]/.test(password);
-
-  // mobile validation - only digits, exactly 10 digits
-  const mobileDigitsOnly = /^\d*$/.test(mobile);
-  const mobileLenOk = mobile.length === 10;
-
-  // Handle country selection - auto-fill country code
   const handleCountryChange = (selectedCountry: string) => {
-    const countryData = COUNTRIES.find((c) => c.name === selectedCountry);
-    if (countryData) {
-      form.setValue('country', selectedCountry);
-      form.setValue('country_code', countryData.code);
-    }
-  };
+    const countryData = COUNTRIES.find((country) => country.name === selectedCountry);
+    if (!countryData) return;
 
+    form.setValue('country', selectedCountry, { shouldValidate: true });
+    form.setValue('country_code', countryData.code, { shouldValidate: true });
+  };
 
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);
     try {
-      // Transform the data to match the API format
-      const apiData = {
+      await registerMutation.mutateAsync({
         first_name: data.first_name,
         last_name: data.last_name,
         country_code: data.country_code,
@@ -132,8 +85,7 @@ export default function RegisterPage() {
         password: data.password,
         confirm_password: data.confirm_password,
         referral_code: data.referral_code,
-      };
-      await registerMutation.mutateAsync(apiData);
+      });
     } finally {
       setIsLoading(false);
     }
@@ -142,7 +94,6 @@ export default function RegisterPage() {
   return (
     <ProtectedRoute requireAuth={false}>
       <div className="min-h-screen flex">
-        {/* Left side - Background / Brand side */}
         <div className="hidden lg:flex lg:w-2/5 relative bg-background">
           <Image
             src="/loginbackground.png"
@@ -153,10 +104,8 @@ export default function RegisterPage() {
           />
         </div>
 
-        {/* Right side - Register Form */}
         <div className="flex-1 flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
           <div className="max-w-md w-full space-y-8">
-            {/* Header copy */}
             <div className="text-center">
               <h2 className="mt-6 text-3xl font-extrabold text-foreground">
                 Create your account
@@ -172,7 +121,6 @@ export default function RegisterPage() {
               </p>
             </div>
 
-            {/* Card container */}
             <Card>
               <CardHeader>
                 <CardTitle>Register</CardTitle>
@@ -187,79 +135,29 @@ export default function RegisterPage() {
                     onSubmit={form.handleSubmit(onSubmit)}
                     className="space-y-4"
                   >
-                    {/* First Name */}
-                    <FormField
+                    <ValidatedTextField
                       control={form.control}
                       name="first_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>First Name</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Enter your first name"
-                              {...field}
-                              className="h-10"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="First Name"
+                      transformValue={sanitizePersonText}
+                      inputProps={{ placeholder: 'Enter your first name', className: 'h-10' }}
                     />
 
-                    {/* Last Name */}
-                    <FormField
+                    <ValidatedTextField
                       control={form.control}
                       name="last_name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Last Name</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Enter your last name"
-                              {...field}
-                              className="h-10"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="Last Name"
+                      transformValue={sanitizePersonText}
+                      inputProps={{ placeholder: 'Enter your last name', className: 'h-10' }}
                     />
 
-                    {/* Email with inline hint */}
-                    <FormField
+                    <ValidatedTextField
                       control={form.control}
                       name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="email"
-                              placeholder="Enter your email"
-                              {...field}
-                              className="h-10"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                          {email && !form.formState.errors.email ? (
-                            <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                              Looks like a valid email.
-                            </p>
-                          ) : email ? (
-                            <FormDescription className="text-destructive">
-                              Please enter a valid email address
-                              (e.g., name@example.com).
-                            </FormDescription>
-                          ) : (
-                            <FormDescription>
-                              e.g., name@example.com
-                            </FormDescription>
-                          )}
-                        </FormItem>
-                      )}
+                      label="Email"
+                      inputProps={{ type: 'email', placeholder: 'Enter your email', className: 'h-10' }}
                     />
 
-                    {/* Country selection - moved after email */}
                     <FormField
                       control={form.control}
                       name="country"
@@ -278,7 +176,7 @@ export default function RegisterPage() {
                                 <SelectValue placeholder="Select country" />
                               </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                            <SelectContent side="bottom" avoidCollisions={false}>
                               {COUNTRIES.map((country) => (
                                 <SelectItem key={country.name} value={country.name}>
                                   {country.name} ({country.code})
@@ -287,217 +185,79 @@ export default function RegisterPage() {
                             </SelectContent>
                           </Select>
                           <FormMessage />
-                          {country && (
-                            <FormDescription>
-                              Country code {countryCode} will be automatically applied
-                            </FormDescription>
-                          )}
                         </FormItem>
                       )}
                     />
 
-                    {/* Country Code (read-only, auto-filled) + Mobile Number */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
-                      {/* Country Code - read-only, auto-filled */}
-                      <FormField
+                    <div className="grid grid-cols-1 gap-4 items-start sm:grid-cols-2">
+                      <ValidatedFormField
                         control={form.control}
                         name="country_code"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Country Code</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="+1"
-                                readOnly
-                                className="h-10 bg-muted cursor-not-allowed"
-                                value={field.value || countryCode || ''}
-                                onChange={() => {}} // Prevent changes
-                                onBlur={field.onBlur}
-                                name={field.name}
-                                ref={field.ref}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                            {!country && (
-                              <FormDescription>
-                                Select a country first
-                              </FormDescription>
-                            )}
-                            {country && countryCode && (
-                              <FormDescription className="text-green-600 dark:text-green-400">
-                                Auto-filled from selected country
-                              </FormDescription>
-                            )}
-                          </FormItem>
+                        label="Country Code"
+                        renderControl={({ field }) => (
+                          <Select
+                            value={field.value}
+                            onValueChange={(value) => {
+                              field.onChange(value);
+                              const matchedCountry = COUNTRIES.find((country) => country.code === value);
+                              if (matchedCountry) {
+                                form.setValue('country', matchedCountry.name, { shouldValidate: true });
+                              }
+                            }}
+                          >
+                            <SelectTrigger className="h-10 w-full">
+                              <SelectValue placeholder="Select country code" />
+                            </SelectTrigger>
+                            <SelectContent side="bottom" avoidCollisions={false}>
+                              {COUNTRIES.map((country) => (
+                                <SelectItem key={`${country.name}-${country.code}`} value={country.code}>
+                                  {country.code} ({country.name})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         )}
                       />
 
-                      {/* Mobile with live feedback - numbers only, max 10 digits */}
-                      <FormField
+                      <ValidatedFormField
                         control={form.control}
                         name="mobile"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Mobile Number</FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Enter 10-digit mobile number"
-                                inputMode="numeric"
-                                maxLength={10}
-                                className="h-10"
-                                {...field}
-                                onChange={(e) => {
-                                  const value = e.target.value;
-                                  // Remove any non-digit characters
-                                  const digitsOnly = value.replace(/\D/g, '');
-                                  // Limit to 10 digits
-                                  const limited = digitsOnly.slice(0, 10);
-                                  field.onChange(limited);
-                                }}
-                                value={field.value || ''}
-                              />
-                            </FormControl>
-                            <FormMessage />
-                            {mobile ? (
-                              !mobileDigitsOnly ? (
-                                <p className="text-xs text-destructive mt-1">
-                                  Only numbers are allowed
-                                </p>
-                              ) : !mobileLenOk ? (
-                                <p className="text-xs text-destructive mt-1">
-                                  Mobile number must be exactly 10 digits
-                                </p>
-                              ) : (
-                                <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                                  Mobile number looks good.
-                                </p>
-                              )
-                            ) : (
-                              <FormDescription>
-                                Enter 10 digits only (numbers)
-                              </FormDescription>
-                            )}
-                          </FormItem>
+                        label="Mobile Number"
+                        renderControl={({ field }) => (
+                          <Input
+                            placeholder="Enter 10-digit mobile number"
+                            inputMode="numeric"
+                            maxLength={10}
+                            className="h-10"
+                            {...field}
+                            value={field.value || ''}
+                            onChange={(event) => field.onChange(sanitizeDigits(event.target.value, 10))}
+                          />
                         )}
                       />
                     </div>
 
-                    {/* Password with checklist */}
-                    <FormField
+                    <ValidatedPasswordField
                       control={form.control}
                       name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <PasswordInput
-                              placeholder="Enter password"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                          <ul className="mt-1 space-y-1 text-xs">
-                            <li
-                              className={
-                                pwLen
-                                  ? 'text-green-600'
-                                  : 'text-muted-foreground'
-                              }
-                            >
-                              • At least 8 characters
-                            </li>
-                            <li
-                              className={
-                                pwUpper
-                                  ? 'text-green-600'
-                                  : 'text-muted-foreground'
-                              }
-                            >
-                              • At least 1 uppercase letter
-                            </li>
-                            <li
-                              className={
-                                pwLower
-                                  ? 'text-green-600'
-                                  : 'text-muted-foreground'
-                              }
-                            >
-                              • At least 1 lowercase letter
-                            </li>
-                            <li
-                              className={
-                                pwNum
-                                  ? 'text-green-600'
-                                  : 'text-muted-foreground'
-                              }
-                            >
-                              • At least 1 number
-                            </li>
-                            <li
-                              className={
-                                pwSpecial
-                                  ? 'text-green-600'
-                                  : 'text-muted-foreground'
-                              }
-                            >
-                              • At least 1 special character
-                            </li>
-                          </ul>
-                        </FormItem>
-                      )}
+                      label="Password"
+                      inputProps={{ placeholder: 'Enter password' }}
                     />
 
-                    {/* Confirm Password with match hint */}
-                    <FormField
+                    <ValidatedPasswordField
                       control={form.control}
                       name="confirm_password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Confirm Password</FormLabel>
-                          <FormControl>
-                            <PasswordInput
-                              placeholder="Confirm password"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                          {confirmPassword && (
-                            <p
-                              className={`text-xs mt-1 ${
-                                confirmPassword === password
-                                  ? 'text-green-600'
-                                  : 'text-red-600'
-                              }`}
-                            >
-                              {confirmPassword === password
-                                ? 'Passwords match.'
-                                : 'Passwords do not match.'}
-                            </p>
-                          )}
-                        </FormItem>
-                      )}
+                      label="Confirm Password"
+                      inputProps={{ placeholder: 'Confirm password' }}
                     />
 
-                    {/* Referral Code (moved to bottom) */}
-                    <FormField
+                    <ValidatedTextField
                       control={form.control}
                       name="referral_code"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Referral Code</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Enter referral code"
-                              {...field}
-                              className="h-10"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
+                      label="Referral Code"
+                      inputProps={{ placeholder: 'Enter referral code', className: 'h-10' }}
                     />
 
-                    {/* Submit button with loading state */}
                     <Button
                       type="submit"
                       className="w-full"

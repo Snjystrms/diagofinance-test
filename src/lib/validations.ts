@@ -1,46 +1,81 @@
 import { z } from 'zod';
+import { COUNTRY_CODES } from '@/lib/countries';
+
+const personNameSchema = (label: string) =>
+  z
+    .string()
+    .trim()
+    .min(1, `${label} is required`)
+    .min(2, `${label} must be at least 2 characters`)
+    .max(50, `${label} must be less than 50 characters`)
+    .regex(/^[a-zA-Z\s'-]+$/, `${label} can only contain letters, spaces, hyphens, and apostrophes`);
+
+const emailSchema = z
+  .string()
+  .trim()
+  .min(1, 'Email is required')
+  .email('Invalid email address')
+  .transform((value) => value.toLowerCase())
+  .refine((email) => email.length <= 100, 'Email must be less than 100 characters');
+
+const securePasswordSchema = z
+  .string()
+  .min(1, 'Password is required')
+  .min(8, 'Password must be at least 8 characters')
+  .max(100, 'Password must be less than 100 characters')
+  .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
+  .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
+  .regex(/[0-9]/, 'Password must contain at least one number')
+  .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character');
+
+const isValidCountryCode = (value: string) => (COUNTRY_CODES as readonly string[]).includes(value);
 
 // Register form validation schema
 export const registerSchema = z.object({
-  first_name: z
+  first_name: personNameSchema('First name'),
+  last_name: personNameSchema('Last name'),
+  country_code: z
     .string()
-    .min(1, 'First name is required')
-    .min(2, 'First name must be at least 2 characters')
-    .max(50, 'First name must be less than 50 characters')
-    .regex(/^[a-zA-Z\s'-]+$/, 'First name can only contain letters, spaces, hyphens, and apostrophes'),
-  last_name: z
-    .string()
-    .min(1, 'Last name is required')
-    .min(2, 'Last name must be at least 2 characters')
-    .max(50, 'Last name must be less than 50 characters')
-    .regex(/^[a-zA-Z\s'-]+$/, 'Last name can only contain letters, spaces, hyphens, and apostrophes'),
-  country_code: z.string().min(1, 'Country code is required'),
-  email: z
-    .string()
-    .min(1, 'Email is required')
-    .email('Invalid email address')
-    .toLowerCase()
-    .refine((email) => email.length <= 100, 'Email must be less than 100 characters'),
+    .min(1, 'Country code is required')
+    .refine(isValidCountryCode, 'Select a valid country code'),
+  email: emailSchema,
   mobile: z
     .string()
     .min(1, 'Mobile number is required')
     .regex(/^\d+$/, 'Mobile number must contain only digits')
     .length(10, 'Mobile number must be exactly 10 digits'),
   country: z.string().min(1, 'Country is required'),
-  password: z
-    .string()
-    .min(1, 'Password is required')
-    .min(8, 'Password must be at least 8 characters')
-    .max(100, 'Password must be less than 100 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number')
-    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
+  password: securePasswordSchema,
   confirm_password: z.string().min(1, 'Please confirm your password'),
   referral_code: z.string().optional(),
 }).refine((data) => data.password === data.confirm_password, {
   message: "Passwords don't match",
   path: ["confirm_password"],
+});
+
+export const adminUserCreateSchema = z.object({
+  first_name: personNameSchema('First name'),
+  last_name: personNameSchema('Last name'),
+  email: emailSchema,
+  mobile: z
+    .string()
+    .trim()
+    .optional()
+    .or(z.literal(''))
+    .refine((value) => !value || /^\d+$/.test(value), 'Mobile number must contain only digits')
+    .refine((value) => !value || value.length >= 6, 'Mobile number must be at least 6 digits')
+    .refine((value) => !value || value.length <= 15, 'Mobile number must be less than 16 digits'),
+  country: z.string().trim().max(100, 'Country must be less than 100 characters').optional().or(z.literal('')),
+  country_code: z
+    .string()
+    .trim()
+    .refine((value) => value === '' || isValidCountryCode(value), 'Select a valid country code'),
+  password: securePasswordSchema,
+  confirm_password: z.string().min(1, 'Please confirm your password'),
+  referral_code: z.string().trim().max(100, 'Referral code must be less than 100 characters').optional().or(z.literal('')),
+}).refine((data) => data.password === data.confirm_password, {
+  message: "Passwords don't match",
+  path: ['confirm_password'],
 });
 
 // Login form validation schema
@@ -125,19 +160,12 @@ export const managerSchema = z.object({
 
 // Manager create schema (password required)
 export const managerCreateSchema = managerSchema.extend({
-  password: z
-    .string()
-    .min(1, 'Password is required')
-    .min(8, 'Password must be at least 8 characters')
-    .max(100, 'Password must be less than 100 characters')
-    .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')
-    .regex(/[a-z]/, 'Password must contain at least one lowercase letter')
-    .regex(/[0-9]/, 'Password must contain at least one number')
-    .regex(/[^A-Za-z0-9]/, 'Password must contain at least one special character'),
+  password: securePasswordSchema,
 });
 
 // Type exports
 export type RegisterFormData = z.infer<typeof registerSchema>;
+export type AdminUserCreateFormData = z.infer<typeof adminUserCreateSchema>;
 export type LoginFormData = z.infer<typeof loginSchema>;
 export type VerifyOtpFormData = z.infer<typeof verifyOtpSchema>;
 export type ResendOtpFormData = z.infer<typeof resendOtpSchema>;

@@ -1,10 +1,17 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import type { ChangeEvent, FormEvent } from "react"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useForm } from "react-hook-form"
 import toast from "react-hot-toast"
 
-import { MainLayout } from "@/components/main-layout"
+import {
+  ValidatedFormField,
+  ValidatedPasswordField,
+  ValidatedTextField,
+  sanitizeDigits,
+  sanitizePersonText,
+} from "@/components/forms/validated-fields"
 import { ProtectedRoute } from "@/components/protected-route"
 import { Button } from "@/components/ui/button"
 import {
@@ -36,7 +43,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Label } from "@/components/ui/label"
+import { Form } from "@/components/ui/form"
 import { useAuth } from "@/contexts/auth-context"
 import {
   adminUsersApi,
@@ -44,7 +51,11 @@ import {
   type PaginationMeta,
   type PendingUser,
 } from "@/lib/api"
-import { useDebouncedCallback } from "@/hooks/use-debounced-callback"
+import {
+  adminUserCreateSchema,
+  type AdminUserCreateFormData,
+} from "@/lib/validations"
+import { COUNTRIES } from "@/lib/countries"
 import {
   AlertCircle,
   Calendar,
@@ -58,35 +69,7 @@ import {
   Users,
 } from "lucide-react"
 
-const statusOptions = [
-  { label: "All statuses", value: "all" },
-  { label: "Inactive", value: "0" },
-  { label: "Active", value: "1" },
-  { label: "Blocked", value: "2" },
-] as const
-
-const approvalOptions = [
-  { label: "All approvals", value: "all" },
-  { label: "Pending approval", value: "0" },
-  { label: "Approved", value: "1" },
-  { label: "Rejected", value: "2" },
-] as const
-
-const limitOptions = ["10", "25", "50"] as const
-
-type CreateUserFormState = {
-  first_name: string
-  last_name: string
-  email: string
-  mobile: string
-  country: string
-  country_code: string
-  password: string
-  confirm_password: string
-  referral_code: string
-}
-
-const createInitialCreateFormState = (): CreateUserFormState => ({
+const createInitialCreateFormState = (): AdminUserCreateFormData => ({
   first_name: "",
   last_name: "",
   email: "",
@@ -229,109 +212,48 @@ export default function NewUsersPage() {
   const { token } = useAuth()
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
-  const [createForm, setCreateForm] = useState<CreateUserFormState>(() => createInitialCreateFormState())
-  const [createErrors, setCreateErrors] = useState<Partial<Record<keyof CreateUserFormState, string>>>({})
   const [creatingUser, setCreatingUser] = useState(false)
 
   const [pendingTransactions, setPendingTransactions] = useState<PendingUser[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [searchInput, setSearchInput] = useState("")
   const [filters, setFilters] = useState({
     page: 1,
     limit: 10,
-    search: "",
-    status: "",
-    isApproved: "",
   })
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null)
 
-  const { page, limit, search, status, isApproved } = filters
+  const { page, limit } = filters
+
+  const createUserForm = useForm<AdminUserCreateFormData>({
+    resolver: zodResolver(adminUserCreateSchema),
+    mode: "onBlur",
+    reValidateMode: "onBlur",
+    defaultValues: createInitialCreateFormState(),
+  })
 
   const resetCreateForm = useCallback(() => {
-    setCreateForm(createInitialCreateFormState())
-    setCreateErrors({})
-  }, [])
+    createUserForm.reset(createInitialCreateFormState())
+  }, [createUserForm])
 
-  const debouncedApplySearch = useDebouncedCallback((value: string) => {
-    setFilters((prev) => ({ ...prev, search: value, page: 1 }))
-  }, 400)
+  const handleCreateCountryChange = useCallback((selectedCountry: string) => {
+    const countryData = COUNTRIES.find((country) => country.name === selectedCountry)
+    if (!countryData) return
 
-  const validateCreateForm = useCallback(() => {
-    const errors: Partial<Record<keyof CreateUserFormState, string>> = {}
+    createUserForm.setValue("country", selectedCountry, { shouldValidate: true })
+    createUserForm.setValue("country_code", countryData.code, { shouldValidate: true })
+  }, [createUserForm])
 
-    if (!createForm.first_name.trim()) {
-      errors.first_name = "First name is required"
-    }
-
-    if (!createForm.last_name.trim()) {
-      errors.last_name = "Last name is required"
-    }
-
-    const emailValue = createForm.email.trim()
-    if (!emailValue) {
-      errors.email = "Email is required"
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailValue)) {
-      errors.email = "Enter a valid email address"
-    }
-
-    if (!createForm.password.trim()) {
-      errors.password = "Password is required"
-    } else if (createForm.password.trim().length < 8) {
-      errors.password = "Password must be at least 8 characters"
-    }
-
-    if (!createForm.confirm_password.trim()) {
-      errors.confirm_password = "Confirm the password"
-    } else if (createForm.confirm_password.trim() !== createForm.password.trim()) {
-      errors.confirm_password = "Passwords must match"
-    }
-
-    if (createForm.mobile.trim() && createForm.mobile.trim().length < 6) {
-      errors.mobile = "Enter a valid mobile number"
-    }
-
-    return errors
-  }, [createForm])
-
-  const handleCreateInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = event.target
-    const nextValue =
-      name === "country_code" ? value.toUpperCase() : value
-
-    const field = name as keyof CreateUserFormState
-
-    setCreateForm((prev) => ({
-      ...prev,
-      [field]: nextValue,
-    }))
-
-    if (createErrors[field]) {
-      setCreateErrors((prev) => {
-        const { [field]: _removed, ...rest } = prev
-        return rest
-      })
-    }
-  }
-
-  const handleCreateUserSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
-
+  const handleCreateUserSubmit = async (data: AdminUserCreateFormData) => {
     if (!token) {
       toast.error("You must be logged in to create users.")
-      return
-    }
-
-    const errors = validateCreateForm()
-    if (Object.keys(errors).length > 0) {
-      setCreateErrors(errors)
       return
     }
 
     try {
       setCreatingUser(true)
 
-      const { confirm_password: _confirmPassword, ...payload } = createForm
+      const { confirm_password: _confirmPassword, ...payload } = data
 
       const response = await adminUsersApi.create(payload, token)
       toast.success(response?.message || "User created successfully")
@@ -371,9 +293,6 @@ export default function NewUsersPage() {
         token,
         page,
         limit,
-        search,
-        status,
-        isApproved,
       })
 
       const payload = response?.data ?? null
@@ -391,28 +310,14 @@ export default function NewUsersPage() {
     } finally {
       setLoading(false)
     }
-  }, [token, page, limit, search, status, isApproved])
+  }, [token, page, limit])
 
   useEffect(() => {
     void fetchPendingTransactions()
   }, [fetchPendingTransactions])
 
-  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
-    const value = event.target.value
-    setSearchInput(value)
-    debouncedApplySearch(value)
-  }
-
-  const handleStatusChange = (value: string) => {
-    setFilters((prev) => ({ ...prev, status: value === "all" ? "" : value, page: 1 }))
-  }
-
-  const handleApprovalChange = (value: string) => {
-    setFilters((prev) => ({ ...prev, isApproved: value === "all" ? "" : value, page: 1 }))
-  }
-
-  const handleLimitChange = (value: string) => {
-    setFilters((prev) => ({ ...prev, limit: Number(value), page: 1 }))
+  const goToPage = (targetPage: number) => {
+    setFilters((prev) => ({ ...prev, page: targetPage }))
   }
 
   const handleRefresh = () => {
@@ -422,11 +327,13 @@ export default function NewUsersPage() {
   const totalPending = paginationMeta?.total ?? pendingTransactions.length
   const currentPage = paginationMeta?.current_page ?? paginationMeta?.page ?? page
   const perPage = paginationMeta?.per_page ?? paginationMeta?.limit ?? limit
-  const perPageOptions = Array.from(new Set([...limitOptions, String(perPage)]))
   const totalPages =
     paginationMeta?.total_pages ??
     paginationMeta?.last_page ??
     (totalPending && perPage ? Math.ceil(totalPending / perPage) : undefined)
+  const pageNumbers = totalPages
+    ? Array.from({ length: totalPages }, (_, index) => index + 1)
+    : [currentPage]
 
   const rangeStart = pendingTransactions.length ? (currentPage - 1) * perPage + 1 : 0
   const rangeEnd = pendingTransactions.length ? rangeStart + pendingTransactions.length - 1 : 0
@@ -464,20 +371,14 @@ export default function NewUsersPage() {
           {/* Title and Description */}
           <div className="flex flex-col space-y-2">
             <h1 className="text-3xl font-bold tracking-tight">New Users</h1>
-            <p className="text-muted-foreground max-w-2xl">
-              Review recent registrations, filter by status, and monitor verification progress.
-            </p>
+              <p className="text-muted-foreground max-w-2xl">
+                Review recent registrations and move through results page by page.
+              </p>
           </div>
 
-          {/* Filter Section */}
+          {/* Actions */}
           <div className="flex w-full flex-col gap-3 rounded-lg border border-border/60 bg-card/60 p-4 shadow-sm">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-3">
-              <Input
-                value={searchInput}
-                onChange={handleSearchChange}
-                placeholder="Search by name, email, mobile..."
-                className="w-full sm:w-auto sm:min-w-[200px] sm:max-w-[280px]"
-              />
               <Dialog open={createDialogOpen} onOpenChange={handleCreateDialogChange}>
                 <DialogTrigger asChild>
                   <Button className="w-full sm:w-auto sm:flex-shrink-0">
@@ -485,179 +386,149 @@ export default function NewUsersPage() {
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
-                  <form className="space-y-5" onSubmit={handleCreateUserSubmit}>
-                    <DialogHeader>
-                      <DialogTitle>Create User</DialogTitle>
-                      <DialogDescription>
-                        Add a new user account. Required fields are marked and validations run before submission.
-                      </DialogDescription>
-                    </DialogHeader>
+                  <Form {...createUserForm}>
+                    <form
+                      className="space-y-5"
+                      onSubmit={createUserForm.handleSubmit(handleCreateUserSubmit)}
+                    >
+                      <DialogHeader>
+                        <DialogTitle>Create User</DialogTitle>
+                        <DialogDescription>
+                          Add a new user account. Shared schema validation is applied here so this modal follows the
+                          same reusable pattern we can use across admin forms.
+                        </DialogDescription>
+                      </DialogHeader>
 
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <Label htmlFor="first_name">First name</Label>
-                        <Input
-                          id="first_name"
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <ValidatedTextField
+                          control={createUserForm.control}
                           name="first_name"
-                          value={createForm.first_name}
-                          onChange={handleCreateInputChange}
-                          autoComplete="given-name"
+                          label="First name"
+                          transformValue={sanitizePersonText}
+                          inputProps={{ autoComplete: "given-name", placeholder: "Enter first name" }}
                         />
-                        {createErrors.first_name && (
-                          <p className="text-sm text-destructive">{createErrors.first_name}</p>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="last_name">Last name</Label>
-                        <Input
-                          id="last_name"
+                        <ValidatedTextField
+                          control={createUserForm.control}
                           name="last_name"
-                          value={createForm.last_name}
-                          onChange={handleCreateInputChange}
-                          autoComplete="family-name"
+                          label="Last name"
+                          transformValue={sanitizePersonText}
+                          inputProps={{ autoComplete: "family-name", placeholder: "Enter last name" }}
                         />
-                        {createErrors.last_name && (
-                          <p className="text-sm text-destructive">{createErrors.last_name}</p>
-                        )}
-                      </div>
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                          id="email"
+                        <ValidatedTextField
+                          control={createUserForm.control}
                           name="email"
-                          type="email"
-                          value={createForm.email}
-                          onChange={handleCreateInputChange}
-                          autoComplete="email"
+                          label="Email"
+                          className="sm:col-span-2"
+                          inputProps={{
+                            type: "email",
+                            autoComplete: "email",
+                            placeholder: "name@example.com",
+                          }}
                         />
-                        {createErrors.email && (
-                          <p className="text-sm text-destructive">{createErrors.email}</p>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="mobile">Mobile</Label>
-                        <Input
-                          id="mobile"
+                        <ValidatedFormField
+                          control={createUserForm.control}
                           name="mobile"
-                          value={createForm.mobile}
-                          onChange={handleCreateInputChange}
-                          autoComplete="tel"
+                          label="Mobile"
+                          renderControl={({ field }) => (
+                            <Input
+                              {...field}
+                              inputMode="numeric"
+                              autoComplete="tel"
+                              placeholder="Enter mobile number"
+                              value={field.value ?? ""}
+                              onChange={(event) => field.onChange(sanitizeDigits(event.target.value, 15))}
+                            />
+                          )}
                         />
-                        {createErrors.mobile && (
-                          <p className="text-sm text-destructive">{createErrors.mobile}</p>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="country_code">Country code</Label>
-                        <Input
-                          id="country_code"
-                          name="country_code"
-                          value={createForm.country_code}
-                          onChange={handleCreateInputChange}
-                          autoComplete="off"
-                          maxLength={5}
-                        />
-                      </div>
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="country">Country</Label>
-                        <Input
-                          id="country"
+                        <ValidatedFormField
+                          control={createUserForm.control}
                           name="country"
-                          value={createForm.country}
-                          onChange={handleCreateInputChange}
-                          autoComplete="country-name"
+                          label="Country"
+                          renderControl={({ field }) => (
+                            <Select
+                              value={field.value}
+                              onValueChange={(value) => {
+                                handleCreateCountryChange(value)
+                                field.onChange(value)
+                              }}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select country" />
+                              </SelectTrigger>
+                              <SelectContent side="bottom" avoidCollisions={false}>
+                                {COUNTRIES.map((country) => (
+                                  <SelectItem key={country.name} value={country.name}>
+                                    {country.name} ({country.code})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
                         />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="password">Password</Label>
-                        <Input
-                          id="password"
+                        <ValidatedFormField
+                          control={createUserForm.control}
+                          name="country_code"
+                          label="Country code"
+                          renderControl={({ field }) => (
+                            <Select
+                              value={field.value}
+                              onValueChange={(value) => {
+                                field.onChange(value)
+                                const matchedCountry = COUNTRIES.find((country) => country.code === value)
+                                if (matchedCountry) {
+                                  createUserForm.setValue("country", matchedCountry.name, { shouldValidate: true })
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select country code" />
+                              </SelectTrigger>
+                              <SelectContent side="bottom" avoidCollisions={false}>
+                                {COUNTRIES.map((country) => (
+                                  <SelectItem key={`${country.name}-${country.code}`} value={country.code}>
+                                    {country.code} ({country.name})
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        />
+                        <ValidatedPasswordField
+                          control={createUserForm.control}
                           name="password"
-                          type="password"
-                          value={createForm.password}
-                          onChange={handleCreateInputChange}
-                          autoComplete="new-password"
+                          label="Password"
+                          inputProps={{ placeholder: "Create a strong password" }}
                         />
-                        {createErrors.password && (
-                          <p className="text-sm text-destructive">{createErrors.password}</p>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="confirm_password">Confirm password</Label>
-                        <Input
-                          id="confirm_password"
+                        <ValidatedPasswordField
+                          control={createUserForm.control}
                           name="confirm_password"
-                          type="password"
-                          value={createForm.confirm_password}
-                          onChange={handleCreateInputChange}
-                          autoComplete="new-password"
+                          label="Confirm password"
+                          inputProps={{ placeholder: "Confirm password" }}
                         />
-                        {createErrors.confirm_password && (
-                          <p className="text-sm text-destructive">{createErrors.confirm_password}</p>
-                        )}
-                      </div>
-                      <div className="space-y-2 sm:col-span-2">
-                        <Label htmlFor="referral_code">Referral code (optional)</Label>
-                        <Input
-                          id="referral_code"
+                        <ValidatedTextField
+                          control={createUserForm.control}
                           name="referral_code"
-                          value={createForm.referral_code}
-                          onChange={handleCreateInputChange}
-                          autoComplete="off"
+                          label="Referral code"
+                          className="sm:col-span-2"
+                          inputProps={{ autoComplete: "off", placeholder: "Enter referral code if available" }}
                         />
                       </div>
-                    </div>
 
-                    <DialogFooter>
-                      <DialogClose asChild>
-                        <Button type="button" variant="outline" disabled={creatingUser}>
-                          Cancel
+                      <DialogFooter>
+                        <DialogClose asChild>
+                          <Button type="button" variant="outline" disabled={creatingUser}>
+                            Cancel
+                          </Button>
+                        </DialogClose>
+                        <Button type="submit" disabled={creatingUser}>
+                          {creatingUser ? "Creating..." : "Create User"}
                         </Button>
-                      </DialogClose>
-                      <Button type="submit" disabled={creatingUser}>
-                        {creatingUser ? "Creating..." : "Create User"}
-                      </Button>
-                    </DialogFooter>
-                  </form>
+                      </DialogFooter>
+                    </form>
+                  </Form>
                 </DialogContent>
               </Dialog>
-              <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:ml-auto">
-                <Select value={status || "all"} onValueChange={handleStatusChange}>
-                  <SelectTrigger className="w-full sm:w-auto sm:min-w-[140px]">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={isApproved || "all"} onValueChange={handleApprovalChange}>
-                  <SelectTrigger className="w-full sm:w-auto sm:min-w-[160px]">
-                    <SelectValue placeholder="Approval" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {approvalOptions.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={String(perPage)} onValueChange={handleLimitChange}>
-                  <SelectTrigger className="w-full sm:w-auto sm:min-w-[110px]">
-                    <SelectValue placeholder="Per page" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {perPageOptions.map((option) => (
-                      <SelectItem key={option} value={option}>
-                        {option} / page
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex flex-wrap items-center gap-2 sm:ml-auto">
                 <Button
                   variant="outline"
                   onClick={handleRefresh}
@@ -679,9 +550,7 @@ export default function NewUsersPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{totalPending}</div>
-                <p className="text-sm text-muted-foreground">
-                  Across all pages{search ? ` for “${search}”` : ""}
-                </p>
+                <p className="text-sm text-muted-foreground">Across all pages</p>
               </CardContent>
             </Card>
             <Card>
@@ -753,9 +622,7 @@ export default function NewUsersPage() {
                         <TableCell colSpan={4}>
                           <div className="py-10 text-center">
                             <Users className="mx-auto mb-4 h-10 w-10 text-muted-foreground" />
-                            <p className="text-muted-foreground">
-                              No users found for the current filters.
-                            </p>
+                            <p className="text-muted-foreground">No users found.</p>
                           </div>
                         </TableCell>
                       </TableRow>
@@ -834,7 +701,7 @@ export default function NewUsersPage() {
                   ? "No users to display"
                   : `Showing ${rangeStart}-${rangeEnd} of ${totalPending} users`}
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -847,6 +714,20 @@ export default function NewUsersPage() {
                 <div className="text-sm font-medium text-muted-foreground">
                   Page {currentPage}
                   {totalPages ? ` of ${totalPages}` : ""}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  {pageNumbers.map((pageNumber) => (
+                    <Button
+                      key={pageNumber}
+                      variant={pageNumber === currentPage ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => goToPage(pageNumber)}
+                      disabled={loading || pageNumber === currentPage}
+                      className="min-w-9"
+                    >
+                      {pageNumber}
+                    </Button>
+                  ))}
                 </div>
                 <Button
                   variant="outline"
