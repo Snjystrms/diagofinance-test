@@ -32,6 +32,19 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env
+.env.local
+.env.development
+
+# Cursor agent skills (local only)
+.agents/skills/
+.agents/skills-lock.json
+
+# autoskills lockfile (repo root)
+skills-lock.json
+
+# Cursor project settings/rules (local-only)
+.cursor/
+skills-lock.json
 
 # vercel
 .vercel
