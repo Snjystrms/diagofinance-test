@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { CenteredLoadingSurface } from '@/components/loading/page-loading-skeleton';
 import { useAuth } from '@/contexts/auth-context';
 
 export default function HomePage() {
@@ -25,11 +26,10 @@ export default function HomePage() {
   }, [user.isAuthenticated, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-        <p className="mt-2 text-sm text-gray-600">Loading...</p>
-      </div>
-    </div>
+    <CenteredLoadingSurface
+      minHeightClassName="min-h-screen"
+      title="Loading"
+      description="Preparing your CRM workspace."
+    />
   );
 }

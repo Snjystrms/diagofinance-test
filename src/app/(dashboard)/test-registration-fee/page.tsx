@@ -77,13 +77,13 @@ const isValidHash = true;
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="text-center p-6 border-b mb-6">
-          <div className="mx-auto flex items-center justify-center w-16 h-16 bg-gradient-to-r from-red-500 to-orange-600 rounded-full mb-4 shadow-lg">
-            <Shield className="h-8 w-8 text-white" />
+          <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-full mb-4 bg-muted/20">
+            <Shield className="h-8 w-8 text-foreground" />
           </div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent mb-2">
+          <h1 className="text-3xl font-semibold text-foreground mb-2">
             One-Time Registration Fee Required
           </h1>
-          <p className="text-muted-foreground text-lg">
+          <p className="text-muted-foreground text-base">
             Complete your account activation by paying the one-time registration fee of {registrationFee}
           </p>
         </div>

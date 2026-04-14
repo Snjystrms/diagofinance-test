@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { RefreshCw, Layers, Plus, Trash2 } from "lucide-react";
 
 import { MainLayout } from "@/components/main-layout";
+import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ProtectedRoute } from "@/components/protected-route";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -417,9 +418,15 @@ export default function IbPlansPage() {
   const renderContent = () => {
     if (loading) {
       return (
-        <div className="flex min-h-[40vh] items-center justify-center">
-          <Spinner className="h-8 w-8" />
-        </div>
+        <ListPageSkeleton
+          contained={false}
+          showHeader={false}
+          showFilterPanel={false}
+          actionCount={0}
+          columnCount={5}
+          rowCount={7}
+          className="px-0"
+        />
       );
     }
 
@@ -645,5 +652,4 @@ export default function IbPlansPage() {
     </ProtectedRoute>
   );
 }
-
 

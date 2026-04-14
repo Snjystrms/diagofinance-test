@@ -1,6 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
+.npm-cache
 /node_modules
 /.pnp
 .pnp.*
@@ -52,3 +53,6 @@ skills-lock.json
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+local
+*.log

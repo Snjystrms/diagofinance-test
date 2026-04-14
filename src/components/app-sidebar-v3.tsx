@@ -277,10 +277,10 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
       {/* First sidebar - Icon sidebar */}
       <Sidebar
         collapsible="icon"
-        className="border-r flex-shrink-0"
+        className="border-r border-[#e9edf5] bg-white shadow-[8px_0_40px_rgba(15,23,42,0.03)] flex-shrink-0"
         {...props}
       >
-        <SidebarHeader>
+        <SidebarHeader className="border-b border-[#e9edf5] p-3">
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton 
@@ -383,10 +383,10 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
         return (
           <Sidebar 
             collapsible="none" 
-            className="w-72 border-l border-r flex-shrink-0 hidden md:flex transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] animate-in slide-in-from-left h-screen sticky top-0" 
+            className="w-72 border-l border-r border-[#e9edf5] bg-white flex-shrink-0 hidden md:flex transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] animate-in slide-in-from-left h-screen sticky top-0" 
           >
             <div className="flex h-full flex-col">
-              <SidebarHeader className="gap-2 border-b p-4 bg-gradient-to-r from-sidebar-accent/30 to-sidebar-accent/10">
+              <SidebarHeader className="gap-2 border-b border-[#e9edf5] p-4 bg-white">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {activeNavItem.icon && (
@@ -431,7 +431,7 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
                             className={`
                               group relative
                               ${isSubActive 
-                                ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-md border-l-2 border-sidebar-primary" 
+                                ? "bg-[#edf4ff] text-[#2563eb] font-semibold shadow-sm" 
                                 : "text-sidebar-foreground/80 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground"
                               }
                               transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]

@@ -5,6 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import toast from "react-hot-toast";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -306,12 +307,13 @@ export default function AllNotificationsPage() {
   if (loading && notifications.length === 0) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="flex flex-col items-center gap-3">
-            <Spinner className="h-8 w-8" />
-            <p className="text-sm text-muted-foreground">Loading notifications...</p>
-          </div>
-        </div>
+        <ListPageSkeleton
+          statsCount={3}
+          actionCount={2}
+          columnCount={5}
+          rowCount={10}
+          filterPillCount={3}
+        />
       </MainLayout>
     );
   }
@@ -321,21 +323,13 @@ export default function AllNotificationsPage() {
       <div className="container mx-auto p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary to-purple-600 rounded-2xl blur opacity-75"></div>
-              <div className="relative flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-r from-primary to-purple-600 text-white shadow-lg">
-                <Bell className="h-8 w-8" />
-              </div>
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
-                All Notifications
-              </h1>
-              <p className="text-lg text-muted-foreground">
-                View and manage all system notifications
-              </p>
-            </div>
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold text-foreground mb-1">
+              All Notifications
+            </h1>
+            <p className="text-base text-muted-foreground">
+              View and manage all system notifications
+            </p>
           </div>
         </div>
 
@@ -435,4 +429,3 @@ export default function AllNotificationsPage() {
     </MainLayout>
   );
 }
-

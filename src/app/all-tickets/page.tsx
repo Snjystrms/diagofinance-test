@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { MainLayout } from "@/components/main-layout";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -449,11 +450,7 @@ export default function AdminTicketsPage() {
 
   const renderTable = () => {
     if (loading && tickets.length === 0) {
-      return (
-        <div className="flex min-h-[40vh] items-center justify-center">
-          <Spinner className="h-8 w-8" />
-        </div>
-      );
+      return <TableSectionSkeleton columnCount={6} rowCount={9} />;
     }
 
     if (!loading && tickets.length === 0) {
@@ -792,4 +789,3 @@ export default function AdminTicketsPage() {
     </MainLayout>
   );
 }
-

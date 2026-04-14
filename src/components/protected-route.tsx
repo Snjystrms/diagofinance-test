@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { CenteredLoadingSurface } from '@/components/loading/page-loading-skeleton';
 import { useAuth } from '@/contexts/auth-context';
 import type { GroupedPermissions } from '@/lib/api';
 
@@ -126,23 +127,21 @@ export function ProtectedRoute({
 
   if (requireAuth && !isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto" />
-          <p className="mt-2 text-sm text-gray-600">Loading...</p>
-        </div>
-      </div>
+      <CenteredLoadingSurface
+        minHeightClassName="min-h-screen"
+        title="Loading"
+        description="Checking your session and preparing the workspace."
+      />
     );
   }
 
   if (!requireAuth && isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto" />
-          <p className="mt-2 text-sm text-gray-600">Redirecting...</p>
-        </div>
-      </div>
+      <CenteredLoadingSurface
+        minHeightClassName="min-h-screen"
+        title="Redirecting"
+        description="Taking you to the right dashboard."
+      />
     );
   }
 

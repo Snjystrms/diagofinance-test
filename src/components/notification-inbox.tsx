@@ -15,10 +15,52 @@ import {
   Loader2,
   Trash2,
 } from "lucide-react";
-import { notificationApi, type NotificationItem } from "@/lib/api";
+import { adminNotificationApi, notificationApi, type AdminNotificationItem, type NotificationItem } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import toast from "react-hot-toast";
 import { cn } from "@/lib/utils";
+
+type NotificationInboxMode = "user" | "admin";
+
+interface NotificationInboxProps {
+  mode?: NotificationInboxMode;
+}
+
+type NotificationInboxItem = {
+  id: number;
+  message: string;
+  timeAgo: string;
+  createdAt: string;
+  isRead: boolean;
+  status: "read" | "unread";
+};
+
+const normalizeNotification = (
+  item: NotificationItem | AdminNotificationItem,
+  mode: NotificationInboxMode
+): NotificationInboxItem => {
+  if (mode === "admin") {
+    const adminItem = item as AdminNotificationItem;
+    return {
+      id: adminItem.id,
+      message: adminItem.message,
+      timeAgo: adminItem.created_at,
+      createdAt: adminItem.created_at,
+      isRead: adminItem.status === 1,
+      status: adminItem.status === 1 ? "read" : "unread",
+    };
+  }
+
+  const userItem = item as NotificationItem;
+  return {
+    id: userItem.id,
+    message: userItem.message,
+    timeAgo: userItem.timeAgo,
+    createdAt: userItem.createdAt,
+    isRead: userItem.isRead,
+    status: userItem.status,
+  };
+};
 
 // Helper function to get icon based on notification message
 const getNotificationIcon = (message: string): LucideIcon => {
@@ -35,9 +77,9 @@ const getNotificationIcon = (message: string): LucideIcon => {
   return Info;
 };
 
-export function NotificationInbox() {
+export function NotificationInbox({ mode = "user" }: NotificationInboxProps) {
   const { token } = useAuth();
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [notifications, setNotifications] = useState<NotificationInboxItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [isMarkingAll, setIsMarkingAll] = useState(false);
@@ -50,24 +92,39 @@ export function NotificationInbox() {
     if (!token) return;
 
     try {
-      const response = await notificationApi.getUnreadCount(token);
+      const response =
+        mode === "admin"
+          ? await adminNotificationApi.getUnreadCount(token)
+          : await notificationApi.getUnreadCount(token);
       if (response.success && response.data) {
         setUnreadCount(response.data.unread_count || 0);
       }
     } catch (error) {
       console.error("Failed to fetch unread count:", error);
     }
-  }, [token]);
+  }, [token, mode]);
 
   const fetchNotifications = useCallback(async () => {
     if (!token) return;
 
     setIsLoading(true);
     try {
-      const response = await notificationApi.getNotifications(token);
+      const response =
+        mode === "admin"
+          ? await adminNotificationApi.getNotifications(token, {
+              page: 1,
+              limit: 20,
+              status: tab === "unread" ? "unread" : "all",
+            })
+          : await notificationApi.getNotifications(token);
+
       if (response.success && response.data) {
-        setNotifications(response.data.notifications || []);
-        // Update unread count from response summary
+        setNotifications(
+          (response.data.notifications || []).map((item) =>
+            normalizeNotification(item, mode)
+          )
+        );
+
         if (response.data.summary) {
           setUnreadCount(response.data.summary.unread || 0);
         }
@@ -78,7 +135,7 @@ export function NotificationInbox() {
     } finally {
       setIsLoading(false);
     }
-  }, [token]);
+  }, [mode, tab, token]);
 
   // Fetch unread count on mount and periodically
   useEffect(() => {
@@ -97,16 +154,22 @@ export function NotificationInbox() {
     }
   }, [isOpen, token, fetchNotifications]);
 
-  const markAsRead = (id: number) => {
-    // Update local state when notification is clicked
+  const markAsRead = async (id: number) => {
+    if (!token) return;
+
+    if (mode === "admin") {
+      try {
+        await adminNotificationApi.markAsRead(id, token);
+      } catch (error) {
+        console.error("Failed to mark admin notification as read:", error);
+      }
+    }
+
     setNotifications((prev) => {
       const wasUnread = prev.find((n) => n.id === id)?.isRead === false;
-      const updated = prev.map((n) => 
-        n.id === id 
-          ? { ...n, isRead: true, status: "read" as const } 
-          : n
+      const updated = prev.map((n) =>
+        n.id === id ? { ...n, isRead: true, status: "read" as const } : n
       );
-      // Update unread count if we marked one as read
       if (wasUnread) {
         setUnreadCount((count) => Math.max(0, count - 1));
       }
@@ -119,7 +182,11 @@ export function NotificationInbox() {
 
     setIsMarkingAll(true);
     try {
-      const response = await notificationApi.markAllAsRead(token);
+      const response =
+        mode === "admin"
+          ? await adminNotificationApi.markAllAsRead(token)
+          : await notificationApi.markAllAsRead(token);
+
       if (response.success) {
         setNotifications((prev) =>
           prev.map((n) => ({ ...n, isRead: true, status: "read" as const }))
@@ -137,7 +204,7 @@ export function NotificationInbox() {
 
   const deleteNotification = async (id: number, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!token) return;
+    if (!token || mode === "admin") return;
 
     const notification = notifications.find((n) => n.id === id);
     const wasUnread = notification?.isRead === false;
@@ -145,7 +212,6 @@ export function NotificationInbox() {
     try {
       await notificationApi.deleteNotification(id, token);
       setNotifications((prev) => prev.filter((n) => n.id !== id));
-      // Update unread count if we deleted an unread notification
       if (wasUnread) {
         setUnreadCount((count) => Math.max(0, count - 1));
       }
@@ -241,13 +307,15 @@ export function NotificationInbox() {
                         <span className="mt-1 inline-block size-2 rounded-full bg-primary flex-shrink-0" />
                       )}
                     </button>
-                    <button
-                      onClick={(e) => deleteNotification(n.id, e)}
-                      className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 p-1 hover:bg-destructive/10 rounded"
-                      aria-label="Delete notification"
-                    >
-                      <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
-                    </button>
+                    {mode !== "admin" && (
+                      <button
+                        onClick={(e) => deleteNotification(n.id, e)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 p-1 hover:bg-destructive/10 rounded"
+                        aria-label="Delete notification"
+                      >
+                        <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                      </button>
+                    )}
                   </div>
                 );
               })

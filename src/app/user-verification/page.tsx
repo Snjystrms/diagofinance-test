@@ -5,6 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import toast from "react-hot-toast";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -503,9 +504,14 @@ const buildReviewPayload = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Spinner className="h-8 w-8" />
-      </div>
+      <MainLayout>
+        <ListPageSkeleton
+          actionCount={1}
+          columnCount={4}
+          rowCount={10}
+          filterPillCount={2}
+        />
+      </MainLayout>
     );
   }
 

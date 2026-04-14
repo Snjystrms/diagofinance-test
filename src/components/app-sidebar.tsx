@@ -41,6 +41,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
 
 // Admin Navigation Data
 export const adminNavData = [
@@ -469,6 +470,8 @@ export const crmData = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth();
+  const isEnterpriseSidebar =
+    user?.type === "admin" || user?.type === "manager" || user?.type === "subadmin";
 
   const navItems = React.useMemo(() => {
     if (!user) return userNavData;
@@ -481,12 +484,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       case "user":
       default:
         // Conditionally modify the menu item based on is_ib_user
-        console.log('Sidebar Debug - User:', user);
-        console.log('Sidebar Debug - is_ib_user:', user.is_ib_user);
         const modifiedUserNavData = userNavData.map((item) => {
-          // Only modify the "Become Partner" item if user is an IB user
           if (item.title === "Become Partner" && user.is_ib_user === true) {
-            console.log('Sidebar Debug - Changing "Become Partner" to "IB dashboard"');
             return {
               ...item,
               title: "IB dashboard",
@@ -521,11 +520,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const isAccountInactive = user && user.type === 'user' && user.is_account_active === false;
 
   return (
-    <Sidebar collapsible="icon" {...props}>
-      <SidebarHeader>
-        <TeamSwitcher teams={crmData.teams} />
+    <Sidebar
+      collapsible="icon"
+      className={cn(
+        "border-r border-[#e9edf5] bg-white shadow-[8px_0_40px_rgba(15,23,42,0.03)]"
+      )}
+      {...props}
+    >
+      <SidebarHeader className="border-b border-[#e9edf5] px-4 py-4 group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:py-3">
+        <TeamSwitcher
+          teams={crmData.teams}
+          variant="enterprise"
+          roleLabel={
+            user?.type === "manager"
+              ? "Manager Console"
+              : user?.type === "subadmin"
+                ? "Subadmin Console"
+                : user?.type === "admin"
+                  ? "Admin Console"
+                  : "Client Workspace"
+          }
+        />
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="gap-0 px-1.5 py-3">
         {isAccountInactive ? (
           <div className="p-4 text-center">
             <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center mx-auto mb-2">
@@ -542,7 +559,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </div>
         ) : (
           <>
-            <NavMain items={navItems} />
+            <NavMain
+              items={navItems}
+              variant="enterprise"
+              sectionLabel={isEnterpriseSidebar ? "Administration" : "Platform"}
+            />
             {/* <NavProjects projects={crmData.projects} /> */}
           </>
         )}
