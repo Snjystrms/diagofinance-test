@@ -339,13 +339,13 @@ function USDTDepositContent() {
         <div className="container mx-auto px-4 py-8">
           {/* Header */}
           <div className="text-center mb-8">
-            <div className="mx-auto flex items-center justify-center w-20 h-20 bg-gradient-to-r from-red-500 to-orange-600 rounded-full mb-4 shadow-lg">
-              <Shield className="h-10 w-10 text-white" />
+            <div className="mx-auto flex items-center justify-center w-20 h-20 rounded-full mb-4 bg-muted/20">
+              <Shield className="h-10 w-10 text-foreground" />
             </div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent mb-2">
+            <h1 className="text-3xl font-semibold text-foreground mb-2">
               Registration Fee Required
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-lg max-w-2xl mx-auto">
+            <p className="text-gray-600 dark:text-gray-400 text-base max-w-2xl mx-auto">
               Complete your account activation by paying the one-time registration fee of 25 USDT
             </p>
           </div>
@@ -385,21 +385,13 @@ function USDTDepositContent() {
         {/* Header Section - Enhanced */}
         <div className="mb-8 relative">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-emerald-500/5 to-teal-500/5 rounded-2xl blur-3xl -z-10" />
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary to-purple-600 rounded-2xl blur opacity-75"></div>
-              <div className="relative flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-r from-primary to-purple-600 text-white shadow-lg">
-                <Wallet className="h-8 w-8" />
-              </div>
-            </div>
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
-                USDT Deposit
-              </h1>
-              <p className="text-lg text-muted-foreground">
-                Scan the QR code or copy the address below to deposit USDT to your account
-              </p>
-            </div>
+          <div className="space-y-2">
+            <h1 className="text-3xl font-semibold text-foreground mb-1">
+              USDT Deposit
+            </h1>
+            <p className="text-base text-muted-foreground max-w-2xl">
+              Scan the QR code or copy the address below to deposit USDT to your account
+            </p>
           </div>
         </div>
 

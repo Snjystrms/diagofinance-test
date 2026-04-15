@@ -10,7 +10,6 @@ import { AppDataTable } from "@/components/app-data-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Spinner } from "@/components/ui/spinner";
 import { CalendarIcon, RefreshCw, Download, Search, X } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -120,6 +119,10 @@ export default function InternalTransferReportPage() {
     setSearchQuery,
     setPage,
   ]);
+
+  const handleRefresh = useCallback(() => {
+    void loadReport();
+  }, [loadReport]);
 
   const handleExportExcel = useCallback(async () => {
     if (!token) {
@@ -423,8 +426,6 @@ export default function InternalTransferReportPage() {
     </ReportPageWrapper>
   );
 }
-
-
 
 
 

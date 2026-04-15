@@ -159,9 +159,9 @@ export function Header() {
 
   return (
     <>
-      <header className="flex h-16 items-center gap-2 border-b bg-card px-3 sm:px-4 md:px-6 overflow-hidden">
+      <header className="flex h-16 items-center gap-3 border-b bg-card px-4 sm:px-5 md:px-6 overflow-hidden">
         {/* Left Section */}
-        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-1 min-w-0 overflow-hidden">
+        <div className="flex items-center gap-3 sm:gap-4 md:gap-5 flex-1 min-w-0 overflow-hidden">
           <SidebarTrigger className="-ml-1 flex-shrink-0" onClick={handleSidebarTriggerClick} />
           
           {/* Search Bar - Desktop */}
@@ -301,24 +301,9 @@ export function Header() {
             </Button>
           )}
           
-          {user?.type === "user" ? (
-            <NotificationInbox />
-          ) : (
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => router.push('/all-notifications')}
-              className="relative flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9"
-              title="View all notifications"
-            >
-              <Bell className="h-4 w-4" />
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-semibold flex items-center justify-center">
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
-              )}
-            </Button>
-          )}
+          {user ? (
+            <NotificationInbox mode={user.type === "user" ? "user" : "admin"} />
+          ) : null}
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

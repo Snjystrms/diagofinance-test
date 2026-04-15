@@ -9,7 +9,6 @@ import { format } from "date-fns";
 import { AppDataTable } from "@/components/app-data-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Spinner } from "@/components/ui/spinner";
 import { CalendarIcon, RefreshCw, Download, Search, X } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -438,7 +437,6 @@ export default function LoginActivityReportPage() {
     </ReportPageWrapper>
   );
 }
-
 
 
 

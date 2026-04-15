@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { MainLayout } from '@/components/main-layout'
 import { AppDataTable } from '@/components/app-data-table'
+import { ListPageSkeleton } from '@/components/loading/page-loading-skeleton'
 import { useAuth } from '@/contexts/auth-context'
 import { withdrawalApi, type WithdrawalItem } from '@/lib/api'
 import { type ColumnDef } from '@tanstack/react-table'
@@ -442,14 +443,12 @@ export default function WithdrawPage() {
   if (loading && withdrawals.length === 0) {
     return (
       <MainLayout>
-        <div className="container mx-auto py-10">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <Clock className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">Loading withdrawal requests...</p>
-            </div>
-          </div>
-        </div>
+        <ListPageSkeleton
+          actionCount={1}
+          columnCount={7}
+          rowCount={8}
+          filterPillCount={3}
+        />
       </MainLayout>
     )
   }
@@ -485,26 +484,19 @@ export default function WithdrawPage() {
     <MainLayout>
       <div className="container mx-auto py-10">
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-orange-600 rounded-2xl blur opacity-75"></div>
-                <div className="relative flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-r from-red-500 to-orange-600 text-white shadow-lg">
-                  <ArrowUpRight className="h-8 w-8" />
-                </div>
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
-                  Withdrawal Status
-                </h1>
-                <p className="text-lg text-muted-foreground">
-                  View and track the status of your withdrawal requests
-                </p>
-              </div>
-              <Button
-                onClick={() => setIsDialogOpen(true)}
-                className="ml-4"
-              >
+          <div className="flex items-center justify-between gap-4">
+            <div className="space-y-2">
+              <h1 className="text-3xl font-semibold text-foreground mb-1">
+                Withdrawal Status
+              </h1>
+              <p className="text-base text-muted-foreground">
+                View and track the status of your withdrawal requests
+              </p>
+            </div>
+            <Button
+              onClick={() => setIsDialogOpen(true)}
+              className="ml-4"
+            >
                 <Plus className="h-4 w-4 mr-2" />
                 Request a Withdrawal
               </Button>

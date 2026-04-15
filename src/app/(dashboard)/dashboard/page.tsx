@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { ActiveProjects } from "@/components/active-projects"
 import { AccentCard } from "@/components/AccentCard"
-import { GlowingEffect } from "@/components/ui/glowing-effect"
 import { ACCENT_COLORS } from "@/utils/accent"
 import { ActivityTimeline, type ActivityTimelineItem } from "@/components/activity-timeline"
 import { ProtectedRoute } from "@/components/protected-route"
@@ -97,9 +96,11 @@ const formatLabel = (label?: string) => {
 
 function DashboardHeaderSkeleton() {
   return (
-    <div className="relative overflow-hidden rounded-3xl border border-border/60 bg-card/80 p-6 shadow-sm">
-      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-transparent" />
-      <div className="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div
+      className="rounded-[26px] p-6"
+      style={{ backgroundColor: "var(--skeleton-panel)" }}
+    >
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div className="flex items-center gap-4">
           <Skeleton className="h-16 w-16 rounded-2xl" />
           <div className="space-y-3">
@@ -122,8 +123,12 @@ function ClientDashboardSkeleton() {
       <DashboardHeaderSkeleton />
       <div className="grid gap-4 sm:grid-cols-3">
         {Array.from({ length: 3 }).map((_, index) => (
-          <Card key={index} className="overflow-hidden border-2 border-border/50 bg-card/80 shadow-sm">
-            <CardContent className="space-y-4 p-6">
+          <div
+            key={index}
+            className="overflow-hidden rounded-[20px] p-6"
+            style={{ backgroundColor: "var(--skeleton-panel)" }}
+          >
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <Skeleton className="h-4 w-24" />
@@ -132,13 +137,16 @@ function ClientDashboardSkeleton() {
                 <Skeleton className="h-12 w-12 rounded-2xl" />
               </div>
               <Skeleton className="h-3 w-32" />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
       <div className="grid gap-6 xl:grid-cols-3">
-        <Card className="xl:col-span-2 border-2 border-border/50 bg-card/80">
-          <CardContent className="space-y-4 p-6">
+        <div
+          className="xl:col-span-2 rounded-[24px] p-6"
+          style={{ backgroundColor: "var(--skeleton-panel)" }}
+        >
+          <div className="space-y-4">
             <div className="flex items-center justify-between">
               <div className="space-y-2">
                 <Skeleton className="h-5 w-40" />
@@ -147,16 +155,23 @@ function ClientDashboardSkeleton() {
               <Skeleton className="h-10 w-24 rounded-xl" />
             </div>
             <Skeleton className="h-[320px] w-full rounded-2xl" />
-          </CardContent>
-        </Card>
-        <Card className="border-2 border-border/50 bg-card/80">
-          <CardContent className="space-y-4 p-6">
+          </div>
+        </div>
+        <div
+          className="rounded-[24px] p-6"
+          style={{ backgroundColor: "var(--skeleton-panel)" }}
+        >
+          <div className="space-y-4">
             <div className="space-y-2">
               <Skeleton className="h-5 w-32" />
               <Skeleton className="h-4 w-24" />
             </div>
             {Array.from({ length: 4 }).map((_, index) => (
-              <div key={index} className="flex items-center gap-3 rounded-xl border border-border/50 p-3">
+              <div
+                key={index}
+                className="flex items-center gap-3 rounded-[16px] p-3"
+                style={{ backgroundColor: "var(--skeleton-panel-strong)" }}
+              >
                 <Skeleton className="h-10 w-10 rounded-full" />
                 <div className="flex-1 space-y-2">
                   <Skeleton className="h-4 w-32" />
@@ -164,11 +179,14 @@ function ClientDashboardSkeleton() {
                 </div>
               </div>
             ))}
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       </div>
-      <Card className="border-2 border-border/50 bg-card/80">
-        <CardContent className="space-y-4 p-6">
+      <div
+        className="rounded-[24px] p-6"
+        style={{ backgroundColor: "var(--skeleton-panel)" }}
+      >
+        <div className="space-y-4">
           <div className="flex flex-wrap gap-2">
             {Array.from({ length: 4 }).map((_, index) => (
               <Skeleton key={index} className="h-10 w-28 rounded-xl" />
@@ -176,11 +194,21 @@ function ClientDashboardSkeleton() {
           </div>
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
             {Array.from({ length: 4 }).map((_, index) => (
-              <Skeleton key={index} className="h-56 w-full rounded-2xl" />
+              <div
+                key={index}
+                className="rounded-[18px] p-4"
+                style={{ backgroundColor: "var(--skeleton-panel-strong)" }}
+              >
+                <div className="space-y-3">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-28" />
+                  <Skeleton className="h-32 w-full rounded-[16px]" />
+                </div>
+              </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   )
 }
@@ -191,8 +219,12 @@ function AdminDashboardSkeleton() {
       <DashboardHeaderSkeleton />
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <Card key={index} className="border border-border/50 bg-card/80">
-            <CardContent className="space-y-4 p-6">
+          <div
+            key={index}
+            className="rounded-[20px] p-6"
+            style={{ backgroundColor: "var(--skeleton-panel)" }}
+          >
+            <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div className="space-y-2">
                   <Skeleton className="h-4 w-24" />
@@ -201,15 +233,63 @@ function AdminDashboardSkeleton() {
                 <Skeleton className="h-11 w-11 rounded-xl" />
               </div>
               <Skeleton className="h-3 w-28" />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         ))}
       </div>
       <div className="grid gap-6 xl:grid-cols-3">
-        <Skeleton className="h-[340px] rounded-2xl xl:col-span-2" />
-        <Skeleton className="h-[340px] rounded-2xl" />
+        <div
+          className="xl:col-span-2 rounded-[24px] p-6"
+          style={{ backgroundColor: "var(--skeleton-panel)" }}
+        >
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-36" />
+                <Skeleton className="h-4 w-56" />
+              </div>
+              <Skeleton className="h-9 w-24 rounded-[10px]" />
+            </div>
+            <Skeleton className="h-[265px] rounded-[18px]" />
+          </div>
+        </div>
+        <div
+          className="rounded-[24px] p-6"
+          style={{ backgroundColor: "var(--skeleton-panel)" }}
+        >
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={index}
+                className="rounded-[16px] p-3"
+                style={{ backgroundColor: "var(--skeleton-panel-strong)" }}
+              >
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-3/4" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
-      <Skeleton className="h-[420px] rounded-2xl" />
+      <div
+        className="rounded-[24px] p-6"
+        style={{ backgroundColor: "var(--skeleton-panel)" }}
+      >
+        <div className="space-y-4">
+          <div className="flex gap-2">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <Skeleton key={index} className="h-9 w-24 rounded-[10px]" />
+            ))}
+          </div>
+          <Skeleton className="h-[360px] rounded-[20px]" />
+        </div>
+      </div>
     </div>
   )
 }
@@ -555,29 +635,28 @@ export default function DashboardPage() {
         id: 'total-deposits',
         title: 'Total Deposits',
         component: (
-          <div className="relative overflow-hidden border-2 border-indigo-500/30 hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-indigo-500/10 via-blue-500/5 to-transparent rounded-3xl group h-full">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/10 to-blue-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
-            <div className="relative z-10 pt-6 pb-6 px-6 h-full flex flex-col">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                      Total Deposits
-                    </div>
-                    <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">
-                      {formatCurrency(
-                        dashboardData?.deposits?.total ?? 0,
-                        depositsCurrency
-                      )}
-                    </p>
+          <div className="border border-border/50 rounded-3xl bg-card shadow-sm transition-all duration-200 hover:shadow-md h-full">
+            <div className="pt-6 pb-6 px-6 h-full flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex-1">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-slate-400" />
+                    Total Deposits
                   </div>
-                  <div className="p-3 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-blue-500/20 border border-indigo-500/30 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                    <TrendingUp className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
-                  </div>
+                  <p className="text-2xl font-bold text-foreground tabular-nums">
+                    {formatCurrency(
+                      dashboardData?.deposits?.total ?? 0,
+                      depositsCurrency
+                    )}
+                  </p>
                 </div>
-              <div className="pt-3 border-t border-indigo-500/20 mt-auto">
-                  <p className="text-xs text-muted-foreground">All time deposits</p>
+                <div className="p-3 rounded-2xl bg-muted/70 border border-border/50">
+                  <TrendingUp className="h-6 w-6 text-foreground" />
                 </div>
+              </div>
+              <div className="pt-3 border-t border-border/50 mt-auto">
+                <p className="text-xs text-muted-foreground">All time deposits</p>
+              </div>
             </div>
           </div>
         ),
@@ -588,29 +667,28 @@ export default function DashboardPage() {
         id: 'total-withdrawals',
         title: 'Total Withdrawals',
         component: (
-          <div className="relative overflow-hidden border-2 border-amber-500/30 hover:border-amber-500/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent rounded-3xl group h-full">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
-            <div className="relative z-10 pt-6 pb-6 px-6 h-full flex flex-col">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                      Total Withdrawals
-                    </div>
-                    <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
-                      {formatCurrency(
-                        dashboardData?.withdrawals?.total ?? 0,
-                        withdrawalsCurrency
-                      )}
-                    </p>
+          <div className="border border-border/50 rounded-3xl bg-card shadow-sm transition-all duration-200 hover:shadow-md h-full">
+            <div className="pt-6 pb-6 px-6 h-full flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex-1">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-slate-400" />
+                    Total Withdrawals
                   </div>
-                  <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                    <TrendingDown className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-                  </div>
+                  <p className="text-2xl font-bold text-foreground tabular-nums">
+                    {formatCurrency(
+                      dashboardData?.withdrawals?.total ?? 0,
+                      withdrawalsCurrency
+                    )}
+                  </p>
                 </div>
-              <div className="pt-3 border-t border-amber-500/20 mt-auto">
-                  <p className="text-xs text-muted-foreground">All time withdrawals</p>
+                <div className="p-3 rounded-2xl bg-muted/70 border border-border/50">
+                  <TrendingDown className="h-6 w-6 text-foreground" />
                 </div>
+              </div>
+              <div className="pt-3 border-t border-border/50 mt-auto">
+                <p className="text-xs text-muted-foreground">All time withdrawals</p>
+              </div>
             </div>
           </div>
         ),
@@ -621,27 +699,26 @@ export default function DashboardPage() {
         id: 'trading-accounts',
         title: 'Trading Accounts',
         component: (
-          <div className="relative overflow-hidden border-2 border-violet-500/30 hover:border-violet-500/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-transparent rounded-3xl group h-full">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
-            <div className="relative z-10 pt-6 pb-6 px-6 h-full flex flex-col">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex-1">
-                    <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
-                      <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
-                      Trading Accounts
-                    </div>
-                    <p className="text-2xl font-bold text-violet-600 dark:text-violet-400 tabular-nums">
-                      {overallAccounts?.total_accounts ?? dashboardData?.account_types?.total_accounts ?? 0}
-                    </p>
+          <div className="border border-border/50 rounded-3xl bg-card shadow-sm transition-all duration-200 hover:shadow-md h-full">
+            <div className="pt-6 pb-6 px-6 h-full flex flex-col">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex-1">
+                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-slate-400" />
+                    Trading Accounts
                   </div>
-                  <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/30 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                    <Building2 className="h-6 w-6 text-violet-600 dark:text-violet-400" />
-                  </div>
+                  <p className="text-2xl font-bold text-foreground tabular-nums">
+                    {overallAccounts?.total_accounts ?? dashboardData?.account_types?.total_accounts ?? 0}
+                  </p>
                 </div>
-              <div className="pt-3 border-t border-violet-500/20 mt-auto">
-                  <p className="text-xs text-muted-foreground">Active MT5 accounts</p>
+                <div className="p-3 rounded-2xl bg-muted/70 border border-border/50">
+                  <Building2 className="h-6 w-6 text-foreground" />
                 </div>
-          </div>
+              </div>
+              <div className="pt-3 border-t border-border/50 mt-auto">
+                <p className="text-xs text-muted-foreground">Active MT5 accounts</p>
+              </div>
+            </div>
           </div>
         ),
         defaultLayout: { x: 8, y: 0, w: 4, h: 3, minW: 3, minH: 2 },
@@ -651,55 +728,47 @@ export default function DashboardPage() {
         id: 'wallet-balance',
         title: 'Wallet Balance',
         component: (
-          <div className="relative overflow-hidden border-none shadow-2xl text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent rounded-3xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group h-full">
-              <div className="absolute inset-0 opacity-60">
-                <div className="absolute -left-20 -top-20 w-60 h-60 bg-primary-foreground/20 rounded-full blur-3xl animate-pulse" />
-                <div className="absolute right-10 top-10 w-40 h-40 bg-primary-foreground/15 rounded-full blur-3xl" />
-                <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-accent/20 rounded-full blur-3xl" />
+          <div className="border border-border/50 rounded-3xl bg-card shadow-sm h-full">
+            <div className="pb-3 px-6 pt-6 h-full flex flex-col">
+              <div className="flex items-center justify-between mb-2">
+                <p className="uppercase tracking-wider text-xs font-bold text-muted-foreground flex items-center gap-2">
+                  <Wallet className="h-3.5 w-3.5" />
+                  Wallet Balance
+                </p>
+                <div className="p-2 rounded-lg bg-muted/70 border border-border/50">
+                  <Shield className="h-4 w-4 text-foreground" />
+                </div>
               </div>
-              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-            <div className="relative z-10 pb-3 px-6 pt-6 h-full flex flex-col">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="uppercase tracking-wider text-xs font-bold text-primary-foreground/80 flex items-center gap-2">
-                    <Wallet className="h-3.5 w-3.5" />
-                    Wallet Balance
-                  </p>
-                  <div className="p-1.5 rounded-lg bg-primary-foreground/10 backdrop-blur-sm border border-primary-foreground/20">
-                    <Shield className="h-4 w-4 text-primary-foreground" />
-                  </div>
-                </div>
-                <div className="flex items-baseline gap-2 mt-2">
-                  <span className="text-4xl font-extrabold leading-tight drop-shadow-lg">
-                    {formatAmount(dashboardData?.wallet?.balance)}
-                  </span>
-                  <span className="text-lg font-bold text-primary-foreground/80">
-                    {walletCurrency}
-                  </span>
-                </div>
+              <div className="flex items-baseline gap-2 mt-2">
+                <span className="text-4xl font-extrabold leading-tight">
+                  {formatAmount(dashboardData?.wallet?.balance)}
+                </span>
+                <span className="text-lg font-bold text-muted-foreground">
+                  {walletCurrency}
+                </span>
+              </div>
               <div className="mt-auto pt-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex-1 space-y-3">
-                    <div>
-                      <p className="text-primary-foreground text-sm font-semibold mb-1">Your Safe Wallet</p>
-                      <p className="text-primary-foreground/80 text-xs leading-relaxed">
-                        Securely manage balances across deposits and transfers.
-                      </p>
-                    </div>
-                    <Link href="/funds/internal-transfer" className="inline-block mt-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-9 px-4 text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/20 text-xs font-bold border border-primary-foreground/30 backdrop-blur-sm transition-all duration-300 hover:scale-105"
-                      >
-                        <ArrowLeftRight className="h-4 w-4 mr-2" />
-                        Transfer Funds
-                      </Button>
-                    </Link>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-foreground text-sm font-semibold mb-1">Your Safe Wallet</p>
+                    <p className="text-muted-foreground text-sm leading-relaxed">
+                      Securely manage balances across deposits and transfers.
+                    </p>
                   </div>
-                    </div>
-                  </div>
+                  <Link href="/funds/internal-transfer" className="inline-block mt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-9 px-4 text-foreground border-border/50"
+                    >
+                      <ArrowLeftRight className="h-4 w-4 mr-2" />
+                      Transfer Funds
+                    </Button>
+                  </Link>
                 </div>
-                      </div>
+              </div>
+            </div>
+          </div>
         ),
         defaultLayout: { x: 0, y: 3, w: 4, h: 5, minW: 3, minH: 4 },
       },
@@ -955,20 +1024,10 @@ export default function DashboardPage() {
         id: 'deposit-funds',
         title: 'Deposit Funds',
         component: (
-          <div className="relative overflow-hidden border-2 border-dashed border-primary/30 hover:border-primary/50 transition-all duration-300 hover:shadow-lg bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5 group h-full">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-            <div className="pt-6 pb-6 relative z-10 h-full flex flex-col items-center justify-center text-center space-y-4">
-              <div className="relative w-24 h-24 flex items-center justify-center animate-pulse">
-                <div className="absolute inset-0 border-2 border-dashed border-primary/40 rounded-full animate-spin-slow" style={{ animation: 'spin 8s linear infinite' }}></div>
-                <div className="absolute inset-2 border-2 border-primary/20 rounded-full"></div>
-                <div className="relative p-4 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 border border-primary/30">
-                  <Wallet className="h-8 w-8 text-primary" />
-            </div>
-                <div className="absolute -bottom-1 -right-1 animate-bounce">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg border-2 border-background">
-                    <PlusCircle className="h-4 w-4 text-white" />
-                  </div>
-                </div>
+          <div className="border border-dashed border-border/50 rounded-3xl bg-card h-full">
+            <div className="pt-6 pb-6 h-full flex flex-col items-center justify-center text-center space-y-4">
+              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-muted/70">
+                <Wallet className="h-8 w-8 text-foreground" />
               </div>
               <div className="space-y-1.5">
                 <h3 className="text-lg font-bold text-foreground">Wallet Empty</h3>
@@ -977,7 +1036,7 @@ export default function DashboardPage() {
                 </p>
               </div>
               <Link href="/funds/deposit" className="w-full mt-2">
-                <Button size="sm" className="w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white shadow-lg hover:shadow-xl transition-all duration-300">
+                <Button size="sm" className="w-full border border-border/50 text-foreground bg-muted/50 hover:bg-muted transition-all duration-200">
                   <PlusCircle className="h-4 w-4 mr-2" />
                   Deposit Funds
                 </Button>
@@ -1029,29 +1088,18 @@ export default function DashboardPage() {
               background: hsl(var(--muted-foreground) / 0.5);
             }
           `}</style>
-          {/* Header Section - Enhanced */}
-          <div className="mb-8 relative">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-purple-500/5 to-pink-500/5 rounded-2xl blur-3xl -z-10" />
-              <div className="flex items-center justify-between flex-wrap gap-4">
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <div className="absolute inset-0 bg-gradient-to-r from-primary to-purple-600 rounded-2xl blur opacity-75"></div>
-                  <div className="relative flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-r from-primary to-purple-600 text-white shadow-lg">
-                    <BarChart3 className="h-8 w-8" />
-                  </div>
-                </div>
-                <div>
-                  <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-300 bg-clip-text text-transparent mb-2">
-                    Dashboard
-                  </h1>
-                  <p className="text-lg text-muted-foreground">
-                    Welcome back! Here&apos;s what&apos;s happening with your account today.
-                  </p>
-                </div>
+          {/* Header Section */}
+          <div className="mb-8 rounded-3xl border border-border/50 bg-card p-6">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-2">
+                <h1 className="text-3xl font-semibold">Dashboard</h1>
+                <p className="text-base text-muted-foreground max-w-2xl">
+                  Welcome back! Here&apos;s what&apos;s happening with your account today.
+                </p>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-3">
                 {canCustomizeDashboard ? (
-                  <div className="flex items-center gap-2 bg-muted/50 rounded-lg p-1 border border-border/50">
+                  <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/50 p-1">
                     <Button
                       variant={isCustomDashboard === 'normal' ? 'default' : 'ghost'}
                       size="sm"

@@ -60,7 +60,7 @@ export function ClientCustomizationProvider({ children }: { children: ReactNode 
   useEffect(() => {
     let nextThemeId = activePreset.themeId;
     let nextSidebarId = activePreset.sidebarId;
-    let nextModes: Record<DashboardArea, DashboardMode> = {
+    const nextModes: Record<DashboardArea, DashboardMode> = {
       admin: activePreset.dashboards.admin?.mode ?? "normal",
       client: activePreset.dashboards.client?.mode ?? "normal",
     };

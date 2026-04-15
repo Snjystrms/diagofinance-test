@@ -10,11 +10,11 @@ import {
 } from "lucide-react";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { MainLayout } from "@/components/main-layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/contexts/auth-context";
 import { adminMT5AccountsApi, type AdminMT5Account, type UpdateMT5AccountRequest, type CreateMT5AccountRequest } from "@/lib/api";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
@@ -272,11 +272,7 @@ export default function AllUsersMT5AccountsPage() {
 
   const renderTableSection = () => {
     if (loading && accounts.length === 0) {
-      return (
-        <div className="flex min-h-[40vh] items-center justify-center">
-          <Spinner className="h-8 w-8" />
-        </div>
-      );
+      return <TableSectionSkeleton columnCount={6} rowCount={8} />;
     }
 
     if (!loading && accounts.length === 0) {
@@ -471,4 +467,3 @@ export default function AllUsersMT5AccountsPage() {
     </MainLayout>
   );
 }
-

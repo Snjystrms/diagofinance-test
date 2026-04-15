@@ -7,6 +7,7 @@ import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
 import { format } from "date-fns";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -18,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Spinner } from "@/components/ui/spinner";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -364,9 +364,12 @@ export default function ReportManagementPage() {
   if (loading && rows.length === 0) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Spinner className="h-8 w-8" />
-        </div>
+        <ListPageSkeleton
+          actionCount={2}
+          columnCount={6}
+          rowCount={10}
+          filterPillCount={4}
+        />
       </MainLayout>
     );
   }

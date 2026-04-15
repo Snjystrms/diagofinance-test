@@ -18,19 +18,25 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { cn } from "@/lib/utils"
 
 export function TeamSwitcher({
   teams,
+  variant = "default",
+  roleLabel,
 }: {
   teams: {
     name: string
     logo: React.ElementType
     plan: string
   }[]
+  variant?: "default" | "enterprise"
+  roleLabel?: string
 }) {
   const { isMobile, state } = useSidebar()
   const isCollapsed = state === "collapsed"
   const [activeTeam, setActiveTeam] = React.useState(teams[0])
+  const isEnterprise = variant === "enterprise"
 
   if (!activeTeam) {
     return null
@@ -43,20 +49,35 @@ export function TeamSwitcher({
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="default"
-              className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-            >
-              <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-10 items-center justify-center rounded-lg transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]">
-                <activeTeam.logo className="size-5 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />
-              </div>
-              {!isCollapsed && (
-                <>
-                  <div className="grid flex-1 text-left text-base leading-tight animate-in fade-in-0 slide-in-from-left-2 duration-500">
-                    <span className="truncate font-medium">{activeTeam.name}</span>
-                    <span className="truncate text-sm">{activeTeam.plan}</span>
-                  </div>
-                  <ChevronsUpDown className="ml-auto size-5 transition-opacity duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />
-                </>
+              className={cn(
+                isEnterprise
+                  ? "h-auto min-h-0 rounded-2xl border border-slate-200 bg-white px-3 py-2 transition-all duration-200 hover:bg-slate-50 data-[state=open]:bg-white data-[state=open]:text-sidebar-foreground group-data-[collapsible=icon]:size-12! group-data-[collapsible=icon]:rounded-2xl group-data-[collapsible=icon]:p-0!"
+                  : "data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               )}
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 border border-slate-200">
+                  <activeTeam.logo className="size-5" />
+                </div>
+                {!isCollapsed && (
+                  <>
+                    <div className="grid flex-1 gap-0.5 text-left leading-tight">
+                      {isEnterprise && (
+                        <span className="truncate text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-500">
+                          {roleLabel ?? "Workspace"}
+                        </span>
+                      )}
+                      <span className="truncate text-sm font-semibold text-slate-900">
+                        {activeTeam.name}
+                      </span>
+                      <span className="truncate text-[12px] text-slate-500">
+                        {activeTeam.plan}
+                      </span>
+                    </div>
+                    <ChevronsUpDown className="size-4 text-slate-400" />
+                  </>
+                )}
+              </div>
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent

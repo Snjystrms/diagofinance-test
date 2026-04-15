@@ -1,9 +1,9 @@
 "use client";
 
+import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { MainLayout } from "@/components/main-layout";
 import { Button } from "@/components/ui/button";
 import { Download, RefreshCw } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
 
 interface ReportPageWrapperProps {
   title: string;
@@ -35,9 +35,13 @@ export function ReportPageWrapper({
   if (isLoading && isEmpty) {
     return (
       <MainLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Spinner className="h-8 w-8" />
-        </div>
+        <ListPageSkeleton
+          actionCount={(onRefresh ? 1 : 0) + (onExport ? 1 : 0)}
+          columnCount={7}
+          rowCount={10}
+          filterPillCount={3}
+          showFilterPanel
+        />
       </MainLayout>
     );
   }
