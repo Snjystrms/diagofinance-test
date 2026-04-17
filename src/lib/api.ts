@@ -207,9 +207,14 @@ export interface PendingUser {
   name: string;
   email: string;
   username: string;
+  uuid?: string;
+  first_name?: string;
+  last_name?: string;
   mobile: string;
   country: string;
+  country_code?: string;
   sponsor_id: string;
+  referral_code?: string;
   status: string;
   email_verified: number;
   payment_verified: number;
@@ -264,6 +269,21 @@ export type AdminUserCreateBody = {
   country_code?: string;
   referral_code?: string;
 };
+
+export type AdminUserUpdateBody = Partial<AdminUserCreateBody>;
+
+export type AdminUserDetailApiData =
+  | PendingUser
+  | {
+      user?: PendingUser;
+      data?: PendingUser;
+    }
+  | {
+      data?: {
+        user?: PendingUser;
+        data?: PendingUser;
+      };
+    };
 
 export interface KycUploadResponse {
   status: number;
@@ -584,8 +604,74 @@ export const adminUsersApi = {
 
     return apiCall(`/admin/user-management/crud/users`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(sanitizedBody),
+    });
+  },
+
+  detail: (id: number | string, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to fetch admin user detail");
+    }
+
+    if (id === undefined || id === null || `${id}` === "") {
+      throw new Error("A valid user identifier is required to fetch admin user detail");
+    }
+
+    return apiCall<AdminUserDetailApiData>(`/admin/user-management/crud/users/${id}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  update: (id: number | string, body: AdminUserUpdateBody, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to update admin user");
+    }
+
+    if (id === undefined || id === null || `${id}` === "") {
+      throw new Error("A valid user identifier is required to update admin user");
+    }
+
+    const sanitizedBody = Object.entries(body).reduce<Record<string, string>>((acc, [key, value]) => {
+      if (value === undefined || value === null) {
+        return acc;
+      }
+
+      const stringValue = typeof value === "string" ? value.trim() : String(value);
+      if (stringValue === "") {
+        return acc;
+      }
+
+      acc[key] = stringValue;
+      return acc;
+    }, {});
+
+    return apiCall(`/admin/user-management/crud/users/${id}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(sanitizedBody),
+    });
+  },
+
+  delete: (id: number | string, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to delete admin user");
+    }
+
+    if (id === undefined || id === null || `${id}` === "") {
+      throw new Error("A valid user identifier is required to delete admin user");
+    }
+
+    return apiCall(`/admin/user-management/crud/users/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
     });
   },
 };

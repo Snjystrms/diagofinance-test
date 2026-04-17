@@ -13,7 +13,6 @@ import {
   Settings2,
   Shield,
   TrendingUp,
-  Trophy,
   UserCheck,
   UserPlus,
   Users,
@@ -44,11 +43,9 @@ type SidebarSectionId =
   | "account-management"
   | "support"
   | "notification"
-  | "notification-management"
   | "reports"
   | "marketing-management"
   | "news-management"
-  | "reward-management"
   | "settings-management";
 
 export interface AppRouteDefinition {
@@ -238,15 +235,6 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     managerCategories: ["Notification"],
   },
   {
-    id: "notification-management",
-    title: "Notification Management",
-    url: "/notification-management",
-    icon: Bell,
-    audience: "backoffice",
-    roles: BACKOFFICE_ROLES,
-    managerCategories: ["Notification"],
-  },
-  {
     id: "reports",
     title: "All Reports",
     url: "/report-management",
@@ -272,15 +260,6 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     managerCategories: ["News Management"],
-  },
-  {
-    id: "reward-management",
-    title: "Reward Management",
-    url: "/reward-management",
-    icon: Trophy,
-    audience: "backoffice",
-    roles: BACKOFFICE_ROLES,
-    managerCategories: ["Rewards Management"],
   },
   {
     id: "settings-management",
@@ -541,22 +520,6 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     managerCategories: ["Group Management"],
   },
   {
-    path: "/package-sales",
-    audience: "backoffice",
-    roles: BACKOFFICE_ROLES,
-    sidebarSection: "account-management",
-    navLabel: "Package Sales",
-    managerCategories: ["Group Management"],
-  },
-  {
-    path: "/package-analytics",
-    audience: "backoffice",
-    roles: BACKOFFICE_ROLES,
-    sidebarSection: "account-management",
-    navLabel: "Package Analytics",
-    managerCategories: ["Group Management"],
-  },
-  {
     path: "/all-tickets",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
@@ -565,35 +528,11 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     managerCategories: ["Ticket Management"],
   },
   {
-    path: "/ticket-management",
-    audience: "backoffice",
-    roles: BACKOFFICE_ROLES,
-    sidebarSection: "support",
-    navLabel: "Ticket Management",
-    managerCategories: ["Ticket Management"],
-  },
-  {
-    path: "/support-analytics",
-    audience: "backoffice",
-    roles: BACKOFFICE_ROLES,
-    sidebarSection: "support",
-    navLabel: "Support Analytics",
-    managerCategories: ["Ticket Management"],
-  },
-  {
     path: "/all-notifications",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "notification",
     navLabel: "All Notifications",
-  },
-  {
-    path: "/notification-management",
-    audience: "backoffice",
-    roles: BACKOFFICE_ROLES,
-    sidebarSection: "notification-management",
-    navLabel: "Notification Management",
-    managerCategories: ["Notification"],
   },
   {
     path: "/report-management",
@@ -650,14 +589,6 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "news-management",
     navLabel: "News Management",
     managerCategories: ["News Management"],
-  },
-  {
-    path: "/reward-management",
-    audience: "backoffice",
-    roles: BACKOFFICE_ROLES,
-    sidebarSection: "reward-management",
-    navLabel: "Reward Management",
-    managerCategories: ["Rewards Management"],
   },
   {
     path: "/settings-management",

@@ -626,7 +626,7 @@ export default function MyDepositPage() {
   if (loading && depositRequests.length === 0 && binanceDeposits.length === 0) {
     return (
       
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
               <Clock className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
@@ -641,7 +641,7 @@ export default function MyDepositPage() {
   if (error && depositRequests.length === 0 && binanceDeposits.length === 0) {
     return (
       
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
           <Card className="border-destructive">
             <CardHeader>
               <CardTitle className="text-destructive">Error</CardTitle>
@@ -670,7 +670,7 @@ export default function MyDepositPage() {
 
   return (
     
-      <div className="container mx-auto py-10">
+      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="space-y-2">

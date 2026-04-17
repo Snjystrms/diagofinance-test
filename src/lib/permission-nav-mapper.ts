@@ -159,8 +159,8 @@ const PERMISSION_NAV_MAPPING: Record<string, NavItem> = {
     icon: LifeBuoy,
     items: [
       {
-        title: "Ticket Management",
-        url: "/ticket-management",
+        title: "All Tickets",
+        url: "/all-tickets",
       },
     ],
   },
@@ -235,7 +235,6 @@ export function canAccessRoute(permissions: Permission[], route: string): boolea
     '/admin-management': { module: 'subadmin', action: 'read' },
     '/manage-permissions': { module: 'subadmin', action: 'write' },
     '/all-packages': { module: 'package', action: 'read' },
-    '/package-sales': { module: 'package', action: 'read' },
     '/ROI-Income': { module: 'roi', action: 'read' },
     '/daily-roi': { module: 'roi', action: 'read' },
     '/kcr-system': { module: 'kcr', action: 'read' },
@@ -252,7 +251,6 @@ export function canAccessRoute(permissions: Permission[], route: string): boolea
     '/audit-by-users': { module: 'audit', action: 'read' },
     '/activity-logs': { module: 'audit', action: 'read' },
     '/all-tickets': { module: 'ticket', action: 'read' },
-    '/ticket-management': { module: 'ticket', action: 'read' },
     '/withdrawal-requests': { module: 'withdrawal', action: 'read' },
     '/withdrawal-history': { module: 'withdrawal', action: 'read' },
   };

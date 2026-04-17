@@ -87,8 +87,6 @@ const getSubItemIcon = (title: string) => {
     
     // Account Management sub-items
     "All Accounts": Package,
-    "Package Sales": TrendingUp,
-    "Package Analytics": BarChart3,
     
     // MT5 Account Management sub-items
     "User Accounts": Database,
@@ -126,7 +124,6 @@ const getSubItemIcon = (title: string) => {
     "Bonus": Gift,
     "E-Mail Management": Mail,
     "All Tickets": Ticket,
-    "Ticket Management": LifeBuoy,
     "Settings": Settings2,
     "Notifications": Bell,
   };

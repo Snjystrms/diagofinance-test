@@ -4,7 +4,7 @@ import { Mail, Send, Inbox, Archive } from "lucide-react"
 
 export default function EmailsPage() {
   return (
-    
+    <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
@@ -74,6 +74,6 @@ export default function EmailsPage() {
           </CardContent>
         </Card>
       </div>
-    
+    </div>
   )
 } 

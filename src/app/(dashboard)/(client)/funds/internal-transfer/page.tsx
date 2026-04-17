@@ -733,9 +733,9 @@ function InternalTransferContent() {
 
 export default function InternalTransferPage() {
   return (
-    
+    <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
       <InternalTransferContent />
-    
+    </div>
   )
 }
 
