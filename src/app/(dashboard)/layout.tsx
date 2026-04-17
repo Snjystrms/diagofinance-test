@@ -1,6 +1,7 @@
 "use client"
 
 import { AppSidebar } from "@/components/app-sidebar"
+import { ProtectedRoute } from "@/components/protected-route"
 import { Header } from "@/components/header"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { IbDashboardSidebarWrapper } from "@/components/ib-dashboard-sidebar-wrapper"
@@ -33,50 +34,52 @@ export default function DashboardLayout({
   const isIbDashboard = useMemo(() => pathname?.includes('ib-dashboard') ?? false, [pathname]);
 
   return (
-    <SidebarProvider
-      defaultOpen={selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel" ? false : true}
-      open={selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel" ? false : undefined}
-      style={
-        selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel"
-          ? {
-              "--sidebar-width": selectedSidebar === "expanded-panel" ? "400px" : "350px",
-            } as React.CSSProperties
-          : {
-              "--sidebar-width": "20rem",
-            } as React.CSSProperties
-      }
-    >
-      {isIbDashboard ? (
-        <>
-          <IbDashboardSidebarWrapper className="hidden md:flex" />
-          <SidebarInset>
-            <Header />
-            <main className="flex-1 overflow-y-auto bg-background">
-              <div className="w-full max-w-none">
-                {children}
-              </div>
-            </main>
-          </SidebarInset>
-        </>
-      ) : (
-        <>
-          {selectedSidebar === "two-panel" ? (
-            <AppSidebarV2 className="hidden md:flex" />
-          ) : selectedSidebar === "expanded-panel" ? (
-            <AppSidebarV3 className="hidden md:flex" />
-          ) : (
-            <AppSidebar className="hidden md:flex flex-shrink-0 " />
-          )}
-          <SidebarInset>
-            <Header />
-            <main className="flex-1 overflow-y-auto bg-background">
-              <div className="w-full max-w-none">
-                {children}
-              </div>
-            </main>
-          </SidebarInset>
-        </>
-      )}
-    </SidebarProvider>
+    <ProtectedRoute>
+      <SidebarProvider
+        defaultOpen={selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel" ? false : true}
+        open={selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel" ? false : undefined}
+        style={
+          selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel"
+            ? {
+                "--sidebar-width": selectedSidebar === "expanded-panel" ? "400px" : "350px",
+              } as React.CSSProperties
+            : {
+                "--sidebar-width": "20rem",
+              } as React.CSSProperties
+        }
+      >
+        {isIbDashboard ? (
+          <>
+            <IbDashboardSidebarWrapper className="hidden md:flex" />
+            <SidebarInset>
+              <Header />
+              <main className="flex-1 overflow-y-auto bg-background">
+                <div className="w-full max-w-none">
+                  {children}
+                </div>
+              </main>
+            </SidebarInset>
+          </>
+        ) : (
+          <>
+            {selectedSidebar === "two-panel" ? (
+              <AppSidebarV2 className="hidden md:flex" />
+            ) : selectedSidebar === "expanded-panel" ? (
+              <AppSidebarV3 className="hidden md:flex" />
+            ) : (
+              <AppSidebar className="hidden md:flex flex-shrink-0 " />
+            )}
+            <SidebarInset>
+              <Header />
+              <main className="flex-1 overflow-y-auto bg-background">
+                <div className="w-full max-w-none">
+                  {children}
+                </div>
+              </main>
+            </SidebarInset>
+          </>
+        )}
+      </SidebarProvider>
+    </ProtectedRoute>
   )
 }

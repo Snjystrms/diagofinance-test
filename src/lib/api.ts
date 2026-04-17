@@ -1546,19 +1546,91 @@ export const accountTypesApi = {
     }),
 };
 
-// ---------- MT5 Request Types ----------
-export interface MT5RequestCreateRequest {
+// ---------- User MT5 Account Types ----------
+export interface UserMT5AccountCreateRequest {
   account_type_id: number;
-  leverage_temp: number;
-  currency: string;
-  swap_free: boolean;
-  password: string;
-  confirm_password: string;
+  extra_fields: Record<string, unknown>;
+  group_id: number;
+  investor_password: string;
+  leverage: number;
+  main_password: string;
 }
 
-export interface MT5RequestResponse {
+export interface UserMT5AccountCreateData {
+  login: number | string;
+  name: string;
+  group: string;
+  leverage: number | string;
+  main_password: string;
+  investor_password: string;
+}
+
+export interface UserMT5AccountListItem {
+  id: number;
+  name: string;
+  email: string;
+  mt5_id: string;
   account_id: string;
+}
+
+export interface UserMT5AccountDetail {
+  id: number;
+  uuid: string;
+  name: string;
+  email: string;
+  manager_id: number | string | null;
+  mobile: string;
+  account_id: string;
+  mt5_id: string;
+  user_id: number;
+  group_id: number;
+  account_type_id: number;
+  leverage: number;
+  self_wallet: number;
+  status: number | string;
+  account_mode: string;
   created_at: string;
+  updated_at: string;
+  mt5_group_name: string;
+  first_name: string;
+  last_name: string;
+  sponsor_id: string | number | null;
+  minimum_deposit: number;
+  spread_from: string;
+  maximum_leverage: string;
+  leverage_type: string;
+  leverage_value: number;
+  stop_out_level: number;
+  hedge_margin: number;
+  swap_free_option: number;
+  base_currency: string;
+  User?: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    email: string;
+    mobile: string;
+    sponsor_id: string | number | null;
+  };
+  group?: {
+    id: number;
+    name: string;
+    mt5_group_name: string;
+    minimum_deposit: number;
+  };
+  Manager?: unknown;
+  accountType?: {
+    id: number;
+    name: string;
+    spread_from: string;
+    maximum_leverage: string;
+    leverage_type: string;
+    leverage_value: number;
+    stop_out_level: number;
+    hedge_margin: number;
+    swap_free_option: number;
+    base_currency: string;
+  };
 }
 
 // ---------- Admin MT5 Request Types ----------
@@ -1598,13 +1670,25 @@ export interface AdminMT5RequestProcessRequest {
   rejection_reason?: string;
 }
 
-// ---------- MT5 Request APIs ----------
-export const mt5RequestApi = {
-  create: (data: MT5RequestCreateRequest, token: string) =>
-    apiCall<MT5RequestResponse>(`/user/mt5-account`, {
+// ---------- User MT5 Account APIs ----------
+export const userMT5AccountsApi = {
+  create: (data: UserMT5AccountCreateRequest, token: string) =>
+    apiCall<UserMT5AccountCreateData>(`/user/mt5-account`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(data),
+    }),
+
+  list: (token: string) =>
+    apiCall<{ mt5_accounts: UserMT5AccountListItem[] }>(`/user/mt5-account`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  getById: (id: string | number, token: string) =>
+    apiCall<{ mt5_account: UserMT5AccountDetail }>(`/user/mt5-account/${id}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
     }),
 };
 

@@ -39,7 +39,6 @@ import {
   Building2
 } from "lucide-react"
 import { NavUser } from "@/components/nav-user"
-import { Label } from "@/components/ui/label"
 import {
   Sidebar,
   SidebarContent,
@@ -56,12 +55,9 @@ import {
   SidebarMenuSubItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { Switch } from "@/components/ui/switch"
 import { useAuth } from "@/contexts/auth-context"
-import { NavMain } from "@/components/nav-main"
-import { TeamSwitcher } from "@/components/team-switcher"
-import { generateManagerNavigation } from "@/lib/permission-nav-mapper"
-import { adminNavData, userNavData, crmData } from "@/components/app-sidebar"
+import { generateSubadminNavigation } from "@/lib/permission-nav-mapper"
+import { getSidebarNavigation } from "@/lib/app-route-registry"
 import type { NavItem } from "@/types/permissions"
 
 // Helper function to get icon for sub-items based on title
@@ -188,17 +184,15 @@ export function AppSidebarV2({ ...props }: React.ComponentProps<typeof Sidebar>)
 
   // Get navigation items based on user type
   const navItems = React.useMemo(() => {
-    if (!user) return userNavData;
-
-    switch (user.type) {
-      case "admin":
-        return adminNavData;
-      case "manager":
-        return generateManagerNavigation(user.managerPermissions || []);
-      case "user":
-      default:
-        return userNavData;
+    if (user?.type === "subadmin") {
+      return generateSubadminNavigation(user.permissions || []);
     }
+
+    return getSidebarNavigation({
+      type: user?.type,
+      isIbUser: user?.is_ib_user,
+      managerPermissions: user?.managerPermissions,
+    });
   }, [user]);
 
   React.useEffect(() => {
