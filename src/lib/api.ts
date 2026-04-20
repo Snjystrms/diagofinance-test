@@ -491,6 +491,22 @@ export interface AccountTypeItem {
 export interface AdminGroupItem {
   id: number;
   name: string;
+  mt5_group_name?: string;
+  status?: number | boolean;
+}
+
+export interface AdminGroupCreateBody {
+  name: string;
+  mt5_group_name: string;
+  status: number;
+}
+
+export interface AdminGroupUpdateBody extends AdminGroupCreateBody {
+  id: number;
+}
+
+export interface AdminGroupDeleteBody {
+  id: number;
 }
 
 // --- helper: turn object to x-www-form-urlencoded ---
@@ -566,6 +582,51 @@ export const adminGroupsApi = {
     return apiCall<AdminGroupItem[]>(`/admin/groups`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  create: (body: AdminGroupCreateBody, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to create a group");
+    }
+
+    return apiCall<AdminGroupItem>(`/admin/groups`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  },
+
+  update: (body: AdminGroupUpdateBody, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to update a group");
+    }
+
+    return apiCall<AdminGroupItem>(`/admin/groups`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  },
+
+  delete: (body: AdminGroupDeleteBody, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to delete a group");
+    }
+
+    return apiCall(`/admin/groups`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
     });
   },
 };
