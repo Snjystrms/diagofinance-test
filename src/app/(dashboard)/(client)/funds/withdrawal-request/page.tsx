@@ -29,6 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { formatDateTimeInIST } from "@/lib/formatters";
 
 // Supported chain options
 const CHAIN_OPTIONS = [
@@ -344,7 +345,7 @@ function WithdrawalRequestContent() {
                             {formatAmount(withdrawalData.amount || amount)} {currency}
                           </p>
                           <p className="text-[11px] text-muted-foreground">
-                            {new Date(withdrawalData.created_at).toLocaleString()}
+                            {formatDateTimeInIST(withdrawalData.created_at)}
                           </p>
                         </>
                       ) : (

@@ -24,7 +24,7 @@ import {
   Shield
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { format } from 'date-fns'
+import { formatDateTimeInIST } from '@/lib/formatters'
 import { Skeleton } from '@/components/ui/skeleton'
 import toast from 'react-hot-toast'
 
@@ -347,10 +347,7 @@ export default function WalletOverviewPage() {
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Clock className="h-3 w-3" />
                             <span>
-                              {format(
-                                new Date(transaction.created_at),
-                                'MMM dd, yyyy HH:mm'
-                              )}
+                              {formatDateTimeInIST(transaction.created_at)}
                             </span>
                           </div>
                         </div>

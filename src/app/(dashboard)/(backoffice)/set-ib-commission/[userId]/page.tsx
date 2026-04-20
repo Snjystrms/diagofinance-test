@@ -45,6 +45,7 @@ import {
 import { ArrowLeft, Edit, Save, X } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { API_BASE_URL, adminIbUserCommissionsApi, type UserCommission, type UserCommissionResponse } from '@/lib/api';
+import { formatDateTimeInIST } from '@/lib/formatters';
 import { User as UserIcon, CheckCircle2, XCircle } from 'lucide-react';
 
 /* ======================== API types ======================== */
@@ -144,7 +145,7 @@ const formatDateTime = (value?: string | null) => {
   if (Number.isNaN(date.getTime())) {
     return value;
   }
-  return date.toLocaleString();
+  return formatDateTimeInIST(value);
 };
 
 /* ======================== Theme hook ======================== */

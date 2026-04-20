@@ -5,19 +5,10 @@ import type { AccountTypeRow } from "./page";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { utilityFunctions } from "@/utils/operations";
+import { formatDateTimeInIST } from "@/lib/formatters";
 import { Gauge, Layers, Cog, Coins, Swords } from "lucide-react";
 
-const fmtDate = (s?: string) =>
-  s
-    ? utilityFunctions.formatDate(s, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    : "-";
+const fmtDate = (s?: string) => (s ? formatDateTimeInIST(s) : "-");
 
 const LeverBadge = ({ type, value }: { type: string; value: number }) => (
   <Badge variant="secondary" className="gap-1">

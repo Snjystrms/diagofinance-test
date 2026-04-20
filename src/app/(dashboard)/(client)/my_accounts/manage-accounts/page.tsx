@@ -53,6 +53,7 @@ import {
   type UserMT5AccountListItem,
 } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
+import { formatDateTimeInIST } from '@/lib/formatters';
 
 type ManagedMT5Account = UserMT5AccountListItem & {
   detail: UserMT5AccountDetail | null;
@@ -68,7 +69,7 @@ const formatDateTime = (value?: string) => {
     return value;
   }
 
-  return date.toLocaleString();
+  return formatDateTimeInIST(value);
 };
 
 const getStatusBadge = (status: string | number | undefined) => {
@@ -123,6 +124,57 @@ const groupAccounts = (accounts: ManagedMT5Account[]) => {
   return groups;
 };
 
+const mt5AccountsRequests = new Map<string, Promise<ManagedMT5Account[]>>();
+const mt5AccountDetailRequests = new Map<string, Promise<UserMT5AccountDetail | null>>();
+
+const loadAccountDetail = (account: UserMT5AccountListItem, token: string) => {
+  const requestKey = `${token}:${account.id}`;
+  const existingRequest = mt5AccountDetailRequests.get(requestKey);
+  if (existingRequest) {
+    return existingRequest;
+  }
+
+  const request = userMT5AccountsApi
+    .getById(account.id, token)
+    .then((detailResponse) => detailResponse.data?.mt5_account ?? null)
+    .catch((detailError) => {
+      console.error(`Error fetching MT5 account detail for ${account.id}:`, detailError);
+      return null;
+    })
+    .finally(() => {
+      mt5AccountDetailRequests.delete(requestKey);
+    });
+
+  mt5AccountDetailRequests.set(requestKey, request);
+  return request;
+};
+
+const loadManagedAccounts = (token: string) => {
+  const existingRequest = mt5AccountsRequests.get(token);
+  if (existingRequest) {
+    return existingRequest;
+  }
+
+  const request = userMT5AccountsApi
+    .list(token)
+    .then(async (listResponse) => {
+      const listItems = listResponse.data?.mt5_accounts ?? [];
+
+      return Promise.all(
+        listItems.map(async (account) => ({
+          ...account,
+          detail: await loadAccountDetail(account, token),
+        }))
+      );
+    })
+    .finally(() => {
+      mt5AccountsRequests.delete(token);
+    });
+
+  mt5AccountsRequests.set(token, request);
+  return request;
+};
+
 export default function ManageAccountsPage() {
   const { token } = useAuth();
   const [accounts, setAccounts] = useState<ManagedMT5Account[]>([]);
@@ -133,6 +185,8 @@ export default function ManageAccountsPage() {
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
   useEffect(() => {
+    let isActive = true;
+
     const fetchAccounts = async () => {
       if (!token) {
         setError('Authentication required');
@@ -144,37 +198,28 @@ export default function ManageAccountsPage() {
         setIsLoading(true);
         setError(null);
 
-        const listResponse = await userMT5AccountsApi.list(token);
-        const listItems = listResponse.data?.mt5_accounts ?? [];
+        const hydratedAccounts = await loadManagedAccounts(token);
 
-        const hydratedAccounts = await Promise.all(
-          listItems.map(async (account) => {
-            try {
-              const detailResponse = await userMT5AccountsApi.getById(account.id, token);
-              return {
-                ...account,
-                detail: detailResponse.data?.mt5_account ?? null,
-              };
-            } catch (detailError) {
-              console.error(`Error fetching MT5 account detail for ${account.id}:`, detailError);
-              return {
-                ...account,
-                detail: null,
-              };
-            }
-          })
-        );
-
-        setAccounts(hydratedAccounts);
+        if (isActive) {
+          setAccounts(hydratedAccounts);
+        }
       } catch (fetchError) {
         console.error('Error fetching MT5 accounts:', fetchError);
-        setError(fetchError instanceof Error ? fetchError.message : 'Failed to load accounts');
+        if (isActive) {
+          setError(fetchError instanceof Error ? fetchError.message : 'Failed to load accounts');
+        }
       } finally {
-        setIsLoading(false);
+        if (isActive) {
+          setIsLoading(false);
+        }
       }
     };
 
     fetchAccounts();
+
+    return () => {
+      isActive = false;
+    };
   }, [token]);
 
   const accountGroups = useMemo(() => groupAccounts(accounts), [accounts]);

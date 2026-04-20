@@ -36,6 +36,28 @@ type NotificationInboxItem = {
   status: "read" | "unread";
 };
 
+const unreadCountRequests = new Map<string, Promise<number>>();
+
+const loadUnreadCount = (mode: NotificationInboxMode, token: string) => {
+  const requestKey = `${mode}:${token}`;
+  const existingRequest = unreadCountRequests.get(requestKey);
+  if (existingRequest) {
+    return existingRequest;
+  }
+
+  const request = (mode === "admin"
+    ? adminNotificationApi.getUnreadCount(token)
+    : notificationApi.getUnreadCount(token)
+  )
+    .then((response) => (response.success && response.data ? response.data.unread_count || 0 : 0))
+    .finally(() => {
+      unreadCountRequests.delete(requestKey);
+    });
+
+  unreadCountRequests.set(requestKey, request);
+  return request;
+};
+
 const normalizeNotification = (
   item: NotificationItem | AdminNotificationItem,
   mode: NotificationInboxMode
@@ -78,7 +100,7 @@ const getNotificationIcon = (message: string): LucideIcon => {
   return Info;
 };
 
-export function NotificationInbox({ mode = "user", shouldFetchUnreadCount = true }: NotificationInboxProps) {
+export function NotificationInbox({ mode = "user", shouldFetchUnreadCount = false }: NotificationInboxProps) {
   const { token } = useAuth();
   const [notifications, setNotifications] = useState<NotificationInboxItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -90,20 +112,15 @@ export function NotificationInbox({ mode = "user", shouldFetchUnreadCount = true
   const filtered = tab === "unread" ? notifications.filter((n) => !n.isRead) : notifications;
 
   const fetchUnreadCount = useCallback(async () => {
-    if (!token) return;
+    if (!token || !shouldFetchUnreadCount) return;
+    if (typeof window !== "undefined" && window.location.pathname !== "/dashboard") return;
 
     try {
-      const response =
-        mode === "admin"
-          ? await adminNotificationApi.getUnreadCount(token)
-          : await notificationApi.getUnreadCount(token);
-      if (response.success && response.data) {
-        setUnreadCount(response.data.unread_count || 0);
-      }
+      setUnreadCount(await loadUnreadCount(mode, token));
     } catch (error) {
       console.error("Failed to fetch unread count:", error);
     }
-  }, [token, mode]);
+  }, [token, mode, shouldFetchUnreadCount]);
 
   const fetchNotifications = useCallback(async () => {
     if (!token) return;

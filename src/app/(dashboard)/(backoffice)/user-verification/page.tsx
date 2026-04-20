@@ -23,6 +23,7 @@ import {
 import { Eye, CheckCircle2, XCircle, Calendar, FileText, User, Mail, Hash, Clock, AlertCircle, Image as ImageIcon } from "lucide-react";
 
 import { adminKycApi, API_BASE_URL, kycFileUrl } from "@/lib/api";
+import { formatDateTimeInIST } from "@/lib/formatters";
 // If you already have auth context, import it. Fallback to localStorage token.
 import { useAuth } from "@/contexts/auth-context";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
@@ -111,7 +112,7 @@ const KYC_STATUS_OPTIONS: KycStatusOption[] = [
 const fmtDateTime = (s?: string) => {
   if (!s) return "—";
   try {
-    return new Date(s).toLocaleString();
+    return formatDateTimeInIST(s);
   } catch {
     return s;
   }

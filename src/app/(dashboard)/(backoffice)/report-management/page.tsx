@@ -33,13 +33,14 @@ import {
   type DepositReportItem,
   type DepositReportListPayload,
 } from "@/lib/api";
+import { formatDateTimeInIST } from "@/lib/formatters";
 import { useAuth } from "@/contexts/auth-context";
 
 /* ---------------- Helpers ---------------- */
 const fmtDateTime = (s?: string | null) => {
   if (!s) return "—";
   try {
-    return new Date(s).toLocaleString();
+    return formatDateTimeInIST(s);
   } catch {
     return s;
   }

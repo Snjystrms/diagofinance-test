@@ -13,11 +13,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { formatDateTimeInIST } from "@/lib/formatters";
 
 const formatDateTime = (value?: string) => {
   if (!value) return "-";
   try {
-    return new Date(value).toLocaleString();
+    return formatDateTimeInIST(value);
   } catch {
     return value;
   }

@@ -2400,34 +2400,87 @@ export interface MT5AccountsResponse {
 }
 
 // ---------- Admin MT5 Account Types ----------
+export interface AdminMT5AccountUser {
+  id?: number | string;
+  name?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  mobile?: string;
+  sponsor_id?: string | number | null;
+}
+
+export interface AdminMT5AccountGroup {
+  id?: number | string;
+  name?: string;
+  mt5_group_name?: string;
+  minimum_deposit?: number | string;
+}
+
+export interface AdminMT5AccountType {
+  id?: number | string;
+  name?: string;
+  spread_from?: string;
+  maximum_leverage?: string;
+  leverage_type?: string;
+  leverage_value?: number | string;
+  stop_out_level?: number | string;
+  hedge_margin?: number | string;
+  swap_free_option?: number | string;
+  base_currency?: string;
+}
+
+export interface AdminMT5AccountManager {
+  id?: number | string;
+  name?: string;
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+}
+
 export interface AdminMT5Account {
   id?: number | string;
+  uuid?: string;
   mt5_id?: string | number;
   account_id?: string | number;
   user_id?: number | string;
   group_id?: number | string;
   manager_id?: number | string;
+  account_type_id?: number | string;
   name?: string;
+  first_name?: string;
+  last_name?: string;
   email?: string;
   mobile?: string;
+  sponsor_id?: string | number | null;
   account_type?: string;
   status?: number | string;
+  account_mode?: "demo" | "live" | string;
   balance?: string | number;
   equity?: string | number;
   margin?: string | number;
   free_margin?: string | number;
   leverage?: string | number;
+  self_wallet?: string | number;
   currency?: string;
+  mt5_group_name?: string;
+  minimum_deposit?: string | number;
+  spread_from?: string;
+  maximum_leverage?: string;
+  leverage_type?: string;
+  leverage_value?: string | number;
+  stop_out_level?: string | number;
+  hedge_margin?: string | number;
+  swap_free_option?: string | number;
+  base_currency?: string;
   created_at?: string;
   updated_at?: string;
-  user?: {
-    id?: number | string;
-    name?: string;
-    first_name?: string;
-    last_name?: string;
-    email?: string;
-    mobile?: string;
-  };
+  user?: AdminMT5AccountUser;
+  User?: AdminMT5AccountUser;
+  group?: AdminMT5AccountGroup;
+  manager?: AdminMT5AccountManager | null;
+  Manager?: AdminMT5AccountManager | null;
+  accountType?: AdminMT5AccountType;
   [key: string]: unknown;
 }
 
@@ -2437,6 +2490,7 @@ export interface AdminMT5AccountsListParams {
   limit?: number;
   search?: string;
   status?: string | number;
+  account_mode?: "demo" | "live" | string;
   user_id?: string | number;
   group_id?: string | number;
   manager_id?: string | number;
@@ -2444,12 +2498,10 @@ export interface AdminMT5AccountsListParams {
 
 export interface UpdateMT5AccountRequest {
   name?: string;
-  email?: string;
-  mobile?: string;
+  group_id?: number;
+  investor_password?: string;
   leverage?: number;
-  status?: number;
-  self_wallet?: number | string;
-  mt5_id?: string;
+  password?: string;
 }
 
 export interface CreateMT5AccountRequest {
@@ -2499,6 +2551,7 @@ export const adminMT5AccountsApi = {
     limit = 10,
     search,
     status,
+    account_mode,
     user_id,
     group_id,
     manager_id,
@@ -2517,6 +2570,10 @@ export const adminMT5AccountsApi = {
 
     if (status !== undefined && status !== null && `${status}` !== "") {
       qs.set("status", String(status));
+    }
+
+    if (account_mode !== undefined && account_mode !== null && `${account_mode}` !== "") {
+      qs.set("account_mode", String(account_mode));
     }
 
     if (user_id !== undefined && user_id !== null && `${user_id}` !== "") {
@@ -2544,7 +2601,11 @@ export const adminMT5AccountsApi = {
       throw new Error("Token is required to fetch MT5 account");
     }
 
-    return apiCall<{ data?: AdminMT5Account; account?: AdminMT5Account }>(
+    return apiCall<{
+      data?: AdminMT5Account | { mt5_account?: AdminMT5Account; account?: AdminMT5Account };
+      account?: AdminMT5Account;
+      mt5_account?: AdminMT5Account;
+    }>(
       `/admin/mt5-accounts/${id}`,
       {
         method: "GET",

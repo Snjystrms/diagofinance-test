@@ -22,13 +22,14 @@ import { Spinner } from "@/components/ui/spinner";
 import { CheckCircle2, XCircle, Calendar, RefreshCw } from "lucide-react";
 
 import { adminMT5RequestApi, type MT5Request } from "@/lib/api";
+import { formatDateTimeInIST } from "@/lib/formatters";
 import { useAuth } from "@/contexts/auth-context";
 
 /* ---------------- Helpers ---------------- */
 const fmtDateTime = (s?: string) => {
   if (!s) return "—";
   try {
-    return new Date(s).toLocaleString();
+    return formatDateTimeInIST(s);
   } catch {
     return s;
   }

@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 
 import { useAuth } from "@/contexts/auth-context";
 import { ibRequestsApi, type IbRequestStatusResponse } from "@/lib/api";
+import { formatDateTimeInIST } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 
 interface BecomePartnerCtaProps {
@@ -117,11 +118,7 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
 
     let createdLabel: string | null = null;
     if (timestamp) {
-      // Try to parse the IST timestamp first, then fallback to ISO
-      const date = new Date(timestamp);
-      if (!Number.isNaN(date.getTime())) {
-        createdLabel = date.toLocaleString();
-      }
+      createdLabel = formatDateTimeInIST(timestamp);
     }
 
     return {

@@ -25,7 +25,7 @@ import {
   FileText,
   Eye
 } from 'lucide-react'
-import { format } from 'date-fns'
+import { formatDateTimeInIST } from '@/lib/formatters'
 import {
   Dialog,
   DialogContent,
@@ -340,7 +340,7 @@ const DepositStatusCell = ({ deposit, token }: { deposit: DepositListItem; token
                 <div className="col-span-2">
                   <Label className="text-xs text-muted-foreground">Transaction Time</Label>
                   <div className="mt-1 text-sm">
-                    {new Date(binanceStatusData.transaction_time).toLocaleString()}
+                    {formatDateTimeInIST(binanceStatusData.transaction_time)}
                   </div>
                 </div>
               )}
@@ -458,7 +458,7 @@ const localColumns: ColumnDef<DepositRequestItem>[] = [
       <div className="flex items-center gap-2 text-sm">
         <Calendar className="h-4 w-4 text-muted-foreground" />
         <span>
-          {format(new Date(row.original.created_at), 'MMM dd, yyyy HH:mm')}
+          {formatDateTimeInIST(row.original.created_at)}
         </span>
       </div>
     ),
@@ -473,7 +473,7 @@ const localColumns: ColumnDef<DepositRequestItem>[] = [
       <div className="flex items-center gap-2 text-sm">
         <Calendar className="h-4 w-4 text-muted-foreground" />
         <span>
-          {format(new Date(row.original.updated_at), 'MMM dd, yyyy HH:mm')}
+          {formatDateTimeInIST(row.original.updated_at)}
         </span>
       </div>
     ),
@@ -549,7 +549,7 @@ const binanceColumns: ColumnDef<DepositListItem>[] = [
       <div className="flex items-center gap-2 text-sm">
         <Calendar className="h-4 w-4 text-muted-foreground" />
         <span>
-          {format(new Date(row.original.created_at), 'MMM dd, yyyy HH:mm')}
+          {formatDateTimeInIST(row.original.created_at)}
         </span>
       </div>
     ),

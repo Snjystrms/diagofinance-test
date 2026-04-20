@@ -12,6 +12,7 @@ import { submitUSDTDeposit } from "@/utils/operations";
 import { walletApi, binanceDepositApi, coinsbuyDepositApi, type WalletSummaryData, type BinanceDepositCreateResponse, type CoinsBuyDepositCreateResponse } from "@/lib/api";
 import { Skeleton } from "@/components/ui/skeleton";
 import toast from "react-hot-toast";
+import { formatDateTimeInIST } from "@/lib/formatters";
 import { 
   Copy, 
   Hash, 
@@ -72,9 +73,7 @@ function USDTDepositContent() {
   const recentDepositLabel = recentDepositAmount
     ? `${formatAmount(recentDepositAmount)} ${currency}`
     : "No recent deposits";
-  const recentDepositDate = recentDeposit
-    ? new Date(recentDeposit.created_at).toLocaleString()
-    : "—";
+  const recentDepositDate = recentDeposit ? formatDateTimeInIST(recentDeposit.created_at) : "-";
 
   const typedAmountNum = parseFloat(amount) || 0;
   const depositReadiness =

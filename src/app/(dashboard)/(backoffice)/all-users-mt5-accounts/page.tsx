@@ -14,12 +14,14 @@ import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/auth-context";
 import { adminMT5AccountsApi, type AdminMT5Account, type UpdateMT5AccountRequest, type CreateMT5AccountRequest } from "@/lib/api";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { getColumnsWithActions } from "./columns";
 import { EditAccountDialog } from "./edit-account-dialog";
 import { CreateAccountDialog } from "./create-account-dialog";
+import { AccountDetailsDialog } from "./account-details-dialog";
 import { DeleteDialog } from "@/components/dialogs/delete-dialog";
 import { Plus } from "lucide-react";
 
@@ -27,6 +29,12 @@ const statusFilters = [
   { label: "All statuses", value: "all" },
   { label: "Active", value: "1" },
   { label: "Inactive", value: "0" },
+];
+
+const accountModeFilters = [
+  { label: "All", value: "all" },
+  { label: "Demo", value: "demo" },
+  { label: "Live", value: "live" },
 ];
 
 const extractItems = (data: unknown): AdminMT5Account[] => {
@@ -57,6 +65,42 @@ const extractItems = (data: unknown): AdminMT5Account[] => {
   return [];
 };
 
+const extractAccountDetail = (data: unknown): AdminMT5Account | null => {
+  if (!data || Array.isArray(data)) return null;
+
+  const dataObj = data as Record<string, unknown>;
+
+  if (dataObj.mt5_account && !Array.isArray(dataObj.mt5_account)) {
+    return dataObj.mt5_account as AdminMT5Account;
+  }
+
+  if (dataObj.account && !Array.isArray(dataObj.account)) {
+    return dataObj.account as AdminMT5Account;
+  }
+
+  if (dataObj.data && !Array.isArray(dataObj.data)) {
+    const nestedData = dataObj.data as Record<string, unknown>;
+
+    if (nestedData.mt5_account && !Array.isArray(nestedData.mt5_account)) {
+      return nestedData.mt5_account as AdminMT5Account;
+    }
+
+    if (nestedData.account && !Array.isArray(nestedData.account)) {
+      return nestedData.account as AdminMT5Account;
+    }
+
+    if (nestedData.id || nestedData.account_id || nestedData.mt5_id) {
+      return nestedData as AdminMT5Account;
+    }
+  }
+
+  if (dataObj.id || dataObj.account_id || dataObj.mt5_id) {
+    return dataObj as AdminMT5Account;
+  }
+
+  return null;
+};
+
 export default function AllUsersMT5AccountsPage() {
   const { token } = useAuth();
 
@@ -73,6 +117,10 @@ export default function AllUsersMT5AccountsPage() {
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
   const [statusFilter, setStatusFilter] = useQueryState(
     "status",
+    parseAsString.withDefault("all"),
+  );
+  const [accountModeFilter, setAccountModeFilter] = useQueryState(
+    "account_mode",
     parseAsString.withDefault("all"),
   );
   const [search, setSearch] = useQueryState(
@@ -98,6 +146,9 @@ export default function AllUsersMT5AccountsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingAccount, setEditingAccount] = useState<AdminMT5Account | null>(null);
+  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [detailsAccount, setDetailsAccount] = useState<AdminMT5Account | null>(null);
+  const [isDetailsLoading, setIsDetailsLoading] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [accountToDelete, setAccountToDelete] = useState<string | number | null>(null);
 
@@ -125,6 +176,8 @@ export default function AllUsersMT5AccountsPage() {
         page,
         limit: perPage,
         status: statusFilter && statusFilter !== "all" ? statusFilter : undefined,
+        account_mode:
+          accountModeFilter && accountModeFilter !== "all" ? accountModeFilter : undefined,
         search: search?.trim() ? search : undefined,
         user_id: userIdFilter?.trim() ? userIdFilter : undefined,
         group_id: groupIdFilter?.trim() ? groupIdFilter : undefined,
@@ -158,8 +211,10 @@ export default function AllUsersMT5AccountsPage() {
       const total =
         (paginationObj?.total as number | undefined) ??
         (paginationObj?.total_items as number | undefined) ??
+        (paginationObj?.total_accounts as number | undefined) ??
         (paginationObj?.totalAccounts as number | undefined) ??
         (payloadTyped?.total as number | undefined) ??
+        (payloadTyped?.total_accounts as number | undefined) ??
         items.length;
 
       const perPageValue =
@@ -190,7 +245,7 @@ export default function AllUsersMT5AccountsPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, page, perPage, statusFilter, search, userIdFilter, groupIdFilter, managerIdFilter]);
+  }, [token, page, perPage, statusFilter, accountModeFilter, search, userIdFilter, groupIdFilter, managerIdFilter]);
 
   useEffect(() => {
     void loadAccounts();
@@ -218,6 +273,41 @@ export default function AllUsersMT5AccountsPage() {
     setEditingAccount(account);
     setIsEditDialogOpen(true);
   }, []);
+
+  const handleViewDetails = useCallback(async (account: AdminMT5Account) => {
+    if (!token) return;
+
+    const accountId = account.id ?? account.account_id ?? account.mt5_id;
+
+    if (!accountId) {
+      toast.error("Account ID not found");
+      return;
+    }
+
+    setIsDetailsDialogOpen(true);
+    setDetailsAccount(null);
+    setIsDetailsLoading(true);
+
+    try {
+      const response = await adminMT5AccountsApi.getById(accountId, token);
+      const selectedAccount = extractAccountDetail(response);
+
+      if (!selectedAccount) {
+        toast.error("Account details are not available");
+        setDetailsAccount(account);
+        return;
+      }
+
+      setDetailsAccount(selectedAccount);
+    } catch (error: unknown) {
+      console.error("Failed to load MT5 account details:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to load MT5 account details";
+      toast.error(errorMessage);
+      setDetailsAccount(account);
+    } finally {
+      setIsDetailsLoading(false);
+    }
+  }, [token]);
 
   // Update handler
   const handleUpdate = useCallback(async (data: UpdateMT5AccountRequest) => {
@@ -265,16 +355,24 @@ export default function AllUsersMT5AccountsPage() {
   }, [token, accountToDelete, loadAccounts]);
 
   const columns: ColumnDef<AdminMT5Account>[] = useMemo(
-    () => getColumnsWithActions(handleEdit, handleDeleteClick),
-    [handleEdit, handleDeleteClick]
+    () => getColumnsWithActions(handleViewDetails, handleEdit, handleDeleteClick),
+    [handleViewDetails, handleEdit, handleDeleteClick]
   );
 
+  const visibleAccounts = useMemo(() => {
+    if (!accountModeFilter || accountModeFilter === "all") return accounts;
+
+    return accounts.filter((account) => {
+      return String(account.account_mode ?? "").toLowerCase() === accountModeFilter;
+    });
+  }, [accounts, accountModeFilter]);
+
   const renderTableSection = () => {
-    if (loading && accounts.length === 0) {
-      return <TableSectionSkeleton columnCount={6} rowCount={8} />;
+    if (loading && visibleAccounts.length === 0) {
+      return <TableSectionSkeleton columnCount={8} rowCount={8} />;
     }
 
-    if (!loading && accounts.length === 0) {
+    if (!loading && visibleAccounts.length === 0) {
       return (
         <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center">
           <div className="rounded-full bg-muted px-4 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -294,7 +392,7 @@ export default function AllUsersMT5AccountsPage() {
 
     return (
       <AppDataTable<AdminMT5Account>
-        data={accounts}
+        data={visibleAccounts}
         columns={columns}
         pageCount={Math.max(1, pagination.total_pages)}
         getRowId={(row) => {
@@ -381,6 +479,22 @@ export default function AllUsersMT5AccountsPage() {
                   ))}
                 </SelectContent>
               </Select>
+
+              <Tabs
+                value={accountModeFilter ?? "all"}
+                onValueChange={(value) => {
+                  void setAccountModeFilter(value === "all" ? null : value);
+                  void setPage(1);
+                }}
+              >
+                <TabsList>
+                  {accountModeFilters.map((option) => (
+                    <TabsTrigger key={option.value} value={option.value}>
+                      {option.label}
+                    </TabsTrigger>
+                  ))}
+                </TabsList>
+              </Tabs>
             </div>
 
             {/* Additional Filters Row */}
@@ -426,7 +540,7 @@ export default function AllUsersMT5AccountsPage() {
             </div>
 
             <div className="text-sm text-muted-foreground">
-              Showing page {pagination.current_page} of {pagination.total_pages} •{" "}
+              Showing page {pagination.current_page} of {pagination.total_pages} -{" "}
               {pagination.total} total accounts
             </div>
           </div>
@@ -450,6 +564,18 @@ export default function AllUsersMT5AccountsPage() {
         onOpenChange={setIsEditDialogOpen}
         account={editingAccount}
         onSubmit={handleUpdate}
+      />
+
+      <AccountDetailsDialog
+        open={isDetailsDialogOpen}
+        onOpenChange={(open) => {
+          setIsDetailsDialogOpen(open);
+          if (!open) {
+            setDetailsAccount(null);
+          }
+        }}
+        account={detailsAccount}
+        loading={isDetailsLoading}
       />
 
       {/* Delete Dialog */}

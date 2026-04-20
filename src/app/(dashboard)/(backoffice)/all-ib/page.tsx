@@ -30,6 +30,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/auth-context";
 import { adminIbRequestsApi, type AdminIbRequest } from "@/lib/api";
+import { formatDateTimeInIST } from "@/lib/formatters";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 
 const statusFilters = [
@@ -97,7 +98,7 @@ const formatDateTime = (value?: string | null) => {
   if (Number.isNaN(date.getTime())) {
     return value;
   }
-  return date.toLocaleString();
+  return formatDateTimeInIST(value);
 };
 
 const deriveUser = (request: AdminIbRequest) => {

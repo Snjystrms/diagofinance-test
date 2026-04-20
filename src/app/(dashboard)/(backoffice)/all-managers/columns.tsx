@@ -7,8 +7,9 @@ import { DataTableColumnHeader } from "@/components/data-table/data-table-column
 import { CalendarDays, Mail, Phone, User2, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { formatDateTimeInIST } from "@/lib/formatters";
 
-const fmtDate = (s?: string) => (s ? new Date(s).toLocaleString() : "-");
+const fmtDate = (s?: string) => (s ? formatDateTimeInIST(s) : "-");
 
 export const getColumns = (opts: {
   onToggleStatus: (id: string, next: boolean) => void;

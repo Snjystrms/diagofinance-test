@@ -44,6 +44,7 @@ import {
   type UserCommission,
   type UserCommissionResponse,
 } from "@/lib/api";
+import { formatDateTimeInIST } from "@/lib/formatters";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 
 const formatDateTime = (value?: string | null) => {
@@ -54,7 +55,7 @@ const formatDateTime = (value?: string | null) => {
   if (Number.isNaN(date.getTime())) {
     return value;
   }
-  return date.toLocaleString();
+  return formatDateTimeInIST(value);
 };
 
 const deriveFullName = (user: AdminIbUser) => {

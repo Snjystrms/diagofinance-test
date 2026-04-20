@@ -29,7 +29,7 @@ import {
   CheckCheck,
   RefreshCw,
 } from "lucide-react";
-import { format } from "date-fns";
+import { formatDateTimeInIST } from "@/lib/formatters";
 
 /* ---------------- Types ---------------- */
 type StatusFilter = "all" | "unread" | "read";
@@ -37,7 +37,7 @@ type StatusFilter = "all" | "unread" | "read";
 /* ---------------- Helpers ---------------- */
 const formatDateTime = (dateString: string) => {
   try {
-    return format(new Date(dateString), "MMM dd, yyyy HH:mm");
+    return formatDateTimeInIST(dateString);
   } catch {
     return dateString;
   }

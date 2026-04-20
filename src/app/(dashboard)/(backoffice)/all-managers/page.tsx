@@ -18,6 +18,7 @@ import {
   type ManagerUpdateBody,
   type GroupedPermissions,
 } from "@/lib/api";
+import { formatDateTimeInIST } from "@/lib/formatters";
 import { ManagerForm } from "./manager-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -427,7 +428,9 @@ export default function AllManagersPage() {
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground">Created</div>
-                    <div className="font-medium">{viewItem.created_at || "-"}</div>
+                    <div className="font-medium">
+                      {viewItem.created_at ? formatDateTimeInIST(viewItem.created_at) : "-"}
+                    </div>
                   </div>
                 </div>
 

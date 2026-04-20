@@ -17,7 +17,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
-import { format } from "date-fns";
+import { formatDateTimeInIST } from "@/lib/formatters";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 
@@ -234,7 +234,7 @@ export default function IbWalletPage() {
                         )}
                         {transaction.created_at && (
                           <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                            {format(new Date(transaction.created_at), "PPp")}
+                            {formatDateTimeInIST(transaction.created_at)}
                           </p>
                         )}
                       </div>

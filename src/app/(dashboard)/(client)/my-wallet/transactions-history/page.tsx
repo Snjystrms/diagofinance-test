@@ -18,7 +18,7 @@ import {
   ExternalLink,
   Plus
 } from 'lucide-react'
-import { format } from 'date-fns'
+import { formatDateTimeInIST } from '@/lib/formatters'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -274,7 +274,7 @@ export default function TransactionsHistoryPage() {
             <div className="flex items-center gap-2 text-sm">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span className="text-foreground">
-                {format(new Date(transaction.created_at), 'MMM dd, yyyy HH:mm')}
+                {formatDateTimeInIST(transaction.created_at)}
               </span>
             </div>
           )

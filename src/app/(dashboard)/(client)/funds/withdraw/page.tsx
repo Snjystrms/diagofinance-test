@@ -25,7 +25,7 @@ import {
   Plus,
   AlertCircle
 } from 'lucide-react'
-import { format } from 'date-fns'
+import { formatDateTimeInIST } from '@/lib/formatters'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -238,7 +238,7 @@ const columns: ColumnDef<WithdrawalItem>[] = [
       <div className="flex items-center gap-2 text-sm">
         <Calendar className="h-4 w-4 text-muted-foreground" />
         <span>
-          {format(new Date(row.original.created_at), 'MMM dd, yyyy HH:mm')}
+          {formatDateTimeInIST(row.original.created_at)}
         </span>
       </div>
     ),

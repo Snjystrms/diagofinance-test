@@ -1,5 +1,6 @@
 // API Operations for Personal Information
 import { ApiResponse } from '@/lib/api'
+import { formatInIST } from '@/lib/date-time'
 
 // Base API configuration (from .env only)
 const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/+$/, '')
@@ -367,7 +368,7 @@ export const utilityFunctions = {
       minute: '2-digit'
     }
     
-    return new Date(dateString).toLocaleDateString('en-US', options || defaultOptions)
+    return formatInIST(dateString, options || defaultOptions)
   },
 
   // Format currency

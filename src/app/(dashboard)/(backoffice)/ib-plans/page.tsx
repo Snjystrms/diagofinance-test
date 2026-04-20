@@ -42,6 +42,7 @@ import {
   type CommissionPlanListResponseData,
   type CommissionPlanRuleInput,
 } from "@/lib/api";
+import { formatDateTimeInIST } from "@/lib/formatters";
 
 type GroupedRules = {
   key: string;
@@ -94,7 +95,7 @@ const formatDateTime = (value?: string | null) => {
   if (Number.isNaN(date.getTime())) {
     return value;
   }
-  return date.toLocaleString();
+  return formatDateTimeInIST(value);
 };
 
 const groupRules = (rules: CommissionPlanRule[] | undefined): GroupedRules[] => {

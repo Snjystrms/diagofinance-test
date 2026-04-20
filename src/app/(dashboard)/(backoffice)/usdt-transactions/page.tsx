@@ -38,6 +38,7 @@ import {
   type AdminUSDTDepositRequest,
   type AdminWithdrawalRequest,
 } from "@/lib/api";
+import { formatDateTimeInIST } from "@/lib/formatters";
 import { useAuth } from "@/contexts/auth-context";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 
@@ -64,7 +65,7 @@ const WITHDRAWAL_STATUS_OPTIONS: TransactionStatusOption[] = [
 const fmtDateTime = (s?: string | null) => {
   if (!s) return "—";
   try {
-    return new Date(s).toLocaleString();
+    return formatDateTimeInIST(s);
   } catch {
     return s;
   }

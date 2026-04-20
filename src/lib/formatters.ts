@@ -2,7 +2,10 @@
  * Shared formatting utilities. Import from here instead of defining locally in each page.
  */
 
+import { formatDateTimeInIST } from "./date-time";
+
 export { formatDate, formatCurrency } from "./format";
+export { formatInIST, formatDateTimeInIST, IST_TIME_ZONE, parseApiDate } from "./date-time";
 
 /**
  * Format a numeric amount with 2 decimal places, optionally with currency symbol.
@@ -20,20 +23,11 @@ export function formatAmount(amount?: number | string | null, currency?: string)
 }
 
 /**
- * Format an ISO date-time string to locale date+time string.
- * e.g. formatDateTime("2024-01-15T10:30:00Z") => "Jan 15, 2024, 10:30 AM"
+ * Format API timestamps in IST.
+ * e.g. formatDateTime("2026-04-20T08:46:35") => "Apr 20, 2026, 02:16 PM IST"
  */
 export function formatDateTime(value?: string | null): string {
-  if (!value) return "—";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatDateTimeInIST(value, "-");
 }
 
 /**
