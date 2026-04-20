@@ -1,6 +1,6 @@
 "use client";
 
-import type { UseFormReturn } from "react-hook-form";
+import type { FieldPath, FieldValues, UseFormReturn } from "react-hook-form";
 
 import {
   ValidatedFormField,
@@ -30,7 +30,19 @@ import {
 } from "@/components/ui/select";
 import { COUNTRIES } from "@/lib/countries";
 
-interface UserFormDialogProps {
+type UserFormDialogValues = FieldValues & {
+  first_name: string;
+  last_name: string;
+  email: string;
+  mobile?: string;
+  country?: string;
+  country_code: string;
+  password?: string;
+  confirm_password?: string;
+  referral_code?: string;
+};
+
+interface UserFormDialogProps<TFormValues extends UserFormDialogValues> {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   title: string;
@@ -40,12 +52,15 @@ interface UserFormDialogProps {
   submitting: boolean;
   loadingDetails?: boolean;
   passwordOptional?: boolean;
-  form: UseFormReturn<any>;
-  onSubmit: (values: any) => void;
+  form: UseFormReturn<TFormValues>;
+  onSubmit: (values: TFormValues) => void;
   onCountryChange: (country: string) => void;
 }
 
-export function UserFormDialog({
+const fieldPath = <TFormValues extends FieldValues>(name: keyof UserFormDialogValues) =>
+  name as FieldPath<TFormValues>;
+
+export function UserFormDialog<TFormValues extends UserFormDialogValues>({
   open,
   onOpenChange,
   title,
@@ -58,7 +73,7 @@ export function UserFormDialog({
   form,
   onSubmit,
   onCountryChange,
-}: UserFormDialogProps) {
+}: UserFormDialogProps<TFormValues>) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
@@ -75,28 +90,28 @@ export function UserFormDialog({
               <div className="grid gap-4 sm:grid-cols-2">
                 <ValidatedTextField
                   control={form.control}
-                  name="first_name"
+                  name={fieldPath<TFormValues>("first_name")}
                   label="First name"
                   transformValue={sanitizePersonText}
                   inputProps={{ autoComplete: "given-name", placeholder: "Enter first name" }}
                 />
                 <ValidatedTextField
                   control={form.control}
-                  name="last_name"
+                  name={fieldPath<TFormValues>("last_name")}
                   label="Last name"
                   transformValue={sanitizePersonText}
                   inputProps={{ autoComplete: "family-name", placeholder: "Enter last name" }}
                 />
                 <ValidatedTextField
                   control={form.control}
-                  name="email"
+                  name={fieldPath<TFormValues>("email")}
                   label="Email"
                   className="sm:col-span-2"
                   inputProps={{ type: "email", autoComplete: "email", placeholder: "name@example.com" }}
                 />
                 <ValidatedFormField
                   control={form.control}
-                  name="mobile"
+                  name={fieldPath<TFormValues>("mobile")}
                   label="Mobile"
                   renderControl={({ field }) => (
                     <Input
@@ -111,7 +126,7 @@ export function UserFormDialog({
                 />
                 <ValidatedFormField
                   control={form.control}
-                  name="country"
+                  name={fieldPath<TFormValues>("country")}
                   label="Country"
                   renderControl={({ field }) => (
                     <Select
@@ -136,7 +151,7 @@ export function UserFormDialog({
                 />
                 <ValidatedFormField
                   control={form.control}
-                  name="country_code"
+                  name={fieldPath<TFormValues>("country_code")}
                   label="Country code"
                   renderControl={({ field }) => (
                     <Select
@@ -145,7 +160,7 @@ export function UserFormDialog({
                         field.onChange(value);
                         const matchedCountry = COUNTRIES.find((country) => country.code === value);
                         if (matchedCountry) {
-                          form.setValue("country", matchedCountry.name, { shouldValidate: true });
+                          form.setValue(fieldPath<TFormValues>("country"), matchedCountry.name as TFormValues[FieldPath<TFormValues>], { shouldValidate: true });
                         }
                       }}
                     >
@@ -164,7 +179,7 @@ export function UserFormDialog({
                 />
                 <ValidatedPasswordField
                   control={form.control}
-                  name="password"
+                  name={fieldPath<TFormValues>("password")}
                   label="Password"
                   inputProps={{
                     placeholder: passwordOptional ? "Leave blank to keep current password" : "Create a strong password",
@@ -172,7 +187,7 @@ export function UserFormDialog({
                 />
                 <ValidatedPasswordField
                   control={form.control}
-                  name="confirm_password"
+                  name={fieldPath<TFormValues>("confirm_password")}
                   label="Confirm password"
                   inputProps={{
                     placeholder: passwordOptional ? "Confirm new password" : "Confirm password",
@@ -180,7 +195,7 @@ export function UserFormDialog({
                 />
                 <ValidatedTextField
                   control={form.control}
-                  name="referral_code"
+                  name={fieldPath<TFormValues>("referral_code")}
                   label="Referral code"
                   className="sm:col-span-2"
                   inputProps={{ autoComplete: "off", placeholder: "Enter referral code if available" }}

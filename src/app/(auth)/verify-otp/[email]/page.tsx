@@ -1,28 +1,21 @@
-'use client';
-
-import { useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
-import { ProtectedRoute } from '@/components/protected-route';
+import type { Metadata } from "next";
+import { Suspense } from "react";
+import { AuthPageFallback } from "../../_components/auth-page-fallback";
+import { VerifyOtpClient } from "./_components/verify-otp-client";
 
 interface PageProps {
   params: Promise<{ email: string }>;
 }
 
+export const metadata: Metadata = {
+  title: "Verify OTP | CRM Dashboard",
+  description: "Verify your registration email with a one-time password.",
+};
+
 export default function VerifyOtpPage({ params }: PageProps) {
-  const router = useRouter();
-  const resolved = use(params);
-  const email = decodeURIComponent(resolved.email);
-
-  useEffect(() => {
-    const query = email ? `?email=${encodeURIComponent(email)}` : '';
-    router.replace(`/check-email${query}`);
-  }, [email, router]);
-
   return (
-    <ProtectedRoute requireAuth={false}>
-      <div className="min-h-screen flex items-center justify-center py-24 px-6">
-        <p className="text-sm text-muted-foreground">Redirecting...</p>
-      </div>
-    </ProtectedRoute>
+    <Suspense fallback={<AuthPageFallback />}>
+      <VerifyOtpClient params={params} />
+    </Suspense>
   );
-} 
+}

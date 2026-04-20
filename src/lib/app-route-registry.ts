@@ -41,6 +41,7 @@ type SidebarSectionId =
   | "email-management"
   | "ib-management"
   | "account-management"
+  | "group-management"
   | "support"
   | "notification"
   | "reports"
@@ -211,6 +212,15 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     id: "account-management",
     title: "Account Management",
     url: "/packages",
+    icon: Package,
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    managerCategories: ["Group Management"],
+  },
+  {
+    id: "group-management",
+    title: "Group Management",
+    url: "/groups",
     icon: Package,
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
@@ -517,6 +527,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     roles: BACKOFFICE_ROLES,
     sidebarSection: "account-management",
     navLabel: "All Accounts",
+    managerCategories: ["Group Management"],
+  },
+  {
+    path: "/all-groups",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "group-management",
+    navLabel: "All Groups",
     managerCategories: ["Group Management"],
   },
   {

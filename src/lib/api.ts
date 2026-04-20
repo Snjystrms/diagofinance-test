@@ -488,6 +488,11 @@ export interface AccountTypeItem {
   updated_at?: string;
 }
 
+export interface AdminGroupItem {
+  id: number;
+  name: string;
+}
+
 // --- helper: turn object to x-www-form-urlencoded ---
 const toFormBody = (obj: Record<string, unknown>) => {
   const p = new URLSearchParams();
@@ -550,6 +555,19 @@ export const adminAccountTypesApi = {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     }),
+};
+
+export const adminGroupsApi = {
+  list: (token: string) => {
+    if (!token) {
+      throw new Error("Token is required to fetch groups");
+    }
+
+    return apiCall<AdminGroupItem[]>(`/admin/groups`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
 };
 
 // ---------- Admin User Management APIs ----------
