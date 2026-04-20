@@ -1614,6 +1614,8 @@ export interface AccountType {
   name: string;
   spread_from: string;
   maximum_leverage: string;
+  leverage_type?: string;
+  leverage_value?: number | string;
   base_currency: string;
 }
 

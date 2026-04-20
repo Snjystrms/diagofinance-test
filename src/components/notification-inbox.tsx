@@ -24,6 +24,7 @@ type NotificationInboxMode = "user" | "admin";
 
 interface NotificationInboxProps {
   mode?: NotificationInboxMode;
+  shouldFetchUnreadCount?: boolean;
 }
 
 type NotificationInboxItem = {
@@ -77,7 +78,7 @@ const getNotificationIcon = (message: string): LucideIcon => {
   return Info;
 };
 
-export function NotificationInbox({ mode = "user" }: NotificationInboxProps) {
+export function NotificationInbox({ mode = "user", shouldFetchUnreadCount = true }: NotificationInboxProps) {
   const { token } = useAuth();
   const [notifications, setNotifications] = useState<NotificationInboxItem[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -137,15 +138,12 @@ export function NotificationInbox({ mode = "user" }: NotificationInboxProps) {
     }
   }, [mode, tab, token]);
 
-  // Fetch unread count on mount and periodically
+  // Fetch unread count only when the parent route allows it.
   useEffect(() => {
-    if (token) {
+    if (token && shouldFetchUnreadCount) {
       fetchUnreadCount();
-      // Refresh count every 30 seconds
-      const interval = setInterval(fetchUnreadCount, 30000);
-      return () => clearInterval(interval);
     }
-  }, [token, fetchUnreadCount]);
+  }, [token, shouldFetchUnreadCount, fetchUnreadCount]);
 
   // Fetch notifications when popover opens
   useEffect(() => {

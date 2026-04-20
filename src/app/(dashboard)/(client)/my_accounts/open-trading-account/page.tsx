@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -25,7 +25,6 @@ import toast from 'react-hot-toast';
 import { ProtectedRoute } from '@/components/protected-route';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -52,7 +51,6 @@ import {
 } from '@/components/ui/dialog';
 import { PasswordInput } from '@/components/password-input';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { tradingAccountSchema, type TradingAccountFormData } from '@/lib/validations';
 import {
   accountTypesApi,
@@ -64,7 +62,34 @@ import { useAuth } from '@/contexts/auth-context';
 
 const DEFAULT_GROUP_ID = 1;
 const DEFAULT_INVESTOR_PASSWORD = 'OptionalInv@123';
-const DEFAULT_EXTRA_FIELDS = '{}';
+
+const LEVERAGE_CHOICES = [
+  { value: 50, label: '1:50 - Lower exposure' },
+  { value: 100, label: '1:100 - Standard' },
+  { value: 200, label: '1:200 - Flexible' },
+  { value: 500, label: '1:500 - Higher flexibility' },
+  { value: 1000, label: '1:1000 - Very high flexibility' },
+  { value: 2000, label: '1:2000 - Maximum available' },
+] as const;
+
+const getMaximumLeverageValue = (accountType?: AccountType) => {
+  if (!accountType) {
+    return null;
+  }
+
+  const ratioMatch = accountType.maximum_leverage?.match(/1\s*:\s*(\d+)/i);
+  if (ratioMatch) {
+    return Number.parseInt(ratioMatch[1], 10);
+  }
+
+  const configuredValue = Number(accountType.leverage_value);
+  if (Number.isFinite(configuredValue) && configuredValue > 0) {
+    return configuredValue;
+  }
+
+  const fallbackMatch = accountType.maximum_leverage?.match(/(\d{2,5})/);
+  return fallbackMatch ? Number.parseInt(fallbackMatch[1], 10) : null;
+};
 
 export default function OpenTradingAccountPage() {
   const { token } = useAuth();
@@ -81,13 +106,33 @@ export default function OpenTradingAccountPage() {
     resolver: zodResolver(tradingAccountSchema),
     defaultValues: {
       accountType: '',
-      groupId: String(DEFAULT_GROUP_ID),
       leverage: '100',
       mainPassword: '',
       investorPassword: DEFAULT_INVESTOR_PASSWORD,
-      extraFields: DEFAULT_EXTRA_FIELDS,
     },
   });
+
+  const selectedAccountTypeName = form.watch('accountType');
+  const selectedAccountType = useMemo(
+    () => accountTypes.find((accountType) => accountType.name === selectedAccountTypeName),
+    [accountTypes, selectedAccountTypeName]
+  );
+  const leverageOptions = useMemo(() => {
+    const maxLeverage = getMaximumLeverageValue(selectedAccountType);
+    if (!maxLeverage) {
+      return LEVERAGE_CHOICES;
+    }
+
+    const options = LEVERAGE_CHOICES.filter((option) => option.value <= maxLeverage);
+    if (options.some((option) => option.value === maxLeverage)) {
+      return options;
+    }
+
+    return [
+      ...options,
+      { value: maxLeverage, label: `1:${maxLeverage} - Maximum available` },
+    ];
+  }, [selectedAccountType]);
 
   const mainPassword = form.watch('mainPassword') || '';
   const investorPassword = form.watch('investorPassword') || '';
@@ -127,6 +172,27 @@ export default function OpenTradingAccountPage() {
     fetchAccountTypes();
   }, [token]);
 
+  useEffect(() => {
+    if (!selectedAccountType || leverageOptions.length === 0) {
+      return;
+    }
+
+    const currentLeverage = form.getValues('leverage');
+    const isCurrentAvailable = leverageOptions.some(
+      (option) => String(option.value) === currentLeverage
+    );
+
+    if (!isCurrentAvailable) {
+      const preferredOption =
+        leverageOptions.find((option) => option.value === 100) ?? leverageOptions[0];
+
+      form.setValue('leverage', String(preferredOption.value), {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [form, leverageOptions, selectedAccountType]);
+
   const onSubmit = async (data: TradingAccountFormData) => {
     if (!token) {
       toast.error('Authentication required');
@@ -140,8 +206,6 @@ export default function OpenTradingAccountPage() {
 
     setIsSubmitting(true);
     try {
-      const selectedAccountType = accountTypes.find((accountType) => accountType.name === data.accountType);
-
       if (!selectedAccountType) {
         throw new Error('Account type not found');
       }
@@ -152,12 +216,16 @@ export default function OpenTradingAccountPage() {
       }
 
       const leverage = Number.parseInt(leverageMatch[1], 10);
-      const extraFields = data.extraFields.trim() ? JSON.parse(data.extraFields) : {};
+      const maxLeverage = getMaximumLeverageValue(selectedAccountType);
+      if (maxLeverage && leverage > maxLeverage) {
+        throw new Error(`Please choose leverage up to 1:${maxLeverage} for this account type.`);
+      }
+
       const response = await userMT5AccountsApi.create(
         {
           account_type_id: selectedAccountType.id,
-          extra_fields: extraFields,
-          group_id: Number.parseInt(data.groupId, 10),
+          extra_fields: {},
+          group_id: DEFAULT_GROUP_ID,
           investor_password: data.investorPassword,
           leverage,
           main_password: data.mainPassword,
@@ -391,14 +459,14 @@ export default function OpenTradingAccountPage() {
                 Account Details
               </CardTitle>
               <CardDescription>
-                Configure the fields required by the MT5 account creation API
+                Choose your account type, leverage, and MT5 passwords.
               </CardDescription>
             </CardHeader>
             <CardContent className="relative z-10">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 via-purple-500/5 to-transparent p-4 text-sm text-muted-foreground">
-                    This form now maps directly to the MT5 request body: account type, group ID, leverage, main password, investor password, and extra fields.
+                    Choose the setup that fits your trading style. Required setup details are applied automatically.
                   </div>
 
                   {/* Account Type */}
@@ -406,10 +474,6 @@ export default function OpenTradingAccountPage() {
                     control={form.control}
                     name="accountType"
                     render={({ field }) => {
-                      const selectedAccountType = accountTypes.find(
-                        (at) => at.name === field.value
-                      );
-                      
                       return (
                         <FormItem>
                           <FormLabel className="text-sm font-semibold text-foreground">
@@ -487,33 +551,6 @@ export default function OpenTradingAccountPage() {
                     }}
                   />
 
-                  {/* Group ID */}
-                  <FormField
-                    control={form.control}
-                    name="groupId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-semibold text-foreground">
-                          Group ID
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="1"
-                            step="1"
-                            placeholder="Enter group ID"
-                            className="h-12 border-2 border-border focus:border-primary rounded-xl"
-                            {...field}
-                          />
-                        </FormControl>
-                        <p className="text-xs text-muted-foreground">
-                          Sent as `group_id` in the request body.
-                        </p>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
                   {/* Leverage */}
                   <FormField
                     control={form.control}
@@ -523,21 +560,26 @@ export default function OpenTradingAccountPage() {
                         <FormLabel className="text-sm font-semibold text-foreground">
                           Leverage
                         </FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                          disabled={!selectedAccountType}
+                        >
                           <FormControl>
                             <SelectTrigger className="w-full h-12 border-2 border-border focus:border-primary rounded-xl">
-                              <SelectValue placeholder="Choose Leverage" />
+                              <SelectValue placeholder={selectedAccountType ? 'Choose leverage' : 'Choose an account type first'} />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="50" className="rounded-lg">1:50 (Conservative)</SelectItem>
-                            <SelectItem value="100" className="rounded-lg">1:100 (Standard)</SelectItem>
-                            <SelectItem value="200" className="rounded-lg">1:200 (Aggressive)</SelectItem>
-                            <SelectItem value="500" className="rounded-lg">1:500 (Professional)</SelectItem>
+                            {leverageOptions.map((option) => (
+                              <SelectItem key={option.value} value={String(option.value)} className="rounded-lg">
+                                {option.label}
+                              </SelectItem>
+                            ))}
                           </SelectContent>
                         </Select>
                         <p className="text-xs text-muted-foreground">
-                          Sent as the numeric `leverage` value, for example `100`.
+                          Available leverage choices are based on the account type you select.
                         </p>
                         <FormMessage />
                       </FormItem>
@@ -561,7 +603,7 @@ export default function OpenTradingAccountPage() {
                           />
                         </FormControl>
                         <p className="text-xs text-muted-foreground">
-                          This field maps to `main_password`.
+                          Use this password to log in and trade from MT5.
                         </p>
                         <FormMessage />
                       </FormItem>
@@ -585,32 +627,7 @@ export default function OpenTradingAccountPage() {
                           />
                         </FormControl>
                         <p className="text-xs text-muted-foreground">
-                          This field maps to `investor_password`.
-                        </p>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Extra Fields */}
-                  <FormField
-                    control={form.control}
-                    name="extraFields"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-sm font-semibold text-foreground">
-                          Extra Fields
-                        </FormLabel>
-                        <FormControl>
-                          <Textarea
-                            rows={4}
-                            placeholder="{}"
-                            className="resize-none rounded-xl border-2 border-border focus:border-primary"
-                            {...field}
-                          />
-                        </FormControl>
-                        <p className="text-xs text-muted-foreground">
-                          Provide a JSON object. Keep `{}` if no extra fields are required.
+                          Use this read-only password when you only want account viewing access.
                         </p>
                         <FormMessage />
                       </FormItem>

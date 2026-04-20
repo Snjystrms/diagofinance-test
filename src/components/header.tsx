@@ -5,7 +5,6 @@ import { Bell, Search, User, LogOut, Palette, Shield, Layout, Copy } from "lucid
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,9 +17,9 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ThemeCustomizer } from "@/components/theme-customizer"
 import { SidebarSelector } from "@/components/sidebar-selector"
 import { useAuth } from "@/contexts/auth-context"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { authApi, admin2FAApi, manager2FAApi, adminNotificationApi } from "@/lib/api"
+import { authApi, admin2FAApi, manager2FAApi } from "@/lib/api"
 import toast from "react-hot-toast"
 import { TwoFactorModal } from "@/components/two-factor-modal"
 import { NotificationInbox } from "@/components/notification-inbox"
@@ -36,6 +35,7 @@ export function Header() {
     exportPresetSnapshot,
   } = useClientCustomization();
   const router = useRouter();
+  const pathname = usePathname();
   const [themeCustomizerOpen, setThemeCustomizerOpen] = useState(false);
   const [sidebarSelectorOpen, setSidebarSelectorOpen] = useState(false);
   const [twoFactorModalOpen, setTwoFactorModalOpen] = useState(false);
@@ -44,6 +44,7 @@ export function Header() {
   const [dashboardName, setDashboardName] = useState<string | null>(null);
   const canManageCustomizer =
     user?.type === "admin" || user?.type === "subadmin" || user?.type === "manager";
+  const isDashboardRoute = pathname === "/dashboard";
 
   // Share the userDashboard data with dashboard page via React Query cache.
   const { data: userDashboardData } = useQuery({
@@ -54,23 +55,6 @@ export function Header() {
     retry: false,
     refetchOnWindowFocus: false,
   });
-
-  // Admin/manager unread count is fetched ONLY on `/dashboard` page.
-  // Header just reads the cached value (no network calls here).
-  const { data: adminUnreadCountData } = useQuery({
-    queryKey: ["adminUnreadCount", token],
-    queryFn: async () => {
-      if (!token) return 0;
-      const response = await adminNotificationApi.getUnreadCount(token);
-      if (response.success && response.data) {
-        return response.data.unread_count || 0;
-      }
-      return 0;
-    },
-    enabled: false,
-    initialData: 0,
-  });
-  const unreadCount = adminUnreadCountData ?? 0;
 
   const { data: is2FAEnabled = false, isFetching: isLoading2FAStatus } = useQuery({
     queryKey: ["twoFactorStatus", user?.type, user?.id, token],
@@ -302,7 +286,10 @@ export function Header() {
           )}
           
           {user ? (
-            <NotificationInbox mode={user.type === "user" ? "user" : "admin"} />
+            <NotificationInbox
+              mode={user.type === "user" ? "user" : "admin"}
+              shouldFetchUnreadCount={isDashboardRoute}
+            />
           ) : null}
           
           <DropdownMenu>

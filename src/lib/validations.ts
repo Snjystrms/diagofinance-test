@@ -113,10 +113,6 @@ export const resetPasswordSchema = z.object({
 // Trading account form validation schema
 export const tradingAccountSchema = z.object({
   accountType: z.string().min(1, 'Account type is required'),
-  groupId: z
-    .string()
-    .min(1, 'Group ID is required')
-    .regex(/^\d+$/, 'Group ID must be a valid number'),
   leverage: z.string().min(1, 'Leverage is required'),
   mainPassword: z.string()
     .min(8, 'Password must be at least 8 characters long')
@@ -130,26 +126,6 @@ export const tradingAccountSchema = z.object({
     .regex(/[a-z]/, 'Investor password must contain at least one lowercase letter')
     .regex(/[0-9]/, 'Investor password must contain at least one number')
     .regex(/[!@#$%^&*]/, 'Investor password must contain at least one special character'),
-  extraFields: z.string().superRefine((value, ctx) => {
-    if (!value.trim()) {
-      return;
-    }
-
-    try {
-      const parsed = JSON.parse(value);
-      if (parsed === null || Array.isArray(parsed) || typeof parsed !== 'object') {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Extra fields must be a JSON object',
-        });
-      }
-    } catch {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'Extra fields must be valid JSON',
-      });
-    }
-  }),
 });
 
 // Manager form validation schema
