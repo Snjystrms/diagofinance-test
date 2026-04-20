@@ -163,8 +163,8 @@ export function Header() {
           <div className="hidden xl:flex items-center justify-center flex-shrink-0">
             <div className="relative group">
               <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-              <div className="relative flex items-center gap-2.5 px-5 py-2.5 rounded-xl bg-card shadow-sm hover:shadow-md transition-all duration-200">
-                <div className="flex items-center gap-2.5 min-w-0">
+              {/* <div className="relative flex items-center gap-2.5 px-5 py-2.5 rounded-xl bg-card shadow-sm hover:shadow-md transition-all duration-200"> */}
+                {/* <div className="flex items-center gap-2.5 min-w-0">
                   <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
                     <span className="text-xs font-bold text-primary">ID</span>
                   </div>
@@ -192,8 +192,8 @@ export function Header() {
                       )}
                     </div>
                   </div>
-                </div>
-              </div>
+                </div> */}
+              {/* </div> */}
             </div>
           </div>
         )}
