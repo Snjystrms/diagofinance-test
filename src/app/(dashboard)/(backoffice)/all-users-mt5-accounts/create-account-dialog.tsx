@@ -17,6 +17,7 @@ import { Check, ChevronsUpDown, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { CreateMT5AccountRequest, PendingUser, AccountType } from "@/lib/api";
 import { adminUsersApi, accountTypesApi } from "@/lib/api";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 interface CreateAccountDialogProps {
   open: boolean;
@@ -79,7 +80,12 @@ export function CreateAccountDialog({
       setAccountTypes(types);
     } catch (error) {
       console.error("Failed to load account types:", error);
-      toast.error("Failed to load account types");
+      toast.error(
+        getAdminFriendlyErrorMessage(error, {
+          resource: "account types",
+          action: "load",
+        })
+      );
     } finally {
       setLoadingAccountTypes(false);
     }
@@ -111,7 +117,12 @@ export function CreateAccountDialog({
       setUsers(userList);
     } catch (error) {
       console.error("Failed to search users:", error);
-      toast.error("Failed to search users");
+      toast.error(
+        getAdminFriendlyErrorMessage(error, {
+          resource: "users",
+          action: "load",
+        })
+      );
     } finally {
       setLoadingUsers(false);
     }

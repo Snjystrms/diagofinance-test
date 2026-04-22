@@ -6,6 +6,7 @@ import {
   DollarSign,
   FileText,
   Gift,
+  History,
   Home,
   LifeBuoy,
   Mail,
@@ -31,6 +32,7 @@ type SidebarSectionId =
   | "wallet"
   | "accounts"
   | "funds"
+  | "trade-history"
   | "profile"
   | "become-partner"
   | "help-support"
@@ -58,6 +60,11 @@ export interface AppRouteDefinition {
   icon?: LucideIcon;
   managerCategories?: string[];
   activeMatch?: string[];
+}
+
+export interface AppBreadcrumbItem {
+  title: string;
+  url?: string;
 }
 
 interface SidebarSectionDefinition {
@@ -104,6 +111,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     icon: Home,
     audience: "shared",
     roles: SHARED_ROLES,
+    directLink: true,
   },
   {
     id: "wallet",
@@ -126,6 +134,14 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     title: "Funds",
     url: "/funds",
     icon: Wallet,
+    audience: "client",
+    roles: CLIENT_ROLES,
+  },
+  {
+    id: "trade-history",
+    title: "Trade History",
+    url: "/trade-history",
+    icon: History,
     audience: "client",
     roles: CLIENT_ROLES,
   },
@@ -288,7 +304,6 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "shared",
     roles: SHARED_ROLES,
     sidebarSection: "dashboard",
-    navLabel: "Overview",
   },
   {
     path: "/test-registration-fee",
@@ -366,6 +381,13 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     navLabel: "Internal Funds Transfer",
   },
   {
+    path: "/trade-history/all-trades",
+    audience: "client",
+    roles: CLIENT_ROLES,
+    sidebarSection: "trade-history",
+    navLabel: "All Trades",
+  },
+  {
     path: "/profile",
     audience: "client",
     roles: CLIENT_ROLES,
@@ -402,43 +424,81 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     path: "/ib-dashboard",
     audience: "client",
     roles: CLIENT_ROLES,
+    navLabel: "IB Dashboard",
     activeMatch: ["/ib-dashboard"],
+  },
+  {
+    path: "/ib-dashboard/wallet",
+    audience: "client",
+    roles: CLIENT_ROLES,
+    navLabel: "IB Wallet",
+  },
+  {
+    path: "/ib-dashboard/clients",
+    audience: "client",
+    roles: CLIENT_ROLES,
+    navLabel: "IB Clients",
+  },
+  {
+    path: "/ib-dashboard/transfer",
+    audience: "client",
+    roles: CLIENT_ROLES,
+    navLabel: "IB Transfer",
   },
   {
     path: "/ticket-history",
     audience: "client",
     roles: CLIENT_ROLES,
+    navLabel: "Ticket History",
   },
   {
     path: "/withdrawal-history",
     audience: "client",
     roles: CLIENT_ROLES,
+    navLabel: "Withdrawal History",
   },
   {
     path: "/purchased-history",
     audience: "client",
     roles: CLIENT_ROLES,
+    navLabel: "Purchased History",
   },
   {
     path: "/My-Package",
     audience: "client",
     roles: CLIENT_ROLES,
+    navLabel: "My Package",
   },
   {
     path: "/usdt-wallet",
     audience: "client",
     roles: CLIENT_ROLES,
+    navLabel: "USDT Wallet",
     activeMatch: ["/usdt-wallet"],
+  },
+  {
+    path: "/usdt-wallet/deposit-history",
+    audience: "client",
+    roles: CLIENT_ROLES,
+    navLabel: "USDT Deposit History",
+  },
+  {
+    path: "/usdt-wallet/statement",
+    audience: "client",
+    roles: CLIENT_ROLES,
+    navLabel: "USDT Wallet Statement",
   },
   {
     path: "/USDT-Wallet-Statement",
     audience: "client",
     roles: CLIENT_ROLES,
+    navLabel: "USDT Wallet Statement",
   },
   {
     path: "/settings",
     audience: "client",
     roles: CLIENT_ROLES,
+    navLabel: "Settings",
   },
   {
     path: "/new-users",
@@ -620,12 +680,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     path: "/ib-plans",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
+    navLabel: "IB Plans",
     managerCategories: ["IB Management"],
   },
   {
     path: "/user-accounts",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
+    navLabel: "User Accounts",
     managerCategories: ["Group Management"],
   },
 ];
@@ -665,6 +727,79 @@ function getManagerCategorySet(groupedPermissions?: GroupedPermissions[]) {
 
 function getSectionById(sectionId: SidebarSectionId) {
   return SIDEBAR_SECTIONS.find((section) => section.id === sectionId);
+}
+
+function normalizePathname(pathname: string) {
+  if (pathname.length > 1 && pathname.endsWith("/")) {
+    return pathname.slice(0, -1);
+  }
+
+  return pathname || "/";
+}
+
+function formatSegmentLabel(segment: string) {
+  return segment
+    .replace(/[-_]/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function findBestRoute(pathname: string) {
+  const normalizedPathname = normalizePathname(pathname);
+
+  return [...ROUTE_DEFINITIONS]
+    .sort((left, right) => right.path.length - left.path.length)
+    .find((route) => {
+      const prefixes = [route.path, ...(route.activeMatch ?? [])];
+      return matchesPrefix(normalizedPathname, prefixes);
+    });
+}
+
+export function getBreadcrumbItems(pathname: string, role?: UserType): AppBreadcrumbItem[] {
+  const normalizedPathname = normalizePathname(pathname);
+  const route = findBestRoute(normalizedPathname);
+
+  if (
+    route &&
+    role &&
+    !route.roles.includes(role) &&
+    !(role === "subadmin" && route.audience !== "client")
+  ) {
+    return [];
+  }
+
+  if (normalizedPathname === "/dashboard") {
+    return [{ title: "Dashboard" }];
+  }
+
+  const breadcrumbs: AppBreadcrumbItem[] = [{ title: "Dashboard", url: "/dashboard" }];
+
+  if (route?.sidebarSection) {
+    const section = getSectionById(route.sidebarSection);
+    if (section && section.id !== "dashboard") {
+      const routeTitle = route.navLabel ?? section.title;
+      if (section.directLink || routeTitle === section.title) {
+        breadcrumbs.push({ title: routeTitle });
+        return breadcrumbs;
+      }
+
+      breadcrumbs.push({ title: section.title });
+      breadcrumbs.push({ title: routeTitle });
+      return breadcrumbs;
+    }
+  }
+
+  if (route?.navLabel) {
+    breadcrumbs.push({ title: route.navLabel });
+    return breadcrumbs;
+  }
+
+  const segments = normalizedPathname.split("/").filter(Boolean);
+  const lastSegment = segments[segments.length - 1];
+  if (lastSegment) {
+    breadcrumbs.push({ title: formatSegmentLabel(lastSegment) });
+  }
+
+  return breadcrumbs;
 }
 
 function buildNavigationForRole(role: "admin" | "user"): NavItem[] {

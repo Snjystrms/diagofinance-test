@@ -1,28 +1,20 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { 
   SquareStack, 
   ArrowRight,
-  Loader2,
-  AlertCircle,
   Diamond,
   Plus,
   Circle,
   Layers
 } from 'lucide-react';
+import { ApiErrorState } from '@/components/errors/api-error-state';
+import { ClientCardGridSkeleton } from '@/components/loading/client-page-skeletons';
 import { ProtectedRoute } from '@/components/protected-route';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
 import { accountTypesApi, type AccountType } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 
@@ -51,60 +43,39 @@ export default function AccountsOverviewPage() {
   const { token } = useAuth();
   const [accountTypes, setAccountTypes] = useState<AccountType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown | null>(null);
+
+  const fetchAccountTypes = useCallback(async () => {
+    if (!token) {
+      setError('Authentication required');
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await accountTypesApi.getActive(token);
+      if (response.success && response.data) {
+        setAccountTypes(response.data);
+      } else {
+        setError('Unable to load account types');
+      }
+    } catch (error) {
+      console.error('Error fetching account types:', error);
+      setError(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [token]);
 
   useEffect(() => {
-    const fetchAccountTypes = async () => {
-      if (!token) {
-        setError('Authentication required');
-        setIsLoading(false);
-        return;
-      }
-
-      try {
-        setIsLoading(true);
-        setError(null);
-        const response = await accountTypesApi.getActive(token);
-        if (response.success && response.data) {
-          setAccountTypes(response.data);
-        } else {
-          setError('Failed to load account types');
-        }
-      } catch (error) {
-        console.error('Error fetching account types:', error);
-        setError(error instanceof Error ? error.message : 'Failed to load account types');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchAccountTypes();
-  }, [token]);
+  }, [fetchAccountTypes]);
 
   return (
     <ProtectedRoute>
       <div className="min-h-full w-full p-4 lg:p-6 xl:p-8">
-        {/* Breadcrumb Navigation */}
-        <Breadcrumb className="mb-6">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/dashboard">Dashboard</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbLink asChild>
-                <Link href="/my_accounts">My Accounts</Link>
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Accounts Overview</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-
         {/* Header Section */}
         <div className="mb-8">
           <div className="space-y-2">
@@ -118,18 +89,21 @@ export default function AccountsOverviewPage() {
         </div>
 
         {/* Error State */}
-        {error && (
-          <div className="mb-6 flex items-center gap-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-destructive">
-            <AlertCircle className="h-5 w-5 flex-shrink-0" />
-            <span>{error}</span>
-          </div>
-        )}
+        {error ? (
+          <ApiErrorState
+            error={error}
+            audience="client"
+            resource="account types"
+            action="load"
+            variant="inline"
+            className="mb-6"
+            onRetry={fetchAccountTypes}
+          />
+        ) : null}
 
         {/* Loading State */}
         {isLoading && (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
+          <ClientCardGridSkeleton />
         )}
 
         {/* Account Types Grid */}

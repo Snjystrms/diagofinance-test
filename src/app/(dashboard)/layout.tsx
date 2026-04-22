@@ -3,10 +3,9 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { ProtectedRoute } from "@/components/protected-route"
 import { Header } from "@/components/header"
+import { DashboardBreadcrumbs } from "@/components/dashboard-breadcrumbs"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
-import { IbDashboardSidebarWrapper } from "@/components/ib-dashboard-sidebar-wrapper"
-import { useEffect, useMemo } from "react"
-import { usePathname } from "next/navigation"
+import { useEffect } from "react"
 import dynamic from "next/dynamic"
 import { useClientCustomization } from "@/contexts/client-customization-context"
 
@@ -21,7 +20,6 @@ export default function DashboardLayout({
   children,
 }: DashboardLayoutProps) {
   const { sidebarId: selectedSidebar } = useClientCustomization();
-  const pathname = usePathname();
 
   // Clear sidebar cookie when switching to two-panel or expanded-panel to ensure it starts collapsed
   useEffect(() => {
@@ -30,8 +28,6 @@ export default function DashboardLayout({
       document.cookie = "sidebar_state=false; path=/; max-age=0";
     }
   }, [selectedSidebar]);
-
-  const isIbDashboard = useMemo(() => pathname?.includes('ib-dashboard') ?? false, [pathname]);
 
   return (
     <ProtectedRoute>
@@ -45,40 +41,25 @@ export default function DashboardLayout({
               } as React.CSSProperties
             : {
                 "--sidebar-width": "20rem",
-              } as React.CSSProperties
+          } as React.CSSProperties
         }
       >
-        {isIbDashboard ? (
-          <>
-            <IbDashboardSidebarWrapper className="hidden md:flex" />
-            <SidebarInset>
-              <Header />
-              <main className="flex-1 overflow-y-auto bg-background">
-                <div className="w-full max-w-none">
-                  {children}
-                </div>
-              </main>
-            </SidebarInset>
-          </>
+        {selectedSidebar === "two-panel" ? (
+          <AppSidebarV2 className="hidden md:flex" />
+        ) : selectedSidebar === "expanded-panel" ? (
+          <AppSidebarV3 className="hidden md:flex" />
         ) : (
-          <>
-            {selectedSidebar === "two-panel" ? (
-              <AppSidebarV2 className="hidden md:flex" />
-            ) : selectedSidebar === "expanded-panel" ? (
-              <AppSidebarV3 className="hidden md:flex" />
-            ) : (
-              <AppSidebar className="hidden md:flex flex-shrink-0 " />
-            )}
-            <SidebarInset>
-              <Header />
-              <main className="flex-1 overflow-y-auto bg-background">
-                <div className="w-full max-w-none">
-                  {children}
-                </div>
-              </main>
-            </SidebarInset>
-          </>
+          <AppSidebar className="hidden md:flex flex-shrink-0 " />
         )}
+        <SidebarInset>
+          <Header />
+          <DashboardBreadcrumbs />
+          <main className="flex-1 overflow-y-auto bg-background">
+            <div className="w-full max-w-none">
+              {children}
+            </div>
+          </main>
+        </SidebarInset>
       </SidebarProvider>
     </ProtectedRoute>
   )

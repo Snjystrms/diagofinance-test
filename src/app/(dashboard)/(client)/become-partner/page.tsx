@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useState, useCallback, useLayoutEffect } from "react";
+import { useState, useCallback, useLayoutEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowUpRight, Handshake, LineChart, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, Handshake, LineChart, Loader2, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { BecomePartnerCta } from "@/components/become-partner/ib-request-cta";
 import { useAuth } from "@/contexts/auth-context";
-import { ibRequestsApi, type IbRequestStatusResponse } from "@/lib/api";
-import { Loader2 } from "lucide-react";
+import { ibRequestsApi } from "@/lib/api";
 
 const advantages = [
   "Zero sign-up fees and super simple set-up process",
@@ -18,7 +17,6 @@ const advantages = [
 export default function BecomePartnerPage() {
   const { token } = useAuth();
   const router = useRouter();
-  const [statusData, setStatusData] = useState<IbRequestStatusResponse | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
 
@@ -36,7 +34,6 @@ export default function BecomePartnerPage() {
     try {
       const response = await ibRequestsApi.getStatus(token);
       if (response?.data) {
-        setStatusData(response.data);
         // Redirect to IB dashboard if approved - check ib_request.status === 1
         const ibRequest = response.data.ib_request;
         if (ibRequest && ibRequest.status === 1) {
@@ -57,14 +54,11 @@ export default function BecomePartnerPage() {
     void checkStatus();
   }, [checkStatus]);
 
-  // Show spinner before API call completes - prevent direct page access
-  // Always show spinner until check is complete and initialized
-  // Render spinner immediately without MainLayout to prevent any flash
   if (isCheckingStatus || !isInitialized) {
     return (
-      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      <div className="flex min-h-[50vh] items-center justify-center px-4 py-10">
+        <div className="flex max-w-sm flex-col items-center gap-4 rounded-xl border bg-card px-6 py-8 text-center shadow-sm">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
           <p className="text-sm font-medium text-muted-foreground">Checking partner status...</p>
         </div>
       </div>
@@ -72,10 +66,10 @@ export default function BecomePartnerPage() {
   }
 
   return (
-    
-    <div className="min-h-screen bg-background pb-24">
-      <section className="bg-card/80">
-          <div className="mx-auto flex max-w-6xl flex-col gap-10 px-6 pb-16 pt-24 md:px-10 lg:px-16">
+    <div className="min-h-full bg-background px-4 py-8 md:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl space-y-8">
+        <section className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+          <div className="flex flex-col gap-10 px-6 py-10 md:px-8 lg:px-10">
             <span className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-primary">
               <span className="size-2 rounded-full bg-primary" /> Become a
               Partner
@@ -140,7 +134,7 @@ export default function BecomePartnerPage() {
 
       <section
         id="partner-benefits"
-        className="mx-auto mt-16 max-w-6xl space-y-12 rounded-[2.5rem] border border-border bg-card px-6 py-16 shadow-xl md:px-10 lg:px-16"
+        className="space-y-12 rounded-2xl border border-border bg-card px-6 py-10 shadow-sm md:px-8 lg:px-10"
       >
         <div className="space-y-4">
           <p className="text-sm font-semibold uppercase tracking-[0.25em] text-primary">
@@ -219,7 +213,7 @@ export default function BecomePartnerPage() {
         </div>
       </section>
 
-      <section className="mx-auto mt-16 max-w-6xl rounded-3xl bg-muted px-6 py-12 text-foreground md:px-10 lg:px-16">
+      <section className="rounded-2xl bg-muted px-6 py-10 text-foreground md:px-8 lg:px-10">
         <div className="grid gap-8 lg:grid-cols-3">
           <div>
             <p className="text-sm font-semibold uppercase tracking-[0.25em] text-primary">
@@ -251,13 +245,13 @@ export default function BecomePartnerPage() {
         </div>
       </section>
 
-      <p className="mx-auto mt-6 max-w-6xl px-6 text-xs text-muted-foreground md:px-10 lg:px-16">
+      <p className="px-1 text-xs text-muted-foreground">
         *Rebate values may vary based on active promotions and regional
         regulations. Contact our partner desk for the latest commission
         structure.
       </p>
+      </div>
     </div>
-    
   );
 }
 

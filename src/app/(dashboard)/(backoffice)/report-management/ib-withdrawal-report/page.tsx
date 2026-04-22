@@ -28,6 +28,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { ReportPageWrapper } from "@/components/report-page-wrapper";
 import { fmtDateTime, formatAmount } from "@/lib/formatters";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 const statusBadge = (status: string | number) => {
   const statusStr = String(status);
@@ -67,6 +68,7 @@ export default function IbWithdrawalReportPage() {
 
   const [rows, setRows] = useState<IbWithdrawalReportItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown | null>(null);
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage, setPerPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
   const [totalPages, setTotalPages] = useState(1);
@@ -127,6 +129,7 @@ export default function IbWithdrawalReportPage() {
 
     try {
       setLoading(true);
+      setLoadError(null);
 
       const response = await adminIbWithdrawalReportApi.list({
         token,
@@ -155,8 +158,12 @@ export default function IbWithdrawalReportPage() {
       }
     } catch (error: unknown) {
       console.error("Failed to load IB withdrawal report:", error);
+      setLoadError(error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to load IB withdrawal report"
+        getAdminFriendlyErrorMessage(error, {
+          resource: "IB withdrawal report",
+          action: "load",
+        })
       );
       setRows([]);
     } finally {
@@ -261,9 +268,10 @@ export default function IbWithdrawalReportPage() {
     } catch (error: unknown) {
       console.error("Failed to export Excel:", error);
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to export Excel file",
+        getAdminFriendlyErrorMessage(error, {
+          resource: "IB withdrawal report",
+          action: "export",
+        }),
         { id: "export-excel" }
       );
     }
@@ -405,6 +413,7 @@ export default function IbWithdrawalReportPage() {
       description="Manage and view IB withdrawal transactions"
       isLoading={loading}
       isEmpty={rows.length === 0}
+      error={loadError}
       onRefresh={() => void loadReport()}
       isRefreshing={loading}
     >

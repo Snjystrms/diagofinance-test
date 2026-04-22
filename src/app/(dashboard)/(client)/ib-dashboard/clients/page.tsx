@@ -8,6 +8,7 @@ import {
   type IbClient,
   type IbRebate,
 } from "@/lib/api";
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,7 +45,7 @@ export default function IbClientsPage() {
   // Clients state
   const [clients, setClients] = useState<IbClient[]>([]);
   const [clientsLoading, setClientsLoading] = useState(false);
-  const [clientsError, setClientsError] = useState<string | null>(null);
+  const [clientsError, setClientsError] = useState<unknown | null>(null);
   const [clientsPagination, setClientsPagination] = useState({
     current_page: 1,
     per_page: 10,
@@ -55,7 +56,7 @@ export default function IbClientsPage() {
   // Sub IBs state
   const [subIbs, setSubIbs] = useState<IbSubIb[]>([]);
   const [subIbsLoading, setSubIbsLoading] = useState(false);
-  const [subIbsError, setSubIbsError] = useState<string | null>(null);
+  const [subIbsError, setSubIbsError] = useState<unknown | null>(null);
   const [subIbsPagination, setSubIbsPagination] = useState({
     current_page: 1,
     per_page: 10,
@@ -66,7 +67,7 @@ export default function IbClientsPage() {
   // Rebates state
   const [rebates, setRebates] = useState<IbRebate[]>([]);
   const [rebatesLoading, setRebatesLoading] = useState(false);
-  const [rebatesError, setRebatesError] = useState<string | null>(null);
+  const [rebatesError, setRebatesError] = useState<unknown | null>(null);
   const [rebatesPagination, setRebatesPagination] = useState({
     current_page: 1,
     per_page: 10,
@@ -102,11 +103,11 @@ export default function IbClientsPage() {
         setClients(clientsData.clients || []);
         setClientsPagination(clientsData.pagination);
       } else {
-        setClientsError("Failed to load clients data");
+        setClientsError("Unable to load clients data");
       }
     } catch (err) {
       console.error("Failed to fetch clients:", err);
-      setClientsError(err instanceof Error ? err.message : "Failed to load clients");
+      setClientsError(err);
       setClients([]);
     } finally {
       setClientsLoading(false);
@@ -135,11 +136,11 @@ export default function IbClientsPage() {
         setSubIbs(subIbsData.sub_ibs || []);
         setSubIbsPagination(subIbsData.pagination);
       } else {
-        setSubIbsError("Failed to load Sub IBs data");
+        setSubIbsError("Unable to load Sub IBs data");
       }
     } catch (err) {
       console.error("Failed to fetch Sub IBs:", err);
-      setSubIbsError(err instanceof Error ? err.message : "Failed to load Sub IBs");
+      setSubIbsError(err);
       setSubIbs([]);
     } finally {
       setSubIbsLoading(false);
@@ -168,11 +169,11 @@ export default function IbClientsPage() {
         setRebates(rebatesData.rebates || []);
         setRebatesPagination(rebatesData.pagination);
       } else {
-        setRebatesError("Failed to load rebates data");
+        setRebatesError("Unable to load rebates data");
       }
     } catch (err) {
       console.error("Failed to fetch rebates:", err);
-      setRebatesError(err instanceof Error ? err.message : "Failed to load rebates");
+      setRebatesError(err);
       setRebates([]);
     } finally {
       setRebatesLoading(false);
@@ -310,11 +311,17 @@ export default function IbClientsPage() {
 
               {/* Clients Tab */}
               <TabsContent value="clients" className="space-y-4">
-                {clientsError && (
-                  <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <p className="text-sm text-red-800 dark:text-red-300">{clientsError}</p>
-                  </div>
-                )}
+                {clientsError ? (
+                  <ApiErrorState
+                    error={clientsError}
+                    audience="client"
+                    resource="clients"
+                    action="load"
+                    variant="inline"
+                    className="mb-4"
+                    onRetry={fetchClients}
+                  />
+                ) : null}
 
                 {clientsLoading && clients.length === 0 ? (
                   <div className="flex items-center justify-center py-12">
@@ -442,11 +449,17 @@ export default function IbClientsPage() {
 
               {/* Sub IBs Tab */}
               <TabsContent value="sub-ibs" className="space-y-4">
-                {subIbsError && (
-                  <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <p className="text-sm text-red-800 dark:text-red-300">{subIbsError}</p>
-                  </div>
-                )}
+                {subIbsError ? (
+                  <ApiErrorState
+                    error={subIbsError}
+                    audience="client"
+                    resource="Sub IBs"
+                    action="load"
+                    variant="inline"
+                    className="mb-4"
+                    onRetry={fetchSubIbs}
+                  />
+                ) : null}
 
                 {subIbsLoading && subIbs.length === 0 ? (
                   <div className="flex items-center justify-center py-12">
@@ -580,11 +593,17 @@ export default function IbClientsPage() {
 
               {/* Rebates Tab */}
               <TabsContent value="rebates" className="space-y-4">
-                {rebatesError && (
-                  <div className="mb-4 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <p className="text-sm text-red-800 dark:text-red-300">{rebatesError}</p>
-                  </div>
-                )}
+                {rebatesError ? (
+                  <ApiErrorState
+                    error={rebatesError}
+                    audience="client"
+                    resource="rebates"
+                    action="load"
+                    variant="inline"
+                    className="mb-4"
+                    onRetry={fetchRebates}
+                  />
+                ) : null}
 
                 {rebatesLoading && rebates.length === 0 ? (
                   <div className="flex items-center justify-center py-12">

@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import toast from "react-hot-toast";
 import { FileImage, Upload, X, Loader2 } from "lucide-react";
 import { adminNewsApi, type NewsCreateBody } from "@/lib/api";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 export default function NewsManagementPage() {
   const { token } = useAuth();
@@ -132,13 +133,18 @@ export default function NewsManagementPage() {
         toast.success(response.message || "News created successfully");
         resetForm();
       } else {
-        toast.error(response.message || "Failed to create news");
+        toast.error(
+          getAdminFriendlyErrorMessage(response.message || "Failed to create news", {
+            resource: "news articles",
+            action: "create",
+          })
+        );
       }
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to create news";
-      toast.error(errorMessage);
       console.error("Error creating news:", error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "news articles", action: "create" })
+      );
     } finally {
       setIsSubmitting(false);
     }

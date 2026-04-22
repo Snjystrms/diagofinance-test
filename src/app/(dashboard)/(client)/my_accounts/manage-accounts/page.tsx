@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  AlertCircle,
   ArrowRight,
   BarChart3,
   CheckCircle2,
@@ -20,17 +19,10 @@ import {
   Zap,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { ApiErrorState } from '@/components/errors/api-error-state';
 import { ProtectedRoute } from '@/components/protected-route';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '@/components/ui/breadcrumb';
 import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
@@ -179,48 +171,36 @@ export default function ManageAccountsPage() {
   const { token } = useAuth();
   const [accounts, setAccounts] = useState<ManagedMT5Account[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown | null>(null);
   const [activeTab, setActiveTab] = useState<'mt5-live' | 'mt5-demo' | 'mt4-live' | 'mt4-demo'>('mt5-live');
   const [selectedAccount, setSelectedAccount] = useState<ManagedMT5Account | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
 
-  useEffect(() => {
-    let isActive = true;
+  const fetchAccounts = useCallback(async () => {
+    if (!token) {
+      setError('Authentication required');
+      setIsLoading(false);
+      return;
+    }
 
-    const fetchAccounts = async () => {
-      if (!token) {
-        setError('Authentication required');
-        setIsLoading(false);
-        return;
-      }
+    try {
+      setIsLoading(true);
+      setError(null);
 
-      try {
-        setIsLoading(true);
-        setError(null);
+      const hydratedAccounts = await loadManagedAccounts(token);
 
-        const hydratedAccounts = await loadManagedAccounts(token);
-
-        if (isActive) {
-          setAccounts(hydratedAccounts);
-        }
-      } catch (fetchError) {
-        console.error('Error fetching MT5 accounts:', fetchError);
-        if (isActive) {
-          setError(fetchError instanceof Error ? fetchError.message : 'Failed to load accounts');
-        }
-      } finally {
-        if (isActive) {
-          setIsLoading(false);
-        }
-      }
-    };
-
-    fetchAccounts();
-
-    return () => {
-      isActive = false;
-    };
+      setAccounts(hydratedAccounts);
+    } catch (fetchError) {
+      console.error('Error fetching MT5 accounts:', fetchError);
+      setError(fetchError);
+    } finally {
+      setIsLoading(false);
+    }
   }, [token]);
+
+  useEffect(() => {
+    fetchAccounts();
+  }, [fetchAccounts]);
 
   const accountGroups = useMemo(() => groupAccounts(accounts), [accounts]);
 
@@ -400,34 +380,6 @@ export default function ManageAccountsPage() {
           <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 blur-3xl" />
         </div>
 
-        <div className="mb-6">
-          <Breadcrumb className="mb-4">
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link href="/dashboard" className="text-muted-foreground hover:text-foreground transition-colors">
-                    Dashboard
-                  </Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink asChild>
-                  <Link href="/my_accounts" className="text-muted-foreground hover:text-foreground transition-colors">
-                    My Accounts
-                  </Link>
-                </BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage className="text-foreground font-semibold">
-                  Manage Accounts
-                </BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
-        </div>
-
         <div className="mb-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-2">
@@ -480,16 +432,17 @@ export default function ManageAccountsPage() {
           </CardContent>
         </Card>
 
-        {error && (
-          <Card className="mb-6 border-destructive/50 bg-destructive/10">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0" />
-                <span className="text-destructive">{error}</span>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {error ? (
+          <ApiErrorState
+            error={error}
+            audience="client"
+            resource="trading accounts"
+            action="load"
+            variant="inline"
+            className="mb-6"
+            onRetry={fetchAccounts}
+          />
+        ) : null}
 
         {isMT4Tab && !isLoading && !error && (
           <Card className="mb-6 border-dashed border-amber-300 bg-amber-50/80 dark:border-amber-800 dark:bg-amber-950/20">
@@ -563,7 +516,7 @@ export default function ManageAccountsPage() {
         )}
 
         <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-          <DialogContent className="max-w-3xl">
+          <DialogContent className="max-h-[82vh] max-w-2xl overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {selectedAccountDetail?.accountType?.name ?? 'MT5 Account Details'}
@@ -574,12 +527,12 @@ export default function ManageAccountsPage() {
             </DialogHeader>
 
             {selectedAccount ? (
-              <div className="grid gap-4 py-2 md:grid-cols-2">
+              <div className="grid gap-3 py-1 md:grid-cols-2">
                 <Card>
-                  <CardHeader className="pb-3">
+                  <CardHeader className="px-4 pb-2 pt-4">
                     <CardTitle className="text-base">Identity</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3 text-sm">
+                  <CardContent className="space-y-2 px-4 pb-4 text-sm">
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-muted-foreground" />
                       <span>{selectedAccountDetail?.name ?? selectedAccount.name}</span>
@@ -604,10 +557,10 @@ export default function ManageAccountsPage() {
                 </Card>
 
                 <Card>
-                  <CardHeader className="pb-3">
+                  <CardHeader className="px-4 pb-2 pt-4">
                     <CardTitle className="text-base">Credentials</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3 text-sm">
+                  <CardContent className="space-y-2 px-4 pb-4 text-sm">
                     <div className="rounded-lg bg-muted/40 px-3 py-2">
                       <div className="mb-1 text-xs text-muted-foreground">Account ID</div>
                       <div className="flex items-center justify-between gap-2">
@@ -638,10 +591,10 @@ export default function ManageAccountsPage() {
                 </Card>
 
                 <Card>
-                  <CardHeader className="pb-3">
+                  <CardHeader className="px-4 pb-2 pt-4">
                     <CardTitle className="text-base">Trading Setup</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3 text-sm">
+                  <CardContent className="space-y-2 px-4 pb-4 text-sm">
                     <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
                       <span className="text-muted-foreground">Account Type</span>
                       <span className="text-right">{selectedAccountDetail?.accountType?.name ?? 'N/A'}</span>
@@ -670,10 +623,10 @@ export default function ManageAccountsPage() {
                 </Card>
 
                 <Card>
-                  <CardHeader className="pb-3">
+                  <CardHeader className="px-4 pb-2 pt-4">
                     <CardTitle className="text-base">Audit</CardTitle>
                   </CardHeader>
-                  <CardContent className="space-y-3 text-sm">
+                  <CardContent className="space-y-2 px-4 pb-4 text-sm">
                     <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
                       <span className="text-muted-foreground">Created</span>
                       <span className="text-right">{formatDateTime(selectedAccountDetail?.created_at)}</span>

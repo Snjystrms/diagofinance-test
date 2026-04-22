@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,7 @@ import {
   type AdminTicketReplyRequest,
 } from "@/lib/api";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 const STATUS_OPTIONS = [
   { label: "All statuses", value: "all" },
@@ -144,6 +146,7 @@ export default function AdminTicketsPage() {
   const { token } = useAuth();
 
   const [statsLoading, setStatsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown | null>(null);
 
   const [stats, setStats] = useState({
     total: 0,
@@ -197,13 +200,24 @@ export default function AdminTicketsPage() {
       }
     } catch (error: unknown) {
       console.error("Failed to load ticket statistics:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to load ticket statistics");
+      toast.error(
+        getAdminFriendlyErrorMessage(error, {
+          resource: "ticket statistics",
+          action: "load",
+        })
+      );
     } finally {
       setStatsLoading(false);
     }
   }, [token]);
 
-  const { data: ticketsQueryResult, isLoading: loading } = useQuery({
+  const {
+    data: ticketsQueryResult,
+    isLoading: loading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["adminTickets", token, page, perPage, statusFilter, priorityFilter, enquiryFilter, userIdFilter, search],
     queryFn: async () => {
       const response = await adminTicketApi.list(token!, {
@@ -232,7 +246,21 @@ export default function AdminTicketsPage() {
       }
     : { current_page: page, per_page: perPage, total_pages: 1, total: tickets.length };
 
-  const loadTickets = useCallback(() => {}, []);
+  const loadTickets = useCallback(() => {
+    setLoadError(null);
+    void refetch().catch((queryError) => {
+      setLoadError(queryError);
+    });
+  }, [refetch]);
+
+  useEffect(() => {
+    if (isError) {
+      setLoadError(error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "tickets", action: "load" })
+      );
+    }
+  }, [isError, error]);
 
   useEffect(() => {
     void loadStats();
@@ -277,7 +305,9 @@ export default function AdminTicketsPage() {
       closeDetail();
     } catch (error: unknown) {
       console.error("Failed to submit reply:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to submit reply");
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "ticket replies", action: "submit" })
+      );
     } finally {
       setIsReplying(false);
     }
@@ -303,7 +333,9 @@ export default function AdminTicketsPage() {
       closeDetail();
     } catch (error: unknown) {
       console.error("Failed to close ticket:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to close ticket");
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "tickets", action: "update" })
+      );
     } finally {
       setIsClosing(false);
     }
@@ -346,7 +378,9 @@ export default function AdminTicketsPage() {
       }
     } catch (error: unknown) {
       console.error("Failed to change status:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to change status");
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "ticket status", action: "update" })
+      );
       setIsChangingStatus(false);
     }
   }, [token, selectedTicket, resolutionNote, closeAdminNotes, loadTickets, loadStats, closeDetail]);
@@ -448,6 +482,19 @@ export default function AdminTicketsPage() {
   );
 
   const renderTable = () => {
+    if (loadError && tickets.length === 0) {
+      return (
+        <ApiErrorState
+          error={loadError}
+          audience="admin"
+          variant="panel"
+          resource="tickets"
+          action="load"
+          onRetry={loadTickets}
+        />
+      );
+    }
+
     if (loading && tickets.length === 0) {
       return <TableSectionSkeleton columnCount={6} rowCount={9} />;
     }

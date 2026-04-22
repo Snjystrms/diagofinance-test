@@ -2,6 +2,7 @@
 
 import type { FieldPath, FieldValues, UseFormReturn } from "react-hook-form";
 
+import { BackofficeDetailDialogSkeleton } from "@/components/loading/backoffice-page-skeletons";
 import {
   ValidatedFormField,
   ValidatedPasswordField,
@@ -85,7 +86,7 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
             </DialogHeader>
 
             {loadingDetails ? (
-              <div className="py-8 text-center text-sm text-muted-foreground">Loading user details...</div>
+              <BackofficeDetailDialogSkeleton fieldCount={8} sectionCount={2} />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
                 <ValidatedTextField

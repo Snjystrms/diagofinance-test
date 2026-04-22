@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/auth-context'
 import { walletApi, type WalletSummaryData } from '@/lib/api'
+import { ApiErrorState } from '@/components/errors/api-error-state'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -33,7 +34,7 @@ export default function WalletOverviewPage() {
   const router = useRouter()
   const [walletData, setWalletData] = useState<WalletSummaryData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<unknown | null>(null)
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null)
 
   const fetchWalletSummary = async () => {
@@ -51,11 +52,11 @@ export default function WalletOverviewPage() {
       if (response.success && response.data) {
         setWalletData(response.data)
       } else {
-        setError(response.message || 'Failed to fetch wallet summary')
+        setError(response.message || 'Unable to load wallet summary')
       }
     } catch (err) {
       console.error('Error fetching wallet summary:', err)
-      setError(err instanceof Error ? err.message : 'Failed to fetch wallet summary')
+      setError(err)
     } finally {
       setLoading(false)
     }
@@ -100,7 +101,7 @@ export default function WalletOverviewPage() {
   if (loading && !walletData) {
     return (
       
-        <div className="container mx-auto py-10">
+        <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
           <div className="space-y-6">
             <div>
               <Skeleton className="h-10 w-64 mb-2" />
@@ -128,19 +129,15 @@ export default function WalletOverviewPage() {
   if (error && !walletData) {
     return (
       
-        <div className="container mx-auto py-10">
-          <Card className="border-destructive">
-            <CardHeader>
-              <CardTitle className="text-destructive">Error</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground mb-4">{error}</p>
-              <Button onClick={fetchWalletSummary}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Retry
-              </Button>
-            </CardContent>
-          </Card>
+        <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+          <ApiErrorState
+            error={error}
+            audience="client"
+            resource="wallet summary"
+            action="load"
+            variant="panel"
+            onRetry={fetchWalletSummary}
+          />
         </div>
       
     )
@@ -396,16 +393,16 @@ export default function WalletOverviewPage() {
             </CardContent>
           </Card>
 
-          {error && walletData && (
-            <Card className="border-yellow-500">
-              <CardContent className="py-4">
-                <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
-                  <Clock className="h-4 w-4" />
-                  <p className="text-sm">{error}</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {error && walletData ? (
+            <ApiErrorState
+              error={error}
+              audience="client"
+              resource="wallet summary"
+              action="load"
+              variant="inline"
+              onRetry={fetchWalletSummary}
+            />
+          ) : null}
         </div>
       </div>
     

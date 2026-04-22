@@ -5,6 +5,8 @@ import type { ColumnDef } from "@tanstack/react-table";
 import toast from "react-hot-toast";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { ApiErrorState } from "@/components/errors/api-error-state";
+import { BackofficeDetailDialogSkeleton } from "@/components/loading/backoffice-page-skeletons";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +26,7 @@ import { Eye, CheckCircle2, XCircle, Calendar, FileText, User, Mail, Hash, Clock
 
 import { adminKycApi, API_BASE_URL, kycFileUrl } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 // If you already have auth context, import it. Fallback to localStorage token.
 import { useAuth } from "@/contexts/auth-context";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
@@ -195,6 +198,7 @@ export default function UserVerificationPage() {
 
   const [rows, setRows] = useState<ListRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("attention");
 
   // modal
@@ -251,6 +255,7 @@ export default function UserVerificationPage() {
     if (!token) return;
     try {
       setLoading(true);
+      setLoadError(null);
       let apiStatus: string | number = statusFilter;
       if (statusFilter === "pending") apiStatus = 0;
       else if (statusFilter === "approved") apiStatus = 1;
@@ -262,8 +267,10 @@ export default function UserVerificationPage() {
       setRows(items);
     } catch (e: unknown) {
       console.error(e);
-      const errorMessage = e instanceof Error ? e.message : "Failed to load KYC list";
-      toast.error(errorMessage);
+      setLoadError(e);
+      toast.error(
+        getAdminFriendlyErrorMessage(e, { resource: "KYC submissions", action: "load" })
+      );
       setRows([]);
     } finally {
       setLoading(false);
@@ -339,8 +346,9 @@ export default function UserVerificationPage() {
         setDocComments(initC);
       } catch (e: unknown) {
         console.error(e);
-        const errorMessage = e instanceof Error ? e.message : "Failed to load user KYC";
-        toast.error(errorMessage);
+        toast.error(
+          getAdminFriendlyErrorMessage(e, { resource: "KYC details", action: "load" })
+        );
       } finally {
         setDetailLoading(false);
       }
@@ -480,8 +488,9 @@ const buildReviewPayload = () => {
       setDetail(null);
     } catch (e: unknown) {
       console.error(e);
-      const errorMessage = e instanceof Error ? e.message : "Failed to submit review";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(e, { resource: "KYC review", action: "submit" })
+      );
     }
   };
 
@@ -492,13 +501,31 @@ const buildReviewPayload = () => {
 
   if (!isAdmin && isManager && !statusFeatureOptions.length) {
     return (
-      
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <p className="text-muted-foreground">
-            You do not have permission to view KYC submissions.
-          </p>
+      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+        <ApiErrorState
+          audience="admin"
+          variant="panel"
+          title="Access restricted"
+          message="Your account does not have permission to view KYC submissions."
+        />
         </div>
-      
+    );
+  }
+
+  if (loadError && rows.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+        <ApiErrorState
+          error={loadError}
+          audience="admin"
+          variant="panel"
+          resource="KYC submissions"
+          action="load"
+          onRetry={() => {
+            void loadList();
+          }}
+        />
+      </div>
     );
   }
 
@@ -577,12 +604,7 @@ const buildReviewPayload = () => {
           </DialogHeader>
 
           {detailLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="flex flex-col items-center gap-3">
-                <Spinner className="h-8 w-8" />
-                <p className="text-sm text-muted-foreground">Loading KYC details...</p>
-              </div>
-            </div>
+            <BackofficeDetailDialogSkeleton fieldCount={8} sectionCount={2} className="py-2" />
           ) : !detail ? (
             <div className="flex flex-col items-center justify-center h-64 gap-3">
               <AlertCircle className="h-12 w-12 text-muted-foreground" />

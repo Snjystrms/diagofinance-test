@@ -35,6 +35,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { ReportPageWrapper } from "@/components/report-page-wrapper";
 import { fmtDateTime, formatAmount } from "@/lib/formatters";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 const statusBadge = (status: string | number) => {
   const statusStr = String(status);
@@ -74,6 +75,7 @@ export default function WithdrawalReportPage() {
 
   const [rows, setRows] = useState<WithdrawalReportItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown | null>(null);
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage, setPerPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
   const [totalPages, setTotalPages] = useState(1);
@@ -151,6 +153,7 @@ export default function WithdrawalReportPage() {
 
     try {
       setLoading(true);
+      setLoadError(null);
 
       const response = await adminWithdrawalReportApi.list({
         token,
@@ -192,8 +195,12 @@ export default function WithdrawalReportPage() {
       }
     } catch (error: unknown) {
       console.error("Failed to load withdrawal report:", error);
+      setLoadError(error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to load withdrawal report"
+        getAdminFriendlyErrorMessage(error, {
+          resource: "withdrawal report",
+          action: "load",
+        })
       );
       setRows([]);
     } finally {
@@ -321,9 +328,10 @@ export default function WithdrawalReportPage() {
     } catch (error: unknown) {
       console.error("Failed to export Excel:", error);
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to export Excel file",
+        getAdminFriendlyErrorMessage(error, {
+          resource: "withdrawal report",
+          action: "export",
+        }),
         { id: "export-excel" }
       );
     }
@@ -457,6 +465,7 @@ export default function WithdrawalReportPage() {
       description="Manage and view withdrawal transactions"
       isLoading={loading}
       isEmpty={rows.length === 0}
+      error={loadError}
       onExport={handleExportExcel}
       onRefresh={() => void loadReport()}
       isRefreshing={loading}

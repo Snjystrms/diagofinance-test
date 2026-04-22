@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,7 @@ import {
   type UserCommissionResponse,
 } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 
 const formatDateTime = (value?: string | null) => {
@@ -138,6 +140,7 @@ export default function IbUsersPage() {
 
   const [users, setUsers] = useState<AdminIbUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown | null>(null);
   const [pagination, setPagination] = useState({
     current_page: 1,
     per_page: 10,
@@ -181,6 +184,7 @@ export default function IbUsersPage() {
 
     try {
       setLoading(true);
+      setLoadError(null);
 
       const response = await adminIbUsersApi.list({
         token,
@@ -251,8 +255,10 @@ export default function IbUsersPage() {
       });
     } catch (error: unknown) {
       console.error("Failed to load IB users:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to load IB users";
-      toast.error(errorMessage);
+      setLoadError(error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "IB users", action: "load" })
+      );
       setUsers([]);
     } finally {
       setLoading(false);
@@ -278,12 +284,18 @@ export default function IbUsersPage() {
         setSelectedUserId(userId);
         setCommissionDialogOpen(true);
       } else {
-        toast.error("Failed to load commission data");
+        toast.error(
+          getAdminFriendlyErrorMessage("Failed to load commission data", {
+            resource: "commission data",
+            action: "load",
+          })
+        );
       }
     } catch (error: unknown) {
       console.error("Failed to load user commissions:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to load commissions";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "commissions", action: "load" })
+      );
     } finally {
       setLoadingCommissions(false);
     }
@@ -364,8 +376,9 @@ export default function IbUsersPage() {
       setEditedCommissions({});
     } catch (error: unknown) {
       console.error("Failed to update commission:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to update commission";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "commissions", action: "update" })
+      );
     } finally {
       setSavingCommission(null);
     }
@@ -563,6 +576,21 @@ export default function IbUsersPage() {
   );
 
   const renderTableSection = () => {
+    if (loadError && users.length === 0) {
+      return (
+        <ApiErrorState
+          error={loadError}
+          audience="admin"
+          variant="panel"
+          resource="IB users"
+          action="load"
+          onRetry={() => {
+            void loadUsers();
+          }}
+        />
+      );
+    }
+
     if (loading && users.length === 0) {
       return <TableSectionSkeleton columnCount={7} rowCount={9} />;
     }

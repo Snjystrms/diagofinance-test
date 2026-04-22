@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { ibRequestsApi, type IbDashboardResponse, type IbInternalTransferRequest } from "@/lib/api";
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +18,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/format";
+import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import toast from "react-hot-toast";
 import Link from "next/link";
 
@@ -24,7 +26,7 @@ export default function TransferPage() {
   const { token, user: authUser } = useAuth();
   const [dashboardData, setDashboardData] = useState<IbDashboardResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown | null>(null);
   const [transferAmount, setTransferAmount] = useState("");
   const [transferComment, setTransferComment] = useState("");
   const [isTransferring, setIsTransferring] = useState(false);
@@ -43,11 +45,11 @@ export default function TransferPage() {
       if (response?.data) {
         setDashboardData(response.data);
       } else {
-        setError("Failed to load dashboard data");
+        setError("Unable to load transfer data");
       }
     } catch (err) {
       console.error("Failed to fetch IB dashboard:", err);
-      setError(err instanceof Error ? err.message : "Failed to load dashboard");
+      setError(err);
     } finally {
       setIsLoading(false);
     }
@@ -90,11 +92,19 @@ export default function TransferPage() {
         // Refresh dashboard data
         await fetchDashboard();
       } else {
-        toast.error(response.message || "Transfer failed");
+        toast.error(getFriendlyErrorMessage(response.message || "Transfer failed", {
+          audience: "client",
+          resource: "wallet transfer",
+          action: "submit",
+        }));
       }
     } catch (err) {
       console.error("Transfer error:", err);
-      toast.error(err instanceof Error ? err.message : "Failed to complete transfer");
+      toast.error(getFriendlyErrorMessage(err, {
+        audience: "client",
+        resource: "wallet transfer",
+        action: "submit",
+      }));
     } finally {
       setIsTransferring(false);
     }
@@ -117,25 +127,23 @@ export default function TransferPage() {
     return (
       <div className="min-h-full w-full bg-white dark:bg-gray-900 p-6">
         <div className="flex items-center justify-center min-h-screen">
-          <Card className="max-w-md border-0 shadow-xl bg-white dark:bg-gray-800">
-            <CardHeader>
-              <CardTitle className="text-xl font-bold">Error</CardTitle>
-              <CardDescription>{error || "Failed to load dashboard data"}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-3">
-                <Button onClick={fetchDashboard} variant="outline" className="bg-blue-600 hover:bg-blue-700 text-white border-0">
-                  Retry
-                </Button>
-                <Link href="/ib-dashboard">
-                  <Button variant="outline">
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Dashboard
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
+          <div className="w-full max-w-md space-y-3">
+            <ApiErrorState
+              error={error || "Unable to load transfer data"}
+              audience="client"
+              resource="transfer data"
+              action="load"
+              variant="panel"
+              className="bg-white dark:bg-gray-800"
+              onRetry={fetchDashboard}
+            />
+            <Link href="/ib-dashboard">
+              <Button variant="outline" className="w-full">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Dashboard
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     );

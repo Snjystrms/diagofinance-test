@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useMemo } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { ibRequestsApi, type IbDashboardResponse, type IbInternalTransferRequest } from "@/lib/api";
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { formatCurrency } from "@/lib/format";
+import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import type { ChartConfig } from "@/components/ui/chart";
 import dynamic from "next/dynamic";
 
@@ -76,7 +78,7 @@ export default function IbDashboardPage() {
   const { token, user: authUser } = useAuth();
   const [dashboardData, setDashboardData] = useState<IbDashboardResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown | null>(null);
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
   const [transferAmount, setTransferAmount] = useState("");
   const [transferComment, setTransferComment] = useState("");
@@ -96,11 +98,11 @@ export default function IbDashboardPage() {
       if (response?.data) {
         setDashboardData(response.data);
       } else {
-        setError("Failed to load dashboard data");
+        setError("Unable to load IB dashboard");
       }
     } catch (err) {
       console.error("Failed to fetch IB dashboard:", err);
-      setError(err instanceof Error ? err.message : "Failed to load dashboard");
+      setError(err);
     } finally {
       setIsLoading(false);
     }
@@ -183,11 +185,19 @@ export default function IbDashboardPage() {
         // Refresh dashboard data
         await fetchDashboard();
       } else {
-        toast.error(response.message || "Transfer failed");
+        toast.error(getFriendlyErrorMessage(response.message || "Transfer failed", {
+          audience: "client",
+          resource: "wallet transfer",
+          action: "submit",
+        }));
       }
     } catch (err) {
       console.error("Transfer error:", err);
-      toast.error(err instanceof Error ? err.message : "Failed to complete transfer");
+      toast.error(getFriendlyErrorMessage(err, {
+        audience: "client",
+        resource: "wallet transfer",
+        action: "submit",
+      }));
     } finally {
       setIsTransferring(false);
     }
@@ -228,21 +238,15 @@ export default function IbDashboardPage() {
           </div>
         </div>
         <div className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-gray-950 p-6">
-          <Card className="max-w-md border-0 shadow-xl bg-white dark:bg-gray-800">
-            <CardHeader>
-              <CardTitle className="text-xl font-bold">Error</CardTitle>
-              <CardDescription>{error || "Failed to load dashboard data"}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Button 
-                onClick={fetchDashboard} 
-                variant="outline"
-                className="bg-blue-600 hover:bg-blue-700 text-white border-0"
-              >
-                Retry
-              </Button>
-            </CardContent>
-          </Card>
+          <ApiErrorState
+            error={error || "Unable to load IB dashboard"}
+            audience="client"
+            resource="IB dashboard"
+            action="load"
+            variant="panel"
+            className="max-w-md bg-white dark:bg-gray-800"
+            onRetry={fetchDashboard}
+          />
         </div>
       </div>
     );

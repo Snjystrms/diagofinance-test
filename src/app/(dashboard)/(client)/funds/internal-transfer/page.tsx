@@ -7,6 +7,7 @@ import { z } from 'zod'
 import toast from 'react-hot-toast'
 import { ArrowLeftRight, Repeat, Wallet } from 'lucide-react'
 
+import { ApiErrorState } from '@/components/errors/api-error-state'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import {
@@ -24,6 +25,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 
 import { internalTransferApi, mt5AccountsApi, type MT5Account } from '@/lib/api'
+import { getFriendlyErrorMessage } from '@/lib/friendly-errors'
 import { useAuth } from '@/contexts/auth-context'
 
 const amountFieldSchema = z
@@ -93,7 +95,7 @@ function InternalTransferContent() {
   const { token } = useAuth()
   const [mt5Accounts, setMt5Accounts] = useState<MT5Account[]>([])
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(false)
-  const [accountsError, setAccountsError] = useState<string | null>(null)
+  const [accountsError, setAccountsError] = useState<unknown | null>(null)
 
   const mt5ToMt5Form = useForm<Mt5ToMt5FormValues>({
     resolver: zodResolver(mt5ToMt5Schema),
@@ -152,7 +154,7 @@ function InternalTransferContent() {
         }
       } catch (error) {
         console.error('Failed to load MT5 accounts', error)
-        setAccountsError(error instanceof Error ? error.message : 'Failed to load MT5 accounts')
+        setAccountsError(error)
       } finally {
         setIsLoadingAccounts(false)
       }
@@ -192,7 +194,11 @@ function InternalTransferContent() {
       }
     } catch (error) {
       console.error('MT5 to MT5 transfer failed', error)
-      toast.error(error instanceof Error ? error.message : 'Transfer failed. Please try again.')
+      toast.error(getFriendlyErrorMessage(error, {
+        audience: 'client',
+        resource: 'transfer',
+        action: 'submit',
+      }))
     }
   }
 
@@ -222,7 +228,11 @@ function InternalTransferContent() {
       }
     } catch (error) {
       console.error('Wallet to wallet transfer failed', error)
-      toast.error(error instanceof Error ? error.message : 'Transfer failed. Please try again.')
+      toast.error(getFriendlyErrorMessage(error, {
+        audience: 'client',
+        resource: 'transfer',
+        action: 'submit',
+      }))
     }
   }
 
@@ -252,7 +262,11 @@ function InternalTransferContent() {
       }
     } catch (error) {
       console.error('Wallet to MT5 transfer failed', error)
-      toast.error(error instanceof Error ? error.message : 'Transfer failed. Please try again.')
+      toast.error(getFriendlyErrorMessage(error, {
+        audience: 'client',
+        resource: 'transfer',
+        action: 'submit',
+      }))
     }
   }
 
@@ -282,7 +296,11 @@ function InternalTransferContent() {
       }
     } catch (error) {
       console.error('MT5 to wallet transfer failed', error)
-      toast.error(error instanceof Error ? error.message : 'Transfer failed. Please try again.')
+      toast.error(getFriendlyErrorMessage(error, {
+        audience: 'client',
+        resource: 'transfer',
+        action: 'submit',
+      }))
     }
   }
 
@@ -297,13 +315,15 @@ function InternalTransferContent() {
             Move funds between your wallets and MT5 trading accounts securely.
           </p>
         </div>
-        {accountsError && (
-          <Card className="border-destructive/40 bg-destructive/5">
-            <CardContent className="py-3 text-sm text-destructive">
-              {accountsError}
-            </CardContent>
-          </Card>
-        )}
+        {accountsError ? (
+          <ApiErrorState
+            error={accountsError}
+            audience="client"
+            resource="MT5 accounts"
+            action="load"
+            variant="inline"
+          />
+        ) : null}
       </div>
 
       <Card>

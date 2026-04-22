@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect } from "react";
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/auth-context";
 import { submitUSDTDeposit } from "@/utils/operations";
 import { walletApi, binanceDepositApi, coinsbuyDepositApi, type WalletSummaryData, type BinanceDepositCreateResponse, type CoinsBuyDepositCreateResponse } from "@/lib/api";
+import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { Skeleton } from "@/components/ui/skeleton";
 import toast from "react-hot-toast";
 import { formatDateTimeInIST } from "@/lib/formatters";
@@ -185,12 +187,16 @@ function USDTDepositContent() {
         window.location.href = qrContent;
       } else {
         console.error("Binance deposit response data:", JSON.stringify(depositData, null, 2));
-        toast.error("QR code link not available. Please check the console for details.");
+        toast.error("Payment link is not available right now. Please try again.");
         setIsSubmittingBinance(false);
       }
     } catch (err) {
       console.error("Error creating Binance deposit:", err);
-      setError(err instanceof Error ? err.message : "Failed to create Binance deposit. Please try again.");
+      setError(getFriendlyErrorMessage(err, {
+        audience: "client",
+        resource: "Binance deposit",
+        action: "create",
+      }));
       setIsSubmittingBinance(false);
     }
   };
@@ -263,7 +269,11 @@ function USDTDepositContent() {
       setCoinsbuyAmount("");
     } catch (err) {
       console.error("Error creating CoinsBuy deposit:", err);
-      setError(err instanceof Error ? err.message : "Failed to create CoinsBuy deposit. Please try again.");
+      setError(getFriendlyErrorMessage(err, {
+        audience: "client",
+        resource: "CoinsBuy deposit",
+        action: "create",
+      }));
       setIsSubmittingCoinsbuy(false);
     }
   };
@@ -322,7 +332,11 @@ function USDTDepositContent() {
 
     } catch (err) {
       console.error("Error submitting deposit:", err);
-      setError(err instanceof Error ? err.message : "Failed to submit deposit. Please try again.");
+      setError(getFriendlyErrorMessage(err, {
+        audience: "client",
+        resource: "deposit",
+        action: "submit",
+      }));
       setIsSubmitting(false);
     }
   };
@@ -393,26 +407,12 @@ function USDTDepositContent() {
           </div>
         </div>
 
-        {/* Tabs - Enhanced */}
+        {/* Deposit type toggle */}
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "local" | "crypto")} className="space-y-6">
-          <div className="flex justify-center">
-            <TabsList className="w-full max-w-md bg-muted/50 p-1 rounded-xl gap-1">
-              <TabsTrigger 
-                value="local" 
-                className="flex-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-emerald-600 data-[state=active]:text-primary-foreground rounded-lg transition-all duration-200"
-              >
-                <Hash className="h-4 w-4 mr-2" />
-                Local
-              </TabsTrigger>
-              <TabsTrigger 
-                value="crypto" 
-                className="flex-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-purple-600 data-[state=active]:text-primary-foreground rounded-lg transition-all duration-200"
-              >
-                <Wallet className="h-4 w-4 mr-2" />
-                Cryptocurrency
-              </TabsTrigger>
-            </TabsList>
-          </div>
+          <TabsList>
+            <TabsTrigger value="local">Local</TabsTrigger>
+            <TabsTrigger value="crypto">Cryptocurrency</TabsTrigger>
+          </TabsList>
 
           {/* Wallet Summary Card - Enhanced */}
           <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-background to-muted/30 group">
@@ -605,12 +605,13 @@ function USDTDepositContent() {
                   <>
                     {/* Error Message */}
                     {error && (
-                      <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4">
-                        <div className="flex items-start gap-3">
-                          <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
-                          <p className="text-sm text-destructive">{error}</p>
-                        </div>
-                      </div>
+                      <ApiErrorState
+                        message={error}
+                        audience="client"
+                        resource="deposit"
+                        action="submit"
+                        variant="inline"
+                      />
                     )}
 
                     {/* Amount Input */}
@@ -935,12 +936,13 @@ function USDTDepositContent() {
 
                   <CardContent className="space-y-6 relative z-10">
                     {error && (
-                      <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4">
-                        <div className="flex items-start gap-3">
-                          <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
-                          <p className="text-sm text-destructive">{error}</p>
-                        </div>
-                      </div>
+                      <ApiErrorState
+                        message={error}
+                        audience="client"
+                        resource="Binance deposit"
+                        action="submit"
+                        variant="inline"
+                      />
                     )}
 
                     {/* Amount Input */}
@@ -1075,12 +1077,13 @@ function USDTDepositContent() {
 
                   <CardContent className="space-y-6 relative z-10">
                     {error && (
-                      <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4">
-                        <div className="flex items-start gap-3">
-                          <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
-                          <p className="text-sm text-destructive">{error}</p>
-                        </div>
-                      </div>
+                      <ApiErrorState
+                        message={error}
+                        audience="client"
+                        resource="CoinsBuy deposit"
+                        action="submit"
+                        variant="inline"
+                      />
                     )}
 
                     {/* Amount Input */}

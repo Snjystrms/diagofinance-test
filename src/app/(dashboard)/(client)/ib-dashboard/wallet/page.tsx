@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { ibRequestsApi, type IbWalletData } from "@/lib/api";
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +26,7 @@ export default function IbWalletPage() {
   const { token } = useAuth();
   const [walletData, setWalletData] = useState<IbWalletData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown | null>(null);
 
   const fetchWalletData = useCallback(async () => {
     if (!token) {
@@ -42,11 +43,11 @@ export default function IbWalletPage() {
       if (response?.success && response.data) {
         setWalletData(response.data);
       } else {
-        setError("Failed to load wallet data");
+        setError("Unable to load IB wallet data");
       }
     } catch (err) {
       console.error("Failed to fetch IB wallet:", err);
-      setError(err instanceof Error ? err.message : "Failed to load wallet");
+      setError(err);
     } finally {
       setIsLoading(false);
     }
@@ -131,17 +132,15 @@ export default function IbWalletPage() {
     return (
       <div className="min-h-full w-full bg-white dark:bg-gray-900 p-6">
         <div className="flex items-center justify-center min-h-screen">
-          <Card className="max-w-md border-0 shadow-xl bg-white dark:bg-gray-800">
-            <CardHeader>
-              <CardTitle className="text-xl font-bold">Error</CardTitle>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{error || "Failed to load wallet data"}</p>
-            </CardHeader>
-            <CardContent>
-              <Button onClick={fetchWalletData} variant="outline" className="bg-blue-600 hover:bg-blue-700 text-white border-0">
-                Retry
-              </Button>
-            </CardContent>
-          </Card>
+          <ApiErrorState
+            error={error || "Unable to load IB wallet data"}
+            audience="client"
+            resource="IB wallet"
+            action="load"
+            variant="panel"
+            className="max-w-md bg-white dark:bg-gray-800"
+            onRetry={fetchWalletData}
+          />
         </div>
       </div>
     );

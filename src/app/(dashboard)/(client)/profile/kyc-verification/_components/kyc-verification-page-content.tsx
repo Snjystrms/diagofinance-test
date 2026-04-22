@@ -8,6 +8,7 @@ import {
   type KycDocumentStatus,
   kycFileUrl,
 } from '@/lib/api';
+import { getFriendlyErrorMessage } from '@/lib/friendly-errors';
 import { toast } from 'react-hot-toast';
 
 import {
@@ -101,12 +102,12 @@ export function KycVerificationPageContent() {
       f.name.toLowerCase().endsWith('.pdf');
 
     if (!okType) {
-      alert('Only JPG, PNG, and PDF files are accepted.');
+      toast.error('Only JPG, PNG, and PDF files are accepted.');
       return false;
     }
     const maxBytes = 15 * 1024 * 1024;
     if (f.size > maxBytes) {
-      alert('Each file must be = 15MB.');
+      toast.error('Each file must be 15MB or less.');
       return false;
     }
     return true;
@@ -139,11 +140,11 @@ export function KycVerificationPageContent() {
 
   const submitKycDocuments = async () => {
     if (!token) {
-      alert('Not authenticated.');
+      toast.error('Please sign in again to continue.');
       return;
     }
     if (!canSubmit) {
-      alert('Please select all required documents and document types.');
+      toast.error('Please select all required documents and document types.');
       return;
     }
     try {
@@ -167,8 +168,11 @@ export function KycVerificationPageContent() {
 
       await loadKycStatus();
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to upload documents';
-      alert(errorMessage);
+      toast.error(getFriendlyErrorMessage(err, {
+        audience: 'client',
+        resource: 'KYC documents',
+        action: 'submit',
+      }));
     } finally {
       setUploading(false);
     }
@@ -176,7 +180,7 @@ export function KycVerificationPageContent() {
 
   const reuploadSingle = async (fieldKey: string) => {
     const f = reuploadFiles[fieldKey];
-    if (!token) return toast.error('Not authenticated.');
+    if (!token) return toast.error('Please sign in again to continue.');
     if (!f) return toast.error('Please choose a file to upload.');
     if (!validateImage(f)) return;
 
@@ -190,8 +194,11 @@ export function KycVerificationPageContent() {
       setReuploadFiles((s) => ({ ...s, [fieldKey]: null }));
       await loadKycStatus();
     } catch (e: unknown) {
-      const errorMessage = e instanceof Error ? e.message : 'Re-upload failed';
-      toast.error(errorMessage);
+      toast.error(getFriendlyErrorMessage(e, {
+        audience: 'client',
+        resource: 'KYC document',
+        action: 'submit',
+      }));
     } finally {
       setReuploadingKey(null);
     }
@@ -222,8 +229,11 @@ export function KycVerificationPageContent() {
       }
     } catch (err: unknown) {
       console.error(err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch KYC status';
-      toast.error(errorMessage);
+      toast.error(getFriendlyErrorMessage(err, {
+        audience: 'client',
+        resource: 'KYC status',
+        action: 'load',
+      }));
     } finally {
       setStatusLoading(false);
     }

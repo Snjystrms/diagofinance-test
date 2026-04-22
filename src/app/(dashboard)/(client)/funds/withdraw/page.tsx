@@ -2,9 +2,11 @@
 
 import React, { useState, useEffect, useMemo } from 'react'
 import { AppDataTable } from '@/components/app-data-table'
+import { ApiErrorState } from '@/components/errors/api-error-state'
 import { ListPageSkeleton } from '@/components/loading/page-loading-skeleton'
 import { useAuth } from '@/contexts/auth-context'
 import { withdrawalApi, type WithdrawalItem } from '@/lib/api'
+import { getFriendlyErrorMessage } from '@/lib/friendly-errors'
 import { type ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -258,7 +260,7 @@ export default function WithdrawPage() {
   const { token } = useAuth()
   const [withdrawals, setWithdrawals] = useState<WithdrawalItem[]>([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<unknown | null>(null)
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
   const [perPage, setPerPage] = useQueryState('perPage', parseAsInteger.withDefault(10))
   const [totalPages, setTotalPages] = useState(1)
@@ -299,13 +301,12 @@ export default function WithdrawPage() {
           setTotal(withdrawalsList.length)
         }
       } else {
-        setError('Failed to fetch withdrawal requests')
+        setError('Unable to load withdrawal requests')
         setWithdrawals([])
       }
     } catch (err) {
       console.error('Error fetching withdrawals:', err)
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch withdrawal requests'
-      setError(errorMessage)
+      setError(err)
       setWithdrawals([])
     } finally {
       setLoading(false)
@@ -421,7 +422,11 @@ export default function WithdrawPage() {
 
     } catch (err) {
       console.error('Error creating withdrawal request:', err)
-      setSubmitError(err instanceof Error ? err.message : 'Failed to create withdrawal request. Please try again.')
+      setSubmitError(getFriendlyErrorMessage(err, {
+        audience: 'client',
+        resource: 'withdrawal request',
+        action: 'create',
+      }))
     } finally {
       setIsSubmitting(false)
     }
@@ -456,24 +461,18 @@ export default function WithdrawPage() {
     return (
       
         <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
-          <Card className="border-destructive">
-            <CardHeader>
-              <CardTitle className="text-destructive">Error</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">{error}</p>
-              <Button 
-                onClick={() => {
-                  if (page && perPage) {
-                    fetchWithdrawals(page, perPage)
-                  }
-                }} 
-                className="mt-4"
-              >
-                Retry
-              </Button>
-            </CardContent>
-          </Card>
+          <ApiErrorState
+            error={error}
+            audience="client"
+            resource="withdrawal requests"
+            action="load"
+            variant="panel"
+            onRetry={() => {
+              if (page && perPage) {
+                fetchWithdrawals(page, perPage)
+              }
+            }}
+          />
         </div>
       
     )
@@ -537,16 +536,20 @@ export default function WithdrawPage() {
             />
           )}
 
-          {error && withdrawals.length > 0 && (
-            <Card className="border-yellow-500">
-              <CardContent className="py-4">
-                <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
-                  <Clock className="h-4 w-4" />
-                  <p className="text-sm">{error}</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {error && withdrawals.length > 0 ? (
+            <ApiErrorState
+              error={error}
+              audience="client"
+              resource="withdrawal requests"
+              action="load"
+              variant="inline"
+              onRetry={() => {
+                if (page && perPage) {
+                  fetchWithdrawals(page, perPage)
+                }
+              }}
+            />
+          ) : null}
         </div>
 
         {/* Withdrawal Request Dialog */}
@@ -581,12 +584,13 @@ export default function WithdrawPage() {
             ) : (
               <div className="space-y-4 py-4">
                 {submitError && (
-                  <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-3">
-                    <div className="flex items-start gap-2">
-                      <AlertCircle className="h-4 w-4 text-destructive mt-0.5 flex-shrink-0" />
-                      <p className="text-sm text-destructive">{submitError}</p>
-                    </div>
-                  </div>
+                  <ApiErrorState
+                    message={submitError}
+                    audience="client"
+                    resource="withdrawal request"
+                    action="submit"
+                    variant="inline"
+                  />
                 )}
 
                 <div className="space-y-2">

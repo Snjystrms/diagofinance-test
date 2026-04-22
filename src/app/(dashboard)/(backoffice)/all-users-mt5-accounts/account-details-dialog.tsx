@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { BackofficeDetailDialogSkeleton } from "@/components/loading/backoffice-page-skeletons";
 import {
   Dialog,
   DialogContent,
@@ -78,9 +79,7 @@ export function AccountDetailsDialog({
         </DialogHeader>
 
         {loading ? (
-          <div className="rounded-md border bg-muted/30 p-6 text-center text-sm text-muted-foreground">
-            Loading account details...
-          </div>
+          <BackofficeDetailDialogSkeleton fieldCount={9} sectionCount={3} />
         ) : !account ? (
           <div className="rounded-md border bg-muted/30 p-6 text-center text-sm text-muted-foreground">
             Account details are not available.

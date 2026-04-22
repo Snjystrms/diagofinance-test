@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { useQueryState, parseAsInteger } from "nuqs";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +46,7 @@ import {
   DEPOSIT_STATUS_OPTIONS,
   WITHDRAWAL_STATUS_OPTIONS,
 } from "../_lib/transaction-format";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 /* ---------------- Helpers ---------------- */
 const fmtDateTime = (s?: string | null) => {
@@ -149,6 +151,7 @@ export function USDTTransactionsPageContent() {
   const [depositRows, setDepositRows] = useState<AdminUSDTDepositRequest[]>([]);
   const [withdrawalRows, setWithdrawalRows] = useState<AdminWithdrawalRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown | null>(null);
   const [page] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
   const [totalPages, setTotalPages] = useState(1);
@@ -175,6 +178,7 @@ export function USDTTransactionsPageContent() {
   const loadDeposits = useCallback(async () => {
     if (!token) return;
     try {
+      setLoadError(null);
       const res = await adminUSDTDepositApi.listAll(page, perPage, token);
       const requests = res?.data?.requests ?? [];
       setDepositRows(requests);
@@ -185,8 +189,13 @@ export function USDTTransactionsPageContent() {
       }
     } catch (e: unknown) {
       console.error(e);
-      const errorMessage = e instanceof Error ? e.message : "Failed to load deposit requests";
-      toast.error(errorMessage);
+      setLoadError(e);
+      toast.error(
+        getAdminFriendlyErrorMessage(e, {
+          resource: "deposit requests",
+          action: "load",
+        })
+      );
       setDepositRows([]);
     }
   }, [token, page, perPage]);
@@ -194,6 +203,7 @@ export function USDTTransactionsPageContent() {
   const loadWithdrawals = useCallback(async () => {
     if (!token) return;
     try {
+      setLoadError(null);
       const status = statusFilter !== "all" ? statusFilter : undefined;
       const res = await adminWithdrawalApi.listAll(page, perPage, token, status) as {
         data?: unknown[] | { withdrawals?: unknown[]; data?: unknown[]; requests?: unknown[]; pagination?: { totalPages?: number; total_pages?: number } };
@@ -227,8 +237,13 @@ export function USDTTransactionsPageContent() {
       }
     } catch (e: unknown) {
       console.error(e);
-      const errorMessage = e instanceof Error ? e.message : "Failed to load withdrawal requests";
-      toast.error(errorMessage);
+      setLoadError(e);
+      toast.error(
+        getAdminFriendlyErrorMessage(e, {
+          resource: "withdrawal requests",
+          action: "load",
+        })
+      );
       setWithdrawalRows([]);
     }
   }, [token, page, perPage, statusFilter]);
@@ -392,9 +407,13 @@ export function USDTTransactionsPageContent() {
       setActionType(null);
       setAdminNotes("");
     } catch (e: unknown) {
-      const errorMessage = e instanceof Error ? e.message : `Failed to ${actionType === "approve" ? "approve" : "reject"} ${activeTab === "deposits" ? "deposit" : "withdrawal"} request`;
-      toast.error(errorMessage);
       console.error(e);
+      toast.error(
+        getAdminFriendlyErrorMessage(e, {
+          resource: activeTab === "deposits" ? "deposit requests" : "withdrawal requests",
+          action: "update",
+        })
+      );
     } finally {
       setSubmitting(false);
     }
@@ -643,6 +662,23 @@ export function USDTTransactionsPageContent() {
           filterPillCount={4}
         />
       
+    );
+  }
+
+  if (loadError && rows.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+        <ApiErrorState
+          error={loadError}
+          audience="admin"
+          variant="panel"
+          resource={activeTab === "deposits" ? "deposit requests" : "withdrawal requests"}
+          action="load"
+          onRetry={() => {
+            void loadList();
+          }}
+        />
+      </div>
     );
   }
 

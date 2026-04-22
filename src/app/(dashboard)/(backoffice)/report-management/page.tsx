@@ -7,6 +7,7 @@ import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
 import { format } from "date-fns";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -35,6 +36,7 @@ import {
 } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { useAuth } from "@/contexts/auth-context";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 /* ---------------- Helpers ---------------- */
 const fmtDateTime = (s?: string | null) => {
@@ -96,6 +98,7 @@ export default function ReportManagementPage() {
 
   const [rows, setRows] = useState<DepositReportItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown | null>(null);
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage, setPerPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
   const [totalPages, setTotalPages] = useState(1);
@@ -173,6 +176,7 @@ export default function ReportManagementPage() {
 
     try {
       setLoading(true);
+      setLoadError(null);
 
       const response = await adminDepositReportApi.list({
         token,
@@ -214,8 +218,12 @@ export default function ReportManagementPage() {
       }
     } catch (error: unknown) {
       console.error("Failed to load deposit report:", error);
+      setLoadError(error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to load deposit report"
+        getAdminFriendlyErrorMessage(error, {
+          resource: "deposit report",
+          action: "load",
+        })
       );
       setRows([]);
     } finally {
@@ -371,6 +379,23 @@ export default function ReportManagementPage() {
           filterPillCount={4}
         />
       
+    );
+  }
+
+  if (loadError && rows.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+        <ApiErrorState
+          error={loadError}
+          audience="admin"
+          variant="panel"
+          resource="deposit report"
+          action="load"
+          onRetry={() => {
+            void loadReport();
+          }}
+        />
+      </div>
     );
   }
 

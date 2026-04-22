@@ -10,6 +10,7 @@ import { Calendar, CheckCircle, Mail, Plus, RefreshCw, Search, Users } from "luc
 
 import { AppDataTable } from "@/components/app-data-table";
 import { DeleteDialog } from "@/components/dialogs/delete-dialog";
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ProtectedRoute } from "@/components/protected-route";
 import { Button } from "@/components/ui/button";
@@ -27,6 +28,7 @@ import {
 } from "@/lib/api";
 import { COUNTRIES } from "@/lib/countries";
 import { adminUserCreateSchema, type AdminUserCreateFormData } from "@/lib/validations";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 
 import { getColumnsWithActions } from "./columns";
@@ -169,6 +171,7 @@ export default function NewUsersPage() {
 
   const [users, setUsers] = useState<PendingUser[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown | null>(null);
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null);
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
@@ -221,6 +224,7 @@ export default function NewUsersPage() {
 
     try {
       setLoading(true);
+      setLoadError(null);
       const response = await adminUsersApi.list({
         token,
         page,
@@ -234,7 +238,10 @@ export default function NewUsersPage() {
       setPaginationMeta(extractPagination(payload, response as { pagination?: PaginationMeta; data?: { pagination?: PaginationMeta } }) ?? null);
     } catch (err) {
       console.error("Failed to load users:", err);
-      toast.error(err instanceof Error ? err.message : "Failed to load users");
+      setLoadError(err);
+      toast.error(
+        getAdminFriendlyErrorMessage(err, { resource: "users", action: "load" })
+      );
       setUsers([]);
       setPaginationMeta(null);
     } finally {
@@ -258,7 +265,9 @@ export default function NewUsersPage() {
       await loadUsers();
     } catch (err) {
       console.error("Failed to create user:", err);
-      toast.error(err instanceof Error ? err.message : "Failed to create user");
+      toast.error(
+        getAdminFriendlyErrorMessage(err, { resource: "users", action: "create" })
+      );
     } finally {
       setCreatingUser(false);
     }
@@ -285,7 +294,9 @@ export default function NewUsersPage() {
       setEditDialogOpen(true);
     } catch (err) {
       console.error("Failed to load user detail:", err);
-      toast.error(err instanceof Error ? err.message : "Failed to load user detail");
+      toast.error(
+        getAdminFriendlyErrorMessage(err, { resource: "user details", action: "load" })
+      );
     } finally {
       setLoadingUserDetails(false);
     }
@@ -305,7 +316,9 @@ export default function NewUsersPage() {
       await loadUsers();
     } catch (err) {
       console.error("Failed to update user:", err);
-      toast.error(err instanceof Error ? err.message : "Failed to update user");
+      toast.error(
+        getAdminFriendlyErrorMessage(err, { resource: "users", action: "update" })
+      );
     } finally {
       setUpdatingUser(false);
     }
@@ -324,7 +337,9 @@ export default function NewUsersPage() {
       await loadUsers();
     } catch (err) {
       console.error("Failed to delete user:", err);
-      toast.error(err instanceof Error ? err.message : "Failed to delete user");
+      toast.error(
+        getAdminFriendlyErrorMessage(err, { resource: "users", action: "delete" })
+      );
     }
   }, [token, userToDelete, loadUsers]);
 
@@ -336,6 +351,25 @@ export default function NewUsersPage() {
 
   const columns = useMemo(() => getColumnsWithActions(handleEdit, handleDelete), [handleEdit, handleDelete]);
 
+  if (loadError && users.length === 0) {
+    return (
+      <ProtectedRoute>
+        <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+          <ApiErrorState
+            error={loadError}
+            audience="admin"
+            variant="panel"
+            resource="users"
+            action="load"
+            onRetry={() => {
+              void loadUsers();
+            }}
+          />
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute>
       <>
@@ -345,7 +379,7 @@ export default function NewUsersPage() {
               <div>
                 <h1 className="text-2xl font-semibold tracking-tight">New Users</h1>
                 <p className="text-sm text-muted-foreground">
-                  This page now uses the same `AppDataTable` pattern as MT5 accounts and the CRUD user endpoints.
+                  Listed are all the crm clients
                 </p>
               </div>
               <div className="flex gap-2">

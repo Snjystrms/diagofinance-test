@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { useQueryState, parseAsInteger } from "nuqs";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +25,7 @@ import { CheckCircle2, XCircle, Calendar, RefreshCw } from "lucide-react";
 import { adminMT5RequestApi, type MT5Request } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { useAuth } from "@/contexts/auth-context";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 /* ---------------- Helpers ---------------- */
 const fmtDateTime = (s?: string) => {
@@ -65,6 +67,7 @@ export default function UserAccountsPage() {
 
   const [rows, setRows] = useState<MT5Request[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown | null>(null);
   const [pagination, setPagination] = useState({
     current_page: 1,
     total_pages: 1,
@@ -86,6 +89,7 @@ export default function UserAccountsPage() {
     if (!token) return;
     try {
       setLoading(true);
+      setLoadError(null);
       const res = await adminMT5RequestApi.getPending(page, perPage, token);
       if (res.success && res.data) {
         setRows(res.data.requests || []);
@@ -93,8 +97,10 @@ export default function UserAccountsPage() {
       }
     } catch (e: unknown) {
       console.error(e);
-      const errorMessage = e instanceof Error ? e.message : "Failed to load MT5 requests";
-      toast.error(errorMessage);
+      setLoadError(e);
+      toast.error(
+        getAdminFriendlyErrorMessage(e, { resource: "MT5 requests", action: "load" })
+      );
       setRows([]);
     } finally {
       setLoading(false);
@@ -120,8 +126,9 @@ export default function UserAccountsPage() {
       await loadRequests();
     } catch (e: unknown) {
       console.error(e);
-      const errorMessage = e instanceof Error ? e.message : "Failed to approve request";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(e, { resource: "MT5 requests", action: "update" })
+      );
     } finally {
       setProcessing(null);
     }
@@ -158,8 +165,9 @@ export default function UserAccountsPage() {
       await loadRequests();
     } catch (e: unknown) {
       console.error(e);
-      const errorMessage = e instanceof Error ? e.message : "Failed to reject request";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(e, { resource: "MT5 requests", action: "update" })
+      );
     } finally {
       setProcessing(null);
     }
@@ -315,6 +323,23 @@ export default function UserAccountsPage() {
           filterPillCount={2}
         />
       
+    );
+  }
+
+  if (loadError && rows.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+        <ApiErrorState
+          error={loadError}
+          audience="admin"
+          variant="panel"
+          resource="MT5 requests"
+          action="load"
+          onRetry={() => {
+            void loadRequests();
+          }}
+        />
+      </div>
     );
   }
 

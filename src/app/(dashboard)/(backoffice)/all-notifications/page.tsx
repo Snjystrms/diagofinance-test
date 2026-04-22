@@ -5,6 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import toast from "react-hot-toast";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import { useAuth } from "@/contexts/auth-context";
 import { adminNotificationApi, type AdminNotificationItem } from "@/lib/api";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import {
   Bell,
   CheckCircle2,
@@ -67,6 +69,7 @@ export default function AllNotificationsPage() {
 
   const [notifications, setNotifications] = useState<AdminNotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown | null>(null);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
@@ -116,6 +119,7 @@ export default function AllNotificationsPage() {
 
     try {
       setLoading(true);
+      setLoadError(null);
       const response = await adminNotificationApi.getNotifications(token, {
         page,
         limit,
@@ -138,13 +142,22 @@ export default function AllNotificationsPage() {
           setSummary(data.summary);
         }
       } else {
-        toast.error(response.message || "Failed to load notifications");
+        const failure = response.message || "Failed to load notifications";
+        setLoadError(failure);
+        toast.error(
+          getAdminFriendlyErrorMessage(failure, {
+            resource: "notifications",
+            action: "load",
+          })
+        );
         setNotifications([]);
       }
     } catch (error) {
       console.error("Error loading notifications:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to load notifications";
-      toast.error(errorMessage);
+      setLoadError(error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "notifications", action: "load" })
+      );
       setNotifications([]);
     } finally {
       setLoading(false);
@@ -183,13 +196,18 @@ export default function AllNotificationsPage() {
             read: prev.read + 1,
           }));
         } else {
-          toast.error(response.message || "Failed to mark notification as read");
+          toast.error(
+            getAdminFriendlyErrorMessage(response.message || "Failed to mark notification as read", {
+              resource: "notifications",
+              action: "update",
+            })
+          );
         }
       } catch (error) {
         console.error("Error marking notification as read:", error);
-        const errorMessage =
-          error instanceof Error ? error.message : "Failed to mark notification as read";
-        toast.error(errorMessage);
+        toast.error(
+          getAdminFriendlyErrorMessage(error, { resource: "notifications", action: "update" })
+        );
       } finally {
         setMarkingRead(null);
       }
@@ -210,13 +228,21 @@ export default function AllNotificationsPage() {
         // Reload notifications to get updated state
         await loadNotifications();
       } else {
-        toast.error(response.message || "Failed to mark all notifications as read");
+        toast.error(
+          getAdminFriendlyErrorMessage(
+            response.message || "Failed to mark all notifications as read",
+            {
+              resource: "notifications",
+              action: "update",
+            }
+          )
+        );
       }
     } catch (error) {
       console.error("Error marking all notifications as read:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Failed to mark all notifications as read";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "notifications", action: "update" })
+      );
     } finally {
       setMarkingAllRead(false);
     }
@@ -293,13 +319,31 @@ export default function AllNotificationsPage() {
 
   if (!canViewNotifications) {
     return (
-      
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <p className="text-muted-foreground">
-            You do not have permission to view notifications.
-          </p>
+      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+        <ApiErrorState
+          audience="admin"
+          variant="panel"
+          title="Access restricted"
+          message="Your account does not have permission to view notifications."
+        />
         </div>
-      
+    );
+  }
+
+  if (loadError && notifications.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+        <ApiErrorState
+          error={loadError}
+          audience="admin"
+          variant="panel"
+          resource="notifications"
+          action="load"
+          onRetry={() => {
+            void loadNotifications();
+          }}
+        />
+      </div>
     );
   }
 

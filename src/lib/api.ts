@@ -17,6 +17,34 @@ export interface ApiResponse<T = unknown> {
   error?: string;
 }
 
+export class ApiRequestError extends Error {
+  status: number;
+  statusText: string;
+  endpoint: string;
+  payload: unknown;
+
+  constructor({
+    message,
+    status,
+    statusText,
+    endpoint,
+    payload,
+  }: {
+    message: string;
+    status: number;
+    statusText: string;
+    endpoint: string;
+    payload: unknown;
+  }) {
+    super(message);
+    this.name = "ApiRequestError";
+    this.status = status;
+    this.statusText = statusText;
+    this.endpoint = endpoint;
+    this.payload = payload;
+  }
+}
+
 export interface RegisterRequest {
   first_name: string;
   last_name: string;
@@ -904,7 +932,13 @@ async function apiCall<T>(
     if (endpoint.includes("ib-requests/status")) {
       console.error("[apiCall] Request failed:", json?.message || `HTTP ${res.status}`);
     }
-    throw new Error(json?.message || `HTTP ${res.status}`);
+    throw new ApiRequestError({
+      message: json?.message || json?.error || `HTTP ${res.status}`,
+      status: res.status,
+      statusText: res.statusText,
+      endpoint,
+      payload: json,
+    });
   }
   return json;
 }
@@ -1857,6 +1891,140 @@ export const userMT5AccountsApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),
+};
+
+// ---------- MT5 SDK Trading APIs ----------
+export interface Mt5SdkPosition {
+  Action?: number;
+  Login: number;
+  Position: number;
+  ExpertPositionID?: number;
+  Symbol: string;
+  PriceCurrent?: number;
+  PriceOpen?: number;
+  PriceSL?: number;
+  PriceTP?: number;
+  Profit?: number;
+  Volume?: number;
+  VolumeExt?: number;
+  TimeCreate?: number;
+  TimeCreateMsc?: number;
+  TimeUpdate?: number;
+  TimeUpdateMsc?: number;
+  ContractSize?: number;
+  Comment?: string;
+  [key: string]: unknown;
+}
+
+export interface Mt5SdkPositionsResponse {
+  login: number;
+  count: number;
+  items: Mt5SdkPosition[];
+}
+
+export type Mt5SdkTradeRecordType = "deal" | "order" | string;
+
+export interface Mt5SdkTradeRecord {
+  record_type: Mt5SdkTradeRecordType;
+  Login: number;
+  Symbol?: string;
+  Action?: number;
+  Type?: number;
+  Entry?: number;
+  Deal?: number;
+  Order?: number;
+  PositionID?: number;
+  Price?: number;
+  PriceCurrent?: number;
+  PricePosition?: number;
+  PriceSL?: number;
+  PriceTP?: number;
+  Profit?: number;
+  ProfitRaw?: number;
+  Commission?: number;
+  Fee?: number;
+  Storage?: number;
+  Volume?: number;
+  VolumeClosed?: number;
+  VolumeExt?: number;
+  VolumeInitial?: number;
+  VolumeCurrent?: number;
+  Time?: number;
+  TimeMsc?: number;
+  TimeDone?: number;
+  TimeDoneMsc?: number;
+  TimeSetup?: number;
+  TimeSetupMsc?: number;
+  State?: number;
+  Comment?: string;
+  [key: string]: unknown;
+}
+
+export interface Mt5SdkTradeHistoryResponse {
+  login: number;
+  from_dt?: string;
+  to_dt?: string;
+  count: number;
+  items: Mt5SdkTradeRecord[];
+}
+
+export interface Mt5SdkTradeHistoryParams {
+  login: string | number;
+  from_dt?: string;
+  to_dt?: string;
+}
+
+const unwrapDirectOrEnvelope = <T,>(response: ApiResponse<T> | T): T => {
+  if (response && typeof response === "object" && "data" in response && !("items" in response)) {
+    const data = (response as ApiResponse<T>).data;
+    if (data !== undefined) {
+      return data;
+    }
+  }
+
+  return response as T;
+};
+
+const authHeaders = (token?: string | null) =>
+  token ? { Authorization: `Bearer ${token}` } : undefined;
+
+export const mt5SdkApi = {
+  getPositions: async (login: string | number, token?: string | null) => {
+    if (login === undefined || login === null || `${login}`.trim() === "") {
+      throw new Error("MT5 login is required to fetch open positions");
+    }
+
+    const response = await apiCall<Mt5SdkPositionsResponse>(
+      `/mt5sdk/accounts/${encodeURIComponent(String(login))}/positions`,
+      {
+        method: "GET",
+        headers: authHeaders(token),
+      }
+    );
+
+    return unwrapDirectOrEnvelope<Mt5SdkPositionsResponse>(response);
+  },
+
+  getTradeHistory: async ({ login, from_dt, to_dt }: Mt5SdkTradeHistoryParams, token?: string | null) => {
+    if (login === undefined || login === null || `${login}`.trim() === "") {
+      throw new Error("MT5 login is required to fetch trade history");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("login", String(login));
+    if (from_dt) qs.set("from_dt", from_dt);
+    if (to_dt) qs.set("to_dt", to_dt);
+
+    const response = await apiCall<Mt5SdkTradeHistoryResponse>(
+      `/mt5sdk/history/trades?${qs.toString()}`,
+      {
+        method: "GET",
+        headers: authHeaders(token),
+      }
+    );
+
+    return unwrapDirectOrEnvelope<Mt5SdkTradeHistoryResponse>(response);
+  },
 };
 
 // ---------- IB Partner Request APIs ----------

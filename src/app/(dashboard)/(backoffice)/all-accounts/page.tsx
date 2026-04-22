@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/auth-context";
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ProtectedRoute } from "@/components/protected-route";
 import { PermissionAwareCrudDataTable } from "@/components/permission-aware-crud-table";
 import { getColumns } from "./columns";
@@ -13,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { adminAccountTypesApi, type AccountTypeItem, type AccountTypeUpsertBody } from "@/lib/api";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 // Row type for the table
 export type AccountTypeRow = {
@@ -106,7 +108,13 @@ export default function AllAccountsPage() {
   const effectiveSearch =
     debouncedSearch.trim().length >= 3 ? debouncedSearch.trim() : "";
 
-  const { data: accountTypesResult, isLoading: loading } = useQuery({
+  const {
+    data: accountTypesResult,
+    isLoading: loading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["accountTypes", token, statusFilter, effectiveSearch],
     queryFn: async () => {
       const res = await adminAccountTypesApi.list({
@@ -143,7 +151,9 @@ export default function AllAccountsPage() {
       return Promise.resolve();
     } catch (e: unknown) {
       console.error("Create error:", e);
-      toast.error(e instanceof Error ? e.message : "Create failed");
+      toast.error(
+        getAdminFriendlyErrorMessage(e, { resource: "account types", action: "create" })
+      );
       return Promise.reject(e);
     }
   };
@@ -166,8 +176,9 @@ export default function AllAccountsPage() {
       return Promise.resolve();
     } catch (e: unknown) {
       console.error("Update error:", e);
-      const errorMessage = e instanceof Error ? e.message : "Update failed";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(e, { resource: "account types", action: "update" })
+      );
       return Promise.reject(e);
     } finally {
       setActionLoadingId(null);
@@ -184,8 +195,9 @@ export default function AllAccountsPage() {
       toast.success(toggled.message || "Status updated");
     } catch (e: unknown) {
       console.error("Toggle error:", e);
-      const errorMessage = e instanceof Error ? e.message : "Toggle failed";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(e, { resource: "account types", action: "update" })
+      );
     } finally {
       setActionLoadingId(null);
     }
@@ -202,8 +214,9 @@ export default function AllAccountsPage() {
       return Promise.resolve();
     } catch (e: unknown) {
       console.error("Delete error:", e);
-      const errorMessage = e instanceof Error ? e.message : "Delete failed";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(e, { resource: "account types", action: "delete" })
+      );
       return Promise.reject(e);
     } finally {
       setActionLoadingId(null);
@@ -214,6 +227,25 @@ export default function AllAccountsPage() {
     () => getColumns({ onToggleStatus: handleToggleStatus, actionLoadingId }),
     [handleToggleStatus, actionLoadingId]
   );
+
+  if (isError && data.length === 0) {
+    return (
+      <ProtectedRoute>
+        <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+          <ApiErrorState
+            error={error}
+            audience="admin"
+            variant="panel"
+            resource="account types"
+            action="load"
+            onRetry={() => {
+              void refetch();
+            }}
+          />
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>

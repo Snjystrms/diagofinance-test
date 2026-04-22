@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,7 @@ import { CreateAccountDialog } from "./create-account-dialog";
 import { AccountDetailsDialog } from "./account-details-dialog";
 import { DeleteDialog } from "@/components/dialogs/delete-dialog";
 import { Plus } from "lucide-react";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 const statusFilters = [
   { label: "All statuses", value: "all" },
@@ -106,6 +108,7 @@ export default function AllUsersMT5AccountsPage() {
 
   const [accounts, setAccounts] = useState<AdminMT5Account[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown | null>(null);
   const [pagination, setPagination] = useState({
     current_page: 1,
     per_page: 10,
@@ -170,6 +173,7 @@ export default function AllUsersMT5AccountsPage() {
 
     try {
       setLoading(true);
+      setLoadError(null);
 
       const response = await adminMT5AccountsApi.list({
         token,
@@ -239,8 +243,10 @@ export default function AllUsersMT5AccountsPage() {
       });
     } catch (error: unknown) {
       console.error("Failed to load MT5 accounts:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to load MT5 accounts";
-      toast.error(errorMessage);
+      setLoadError(error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "MT5 accounts", action: "load" })
+      );
       setAccounts([]);
     } finally {
       setLoading(false);
@@ -262,8 +268,9 @@ export default function AllUsersMT5AccountsPage() {
       void loadAccounts(); // Refresh the list
     } catch (error: unknown) {
       console.error("Failed to create MT5 account:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to create MT5 account";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "MT5 accounts", action: "create" })
+      );
       throw error; // Re-throw to let the dialog handle it
     }
   }, [token, loadAccounts]);
@@ -293,7 +300,12 @@ export default function AllUsersMT5AccountsPage() {
       const selectedAccount = extractAccountDetail(response);
 
       if (!selectedAccount) {
-        toast.error("Account details are not available");
+        toast.error(
+          getAdminFriendlyErrorMessage("Account details are not available", {
+            resource: "MT5 account details",
+            action: "load",
+          })
+        );
         setDetailsAccount(account);
         return;
       }
@@ -301,8 +313,9 @@ export default function AllUsersMT5AccountsPage() {
       setDetailsAccount(selectedAccount);
     } catch (error: unknown) {
       console.error("Failed to load MT5 account details:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to load MT5 account details";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "MT5 account details", action: "load" })
+      );
       setDetailsAccount(account);
     } finally {
       setIsDetailsLoading(false);
@@ -327,8 +340,9 @@ export default function AllUsersMT5AccountsPage() {
       void loadAccounts(); // Refresh the list
     } catch (error: unknown) {
       console.error("Failed to update MT5 account:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to update MT5 account";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "MT5 accounts", action: "update" })
+      );
     }
   }, [token, editingAccount, loadAccounts]);
 
@@ -349,8 +363,9 @@ export default function AllUsersMT5AccountsPage() {
       void loadAccounts(); // Refresh the list
     } catch (error: unknown) {
       console.error("Failed to delete MT5 account:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to delete MT5 account";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "MT5 accounts", action: "delete" })
+      );
     }
   }, [token, accountToDelete, loadAccounts]);
 
@@ -366,6 +381,23 @@ export default function AllUsersMT5AccountsPage() {
       return String(account.account_mode ?? "").toLowerCase() === accountModeFilter;
     });
   }, [accounts, accountModeFilter]);
+
+  if (loadError && visibleAccounts.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+        <ApiErrorState
+          error={loadError}
+          audience="admin"
+          variant="panel"
+          resource="MT5 accounts"
+          action="load"
+          onRetry={() => {
+            void loadAccounts();
+          }}
+        />
+      </div>
+    );
+  }
 
   const renderTableSection = () => {
     if (loading && visibleAccounts.length === 0) {

@@ -8,6 +8,8 @@ import { useAuth } from "@/contexts/auth-context";
 import { ProtectedRoute } from "@/components/protected-route";
 import { PermissionAwareCrudDataTable } from "@/components/permission-aware-crud-table";
 import { PermissionAwareButton } from "@/components/permission-aware-button";
+import { ApiErrorState } from "@/components/errors/api-error-state";
+import { BackofficeDetailDialogSkeleton } from "@/components/loading/backoffice-page-skeletons";
 import { Plus } from "lucide-react";
 import { getColumns } from "./columns";
 import {
@@ -21,6 +23,7 @@ import {
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { ManagerForm } from "./manager-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 export type PermissionLite = { id: number; name: string };
 
@@ -125,7 +128,13 @@ export default function AllManagersPage() {
     [token]
   );
 
-  const { data: managersResult, isLoading: loading } = useQuery({
+  const {
+    data: managersResult,
+    isLoading: loading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
     queryKey: ["managers", token],
     queryFn: async () => {
       const res = await adminManagersApi.list(token!);
@@ -180,8 +189,9 @@ export default function AllManagersPage() {
       return Promise.resolve();
     } catch (e: unknown) {
       console.error("Create manager error:", e);
-      const errorMessage = e instanceof Error ? e.message : "Create failed";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(e, { resource: "managers", action: "create" })
+      );
       return Promise.reject(e);
     }
   };
@@ -209,8 +219,9 @@ export default function AllManagersPage() {
       return Promise.resolve();
     } catch (e: unknown) {
       console.error("Update manager error:", e);
-      const errorMessage = e instanceof Error ? e.message : "Update failed";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(e, { resource: "managers", action: "update" })
+      );
       return Promise.reject(e);
     } finally {
       setActionLoadingId(null);
@@ -238,8 +249,9 @@ export default function AllManagersPage() {
         toast.success("Manager status updated successfully");
       } catch (e: unknown) {
         console.error("[Toggle] Error:", e);
-        const errorMessage = e instanceof Error ? e.message : "Failed to update status";
-        toast.error(errorMessage);
+        toast.error(
+          getAdminFriendlyErrorMessage(e, { resource: "manager status", action: "update" })
+        );
       } finally {
         setActionLoadingId(null);
       }
@@ -258,8 +270,9 @@ export default function AllManagersPage() {
       return Promise.resolve();
     } catch (e: unknown) {
       console.error("Delete manager error:", e);
-      const errorMessage = e instanceof Error ? e.message : "Delete failed";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(e, { resource: "managers", action: "delete" })
+      );
       return Promise.reject(e);
     } finally {
       setActionLoadingId(null);
@@ -276,8 +289,9 @@ export default function AllManagersPage() {
         setViewItem(manager);
       } catch (error: unknown) {
         console.error("View manager error:", error);
-        const errorMessage = error instanceof Error ? error.message : "Failed to fetch manager detail";
-        toast.error(errorMessage);
+        toast.error(
+          getAdminFriendlyErrorMessage(error, { resource: "manager details", action: "load" })
+        );
         setViewOpen(false);
       } finally {
         setViewLoading(false);
@@ -314,6 +328,25 @@ export default function AllManagersPage() {
     });
     return ordered;
   }, [viewItem, permIndex, groupedPerms]);
+
+  if (isError && data.length === 0) {
+    return (
+      <ProtectedRoute>
+        <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+          <ApiErrorState
+            error={error}
+            audience="admin"
+            variant="panel"
+            resource="managers"
+            action="load"
+            onRetry={() => {
+              void refetch();
+            }}
+          />
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>
@@ -404,9 +437,7 @@ export default function AllManagersPage() {
             </DialogHeader>
 
             {viewLoading ? (
-              <div className="py-10 flex justify-center">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-              </div>
+              <BackofficeDetailDialogSkeleton />
             ) : viewItem ? (
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

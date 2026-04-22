@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from '@/contexts/auth-context'
 import { walletApi, type Transaction, type TransactionsData } from '@/lib/api'
+import { ApiErrorState } from '@/components/errors/api-error-state'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -33,7 +34,7 @@ export default function TransactionsHistoryPage() {
   const router = useRouter()
   const [transactionsData, setTransactionsData] = useState<TransactionsData | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<unknown | null>(null)
   
   // Use URL query params for pagination (synced with data table)
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
@@ -76,11 +77,11 @@ export default function TransactionsHistoryPage() {
       if (response.success && response.data) {
         setTransactionsData(response.data)
       } else {
-        setError(response.message || 'Failed to fetch transactions')
+        setError(response.message || 'Unable to load transactions')
       }
     } catch (err) {
       console.error('Error fetching transactions:', err)
-      setError(err instanceof Error ? err.message : 'Failed to fetch transactions')
+      setError(err)
     } finally {
       setLoading(false)
     }
@@ -434,15 +435,16 @@ export default function TransactionsHistoryPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {error && !transactionsData && (
-                <div className="text-center py-10">
-                  <p className="text-destructive mb-4">{error}</p>
-                  <Button onClick={fetchTransactions} variant="outline">
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    Retry
-                  </Button>
-                </div>
-              )}
+              {error && !transactionsData ? (
+                <ApiErrorState
+                  error={error}
+                  audience="client"
+                  resource="transactions"
+                  action="load"
+                  variant="empty"
+                  onRetry={fetchTransactions}
+                />
+              ) : null}
 
               {transactionsData && transactionsData.transactions.length > 0 ? (
                 <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
@@ -477,16 +479,16 @@ export default function TransactionsHistoryPage() {
             </CardContent>
           </Card>
 
-          {error && transactionsData && (
-            <Card className="border-yellow-500">
-              <CardContent className="py-4">
-                <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
-                  <Clock className="h-4 w-4" />
-                  <p className="text-sm">{error}</p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {error && transactionsData ? (
+            <ApiErrorState
+              error={error}
+              audience="client"
+              resource="transactions"
+              action="load"
+              variant="inline"
+              onRetry={fetchTransactions}
+            />
+          ) : null}
         </div>
       </div>
     

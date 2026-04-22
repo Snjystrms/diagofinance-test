@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/auth-context";
 import { adminIbRequestsApi, type AdminIbRequest } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 
 const statusFilters = [
@@ -211,6 +213,7 @@ export default function IbManagementPage() {
 
   const [requests, setRequests] = useState<AdminIbRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown | null>(null);
   const [pagination, setPagination] = useState({
     current_page: 1,
     per_page: 20,
@@ -255,6 +258,7 @@ export default function IbManagementPage() {
 
     try {
       setLoading(true);
+      setLoadError(null);
 
       const response = await adminIbRequestsApi.list({
         token,
@@ -326,8 +330,10 @@ export default function IbManagementPage() {
       });
     } catch (error: unknown) {
       console.error("Failed to load IB requests:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to load IB requests";
-      toast.error(errorMessage);
+      setLoadError(error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "IB requests", action: "load" })
+      );
       setRequests([]);
     } finally {
       setLoading(false);
@@ -410,8 +416,9 @@ export default function IbManagementPage() {
       await loadRequests();
     } catch (error: unknown) {
       console.error("Failed to update IB request:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to update request status";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "IB requests", action: "update" })
+      );
     } finally {
       setProcessingId(null);
     }
@@ -581,6 +588,21 @@ export default function IbManagementPage() {
   );
 
   const renderTableSection = () => {
+    if (loadError && requests.length === 0) {
+      return (
+        <ApiErrorState
+          error={loadError}
+          audience="admin"
+          variant="panel"
+          resource="IB requests"
+          action="load"
+          onRetry={() => {
+            void loadRequests();
+          }}
+        />
+      );
+    }
+
     if (loading && requests.length === 0) {
       return <TableSectionSkeleton columnCount={6} rowCount={9} />;
     }

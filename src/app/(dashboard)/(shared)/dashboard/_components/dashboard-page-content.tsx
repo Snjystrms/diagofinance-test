@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ApiErrorState } from "@/components/errors/api-error-state"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -59,6 +60,7 @@ import { useQuery } from "@tanstack/react-query"
 import { useClientCustomization } from "@/contexts/client-customization-context"
 
 import { formatCurrency } from "@/lib/formatters"
+import { getFriendlyErrorMessage } from "@/lib/friendly-errors"
 
 const formatAmount = (amount?: number) => {
   const numAmount = typeof amount === 'number' ? amount : 0
@@ -127,7 +129,7 @@ export function DashboardPageContent() {
   const [withdrawalsStatistics, setWithdrawalsStatistics] = useState<Array<{ day: string; date: string; amount: number }>>([]);
   const [isDashboardLoading, setIsDashboardLoading] = useState(isUser || isAdmin);
   const [isStatisticsLoading, setIsStatisticsLoading] = useState(false);
-  const [dashboardError, setDashboardError] = useState<string | null>(null);
+  const [dashboardError, setDashboardError] = useState<unknown | null>(null);
   const [statisticsPeriod, setStatisticsPeriod] = useState<7 | 30>(30);
   const [activeTab, setActiveTab] = useState<'mt5-live' | 'mt5-demo' | 'mt4-live' | 'mt4-demo'>('mt5-live');
   const [dateRange] = useState<{ start_date?: string; end_date?: string }>({});
@@ -206,9 +208,12 @@ export function DashboardPageContent() {
       } catch (error: unknown) {
         console.error("Failed to fetch dashboard data:", error);
         if (isMounted) {
-          const message = error instanceof Error ? error.message : "Unable to load dashboard";
-          setDashboardError(message);
-          toast.error(message);
+          setDashboardError(error);
+          toast.error(getFriendlyErrorMessage(error, {
+            audience: "client",
+            resource: "dashboard",
+            action: "load",
+          }));
         }
       } finally {
         if (isMounted) {
@@ -244,12 +249,11 @@ export function DashboardPageContent() {
         if (response.success && response.data) {
           setAdminDashboardData(response.data);
         } else {
-          setDashboardError("Failed to load admin dashboard");
+          setDashboardError("Unable to load admin dashboard");
         }
       } catch (error: unknown) {
         if (isMounted) {
-          const message = error instanceof Error ? error.message : "Unable to load admin dashboard";
-          setDashboardError(message);
+          setDashboardError(error);
         }
       } finally {
         if (isMounted) {
@@ -291,8 +295,11 @@ export function DashboardPageContent() {
       } catch (error: unknown) {
         console.error("Failed to fetch statistics:", error);
         if (isMounted) {
-          const message = error instanceof Error ? error.message : "Unable to load statistics";
-          toast.error(message);
+          toast.error(getFriendlyErrorMessage(error, {
+            audience: "client",
+            resource: "statistics",
+            action: "load",
+          }));
         }
       } finally {
         if (isMounted) {
@@ -913,16 +920,13 @@ export function DashboardPageContent() {
           {isDashboardLoading ? (
           <ClientDashboardSkeleton />
         ) : dashboardError ? (
-          <div className="flex items-center justify-center py-12">
-            <Card className="w-full max-w-md">
-              <CardContent className="pt-6">
-                <div className="text-center">
-                  <p className="text-sm text-destructive mb-2">Error loading dashboard</p>
-                  <p className="text-xs text-muted-foreground">{dashboardError}</p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <ApiErrorState
+            error={dashboardError}
+            audience="client"
+            resource="dashboard"
+            action="load"
+            variant="panel"
+          />
         ) : (
         <div className="space-y-6">
           {/* Normal Dashboard View */}
@@ -1610,16 +1614,13 @@ export function DashboardPageContent() {
           {isDashboardLoading ? (
             <AdminDashboardSkeleton />
           ) : dashboardError ? (
-            <div className="flex items-center justify-center py-12">
-              <Card className="w-full max-w-md">
-                <CardContent className="pt-6">
-                  <div className="text-center">
-                    <p className="text-sm text-destructive mb-2">Error loading dashboard</p>
-                    <p className="text-xs text-muted-foreground">{dashboardError}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <ApiErrorState
+              error={dashboardError}
+              audience="admin"
+              resource="admin dashboard"
+              action="load"
+              variant="panel"
+            />
           ) : (
             <AdminDashboardView adminDashboardData={adminDashboardData} />
           )}

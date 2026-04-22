@@ -21,6 +21,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { ReportPageWrapper } from "@/components/report-page-wrapper";
 import { fmtDateTime, formatAmount } from "@/lib/formatters";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 /* ---------------- Page ---------------- */
 export default function InternalTransferReportPage() {
@@ -32,6 +33,7 @@ export default function InternalTransferReportPage() {
 
   const [rows, setRows] = useState<InternalTransferReportItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown | null>(null);
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage, setPerPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
   const [totalPages, setTotalPages] = useState(1);
@@ -55,6 +57,7 @@ export default function InternalTransferReportPage() {
 
     try {
       setLoading(true);
+      setLoadError(null);
 
       const response = await adminInternalTransferReportApi.list({
         token,
@@ -82,8 +85,12 @@ export default function InternalTransferReportPage() {
       }
     } catch (error: unknown) {
       console.error("Failed to load internal transfer report:", error);
+      setLoadError(error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to load internal transfer report"
+        getAdminFriendlyErrorMessage(error, {
+          resource: "internal transfer report",
+          action: "load",
+        })
       );
       setRows([]);
     } finally {
@@ -187,9 +194,10 @@ export default function InternalTransferReportPage() {
     } catch (error: unknown) {
       console.error("Failed to export Excel:", error);
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to export Excel file",
+        getAdminFriendlyErrorMessage(error, {
+          resource: "internal transfer report",
+          action: "export",
+        }),
         { id: "export-excel" }
       );
     }
@@ -315,6 +323,7 @@ export default function InternalTransferReportPage() {
       description="Manage and view internal transfer transactions"
       isLoading={loading}
       isEmpty={rows.length === 0}
+      error={loadError}
       onExport={handleExportExcel}
       onRefresh={handleRefresh}
       isRefreshing={loading}

@@ -3,9 +3,12 @@
 import React, { useState, useEffect, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { AppDataTable } from '@/components/app-data-table'
+import { ApiErrorState } from '@/components/errors/api-error-state'
+import { ClientTablePageSkeleton } from '@/components/loading/client-page-skeletons'
 import { useAuth } from '@/contexts/auth-context'
 import { getUserDepositRequests, type DepositRequestItem } from '@/utils/operations'
 import { binanceDepositApi, coinsbuyDepositApi, type DepositListItem, type BinanceDepositStatusResponse, type CoinsBuyDepositStatusResponse, type DepositListResponse } from '@/lib/api'
+import { getFriendlyErrorMessage } from '@/lib/friendly-errors'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import toast from 'react-hot-toast'
 import { type ColumnDef } from '@tanstack/react-table'
@@ -183,7 +186,7 @@ const DepositStatusCell = ({ deposit, token }: { deposit: DepositListItem; token
 
   const fetchStatus = async () => {
     if (!token) {
-      toast.error('Authentication token is missing');
+      toast.error('Please sign in again to continue.');
       return;
     }
     
@@ -213,7 +216,11 @@ const DepositStatusCell = ({ deposit, token }: { deposit: DepositListItem; token
             toast.error('Status data not available');
           }
         } else {
-          toast.error(response.message || 'Failed to fetch status');
+          toast.error(getFriendlyErrorMessage(response.message || 'Unable to fetch status', {
+            audience: 'client',
+            resource: 'deposit status',
+            action: 'load',
+          }));
         }
       } else if (isCoinsbuy && deposit.coinsbuy_deposit_id) {
         const response = await coinsbuyDepositApi.getStatus(deposit.coinsbuy_deposit_id, token);
@@ -239,14 +246,22 @@ const DepositStatusCell = ({ deposit, token }: { deposit: DepositListItem; token
             toast.error('Status data not available');
           }
         } else {
-          toast.error(response.message || 'Failed to fetch status');
+          toast.error(getFriendlyErrorMessage(response.message || 'Unable to fetch status', {
+            audience: 'client',
+            resource: 'deposit status',
+            action: 'load',
+          }));
         }
       } else {
         toast.error('Required information not available for this deposit type');
       }
     } catch (error) {
       console.error('Error fetching deposit status:', error);
-      toast.error('Failed to fetch deposit status');
+      toast.error(getFriendlyErrorMessage(error, {
+        audience: 'client',
+        resource: 'deposit status',
+        action: 'load',
+      }));
     } finally {
       setLoading(false);
     }
@@ -569,11 +584,11 @@ const binanceColumns: ColumnDef<DepositListItem>[] = [
 export default function MyDepositPage() {
   const { token } = useAuth()
   const [activeTab, setActiveTab] = useState<"local" | "crypto">("local")
-  const [error, setError] = useState<string | null>(null)
+  const [error] = useState<unknown | null>(null)
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
   const [perPage, setPerPage] = useQueryState('perPage', parseAsInteger.withDefault(10))
 
-  const { data: localDepositsData, isLoading: localLoading, refetch: refetchLocalDeposits } = useQuery({
+  const { data: localDepositsData, isLoading: localLoading, refetch: refetchLocalDeposits, error: localDepositsError } = useQuery({
     queryKey: ['myDeposits', 'local', token, page, perPage],
     queryFn: () => getUserDepositRequests(page, perPage, token!),
     enabled: Boolean(token) && activeTab === 'local',
@@ -581,7 +596,7 @@ export default function MyDepositPage() {
     placeholderData: (prev) => prev,
   })
 
-  const { data: cryptoDepositsData, isLoading: cryptoLoading, refetch: refetchCryptoDeposits } = useQuery({
+  const { data: cryptoDepositsData, isLoading: cryptoLoading, refetch: refetchCryptoDeposits, error: cryptoDepositsError } = useQuery({
     queryKey: ['myDeposits', 'crypto', token, page, perPage],
     queryFn: () => binanceDepositApi.getList(page, perPage, token!),
     enabled: Boolean(token) && activeTab === 'crypto',
@@ -613,6 +628,7 @@ export default function MyDepositPage() {
   }
   const totalPages = activeTab === 'local' ? localTotalPages : cryptoTotalPages
   const total = activeTab === 'local' ? localTotal : cryptoTotal
+  const activeError = error ?? (activeTab === 'local' ? localDepositsError : cryptoDepositsError)
 
 
 
@@ -625,44 +641,29 @@ export default function MyDepositPage() {
 
   if (loading && depositRequests.length === 0 && binanceDeposits.length === 0) {
     return (
-      
-        <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="text-center">
-              <Clock className="h-8 w-8 animate-spin mx-auto mb-4 text-muted-foreground" />
-              <p className="text-muted-foreground">Loading deposit requests...</p>
-            </div>
-          </div>
-        </div>
-      
+      <ClientTablePageSkeleton columnCount={8} rowCount={8} />
     )
   }
 
-  if (error && depositRequests.length === 0 && binanceDeposits.length === 0) {
+  if (activeError && depositRequests.length === 0 && binanceDeposits.length === 0) {
     return (
       
         <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
-          <Card className="border-destructive">
-            <CardHeader>
-              <CardTitle className="text-destructive">Error</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground">{error}</p>
-              <Button 
-                onClick={() => {
-                  if (activeTab === "local") {
-                    void refetchLocalDeposits()
-                    return
-                  }
+          <ApiErrorState
+            error={activeError}
+            audience="client"
+            resource="deposit requests"
+            action="load"
+            variant="panel"
+            onRetry={() => {
+              if (activeTab === "local") {
+                void refetchLocalDeposits()
+                return
+              }
 
-                  void refetchCryptoDeposits()
-                }} 
-                className="mt-4"
-              >
-                Retry
-              </Button>
-            </CardContent>
-          </Card>
+              void refetchCryptoDeposits()
+            }}
+          />
         </div>
       
     )
@@ -713,15 +714,17 @@ export default function MyDepositPage() {
                 />
               )}
 
-              {error && depositRequests.length > 0 && (
-                <Card className="border-yellow-500">
-                  <CardContent className="py-4">
-                    <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
-                      <Clock className="h-4 w-4" />
-                      <p className="text-sm">{error}</p>
-                    </div>
-                  </CardContent>
-                </Card>
+              {activeError && depositRequests.length > 0 && (
+                <ApiErrorState
+                  error={activeError}
+                  audience="client"
+                  resource="deposit requests"
+                  action="load"
+                  variant="inline"
+                  onRetry={() => {
+                    void refetchLocalDeposits()
+                  }}
+                />
               )}
             </TabsContent>
 
@@ -761,15 +764,17 @@ export default function MyDepositPage() {
                 />
               )}
 
-              {error && binanceDeposits.length > 0 && (
-                <Card className="border-yellow-500">
-                  <CardContent className="py-4">
-                    <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400">
-                      <Clock className="h-4 w-4" />
-                      <p className="text-sm">{error}</p>
-                    </div>
-                  </CardContent>
-                </Card>
+              {activeError && binanceDeposits.length > 0 && (
+                <ApiErrorState
+                  error={activeError}
+                  audience="client"
+                  resource="crypto deposits"
+                  action="load"
+                  variant="inline"
+                  onRetry={() => {
+                    void refetchCryptoDeposits()
+                  }}
+                />
               )}
             </TabsContent>
           </Tabs>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useCallback, useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -9,7 +9,6 @@ import {
   BarChart3, 
   ArrowRight, 
   Loader2,
-  AlertCircle,
   CheckCircle2,
   Copy,
   Shield,
@@ -22,6 +21,7 @@ import {
   Hash
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { ApiErrorState } from '@/components/errors/api-error-state';
 import { ProtectedRoute } from '@/components/protected-route';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -58,6 +58,7 @@ import {
   userMT5AccountsApi,
   type UserMT5AccountCreateData,
 } from '@/lib/api';
+import { getFriendlyErrorMessage } from '@/lib/friendly-errors';
 import { useAuth } from '@/contexts/auth-context';
 
 const DEFAULT_GROUP_ID = 1;
@@ -98,7 +99,7 @@ export default function OpenTradingAccountPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [accountTypes, setAccountTypes] = useState<AccountType[]>([]);
   const [isLoadingAccountTypes, setIsLoadingAccountTypes] = useState(true);
-  const [accountTypesError, setAccountTypesError] = useState<string | null>(null);
+  const [accountTypesError, setAccountTypesError] = useState<unknown | null>(null);
   const [isSuccessDialogOpen, setIsSuccessDialogOpen] = useState(false);
   const [mt5RequestData, setMt5RequestData] = useState<UserMT5AccountCreateData | null>(null);
 
@@ -143,34 +144,34 @@ export default function OpenTradingAccountPage() {
   const pwNum = /\d/.test(activePassword);
   const pwSpecial = /[!@#$%^&*]/.test(activePassword);
 
+  const fetchAccountTypes = useCallback(async () => {
+    if (!token) {
+      setAccountTypesError('Authentication required');
+      setIsLoadingAccountTypes(false);
+      return;
+    }
+
+    try {
+      setIsLoadingAccountTypes(true);
+      setAccountTypesError(null);
+      const response = await accountTypesApi.getActive(token);
+      if (response.success && response.data) {
+        setAccountTypes(response.data);
+      } else {
+        setAccountTypesError('Unable to load account types');
+      }
+    } catch (error) {
+      console.error('Error fetching account types:', error);
+      setAccountTypesError(error);
+    } finally {
+      setIsLoadingAccountTypes(false);
+    }
+  }, [token]);
+
   // Fetch account types for the MT5 account opening flow.
   useEffect(() => {
-    const fetchAccountTypes = async () => {
-      if (!token) {
-        setAccountTypesError('Authentication required');
-        setIsLoadingAccountTypes(false);
-        return;
-      }
-
-      try {
-        setIsLoadingAccountTypes(true);
-        setAccountTypesError(null);
-        const response = await accountTypesApi.getActive(token);
-        if (response.success && response.data) {
-          setAccountTypes(response.data);
-        } else {
-          setAccountTypesError('Failed to load account types');
-        }
-      } catch (error) {
-        console.error('Error fetching account types:', error);
-        setAccountTypesError(error instanceof Error ? error.message : 'Failed to load account types');
-      } finally {
-        setIsLoadingAccountTypes(false);
-      }
-    };
-
     fetchAccountTypes();
-  }, [token]);
+  }, [fetchAccountTypes]);
 
   useEffect(() => {
     if (!selectedAccountType || leverageOptions.length === 0) {
@@ -207,18 +208,21 @@ export default function OpenTradingAccountPage() {
     setIsSubmitting(true);
     try {
       if (!selectedAccountType) {
-        throw new Error('Account type not found');
+        toast.error('Choose an account type before creating the account.');
+        return;
       }
 
       const leverageMatch = data.leverage.match(/^(\d+)$/);
       if (!leverageMatch) {
-        throw new Error('Invalid leverage format');
+        toast.error('Choose a valid leverage option.');
+        return;
       }
 
       const leverage = Number.parseInt(leverageMatch[1], 10);
       const maxLeverage = getMaximumLeverageValue(selectedAccountType);
       if (maxLeverage && leverage > maxLeverage) {
-        throw new Error(`Please choose leverage up to 1:${maxLeverage} for this account type.`);
+        toast.error(`Please choose leverage up to 1:${maxLeverage} for this account type.`);
+        return;
       }
 
       const response = await userMT5AccountsApi.create(
@@ -243,8 +247,11 @@ export default function OpenTradingAccountPage() {
       toast.success(response.message || 'MT5 account created successfully!');
     } catch (error) {
       console.error('Error creating account:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Failed to create account';
-      toast.error(errorMessage);
+      toast.error(getFriendlyErrorMessage(error, {
+        audience: 'client',
+        resource: 'MT5 account',
+        action: 'create',
+      }));
     } finally {
       setIsSubmitting(false);
     }
@@ -490,7 +497,7 @@ export default function OpenTradingAccountPage() {
                                   isLoadingAccountTypes 
                                     ? "Loading account types..." 
                                     : accountTypesError 
-                                    ? "Error loading account types"
+                                    ? "Account types unavailable"
                                     : "Choose Account Type"
                                 } />
                               </SelectTrigger>
@@ -502,7 +509,7 @@ export default function OpenTradingAccountPage() {
                                 </div>
                               ) : accountTypesError ? (
                                 <div className="py-4 px-2 text-center text-sm text-destructive">
-                                  {accountTypesError}
+                                  Unable to load account types
                                 </div>
                               ) : accountTypes.length === 0 ? (
                                 <div className="py-4 text-center text-sm text-muted-foreground">
@@ -517,12 +524,17 @@ export default function OpenTradingAccountPage() {
                               )}
                             </SelectContent>
                           </Select>
-                          {accountTypesError && (
-                            <div className="mt-2 flex items-center gap-2 rounded-xl border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-                              <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                              <span>{accountTypesError}</span>
-                            </div>
-                          )}
+                          {accountTypesError ? (
+                            <ApiErrorState
+                              error={accountTypesError}
+                              audience="client"
+                              resource="account types"
+                              action="load"
+                              variant="inline"
+                              className="mt-2"
+                              onRetry={fetchAccountTypes}
+                            />
+                          ) : null}
                           {selectedAccountType && (
                             <div className="mt-3 p-4 bg-gradient-to-br from-primary/5 via-purple-500/5 to-transparent rounded-xl border border-primary/20 space-y-2">
                               <div className="flex items-center justify-between">

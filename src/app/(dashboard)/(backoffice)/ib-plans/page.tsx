@@ -5,6 +5,7 @@ import type { ChangeEvent, FormEvent } from "react";
 import toast from "react-hot-toast";
 import { RefreshCw, Layers, Plus, Trash2 } from "lucide-react";
 
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ProtectedRoute } from "@/components/protected-route";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +44,7 @@ import {
   type CommissionPlanRuleInput,
 } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 type GroupedRules = {
   key: string;
@@ -128,6 +130,7 @@ export default function IbPlansPage() {
   const [plans, setPlans] = useState<CommissionPlan[]>([]);
   const [pagination, setPagination] = useState<CommissionPlanListResponseData["pagination"]>();
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createSubmitting, setCreateSubmitting] = useState(false);
@@ -152,6 +155,7 @@ export default function IbPlansPage() {
           setRefreshing(true);
         } else {
           setLoading(true);
+          setLoadError(null);
         }
 
         const response = await adminCommissionPlansApi.list({
@@ -164,8 +168,15 @@ export default function IbPlansPage() {
         setPagination(payload?.pagination);
       } catch (error: unknown) {
         console.error("Failed to fetch commission plans:", error);
-        const errorMessage = error instanceof Error ? error.message : "Failed to load commission plans";
-        toast.error(errorMessage);
+        if (!silent) {
+          setLoadError(error);
+        }
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "commission plans",
+            action: "load",
+          })
+        );
         if (!silent) {
           setPlans([]);
         }
@@ -251,9 +262,10 @@ export default function IbPlansPage() {
           }
           return rule as CommissionPlanRuleInput;
         });
-      } catch (error: unknown) {
-        const errorMessage = error instanceof Error ? error.message : "Invalid rules JSON.";
-        setCreateError(errorMessage);
+      } catch {
+        setCreateError(
+          "Please enter commission rules as a valid JSON array. Each rule must include an asset group and a numeric level."
+        );
         return;
       }
     }
@@ -275,8 +287,12 @@ export default function IbPlansPage() {
       await loadPlans({ silent: true });
     } catch (error: unknown) {
       console.error("Failed to create commission plan:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to create commission plan";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, {
+          resource: "commission plans",
+          action: "create",
+        })
+      );
     } finally {
       setCreateSubmitting(false);
     }
@@ -296,8 +312,12 @@ export default function IbPlansPage() {
       await loadPlans({ silent: true });
     } catch (error: unknown) {
       console.error("Failed to delete commission plan:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to delete commission plan";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, {
+          resource: "commission plans",
+          action: "delete",
+        })
+      );
     } finally {
       setDeleteLoading(false);
     }
@@ -426,6 +446,21 @@ export default function IbPlansPage() {
           columnCount={5}
           rowCount={7}
           className="px-0"
+        />
+      );
+    }
+
+    if (loadError && plans.length === 0) {
+      return (
+        <ApiErrorState
+          error={loadError}
+          audience="admin"
+          variant="panel"
+          resource="commission plans"
+          action="load"
+          onRetry={() => {
+            void loadPlans({ silent: false });
+          }}
         />
       );
     }

@@ -8,6 +8,7 @@ import { Search, RefreshCw, Network } from "lucide-react";
 
 import { useRouter } from "next/navigation";
 import { AppDataTable } from "@/components/app-data-table";
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import {
   adminIbUsersApi,
 } from "@/lib/api";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 
 interface IbUserForCommission {
@@ -40,6 +42,7 @@ export default function SetIbCommissionPage() {
 
   const [users, setUsers] = useState<IbUserForCommission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown | null>(null);
   const [pagination, setPagination] = useState({
     current_page: 1,
     per_page: 10,
@@ -74,6 +77,7 @@ export default function SetIbCommissionPage() {
 
     try {
       setLoading(true);
+      setLoadError(null);
 
       const response = await adminIbUsersApi.list({
         token,
@@ -144,8 +148,10 @@ export default function SetIbCommissionPage() {
       });
     } catch (error: unknown) {
       console.error("Failed to load IB users:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to load IB users";
-      toast.error(errorMessage);
+      setLoadError(error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "IB users", action: "load" })
+      );
       setUsers([]);
     } finally {
       setLoading(false);
@@ -245,6 +251,21 @@ export default function SetIbCommissionPage() {
   );
 
   const renderTableSection = () => {
+    if (loadError && users.length === 0) {
+      return (
+        <ApiErrorState
+          error={loadError}
+          audience="admin"
+          variant="panel"
+          resource="IB users"
+          action="load"
+          onRetry={() => {
+            void loadUsers();
+          }}
+        />
+      );
+    }
+
     if (loading && users.length === 0) {
       return <TableSectionSkeleton columnCount={5} rowCount={9} />;
     }

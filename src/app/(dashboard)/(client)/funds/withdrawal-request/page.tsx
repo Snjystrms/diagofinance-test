@@ -1,5 +1,6 @@
 'use client'
 import React, { useState, useEffect } from "react";
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/auth-context";
 import { withdrawalApi, walletApi, type WithdrawalResponse, type WalletSummaryData, type WithdrawalItem } from "@/lib/api";
+import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import {
   Wallet,
   DollarSign,
@@ -209,7 +211,11 @@ function WithdrawalRequestContent() {
 
     } catch (err) {
       console.error("Error creating withdrawal request:", err);
-      setError(err instanceof Error ? err.message : "Failed to create withdrawal request. Please try again.");
+      setError(getFriendlyErrorMessage(err, {
+        audience: "client",
+        resource: "withdrawal request",
+        action: "create",
+      }));
       setIsSubmitting(false);
     }
   };
@@ -384,12 +390,13 @@ function WithdrawalRequestContent() {
                 <>
                   {/* Error Message */}
                   {error && (
-                    <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4">
-                      <div className="flex items-start gap-3">
-                        <AlertCircle className="h-5 w-5 text-destructive mt-0.5 flex-shrink-0" />
-                        <p className="text-sm text-destructive">{error}</p>
-                      </div>
-                    </div>
+                    <ApiErrorState
+                      message={error}
+                      audience="client"
+                      resource="withdrawal request"
+                      action="submit"
+                      variant="inline"
+                    />
                   )}
 
                   {/* Amount Input */}

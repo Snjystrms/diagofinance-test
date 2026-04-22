@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/auth-context";
 import { ticketApi, type TicketItem, type CreateTicketRequest } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
+import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 
 const statusFilters = [
@@ -161,6 +163,7 @@ export default function RaiseTicketPage() {
 
   const [tickets, setTickets] = useState<TicketItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown | null>(null);
   const [pagination, setPagination] = useState({
     current_page: 1,
     per_page: 10,
@@ -208,6 +211,7 @@ export default function RaiseTicketPage() {
 
     try {
       setLoading(true);
+      setLoadError(null);
 
       const response = await ticketApi.list(token, page, perPage);
 
@@ -281,7 +285,7 @@ export default function RaiseTicketPage() {
       }
     } catch (error: unknown) {
       console.error("Failed to load tickets:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to load tickets");
+      setLoadError(error);
       setTickets([]);
     } finally {
       setLoading(false);
@@ -335,7 +339,11 @@ export default function RaiseTicketPage() {
       }
     } catch (error: unknown) {
       console.error("Failed to create ticket:", error);
-      toast.error(error instanceof Error ? error.message : "Failed to create ticket");
+      toast.error(getFriendlyErrorMessage(error, {
+        audience: "client",
+        resource: "support ticket",
+        action: "create",
+      }));
     } finally {
       setIsSubmitting(false);
     }
@@ -442,6 +450,19 @@ export default function RaiseTicketPage() {
   const renderTableSection = () => {
     if (loading && tickets.length === 0) {
       return <TableSectionSkeleton columnCount={6} rowCount={9} />;
+    }
+
+    if (loadError && tickets.length === 0) {
+      return (
+        <ApiErrorState
+          error={loadError}
+          audience="client"
+          resource="support tickets"
+          action="load"
+          variant="empty"
+          onRetry={loadTickets}
+        />
+      );
     }
 
     if (!loading && tickets.length === 0) {
@@ -555,6 +576,17 @@ export default function RaiseTicketPage() {
           </div>
 
           <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-4">
+            {loadError && tickets.length > 0 ? (
+              <ApiErrorState
+                error={loadError}
+                audience="client"
+                resource="support tickets"
+                action="load"
+                variant="inline"
+                className="mb-4"
+                onRetry={loadTickets}
+              />
+            ) : null}
             {renderTableSection()}
           </div>
         </div>

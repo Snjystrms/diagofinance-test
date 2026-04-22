@@ -20,6 +20,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { ReportPageWrapper } from "@/components/report-page-wrapper";
 import { fmtDateTime } from "@/lib/formatters";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 /* ---------------- Page ---------------- */
 export default function LoginActivityReportPage() {
@@ -31,6 +32,7 @@ export default function LoginActivityReportPage() {
 
   const [rows, setRows] = useState<LoginActivityReportItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown | null>(null);
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage, setPerPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
   const [totalPages, setTotalPages] = useState(1);
@@ -54,6 +56,7 @@ export default function LoginActivityReportPage() {
 
     try {
       setLoading(true);
+      setLoadError(null);
 
       const response = await adminLoginActivityReportApi.list({
         token,
@@ -81,8 +84,12 @@ export default function LoginActivityReportPage() {
       }
     } catch (error: unknown) {
       console.error("Failed to load login activity report:", error);
+      setLoadError(error);
       toast.error(
-        error instanceof Error ? error.message : "Failed to load login activity report"
+        getAdminFriendlyErrorMessage(error, {
+          resource: "login activity report",
+          action: "load",
+        })
       );
       setRows([]);
     } finally {
@@ -180,9 +187,10 @@ export default function LoginActivityReportPage() {
     } catch (error: unknown) {
       console.error("Failed to export Excel:", error);
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to export Excel file",
+        getAdminFriendlyErrorMessage(error, {
+          resource: "login activity report",
+          action: "export",
+        }),
         { id: "export-excel" }
       );
     }
@@ -326,6 +334,7 @@ export default function LoginActivityReportPage() {
       description="View and manage user login activities"
       isLoading={loading}
       isEmpty={rows.length === 0}
+      error={loadError}
       onExport={handleExportExcel}
       onRefresh={() => void loadReport()}
       isRefreshing={loading}

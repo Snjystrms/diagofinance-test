@@ -5,7 +5,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Edit, Plus, RefreshCw, Search, Trash2, Users } from "lucide-react";
 import toast from "react-hot-toast";
 
+import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ProtectedRoute } from "@/components/protected-route";
+import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +33,7 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import { adminGroupsApi, type AdminGroupItem } from "@/lib/api";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 type GroupRow = {
   id: number;
@@ -66,25 +69,6 @@ function toPayload(values: GroupFormState) {
     mt5_group_name: values.mt5_group_name.trim(),
     status: values.status ? 1 : 0,
   };
-}
-
-function getErrorMessage(error: unknown, fallback: string) {
-  return error instanceof Error ? error.message : fallback;
-}
-
-function GroupsTableSkeleton() {
-  return (
-    <div className="space-y-3">
-      {Array.from({ length: 8 }).map((_, index) => (
-        <div key={index} className="grid grid-cols-[120px_1fr_1fr_140px] gap-4 rounded-md border p-3">
-          <Skeleton className="h-5 w-14" />
-          <Skeleton className="h-5 w-full max-w-sm" />
-          <Skeleton className="h-5 w-full max-w-sm" />
-          <Skeleton className="h-5 w-24" />
-        </div>
-      ))}
-    </div>
-  );
 }
 
 function GroupFormFields({
@@ -152,6 +136,8 @@ export function AllGroupsPageContent() {
     data: groupsResponse,
     isFetching,
     isLoading,
+    isError,
+    error,
     refetch,
   } = useQuery({
     queryKey,
@@ -176,7 +162,9 @@ export function AllGroupsPageContent() {
       refreshGroups();
     },
     onError: (error) => {
-      toast.error(getErrorMessage(error, "Failed to create group"));
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "groups", action: "create" })
+      );
     },
   });
 
@@ -191,7 +179,9 @@ export function AllGroupsPageContent() {
       refreshGroups();
     },
     onError: (error) => {
-      toast.error(getErrorMessage(error, "Failed to update group"));
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "groups", action: "update" })
+      );
     },
   });
 
@@ -202,7 +192,9 @@ export function AllGroupsPageContent() {
       refreshGroups();
     },
     onError: (error) => {
-      toast.error(getErrorMessage(error, "Failed to delete group"));
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "groups", action: "delete" })
+      );
     },
   });
 
@@ -254,6 +246,25 @@ export function AllGroupsPageContent() {
   };
 
   const mutationInProgress = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
+
+  if (isError && groups.length === 0) {
+    return (
+      <ProtectedRoute>
+        <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+          <ApiErrorState
+            error={error}
+            audience="admin"
+            variant="panel"
+            resource="groups"
+            action="load"
+            onRetry={() => {
+              void refetch();
+            }}
+          />
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>
@@ -307,7 +318,7 @@ export function AllGroupsPageContent() {
             </div>
 
             {isLoading ? (
-              <GroupsTableSkeleton />
+              <TableSectionSkeleton columnCount={5} rowCount={8} />
             ) : (
               <div className="rounded-md border">
                 <Table>

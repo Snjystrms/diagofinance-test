@@ -17,6 +17,8 @@ import {
 import '@xyflow/react/dist/style.css';
 import dagre from '@dagrejs/dagre';
 import toast from 'react-hot-toast';
+import { ApiErrorState } from '@/components/errors/api-error-state';
+import { BackofficeDetailDialogSkeleton } from '@/components/loading/backoffice-page-skeletons';
 import { Spinner } from '@/components/ui/spinner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +41,7 @@ import {
 import { ArrowLeft, Edit, Save, X } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import { API_BASE_URL, adminIbUserCommissionsApi, type UserCommission, type UserCommissionResponse } from '@/lib/api';
+import { getAdminFriendlyErrorMessage } from '@/lib/admin-friendly-errors';
 import { nodeTypes } from './team-node';
 import { formatDateTimeInIST } from '@/lib/formatters';
 import { NODE_H, NODE_W, levelColor, levelToDepth, toastNoDownline } from '../_lib/graph-helpers';
@@ -65,6 +68,7 @@ export function DownlineTreePageContent() {
   const [nodesById, setNodesById] = useState<Record<string, NodeRecord>>({});
   const [edges, setEdges] = useState<Array<{ source: string; target: string }>>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<unknown | null>(null);
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [userName, setUserName] = useState<string>('');
@@ -90,13 +94,20 @@ export function DownlineTreePageContent() {
         });
         const json: UsersByLevelResponse = await res.json();
         if (!json.success || !json.data) {
-          toast.error(json?.message || 'Failed to fetch downline users');
+          toast.error(
+            getAdminFriendlyErrorMessage(json?.message || 'Failed to fetch downline users', {
+              resource: 'downline users',
+              action: 'load',
+            })
+          );
           return null;
         }
         return json.data;
       } catch (error) {
         console.error('Failed to fetch users by level:', error);
-        toast.error('Failed to fetch downline users');
+        toast.error(
+          getAdminFriendlyErrorMessage(error, { resource: 'downline users', action: 'load' })
+        );
         return null;
       }
     },
@@ -110,6 +121,7 @@ export function DownlineTreePageContent() {
     let mounted = true;
     const run = async () => {
       setLoading(true);
+      setLoadError(null);
       setNodesById({});
       setEdges([]);
       setExpanded({});
@@ -117,6 +129,9 @@ export function DownlineTreePageContent() {
 
       const data = await fetchUsersByLevel(userId);
       if (!mounted || !data) {
+        if (!data) {
+          setLoadError(new Error("Failed to load downline tree"));
+        }
         setLoading(false);
         return;
       }
@@ -127,6 +142,7 @@ export function DownlineTreePageContent() {
 
       if (!ibUser) {
         setLoading(false);
+        setLoadError(new Error("IB user information not found"));
         toast.error('IB user information not found');
         return;
       }
@@ -363,12 +379,18 @@ export function DownlineTreePageContent() {
         setEditedCommissions({});
         setEditingCommission(null);
       } else {
-        toast.error("Failed to load commission data");
+        toast.error(
+          getAdminFriendlyErrorMessage("Failed to load commission data", {
+            resource: "commission data",
+            action: "load",
+          })
+        );
       }
     } catch (error: unknown) {
       console.error("Failed to load user commissions:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to load commissions";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "commissions", action: "load" })
+      );
     } finally {
       setLoadingCommissions(false);
     }
@@ -438,8 +460,9 @@ export function DownlineTreePageContent() {
       setEditedCommissions({});
     } catch (error: unknown) {
       console.error("Failed to update commission:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to update commission";
-      toast.error(errorMessage);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "commissions", action: "update" })
+      );
     } finally {
       setSavingCommission(null);
     }
@@ -682,14 +705,28 @@ export function DownlineTreePageContent() {
     );
   }
 
+  if (loadError && Object.keys(nodesById).length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+        <ApiErrorState
+          error={loadError}
+          audience="admin"
+          variant="panel"
+          resource="downline tree"
+          action="load"
+          onRetry={() => {
+            router.refresh();
+          }}
+        />
+      </div>
+    );
+  }
+
   if (loading && Object.keys(nodesById).length === 0) {
     return (
       <>
         <div className="p-8 flex items-center justify-center h-[70vh] bg-background">
-          <div className="flex flex-col items-center space-y-3">
-            <Spinner className="h-8 w-8" />
-            <p className="text-sm text-muted-foreground">Loading downline tree…</p>
-          </div>
+          <BackofficeDetailDialogSkeleton fieldCount={6} sectionCount={2} className="w-full max-w-3xl" />
         </div>
       </>
     );
@@ -740,9 +777,7 @@ export function DownlineTreePageContent() {
           </DialogHeader>
 
           {loadingCommissions ? (
-            <div className="flex items-center justify-center py-8">
-              <Spinner className="h-8 w-8" />
-            </div>
+            <BackofficeDetailDialogSkeleton fieldCount={8} sectionCount={2} />
           ) : commissionData ? (
             commissionData.commissions && commissionData.commissions.length > 0 ? (
               <div className="space-y-4">

@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { ProfileHeaderSkeleton } from "@/components/loading/client-page-skeletons";
 import { Phone, MapPin, Shield, Copy, Check } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { authApi, type ProfileViewResponse } from "@/lib/api";
-import { Loader2 } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function ProfileHeader() {
@@ -75,15 +75,7 @@ export default function ProfileHeader() {
 
 
   if (loading) {
-    return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <ProfileHeaderSkeleton />;
   }
 
   if (!profileData?.user) {
