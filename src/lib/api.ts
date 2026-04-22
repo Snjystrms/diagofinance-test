@@ -2911,7 +2911,9 @@ export interface Mt5ToMt5TransferRequest {
   from_mt5_account_id: string;
   to_mt5_account_id: string;
   amount: number;
-  remarks?: string;
+  comment?: string;
+  from_mt5_user_id?: string;
+  to_mt5_user_id?: string;
 }
 
 export interface WalletToWalletTransferRequest {
@@ -2922,10 +2924,9 @@ export interface WalletToWalletTransferRequest {
 }
 
 export interface WalletToMt5TransferRequest {
-  from_wallet_type: string;
-  to_mt5_account_id: string;
+  account_ref: string;
   amount: number;
-  remarks?: string;
+  comment?: string;
 }
 
 export interface Mt5ToWalletTransferRequest {
