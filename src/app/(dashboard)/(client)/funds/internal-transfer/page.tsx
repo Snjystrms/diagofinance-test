@@ -5,7 +5,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
-import { ArrowLeftRight, Repeat, Wallet } from 'lucide-react'
+import { Repeat, Wallet } from 'lucide-react'
 
 import { ApiErrorState } from '@/components/errors/api-error-state'
 import { Button } from '@/components/ui/button'
@@ -24,7 +24,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 
-import { internalTransferApi, mt5AccountsApi, type MT5Account } from '@/lib/api'
+import {
+  internalTransferApi,
+  mt5AccountsApi,
+  walletApi,
+  type MT5Account,
+  type WalletSummaryData,
+} from '@/lib/api'
 import { getFriendlyErrorMessage } from '@/lib/friendly-errors'
 import { useAuth } from '@/contexts/auth-context'
 
@@ -52,21 +58,18 @@ const mt5ToMt5Schema = z
 
 const walletToWalletSchema = z
   .object({
-    fromWalletType: z.string().min(1, 'Enter the source wallet'),
-    toWalletType: z.string().min(1, 'Enter the destination wallet'),
+    fromWalletType: z.string().min(1, 'Select a source wallet'),
+    toWalletType: z.string().min(1, 'Select a destination wallet'),
     amount: amountFieldSchema,
     remarks: remarksSchema,
   })
-  .refine(
-    (values) => values.fromWalletType.trim().toLowerCase() !== values.toWalletType.trim().toLowerCase(),
-    {
-      message: 'Wallet types must be different',
-      path: ['toWalletType'],
-    }
-  )
+  .refine((values) => values.fromWalletType !== values.toWalletType, {
+    message: 'From and To wallets must be different',
+    path: ['toWalletType'],
+  })
 
 const walletToMt5Schema = z.object({
-  fromWalletType: z.string().min(1, 'Enter the source wallet'),
+  fromWalletType: z.string().min(1, 'Select a wallet'),
   toAccountId: z.string().min(1, 'Select an MT5 account'),
   amount: amountFieldSchema,
   remarks: remarksSchema,
@@ -74,7 +77,7 @@ const walletToMt5Schema = z.object({
 
 const mt5ToWalletSchema = z.object({
   fromAccountId: z.string().min(1, 'Select an MT5 account'),
-  toWalletType: z.string().min(1, 'Enter the destination wallet'),
+  toWalletType: z.string().min(1, 'Select a wallet'),
   amount: amountFieldSchema,
   remarks: remarksSchema,
 })
@@ -84,17 +87,33 @@ type WalletToWalletFormValues = z.infer<typeof walletToWalletSchema>
 type WalletToMt5FormValues = z.infer<typeof walletToMt5Schema>
 type Mt5ToWalletFormValues = z.infer<typeof mt5ToWalletSchema>
 
-const walletTypeHints = ['main', 'roi', 'bonus']
+type WalletOption = {
+  value: string
+  label: string
+  balance: number
+  currency: string
+  isPrimary: boolean
+}
 
-function sanitizeRemarks(value?: string) {
+function sanitizeComment(value?: string) {
   const trimmed = value?.trim()
   return trimmed ? trimmed : undefined
 }
 
+function formatWalletLabel(walletKey: string) {
+  return walletKey
+    .split(/[_-\s]+/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ')
+}
+
 function InternalTransferContent() {
-  const { token } = useAuth()
+  const { token, user } = useAuth()
   const [mt5Accounts, setMt5Accounts] = useState<MT5Account[]>([])
-  const [isLoadingAccounts, setIsLoadingAccounts] = useState(false)
+  const [walletSummary, setWalletSummary] = useState<WalletSummaryData | null>(null)
+  const [isLoadingResources, setIsLoadingResources] = useState(false)
+  const [walletError, setWalletError] = useState<unknown | null>(null)
   const [accountsError, setAccountsError] = useState<unknown | null>(null)
 
   const mt5ToMt5Form = useForm<Mt5ToMt5FormValues>({
@@ -110,7 +129,7 @@ function InternalTransferContent() {
   const walletToWalletForm = useForm<WalletToWalletFormValues>({
     resolver: zodResolver(walletToWalletSchema),
     defaultValues: {
-      fromWalletType: '',
+      fromWalletType: 'main',
       toWalletType: '',
       amount: '',
       remarks: '',
@@ -120,7 +139,7 @@ function InternalTransferContent() {
   const walletToMt5Form = useForm<WalletToMt5FormValues>({
     resolver: zodResolver(walletToMt5Schema),
     defaultValues: {
-      fromWalletType: '',
+      fromWalletType: 'main',
       toAccountId: '',
       amount: '',
       remarks: '',
@@ -131,7 +150,7 @@ function InternalTransferContent() {
     resolver: zodResolver(mt5ToWalletSchema),
     defaultValues: {
       fromAccountId: '',
-      toWalletType: '',
+      toWalletType: 'main',
       amount: '',
       remarks: '',
     },
@@ -142,34 +161,119 @@ function InternalTransferContent() {
       return
     }
 
-    const fetchAccounts = async () => {
-      try {
-        setIsLoadingAccounts(true)
-        setAccountsError(null)
-        const response = await mt5AccountsApi.getAll(token)
+    const loadTransferResources = async () => {
+      setIsLoadingResources(true)
+      setWalletError(null)
+      setAccountsError(null)
+
+      const [walletResult, accountsResult] = await Promise.allSettled([
+        walletApi.getSummary(token),
+        mt5AccountsApi.getAll(token),
+      ])
+
+      if (walletResult.status === 'fulfilled') {
+        const response = walletResult.value
+        if (response.success && response.data) {
+          setWalletSummary(response.data)
+        } else {
+          setWalletSummary(null)
+          setWalletError(response.message || 'Unable to load wallet summary')
+        }
+      } else {
+        console.error('Failed to load wallet summary', walletResult.reason)
+        setWalletSummary(null)
+        setWalletError(walletResult.reason)
+      }
+
+      if (accountsResult.status === 'fulfilled') {
+        const response = accountsResult.value
         if (response.success && response.data) {
           setMt5Accounts(response.data)
         } else {
+          setMt5Accounts([])
           setAccountsError('Unable to load MT5 accounts')
         }
-      } catch (error) {
-        console.error('Failed to load MT5 accounts', error)
-        setAccountsError(error)
-      } finally {
-        setIsLoadingAccounts(false)
+      } else {
+        console.error('Failed to load MT5 accounts', accountsResult.reason)
+        setMt5Accounts([])
+        setAccountsError(accountsResult.reason)
       }
+
+      setIsLoadingResources(false)
     }
 
-    fetchAccounts()
+    void loadTransferResources()
   }, [token])
 
   const mt5AccountOptions = useMemo(() => mt5Accounts.map((account) => ({
       id: account.account_id,
-      label: `${account.account_id} • ${account.account_type}`,
+      label: `${account.account_id} • ${account.available_balance} ${account.currency}`,
     })), [mt5Accounts])
 
+  const walletOptions = useMemo<WalletOption[]>(() => {
+    if (!walletSummary?.wallets) {
+      return []
+    }
+
+    return Object.entries(walletSummary.wallets).map(([walletKey, wallet]) => ({
+      value: walletKey,
+      label: formatWalletLabel(walletKey),
+      balance: Number(wallet.balance ?? 0),
+      currency: wallet.currency || 'USD',
+      isPrimary: Boolean(wallet.is_primary),
+    }))
+  }, [walletSummary])
+
+  const defaultWalletValue = useMemo(() => {
+    if (walletOptions.length === 0) {
+      return 'main'
+    }
+
+    return (
+      walletOptions.find((wallet) => wallet.isPrimary)?.value ||
+      walletOptions.find((wallet) => wallet.value.toLowerCase() === 'main')?.value ||
+      walletOptions[0]?.value ||
+      'main'
+    )
+  }, [walletOptions])
+
+  const secondaryWalletValue = useMemo(
+    () => walletOptions.find((wallet) => wallet.value !== defaultWalletValue)?.value || defaultWalletValue,
+    [defaultWalletValue, walletOptions]
+  )
+
+  useEffect(() => {
+    if (!defaultWalletValue) {
+      return
+    }
+
+    if (!walletToWalletForm.getValues('fromWalletType')) {
+      walletToWalletForm.setValue('fromWalletType', defaultWalletValue)
+    }
+    if (!walletToWalletForm.getValues('toWalletType')) {
+      walletToWalletForm.setValue('toWalletType', secondaryWalletValue)
+    }
+    if (!walletToMt5Form.getValues('fromWalletType')) {
+      walletToMt5Form.setValue('fromWalletType', defaultWalletValue)
+    }
+    if (!mt5ToWalletForm.getValues('toWalletType')) {
+      mt5ToWalletForm.setValue('toWalletType', defaultWalletValue)
+    }
+  }, [
+    defaultWalletValue,
+    mt5ToWalletForm,
+    secondaryWalletValue,
+    walletToMt5Form,
+    walletToWalletForm,
+  ])
+
+  const mainWallet = useMemo(
+    () => walletOptions.find((wallet) => wallet.value === defaultWalletValue) || walletOptions[0] || null,
+    [defaultWalletValue, walletOptions]
+  )
+
   const handleMt5ToMt5Submit = async (values: Mt5ToMt5FormValues) => {
-    if (!token) {
+    if (!token || !user?.id) {
       toast.error('Authentication required')
       return
     }
@@ -179,7 +283,9 @@ function InternalTransferContent() {
         from_mt5_account_id: values.fromAccountId,
         to_mt5_account_id: values.toAccountId,
         amount: Number(values.amount),
-        remarks: sanitizeRemarks(values.remarks),
+        comment: sanitizeComment(values.remarks),
+        from_mt5_user_id: String(user.id),
+        to_mt5_user_id: String(user.id),
       }
 
       const response = await internalTransferApi.mt5ToMt5(payload, token)
@@ -210,10 +316,10 @@ function InternalTransferContent() {
 
     try {
       const payload = {
-        from_wallet_type: values.fromWalletType.trim(),
-        to_wallet_type: values.toWalletType.trim(),
+        from_wallet_type: values.fromWalletType,
+        to_wallet_type: values.toWalletType,
         amount: Number(values.amount),
-        remarks: sanitizeRemarks(values.remarks),
+        remarks: sanitizeComment(values.remarks),
       }
 
       const response = await internalTransferApi.userWalletToUserWallet(payload, token)
@@ -244,10 +350,9 @@ function InternalTransferContent() {
 
     try {
       const payload = {
-        from_wallet_type: values.fromWalletType.trim(),
-        to_mt5_account_id: values.toAccountId,
+        account_ref: values.toAccountId,
         amount: Number(values.amount),
-        remarks: sanitizeRemarks(values.remarks),
+        comment: sanitizeComment(values.remarks),
       }
 
       const response = await internalTransferApi.userWalletToMt5(payload, token)
@@ -279,9 +384,9 @@ function InternalTransferContent() {
     try {
       const payload = {
         from_mt5_account_id: values.fromAccountId,
-        to_wallet_type: values.toWalletType.trim(),
+        to_wallet_type: values.toWalletType,
         amount: Number(values.amount),
-        remarks: sanitizeRemarks(values.remarks),
+        remarks: sanitizeComment(values.remarks),
       }
 
       const response = await internalTransferApi.mt5ToUserWallet(payload, token)
@@ -304,6 +409,10 @@ function InternalTransferContent() {
     }
   }
 
+  const walletSelectPlaceholder = isLoadingResources ? 'Loading wallets...' : 'Select wallet'
+  const mt5SelectPlaceholder = isLoadingResources ? 'Loading accounts...' : 'Select MT5 account'
+  const canTransferBetweenWallets = walletOptions.length > 1
+
   return (
     <div className="space-y-6">
       <div className="space-y-2">
@@ -312,9 +421,18 @@ function InternalTransferContent() {
             Internal Transfers
           </h1>
           <p className="text-base text-muted-foreground max-w-2xl">
-            Move funds between your wallets and MT5 trading accounts securely.
+            Move funds between your CRM wallets and linked MT5 trading accounts.
           </p>
         </div>
+        {walletError ? (
+          <ApiErrorState
+            error={walletError}
+            audience="client"
+            resource="wallet summary"
+            action="load"
+            variant="inline"
+          />
+        ) : null}
         {accountsError ? (
           <ApiErrorState
             error={accountsError}
@@ -326,55 +444,95 @@ function InternalTransferContent() {
         ) : null}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-            <Wallet className="h-5 w-5" />
-            Linked MT5 Accounts
-          </CardTitle>
-          <CardDescription>
-            Selectable MT5 accounts are shown below. Balances reflect the latest data from the trading server.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoadingAccounts ? (
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Repeat className="h-4 w-4 animate-spin" />
-              Loading MT5 accounts...
-            </div>
-          ) : mt5Accounts.length > 0 ? (
-            <div className="grid gap-3 sm:grid-cols-2">
-              {mt5Accounts.map((account) => (
-                <div
-                  key={account.account_id}
-                  className="rounded-lg border bg-muted/40 p-3 text-sm"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">{account.account_id}</span>
-                    <Badge variant="outline" className="capitalize">
-                      {account.account_type}
-                    </Badge>
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <Wallet className="h-5 w-5" />
+              CRM Wallet
+            </CardTitle>
+            <CardDescription>
+              The primary CRM wallet is used by default for wallet to MT5 transfers.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingResources ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Repeat className="h-4 w-4 animate-spin" />
+                Loading wallet balances...
+              </div>
+            ) : mainWallet ? (
+              <div className="rounded-lg border bg-muted/40 p-4 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="font-medium">{mainWallet.label}</div>
+                    <div className="mt-1 text-muted-foreground">
+                      Balance: {mainWallet.balance} {mainWallet.currency}
+                    </div>
                   </div>
-                  <div className="mt-1 text-muted-foreground">
-                    Balance: {account.available_balance}
-                  </div>
+                  <Badge variant="outline">
+                    {mainWallet.isPrimary ? 'Primary' : 'Wallet'}
+                  </Badge>
                 </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              No MT5 accounts found. Create an MT5 account before initiating transfers involving trading accounts.
-            </p>
-          )}
-        </CardContent>
-      </Card>
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No CRM wallet data is available right now.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
+              <Wallet className="h-5 w-5" />
+              Linked MT5 Accounts
+            </CardTitle>
+            <CardDescription>
+              Choose from your linked MT5 accounts when moving funds to or between trading accounts.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoadingResources ? (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Repeat className="h-4 w-4 animate-spin" />
+                Loading MT5 accounts...
+              </div>
+            ) : mt5Accounts.length > 0 ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+                {mt5Accounts.map((account) => (
+                  <div
+                    key={account.account_id}
+                    className="rounded-lg border bg-muted/40 p-3 text-sm"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{account.account_id}</span>
+                      <Badge variant="outline" className="capitalize">
+                        {account.account_type}
+                      </Badge>
+                    </div>
+                    <div className="mt-1 text-muted-foreground">
+                      Balance: {account.available_balance} {account.currency}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No MT5 accounts found. Create an MT5 account before initiating transfers involving trading accounts.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <Tabs defaultValue="wallet-to-wallet" className="space-y-4">
         <TabsList className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4">
-          <TabsTrigger value="wallet-to-wallet">Wallet ➜ Wallet</TabsTrigger>
-          <TabsTrigger value="wallet-to-mt5">Wallet ➜ MT5</TabsTrigger>
-          <TabsTrigger value="mt5-to-wallet">MT5 ➜ Wallet</TabsTrigger>
-          <TabsTrigger value="mt5-to-mt5">MT5 ➜ MT5</TabsTrigger>
+          <TabsTrigger value="wallet-to-wallet">Wallet to Wallet</TabsTrigger>
+          <TabsTrigger value="wallet-to-mt5">Wallet to MT5</TabsTrigger>
+          <TabsTrigger value="mt5-to-wallet">MT5 to Wallet</TabsTrigger>
+          <TabsTrigger value="mt5-to-mt5">MT5 to MT5</TabsTrigger>
         </TabsList>
 
         <TabsContent value="wallet-to-wallet">
@@ -382,13 +540,7 @@ function InternalTransferContent() {
             <CardHeader>
               <CardTitle>Transfer between wallets</CardTitle>
               <CardDescription>
-                Move balances between your internal wallets. Common wallets include{' '}
-                {walletTypeHints.map((type, index) => (
-                  <span key={type} className="font-medium">
-                    {type.toUpperCase()}
-                    {index < walletTypeHints.length - 1 ? ', ' : ''}
-                  </span>
-                ))}.
+                Move balances between the wallets available in your CRM account.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -404,9 +556,24 @@ function InternalTransferContent() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>From Wallet</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g. main" {...field} />
-                          </FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isLoadingResources || walletOptions.length === 0}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={walletSelectPlaceholder} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {walletOptions.map((wallet) => (
+                                <SelectItem key={wallet.value} value={wallet.value}>
+                                  {wallet.label} ({wallet.balance} {wallet.currency})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -417,14 +584,35 @@ function InternalTransferContent() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>To Wallet</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g. roi" {...field} />
-                          </FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isLoadingResources || walletOptions.length === 0}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={walletSelectPlaceholder} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {walletOptions.map((wallet) => (
+                                <SelectItem key={wallet.value} value={wallet.value}>
+                                  {wallet.label} ({wallet.balance} {wallet.currency})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
+
+                  {!canTransferBetweenWallets ? (
+                    <p className="text-sm text-muted-foreground">
+                      A second CRM wallet is required before funds can be moved between wallets.
+                    </p>
+                  ) : null}
 
                   <FormField
                     control={walletToWalletForm.control}
@@ -454,7 +642,11 @@ function InternalTransferContent() {
                     )}
                   />
 
-                  <Button type="submit" className="w-full md:w-auto" disabled={walletToWalletForm.formState.isSubmitting}>
+                  <Button
+                    type="submit"
+                    className="w-full md:w-auto"
+                    disabled={walletToWalletForm.formState.isSubmitting || !canTransferBetweenWallets}
+                  >
                     {walletToWalletForm.formState.isSubmitting ? 'Processing...' : 'Transfer Funds'}
                   </Button>
                 </form>
@@ -468,7 +660,7 @@ function InternalTransferContent() {
             <CardHeader>
               <CardTitle>Transfer from wallet to MT5</CardTitle>
               <CardDescription>
-                Fund any of your MT5 accounts using your internal wallet balance.
+                Deposit funds from your primary CRM wallet into one of your linked MT5 accounts.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -484,9 +676,20 @@ function InternalTransferContent() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>From Wallet</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g. main" {...field} />
-                          </FormControl>
+                          <Select value={field.value} disabled>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={walletSelectPlaceholder} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {mainWallet ? (
+                                <SelectItem value={mainWallet.value}>
+                                  {mainWallet.label} ({mainWallet.balance} {mainWallet.currency})
+                                </SelectItem>
+                              ) : null}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -497,10 +700,14 @@ function InternalTransferContent() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>MT5 Account</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingAccounts || mt5Accounts.length === 0}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isLoadingResources || mt5Accounts.length === 0}
+                          >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder={isLoadingAccounts ? 'Loading accounts...' : 'Select MT5 account'} />
+                                <SelectValue placeholder={mt5SelectPlaceholder} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -545,7 +752,11 @@ function InternalTransferContent() {
                     )}
                   />
 
-                  <Button type="submit" className="w-full md:w-auto" disabled={walletToMt5Form.formState.isSubmitting}>
+                  <Button
+                    type="submit"
+                    className="w-full md:w-auto"
+                    disabled={walletToMt5Form.formState.isSubmitting || !mainWallet}
+                  >
                     {walletToMt5Form.formState.isSubmitting ? 'Processing...' : 'Transfer Funds'}
                   </Button>
                 </form>
@@ -559,7 +770,7 @@ function InternalTransferContent() {
             <CardHeader>
               <CardTitle>Transfer from MT5 to wallet</CardTitle>
               <CardDescription>
-                Withdraw profits or balances from your MT5 account back to an internal wallet.
+                Withdraw balances from an MT5 account back into one of your CRM wallets.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -575,10 +786,14 @@ function InternalTransferContent() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>MT5 Account</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingAccounts || mt5Accounts.length === 0}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isLoadingResources || mt5Accounts.length === 0}
+                          >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder={isLoadingAccounts ? 'Loading accounts...' : 'Select MT5 account'} />
+                                <SelectValue placeholder={mt5SelectPlaceholder} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -599,9 +814,24 @@ function InternalTransferContent() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>To Wallet</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g. main" {...field} />
-                          </FormControl>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isLoadingResources || walletOptions.length === 0}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={walletSelectPlaceholder} />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {walletOptions.map((wallet) => (
+                                <SelectItem key={wallet.value} value={wallet.value}>
+                                  {wallet.label} ({wallet.balance} {wallet.currency})
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -666,10 +896,14 @@ function InternalTransferContent() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>From MT5 Account</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingAccounts || mt5Accounts.length === 0}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isLoadingResources || mt5Accounts.length === 0}
+                          >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder={isLoadingAccounts ? 'Loading accounts...' : 'Select MT5 account'} />
+                                <SelectValue placeholder={mt5SelectPlaceholder} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
@@ -690,10 +924,14 @@ function InternalTransferContent() {
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>To MT5 Account</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value} disabled={isLoadingAccounts || mt5Accounts.length === 0}>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={isLoadingResources || mt5Accounts.length === 0}
+                          >
                             <FormControl>
                               <SelectTrigger>
-                                <SelectValue placeholder={isLoadingAccounts ? 'Loading accounts...' : 'Select MT5 account'} />
+                                <SelectValue placeholder={mt5SelectPlaceholder} />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
