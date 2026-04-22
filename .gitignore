@@ -1,6 +1,7 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
+.npm-cache
 /node_modules
 /.pnp
 .pnp.*
@@ -32,6 +33,19 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env
+.env.local
+.env.development
+
+# Cursor agent skills (local only)
+.agents/skills/
+.agents/skills-lock.json
+
+# autoskills lockfile (repo root)
+skills-lock.json
+
+# Cursor project settings/rules (local-only)
+.cursor/
+skills-lock.json
 
 # vercel
 .vercel
@@ -39,3 +53,10 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+local
+*.log
+
+graphify-out
+*.md
+.codex

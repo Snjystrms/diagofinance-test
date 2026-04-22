@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { CenteredLoadingSurface } from '@/components/loading/page-loading-skeleton';
 import { useAuth } from '@/contexts/auth-context';
 import { canAccessRoute } from '@/lib/permission-nav-mapper';
 
@@ -55,12 +56,11 @@ export function PermissionProtectedRoute({
   // Show loading state while checking permissions
   if (!isAuthenticated || (user?.type === 'subadmin' && !user.permissions)) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-2 text-sm text-gray-600">Checking permissions...</p>
-        </div>
-      </div>
+      <CenteredLoadingSurface
+        minHeightClassName="min-h-screen"
+        title="Checking permissions"
+        description="Validating access for this section."
+      />
     );
   }
 

@@ -1,9 +1,11 @@
 "use client"
 
 import { AppSidebar } from "@/components/app-sidebar"
-import { AppSidebarV2 } from "@/components/app-sidebar-v2"
-import { AppSidebarV3 } from "@/components/app-sidebar-v3"
 import { Header } from "@/components/header"
+import dynamic from "next/dynamic"
+
+const AppSidebarV2 = dynamic(() => import("@/components/app-sidebar-v2").then((m) => ({ default: m.AppSidebarV2 })), { ssr: false })
+const AppSidebarV3 = dynamic(() => import("@/components/app-sidebar-v3").then((m) => ({ default: m.AppSidebarV3 })), { ssr: false })
 import { RegistrationFeeModal } from "@/components/registration-fee-modal"
 import { useAuth } from "@/contexts/auth-context"
 import {
@@ -11,6 +13,7 @@ import {
   SidebarProvider,
 } from "@/components/ui/sidebar"
 import { useState, useEffect } from "react"
+import { useClientCustomization } from "@/contexts/client-customization-context"
 
 interface MainLayoutProps {
   children: React.ReactNode
@@ -19,23 +22,7 @@ interface MainLayoutProps {
 export function MainLayout({ children }: MainLayoutProps) {
   const { user } = useAuth();
   const [showRegistrationModal, setShowRegistrationModal] = useState(false);
-  const [selectedSidebar, setSelectedSidebar] = useState<string>("default");
-
-  // Load saved sidebar from localStorage
-  useEffect(() => {
-    const savedSidebar = localStorage.getItem("selected-sidebar") || "default";
-    setSelectedSidebar(savedSidebar);
-
-    // Listen for sidebar changes
-    const handleSidebarChange = (event: CustomEvent) => {
-      setSelectedSidebar(event.detail.sidebarId);
-    };
-
-    window.addEventListener('sidebar-changed', handleSidebarChange as EventListener);
-    return () => {
-      window.removeEventListener('sidebar-changed', handleSidebarChange as EventListener);
-    };
-  }, []);
+  const { sidebarId: selectedSidebar } = useClientCustomization();
 
   // Check if user needs to pay registration fee
   useEffect(() => {
@@ -43,6 +30,14 @@ export function MainLayout({ children }: MainLayoutProps) {
       setShowRegistrationModal(true);
     }
   }, [user]);
+
+  // Clear sidebar cookie when switching to two-panel or expanded-panel to ensure it starts collapsed
+  useEffect(() => {
+    if (selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel") {
+      // Clear the sidebar state cookie to force collapsed state
+      document.cookie = "sidebar_state=false; path=/; max-age=0";
+    }
+  }, [selectedSidebar]);
 
   // If user needs to pay registration fee, show modal and disable sidebar
   if (user && user.type === 'user' && user.is_account_active === false) {
@@ -77,14 +72,6 @@ export function MainLayout({ children }: MainLayoutProps) {
     );
   }
 
-  // Clear sidebar cookie when switching to two-panel or expanded-panel to ensure it starts collapsed
-  useEffect(() => {
-    if (selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel") {
-      // Clear the sidebar state cookie to force collapsed state
-      document.cookie = "sidebar_state=false; path=/; max-age=0";
-    }
-  }, [selectedSidebar]);
-
   return (
     <SidebarProvider
       defaultOpen={selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel" ? false : true}
@@ -94,7 +81,9 @@ export function MainLayout({ children }: MainLayoutProps) {
           ? {
               "--sidebar-width": selectedSidebar === "expanded-panel" ? "400px" : "350px",
             } as React.CSSProperties
-          : undefined
+          : {
+              "--sidebar-width": "20rem",
+            } as React.CSSProperties
       }
     >
       {selectedSidebar === "two-panel" ? (
@@ -106,7 +95,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       )}
       <SidebarInset>
         <Header />
-        <main className="flex-1 overflow-auto p-4 md:p-6">
+        <main className="flex-1 overflow-auto p-5 md:p-6 lg:p-8">
           {children}
         </main>
       </SidebarInset>

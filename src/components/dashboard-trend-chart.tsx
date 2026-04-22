@@ -52,6 +52,8 @@ type DashboardTrendChartProps = {
   selectOptions?: SelectOption[]
   emptyStateLabel?: string
   formatValue: (value: number) => string
+  selectedPeriod?: PeriodOption["value"]
+  onPeriodChange?: (period: PeriodOption["value"]) => void
 }
 
 export function DashboardTrendChart({
@@ -64,9 +66,23 @@ export function DashboardTrendChart({
   selectOptions = [{ label: "All Wallets", value: "all" }],
   emptyStateLabel = "No data available",
   formatValue,
+  selectedPeriod: controlledPeriod,
+  onPeriodChange,
 }: DashboardTrendChartProps) {
-  const [selectedPeriod, setSelectedPeriod] =
+  const [internalPeriod, setInternalPeriod] =
     React.useState<PeriodOption["value"]>("7d")
+  
+  // Use controlled period if provided, otherwise use internal state
+  const selectedPeriod = controlledPeriod ?? internalPeriod
+  
+  const handlePeriodChange = (period: PeriodOption["value"]) => {
+    if (onPeriodChange) {
+      onPeriodChange(period)
+    } else {
+      setInternalPeriod(period)
+    }
+  }
+  
   const [selectedSource, setSelectedSource] = React.useState(
     selectOptions[0]?.value ?? "all",
   )
@@ -161,6 +177,34 @@ export function DashboardTrendChart({
 
   const isPositive = changePercent >= 0
 
+  // Get theme-aware color for XAxis ticks
+  const tickColor = React.useMemo(() => {
+    if (typeof window === "undefined") return "#71717a" // fallback for SSR
+    // Create a test element to get the computed color
+    const testEl = document.createElement("div")
+    testEl.className = "text-muted-foreground"
+    testEl.style.visibility = "hidden"
+    testEl.style.position = "absolute"
+    document.body.appendChild(testEl)
+    const computedColor = getComputedStyle(testEl).color
+    document.body.removeChild(testEl)
+    
+    // If we got a valid color, use it
+    if (computedColor && computedColor !== "rgba(0, 0, 0, 0)" && computedColor !== "transparent") {
+      return computedColor
+    }
+    
+    // Fallback: try to get CSS variable value directly
+    const root = document.documentElement
+    const value = getComputedStyle(root).getPropertyValue("--muted-foreground").trim()
+    if (value) {
+      return value.startsWith("hsl") ? value : `hsl(${value})`
+    }
+    
+    // Final fallback
+    return "#71717a"
+  }, [])
+
   return (
     <Card className="relative flex w-full max-w-full flex-col gap-6 overflow-hidden rounded-2xl border-2 border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-card via-card to-muted/20 shadow-lg backdrop-blur-sm group md:p-6">
       {/* Decorative gradient overlay */}
@@ -202,7 +246,7 @@ export function DashboardTrendChart({
           {PERIOD_OPTIONS.map((period) => (
             <button
               key={period.value}
-              onClick={() => setSelectedPeriod(period.value)}
+              onClick={() => handlePeriodChange(period.value)}
               data-active={selectedPeriod === period.value}
               className={cn(
                 "relative flex h-9 flex-1 items-center justify-center bg-transparent text-sm font-semibold tracking-[-0.006em] outline-none transition-all duration-200 first:rounded-l-lg last:rounded-r-lg",
@@ -260,7 +304,7 @@ export function DashboardTrendChart({
                     dataKey="label"
                     tick={{ 
                       fontSize: 11,
-                      fill: "hsl(var(--muted-foreground))",
+                      fill: tickColor,
                     }}
                     tickLine={false}
                     axisLine={false}

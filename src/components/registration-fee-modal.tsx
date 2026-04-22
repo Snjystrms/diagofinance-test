@@ -202,7 +202,7 @@ export function RegistrationFeeModal({ isOpen, onClose }: RegistrationFeeModalPr
                         />
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        Find this in your wallet's transaction history or blockchain explorer
+                        Find this in your wallet&apos;s transaction history or blockchain explorer
                       </p>
                     </div>
 
@@ -236,7 +236,7 @@ export function RegistrationFeeModal({ isOpen, onClose }: RegistrationFeeModalPr
                       Verifying Payment
                     </h3>
                     <p className="text-muted-foreground mb-3 text-sm">
-                      We're verifying your registration fee payment...
+                      We&apos;re verifying your registration fee payment...
                     </p>
                     <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-3 border border-blue-200 dark:border-blue-800">
                       <p className="text-xs text-blue-800 dark:text-blue-200 break-all">
@@ -302,7 +302,7 @@ export function RegistrationFeeModal({ isOpen, onClose }: RegistrationFeeModalPr
         <div className="p-4 border-t bg-muted/30">
           <div className="text-center">
             <p className="text-sm text-muted-foreground mb-3">
-              After payment verification, your account will be activated and you'll have access to all features.
+              After payment verification, your account will be activated and you&apos;ll have access to all features.
             </p>
             <Button
               variant="outline"

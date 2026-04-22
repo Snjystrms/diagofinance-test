@@ -10,7 +10,7 @@ interface PermissionAwareButtonProps extends React.ComponentProps<typeof Button>
   children: React.ReactNode;
   requiredModule: string;
   requiredAction: string;
-  fallbackComponent?: React.ComponentType<any> | null;
+  fallbackComponent?: React.ComponentType<Record<string, unknown>> | null;
   showTooltip?: boolean;
   tooltipMessage?: string;
 }

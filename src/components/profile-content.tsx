@@ -374,7 +374,7 @@ export default function ProfileContent() {
                         <FileText className="h-5 w-5 text-blue-500" />
                         <div>
                           <h4 className="font-medium">Government-issued ID</h4>
-                          <p className="text-sm text-muted-foreground">Passport, Driver's License, or National ID</p>
+                          <p className="text-sm text-muted-foreground">Passport, Driver&apos;s License, or National ID</p>
                         </div>
                       </div>
                       <Badge variant="outline" className="flex items-center gap-1">

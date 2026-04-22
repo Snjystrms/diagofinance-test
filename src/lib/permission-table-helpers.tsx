@@ -23,7 +23,7 @@ export interface TableActionHandlers<T> {
 export interface CustomAction {
   key: string;
   label: string;
-  icon?: React.ComponentType<any>;
+  icon?: React.ComponentType<Record<string, unknown>>;
   variant?: 'default' | 'destructive' | 'ghost' | 'link' | 'outline' | 'secondary';
   requiredAction?: string; // defaults to 'write'
 }

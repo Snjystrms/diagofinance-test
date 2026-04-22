@@ -1,3 +1,5 @@
+import { formatInIST } from "./date-time";
+
 export function formatDate(
   date: Date | string | number | undefined,
   opts: Intl.DateTimeFormatOptions = {},
@@ -5,12 +7,12 @@ export function formatDate(
   if (!date) return "";
 
   try {
-    return new Intl.DateTimeFormat("en-US", {
+    return formatInIST(date, {
       month: opts.month ?? "long",
       day: opts.day ?? "numeric",
       year: opts.year ?? "numeric",
       ...opts,
-    }).format(new Date(date));
+    }, "");
   } catch (_err) {
     return "";
   }

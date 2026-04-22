@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { Bell, Search, User, LogOut, Palette, Shield, Layout, Copy } from "lucide-react"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,105 +13,106 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ThemeCustomizer } from "@/components/theme-customizer"
 import { SidebarSelector } from "@/components/sidebar-selector"
 import { useAuth } from "@/contexts/auth-context"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { authApi, admin2FAApi, manager2FAApi } from "@/lib/api"
 import toast from "react-hot-toast"
 import { TwoFactorModal } from "@/components/two-factor-modal"
+import { NotificationInbox } from "@/components/notification-inbox"
+import { useClientCustomization } from "@/contexts/client-customization-context"
 
 export function Header() {
   const { user, token, logout } = useAuth();
+  const queryClient = useQueryClient();
+  const {
+    canCustomizeTheme,
+    canCustomizeSidebar,
+    customizationEnabled,
+    exportPresetSnapshot,
+  } = useClientCustomization();
   const router = useRouter();
+  const pathname = usePathname();
   const [themeCustomizerOpen, setThemeCustomizerOpen] = useState(false);
   const [sidebarSelectorOpen, setSidebarSelectorOpen] = useState(false);
   const [twoFactorModalOpen, setTwoFactorModalOpen] = useState(false);
-  const [is2FAEnabled, setIs2FAEnabled] = useState(false);
-  const [isLoading2FAStatus, setIsLoading2FAStatus] = useState(false);
   const [accountId, setAccountId] = useState<string | null>(null);
   const [profileStatus, setProfileStatus] = useState<string | null>(null);
   const [dashboardName, setDashboardName] = useState<string | null>(null);
+  const canManageCustomizer =
+    user?.type === "admin" || user?.type === "subadmin" || user?.type === "manager";
+  const isDashboardRoute = pathname === "/dashboard";
 
-  // Check 2FA status when component mounts and when user changes
-  useEffect(() => {
-    if (user?.id && token) {
-      checkTwoFactorStatus();
-    }
-  }, [user, token]);
+  // Share the userDashboard data with dashboard page via React Query cache.
+  const { data: userDashboardData } = useQuery({
+    queryKey: ["userDashboard", token],
+    queryFn: () => authApi.getUserDashboard(token!),
+    enabled: Boolean(token) && user?.type === "user",
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
 
+  const { data: is2FAEnabled = false, isFetching: isLoading2FAStatus } = useQuery({
+    queryKey: ["twoFactorStatus", user?.type, user?.id, token],
+    queryFn: async () => {
+      if (!user?.id || !token) return false;
+
+      try {
+        const isAdminLike = user.type === "admin" || user.type === "subadmin";
+        const isManager = user.type === "manager";
+
+        const response = isAdminLike
+          ? await admin2FAApi.getTwoFactorStatus(user.id, token)
+          : isManager
+            ? await manager2FAApi.getTwoFactorStatus(user.id, token)
+            : await authApi.getTwoFactorStatus(Number(user.id), token);
+
+        return response.success && response.data ? Boolean(response.data.google_2FA_status) : false;
+      } catch {
+        return false;
+      }
+    },
+    enabled: Boolean(user?.id && token),
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+    refetchOnWindowFocus: false,
+  });
+
+  // Derive header info from the shared userDashboard React Query cache.
   useEffect(() => {
-    let isMounted = true;
-    if (!token || user?.type !== "user") {
-      setAccountId(null);
-      setProfileStatus(null);
-      setDashboardName(null);
+    if (!userDashboardData?.success || !userDashboardData.data) {
+      if (user?.type !== "user") {
+        setAccountId(null);
+        setProfileStatus(null);
+        setDashboardName(null);
+      }
       return;
     }
-
-    const fetchDashboardInfo = async () => {
-      try {
-        const response = await authApi.getUserDashboard(token);
-        if (response.success && response.data && isMounted) {
-          const dashboardUser = response.data.user;
-          const profile = response.data.profile_status;
-          setAccountId(dashboardUser?.account_id ?? null);
-          setProfileStatus(profile?.status ?? null);
-          const displayName =
-            dashboardUser?.name ||
-            [dashboardUser?.first_name, dashboardUser?.last_name].filter(Boolean).join(" ");
-          setDashboardName(displayName || null);
-        }
-      } catch (error) {
-        console.error("Failed to load dashboard header info:", error);
-      }
-    };
-
-    fetchDashboardInfo();
-    return () => {
-      isMounted = false;
-    };
-  }, [token, user?.type]);
-
-  const checkTwoFactorStatus = async () => {
-    if (!user?.id || !token) return;
-    
-    setIsLoading2FAStatus(true);
-    
-    try {
-      // Use appropriate API based on user type
-      const isAdmin = user.type === 'admin';
-      const isManager = user.type === 'manager';
-      let response;
-      
-      if (isAdmin) {
-        response = await admin2FAApi.getTwoFactorStatus(user.id, token);
-      } else if (isManager) {
-        response = await manager2FAApi.getTwoFactorStatus(user.id, token);
-      } else {
-        response = await authApi.getTwoFactorStatus(Number(user.id), token);
-      }
-      
-      if (response.success && response.data) {
-        setIs2FAEnabled(response.data.google_2FA_status);
-      }
-    } catch (error) {
-      console.error('Failed to check 2FA status:', error);
-    } finally {
-      setIsLoading2FAStatus(false);
-    }
-  };
+    const dashboardUser = userDashboardData.data.user;
+    const profile = userDashboardData.data.profile_status;
+    setAccountId(dashboardUser?.account_id ?? null);
+    setProfileStatus(profile?.status ?? null);
+    const displayName =
+      dashboardUser?.name ||
+      [dashboardUser?.first_name, dashboardUser?.last_name].filter(Boolean).join(" ");
+    setDashboardName(displayName || null);
+  }, [userDashboardData, user?.type]);
 
   const handleLogout = async () => {
     try {
-      // Call the logout API if we have a token
-      if (token) {
+      // Only user sessions have a matching logout endpoint in the current API layer.
+      if (token && user?.type === "user") {
         await authApi.logout(token);
       }
     } catch (error) {
-      console.error('Logout API error:', error);
+      const message = error instanceof Error ? error.message : "";
+      if (message && !message.toLowerCase().includes("invalid token type")) {
+        console.warn("Logout API failed, completing local logout");
+      }
       // Even if the API call fails, we still want to log out locally
     } finally {
       // Perform local logout regardless of API success
@@ -123,20 +124,29 @@ export function Header() {
 
   const handle2FAStatusChange = () => {
     // Toggle the 2FA status and refresh the status from API
-    checkTwoFactorStatus();
+    void queryClient.invalidateQueries({ queryKey: ["twoFactorStatus"] });
   };
 
   const handleSidebarTriggerClick = () => {
     window.dispatchEvent(new CustomEvent("toggle-nested-sidebar"));
   };
 
+  const handleExportPreset = async () => {
+    try {
+      await navigator.clipboard.writeText(exportPresetSnapshot());
+      toast.success("Preset snapshot copied to clipboard");
+    } catch (error) {
+      console.error("Failed to copy preset snapshot:", error);
+      toast.error("Unable to copy preset snapshot");
+    }
+  };
+
   return (
     <>
-      <header className="flex h-16 items-center justify-between gap-2 border-b bg-card px-3 sm:px-4 md:px-6 overflow-hidden">
-        <div className="flex items-center gap-2 sm:gap-3 md:gap-4 flex-1 min-w-0 overflow-hidden">
+      <header className="flex h-16 items-center gap-3 border-b bg-card px-4 sm:px-5 md:px-6 overflow-hidden">
+        {/* Left Section */}
+        <div className="flex items-center gap-3 sm:gap-4 md:gap-5 flex-1 min-w-0 overflow-hidden">
           <SidebarTrigger className="-ml-1 flex-shrink-0" onClick={handleSidebarTriggerClick} />
-          
-      
           
           {/* Search Bar - Desktop */}
           <div className="relative hidden lg:block flex-shrink-0">
@@ -148,7 +158,48 @@ export function Header() {
           </div>
         </div>
         
-        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+        {/* Center Section - Account ID */}
+        {user?.type === "user" && (
+          <div className="hidden xl:flex items-center justify-center flex-shrink-0">
+            <div className="relative group">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent rounded-xl blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              {/* <div className="relative flex items-center gap-2.5 px-5 py-2.5 rounded-xl bg-card shadow-sm hover:shadow-md transition-all duration-200"> */}
+                {/* <div className="flex items-center gap-2.5 min-w-0">
+                  <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-primary/10 dark:bg-primary/20 flex items-center justify-center">
+                    <span className="text-xs font-bold text-primary">ID</span>
+                  </div>
+                  <div className="flex flex-col min-w-0">
+                    <div className="text-[9px] uppercase tracking-widest text-muted-foreground/60 font-semibold mb-0.5">
+                      Account
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-base font-bold text-foreground font-mono tracking-wider">
+                        {accountId || user.id || "—"}
+                      </div>
+                      {accountId && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 flex-shrink-0 hover:bg-primary/10 hover:text-primary rounded-md transition-colors"
+                          onClick={() => {
+                            navigator.clipboard.writeText(accountId);
+                            toast.success('Account ID copied to clipboard');
+                          }}
+                          title="Copy Account ID"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </div> */}
+              {/* </div> */}
+            </div>
+          </div>
+        )}
+        
+        {/* Right Section */}
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           {/* Search Bar - Mobile/Tablet */}
           <div className="relative lg:hidden flex-shrink-0">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -157,55 +208,6 @@ export function Header() {
               className="pl-8 w-40 sm:w-48 md:w-56"
             />
           </div>
-              {/* Account ID and User Info - Left Side (visible on larger screens) */}
-              {user?.type === "user" && (
-            <div className="hidden xl:flex items-center gap-4 lg:gap-6 flex-shrink-0">
-              {/* Account ID */}
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="min-w-0">
-                  <div className="text-xs text-muted-foreground mb-1 whitespace-nowrap">Account ID</div>
-                  <div className="text-sm lg:text-base font-semibold text-foreground truncate max-w-[140px] lg:max-w-[200px] xl:max-w-none">
-                    {accountId || user.id || "—"}
-                  </div>
-                </div>
-                {accountId && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-6 w-6 flex-shrink-0"
-                    onClick={() => {
-                      navigator.clipboard.writeText(accountId);
-                      toast.success('Account ID copied to clipboard');
-                    }}
-                    title="Copy Account ID"
-                  >
-                    <Copy className="h-3.5 w-3.5 text-primary" />
-                  </Button>
-                )}
-              </div>
-              
-              {/* User Name and Status */}
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="flex flex-col min-w-0">
-                  <span className="text-xs sm:text-sm font-semibold text-foreground truncate max-w-[120px] lg:max-w-[150px] xl:max-w-none">
-                    {dashboardName || user.name || "User"}
-                  </span>
-                  {profileStatus && (
-                    <Badge
-                      variant={profileStatus.toLowerCase() === "verified" ? "default" : "destructive"}
-                      className={
-                        profileStatus.toLowerCase() === "verified"
-                          ? "text-[10px] sm:text-xs mt-1 w-fit bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-950/40 dark:text-green-300 dark:hover:bg-green-900/40"
-                          : "text-[10px] sm:text-xs mt-1 w-fit"
-                      }
-                    >
-                      {profileStatus.charAt(0).toUpperCase() + profileStatus.slice(1)}
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </div>
-          )}
           
           {/* 2FA Button */}
           <Button 
@@ -244,7 +246,7 @@ export function Header() {
             )}
           </Button>
           
-          {user?.type === 'admin' && (
+          {canManageCustomizer && canCustomizeSidebar && (
             <Button 
               variant="ghost" 
               size="icon" 
@@ -256,38 +258,84 @@ export function Header() {
             </Button>
           )}
           
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => setThemeCustomizerOpen(true)}
-            title="Customize Theme"
-            className="relative flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9"
-            style={{
-              '--tw-ring-color': 'var(--accent, #3b82f6)',
-            } as React.CSSProperties}
-          >
-            <Palette className="h-4 w-4" />
-          </Button>
+          {canCustomizeTheme && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setThemeCustomizerOpen(true)}
+              title="Customize Theme"
+              className="relative flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9"
+              style={{
+                '--tw-ring-color': 'var(--accent, #3b82f6)',
+              } as React.CSSProperties}
+            >
+              <Palette className="h-4 w-4" />
+            </Button>
+          )}
+
+          {customizationEnabled && canManageCustomizer && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleExportPreset}
+              className="hidden lg:inline-flex"
+              title="Copy current preset snapshot"
+            >
+              Export Preset
+            </Button>
+          )}
           
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="relative flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9"
-          >
-            <Bell className="h-4 w-4" />
-            <span className="absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500"></span>
-          </Button>
+          {user ? (
+            <NotificationInbox
+              mode={user.type === "user" ? "user" : "admin"}
+              shouldFetchUnreadCount={isDashboardRoute}
+            />
+          ) : null}
           
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-8 w-8 sm:h-9 sm:w-9 rounded-full flex-shrink-0">
-                <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
-                  <AvatarImage src="/avatars/01.png" alt="@user" />
-                  <AvatarFallback>
-                    {user?.name ? user.name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
+              {user?.type === "user" ? (
+                <div className="hidden xl:flex items-center gap-3 min-w-0 cursor-pointer">
+                  <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-background via-muted/30 to-background border border-border/60 hover:border-border hover:shadow-lg transition-all duration-300">
+                    <div className="relative flex-shrink-0">
+                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center ring-2 ring-background">
+                        <User className="h-3.5 w-3.5 text-primary" />
+                      </div>
+                      {profileStatus && (
+                        <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${
+                          profileStatus.toLowerCase() === "verified" 
+                            ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" 
+                            : "bg-orange-500"
+                        }`}></div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-semibold text-foreground truncate max-w-[140px] leading-none">
+                          {dashboardName || user.name || "User"}
+                        </span>
+                        {profileStatus && (
+                          <span className={`text-[9px] font-medium mt-0.5 ${
+                            profileStatus.toLowerCase() === "verified"
+                              ? "text-green-600 dark:text-green-400"
+                              : "text-orange-600 dark:text-orange-400"
+                          }`}>
+                            {profileStatus.charAt(0).toUpperCase() + profileStatus.slice(1)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <Button variant="ghost" className="relative h-8 w-8 sm:h-9 sm:w-9 rounded-full flex-shrink-0">
+                  <Avatar className="h-8 w-8 sm:h-9 sm:w-9">
+                    <AvatarFallback>
+                      {user?.name ? user.name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              )}
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56" align="end" forceMount>
               <DropdownMenuLabel className="font-normal">

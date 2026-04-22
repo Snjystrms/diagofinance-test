@@ -1,12 +1,16 @@
 "use client"
 
 import { AppSidebar } from "@/components/app-sidebar"
-import { AppSidebarV2 } from "@/components/app-sidebar-v2"
-import { AppSidebarV3 } from "@/components/app-sidebar-v3"
+import { ProtectedRoute } from "@/components/protected-route"
 import { Header } from "@/components/header"
-import { cn } from "@/lib/utils"
+import { DashboardBreadcrumbs } from "@/components/dashboard-breadcrumbs"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
-import { useState, useEffect } from "react"
+import { useEffect } from "react"
+import dynamic from "next/dynamic"
+import { useClientCustomization } from "@/contexts/client-customization-context"
+
+const AppSidebarV2 = dynamic(() => import("@/components/app-sidebar-v2").then((m) => ({ default: m.AppSidebarV2 })), { ssr: false })
+const AppSidebarV3 = dynamic(() => import("@/components/app-sidebar-v3").then((m) => ({ default: m.AppSidebarV3 })), { ssr: false })
 
 interface DashboardLayoutProps {
   children: React.ReactNode
@@ -15,23 +19,7 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({
   children,
 }: DashboardLayoutProps) {
-  const [selectedSidebar, setSelectedSidebar] = useState<string>("default");
-
-  // Load saved sidebar from localStorage
-  useEffect(() => {
-    const savedSidebar = localStorage.getItem("selected-sidebar") || "default";
-    setSelectedSidebar(savedSidebar);
-
-    // Listen for sidebar changes
-    const handleSidebarChange = (event: CustomEvent) => {
-      setSelectedSidebar(event.detail.sidebarId);
-    };
-
-    window.addEventListener('sidebar-changed', handleSidebarChange as EventListener);
-    return () => {
-      window.removeEventListener('sidebar-changed', handleSidebarChange as EventListener);
-    };
-  }, []);
+  const { sidebarId: selectedSidebar } = useClientCustomization();
 
   // Clear sidebar cookie when switching to two-panel or expanded-panel to ensure it starts collapsed
   useEffect(() => {
@@ -42,32 +30,37 @@ export default function DashboardLayout({
   }, [selectedSidebar]);
 
   return (
-    <SidebarProvider
-      defaultOpen={selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel" ? false : true}
-      open={selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel" ? false : undefined}
-      style={
-        selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel"
-          ? {
-              "--sidebar-width": selectedSidebar === "expanded-panel" ? "400px" : "350px",
-            } as React.CSSProperties
-          : undefined
-      }
-    >
-      {selectedSidebar === "two-panel" ? (
-        <AppSidebarV2 className="hidden md:flex" />
-      ) : selectedSidebar === "expanded-panel" ? (
-        <AppSidebarV3 className="hidden md:flex" />
-      ) : (
-        <AppSidebar className="hidden md:flex flex-shrink-0" />
-      )}
-      <SidebarInset>
-        <Header />
-        <main className="flex-1 overflow-y-auto bg-background">
-          <div className="w-full max-w-none">
-            {children}
-          </div>
-        </main>
-      </SidebarInset>
-    </SidebarProvider>
+    <ProtectedRoute>
+      <SidebarProvider
+        defaultOpen={selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel" ? false : true}
+        open={selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel" ? false : undefined}
+        style={
+          selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel"
+            ? {
+                "--sidebar-width": selectedSidebar === "expanded-panel" ? "400px" : "350px",
+              } as React.CSSProperties
+            : {
+                "--sidebar-width": "20rem",
+          } as React.CSSProperties
+        }
+      >
+        {selectedSidebar === "two-panel" ? (
+          <AppSidebarV2 className="hidden md:flex" />
+        ) : selectedSidebar === "expanded-panel" ? (
+          <AppSidebarV3 className="hidden md:flex" />
+        ) : (
+          <AppSidebar className="hidden md:flex flex-shrink-0 " />
+        )}
+        <SidebarInset>
+          <Header />
+          <DashboardBreadcrumbs />
+          <main className="flex-1 overflow-y-auto bg-background">
+            <div className="w-full max-w-none">
+              {children}
+            </div>
+          </main>
+        </SidebarInset>
+      </SidebarProvider>
+    </ProtectedRoute>
   )
 }

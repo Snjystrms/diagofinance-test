@@ -2,8 +2,9 @@
 
 import { useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
+import { CenteredLoadingSurface } from '@/components/loading/page-loading-skeleton';
 import { useAuth } from '@/contexts/auth-context';
-import type { GroupedPermissions } from '@/lib/api';
+import { isRouteAllowedForRole } from '@/lib/app-route-registry';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -12,62 +13,6 @@ interface ProtectedRouteProps {
 }
 
 type UserRole = 'admin' | 'manager' | 'user' | 'subadmin';
-
-const USER_ALLOWED_PREFIXES: string[] = [
-  '/dashboard',
-  '/my_wallet',
-  '/my_accounts',
-  '/funds',
-  '/social-trading',
-  '/trading_platforms',
-  '/profile',
-  '/trading-central',
-  '/help-support',
-  '/raise-ticket',
-  '/ticket-history',
-];
-
-const MANAGER_BASE_ROUTES = ['/dashboard'];
-
-const MANAGER_CATEGORY_ROUTE_MAP: Record<string, string[]> = {
-  Bonus: ['/bonus-management'],
-  'E-Mail Management': ['/email-management'],
-  'Group Management': ['/packages', '/all-accounts', '/package-sales', '/package-analytics'],
-  'IB Management': ['/ib-management'],
-  'Marketing Management': ['/marketing-management'],
-  'News Management': ['/news-management'],
-  Notification: ['/notification-management'],
-  'Report Management': ['/report-management'],
-  'Rewards Management': ['/reward-management'],
-  'Settings Management': ['/settings-management'],
-  'Sub Admin': ['/manager', '/all-managers'],
-  'Ticket Management': ['/ticket-management'],
-  Transaction: ['/transactions', '/usdt-transactions', '/transaction-verification', '/payment-history'],
-  'User Management': ['/users', '/new-users', '/user-verification', '/user-status'],
-};
-
-const matchesPrefix = (pathname: string, prefixes: string[]) =>
-  prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
-
-const getManagerCategories = (permissions?: GroupedPermissions[]) =>
-  new Set((permissions ?? []).map((group) => group.category).filter(Boolean));
-
-const isRouteAllowedForUser = (pathname: string): boolean =>
-  matchesPrefix(pathname, USER_ALLOWED_PREFIXES);
-
-const isRouteAllowedForManager = (pathname: string, categories: Set<string>): boolean => {
-  if (matchesPrefix(pathname, MANAGER_BASE_ROUTES)) {
-    return true;
-  }
-
-  for (const [category, routes] of Object.entries(MANAGER_CATEGORY_ROUTE_MAP)) {
-    if (matchesPrefix(pathname, routes)) {
-      return categories.has(category);
-    }
-  }
-
-  return false;
-};
 
 export function ProtectedRoute({
   children,
@@ -83,18 +28,9 @@ export function ProtectedRoute({
   const isAuthorized = useMemo(() => {
     if (!requireAuth) return true;
     if (!isAuthenticated) return false;
-
-    if (userRole === 'admin') return true;
-    if (userRole === 'user') {
-      return isRouteAllowedForUser(pathname);
-    }
-    if (userRole === 'manager') {
-      const categories = getManagerCategories(user?.managerPermissions);
-      return isRouteAllowedForManager(pathname, categories);
-    }
-
-    // default deny for unknown role
-    return false;
+    return isRouteAllowedForRole(pathname, userRole, {
+      managerPermissions: user?.managerPermissions,
+    });
   }, [requireAuth, isAuthenticated, userRole, pathname, user?.managerPermissions]);
 
   useEffect(() => {
@@ -126,23 +62,21 @@ export function ProtectedRoute({
 
   if (requireAuth && !isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto" />
-          <p className="mt-2 text-sm text-gray-600">Loading...</p>
-        </div>
-      </div>
+      <CenteredLoadingSurface
+        minHeightClassName="min-h-screen"
+        title="Loading"
+        description="Checking your session and preparing the workspace."
+      />
     );
   }
 
   if (!requireAuth && isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto" />
-          <p className="mt-2 text-sm text-gray-600">Redirecting...</p>
-        </div>
-      </div>
+      <CenteredLoadingSurface
+        minHeightClassName="min-h-screen"
+        title="Redirecting"
+        description="Taking you to the right dashboard."
+      />
     );
   }
 

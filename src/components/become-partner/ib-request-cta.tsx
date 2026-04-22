@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 
 import { useAuth } from "@/contexts/auth-context";
 import { ibRequestsApi, type IbRequestStatusResponse } from "@/lib/api";
+import { formatDateTimeInIST } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 
 interface BecomePartnerCtaProps {
@@ -19,8 +20,8 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [statusData, setStatusData] = useState<IbRequestStatusResponse | null>(null);
-  // Show status if there's an ib_request OR if status_text exists (even if rejected)
-  const hasSubmitted = Boolean(statusData?.ib_request || statusData?.status_text);
+  // Show status only if ib_request exists (not null) - if null, user hasn't applied yet
+  const hasSubmitted = Boolean(statusData?.ib_request);
 
   const refreshStatus = useCallback(async () => {
     if (!token) {
@@ -43,14 +44,9 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
       console.log("[IB Status] ib_request:", data?.ib_request);
       
       if (data) {
-        // Verify the data structure matches IbRequestStatusResponse
-        if (data.status_text || data.ib_request !== undefined) {
-          console.log("[IB Status] Valid data structure, setting statusData");
-          setStatusData(data);
-        } else {
-          console.warn("[IB Status] Data structure unexpected:", data);
-          setStatusData(null);
-        }
+        // Always set statusData if we have data, even if ib_request is null
+        console.log("[IB Status] Valid data structure, setting statusData");
+        setStatusData(data);
       } else {
         console.log("[IB Status] No data in response, setting statusData to null");
         setStatusData(null);
@@ -98,26 +94,38 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
   };
 
   const submittedDetails = useMemo(() => {
-    if (!statusData || !statusData.status_text) return null;
+    // Only show details if ib_request exists (user has applied)
+    if (!statusData || !statusData.ib_request) return null;
 
-    const statusText = statusData.status_text;
     const ibRequest = statusData.ib_request;
-    const timestamp = ibRequest?.created_at_ist || ibRequest?.created_at;
+    const timestamp = ibRequest.created_at_ist || ibRequest.created_at;
+
+    // Determine status based on ib_request.status: 0 = Pending, 1 = Approved, 2 = Rejected
+    let statusText: string;
+    switch (ibRequest.status) {
+      case 0:
+        statusText = "Pending";
+        break;
+      case 1:
+        statusText = "Approved";
+        break;
+      case 2:
+        statusText = "Rejected";
+        break;
+      default:
+        statusText = statusData.status_text || "Unknown";
+    }
 
     let createdLabel: string | null = null;
     if (timestamp) {
-      // Try to parse the IST timestamp first, then fallback to ISO
-      const date = new Date(timestamp);
-      if (!Number.isNaN(date.getTime())) {
-        createdLabel = date.toLocaleString();
-      }
+      createdLabel = formatDateTimeInIST(timestamp);
     }
 
     return {
       statusText,
-      adminComment: ibRequest?.admin_comment || null,
+      adminComment: ibRequest.admin_comment || null,
       createdLabel,
-      status: ibRequest?.status,
+      status: ibRequest.status,
     };
   }, [statusData]);
 

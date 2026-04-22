@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ProfileContentSkeleton } from "@/components/loading/client-page-skeletons";
 import {
   Select,
   SelectContent,
@@ -280,7 +281,7 @@ export default function ProfileContent() {
   };
 
   // Handle input changes for legal information
-  const handleLegalInfoChange = (field: keyof ProfileViewResponse["legal_information"], value: any) => {
+  const handleLegalInfoChange = (field: keyof ProfileViewResponse["legal_information"], value: string | number | boolean | null) => {
     if (!profileData) return;
     setProfileData({
       ...profileData,
@@ -361,13 +362,7 @@ export default function ProfileContent() {
     : [];
 
   if (loading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    );
+    return <ProfileContentSkeleton />;
   }
 
   if (!profileData) {

@@ -56,15 +56,9 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/contexts/auth-context"
-import { generateManagerNavigation } from "@/lib/permission-nav-mapper"
-import { adminNavData, userNavData } from "@/components/app-sidebar"
-
-type NavItem = {
-  title: string;
-  url: string;
-  icon?: React.ComponentType<{ className?: string }>;
-  items?: Array<{ title: string; url: string }>;
-};
+import { generateSubadminNavigation } from "@/lib/permission-nav-mapper"
+import { getSidebarNavigation } from "@/lib/app-route-registry"
+import type { NavItem } from "@/types/permissions"
 
 // Helper function to get icon for sub-items based on title
 const getSubItemIcon = (title: string) => {
@@ -93,8 +87,6 @@ const getSubItemIcon = (title: string) => {
     
     // Account Management sub-items
     "All Accounts": Package,
-    "Package Sales": TrendingUp,
-    "Package Analytics": BarChart3,
     
     // MT5 Account Management sub-items
     "User Accounts": Database,
@@ -132,7 +124,6 @@ const getSubItemIcon = (title: string) => {
     "Bonus": Gift,
     "E-Mail Management": Mail,
     "All Tickets": Ticket,
-    "Ticket Management": LifeBuoy,
     "Settings": Settings2,
     "Notifications": Bell,
   };
@@ -189,18 +180,35 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
 
   // Get navigation items based on user type
   const navItems = React.useMemo(() => {
-    if (!user) return userNavData;
-
-    switch (user.type) {
-      case "admin":
-        return adminNavData;
-      case "manager":
-        return generateManagerNavigation(user.managerPermissions || []);
-      case "user":
-      default:
-        return userNavData;
+    if (user?.type === "subadmin") {
+      return generateSubadminNavigation(user.permissions || []);
     }
+
+    return getSidebarNavigation({
+      type: user?.type,
+      isIbUser: user?.is_ib_user,
+      managerPermissions: user?.managerPermissions,
+    });
   }, [user]);
+
+  React.useEffect(() => {
+    const urls = navItems.flatMap((item) => [item.url, ...(item.items?.map((subItem) => subItem.url) ?? [])]);
+    const uniqueUrls = Array.from(new Set(urls.filter(Boolean)));
+
+    const prefetchRoutes = () => {
+      uniqueUrls.forEach((url) => {
+        router.prefetch(url);
+      });
+    };
+
+    if (typeof window !== "undefined" && typeof window.requestIdleCallback === "function") {
+      const idleId = window.requestIdleCallback(() => prefetchRoutes());
+      return () => window.cancelIdleCallback(idleId);
+    }
+
+    const timeoutId = globalThis.setTimeout(prefetchRoutes, 300);
+    return () => globalThis.clearTimeout(timeoutId);
+  }, [navItems, router]);
 
   // Auto-expand item if current path matches
   React.useEffect(() => {
@@ -264,10 +272,10 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
       {/* First sidebar - Icon sidebar */}
       <Sidebar
         collapsible="icon"
-        className="border-r flex-shrink-0"
+        className="border-r border-[#e9edf5] bg-white shadow-[8px_0_40px_rgba(15,23,42,0.03)] flex-shrink-0"
         {...props}
       >
-        <SidebarHeader>
+        <SidebarHeader className="border-b border-[#e9edf5] p-3">
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton 
@@ -306,7 +314,7 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
                     </p>
                   </div>
                 ) : (
-                  navItems.map((item: NavItem) => {
+                  navItems.map((item) => {
                     const hasSubItems = item.items && item.items.length > 0;
                     const isExpanded = expandedItems.has(item.title);
                     const isActive = activeItem === item.title;
@@ -328,7 +336,7 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
                         >
                           {hasSubItems ? (
                             <>
-                              {item.icon && <item.icon className="size-5 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />}
+                              {item.icon && (React.isValidElement(item.icon) ? item.icon : <item.icon className="size-5 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />)}
                               {!isCollapsed && <span className="animate-in fade-in-0 slide-in-from-left-2 duration-500">{item.title}</span>}
                               {!isCollapsed && (
                                 <ChevronRight className={`ml-auto h-5 w-5 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${isExpanded ? 'rotate-90' : ''}`} />
@@ -336,7 +344,7 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
                             </>
                           ) : (
                             <Link href={item.url}>
-                              {item.icon && <item.icon className="size-5 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />}
+                              {item.icon && (React.isValidElement(item.icon) ? item.icon : <item.icon className="size-5 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />)}
                               {!isCollapsed && <span className="animate-in fade-in-0 slide-in-from-left-2 duration-500">{item.title}</span>}
                             </Link>
                           )}
@@ -353,8 +361,7 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
           {user && (
             <NavUser user={{
               name: user.name || "User",
-              email: user.email || "user@example.com",
-              avatar: "/avatars/01.png"
+              email: user.email || "user@example.com"
             }} />
           )}
         </SidebarFooter>
@@ -371,16 +378,15 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
         return (
           <Sidebar 
             collapsible="none" 
-            className="w-72 border-l border-r flex-shrink-0 hidden md:flex transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] animate-in slide-in-from-left" 
-            style={{ height: '100vh' }}
+            className="w-72 border-l border-r border-[#e9edf5] bg-white flex-shrink-0 hidden md:flex transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] animate-in slide-in-from-left h-screen sticky top-0" 
           >
             <div className="flex h-full flex-col">
-              <SidebarHeader className="gap-2 border-b p-4 bg-gradient-to-r from-sidebar-accent/30 to-sidebar-accent/10">
+              <SidebarHeader className="gap-2 border-b border-[#e9edf5] p-4 bg-white">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     {activeNavItem.icon && (
                       <div className="p-2 rounded-lg bg-sidebar-primary/10">
-                        <activeNavItem.icon className="h-5 w-5 text-sidebar-primary" />
+                        {React.isValidElement(activeNavItem.icon) ? activeNavItem.icon : <activeNavItem.icon className="h-5 w-5 text-sidebar-primary" />}
                       </div>
                     )}
                     <div className="text-foreground text-base font-bold">
@@ -420,7 +426,7 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
                             className={`
                               group relative
                               ${isSubActive 
-                                ? "bg-sidebar-accent text-sidebar-accent-foreground font-semibold shadow-md border-l-2 border-sidebar-primary" 
+                                ? "bg-[#edf4ff] text-[#2563eb] font-semibold shadow-sm" 
                                 : "text-sidebar-foreground/80 hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground"
                               }
                               transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]

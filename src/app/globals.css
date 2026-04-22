@@ -6,7 +6,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --font-sans: var(--font-inter-sans);
   --font-mono: var(--font-geist-mono);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -76,6 +76,12 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --skeleton-base: rgba(244, 247, 251, 0.96);
+  --skeleton-base-strong: rgba(237, 242, 247, 1);
+  --skeleton-highlight: rgba(255, 255, 255, 0.88);
+  --skeleton-stroke: rgba(15, 23, 42, 0.045);
+  --skeleton-panel: rgba(255, 255, 255, 0.98);
+  --skeleton-panel-strong: rgba(251, 252, 254, 1);
 
   /* Glowing effect variables */
   --black: #000000;
@@ -84,6 +90,14 @@
   --color-primary: #0f172a;
   --color-secondary: #475569;
   --color-accent: #3b82f6;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 1.75rem;
+  --space-8: 2rem;
 }
 
 .dark {
@@ -118,6 +132,12 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --skeleton-base: rgba(31, 41, 55, 0.88);
+  --skeleton-base-strong: rgba(39, 50, 66, 0.98);
+  --skeleton-highlight: rgba(148, 163, 184, 0.14);
+  --skeleton-stroke: rgba(255, 255, 255, 0.05);
+  --skeleton-panel: rgba(15, 23, 42, 0.56);
+  --skeleton-panel-strong: rgba(17, 24, 39, 0.72);
 
   /* Custom theme variables */
   --color-primary: #f8fafc;
@@ -132,6 +152,12 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
+
+@keyframes skeleton-shimmer {
+  100% {
+    transform: translateX(100%);
   }
 }
 
@@ -154,6 +180,24 @@
 
   .main-content-collapsed {
     @apply md:ml-16;
+  }
+
+  .crm-page-padding {
+    padding: var(--space-5);
+  }
+
+  .crm-page-padding-lg {
+    padding: var(--space-6);
+  }
+
+  .crm-section-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5);
+  }
+
+  .crm-card-spacing {
+    padding: var(--space-6);
   }
 }
 
