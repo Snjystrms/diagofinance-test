@@ -33,6 +33,7 @@ export default function RootLayout({
         <meta name="cryptomus" content="b4a2ebfe" />
       </head>
       <body
+        suppressHydrationWarning
         className={`${interSans.variable} ${geistMono.variable} antialiased`}
       >
         <NuqsAdapter>

@@ -116,7 +116,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   {
     id: "wallet",
     title: "My wallet",
-    url: "/my-wallet",
+    url: "/my-wallet/wallet-overview",
     icon: DollarSign,
     audience: "client",
     roles: CLIENT_ROLES,
@@ -124,7 +124,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   {
     id: "accounts",
     title: "My Accounts",
-    url: "/my_accounts",
+    url: "/my_accounts/open-trading-account",
     icon: Award,
     audience: "client",
     roles: CLIENT_ROLES,
@@ -132,7 +132,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   {
     id: "funds",
     title: "Funds",
-    url: "/funds",
+    url: "/funds/deposit",
     icon: Wallet,
     audience: "client",
     roles: CLIENT_ROLES,
@@ -140,7 +140,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   {
     id: "trade-history",
     title: "Trade History",
-    url: "/trade-history",
+    url: "/trade-history/all-trades",
     icon: History,
     audience: "client",
     roles: CLIENT_ROLES,
@@ -148,7 +148,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   {
     id: "profile",
     title: "My profile",
-    url: "/profile",
+    url: "/profile/view_profile",
     icon: Mail,
     audience: "client",
     roles: CLIENT_ROLES,
@@ -165,7 +165,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   {
     id: "help-support",
     title: "Help & Support",
-    url: "/help-support",
+    url: "/raise-ticket",
     icon: LifeBuoy,
     audience: "client",
     roles: CLIENT_ROLES,
@@ -173,7 +173,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   {
     id: "user-management",
     title: "User Management",
-    url: "/users",
+    url: "/new-users",
     icon: Users,
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
@@ -182,7 +182,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   {
     id: "transaction-management",
     title: "Transaction Management",
-    url: "/transactions",
+    url: "/usdt-transactions",
     icon: CreditCard,
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
@@ -200,7 +200,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   {
     id: "manager-management",
     title: "Manager Management",
-    url: "/manager",
+    url: "/all-managers",
     icon: UserPlus,
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
@@ -218,7 +218,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   {
     id: "ib-management",
     title: "IB Management",
-    url: "/ib-management",
+    url: "/all-ib",
     icon: UserCheck,
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
@@ -227,7 +227,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   {
     id: "account-management",
     title: "Account Management",
-    url: "/packages",
+    url: "/all-accounts",
     icon: Package,
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
@@ -236,7 +236,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   {
     id: "group-management",
     title: "Group Management",
-    url: "/groups",
+    url: "/all-groups",
     icon: Package,
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
@@ -245,7 +245,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   {
     id: "support",
     title: "Support & Tickets",
-    url: "/support",
+    url: "/all-tickets",
     icon: LifeBuoy,
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
@@ -254,7 +254,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   {
     id: "notification",
     title: "Notification",
-    url: "/notification",
+    url: "/all-notifications",
     icon: Bell,
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,

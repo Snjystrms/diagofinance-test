@@ -78,6 +78,39 @@ const formatLabel = (label?: string) => {
     .join(" ");
 };
 
+const normalizeIbWalletData = (raw: unknown): IbWalletData | null => {
+  if (!raw || typeof raw !== "object") {
+    return null;
+  }
+
+  const source = raw as Record<string, unknown>;
+  const walletBalance = source.wallet_balance ?? source.partner_wallet;
+  const clientWallet = source.client_wallet;
+  const earningSummary = source.earning_summary;
+  const transactions =
+    source.transactions ??
+    ({
+      data: [],
+      pagination: {
+        current_page: 1,
+        per_page: 0,
+        total: 0,
+        total_pages: 0,
+      },
+    } satisfies IbWalletData["transactions"]);
+
+  if (!walletBalance || !clientWallet || !earningSummary) {
+    return null;
+  }
+
+  return {
+    wallet_balance: walletBalance as IbWalletData["wallet_balance"],
+    client_wallet: clientWallet as IbWalletData["client_wallet"],
+    earning_summary: earningSummary as IbWalletData["earning_summary"],
+    transactions: transactions as IbWalletData["transactions"],
+  };
+};
+
 export function DashboardPageContent() {
   const auth = useAuth();
   const { user, token } = auth;
@@ -136,6 +169,11 @@ export function DashboardPageContent() {
   const dashboardArea = isAdmin ? 'admin' : 'client';
   const isCustomDashboard = getDashboardMode(dashboardArea);
   const dashboardPreset = getDashboardPreset(dashboardArea);
+  const hasIbWalletData = Boolean(
+    ibWalletData?.wallet_balance &&
+      ibWalletData?.client_wallet &&
+      ibWalletData?.earning_summary
+  );
 
   const handleDashboardModeChange = (mode: 'normal' | 'custom') => {
     setDashboardMode(dashboardArea, mode);
@@ -201,7 +239,7 @@ export function DashboardPageContent() {
         }
 
         if (ibWalletResponse?.success && ibWalletResponse.data) {
-          setIbWalletData((ibWalletResponse.data as unknown) as IbWalletData);
+          setIbWalletData(normalizeIbWalletData(ibWalletResponse.data));
         } else {
           setIbWalletData(null);
         }
@@ -418,6 +456,8 @@ export function DashboardPageContent() {
       return [];
     }
 
+    const ibWallet = hasIbWalletData ? ibWalletData : null;
+
     const widgets: DashboardWidget[] = [
       // Total Deposits Widget
       {
@@ -562,7 +602,7 @@ export function DashboardPageContent() {
         defaultLayout: { x: 0, y: 3, w: 4, h: 5, minW: 3, minH: 4 },
       },
       // Partner Wallet Widget (only show if IB wallet data exists)
-      ...(ibWalletData ? [{
+      ...(ibWallet ? [{
         id: 'partner-wallet',
         title: 'Partner Wallet',
         component: (
@@ -575,12 +615,12 @@ export function DashboardPageContent() {
                     <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                     Partner Wallet
                   </div>
-                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 tabular-nums">
-                    {formatCurrency(
-                      ibWalletData.wallet_balance.amount,
-                      ibWalletData.wallet_balance.currency
-                    )}
-                  </p>
+                    <p className="text-2xl font-bold text-blue-600 dark:text-blue-400 tabular-nums">
+                      {formatCurrency(
+                        ibWallet.wallet_balance.amount,
+                        ibWallet.wallet_balance.currency
+                      )}
+                    </p>
                 </div>
                 <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20 border border-blue-500/30 group-hover:scale-110 transition-transform duration-300 shadow-lg">
                   <Wallet className="h-6 w-6 text-blue-600 dark:text-blue-400" />
@@ -589,21 +629,21 @@ export function DashboardPageContent() {
               <div className="pt-3 border-t border-blue-500/20 mt-auto space-y-2">
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">Client Wallet:</span>
-                  <span className="font-semibold text-foreground">
-                    {formatCurrency(
-                      ibWalletData.client_wallet.amount,
-                      ibWalletData.client_wallet.currency
-                    )}
-                  </span>
+                    <span className="font-semibold text-foreground">
+                      {formatCurrency(
+                        ibWallet.client_wallet.amount,
+                        ibWallet.client_wallet.currency
+                      )}
+                    </span>
                 </div>
                 <div className="flex items-center justify-between text-xs">
                   <span className="text-muted-foreground">Total Earned:</span>
-                  <span className="font-semibold text-foreground">
-                    {formatCurrency(
-                      ibWalletData.earning_summary.total_earned,
-                      ibWalletData.earning_summary.currency
-                    )}
-                  </span>
+                    <span className="font-semibold text-foreground">
+                      {formatCurrency(
+                        ibWallet.earning_summary.total_earned,
+                        ibWallet.earning_summary.currency
+                      )}
+                    </span>
                 </div>
               </div>
             </div>
@@ -693,7 +733,7 @@ export function DashboardPageContent() {
             </div>
           </div>
         ),
-        defaultLayout: { x: ibWalletData ? 8 : 4, y: 3, w: 4, h: 5, minW: 3, minH: 4 },
+        defaultLayout: { x: hasIbWalletData ? 8 : 4, y: 3, w: 4, h: 5, minW: 3, minH: 4 },
       },
       // Deposits Chart Widget
       {
@@ -1077,7 +1117,7 @@ export function DashboardPageContent() {
                 </Card>
 
                 {/* Partner Wallet Card - Enhanced */}
-                {ibWalletData && (
+                {hasIbWalletData && ibWalletData && (
                   <Card className="sm:col-span-1 lg:col-span-1 relative overflow-hidden border-2 border-blue-500/30 hover:border-blue-500/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-transparent rounded-3xl group">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
                     <CardHeader className="relative z-10 pb-3 px-6 pt-6">
@@ -1471,12 +1511,16 @@ export function DashboardPageContent() {
                       };
 
                       return (
-                        <Card key={account.id} className={`border-2 border-border/50 bg-gradient-to-br from-card to-muted/30 backdrop-blur-sm hover:border-primary/50 hover:shadow-xl transition-all duration-300 group`}>
-                          <CardContent className="p-6">
+                        <Card
+                          key={account.id}
+                          className="group h-full border-2 border-border/50 bg-gradient-to-br from-card to-muted/30 backdrop-blur-sm transition-all duration-300 hover:border-primary/50 hover:shadow-xl"
+                        >
+                          <CardContent className="flex h-full flex-col p-5 sm:p-6">
                             {/* Header */}
-                            <div className="flex items-start justify-between mb-4">
-                              <div className="flex items-center gap-3">
-                                <div className={`flex items-center justify-center w-12 h-12 rounded-xl bg-gradient-to-r ${platformConfig.gradient} text-white font-bold text-lg shadow-lg group-hover:scale-110 transition-transform duration-300 overflow-hidden`}>
+                            <div className="mb-5 flex items-start gap-3">
+                              <div
+                                className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r ${platformConfig.gradient} text-lg font-bold text-white shadow-lg transition-transform duration-300 group-hover:scale-110`}
+                              >
                                   <Image
                                     src={isMT4 ? "/metatrader-4.svg" : "/metatrader-5.svg"}
                                     alt={isMT4 ? "MetaTrader 4" : "MetaTrader 5"}
@@ -1485,42 +1529,41 @@ export function DashboardPageContent() {
                                     className="object-contain w-full h-full p-1.5"
                                     priority
                                   />
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <h3 className="font-bold text-lg text-foreground">
+                              </div>
+                              <div className="min-w-0 flex-1 space-y-2">
+                                <div className="flex flex-wrap items-start gap-2">
+                                    <h3 className="min-w-0 flex-1 text-lg font-bold leading-snug text-foreground">
                                       {account.accountType?.account_type_name || 'Trading Account'}
                                     </h3>
-                                    <Badge className="bg-primary/10 text-primary border-0">
+                                    <Badge className="shrink-0 border-0 bg-primary/10 text-primary">
                                       <CheckCircle2 className="h-3 w-3 mr-1" />
                                       Active
                                     </Badge>
                                   </div>
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className="text-xs border-border">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <Badge variant="outline" className="border-border text-xs">
                                       {isDemo ? 'DEMO' : 'LIVE'}
                                     </Badge>
                                     <span className="text-xs text-muted-foreground">
                                       {account.accountType?.currency || 'USD'}
                                     </span>
                                   </div>
-                                </div>
                               </div>
                             </div>
 
                             {/* Account ID */}
-                            <div className="mb-4">
+                            <div className="mb-5">
                               <label className="text-xs font-medium text-muted-foreground mb-2 block">
                                 Account ID
                               </label>
-                              <div className="flex items-center gap-2">
-                                <code className="flex-1 font-mono text-sm bg-muted/50 rounded-lg px-3 py-2 text-foreground">
+                              <div className="flex min-w-0 items-center gap-2">
+                                <code className="min-w-0 flex-1 truncate rounded-xl border border-border/60 bg-muted/40 px-3 py-2.5 font-mono text-xs font-medium text-foreground sm:text-sm">
                                   {account.account_id}
                                 </code>
                                 <Button
                                   variant="outline"
                                   size="icon"
-                                  className="h-9 w-9 shrink-0"
+                                  className="h-10 w-10 shrink-0 rounded-xl border-border/70 bg-background/80"
                                   onClick={() => {
                                     navigator.clipboard.writeText(account.account_id.toString());
                                     toast.success('Account ID copied to clipboard!');
@@ -1532,37 +1575,41 @@ export function DashboardPageContent() {
                             </div>
 
                             {/* Account Metrics */}
-                            <div className="grid grid-cols-2 gap-4 mb-4">
-                              <div className="space-y-1">
+                            <div className="mb-5 grid grid-cols-2 gap-3">
+                              <div className="rounded-xl border border-border/40 bg-muted/15 p-3">
+                                <div className="space-y-1">
                                 <span className="text-xs text-muted-foreground">Leverage</span>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1.5">
                                   <Zap className="h-3 w-3 text-primary" />
                                   <span className="font-semibold text-sm text-foreground">{account.leverage || '1:100'}</span>
                                 </div>
                               </div>
-                              <div className="space-y-1">
+                              </div>
+                              <div className="rounded-xl border border-border/40 bg-muted/15 p-3">
+                                <div className="space-y-1">
                                 <span className="text-xs text-muted-foreground">Platform</span>
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1.5">
                                   <TrendingUp className="h-3 w-3 text-primary" />
                                   <span className="font-semibold text-sm text-foreground">{isMT4 ? 'MT4' : 'MT5'}</span>
                                 </div>
+                              </div>
                               </div>
                             </div>
 
                             {/* Financial Metrics */}
                             <div className="space-y-3">
-                              <div className="flex justify-between items-center p-3 bg-muted/30 rounded-lg border border-border/50">
+                              <div className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/30 p-3.5">
                                 <span className="text-sm font-medium text-foreground">Balance</span>
-                                <span className="font-bold text-primary">
+                                <span className="truncate text-right font-bold text-primary">
                                   {formatCurrency(account.balance, account.accountType?.currency || 'USD')}
                                 </span>
                               </div>
-                              <div className="grid grid-cols-2 gap-2">
-                                <div className="text-center p-2 bg-muted/20 rounded border border-border/30">
+                              <div className="grid grid-cols-2 gap-2.5">
+                                <div className="rounded-xl border border-border/30 bg-muted/20 p-3 text-center">
                                   <div className="text-xs text-muted-foreground">Equity</div>
                                   <div className="font-semibold text-sm text-foreground">{formatCurrency(account.equity, account.accountType?.currency || 'USD')}</div>
                                 </div>
-                                <div className="text-center p-2 bg-muted/20 rounded border border-border/30">
+                                <div className="rounded-xl border border-border/30 bg-muted/20 p-3 text-center">
                                   <div className="text-xs text-muted-foreground">Free Margin</div>
                                   <div className="font-semibold text-sm text-foreground">{formatCurrency(account.free_margin, account.accountType?.currency || 'USD')}</div>
                                 </div>
@@ -1570,13 +1617,13 @@ export function DashboardPageContent() {
                             </div>
 
                             {/* Action Buttons */}
-                            <div className="flex gap-2 mt-4">
-                              <Button size="sm" className="flex-1 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground">
-                                <BarChart3 className="h-4 w-4 mr-1" />
+                            <div className="mt-auto flex gap-2 pt-5">
+                              <Button size="sm" className="h-10 flex-1 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground hover:from-primary/90 hover:to-primary/70">
+                                <BarChart3 className="mr-1.5 h-4 w-4 shrink-0" />
                                 Trade
                               </Button>
-                              <Button size="sm" variant="outline" className="flex-1 border-border hover:bg-accent hover:text-accent-foreground">
-                                <Eye className="h-4 w-4 mr-1" />
+                              <Button size="sm" variant="outline" className="h-10 flex-1 border-border hover:bg-accent hover:text-accent-foreground">
+                                <Eye className="mr-1.5 h-4 w-4 shrink-0" />
                                 View
                               </Button>
                             </div>
