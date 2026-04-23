@@ -39,7 +39,13 @@ const updateUserSchema = z
     first_name: z.string().trim().min(2, "First name must be at least 2 characters"),
     last_name: z.string().trim().min(2, "Last name must be at least 2 characters"),
     email: z.string().trim().email("Invalid email address"),
-    mobile: z.string().trim().optional().or(z.literal("")),
+    mobile: z
+      .string()
+      .trim()
+      .optional()
+      .or(z.literal(""))
+      .refine((value) => !value || /^\d+$/.test(value), "Mobile number must contain only digits")
+      .refine((value) => !value || value.length === 10, "Mobile number must be exactly 10 digits"),
     country: z.string().trim().optional().or(z.literal("")),
     country_code: z.string().trim(),
     password: z.string().optional().or(z.literal("")),
@@ -87,24 +93,31 @@ const createInitialUpdateFormState = (): UpdateUserFormData => ({
   referral_code: "",
 });
 
-const transformUser = (raw: Record<string, unknown>): PendingUser => ({
-  id: typeof raw.id === "number" ? raw.id : Number(raw.id ?? 0) || 0,
-  uuid: String(raw.uuid ?? ""),
-  first_name: String(raw.first_name ?? ""),
-  last_name: String(raw.last_name ?? ""),
-  name: `${String(raw.first_name ?? "")} ${String(raw.last_name ?? "")}`.trim() || String(raw.name ?? "-"),
-  email: String(raw.email ?? ""),
-  username: String(raw.uuid ?? raw.username ?? ""),
-  mobile: String(raw.mobile ?? ""),
-  country: String(raw.country ?? ""),
-  country_code: String(raw.country_code ?? ""),
-  sponsor_id: String(raw.sponsor_id ?? ""),
-  referral_code: String(raw.referral_code ?? ""),
-  status: String(raw.status ?? ""),
-  email_verified: typeof raw.email_verified === "number" ? raw.email_verified : Number(raw.email_verified ?? 0) || 0,
-  payment_verified: typeof raw.payment_verified === "number" ? raw.payment_verified : Number(raw.payment_verified ?? 0) || 0,
-  created_at: String(raw.created_at ?? ""),
-});
+const transformUser = (raw: Record<string, unknown>): PendingUser => {
+  const email = String(raw.email ?? "");
+  const username =
+    String(raw.username ?? "").trim() ||
+    (email.includes("@") ? email.split("@")[0] : "");
+
+  return {
+    id: typeof raw.id === "number" ? raw.id : Number(raw.id ?? 0) || 0,
+    uuid: String(raw.uuid ?? ""),
+    first_name: String(raw.first_name ?? ""),
+    last_name: String(raw.last_name ?? ""),
+    name: `${String(raw.first_name ?? "")} ${String(raw.last_name ?? "")}`.trim() || String(raw.name ?? "-"),
+    email,
+    username,
+    mobile: String(raw.mobile ?? ""),
+    country: String(raw.country ?? ""),
+    country_code: String(raw.country_code ?? ""),
+    sponsor_id: String(raw.sponsor_id ?? ""),
+    referral_code: String(raw.referral_code ?? ""),
+    status: String(raw.status ?? ""),
+    email_verified: typeof raw.email_verified === "number" ? raw.email_verified : Number(raw.email_verified ?? 0) || 0,
+    payment_verified: typeof raw.payment_verified === "number" ? raw.payment_verified : Number(raw.payment_verified ?? 0) || 0,
+    created_at: String(raw.created_at ?? ""),
+  };
+};
 
 const extractUsers = (payload?: AdminUsersListApiData | null): PendingUser[] => {
   if (!payload) return [];
@@ -440,7 +453,7 @@ export default function NewUsersPage() {
                       setSearchInput(value);
                       debouncedApplySearch(value);
                     }}
-                    placeholder="Search by name, email, mobile, or uuid"
+                    placeholder="Search by name, email, or mobile"
                     className="h-8 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
                   />
                   {searchInput ? (

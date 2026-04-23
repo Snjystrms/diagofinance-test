@@ -117,11 +117,18 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
                   renderControl={({ field }) => (
                     <Input
                       {...field}
+                      type="tel"
                       inputMode="numeric"
                       autoComplete="tel"
-                      placeholder="Enter mobile number"
-                      value={field.value ?? ""}
-                      onChange={(event) => field.onChange(sanitizeDigits(event.target.value, 15))}
+                      placeholder="Enter 10-digit mobile number"
+                      maxLength={10}
+                      pattern="\d{10}"
+                      value={sanitizeDigits(String(field.value ?? ""), 10)}
+                      onInput={(event) => {
+                        const nextValue = sanitizeDigits(event.currentTarget.value, 10);
+                        event.currentTarget.value = nextValue;
+                      }}
+                      onChange={(event) => field.onChange(sanitizeDigits(event.target.value, 10))}
                     />
                   )}
                 />

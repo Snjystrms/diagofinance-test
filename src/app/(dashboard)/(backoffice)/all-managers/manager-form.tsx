@@ -14,8 +14,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Eye, EyeOff } from "lucide-react";
-import { managerSchema, managerCreateSchema } from "@/lib/validations";
-import type { ZodError } from "zod";
 
 export type ManagerRow = {
   id: string;
@@ -43,7 +41,7 @@ type FormValue = {
 interface ManagerFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSubmit: (data: FormValue) => void;
+  onSubmit: (data: FormValue) => void | Promise<unknown>;
   initialData?: ManagerRow | null;
   allPermissions?: PermissionItem[];           // flat, optional
   groupedPermissions?: PermissionGroup[];      // NEW: grouped
@@ -75,6 +73,7 @@ export function ManagerForm({
   const [showPassword, setShowPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [submitting, setSubmitting] = useState(false);
 
   // Ensure permissions are fetched on open (edit only)
   useEffect(() => {
@@ -110,6 +109,7 @@ export function ManagerForm({
     setShowNewPassword(false);
     // Clear errors when dialog opens/closes
     setErrors({});
+    setSubmitting(false);
   }, [isEdit, initialData, open]);
 
   const togglePermission = (pid: number, checked: boolean) => {
@@ -232,7 +232,7 @@ export function ManagerForm({
     }
   };
 
-  const submit = (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate all fields
@@ -262,7 +262,15 @@ export function ManagerForm({
       if (trimmedPassword) {
         payload.password = trimmedPassword;
       }
-      onSubmit(payload);
+      try {
+        setSubmitting(true);
+        await onSubmit(payload);
+        onOpenChange(false);
+      } catch {
+        // Toast messaging is handled by the caller.
+      } finally {
+        setSubmitting(false);
+      }
     } else {
       if (!form.password?.trim()) {
         setErrors((prev) => ({ ...prev, password: "Password is required" }));
@@ -275,15 +283,21 @@ export function ManagerForm({
         return;
       }
 
-      onSubmit({
-        name: form.name.trim(),
-        email: form.email.trim().toLowerCase(),
-        mobile: form.mobile.trim(),
-        password: form.password.trim(),
-      });
+      try {
+        setSubmitting(true);
+        await onSubmit({
+          name: form.name.trim(),
+          email: form.email.trim().toLowerCase(),
+          mobile: form.mobile.trim(),
+          password: form.password.trim(),
+        });
+        onOpenChange(false);
+      } catch {
+        // Toast messaging is handled by the caller.
+      } finally {
+        setSubmitting(false);
+      }
     }
-
-    onOpenChange(false);
   };
 
   return (
@@ -304,6 +318,7 @@ export function ManagerForm({
                 onBlur={() => validateField("name", form.name)}
                 placeholder="John Manager"
                 disabled={readOnly}
+                maxLength={10}
                 required
               />
               {errors.name && (
@@ -493,11 +508,13 @@ export function ManagerForm({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
               {readOnly ? "Close" : "Cancel"}
             </Button>
             {!readOnly && (
-              <Button type="submit">{isEdit ? "Save Changes" : "Create"}</Button>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? (isEdit ? "Saving..." : "Creating...") : isEdit ? "Save Changes" : "Create"}
+              </Button>
             )}
           </DialogFooter>
         </form>

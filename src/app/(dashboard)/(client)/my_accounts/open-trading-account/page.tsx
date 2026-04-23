@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import Image from 'next/image';
+import { useSearchParams } from 'next/navigation';
 import { 
   BarChart3, 
   ArrowRight, 
@@ -94,6 +95,7 @@ const getMaximumLeverageValue = (accountType?: AccountType) => {
 
 export default function OpenTradingAccountPage() {
   const { token } = useAuth();
+  const searchParams = useSearchParams();
   const [accountMode, setAccountMode] = useState<'live' | 'demo'>('live');
   const [selectedPlatform, setSelectedPlatform] = useState<'mt4' | 'mt5'>('mt5');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -143,6 +145,21 @@ export default function OpenTradingAccountPage() {
   const pwLower = /[a-z]/.test(activePassword);
   const pwNum = /\d/.test(activePassword);
   const pwSpecial = /[!@#$%^&*]/.test(activePassword);
+
+  useEffect(() => {
+    const requestedMode = searchParams.get('mode');
+    if (requestedMode === 'demo' || requestedMode === 'live') {
+      setAccountMode(requestedMode);
+    }
+
+    const requestedType = searchParams.get('type');
+    if (requestedType) {
+      form.setValue('accountType', requestedType, {
+        shouldDirty: false,
+        shouldValidate: true,
+      });
+    }
+  }, [form, searchParams]);
 
   const fetchAccountTypes = useCallback(async () => {
     if (!token) {
@@ -228,6 +245,7 @@ export default function OpenTradingAccountPage() {
       const response = await userMT5AccountsApi.create(
         {
           account_type_id: selectedAccountType.id,
+          account_mode: accountMode,
           extra_fields: {},
           group_id: DEFAULT_GROUP_ID,
           investor_password: data.investorPassword,

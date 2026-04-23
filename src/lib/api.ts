@@ -1750,6 +1750,7 @@ export const accountTypesApi = {
 // ---------- User MT5 Account Types ----------
 export interface UserMT5AccountCreateRequest {
   account_type_id: number;
+  account_mode: "demo" | "live";
   extra_fields: Record<string, unknown>;
   group_id: number;
   investor_password: string;
@@ -1772,6 +1773,7 @@ export interface UserMT5AccountListItem {
   email: string;
   mt5_id: string;
   account_id: string;
+  balance: number;
 }
 
 export interface UserMT5AccountDetail {
@@ -2629,21 +2631,19 @@ export const adminMT5RequestApi = {
 // ---------- MT5 Account Types ----------
 export interface MT5Account {
   id: number;
-  account_type: string;
+  name: string;
+  email: string;
+  mt5_id: string;
   account_id: string;
-  available_balance: string;
-  platform: string;
-  status: string;
-  free_margin: string;
-  equity: string;
-  leverage: string;
-  currency: string;
+  balance: number;
 }
 
 export interface MT5AccountsResponse {
   success: boolean;
   message?: string;
-  data: MT5Account[];
+  data: {
+    mt5_accounts: MT5Account[];
+  };
 }
 
 // ---------- Admin MT5 Account Types ----------
@@ -2784,7 +2784,7 @@ export interface AdminMT5AccountsListResponse {
 // ---------- MT5 Accounts APIs ----------
 export const mt5AccountsApi = {
   getAll: (token: string) =>
-    apiCall<MT5Account[]>(`/user/internal-transfer/mt5-accounts`, {
+    apiCall<{ mt5_accounts: MT5Account[] }>(`/user/mt5-account`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),

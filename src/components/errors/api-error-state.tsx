@@ -131,7 +131,7 @@ export function ApiErrorState({
   return (
     <div
       className={cn(
-        "mx-3 flex flex-col gap-3 rounded-lg border p-4 sm:mx-0 sm:flex-row",
+        "mx-3 my-3 flex flex-col gap-3 rounded-lg border p-4 sm:mx-0 sm:my-4 sm:flex-row",
         variant === "panel" && "p-5 shadow-sm sm:p-5",
         tone.container,
         className

@@ -63,8 +63,7 @@ export const adminUserCreateSchema = z.object({
     .optional()
     .or(z.literal(''))
     .refine((value) => !value || /^\d+$/.test(value), 'Mobile number must contain only digits')
-    .refine((value) => !value || value.length >= 6, 'Mobile number must be at least 6 digits')
-    .refine((value) => !value || value.length <= 15, 'Mobile number must be less than 16 digits'),
+    .refine((value) => !value || value.length === 10, 'Mobile number must be exactly 10 digits'),
   country: z.string().trim().max(100, 'Country must be less than 100 characters').optional().or(z.literal('')),
   country_code: z
     .string()

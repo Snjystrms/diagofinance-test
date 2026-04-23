@@ -14,6 +14,7 @@ import {
   LucideIcon,
   Loader2,
   Trash2,
+  X,
 } from "lucide-react";
 import { adminNotificationApi, notificationApi, type AdminNotificationItem, type NotificationItem } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
@@ -257,7 +258,7 @@ export function NotificationInbox({ mode = "user", shouldFetchUnreadCount = fals
       <PopoverContent className="w-[380px] p-0" align="end">
         {/* Header with Tabs + Mark All */}
         <Tabs value={tab} onValueChange={setTab}>
-          <div className="flex items-center justify-between border-b px-3 py-2">
+          <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
             <TabsList className="bg-transparent">
               <TabsTrigger value="all" className="text-sm">
                 All
@@ -266,15 +267,27 @@ export function NotificationInbox({ mode = "user", shouldFetchUnreadCount = fals
                 Unread {unreadCount > 0 && <Badge className="ml-1 text-[10px]">{unreadCount}</Badge>}
               </TabsTrigger>
             </TabsList>
-            {unreadCount > 0 && (
-              <button
-                onClick={markAllAsRead}
-                disabled={isMarkingAll}
-                className="text-xs font-medium text-muted-foreground hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
+            <div className="flex items-center gap-1">
+              {unreadCount > 0 && (
+                <button
+                  onClick={markAllAsRead}
+                  disabled={isMarkingAll}
+                  className="text-xs font-medium text-muted-foreground hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isMarkingAll ? "Marking..." : "Mark all as read"}
+                </button>
+              )}
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setIsOpen(false)}
+                aria-label="Close notifications"
               >
-                {isMarkingAll ? "Marking..." : "Mark all as read"}
-              </button>
-            )}
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
 
           {/* Notifications List */}

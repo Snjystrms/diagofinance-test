@@ -9,7 +9,6 @@ import {
   Clock,
   Copy,
   Eye,
-  Loader2,
   Mail,
   MoreVertical,
   Settings,
@@ -20,6 +19,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ApiErrorState } from '@/components/errors/api-error-state';
+import { ClientCardGridSkeleton } from '@/components/loading/client-page-skeletons';
 import { ProtectedRoute } from '@/components/protected-route';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,12 +39,14 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   userMT5AccountsApi,
   type UserMT5AccountDetail,
   type UserMT5AccountListItem,
 } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
+import { formatCurrency } from '@/lib/format';
 import { formatDateTimeInIST } from '@/lib/formatters';
 
 type ManagedMT5Account = UserMT5AccountListItem & {
@@ -250,6 +252,7 @@ export default function ManageAccountsPage() {
     const accountTypeName = detail?.accountType?.name ?? 'MT5 Account';
     const leverageValue = detail?.leverage ? `1:${detail.leverage}` : 'N/A';
     const groupName = detail?.group?.name ?? detail?.mt5_group_name ?? 'N/A';
+    const balanceValue = formatCurrency(Number(account.balance ?? 0), detail?.base_currency ?? 'USD');
 
     return (
       <Card className="border-2 border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 hover:shadow-lg transition-all duration-300">
@@ -334,6 +337,10 @@ export default function ManageAccountsPage() {
           </div>
 
           <div className="mb-4 grid grid-cols-2 gap-3">
+            <div className="rounded-lg bg-white/40 p-3 dark:bg-black/10">
+              <div className="mb-1 text-xs text-muted-foreground">Balance</div>
+              <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">{balanceValue}</div>
+            </div>
             <div className="rounded-lg bg-white/40 p-3 dark:bg-black/10">
               <div className="mb-1 text-xs text-muted-foreground">Leverage</div>
               <div className="flex items-center gap-1 text-sm font-semibold">
@@ -465,11 +472,13 @@ export default function ManageAccountsPage() {
         )}
 
         {isLoading && (
-          <Card className="border-0 shadow-xl bg-card/70 backdrop-blur-sm">
-            <CardContent className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <Skeleton className="h-8 w-48 rounded-full" />
+              <Skeleton className="h-4 w-36 rounded-full" />
+            </div>
+            <ClientCardGridSkeleton cardCount={6} />
+          </div>
         )}
 
         {!isLoading && !error && (
@@ -595,6 +604,10 @@ export default function ManageAccountsPage() {
                     <CardTitle className="text-base">Trading Setup</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 px-4 pb-4 text-sm">
+                    <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
+                      <span className="text-muted-foreground">Balance</span>
+                      <span>{formatCurrency(Number(selectedAccount.balance ?? 0), selectedAccountDetail?.base_currency ?? 'USD')}</span>
+                    </div>
                     <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
                       <span className="text-muted-foreground">Account Type</span>
                       <span className="text-right">{selectedAccountDetail?.accountType?.name ?? 'N/A'}</span>

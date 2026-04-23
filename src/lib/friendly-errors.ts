@@ -51,21 +51,47 @@ function getStringField(value: unknown, key: string) {
   return typeof field === "string" ? field : "";
 }
 
+function collectStringsDeep(value: unknown, seen = new Set<unknown>()): string[] {
+  if (typeof value === "string") {
+    return [value];
+  }
+
+  if (!value || typeof value !== "object") {
+    return [];
+  }
+
+  if (seen.has(value)) {
+    return [];
+  }
+
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    return value.flatMap((item) => collectStringsDeep(item, seen));
+  }
+
+  if (!isRecord(value)) {
+    return [];
+  }
+
+  return Object.values(value).flatMap((item) => collectStringsDeep(item, seen));
+}
+
 function collectValidationMessages(payload: unknown) {
   if (!isRecord(payload)) return "";
 
-  const errors = payload.errors;
-  if (!errors) return "";
+  const directErrors = payload.errors;
+  const nestedErrors = isRecord(payload.data) ? payload.data.errors : undefined;
+  const candidates = [directErrors, nestedErrors].filter(Boolean);
 
-  if (Array.isArray(errors)) {
-    return errors.filter((item): item is string => typeof item === "string").join(" ");
-  }
+  for (const candidate of candidates) {
+    const messages = collectStringsDeep(candidate)
+      .map((item) => item.trim())
+      .filter(Boolean);
 
-  if (isRecord(errors)) {
-    return Object.values(errors)
-      .flatMap((value) => (Array.isArray(value) ? value : [value]))
-      .filter((item): item is string => typeof item === "string")
-      .join(" ");
+    if (messages.length) {
+      return messages.join(" ");
+    }
   }
 
   return "";
@@ -78,14 +104,15 @@ function extractStatusFromMessage(message: string) {
 
 export function getErrorParts(error: unknown): ErrorParts {
   if (isApiRequestError(error)) {
+    const validationMessages = collectValidationMessages(error.payload);
     return {
       status: error.status,
       message: error.message,
       detail:
         getStringField(error.payload, "detail") ||
         getStringField(error.payload, "error") ||
-        getStringField(error.payload, "message") ||
-        collectValidationMessages(error.payload),
+        validationMessages ||
+        getStringField(error.payload, "message"),
       payload: error.payload,
     };
   }
@@ -102,11 +129,12 @@ export function getErrorParts(error: unknown): ErrorParts {
   if (isRecord(error)) {
     const statusField = error.status ?? error.statusCode ?? error.code;
     const status = typeof statusField === "number" ? statusField : undefined;
+    const validationMessages = collectValidationMessages(error);
 
     return {
       status,
       message: getStringField(error, "message") || getStringField(error, "error"),
-      detail: getStringField(error, "detail") || collectValidationMessages(error),
+      detail: getStringField(error, "detail") || validationMessages,
       payload: error,
     };
   }
@@ -150,12 +178,45 @@ function getDefaultFallback(options: FriendlyErrorOptions) {
   return options.fallbackMessage || `We could not ${action} ${resource} right now. Please try again.`;
 }
 
+function getKnownFriendlyMessage(
+  combinedMessage: string,
+  audience: FriendlyErrorAudience
+) {
+  if (combinedMessage.includes("email already exists")) {
+    return audience === "admin"
+      ? "This email address is already in use. Enter a different email address and try again."
+      : "This email address is already in use. Please enter a different one.";
+  }
+
+  if (
+    combinedMessage.includes("mobile already exists") ||
+    combinedMessage.includes("phone already exists")
+  ) {
+    return audience === "admin"
+      ? "This mobile number is already in use. Enter a different mobile number and try again."
+      : "This mobile number is already in use. Please enter a different one.";
+  }
+
+  if (
+    combinedMessage.includes("already exists") ||
+    combinedMessage.includes("already taken") ||
+    combinedMessage.includes("duplicate")
+  ) {
+    return audience === "admin"
+      ? "A record with the same details already exists. Review the entered values and try again."
+      : "A matching record already exists. Please review the details and try again.";
+  }
+
+  return "";
+}
+
 export function getFriendlyError(error: unknown, options: FriendlyErrorOptions = {}): FriendlyError {
   const audience = options.audience ?? "client";
   const resource = makeResourceLabel(options.resource);
   const parts = getErrorParts(error);
   const combinedMessage = `${parts.message} ${parts.detail}`.trim().toLowerCase();
   const status = parts.status;
+  const knownFriendlyMessage = getKnownFriendlyMessage(combinedMessage, audience);
 
   if (!combinedMessage || combinedMessage === "failed to fetch" || combinedMessage.includes("networkerror")) {
     return {
@@ -188,6 +249,16 @@ export function getFriendlyError(error: unknown, options: FriendlyErrorOptions =
       status: status ?? 401,
       severity: "warning",
       canRetry: false,
+    };
+  }
+
+  if (knownFriendlyMessage) {
+    return {
+      title: "Check the details",
+      message: knownFriendlyMessage,
+      status,
+      severity: "warning",
+      canRetry: true,
     };
   }
 

@@ -384,8 +384,8 @@ export default function AllManagersPage() {
                 onFetchPermissions={undefined}
               />
             )}
-            title="All Managers"
-            description="Managers list with status and permissions"
+            title=""
+            description=""
             requiredModule="manager"
             hideAddButton={true}
             onAdd={async (partial) => {

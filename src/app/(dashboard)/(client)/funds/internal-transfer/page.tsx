@@ -31,6 +31,7 @@ import {
   type MT5Account,
   type WalletSummaryData,
 } from '@/lib/api'
+import { formatCurrency } from '@/lib/format'
 import { getFriendlyErrorMessage } from '@/lib/friendly-errors'
 import { useAuth } from '@/contexts/auth-context'
 
@@ -187,8 +188,8 @@ function InternalTransferContent() {
 
       if (accountsResult.status === 'fulfilled') {
         const response = accountsResult.value
-        if (response.success && response.data) {
-          setMt5Accounts(response.data)
+        if (response.success && response.data?.mt5_accounts) {
+          setMt5Accounts(response.data.mt5_accounts)
         } else {
           setMt5Accounts([])
           setAccountsError('Unable to load MT5 accounts')
@@ -207,7 +208,7 @@ function InternalTransferContent() {
 
   const mt5AccountOptions = useMemo(() => mt5Accounts.map((account) => ({
       id: account.account_id,
-      label: `${account.account_id} • ${account.available_balance} ${account.currency}`,
+      label: `${account.account_id} • ${formatCurrency(account.balance)}`,
     })), [mt5Accounts])
 
   const walletOptions = useMemo<WalletOption[]>(() => {
@@ -506,14 +507,19 @@ function InternalTransferContent() {
                     key={account.account_id}
                     className="rounded-lg border bg-muted/40 p-3 text-sm"
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{account.account_id}</span>
-                      <Badge variant="outline" className="capitalize">
-                        {account.account_type}
+                    <div className="flex items-center justify-between gap-3">
+                      <div>
+                        <div className="font-medium">{account.account_id}</div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          MT5 Login: {account.mt5_id}
+                        </div>
+                      </div>
+                      <Badge variant="outline">
+                        MT5
                       </Badge>
                     </div>
                     <div className="mt-1 text-muted-foreground">
-                      Balance: {account.available_balance} {account.currency}
+                      Balance: {formatCurrency(account.balance)}
                     </div>
                   </div>
                 ))}
