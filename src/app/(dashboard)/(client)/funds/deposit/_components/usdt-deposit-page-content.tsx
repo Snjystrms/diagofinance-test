@@ -392,11 +392,10 @@ function USDTDepositContent() {
   }
 
   return (
-    <div className="min-h-screen w-full p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-background via-background to-muted/20">
+    <div className="min-h-screen w-full bg-background p-4 lg:p-6 xl:p-8">
       <div className="max-w-7xl mx-auto space-y-8">
         {/* Header Section - Enhanced */}
-        <div className="mb-8 relative">
-          <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-emerald-500/5 to-teal-500/5 rounded-2xl blur-3xl -z-10" />
+        <div className="mb-8">
           <div className="space-y-2">
             <h1 className="text-3xl font-semibold text-foreground mb-1">
               USDT Deposit
@@ -415,8 +414,7 @@ function USDTDepositContent() {
           </TabsList>
 
           {/* Wallet Summary Card - Enhanced */}
-          <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-background to-muted/30 group">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-emerald-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
+          <Card className="border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-md">
             <CardContent className="p-6 relative z-10">
               {walletLoading ? (
                 <div className="grid gap-4 md:grid-cols-3">
@@ -461,7 +459,7 @@ function USDTDepositContent() {
                     </div>
                     <div className="h-2 rounded-full bg-muted overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-emerald-500 to-blue-500 transition-all duration-300"
+                        className="h-full bg-primary transition-all duration-300"
                         style={{ width: `${depositReadiness}%` }}
                       />
                     </div>
@@ -586,17 +584,16 @@ function USDTDepositContent() {
             </Card>
 
             {/* Right Column - Transaction Hash Submission */}
-            <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-background to-muted/30 group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
+            <Card className="border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-md">
               <CardHeader className="relative z-10">
                 <CardTitle className="text-2xl font-bold flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/10 to-purple-500/10 border border-primary/20">
+                  <div className="rounded-lg border border-primary/20 bg-primary/10 p-1.5">
                     <Hash className="h-5 w-5 text-primary" />
                   </div>
                   Submit Transaction
                 </CardTitle>
                 <CardDescription>
-                  After sending USDT, paste your transaction hash below to track your deposit
+                  After sending USDT, submit your transaction details for admin review. We will verify the transfer and process the deposit shortly.
                 </CardDescription>
               </CardHeader>
 
@@ -663,7 +660,7 @@ function USDTDepositContent() {
                         Payment Proof (Screenshot) <span className="text-muted-foreground text-xs">(Optional if transaction hash provided)</span>
                       </Label>
                       {!paymentProof ? (
-                        <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 hover:border-purple-500 dark:hover:border-purple-400 transition-colors">
+                        <div className="rounded-lg border-2 border-dashed border-border p-6 transition-colors hover:border-primary/50">
                           <label
                             htmlFor="payment_proof"
                             className="flex flex-col items-center justify-center cursor-pointer"
@@ -723,7 +720,7 @@ function USDTDepositContent() {
                     <Button
                       onClick={handleSubmitHash}
                       disabled={!canSubmit || isSubmitting}
-                      className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="h-12 w-full rounded-xl bg-primary text-lg font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isSubmitting ? (
                         <>
@@ -741,39 +738,42 @@ function USDTDepositContent() {
                 )}
 
                 {depositStatus === "submitted" && (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Clock className="h-8 w-8 text-blue-600 dark:text-blue-400 animate-spin" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                      Processing Transaction
-                    </h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-4">
-                      We&apos;re verifying your transaction on the blockchain...
-                    </p>
-                    <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
-                      <p className="text-sm text-blue-800 dark:text-blue-200 break-all">
-                        Hash: {transactionHash}
+                    <div className="py-8 text-center">
+                      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                        <Clock className="h-8 w-8 animate-spin text-primary" />
+                      </div>
+                      <h3 className="mb-2 text-xl font-semibold text-foreground">
+                        Deposit Submitted
+                      </h3>
+                      <p className="mb-4 text-muted-foreground">
+                        Your deposit request is under review by the admin team. We&apos;ll verify the transaction details and process it soon.
+                      </p>
+                      <div className="mb-3 rounded-lg border border-border bg-muted/40 p-4">
+                        <p className="break-all text-sm text-foreground">
+                          Hash: {transactionHash}
+                        </p>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Once approved, the deposit will reflect in your wallet and account history.
                       </p>
                     </div>
-                  </div>
                 )}
 
                 {depositStatus === "confirmed" && (
-                  <div className="text-center py-8">
-                    <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="py-8 text-center">
+                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
                       <CheckCircle className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
                     </div>
-                    <h3 className="text-xl font-semibold text-emerald-900 dark:text-emerald-100 mb-2">
-                      Deposit Confirmed!
+                    <h3 className="mb-2 text-xl font-semibold text-foreground">
+                      Deposit Processed
                     </h3>
-                    <p className="text-gray-600 dark:text-gray-400 mb-4">
-                      Your USDT deposit has been successfully processed
+                    <p className="mb-4 text-muted-foreground">
+                      Your deposit has been reviewed and credited successfully.
                     </p>
                     <div className="space-y-3">
-                      <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-4 border border-emerald-200 dark:border-emerald-800">
+                      <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/20">
                         <p className="text-sm text-emerald-800 dark:text-emerald-200">
-                          Transaction confirmed on blockchain
+                          The admin team has completed the review and released the funds to your wallet.
                         </p>
                       </div>
                       <Button
@@ -822,14 +822,13 @@ function USDTDepositContent() {
 
             <TabsContent value="crypto" className="space-y-8">
               {/* Payment Method Selection - Enhanced with Tabs */}
-              <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-background to-muted/30 group">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
+              <Card className="border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-md">
                 <CardContent className="p-4 relative z-10">
                   <Tabs value={cryptoPaymentMethod} onValueChange={(value) => setCryptoPaymentMethod(value as "binance" | "coinsbuy")} className="w-full">
                     <TabsList className="w-full bg-muted/50 p-1 rounded-xl">
                       <TabsTrigger 
                         value="binance" 
-                        className="flex-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-yellow-500 data-[state=active]:to-orange-600 data-[state=active]:text-white rounded-lg transition-all duration-200"
+                        className="flex-1 rounded-lg transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                       >
                         <img 
                           src="https://binance.com/favicon.ico" 
@@ -843,7 +842,7 @@ function USDTDepositContent() {
                       </TabsTrigger>
                       <TabsTrigger 
                         value="coinsbuy" 
-                        className="flex-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-indigo-600 data-[state=active]:text-white rounded-lg transition-all duration-200"
+                        className="flex-1 rounded-lg transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                       >
                         <Wallet className="h-4 w-4 mr-2" />
                         CoinsBuy
@@ -986,7 +985,7 @@ function USDTDepositContent() {
                     <Button
                       onClick={handleBinanceSubmit}
                       disabled={!binanceAmount.trim() || parseFloat(binanceAmount) <= 0 || isSubmittingBinance}
-                      className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="h-12 w-full rounded-xl bg-primary text-lg font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isSubmittingBinance ? (
                         <>
@@ -1113,7 +1112,7 @@ function USDTDepositContent() {
                     <Button
                       onClick={handleCoinsbuySubmit}
                       disabled={!coinsbuyAmount.trim() || parseFloat(coinsbuyAmount) <= 0 || isSubmittingCoinsbuy}
-                      className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="h-12 w-full rounded-xl bg-primary text-lg font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isSubmittingCoinsbuy ? (
                         <>

@@ -112,25 +112,6 @@ function WithdrawalRequestContent() {
     }
   };
 
-  const validateWalletAddress = (address: string, chain: string): boolean => {
-    if (!address.trim()) return false;
-    
-    const trimmedAddress = address.trim();
-    
-    // TRC20 addresses start with T and are typically 34 characters (allow 25-40 for flexibility)
-    if (chain === "TRC20") {
-      return trimmedAddress.startsWith("T") && trimmedAddress.length >= 25 && trimmedAddress.length <= 40;
-    }
-    
-    // ERC20/BEP20 addresses start with 0x and are typically 42 characters (allow 30-50 for flexibility)
-    if (chain === "ERC20" || chain === "BEP20" || chain === "BSC" || chain === "ETH") {
-      return trimmedAddress.startsWith("0x") && trimmedAddress.length >= 30 && trimmedAddress.length <= 50;
-    }
-    
-    // For other chains, just check minimum length
-    return trimmedAddress.length >= 20;
-  };
-
   const handleSubmit = async () => {
     if (!token) {
       setError("Authentication required. Please log in again.");
@@ -166,11 +147,6 @@ function WithdrawalRequestContent() {
     // Validate wallet address
     if (!walletAddress.trim()) {
       setError("Wallet address is required");
-      return;
-    }
-
-    if (!validateWalletAddress(walletAddress, chainId)) {
-      setError(`Invalid ${chainId} wallet address format`);
       return;
     }
 
@@ -464,7 +440,7 @@ function WithdrawalRequestContent() {
                         value={walletAddress}
                         onChange={(e) => setWalletAddress(e.target.value)}
                         className="pl-10 pr-20 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-red-500 dark:focus:border-red-400 rounded-lg font-mono text-sm"
-                        placeholder={chainId === "TRC20" ? "T..." : "0x..."}
+                        placeholder="Paste your wallet address"
                       />
                       {walletAddress && (
                         <Button
@@ -481,9 +457,7 @@ function WithdrawalRequestContent() {
                     <div className="flex items-start gap-2">
                       <AlertCircle className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
                       <p className="text-xs text-gray-500">
-                        {chainId === "TRC20" 
-                          ? "TRC20 addresses start with 'T' and are typically 25-40 characters long" 
-                          : "ERC20/BEP20 addresses start with '0x' and are typically 30-50 characters long"}
+                        Paste the destination wallet address exactly as provided by your receiving wallet for the selected network.
                       </p>
                     </div>
                   </div>

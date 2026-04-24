@@ -19,19 +19,12 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ApiErrorState } from '@/components/errors/api-error-state';
+import { ClientMt5AccountDetailsDialog } from '@/components/accounts/client-mt5-account-details-dialog';
 import { ClientCardGridSkeleton } from '@/components/loading/client-page-skeletons';
 import { ProtectedRoute } from '@/components/protected-route';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -255,11 +248,11 @@ export default function ManageAccountsPage() {
     const balanceValue = formatCurrency(Number(account.balance ?? 0), detail?.base_currency ?? 'USD');
 
     return (
-      <Card className="border-2 border-green-200 dark:border-green-800 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 hover:shadow-lg transition-all duration-300">
+      <Card className="border border-border/60 bg-gradient-to-br from-card to-muted/20 shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-lg">
         <CardContent className="p-6">
           <div className="mb-4 flex items-start justify-between gap-3">
             <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 text-lg font-bold text-white shadow-lg">
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground shadow-sm">
                 5
               </div>
               <div>
@@ -339,7 +332,7 @@ export default function ManageAccountsPage() {
           <div className="mb-4 grid grid-cols-2 gap-3">
             <div className="rounded-lg bg-white/40 p-3 dark:bg-black/10">
               <div className="mb-1 text-xs text-muted-foreground">Balance</div>
-              <div className="text-sm font-semibold text-emerald-700 dark:text-emerald-400">{balanceValue}</div>
+              <div className="text-sm font-semibold text-primary">{balanceValue}</div>
             </div>
             <div className="rounded-lg bg-white/40 p-3 dark:bg-black/10">
               <div className="mb-1 text-xs text-muted-foreground">Leverage</div>
@@ -363,7 +356,7 @@ export default function ManageAccountsPage() {
           </div>
 
           <div className="flex gap-2">
-            <Button size="sm" className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white" onClick={() => openDetails(account)}>
+            <Button size="sm" className="flex-1" onClick={() => openDetails(account)}>
               <Eye className="h-4 w-4 mr-1" />
               View Details
             </Button>
@@ -381,11 +374,7 @@ export default function ManageAccountsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-full w-full p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/20 dark:from-gray-900 dark:via-blue-950/20 dark:to-indigo-950/10">
-        <div className="fixed inset-0 -z-10 overflow-hidden">
-          <div className="absolute -top-40 -right-40 h-80 w-80 rounded-full bg-gradient-to-r from-blue-500/10 to-purple-500/10 blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 h-80 w-80 rounded-full bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 blur-3xl" />
-        </div>
+      <div className="min-h-full w-full bg-background p-4 lg:p-6 xl:p-8">
 
         <div className="mb-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -406,31 +395,31 @@ export default function ManageAccountsPage() {
           </div>
         </div>
 
-        <Card className="border-0 shadow-xl bg-card/70 backdrop-blur-sm mb-8">
+        <Card className="mb-8 border border-border/60 bg-card/80 shadow-sm">
           <CardContent className="px-4 py-4">
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)} className="w-full">
               <TabsList className="grid h-auto w-full grid-cols-4 rounded-lg bg-muted/50 p-1">
                 <TabsTrigger
                   value="mt5-live"
-                  className="rounded-md py-2 px-2 text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white"
+                  className="rounded-md py-2 px-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   MT5 Live
                 </TabsTrigger>
                 <TabsTrigger
                   value="mt5-demo"
-                  className="rounded-md py-2 px-2 text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white"
+                  className="rounded-md py-2 px-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   MT5 Demo
                 </TabsTrigger>
                 <TabsTrigger
                   value="mt4-live"
-                  className="rounded-md py-2 px-2 text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white"
+                  className="rounded-md py-2 px-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   MT4 Live
                 </TabsTrigger>
                 <TabsTrigger
                   value="mt4-demo"
-                  className="rounded-md py-2 px-2 text-sm data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white"
+                  className="rounded-md py-2 px-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                 >
                   MT4 Demo
                 </TabsTrigger>
@@ -512,7 +501,7 @@ export default function ManageAccountsPage() {
                       ? 'MT4 account management is not available yet. Use the MT5 flow to create and review active trading accounts.'
                       : `You don't have any ${activeTabTitle.toLowerCase()} yet. Open a new account to get started.`}
                   </p>
-                  <Button size="lg" asChild className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white">
+                  <Button size="lg" asChild>
                     <Link href="/my_accounts/open-trading-account">
                       Open Trading Account
                       <ArrowRight className="ml-2 h-4 w-4" />
@@ -523,160 +512,12 @@ export default function ManageAccountsPage() {
             )}
           </div>
         )}
-
-        <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-          <DialogContent className="max-h-[82vh] max-w-2xl overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {selectedAccountDetail?.accountType?.name ?? 'MT5 Account Details'}
-              </DialogTitle>
-              <DialogDescription>
-                Review the MT5 account credentials and metadata returned by the account management APIs.
-              </DialogDescription>
-            </DialogHeader>
-
-            {selectedAccount ? (
-              <div className="grid gap-3 py-1 md:grid-cols-2">
-                <Card>
-                  <CardHeader className="px-4 pb-2 pt-4">
-                    <CardTitle className="text-base">Identity</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2 px-4 pb-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <span>{selectedAccountDetail?.name ?? selectedAccount.name}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span className="break-all">{selectedAccountDetail?.email ?? selectedAccount.email}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                      <span className="text-muted-foreground">Mobile</span>
-                      <span>{selectedAccountDetail?.mobile ?? 'N/A'}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                      <span className="text-muted-foreground">Status</span>
-                      <span>{getStatusBadge(selectedAccountDetail?.status)}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                      <span className="text-muted-foreground">Mode</span>
-                      <span className="font-medium uppercase">{selectedAccountDetail?.account_mode ?? 'live'}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="px-4 pb-2 pt-4">
-                    <CardTitle className="text-base">Credentials</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2 px-4 pb-4 text-sm">
-                    <div className="rounded-lg bg-muted/40 px-3 py-2">
-                      <div className="mb-1 text-xs text-muted-foreground">Account ID</div>
-                      <div className="flex items-center justify-between gap-2">
-                        <code className="font-semibold">{selectedAccount.account_id}</code>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyToClipboard(selectedAccount.account_id, 'Account ID')}>
-                          <Copy className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="rounded-lg bg-muted/40 px-3 py-2">
-                      <div className="mb-1 text-xs text-muted-foreground">MT5 Login</div>
-                      <div className="flex items-center justify-between gap-2">
-                        <code className="font-semibold">{selectedAccount.mt5_id}</code>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyToClipboard(selectedAccount.mt5_id, 'MT5 login')}>
-                          <Copy className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                      <span className="text-muted-foreground">Platform</span>
-                      <span className="font-medium">MT5</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                      <span className="text-muted-foreground">Group</span>
-                      <span className="break-all text-right">{selectedAccountDetail?.group?.mt5_group_name ?? selectedAccountDetail?.mt5_group_name ?? 'N/A'}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="px-4 pb-2 pt-4">
-                    <CardTitle className="text-base">Trading Setup</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2 px-4 pb-4 text-sm">
-                    <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                      <span className="text-muted-foreground">Balance</span>
-                      <span>{formatCurrency(Number(selectedAccount.balance ?? 0), selectedAccountDetail?.base_currency ?? 'USD')}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                      <span className="text-muted-foreground">Account Type</span>
-                      <span className="text-right">{selectedAccountDetail?.accountType?.name ?? 'N/A'}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                      <span className="text-muted-foreground">Leverage</span>
-                      <span>{selectedAccountDetail?.leverage ? `1:${selectedAccountDetail.leverage}` : 'N/A'}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                      <span className="text-muted-foreground">Spread From</span>
-                      <span>{selectedAccountDetail?.spread_from ?? 'N/A'}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                      <span className="text-muted-foreground">Maximum Leverage</span>
-                      <span className="text-right">{selectedAccountDetail?.maximum_leverage ?? 'N/A'}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                      <span className="text-muted-foreground">Base Currency</span>
-                      <span>{selectedAccountDetail?.base_currency ?? 'N/A'}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                      <span className="text-muted-foreground">Minimum Deposit</span>
-                      <span>{selectedAccountDetail?.minimum_deposit ?? 'N/A'}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card>
-                  <CardHeader className="px-4 pb-2 pt-4">
-                    <CardTitle className="text-base">Audit</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2 px-4 pb-4 text-sm">
-                    <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                      <span className="text-muted-foreground">Created</span>
-                      <span className="text-right">{formatDateTime(selectedAccountDetail?.created_at)}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                      <span className="text-muted-foreground">Updated</span>
-                      <span className="text-right">{formatDateTime(selectedAccountDetail?.updated_at)}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                      <span className="text-muted-foreground">Stop Out Level</span>
-                      <span>{selectedAccountDetail?.stop_out_level ?? 'N/A'}</span>
-                    </div>
-                    <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                      <span className="text-muted-foreground">Swap Free</span>
-                      <span>{selectedAccountDetail?.swap_free_option ? 'Enabled' : 'Disabled'}</span>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            ) : (
-              <div className="py-6 text-sm text-muted-foreground">
-                No account details available.
-              </div>
-            )}
-
-            <DialogFooter className="sm:justify-between">
-              <Button variant="outline" asChild>
-                <Link href="/my_accounts/open-trading-account">
-                  Open Another Account
-                </Link>
-              </Button>
-              <Button onClick={() => setIsDetailsDialogOpen(false)}>
-                Close
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <ClientMt5AccountDetailsDialog
+          open={isDetailsDialogOpen}
+          onOpenChange={setIsDetailsDialogOpen}
+          account={selectedAccount}
+          initialDetail={selectedAccountDetail}
+        />
       </div>
     </ProtectedRoute>
   );

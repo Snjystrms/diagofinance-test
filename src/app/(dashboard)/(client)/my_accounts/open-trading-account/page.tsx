@@ -277,7 +277,7 @@ export default function OpenTradingAccountPage() {
 
   return (
     <ProtectedRoute>
-      <div className="min-h-full w-full p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-background via-background to-muted/20">
+      <div className="min-h-full w-full bg-background p-4 lg:p-6 xl:p-8">
         {/* Header Section - Enhanced */}
         <div className="mb-8">
             <div className="space-y-2">
@@ -295,11 +295,10 @@ export default function OpenTradingAccountPage() {
           {/* Left Side: Account Type and Platform Selection */}
           <div className="space-y-6">
             {/* Account Type Tabs */}
-            <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-background to-muted/30 group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
+            <Card className="border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-md">
               <CardHeader className="relative z-10 pb-4">
                 <CardTitle className="text-xl font-bold flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/10 to-purple-500/10 border border-primary/20">
+                  <div className="rounded-lg border border-primary/20 bg-primary/10 p-1.5">
                     <Zap className="h-4 w-4 text-primary" />
                   </div>
                   Account Type
@@ -310,14 +309,14 @@ export default function OpenTradingAccountPage() {
                   <TabsList className="w-full bg-muted/50 p-1 rounded-xl">
                     <TabsTrigger 
                       value="live" 
-                      className="flex-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-purple-600 data-[state=active]:text-primary-foreground rounded-lg transition-all duration-200"
+                      className="flex-1 rounded-lg transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                     >
                       <TrendingUp className="h-4 w-4 mr-2" />
                       Live Account
                     </TabsTrigger>
                     <TabsTrigger 
                       value="demo" 
-                      className="flex-1 data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-purple-600 data-[state=active]:text-primary-foreground rounded-lg transition-all duration-200"
+                      className="flex-1 rounded-lg transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                     >
                       <Shield className="h-4 w-4 mr-2" />
                       Demo Account
@@ -331,11 +330,10 @@ export default function OpenTradingAccountPage() {
             </Card>
 
             {/* Platform Selection */}
-            <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-background to-muted/30 group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
+            <Card className="border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-md">
               <CardHeader className="relative z-10 pb-4">
                 <CardTitle className="text-xl font-bold flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/10 to-purple-500/10 border border-primary/20">
+                  <div className="rounded-lg border border-primary/20 bg-primary/10 p-1.5">
                     <Globe className="h-4 w-4 text-primary" />
                   </div>
                   Trading Platform
@@ -386,7 +384,7 @@ export default function OpenTradingAccountPage() {
                   <Card
                     className={`cursor-pointer transition-all duration-300 border-2 ${
                       selectedPlatform === 'mt5'
-                        ? 'border-primary bg-gradient-to-br from-primary/10 via-purple-500/5 to-transparent shadow-lg scale-105'
+                        ? 'scale-105 border-primary bg-primary/5 shadow-lg'
                         : 'border-border bg-muted/30 hover:border-primary/30'
                     }`}
                     onClick={() => setSelectedPlatform('mt5')}
@@ -396,7 +394,7 @@ export default function OpenTradingAccountPage() {
                         <div className="flex items-center gap-4">
                           <div className={`relative flex items-center justify-center w-20 h-20 rounded-2xl transition-all duration-300 ${
                             selectedPlatform === 'mt5' 
-                              ? 'bg-gradient-to-r from-primary to-purple-600 shadow-lg' 
+                              ? 'bg-primary/10 shadow-sm border border-primary/20' 
                               : 'bg-muted'
                           }`}>
                             <div className="relative w-full h-full flex items-center justify-center p-2">
@@ -441,11 +439,10 @@ export default function OpenTradingAccountPage() {
             </Card>
 
             {/* Features Card */}
-            <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5 group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
+            <Card className="border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-md">
               <CardHeader className="relative z-10">
                 <CardTitle className="text-lg font-bold flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/10 to-purple-500/10 border border-primary/20">
+                  <div className="rounded-lg border border-primary/20 bg-primary/10 p-1.5">
                     <Star className="h-4 w-4 text-primary" />
                   </div>
                   Why Trade With Us?
@@ -477,10 +474,9 @@ export default function OpenTradingAccountPage() {
           </div>
 
           {/* Right Side: Account Details Form */}
-          <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-background to-muted/30 group sticky top-6">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
+          <Card className="sticky top-6 border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-md">
             <CardHeader className="relative z-10 pb-4">
-              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
+              <CardTitle className="text-2xl font-bold text-foreground">
                 Account Details
               </CardTitle>
               <CardDescription>
@@ -490,7 +486,7 @@ export default function OpenTradingAccountPage() {
             <CardContent className="relative z-10">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 via-purple-500/5 to-transparent p-4 text-sm text-muted-foreground">
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
                     Choose the setup that fits your trading style. Required setup details are applied automatically.
                   </div>
 
@@ -554,7 +550,7 @@ export default function OpenTradingAccountPage() {
                             />
                           ) : null}
                           {selectedAccountType && (
-                            <div className="mt-3 p-4 bg-gradient-to-br from-primary/5 via-purple-500/5 to-transparent rounded-xl border border-primary/20 space-y-2">
+                            <div className="mt-3 space-y-2 rounded-xl border border-primary/20 bg-primary/5 p-4">
                               <div className="flex items-center justify-between">
                                 <span className="text-sm font-medium text-muted-foreground">Spread:</span>
                                 <Badge variant="secondary">
@@ -700,7 +696,7 @@ export default function OpenTradingAccountPage() {
                   {/* Submit Button */}
                   <Button
                     type="submit"
-                    className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="h-12 w-full rounded-xl bg-primary text-lg font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={isSubmitting}
                   >
                     {isSubmitting ? (
@@ -722,13 +718,12 @@ export default function OpenTradingAccountPage() {
         </div>
 
         {/* Manage Accounts Section */}
-        <Card className="mt-8 relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5 group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
+        <Card className="mt-8 border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-md">
           <CardContent className="p-8 relative z-10">
             <div className="flex flex-col lg:flex-row items-center justify-between gap-6">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-gradient-to-r from-primary to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <BarChart3 className="h-6 w-6 text-primary-foreground" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
+                  <BarChart3 className="h-6 w-6 text-primary" />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-foreground">
@@ -756,10 +751,10 @@ export default function OpenTradingAccountPage() {
 
       {/* Success Dialog */}
       <Dialog open={isSuccessDialogOpen} onOpenChange={setIsSuccessDialogOpen}>
-        <DialogContent className="sm:max-w-lg max-h-[85vh] overflow-y-auto border-0 shadow-2xl bg-card/95 backdrop-blur-sm rounded-2xl">
+          <DialogContent className="max-h-[85vh] overflow-y-auto rounded-2xl border border-border/60 bg-card/95 shadow-xl sm:max-w-lg">
           <DialogHeader>
-            <div className="flex items-center gap-4 mb-4">
-              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-primary/10 to-purple-500/10 border border-primary/20">
+              <div className="mb-4 flex items-center gap-4">
+              <div className="flex h-16 w-16 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
                 <CheckCircle2 className="h-8 w-8 text-primary" />
               </div>
               <div>
@@ -776,7 +771,7 @@ export default function OpenTradingAccountPage() {
           {mt5RequestData && (
             <div className="space-y-6 py-4">
               <div className="space-y-4">
-                <div className="rounded-xl border border-primary/20 bg-gradient-to-br from-primary/5 via-purple-500/5 to-transparent p-4">
+                <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center border border-primary/20">
                       <Hash className="h-5 w-5 text-primary" />
@@ -863,7 +858,7 @@ export default function OpenTradingAccountPage() {
                 </div>
               </div>
               
-              <div className="p-4 bg-gradient-to-br from-primary/5 via-purple-500/5 to-transparent rounded-xl border border-primary/20">
+              <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
                 <div className="flex items-start gap-3">
                   <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center mt-0.5 border border-primary/20">
                     <span className="text-primary text-xs font-bold">i</span>
@@ -896,7 +891,7 @@ export default function OpenTradingAccountPage() {
                 setIsSuccessDialogOpen(false);
                 setMt5RequestData(null);
               }}
-              className="h-12 w-full sm:flex-1 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-primary-foreground rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+              className="h-12 w-full rounded-xl bg-primary font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md sm:flex-1"
             >
               Close
             </Button>

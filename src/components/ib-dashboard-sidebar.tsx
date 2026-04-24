@@ -18,6 +18,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { formatCurrency } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { useSidebar } from "@/components/ui/sidebar"
+import { getIbWalletSnapshot, normalizeIbWalletData } from "@/lib/ib"
 
 export function IbDashboardSidebar() {
   const { user, token } = useAuth()
@@ -54,8 +55,7 @@ export function IbDashboardSidebar() {
       }
 
       if (walletResponse?.success && walletResponse.data) {
-        // apiCall returns ApiResponse<IbWalletData>, so walletResponse.data is IbWalletData
-        setWalletData(walletResponse.data)
+        setWalletData(normalizeIbWalletData(walletResponse.data))
       }
     } catch (err) {
       console.error("Failed to fetch IB data:", err)
@@ -93,13 +93,10 @@ export function IbDashboardSidebar() {
   const partnerId = dashboardData?.partner_info?.partner_id || dashboardData?.user?.partner_id || "N/A"
   
   // Get wallet data from ib-wallet API (preferred) or fallback to dashboard API
-  const clientWallet = walletData?.client_wallet?.amount ?? dashboardData?.client_wallet?.balance ?? 0
-  const partnerWallet = walletData?.wallet_balance?.amount ?? dashboardData?.partner_wallet?.balance ?? 0
-  const currency = walletData?.client_wallet?.currency ?? 
-                   walletData?.wallet_balance?.currency ?? 
-                   dashboardData?.client_wallet?.currency ?? 
-                   dashboardData?.partner_wallet?.currency ?? 
-                   "USD"
+  const walletSnapshot = getIbWalletSnapshot(walletData, dashboardData)
+  const clientWallet = walletSnapshot.clientWallet.amount
+  const partnerWallet = walletSnapshot.partnerWallet.amount
+  const currency = walletSnapshot.currency
   const ibPlan = dashboardData?.partner_info?.ib_plan || "GOLD"
 
   if (isLoading) {

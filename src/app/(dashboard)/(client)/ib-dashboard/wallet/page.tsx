@@ -1,26 +1,97 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import { useAuth } from "@/contexts/auth-context";
-import { ibRequestsApi, type IbWalletData } from "@/lib/api";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import {
+  ArrowDownRight,
+  ArrowLeft,
+  ArrowUpRight,
+  Clock,
+  RefreshCw,
+  TrendingUp,
+  Wallet,
+} from "lucide-react";
+
 import { ApiErrorState } from "@/components/errors/api-error-state";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { IbMetricCard, IbPageHeader, IbPageShell, IbSectionCard } from "@/components/ib/ib-page-primitives";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Wallet,
-  ArrowUpRight,
-  ArrowDownRight,
-  Loader2,
-  RefreshCw,
-  Clock,
-  CheckCircle,
-  XCircle,
-} from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/contexts/auth-context";
+import { type IbWalletData, ibRequestsApi } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
 import { formatDateTimeInIST } from "@/lib/formatters";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
+import { getIbWalletSnapshot, normalizeIbWalletData } from "@/lib/ib";
+
+function WalletLoadingState() {
+  return (
+    <IbPageShell>
+      <section className="rounded-[28px] border border-border/60 bg-card p-6 shadow-sm">
+        <div className="space-y-3">
+          <Skeleton className="h-3 w-28 rounded-full" />
+          <Skeleton className="h-10 w-64 rounded-full" />
+          <Skeleton className="h-4 w-full max-w-xl rounded-full" />
+        </div>
+      </section>
+      <div className="grid gap-4 md:grid-cols-3">
+        {Array.from({ length: 3 }).map((_, index) => (
+          <div key={index} className="rounded-[28px] border border-border/60 bg-card p-6 shadow-sm">
+            <div className="space-y-4">
+              <Skeleton className="h-3 w-24 rounded-full" />
+              <Skeleton className="h-8 w-36 rounded-full" />
+              <Skeleton className="h-4 w-full rounded-full" />
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="rounded-[28px] border border-border/60 bg-card p-6 shadow-sm">
+        <div className="space-y-3">
+          {Array.from({ length: 6 }).map((_, index) => (
+            <Skeleton key={index} className="h-20 w-full rounded-2xl" />
+          ))}
+        </div>
+      </div>
+    </IbPageShell>
+  );
+}
+
+function getStatusBadge(status?: string) {
+  if (!status) {
+    return <Badge variant="outline">Unknown</Badge>;
+  }
+
+  const normalized = status.toLowerCase();
+
+  if (["completed", "success", "approved"].includes(normalized)) {
+    return <Badge className="border-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">{status}</Badge>;
+  }
+
+  if (["pending", "processing"].includes(normalized)) {
+    return <Badge className="border-0 bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300">{status}</Badge>;
+  }
+
+  if (["failed", "rejected", "cancelled"].includes(normalized)) {
+    return <Badge className="border-0 bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">{status}</Badge>;
+  }
+
+  return <Badge variant="outline">{status}</Badge>;
+}
+
+function getDirection(type?: string) {
+  const normalized = type?.toLowerCase() ?? "";
+  const isOutflow =
+    normalized.includes("withdrawal") ||
+    normalized.includes("debit") ||
+    normalized.includes("transfer");
+
+  return {
+    isOutflow,
+    icon: isOutflow ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />,
+    tone: isOutflow
+      ? "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"
+      : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300",
+  };
+}
 
 export default function IbWalletPage() {
   const { token } = useAuth();
@@ -39,15 +110,18 @@ export default function IbWalletPage() {
       setIsLoading(true);
       setError(null);
       const response = await ibRequestsApi.getIbWallet(token);
-      // apiCall returns ApiResponse<IbWalletData>, so response.data is IbWalletData
-      if (response?.success && response.data) {
-        setWalletData(response.data);
+      const normalized = normalizeIbWalletData(response?.data);
+
+      if (response?.success && normalized) {
+        setWalletData(normalized);
       } else {
+        setWalletData(null);
         setError("Unable to load IB wallet data");
       }
-    } catch (err) {
-      console.error("Failed to fetch IB wallet:", err);
-      setError(err);
+    } catch (fetchError) {
+      console.error("Failed to fetch IB wallet:", fetchError);
+      setWalletData(null);
+      setError(fetchError);
     } finally {
       setIsLoading(false);
     }
@@ -57,219 +131,128 @@ export default function IbWalletPage() {
     void fetchWalletData();
   }, [fetchWalletData]);
 
-  const getStatusBadge = (status?: string) => {
-    if (!status) return null;
-    const statusLower = status.toLowerCase();
-    if (statusLower === "completed" || statusLower === "success" || statusLower === "approved") {
-      return (
-        <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800">
-          <CheckCircle className="h-3 w-3 mr-1" />
-          {status}
-        </Badge>
-      );
-    }
-    if (statusLower === "pending" || statusLower === "processing") {
-      return (
-        <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800">
-          <Clock className="h-3 w-3 mr-1" />
-          {status}
-        </Badge>
-      );
-    }
-    if (statusLower === "failed" || statusLower === "rejected" || statusLower === "cancelled") {
-      return (
-        <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800">
-          <XCircle className="h-3 w-3 mr-1" />
-          {status}
-        </Badge>
-      );
-    }
-    return (
-      <Badge variant="secondary" className="text-xs">
-        {status}
-      </Badge>
-    );
-  };
-
-  const getTransactionIcon = (type?: string) => {
-    if (!type) return <RefreshCw className="h-4 w-4" />;
-    const typeLower = type.toLowerCase();
-    if (typeLower.includes("deposit") || typeLower.includes("credit") || typeLower.includes("earn")) {
-      return <ArrowDownRight className="h-4 w-4 text-green-600" />;
-    }
-    if (typeLower.includes("withdrawal") || typeLower.includes("debit") || typeLower.includes("transfer")) {
-      return <ArrowUpRight className="h-4 w-4 text-red-600" />;
-    }
-    return <RefreshCw className="h-4 w-4" />;
-  };
-
-  const getTransactionColor = (type?: string) => {
-    if (!type) return "text-gray-600";
-    const typeLower = type.toLowerCase();
-    if (typeLower.includes("deposit") || typeLower.includes("credit") || typeLower.includes("earn")) {
-      return "text-green-600";
-    }
-    if (typeLower.includes("withdrawal") || typeLower.includes("debit") || typeLower.includes("transfer")) {
-      return "text-red-600";
-    }
-    return "text-gray-600";
-  };
+  const snapshot = useMemo(() => getIbWalletSnapshot(walletData), [walletData]);
+  const transactions = snapshot.transactions.data ?? [];
 
   if (isLoading) {
-    return (
-      <div className="min-h-full w-full bg-white dark:bg-gray-900 p-6">
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-            <p className="text-sm text-gray-600 dark:text-gray-300">Loading wallet data...</p>
-          </div>
-        </div>
-      </div>
-    );
+    return <WalletLoadingState />;
   }
 
   if (error || !walletData) {
     return (
-      <div className="min-h-full w-full bg-white dark:bg-gray-900 p-6">
-        <div className="flex items-center justify-center min-h-screen">
-          <ApiErrorState
-            error={error || "Unable to load IB wallet data"}
-            audience="client"
-            resource="IB wallet"
-            action="load"
-            variant="panel"
-            className="max-w-md bg-white dark:bg-gray-800"
-            onRetry={fetchWalletData}
-          />
-        </div>
-      </div>
+      <IbPageShell>
+        <ApiErrorState
+          error={error || "Unable to load IB wallet data"}
+          audience="client"
+          resource="IB wallet"
+          action="load"
+          variant="panel"
+          onRetry={fetchWalletData}
+        />
+      </IbPageShell>
     );
   }
 
-  const { wallet_balance, client_wallet, earning_summary, transactions } = walletData;
-  const transactionList = transactions?.data || [];
-
   return (
-    <div className="min-h-full w-full bg-gray-50 dark:bg-gray-950 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Link href="/ib-dashboard">
-              <Button variant="ghost" size="icon">
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">IB Wallet</h1>
-              <p className="text-gray-600 dark:text-gray-400">View your wallet balance and transaction history</p>
-            </div>
-          </div>
-          <Button onClick={fetchWalletData} variant="outline" size="sm">
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Refresh
-          </Button>
-        </div>
+    <IbPageShell>
+      <IbPageHeader
+        eyebrow="IB Wallet"
+        title="Partner and client wallet ledger"
+        description="Review current balances and the latest transfer activity linked to your IB account."
+        actions={
+          <>
+            <Button variant="outline" asChild>
+              <Link href="/ib-dashboard">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to dashboard
+              </Link>
+            </Button>
+            <Button variant="outline" onClick={fetchWalletData}>
+              <RefreshCw className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+          </>
+        }
+      />
 
-        {/* Wallet Summary Cards */}
-        <div className="grid gap-6 md:grid-cols-3">
-          <Card className="border-0 shadow-xl bg-white dark:bg-gray-800">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Partner Wallet</CardTitle>
-              <Wallet className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(wallet_balance.amount, wallet_balance.currency)}</div>
-            </CardContent>
-          </Card>
+      <div className="grid gap-4 md:grid-cols-3">
+        <IbMetricCard
+          title="Partner Wallet"
+          value={formatCurrency(snapshot.partnerWallet.amount, snapshot.partnerWallet.currency)}
+          description="Current partner-side balance."
+          icon={<Wallet className="h-5 w-5" />}
+          accent="primary"
+        />
+        <IbMetricCard
+          title="Client Wallet"
+          value={formatCurrency(snapshot.clientWallet.amount, snapshot.clientWallet.currency)}
+          description="Funds currently available inside the client wallet."
+          icon={<Wallet className="h-5 w-5" />}
+          accent="emerald"
+        />
+        <IbMetricCard
+          title="Total Earned"
+          value={formatCurrency(snapshot.earningSummary.total_earned, snapshot.earningSummary.currency)}
+          description={`Internal transfers: ${formatCurrency(snapshot.earningSummary.total_internal_transfers, snapshot.earningSummary.currency)}`}
+          icon={<TrendingUp className="h-5 w-5" />}
+          accent="slate"
+        />
+      </div>
 
-          <Card className="border-0 shadow-xl bg-white dark:bg-gray-800">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Client Wallet</CardTitle>
-              <Wallet className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(client_wallet.amount, client_wallet.currency)}</div>
-            </CardContent>
-          </Card>
+      <IbSectionCard
+        title="Transaction history"
+        description="Latest IB wallet entries returned by the wallet ledger API."
+      >
+        {transactions.length > 0 ? (
+          <div className="space-y-3">
+            {transactions.map((transaction, index) => {
+              const direction = getDirection(transaction.type);
+              const amount = typeof transaction.amount === "number" ? transaction.amount : 0;
+              const currency = transaction.currency || snapshot.currency;
 
-          <Card className="border-0 shadow-xl bg-white dark:bg-gray-800">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Earned</CardTitle>
-              <Wallet className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(earning_summary.total_earned, earning_summary.currency)}</div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Transactions History */}
-        <Card className="border-0 shadow-xl bg-white dark:bg-gray-800">
-          <CardHeader>
-            <CardTitle>Transaction History</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {transactionList.length > 0 ? (
-              <div className="space-y-4">
-                {transactionList.map((transaction) => (
-                  <div
-                    key={transaction.id}
-                    className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-4 flex-1">
-                      <div className={`p-2 rounded-lg bg-gray-100 dark:bg-gray-700 ${getTransactionColor(transaction.type)}`}>
-                        {getTransactionIcon(transaction.type)}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <p className="font-semibold text-gray-900 dark:text-white">
-                            {transaction.type || "Transaction"}
-                          </p>
-                          {getStatusBadge(transaction.status)}
-                        </div>
-                        {transaction.description && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{transaction.description}</p>
-                        )}
-                        {transaction.created_at && (
-                          <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
-                            {formatDateTimeInIST(transaction.created_at)}
-                          </p>
-                        )}
-                      </div>
+              return (
+                <div
+                  key={`${transaction.id ?? "tx"}-${index}`}
+                  className="flex flex-col gap-4 rounded-3xl border border-border/60 bg-muted/15 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="flex min-w-0 items-start gap-3">
+                    <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${direction.tone}`}>
+                      {direction.icon}
                     </div>
-                    <div className="text-right">
-                      <p className={`font-bold text-lg ${getTransactionColor(transaction.type)}`}>
-                        {transaction.amount !== undefined
-                          ? `${transaction.type?.toLowerCase().includes("withdrawal") || transaction.type?.toLowerCase().includes("debit") || transaction.type?.toLowerCase().includes("transfer") ? "-" : "+"}${formatCurrency(Math.abs(transaction.amount), transaction.currency || "USD")}`
-                          : "N/A"}
-                      </p>
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-medium text-foreground">{transaction.type || "Transaction"}</p>
+                        {getStatusBadge(transaction.status)}
+                      </div>
+                      {transaction.description ? (
+                        <p className="text-sm text-muted-foreground">{transaction.description}</p>
+                      ) : null}
+                      <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span>{transaction.created_at ? formatDateTimeInIST(transaction.created_at) : "Date unavailable"}</span>
+                      </div>
                     </div>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-12">
-                <Clock className="h-16 w-16 mx-auto mb-4 text-gray-400 dark:text-gray-500" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">No Transaction</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
-                  You haven&apos;t made any transactions yet. Your transaction history will appear here.
-                </p>
-                <Link href="/ib-dashboard">
-                  <Button variant="outline">
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Dashboard
-                  </Button>
-                </Link>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+                  <div className="sm:text-right">
+                    <p className={`text-lg font-semibold ${direction.isOutflow ? "text-rose-600 dark:text-rose-300" : "text-emerald-600 dark:text-emerald-300"}`}>
+                      {direction.isOutflow ? "-" : "+"}
+                      {formatCurrency(Math.abs(amount), currency)}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="flex min-h-[220px] flex-col items-center justify-center rounded-[24px] border border-dashed border-border/60 bg-muted/10 px-6 text-center">
+            <Clock className="mb-4 h-10 w-10 text-muted-foreground" />
+            <h3 className="text-lg font-semibold text-foreground">No transactions yet</h3>
+            <p className="mt-2 max-w-md text-sm text-muted-foreground">
+              Your IB wallet ledger is empty right now. Transfers and earnings will appear here once activity starts.
+            </p>
+          </div>
+        )}
+      </IbSectionCard>
+    </IbPageShell>
   );
 }
-
-
-
-

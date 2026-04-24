@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import type { ActivityTimelineItem } from "@/components/activity-timeline"
+import { ClientMt5AccountDetailsDialog } from "@/components/accounts/client-mt5-account-details-dialog"
 import { ProtectedRoute } from "@/components/protected-route"
 import dynamic from "next/dynamic"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -61,6 +62,7 @@ import { useClientCustomization } from "@/contexts/client-customization-context"
 
 import { formatCurrency } from "@/lib/formatters"
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors"
+import { normalizeIbWalletData } from "@/lib/ib"
 
 const formatAmount = (amount?: number) => {
   const numAmount = typeof amount === 'number' ? amount : 0
@@ -78,37 +80,18 @@ const formatLabel = (label?: string) => {
     .join(" ");
 };
 
-const normalizeIbWalletData = (raw: unknown): IbWalletData | null => {
-  if (!raw || typeof raw !== "object") {
-    return null;
-  }
-
-  const source = raw as Record<string, unknown>;
-  const walletBalance = source.wallet_balance ?? source.partner_wallet;
-  const clientWallet = source.client_wallet;
-  const earningSummary = source.earning_summary;
-  const transactions =
-    source.transactions ??
-    ({
-      data: [],
-      pagination: {
-        current_page: 1,
-        per_page: 0,
-        total: 0,
-        total_pages: 0,
-      },
-    } satisfies IbWalletData["transactions"]);
-
-  if (!walletBalance || !clientWallet || !earningSummary) {
-    return null;
-  }
-
-  return {
-    wallet_balance: walletBalance as IbWalletData["wallet_balance"],
-    client_wallet: clientWallet as IbWalletData["client_wallet"],
-    earning_summary: earningSummary as IbWalletData["earning_summary"],
-    transactions: transactions as IbWalletData["transactions"],
-  };
+type DashboardTradingAccount = {
+  id: number;
+  account_id: string;
+  account_mode: string;
+  balance: number;
+  leverage: string | number;
+  accountType?: { account_type_name: string; currency: string };
+  equity?: number;
+  free_margin?: number;
+  mt5_id?: string | null;
+  name?: string | null;
+  email?: string | null;
 };
 
 export function DashboardPageContent() {
@@ -165,6 +148,8 @@ export function DashboardPageContent() {
   const [dashboardError, setDashboardError] = useState<unknown | null>(null);
   const [statisticsPeriod, setStatisticsPeriod] = useState<7 | 30>(30);
   const [activeTab, setActiveTab] = useState<'mt5-live' | 'mt5-demo' | 'mt4-live' | 'mt4-demo'>('mt5-live');
+  const [selectedDashboardAccount, setSelectedDashboardAccount] = useState<DashboardTradingAccount | null>(null);
+  const [isDashboardAccountDialogOpen, setIsDashboardAccountDialogOpen] = useState(false);
   const [dateRange] = useState<{ start_date?: string; end_date?: string }>({});
   const dashboardArea = isAdmin ? 'admin' : 'client';
   const isCustomDashboard = getDashboardMode(dashboardArea);
@@ -395,16 +380,7 @@ export function DashboardPageContent() {
 
   // Helper function to get current accounts based on active tab
   const getCurrentAccounts = () => {
-    const allAccounts: Array<{
-      id: number;
-      account_id: string;
-      account_mode: string;
-      balance: number;
-      leverage: string | number;
-      accountType?: { account_type_name: string; currency: string };
-      equity?: number;
-      free_margin?: number;
-    }> = [];
+    const allAccounts: DashboardTradingAccount[] = [];
 
     // Collect accounts from mtAccountSummary
     mtAccountSummary.forEach((accountType) => {
@@ -449,6 +425,11 @@ export function DashboardPageContent() {
   };
 
   const currentAccounts = getCurrentAccounts();
+
+  const openDashboardAccountDetails = (account: DashboardTradingAccount) => {
+    setSelectedDashboardAccount(account);
+    setIsDashboardAccountDialogOpen(true);
+  };
   
   // Dashboard widgets - must be at top level to follow Rules of Hooks
   const dashboardWidgets = useMemo((): DashboardWidget[] => {
@@ -1425,13 +1406,13 @@ export function DashboardPageContent() {
               <Card className="border-0 shadow-xl bg-card/70 backdrop-blur-sm">
                 <CardContent className="px-4 py-4">
                   <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)} className="w-full">
-                    <TabsList className="w-full bg-muted/50 p-1 rounded-lg grid grid-cols-4 h-auto">
+                    <TabsList className="grid h-auto w-full grid-cols-4 rounded-lg bg-muted/50 p-1">
                       <TabsTrigger 
                         value="mt5-live" 
-                        className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-500 data-[state=active]:to-emerald-500 data-[state=active]:text-white rounded-md transition-all duration-200 py-2 px-2 text-sm"
+                        className="rounded-md py-2 px-2 text-sm transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                       >
                         <div className="flex items-center gap-1.5">
-                          <div className="w-5 h-5 bg-green-100 text-green-800 rounded text-xs font-bold flex items-center justify-center">
+                          <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
                             5
                           </div>
                           <span className="hidden sm:inline text-xs">MT5 Live</span>
@@ -1439,10 +1420,10 @@ export function DashboardPageContent() {
                       </TabsTrigger>
                       <TabsTrigger 
                         value="mt5-demo" 
-                        className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white rounded-md transition-all duration-200 py-2 px-2 text-sm"
+                        className="rounded-md py-2 px-2 text-sm transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                       >
                         <div className="flex items-center gap-1.5">
-                          <div className="w-5 h-5 bg-blue-100 text-blue-800 rounded text-xs font-bold flex items-center justify-center">
+                          <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
                             5
                           </div>
                           <span className="hidden sm:inline text-xs">MT5 Demo</span>
@@ -1450,10 +1431,10 @@ export function DashboardPageContent() {
                       </TabsTrigger>
                       <TabsTrigger 
                         value="mt4-live" 
-                        className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-500 data-[state=active]:to-indigo-500 data-[state=active]:text-white rounded-md transition-all duration-200 py-2 px-2 text-sm"
+                        className="rounded-md py-2 px-2 text-sm transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                       >
                         <div className="flex items-center gap-1.5">
-                          <div className="w-5 h-5 bg-purple-100 text-purple-800 rounded text-xs font-bold flex items-center justify-center">
+                          <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
                             4
                           </div>
                           <span className="hidden sm:inline text-xs">MT4 Live</span>
@@ -1461,10 +1442,10 @@ export function DashboardPageContent() {
                       </TabsTrigger>
                       <TabsTrigger 
                         value="mt4-demo" 
-                        className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-500 data-[state=active]:text-white rounded-md transition-all duration-200 py-2 px-2 text-sm"
+                        className="rounded-md py-2 px-2 text-sm transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                       >
                         <div className="flex items-center gap-1.5">
-                          <div className="w-5 h-5 bg-blue-100 text-blue-800 rounded text-xs font-bold flex items-center justify-center">
+                          <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
                             4
                           </div>
                           <span className="hidden sm:inline text-xs">MT4 Demo</span>
@@ -1491,35 +1472,17 @@ export function DashboardPageContent() {
                   {currentAccounts.map((account) => {
                       const isDemo = account.account_mode?.toLowerCase().includes('demo');
                       const isMT4 = activeTab.startsWith('mt4');
-                      const platformConfig = {
-                        icon: isMT4 ? '4' : '5',
-                        gradient: isDemo 
-                          ? 'from-blue-500 to-cyan-500' 
-                          : isMT4
-                          ? 'from-purple-500 to-indigo-500'
-                          : 'from-green-500 to-emerald-500',
-                        bgGradient: isDemo
-                          ? 'from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20'
-                          : isMT4
-                          ? 'from-purple-50 to-indigo-50 dark:from-purple-950/20 dark:to-indigo-950/20'
-                          : 'from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20',
-                        borderColor: isDemo
-                          ? 'border-blue-200 dark:border-blue-800'
-                          : isMT4
-                          ? 'border-purple-200 dark:border-purple-800'
-                          : 'border-green-200 dark:border-green-800'
-                      };
 
                       return (
                         <Card
                           key={account.id}
-                          className="group h-full border-2 border-border/50 bg-gradient-to-br from-card to-muted/30 backdrop-blur-sm transition-all duration-300 hover:border-primary/50 hover:shadow-xl"
+                          className="group h-full border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-lg"
                         >
                           <CardContent className="flex h-full flex-col p-5 sm:p-6">
                             {/* Header */}
                             <div className="mb-5 flex items-start gap-3">
                               <div
-                                className={`flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r ${platformConfig.gradient} text-lg font-bold text-white shadow-lg transition-transform duration-300 group-hover:scale-110`}
+                                className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-primary/10 text-lg font-bold text-primary shadow-sm transition-transform duration-300 group-hover:scale-105"
                               >
                                   <Image
                                     src={isMT4 ? "/metatrader-4.svg" : "/metatrader-5.svg"}
@@ -1618,13 +1581,14 @@ export function DashboardPageContent() {
 
                             {/* Action Buttons */}
                             <div className="mt-auto flex gap-2 pt-5">
-                              <Button size="sm" className="h-10 flex-1 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground hover:from-primary/90 hover:to-primary/70">
-                                <BarChart3 className="mr-1.5 h-4 w-4 shrink-0" />
-                                Trade
-                              </Button>
-                              <Button size="sm" variant="outline" className="h-10 flex-1 border-border hover:bg-accent hover:text-accent-foreground">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="h-10 flex-1 border-border bg-background hover:bg-accent hover:text-accent-foreground"
+                                onClick={() => openDashboardAccountDetails(account)}
+                              >
                                 <Eye className="mr-1.5 h-4 w-4 shrink-0" />
-                                View
+                                View Details
                               </Button>
                             </div>
                           </CardContent>
@@ -1653,6 +1617,11 @@ export function DashboardPageContent() {
               )}
             </div>
           )}
+          <ClientMt5AccountDetailsDialog
+            open={isDashboardAccountDialogOpen}
+            onOpenChange={setIsDashboardAccountDialogOpen}
+            account={selectedDashboardAccount}
+          />
         </div>
           )}
         </div>
