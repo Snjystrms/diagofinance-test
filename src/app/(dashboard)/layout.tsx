@@ -1,12 +1,15 @@
 "use client"
 
 import { AppSidebar } from "@/components/app-sidebar"
+import { IbDashboardSidebarWrapper } from "@/components/ib-dashboard-sidebar-wrapper"
 import { ProtectedRoute } from "@/components/protected-route"
 import { Header } from "@/components/header"
 import { DashboardBreadcrumbs } from "@/components/dashboard-breadcrumbs"
 import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
+import { useAuth } from "@/contexts/auth-context"
 import { useEffect } from "react"
 import dynamic from "next/dynamic"
+import { usePathname } from "next/navigation"
 import { useClientCustomization } from "@/contexts/client-customization-context"
 
 const AppSidebarV2 = dynamic(() => import("@/components/app-sidebar-v2").then((m) => ({ default: m.AppSidebarV2 })), { ssr: false })
@@ -19,23 +22,50 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({
   children,
 }: DashboardLayoutProps) {
+  const { user } = useAuth();
+  const pathname = usePathname();
   const { sidebarId: selectedSidebar } = useClientCustomization();
+  const isIbPortal =
+    user?.type === "user" &&
+    Boolean(user?.is_ib_user) &&
+    pathname.startsWith("/ib-dashboard");
+  const usesClientCustomization = !isIbPortal;
 
   // Clear sidebar cookie when switching to two-panel or expanded-panel to ensure it starts collapsed
   useEffect(() => {
-    if (selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel") {
+    if (
+      usesClientCustomization &&
+      (selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel")
+    ) {
       // Clear the sidebar state cookie to force collapsed state
       document.cookie = "sidebar_state=false; path=/; max-age=0";
     }
-  }, [selectedSidebar]);
+  }, [selectedSidebar, usesClientCustomization]);
 
   return (
     <ProtectedRoute>
       <SidebarProvider
-        defaultOpen={selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel" ? false : true}
-        open={selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel" ? false : undefined}
+        defaultOpen={
+          isIbPortal
+            ? true
+            : selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel"
+              ? false
+              : true
+        }
+        open={
+          isIbPortal
+            ? undefined
+            : selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel"
+              ? false
+              : undefined
+        }
         style={
-          selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel"
+          isIbPortal
+            ? ({
+                "--sidebar-width": "22rem",
+                "--sidebar-width-icon": "5.25rem",
+              } as React.CSSProperties)
+            : selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel"
             ? {
                 "--sidebar-width": selectedSidebar === "expanded-panel" ? "400px" : "350px",
               } as React.CSSProperties
@@ -44,7 +74,9 @@ export default function DashboardLayout({
           } as React.CSSProperties
         }
       >
-        {selectedSidebar === "two-panel" ? (
+        {isIbPortal ? (
+          <IbDashboardSidebarWrapper className="hidden md:flex flex-shrink-0" />
+        ) : selectedSidebar === "two-panel" ? (
           <AppSidebarV2 className="hidden md:flex" />
         ) : selectedSidebar === "expanded-panel" ? (
           <AppSidebarV3 className="hidden md:flex" />

@@ -1,10 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import {
   ArrowDownRight,
-  ArrowLeft,
   ArrowUpRight,
   Clock,
   RefreshCw,
@@ -21,7 +19,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { type IbWalletData, ibRequestsApi } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
 import { formatDateTimeInIST } from "@/lib/formatters";
-import { getIbWalletSnapshot, normalizeIbWalletData } from "@/lib/ib";
+import { getFallbackIbWalletData, getIbWalletSnapshot, normalizeIbWalletData } from "@/lib/ib";
 
 function WalletLoadingState() {
   return (
@@ -98,6 +96,7 @@ export default function IbWalletPage() {
   const [walletData, setWalletData] = useState<IbWalletData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<unknown | null>(null);
+  const [usingFallbackData, setUsingFallbackData] = useState(false);
 
   const fetchWalletData = useCallback(async () => {
     if (!token) {
@@ -112,16 +111,13 @@ export default function IbWalletPage() {
       const response = await ibRequestsApi.getIbWallet(token);
       const normalized = normalizeIbWalletData(response?.data);
 
-      if (response?.success && normalized) {
-        setWalletData(normalized);
-      } else {
-        setWalletData(null);
-        setError("Unable to load IB wallet data");
-      }
+      setWalletData(normalized ?? getFallbackIbWalletData());
+      setUsingFallbackData(!normalized);
     } catch (fetchError) {
       console.error("Failed to fetch IB wallet:", fetchError);
-      setWalletData(null);
-      setError(fetchError);
+      setWalletData(getFallbackIbWalletData());
+      setUsingFallbackData(true);
+      setError(null);
     } finally {
       setIsLoading(false);
     }
@@ -161,12 +157,6 @@ export default function IbWalletPage() {
         description="Review current balances and the latest transfer activity linked to your IB account."
         actions={
           <>
-            <Button variant="outline" asChild>
-              <Link href="/ib-dashboard">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to dashboard
-              </Link>
-            </Button>
             <Button variant="outline" onClick={fetchWalletData}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
@@ -174,6 +164,12 @@ export default function IbWalletPage() {
           </>
         }
       />
+
+      {usingFallbackData ? (
+        <div className="rounded-[24px] border border-amber-300/60 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+          Showing sample IB wallet data until the live wallet API payload is ready.
+        </div>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-3">
         <IbMetricCard

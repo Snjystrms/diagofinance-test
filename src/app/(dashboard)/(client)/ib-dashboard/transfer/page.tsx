@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import toast from "react-hot-toast";
-import { ArrowLeft, ArrowRightLeft, Loader2, RefreshCw, Wallet } from "lucide-react";
+import { ArrowRightLeft, Loader2, RefreshCw, Wallet } from "lucide-react";
 
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { IbMetricCard, IbPageHeader, IbPageShell, IbSectionCard } from "@/components/ib/ib-page-primitives";
@@ -185,12 +184,6 @@ export default function TransferPage() {
         description="Use internal transfer to shift balance from the partner wallet into the client wallet instantly."
         actions={
           <>
-            <Button variant="outline" asChild>
-              <Link href="/ib-dashboard">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to dashboard
-              </Link>
-            </Button>
             <Button variant="outline" onClick={fetchDashboard}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
@@ -296,7 +289,7 @@ export default function TransferPage() {
                 {formatCurrency(projectedClientBalance, client_wallet.currency)}
               </p>
             </div>
-            <div className="rounded-3xl border border-blue-200/70 bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-4 text-sm text-muted-foreground dark:border-blue-900/60 dark:from-blue-950/30 dark:via-card dark:to-indigo-950/20">
+            <div className="ib-portal-note rounded-3xl border p-4 text-sm text-muted-foreground">
               Transfers are immediate and reflected in the IB wallet history once the backend confirms the operation.
             </div>
           </div>

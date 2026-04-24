@@ -410,7 +410,7 @@ export default function IbDashboardPage() {
 
         <IbSectionCard title="Partner profile" description="Core IB program details and referral assets.">
           <div className="space-y-4">
-            <div className="rounded-3xl border border-blue-200/70 bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-5 dark:border-blue-900/60 dark:from-blue-950/30 dark:via-card dark:to-indigo-950/20">
+            <div className="ib-portal-note rounded-3xl border p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">IB Plan</p>

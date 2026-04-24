@@ -446,6 +446,12 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     navLabel: "IB Transfer",
   },
   {
+    path: "/ib-dashboard/commissions",
+    audience: "client",
+    roles: CLIENT_ROLES,
+    navLabel: "Commissions Table",
+  },
+  {
     path: "/ticket-history",
     audience: "client",
     roles: CLIENT_ROLES,
@@ -848,8 +854,9 @@ export function getUserNavigation(isIbUser = false): NavItem[] {
     item.title === "Become Partner"
       ? {
           ...item,
-          title: "IB dashboard",
+          title: "Login to IB Portal",
           url: "/ib-dashboard",
+          icon: BarChart3,
         }
       : item
   );

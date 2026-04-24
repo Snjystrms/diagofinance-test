@@ -8,8 +8,8 @@ import {
   LayoutDashboard, 
   Wallet, 
   ArrowLeftRight, 
-  User, 
-  Megaphone, 
+  ArrowLeft,
+  Users, 
   PieChart,
   Gem,
   Loader2
@@ -18,7 +18,7 @@ import { usePathname, useRouter } from "next/navigation"
 import { formatCurrency } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { useSidebar } from "@/components/ui/sidebar"
-import { getIbWalletSnapshot, normalizeIbWalletData } from "@/lib/ib"
+import { getFallbackIbWalletData, getIbWalletSnapshot, normalizeIbWalletData } from "@/lib/ib"
 
 export function IbDashboardSidebar() {
   const { user, token } = useAuth()
@@ -54,8 +54,10 @@ export function IbDashboardSidebar() {
         setDashboardData(dashboardResponse.data)
       }
 
-      if (walletResponse?.success && walletResponse.data) {
-        setWalletData(normalizeIbWalletData(walletResponse.data))
+      if (walletResponse?.success) {
+        setWalletData(normalizeIbWalletData(walletResponse.data) ?? getFallbackIbWalletData())
+      } else if (!dashboardResponse?.data) {
+        setWalletData(getFallbackIbWalletData())
       }
     } catch (err) {
       console.error("Failed to fetch IB data:", err)
@@ -82,9 +84,8 @@ export function IbDashboardSidebar() {
   const navItems = [
     { icon: LayoutDashboard, label: "Dashboard", path: "/ib-dashboard" },
     { icon: Wallet, label: "Wallet", path: "/ib-dashboard/wallet" },
-    { icon: ArrowLeftRight, label: "IB Internal Transfer", path: "/ib-dashboard/transfer" },
-    { icon: User, label: "Client Summary", path: "/ib-dashboard/clients" },
-    { icon: Megaphone, label: "Marketing Material", path: "/ib-dashboard/marketing" },
+    { icon: ArrowLeftRight, label: "Internal Transfer", path: "/ib-dashboard/transfer" },
+    { icon: Users, label: "Client Summary", path: "/ib-dashboard/clients" },
     { icon: PieChart, label: "Commissions Table", path: "/ib-dashboard/commissions" },
   ]
 
@@ -98,6 +99,10 @@ export function IbDashboardSidebar() {
   const partnerWallet = walletSnapshot.partnerWallet.amount
   const currency = walletSnapshot.currency
   const ibPlan = dashboardData?.partner_info?.ib_plan || "GOLD"
+  const avatarGradient = {
+    backgroundImage:
+      "linear-gradient(135deg, color-mix(in srgb, var(--sidebar-primary) 86%, white 14%) 0%, color-mix(in srgb, var(--accent) 62%, var(--sidebar-primary) 38%) 100%)",
+  }
 
   if (isLoading) {
     return (
@@ -110,9 +115,9 @@ export function IbDashboardSidebar() {
   // Collapsed state - show minimal info
   if (isCollapsed) {
     return (
-      <div className="flex flex-col items-center p-4 space-y-4">
-        <Avatar className="h-12 w-12 border-2 border-gray-300 dark:border-gray-700">
-          <AvatarFallback className="bg-gradient-to-br from-purple-600 to-blue-600 text-white text-sm font-bold">
+      <div className="flex h-full flex-col items-center gap-4 bg-sidebar px-3 py-5 text-sidebar-foreground">
+        <Avatar className="h-12 w-12 border border-sidebar-border shadow-sm">
+          <AvatarFallback className="text-sidebar-primary-foreground text-sm font-bold" style={avatarGradient}>
             {getInitials(userName)}
           </AvatarFallback>
         </Avatar>
@@ -128,10 +133,10 @@ export function IbDashboardSidebar() {
                 key={item.path}
                 onClick={() => router.push(item.path)}
                 className={cn(
-                  "p-2 rounded-lg transition-all duration-200",
+                  "rounded-2xl border p-2.5 transition-all duration-200",
                   isActive
-                    ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white"
-                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    ? "border-transparent bg-sidebar-primary text-sidebar-primary-foreground shadow-sm"
+                    : "border-sidebar-border bg-sidebar-accent/45 text-sidebar-foreground hover:bg-sidebar-accent"
                 )}
                 title={item.label}
               >
@@ -140,71 +145,66 @@ export function IbDashboardSidebar() {
             )
           })}
         </div>
+        <button
+          onClick={() => router.push("/dashboard")}
+          className="mt-auto rounded-2xl border border-sidebar-border bg-sidebar-accent/45 p-2.5 text-sidebar-foreground transition-all duration-200 hover:bg-sidebar-accent"
+          title="Client Portal"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
       </div>
     )
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Top Section - Dark Theme */}
-      <div className="bg-gradient-to-b from-gray-900 to-gray-800 text-white p-6 space-y-4">
-        {/* Tier Status */}
+    <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
+      <div className="ib-sidebar-hero p-6 space-y-5">
         <div className="flex items-center justify-center gap-2">
-          <Gem className="h-4 w-4 text-green-400" />
-          <span className="text-green-400 font-semibold text-sm uppercase">{ibPlan}</span>
+          <Gem className="h-4 w-4 text-sidebar-primary" />
+          <span className="text-sidebar-primary font-semibold text-sm uppercase tracking-[0.24em]">{ibPlan}</span>
         </div>
 
-        {/* Avatar */}
         <div className="flex justify-center">
-          <Avatar className="h-20 w-20 border-2 border-white/20">
-            <AvatarFallback className="bg-gradient-to-br from-purple-600 to-blue-600 text-white text-xl font-bold">
+          <Avatar className="h-20 w-20 border border-sidebar-border shadow-lg">
+            <AvatarFallback className="text-sidebar-primary-foreground text-xl font-bold" style={avatarGradient}>
               {getInitials(userName)}
             </AvatarFallback>
           </Avatar>
         </div>
 
-        {/* User Name */}
         <div className="text-center">
-          <h3 className="font-bold text-lg">{userName}</h3>
+          <h3 className="font-bold text-lg text-sidebar-foreground">{userName}</h3>
         </div>
 
-        {/* Partner ID */}
         <div className="text-center">
-          <span className="text-white/80 text-sm">Partner ID: </span>
-          <span className="text-cyan-400 font-semibold">{partnerId}</span>
+          <span className="text-sidebar-foreground/70 text-sm">Partner ID: </span>
+          <span className="text-sidebar-primary font-semibold">{partnerId}</span>
         </div>
 
-        {/* Wallet Balances */}
-        <div className="bg-gray-800/50 rounded-lg p-4 border border-gray-700/50 relative">
+        <div className="ib-sidebar-balance relative rounded-3xl p-4">
           <div className="grid grid-cols-2 gap-4">
-            {/* Client Wallet */}
             <div className="text-center">
-              <p className="text-white/80 text-xs mb-1">Client Wallet</p>
-              <p className="text-white font-bold text-lg">
+              <p className="text-sidebar-foreground/70 text-[11px] uppercase tracking-[0.2em] mb-2">Client Wallet</p>
+              <p className="text-sidebar-foreground font-bold text-lg">
                 {formatCurrency(clientWallet, currency)}
               </p>
             </div>
 
-            {/* Partner Wallet */}
             <div className="text-center">
-              <p className="text-white/80 text-xs mb-1">Partner Wallet</p>
-              <p className="text-white font-bold text-lg">
+              <p className="text-sidebar-foreground/70 text-[11px] uppercase tracking-[0.2em] mb-2">Partner Wallet</p>
+              <p className="text-sidebar-foreground font-bold text-lg">
                 {formatCurrency(partnerWallet, currency)}
               </p>
             </div>
           </div>
-          {/* Divider */}
-          <div className="absolute left-1/2 top-2 bottom-2 w-px bg-gray-700/50 transform -translate-x-1/2" />
+          <div className="absolute left-1/2 top-3 bottom-3 w-px bg-sidebar-border/70 transform -translate-x-1/2" />
         </div>
       </div>
 
-      {/* Bottom Section - Light Theme */}
-      <div className="flex-1 bg-gray-50 dark:bg-gray-900 p-4">
+      <div className="ib-sidebar-grid flex-1 p-4">
         <div className="grid grid-cols-2 gap-3">
-          {navItems.map((item) => {
+          {navItems.map((item, index) => {
             const Icon = item.icon
-            // Check if current path matches the item path
-            // For dashboard, check if pathname is exactly /ib-dashboard or starts with /ib-dashboard but doesn't have additional paths
             const isActive = item.path === "/ib-dashboard" 
               ? (pathname === "/ib-dashboard" || (pathname?.startsWith("/ib-dashboard") && pathname.split("/").length === 2))
               : pathname === item.path || pathname?.startsWith(item.path + "/")
@@ -214,19 +214,20 @@ export function IbDashboardSidebar() {
                 key={item.path}
                 onClick={() => router.push(item.path)}
                 className={cn(
-                  "flex flex-col items-center justify-center gap-2 p-4 rounded-lg transition-all duration-200",
+                  "ib-sidebar-nav-card flex min-h-[108px] flex-col items-center justify-center gap-2 rounded-[24px] p-4 transition-all duration-200",
+                  navItems.length % 2 !== 0 && index === navItems.length - 1 && "col-span-2",
                   isActive
-                    ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg"
-                    : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    ? "ib-sidebar-nav-card-active"
+                    : "text-foreground"
                 )}
               >
                 <Icon className={cn(
                   "h-6 w-6",
-                  isActive ? "text-white" : "text-gray-600 dark:text-gray-400"
+                  isActive ? "text-sidebar-primary-foreground" : "text-primary"
                 )} />
                 <span className={cn(
                   "text-xs font-medium text-center leading-tight",
-                  isActive ? "text-white" : "text-gray-700 dark:text-gray-300"
+                  isActive ? "text-sidebar-primary-foreground" : "text-foreground"
                 )}>
                   {item.label}
                 </span>
@@ -234,6 +235,16 @@ export function IbDashboardSidebar() {
             )
           })}
         </div>
+      </div>
+
+      <div className="p-4 pt-0">
+        <button
+          onClick={() => router.push("/dashboard")}
+          className="flex w-full items-center justify-center gap-2 rounded-[24px] border border-sidebar-border bg-sidebar-accent/55 px-4 py-3 text-sm font-semibold text-sidebar-foreground transition-all duration-200 hover:bg-sidebar-accent"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Client Portal
+        </button>
       </div>
     </div>
   )

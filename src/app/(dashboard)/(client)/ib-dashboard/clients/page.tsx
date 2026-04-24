@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
-import Link from "next/link";
 import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
-import { ArrowLeft, DollarSign, RefreshCw, Search, Users } from "lucide-react";
+import { DollarSign, RefreshCw, Search, Users } from "lucide-react";
 
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { IbMetricCard, IbPageHeader, IbPageShell, IbSectionCard } from "@/components/ib/ib-page-primitives";
@@ -15,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAuth } from "@/contexts/auth-context";
 import { type IbClient, type IbRebate, type IbSubIb, ibRequestsApi } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
+import { getFallbackIbClients, getFallbackIbRebates, getFallbackIbSubIbs } from "@/lib/ib";
 
 type TabType = "clients" | "sub-ibs" | "rebates";
 type PaginationState = {
@@ -30,6 +30,134 @@ const emptyPagination: PaginationState = {
   total: 0,
   total_pages: 1,
 };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+function toNumber(value: unknown, fallback = 0) {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return fallback;
+}
+
+function toString(value: unknown, fallback = "") {
+  return typeof value === "string" && value.trim() ? value : fallback;
+}
+
+function normalizePagination(raw: unknown, fallbackPage: number, fallbackLimit: number, total: number): PaginationState {
+  if (!isRecord(raw)) {
+    return {
+      current_page: fallbackPage,
+      per_page: fallbackLimit,
+      total,
+      total_pages: Math.max(1, Math.ceil(total / Math.max(fallbackLimit, 1))),
+    };
+  }
+
+  const currentPage = toNumber(raw.current_page ?? raw.page, fallbackPage);
+  const perPage = toNumber(raw.per_page ?? raw.limit, fallbackLimit);
+  const normalizedTotal = toNumber(raw.total, total);
+  const totalPages = toNumber(
+    raw.total_pages ?? raw.last_page,
+    Math.max(1, Math.ceil(normalizedTotal / Math.max(perPage, 1))),
+  );
+
+  return {
+    current_page: currentPage,
+    per_page: perPage,
+    total: normalizedTotal,
+    total_pages: totalPages,
+  };
+}
+
+function unwrapPayload(raw: unknown) {
+  if (!isRecord(raw)) {
+    return null;
+  }
+
+  if (isRecord(raw.data) && isRecord(raw.data.data)) {
+    return raw.data.data;
+  }
+
+  if (isRecord(raw.data)) {
+    return raw.data;
+  }
+
+  return raw;
+}
+
+function normalizeClientRow(raw: unknown): IbClient | null {
+  if (!isRecord(raw)) {
+    return null;
+  }
+
+  const clientId = toString(raw.client_id ?? raw.clientId ?? raw.account_id ?? raw.id, "");
+  if (!clientId) {
+    return null;
+  }
+
+  return {
+    client_id: clientId,
+    client_name: toString(raw.client_name ?? raw.clientName ?? raw.name, "Unnamed Client"),
+    lots_traded: toNumber(raw.lots_traded ?? raw.lotsTraded, 0),
+    pending_rebates: toNumber(raw.pending_rebates ?? raw.pendingRebates, 0),
+    earned_rebates: toNumber(raw.earned_rebates ?? raw.earnedRebates, 0),
+    registration_date: toString(raw.registration_date ?? raw.created_at ?? raw.createdAt, "2026-04-01T00:00:00Z"),
+  };
+}
+
+function normalizeSubIbRow(raw: unknown): IbSubIb | null {
+  const base = normalizeClientRow(raw);
+  if (!base || !isRecord(raw)) {
+    return null;
+  }
+
+  return {
+    ...base,
+    level: toNumber(raw.level, 1),
+  };
+}
+
+function normalizeRebateRow(raw: unknown): IbRebate | null {
+  return normalizeClientRow(raw);
+}
+
+function resolveRows<T>(
+  response: unknown,
+  collectionKey: string,
+  normalizeRow: (row: unknown) => T | null,
+  fallback: { rows: T[]; pagination: PaginationState },
+  page: number,
+  limit: number,
+) {
+  const payload = unwrapPayload(response);
+  const rowsSource = payload?.[collectionKey];
+
+  if (!Array.isArray(rowsSource)) {
+    return {
+      rows: fallback.rows,
+      pagination: fallback.pagination,
+      usingFallback: true,
+    };
+  }
+
+  const rows = rowsSource.map((row) => normalizeRow(row)).filter((row): row is T => Boolean(row));
+  return {
+    rows,
+    pagination: normalizePagination(payload?.pagination, page, limit, rows.length),
+    usingFallback: false,
+  };
+}
 
 function formatDate(value: string) {
   const date = new Date(value);
@@ -217,16 +345,19 @@ export default function IbClientsPage() {
   const [clientsLoading, setClientsLoading] = useState(false);
   const [clientsError, setClientsError] = useState<unknown | null>(null);
   const [clientsPagination, setClientsPagination] = useState<PaginationState>(emptyPagination);
+  const [clientsUsingFallback, setClientsUsingFallback] = useState(false);
 
   const [subIbs, setSubIbs] = useState<IbSubIb[]>([]);
   const [subIbsLoading, setSubIbsLoading] = useState(false);
   const [subIbsError, setSubIbsError] = useState<unknown | null>(null);
   const [subIbsPagination, setSubIbsPagination] = useState<PaginationState>(emptyPagination);
+  const [subIbsUsingFallback, setSubIbsUsingFallback] = useState(false);
 
   const [rebates, setRebates] = useState<IbRebate[]>([]);
   const [rebatesLoading, setRebatesLoading] = useState(false);
   const [rebatesError, setRebatesError] = useState<unknown | null>(null);
   const [rebatesPagination, setRebatesPagination] = useState<PaginationState>(emptyPagination);
+  const [rebatesUsingFallback, setRebatesUsingFallback] = useState(false);
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [limit] = useQueryState("limit", parseAsInteger.withDefault(10));
@@ -236,6 +367,7 @@ export default function IbClientsPage() {
   const fetchClients = useCallback(async () => {
     if (!token) {
       setClientsError("Authentication required");
+      setClientsUsingFallback(false);
       setClientsLoading(false);
       return;
     }
@@ -244,17 +376,18 @@ export default function IbClientsPage() {
       setClientsLoading(true);
       setClientsError(null);
       const response = await ibRequestsApi.getClients(token, { page, limit, search: search || undefined });
-      if (response?.success && response.data?.data) {
-        setClients(response.data.data.clients || []);
-        setClientsPagination(response.data.data.pagination);
-      } else {
-        setClients([]);
-        setClientsError("Unable to load clients data");
-      }
+      const fallback = getFallbackIbClients({ page, limit, search: search || undefined });
+      const resolved = resolveRows(response, "clients", normalizeClientRow, fallback, page, limit);
+      setClients(resolved.rows);
+      setClientsPagination(resolved.pagination);
+      setClientsUsingFallback(resolved.usingFallback);
     } catch (fetchError) {
       console.error("Failed to fetch clients:", fetchError);
-      setClients([]);
-      setClientsError(fetchError);
+      const fallback = getFallbackIbClients({ page, limit, search: search || undefined });
+      setClients(fallback.rows);
+      setClientsPagination(fallback.pagination);
+      setClientsUsingFallback(true);
+      setClientsError(null);
     } finally {
       setClientsLoading(false);
     }
@@ -263,6 +396,7 @@ export default function IbClientsPage() {
   const fetchSubIbs = useCallback(async () => {
     if (!token) {
       setSubIbsError("Authentication required");
+      setSubIbsUsingFallback(false);
       setSubIbsLoading(false);
       return;
     }
@@ -271,17 +405,18 @@ export default function IbClientsPage() {
       setSubIbsLoading(true);
       setSubIbsError(null);
       const response = await ibRequestsApi.getSubIbs(token, { page, limit, search: search || undefined });
-      if (response?.success && response.data?.data) {
-        setSubIbs(response.data.data.sub_ibs || []);
-        setSubIbsPagination(response.data.data.pagination);
-      } else {
-        setSubIbs([]);
-        setSubIbsError("Unable to load sub IB data");
-      }
+      const fallback = getFallbackIbSubIbs({ page, limit, search: search || undefined });
+      const resolved = resolveRows(response, "sub_ibs", normalizeSubIbRow, fallback, page, limit);
+      setSubIbs(resolved.rows);
+      setSubIbsPagination(resolved.pagination);
+      setSubIbsUsingFallback(resolved.usingFallback);
     } catch (fetchError) {
       console.error("Failed to fetch sub IBs:", fetchError);
-      setSubIbs([]);
-      setSubIbsError(fetchError);
+      const fallback = getFallbackIbSubIbs({ page, limit, search: search || undefined });
+      setSubIbs(fallback.rows);
+      setSubIbsPagination(fallback.pagination);
+      setSubIbsUsingFallback(true);
+      setSubIbsError(null);
     } finally {
       setSubIbsLoading(false);
     }
@@ -290,6 +425,7 @@ export default function IbClientsPage() {
   const fetchRebates = useCallback(async () => {
     if (!token) {
       setRebatesError("Authentication required");
+      setRebatesUsingFallback(false);
       setRebatesLoading(false);
       return;
     }
@@ -298,17 +434,18 @@ export default function IbClientsPage() {
       setRebatesLoading(true);
       setRebatesError(null);
       const response = await ibRequestsApi.getRebates(token, { page, limit, search: search || undefined });
-      if (response?.success && response.data?.data) {
-        setRebates(response.data.data.rebates || []);
-        setRebatesPagination(response.data.data.pagination);
-      } else {
-        setRebates([]);
-        setRebatesError("Unable to load rebate data");
-      }
+      const fallback = getFallbackIbRebates({ page, limit, search: search || undefined });
+      const resolved = resolveRows(response, "rebates", normalizeRebateRow, fallback, page, limit);
+      setRebates(resolved.rows);
+      setRebatesPagination(resolved.pagination);
+      setRebatesUsingFallback(resolved.usingFallback);
     } catch (fetchError) {
       console.error("Failed to fetch rebates:", fetchError);
-      setRebates([]);
-      setRebatesError(fetchError);
+      const fallback = getFallbackIbRebates({ page, limit, search: search || undefined });
+      setRebates(fallback.rows);
+      setRebatesPagination(fallback.pagination);
+      setRebatesUsingFallback(true);
+      setRebatesError(null);
     } finally {
       setRebatesLoading(false);
     }
@@ -358,6 +495,8 @@ export default function IbClientsPage() {
   const currentError =
     activeTab === "clients" ? clientsError : activeTab === "sub-ibs" ? subIbsError : rebatesError;
   const currentRows = activeTab === "clients" ? clients : activeTab === "sub-ibs" ? subIbs : rebates;
+  const currentUsingFallback =
+    activeTab === "clients" ? clientsUsingFallback : activeTab === "sub-ibs" ? subIbsUsingFallback : rebatesUsingFallback;
 
   const totals = useMemo(() => {
     const rows = currentRows;
@@ -380,12 +519,6 @@ export default function IbClientsPage() {
         description="Browse direct clients, sub IBs, and rebate records from the same reporting surface."
         actions={
           <>
-            <Button variant="outline" asChild>
-              <Link href="/ib-dashboard">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to dashboard
-              </Link>
-            </Button>
             <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
               <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
               Refresh
@@ -461,6 +594,12 @@ export default function IbClientsPage() {
               ) : null}
             </div>
           </div>
+
+          {currentUsingFallback ? (
+            <div className="rounded-[24px] border border-amber-300/60 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+              Showing sample {activeTab === "clients" ? "client" : activeTab === "sub-ibs" ? "sub IB" : "rebate"} data until this IB API is connected.
+            </div>
+          ) : null}
 
           {currentError ? (
             <ApiErrorState

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Sparkles } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -35,18 +36,18 @@ interface IbSectionCardProps {
 
 const accentStyles: Record<NonNullable<IbMetricCardProps["accent"]>, string> = {
   primary:
-    "border-blue-200/70 bg-gradient-to-br from-blue-50 via-white to-indigo-50 dark:border-blue-900/60 dark:from-blue-950/30 dark:via-card dark:to-indigo-950/20",
+    "ib-portal-surface ib-portal-surface-primary",
   emerald:
-    "border-emerald-200/70 bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:border-emerald-900/60 dark:from-emerald-950/30 dark:via-card dark:to-teal-950/20",
+    "ib-portal-surface ib-portal-surface-emerald",
   amber:
-    "border-amber-200/70 bg-gradient-to-br from-amber-50 via-white to-orange-50 dark:border-amber-900/60 dark:from-amber-950/30 dark:via-card dark:to-orange-950/20",
+    "ib-portal-surface ib-portal-surface-amber",
   slate:
-    "border-border/60 bg-gradient-to-br from-card via-card to-muted/20",
+    "ib-portal-surface",
 };
 
 export function IbPageShell({ children, className }: IbPageShellProps) {
   return (
-    <div className={cn("min-h-full w-full bg-background", className)}>
+    <div className={cn("ib-portal-shell min-h-full w-full bg-background", className)}>
       <div className="mx-auto flex w-full max-w-none flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
         {children}
       </div>
@@ -61,20 +62,25 @@ export function IbPageHeader({
   actions,
 }: IbPageHeaderProps) {
   return (
-    <section className="rounded-[28px] border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 px-6 py-6 shadow-sm sm:px-7">
+    <section className="ib-portal-hero rounded-[28px] border px-6 py-6 sm:px-7">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
-          <div className="text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
+          <div className="ib-portal-kicker inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.22em]">
+            <Sparkles className="h-3.5 w-3.5" />
             {eyebrow}
           </div>
           <div className="space-y-1">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground">{title}</h1>
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2.15rem]">{title}</h1>
             {description ? (
               <p className="max-w-3xl text-sm text-muted-foreground sm:text-base">{description}</p>
             ) : null}
           </div>
         </div>
-        {actions ? <div className="flex flex-wrap items-center gap-3">{actions}</div> : null}
+        {actions ? (
+          <div className="flex flex-wrap items-center gap-3">
+            {actions}
+          </div>
+        ) : null}
       </div>
     </section>
   );
@@ -98,7 +104,7 @@ export function IbMetricCard({
             <div className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{value}</div>
           </div>
           {icon ? (
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-background/60 bg-background/70 text-foreground shadow-sm">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/80 text-foreground shadow-sm backdrop-blur-sm">
               {icon}
             </div>
           ) : null}
@@ -119,7 +125,7 @@ export function IbSectionCard({
   contentClassName,
 }: IbSectionCardProps) {
   return (
-    <Card className={cn("rounded-[28px] border border-border/60 bg-card/80 shadow-sm", className)}>
+    <Card className={cn("ib-portal-surface rounded-[28px] border shadow-sm", className)}>
       <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="space-y-1">
           <CardTitle className="text-xl font-semibold text-foreground">{title}</CardTitle>

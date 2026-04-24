@@ -15,7 +15,7 @@ const advantages = [
 ];
 
 export default function BecomePartnerPage() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const router = useRouter();
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
@@ -25,6 +25,11 @@ export default function BecomePartnerPage() {
     setIsCheckingStatus(true);
     setIsInitialized(false);
     
+    if (user?.is_ib_user) {
+      router.push("/ib-dashboard");
+      return;
+    }
+
     if (!token) {
       setIsCheckingStatus(false);
       setIsInitialized(true);
@@ -47,7 +52,7 @@ export default function BecomePartnerPage() {
       setIsCheckingStatus(false);
       setIsInitialized(true);
     }
-  }, [token, router]);
+  }, [token, router, user?.is_ib_user]);
 
   // Use useLayoutEffect to run synchronously before paint to prevent flash
   useLayoutEffect(() => {
