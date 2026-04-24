@@ -31,6 +31,7 @@ export function Header() {
   const {
     canCustomizeTheme,
     canCustomizeSidebar,
+    canCustomizeDashboard,
     customizationEnabled,
     exportPresetSnapshot,
   } = useClientCustomization();
@@ -44,6 +45,8 @@ export function Header() {
   const [dashboardName, setDashboardName] = useState<string | null>(null);
   const canManageCustomizer =
     user?.type === "admin" || user?.type === "subadmin" || user?.type === "manager";
+  const canExportPreset =
+    customizationEnabled && (canCustomizeTheme || canCustomizeSidebar || canCustomizeDashboard);
   const isDashboardRoute = pathname === "/dashboard";
 
   // Share the userDashboard data with dashboard page via React Query cache.
@@ -273,7 +276,7 @@ export function Header() {
             </Button>
           )}
 
-          {customizationEnabled && canManageCustomizer && (
+          {canExportPreset && (
             <Button
               variant="ghost"
               size="sm"
