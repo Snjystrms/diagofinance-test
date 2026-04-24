@@ -71,7 +71,7 @@ export function NavMain({
       <SidebarGroupLabel
         className={cn(
           isEnterprise
-            ? "mb-3 h-auto px-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#98a2b3]"
+            ? "mb-3 h-auto px-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-sidebar-foreground/55"
             : "text-sm"
         )}
       >
@@ -87,9 +87,9 @@ export function NavMain({
           const isActive = isDirectActive || hasActiveSubItem
           const topLevelButtonClass = isEnterprise
             ? cn(
-                "group h-11 rounded-xl px-3.5 text-[15px] font-medium tracking-[-0.01em] text-[#344054] transition-all duration-300 hover:bg-[#f6f8fc] hover:text-[#111827] hover:shadow-[inset_0_0_0_1px_rgba(15,23,42,0.05)] data-[state=open]:bg-[#f6f8fc] data-[state=open]:text-[#172033] [&>svg]:size-[18px] [&>svg]:shrink-0 [&>svg]:text-[#98a2b3]",
-                hasActiveSubItem && !isDirectActive && "bg-[#f7f9fc] text-[#172033] shadow-[inset_0_0_0_1px_rgba(15,23,42,0.04)] [&>svg]:text-[#667085]",
-                isDirectActive && "bg-[#edf4ff] text-[#2563eb] shadow-[inset_0_0_0_1px_rgba(37,99,235,0.16)] [&>svg]:text-[#2563eb]",
+                "group h-11 rounded-xl px-3.5 text-[15px] font-medium tracking-[-0.01em] text-sidebar-foreground transition-all duration-300 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[inset_0_0_0_1px_hsl(var(--sidebar-border))] data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground [&>svg]:size-[18px] [&>svg]:shrink-0 [&>svg]:text-sidebar-foreground/55",
+                hasActiveSubItem && !isDirectActive && "bg-sidebar-accent/75 text-sidebar-accent-foreground shadow-[inset_0_0_0_1px_hsl(var(--sidebar-border))] [&>svg]:text-sidebar-accent-foreground",
+                isDirectActive && "bg-sidebar-primary text-sidebar-primary-foreground shadow-[inset_0_0_0_1px_hsl(var(--sidebar-primary))] [&>svg]:text-sidebar-primary-foreground",
                 isCollapsed && "justify-center px-0"
               )
             : isActive
@@ -139,7 +139,7 @@ export function NavMain({
                           <ChevronRight
                             className={cn(
                               "ml-auto transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] group-data-[state=open]/collapsible:rotate-90",
-                              isEnterprise ? "size-4 text-[#98a2b3]" : "size-6"
+                              isEnterprise ? "size-4 text-sidebar-foreground/55" : "size-6"
                             )}
                           />
                         )}
@@ -176,7 +176,7 @@ export function NavMain({
                     <SidebarMenuSub
                       className={cn(
                         isEnterprise &&
-                          "mx-0 mt-1 ml-6 translate-x-0 gap-1 border-l border-[#edf1f7] py-1 pl-4 pr-0"
+                          "mx-0 mt-1 ml-6 translate-x-0 gap-1 border-l border-sidebar-border py-1 pl-4 pr-0"
                       )}
                     >
                       {item.items?.map((subItem) => {
@@ -190,11 +190,11 @@ export function NavMain({
                               isActive={isSubActive}
                               className={cn(
                                 isEnterprise
-                                  ? "h-9 rounded-lg px-3 text-[14px] font-medium tracking-[-0.01em] text-[#667085] transition-all duration-300 hover:bg-[#f6f8fc] hover:text-[#172033]"
+                                  ? "h-9 rounded-lg px-3 text-[14px] font-medium tracking-[-0.01em] text-sidebar-foreground/70 transition-all duration-300 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                                   : "text-sm",
                                 isEnterprise &&
                                   isSubActive &&
-                                  "bg-[#edf4ff] text-[#2563eb] shadow-[inset_0_0_0_1px_rgba(37,99,235,0.14)]"
+                                  "bg-sidebar-primary text-sidebar-primary-foreground shadow-[inset_0_0_0_1px_hsl(var(--sidebar-primary))]"
                               )}
                             >
                               <Link href={subItem.url}>

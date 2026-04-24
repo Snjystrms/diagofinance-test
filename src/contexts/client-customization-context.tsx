@@ -50,6 +50,9 @@ const ClientCustomizationContext = createContext<ClientCustomizationContextValue
 export function ClientCustomizationProvider({ children }: { children: ReactNode }) {
   const activePreset = useMemo(() => getActiveClientPreset(), []);
   const customizationEnabled = useMemo(() => isCustomizationModeEnabled(), []);
+  const allowThemeCustomization = customizationEnabled || !activePreset.locks.theme;
+  const allowSidebarCustomization = customizationEnabled || !activePreset.locks.sidebar;
+  const allowDashboardCustomization = customizationEnabled || !activePreset.locks.dashboardLayout;
   const [themeId, setThemeIdState] = useState<string>(activePreset.themeId);
   const [sidebarId, setSidebarIdState] = useState<SidebarId>(activePreset.sidebarId);
   const [dashboardModes, setDashboardModes] = useState<Record<DashboardArea, DashboardMode>>({
@@ -65,23 +68,30 @@ export function ClientCustomizationProvider({ children }: { children: ReactNode 
       client: activePreset.dashboards.client?.mode ?? "normal",
     };
 
-    if (customizationEnabled && typeof window !== "undefined") {
-      nextThemeId = window.localStorage.getItem(THEME_STORAGE_KEY) || nextThemeId;
-      nextSidebarId =
-        (window.localStorage.getItem(SIDEBAR_STORAGE_KEY) as SidebarId | null) || nextSidebarId;
+    if (typeof window !== "undefined") {
+      if (allowThemeCustomization) {
+        nextThemeId = window.localStorage.getItem(THEME_STORAGE_KEY) || nextThemeId;
+      }
 
-      (["admin", "client"] as DashboardArea[]).forEach((area) => {
-        const storedMode = window.localStorage.getItem(getDashboardModeStorageKey(area));
-        if (storedMode === "normal" || storedMode === "custom") {
-          nextModes[area] = storedMode;
-        }
-      });
+      if (allowSidebarCustomization) {
+        nextSidebarId =
+          (window.localStorage.getItem(SIDEBAR_STORAGE_KEY) as SidebarId | null) || nextSidebarId;
+      }
+
+      if (allowDashboardCustomization) {
+        (["admin", "client"] as DashboardArea[]).forEach((area) => {
+          const storedMode = window.localStorage.getItem(getDashboardModeStorageKey(area));
+          if (storedMode === "normal" || storedMode === "custom") {
+            nextModes[area] = storedMode;
+          }
+        });
+      }
     }
 
     setThemeIdState(nextThemeId);
     setSidebarIdState(nextSidebarId);
     setDashboardModes(nextModes);
-  }, []);
+  }, [activePreset, allowDashboardCustomization, allowSidebarCustomization, allowThemeCustomization]);
 
   useEffect(() => {
     applyThemeById(themeId);
@@ -89,29 +99,29 @@ export function ClientCustomizationProvider({ children }: { children: ReactNode 
 
   const setThemeId = useCallback(
     (nextThemeId: string) => {
-      if (!customizationEnabled) return;
+      if (!allowThemeCustomization) return;
       setThemeIdState(nextThemeId);
       window.localStorage.setItem(THEME_STORAGE_KEY, nextThemeId);
     },
-    []
+    [allowThemeCustomization]
   );
 
   const setSidebarId = useCallback(
     (nextSidebarId: SidebarId) => {
-      if (!customizationEnabled) return;
+      if (!allowSidebarCustomization) return;
       setSidebarIdState(nextSidebarId);
       window.localStorage.setItem(SIDEBAR_STORAGE_KEY, nextSidebarId);
     },
-    []
+    [allowSidebarCustomization]
   );
 
   const setDashboardMode = useCallback(
     (area: DashboardArea, mode: DashboardMode) => {
-      if (!customizationEnabled) return;
+      if (!allowDashboardCustomization) return;
       setDashboardModes((current) => ({ ...current, [area]: mode }));
       window.localStorage.setItem(getDashboardModeStorageKey(area), mode);
     },
-    []
+    [allowDashboardCustomization]
   );
 
   const getDashboardMode = useCallback(
@@ -153,9 +163,9 @@ export function ClientCustomizationProvider({ children }: { children: ReactNode 
     () => ({
       activePreset,
       customizationEnabled,
-      canCustomizeTheme: customizationEnabled || !activePreset.locks.theme,
-      canCustomizeSidebar: customizationEnabled || !activePreset.locks.sidebar,
-      canCustomizeDashboard: customizationEnabled || !activePreset.locks.dashboardLayout,
+      canCustomizeTheme: allowThemeCustomization,
+      canCustomizeSidebar: allowSidebarCustomization,
+      canCustomizeDashboard: allowDashboardCustomization,
       themeId,
       sidebarId,
       setThemeId,
@@ -167,6 +177,9 @@ export function ClientCustomizationProvider({ children }: { children: ReactNode 
     }),
     [
       activePreset,
+      allowDashboardCustomization,
+      allowSidebarCustomization,
+      allowThemeCustomization,
       customizationEnabled,
       exportPresetSnapshot,
       getDashboardMode,

@@ -51,30 +51,30 @@ export function TeamSwitcher({
               size="default"
               className={cn(
                 isEnterprise
-                  ? "h-auto min-h-0 rounded-2xl border border-slate-200 bg-white px-3 py-2 transition-all duration-200 hover:bg-slate-50 data-[state=open]:bg-white data-[state=open]:text-sidebar-foreground group-data-[collapsible=icon]:size-12! group-data-[collapsible=icon]:rounded-2xl group-data-[collapsible=icon]:p-0!"
+                  ? "h-auto min-h-0 rounded-2xl border border-sidebar-border bg-sidebar-accent/45 px-3 py-2 text-sidebar-foreground transition-all duration-200 hover:bg-sidebar-accent data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-foreground group-data-[collapsible=icon]:size-12! group-data-[collapsible=icon]:rounded-2xl group-data-[collapsible=icon]:p-0!"
                   : "data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               )}
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-100 text-slate-700 border border-slate-200">
+                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-sidebar-border bg-sidebar-primary/10 text-sidebar-primary">
                   <activeTeam.logo className="size-5" />
                 </div>
                 {!isCollapsed && (
                   <>
                     <div className="grid flex-1 gap-0.5 text-left leading-tight">
                       {isEnterprise && (
-                        <span className="truncate text-[11px] font-semibold uppercase tracking-[0.15em] text-slate-500">
+                        <span className="truncate text-[11px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/60">
                           {roleLabel ?? "Workspace"}
                         </span>
                       )}
-                      <span className="truncate text-sm font-semibold text-slate-900">
+                      <span className="truncate text-sm font-semibold text-sidebar-foreground">
                         {activeTeam.name}
                       </span>
-                      <span className="truncate text-[12px] text-slate-500">
+                      <span className="truncate text-[12px] text-sidebar-foreground/65">
                         {activeTeam.plan}
                       </span>
                     </div>
-                    <ChevronsUpDown className="size-4 text-slate-400" />
+                    <ChevronsUpDown className="size-4 text-sidebar-foreground/55" />
                   </>
                 )}
               </div>

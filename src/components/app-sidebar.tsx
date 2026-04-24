@@ -42,11 +42,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar
       collapsible="icon"
       className={cn(
-        "border-r border-[#e9edf5] bg-white shadow-[8px_0_40px_rgba(15,23,42,0.03)]"
+        "border-r border-sidebar-border bg-sidebar shadow-[8px_0_40px_rgba(15,23,42,0.03)]"
       )}
       {...props}
     >
-      <SidebarHeader className="border-b border-[#e9edf5] px-4 py-4 group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:py-3">
+      <SidebarHeader className="border-b border-sidebar-border px-4 py-4 group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:py-3">
         <TeamSwitcher
           teams={crmData.teams}
           variant="enterprise"
