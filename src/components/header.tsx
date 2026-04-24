@@ -107,8 +107,7 @@ export function Header() {
 
   const handleLogout = async () => {
     try {
-      // Only user sessions have a matching logout endpoint in the current API layer.
-      if (token && user?.type === "user") {
+      if (token) {
         await authApi.logout(token);
       }
     } catch (error) {
@@ -299,10 +298,10 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               {user?.type === "user" ? (
                 <div className="hidden xl:flex items-center gap-3 min-w-0 cursor-pointer">
-                  <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-background via-muted/30 to-background border border-border/60 hover:border-border hover:shadow-lg transition-all duration-300">
+                  <div className="flex items-center gap-2.5 rounded-full border border-border/80 bg-card/90 px-3 py-1.5 shadow-[0_10px_30px_-20px_rgba(15,23,42,0.85)] backdrop-blur-md transition-all duration-300 hover:border-border hover:bg-card">
                     <div className="relative flex-shrink-0">
-                      <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center ring-2 ring-background">
-                        <User className="h-3.5 w-3.5 text-primary" />
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full border border-primary/20 bg-primary/12 ring-2 ring-background/80">
+                        <User className="h-4 w-4 text-primary" />
                       </div>
                       {profileStatus && (
                         <div className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-background ${
@@ -314,11 +313,11 @@ export function Header() {
                     </div>
                     <div className="flex items-center gap-2 min-w-0">
                       <div className="flex flex-col min-w-0">
-                        <span className="text-xs font-semibold text-foreground truncate max-w-[140px] leading-none">
+                        <span className="max-w-[156px] truncate text-sm font-semibold leading-none text-foreground">
                           {dashboardName || user.name || "User"}
                         </span>
                         {profileStatus && (
-                          <span className={`text-[9px] font-medium mt-0.5 ${
+                          <span className={`mt-0.5 text-[10px] font-semibold ${
                             profileStatus.toLowerCase() === "verified"
                               ? "text-green-600 dark:text-green-400"
                               : "text-orange-600 dark:text-orange-400"

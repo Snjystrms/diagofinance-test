@@ -50,7 +50,7 @@ export function ProfileCompletionDialog({
             <AlertCircle className="h-5 w-5 text-orange-500" />
             Complete Your Profile
           </DialogTitle>
-          <DialogDescription className="text-base pt-2">
+          <DialogDescription className="pt-2 text-base text-foreground/72">
             Please complete the following sections to verify your account and unlock all features.
           </DialogDescription>
         </DialogHeader>
@@ -59,18 +59,18 @@ export function ProfileCompletionDialog({
           {incompleteSections.map((section) => (
             <div
               key={section.key}
-              className="flex items-start gap-4 p-4 border-2 border-orange-200 dark:border-orange-800 rounded-lg bg-orange-50/50 dark:bg-orange-950/20"
+              className="flex items-start gap-4 rounded-xl border border-orange-500/35 bg-card/96 p-4 shadow-[0_18px_40px_-28px_rgba(249,115,22,0.45)] backdrop-blur-sm"
             >
-              <div className="p-2 rounded-lg bg-orange-100 dark:bg-orange-950/40 flex-shrink-0">
+              <div className="flex-shrink-0 rounded-lg border border-orange-500/20 bg-orange-500/12 p-2 text-orange-400">
                 {section.icon}
               </div>
               <div className="flex-1">
-                <h4 className="font-semibold text-sm mb-1">{section.title}</h4>
-                <p className="text-sm text-muted-foreground mb-3">{section.message}</p>
+                <h4 className="mb-1 text-sm font-semibold text-foreground">{section.title}</h4>
+                <p className="mb-3 text-sm text-foreground/70">{section.message}</p>
                 <Button
                   size="sm"
                   onClick={() => handleNavigate(section.route)}
-                  className="bg-orange-600 hover:bg-orange-700 text-white"
+                  className="bg-orange-600 text-white shadow-[0_12px_24px_-16px_rgba(249,115,22,0.9)] hover:bg-orange-500"
                 >
                   Complete Now
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -81,13 +81,13 @@ export function ProfileCompletionDialog({
         </div>
 
         <DialogFooter className="flex items-center justify-between">
-          <Button variant="outline" onClick={handleSkip}>
+          <Button variant="outline" onClick={handleSkip} className="border-border/80 bg-background/70">
             I&apos;ll do this later
           </Button>
           {incompleteSections.length > 0 && (
             <Button
               onClick={() => handleNavigate(incompleteSections[0].route)}
-              className="bg-primary hover:bg-primary/90"
+              className="bg-orange-600 text-white hover:bg-orange-500"
             >
               Complete All Sections
             </Button>

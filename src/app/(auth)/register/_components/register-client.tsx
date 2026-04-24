@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 import { COUNTRIES } from '@/lib/countries';
 import { registerSchema, type RegisterFormData } from '@/lib/validations';
@@ -46,6 +47,7 @@ import { Spinner } from '@/components/ui/spinner';
 export function RegisterClient() {
   const { registerMutation } = useAuthMutations();
   const [isLoading, setIsLoading] = useState(false);
+  const searchParams = useSearchParams();
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -71,6 +73,18 @@ export function RegisterClient() {
     form.setValue('country', selectedCountry, { shouldValidate: true });
     form.setValue('country_code', countryData.code, { shouldValidate: true });
   };
+
+  useEffect(() => {
+    const ibCode = searchParams.get('ib');
+    const referralCode = searchParams.get('referral_code');
+    const nextReferralCode = ibCode || referralCode || '';
+
+    if (!nextReferralCode) {
+      return;
+    }
+
+    form.setValue('referral_code', nextReferralCode, { shouldDirty: false, shouldValidate: true });
+  }, [form, searchParams]);
 
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true);

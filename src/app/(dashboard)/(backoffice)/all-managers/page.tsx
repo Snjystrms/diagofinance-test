@@ -162,6 +162,27 @@ export default function AllManagersPage() {
     () => groupedPerms.flatMap((g) => (g.permissions || []).map((p) => ({ id: p.id, name: p.name }))),
     [groupedPerms]
   );
+  const ManagerFormComponent = useCallback(
+    (props: {
+      open: boolean;
+      onOpenChange: (open: boolean) => void;
+      initialData?: ManagerRow | null;
+      onSubmit: (data: Partial<ManagerRow>) => void | Promise<void>;
+      readOnly?: boolean;
+    }) => (
+      <ManagerForm
+        open={props.open}
+        onOpenChange={props.onOpenChange}
+        initialData={props.initialData}
+        onSubmit={props.onSubmit as Parameters<typeof ManagerForm>[0]["onSubmit"]}
+        readOnly={props.readOnly}
+        allPermissions={allPerms}
+        groupedPermissions={groupedPerms}
+        onFetchPermissions={undefined}
+      />
+    ),
+    [allPerms, groupedPerms]
+  );
 
   const fetchList = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["managers", token] });
@@ -178,6 +199,7 @@ export default function AllManagersPage() {
         email: payload.email,
         mobile: payload.mobile,
         password: payload.password || "",
+        permissions: toIdArray(payload.permissions),
       };
       if (!body.password) {
         toast.error("Password is required to create manager");
@@ -376,14 +398,7 @@ export default function AllManagersPage() {
             data={data}
             initialData={data}
             columns={columns}
-            formComponent={(props) => (
-              <ManagerForm
-                {...(props as Parameters<typeof ManagerForm>[0])}
-                allPermissions={allPerms}
-                groupedPermissions={groupedPerms}
-                onFetchPermissions={undefined}
-              />
-            )}
+            formComponent={ManagerFormComponent}
             title=""
             description=""
             requiredModule="manager"
@@ -414,7 +429,10 @@ export default function AllManagersPage() {
                 mobile: form.mobile,
                 password: form.password,
                 status: form.status ?? true,
-                permissions: [],
+                permissions: (form.permissions ?? []).map((id) => {
+                  const permission = permIndex[id];
+                  return permission ? { id: permission.id, name: permission.name } : { id, name: `Permission ${id}` };
+                }),
               });
             }}
           />

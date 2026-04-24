@@ -218,8 +218,8 @@ export function TwoFactorModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
+      <DialogContent className="max-w-md gap-3 p-5 sm:max-w-[28rem]">
+        <DialogHeader className="gap-1">
           <DialogTitle>
             {step === 'setup' && 'Enable Two-Factor Authentication'}
             {step === 'verify' && 'Verify Two-Factor Authentication'}
@@ -228,7 +228,7 @@ export function TwoFactorModal({
         </DialogHeader>
         
         {step === 'setup' && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
@@ -237,25 +237,25 @@ export function TwoFactorModal({
             )}
             
             {isLoading ? (
-              <div className="flex justify-center py-4">
+              <div className="flex justify-center py-3">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
               </div>
             ) : setupData ? (
               <>
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground mb-4">
+                  <p className="mb-3 text-sm text-muted-foreground">
                     Scan this QR code with Google Authenticator app
                   </p>
                   
-                  <div className="flex justify-center mb-4">
+                  <div className="mb-3 flex justify-center">
                     <img 
                       src={setupData.qrCode} 
                       alt="2FA QR Code" 
-                      className="border rounded-lg p-2"
+                      className="h-40 w-40 rounded-lg border p-1.5 object-contain"
                     />
                   </div>
                   
-                  <div className="bg-muted p-3 rounded-lg mb-4">
+                  <div className="mb-3 rounded-lg bg-muted p-2.5">
                     <p className="text-xs font-mono break-all">
                       {setupData.secret}
                     </p>
@@ -265,7 +265,7 @@ export function TwoFactorModal({
                   </div>
                 </div>
                 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <h4 className="font-medium text-sm">Instructions:</h4>
                   <ul className="text-xs space-y-1">
                     {setupData.instructions.map((instruction, index) => (
@@ -296,7 +296,7 @@ export function TwoFactorModal({
         )}
         
         {step === 'verify' && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
@@ -305,7 +305,7 @@ export function TwoFactorModal({
             )}
             
             <div className="text-center">
-              <p className="text-sm text-muted-foreground mb-4">
+              <p className="mb-3 text-sm text-muted-foreground">
                 Enter the 6-digit code from your authenticator app
               </p>
               
@@ -323,7 +323,7 @@ export function TwoFactorModal({
                     value={verificationCode}
                     onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
                     placeholder="123456"
-                    className="text-center text-lg tracking-widest"
+                    className="h-10 text-center text-lg tracking-widest"
                   />
                 </div>
               </div>
@@ -347,7 +347,7 @@ export function TwoFactorModal({
         )}
         
         {step === 'disable' && (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {error && (
               <Alert variant="destructive">
                 <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
@@ -355,8 +355,8 @@ export function TwoFactorModal({
               </Alert>
             )}
             
-            <div className="text-center py-4">
-              <ShieldX className="h-12 w-12 text-red-500 mx-auto mb-3" />
+            <div className="py-3 text-center">
+              <ShieldX className="mx-auto mb-2 h-10 w-10 text-red-500" />
               <p className="text-sm text-muted-foreground">
                 Are you sure you want to disable two-factor authentication?
                 This will reduce the security of your account.

@@ -964,7 +964,7 @@ export const authApi = {
     apiCall("/user/reset-password", { method: "POST", body: JSON.stringify(data) }),
 
   logout: (token: string) =>
-    apiCall("/user/logout", {
+    apiCall("/auth/logout", {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
     }),
@@ -1164,23 +1164,6 @@ export const adminKycApi = {
   },
 };
 
-// ---------- Managers APIs ----------
-const encodeManagerUpdate = (body: ManagerUpdateBody) => {
-  const p = new URLSearchParams();
-  if (typeof body.name !== "undefined") p.set("name", body.name ?? "");
-  if (typeof body.email !== "undefined") p.set("email", body.email ?? "");
-  if (typeof body.mobile !== "undefined") p.set("mobile", body.mobile ?? "");
-  if (typeof body.status !== "undefined") {
-    p.set("status", body.status ? "1" : "0");
-  }
-  if (typeof body.password === "string" && body.password.trim()) {
-    p.set("password", body.password.trim());
-  }
-  const ids = Array.isArray(body.permissions) ? body.permissions : [];
-  ids.forEach((id) => p.append("permissions[]", String(id)));
-  return p.toString();
-};
-
 export const adminManagersApi = {
   list: (token: string) =>
     apiCall<{ managers: ManagerItem[]; pagination?: PaginationMeta }>(`/admin/manager/list`, {
@@ -1193,15 +1176,15 @@ export const adminManagersApi = {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-        Accept: "application/json",
+        "Content-Type": "application/json",
       },
-      body: new URLSearchParams({
+      body: JSON.stringify({
         name: body.name ?? "",
         email: body.email ?? "",
         mobile: body.mobile ?? "",
         password: body.password ?? "",
-      }).toString(),
+        permissions: Array.isArray(body.permissions) ? body.permissions : [],
+      }),
     }),
 
   patchStatus: (id: number | string, status: boolean, token: string) =>
@@ -1220,10 +1203,13 @@ export const adminManagersApi = {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-        Accept: "application/json",
+        "Content-Type": "application/json",
       },
-      body: encodeManagerUpdate(body),
+      body: JSON.stringify({
+        ...body,
+        password: typeof body.password === "string" ? body.password.trim() : undefined,
+        permissions: Array.isArray(body.permissions) ? body.permissions : [],
+      }),
     }),
 
   detail: (id: number | string, token: string) =>

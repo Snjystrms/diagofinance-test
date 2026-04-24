@@ -1,4 +1,3 @@
-// C:\Users\DELL\Desktop\crminhouse\src\app\all-managers\manager-form.tsx
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
@@ -13,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 export type ManagerRow = {
   id: string;
@@ -33,9 +32,9 @@ type FormValue = {
   name: string;
   email: string;
   mobile: string;
-  password?: string;         // only used on create
-  status?: boolean;          // used on edit
-  permissions?: number[];    // IDs only
+  password?: string;
+  status?: boolean;
+  permissions?: number[];
 };
 
 interface ManagerFormProps {
@@ -43,9 +42,9 @@ interface ManagerFormProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: FormValue) => void | Promise<unknown>;
   initialData?: ManagerRow | null;
-  allPermissions?: PermissionItem[];           // flat, optional
-  groupedPermissions?: PermissionGroup[];      // NEW: grouped
-  onFetchPermissions?: () => void;             // fetch when opening in edit mode
+  allPermissions?: PermissionItem[];
+  groupedPermissions?: PermissionGroup[];
+  onFetchPermissions?: () => void;
   readOnly?: boolean;
 }
 
@@ -75,13 +74,11 @@ export function ManagerForm({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
 
-  // Ensure permissions are fetched on open (edit only)
   useEffect(() => {
-    if (open && isEdit && (!allPermissions?.length || !groupedPermissions?.length)) {
+    if (open && (!allPermissions.length || !groupedPermissions.length)) {
       onFetchPermissions?.();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, isEdit]);
+  }, [open, allPermissions.length, groupedPermissions.length, onFetchPermissions]);
 
   useEffect(() => {
     if (isEdit && initialData) {
@@ -89,9 +86,9 @@ export function ManagerForm({
         id: initialData.id,
         name: initialData.name ?? "",
         email: initialData.email ?? "",
-        mobile: initialData.mobile ?? "",
+        mobile: (initialData.mobile ?? "").replace(/\D/g, "").slice(-10),
         status: !!initialData.status,
-        permissions: (initialData.permissions ?? []).map((p) => p.id), // store IDs
+        permissions: (initialData.permissions ?? []).map((permission) => permission.id),
         password: "",
       });
     } else {
@@ -104,32 +101,32 @@ export function ManagerForm({
         permissions: [],
       });
     }
-    // Reset password visibility when dialog opens/closes
+
     setShowPassword(false);
     setShowNewPassword(false);
-    // Clear errors when dialog opens/closes
     setErrors({});
     setSubmitting(false);
   }, [isEdit, initialData, open]);
 
-  const togglePermission = (pid: number, checked: boolean) => {
+  const togglePermission = (permissionId: number, checked: boolean) => {
     setForm((prev) => {
       const current = new Set(prev.permissions ?? []);
-      if (checked) current.add(pid);
-      else current.delete(pid);
+      if (checked) {
+        current.add(permissionId);
+      } else {
+        current.delete(permissionId);
+      }
       return { ...prev, permissions: Array.from(current) };
     });
   };
 
   const validateField = (field: string, value: string) => {
-    // Clear error for this field
     setErrors((prev) => {
-      const newErrors = { ...prev };
-      delete newErrors[field];
-      return newErrors;
+      const nextErrors = { ...prev };
+      delete nextErrors[field];
+      return nextErrors;
     });
 
-    // Validate based on field type
     if (field === "name") {
       if (!value.trim()) {
         setErrors((prev) => ({ ...prev, name: "Name is required" }));
@@ -140,7 +137,10 @@ export function ManagerForm({
         return false;
       }
       if (!/^[a-zA-Z\s'-]+$/.test(value)) {
-        setErrors((prev) => ({ ...prev, name: "Name can only contain letters, spaces, hyphens, and apostrophes" }));
+        setErrors((prev) => ({
+          ...prev,
+          name: "Name can only contain letters, spaces, hyphens, and apostrophes",
+        }));
         return false;
       }
     } else if (field === "email") {
@@ -192,50 +192,48 @@ export function ManagerForm({
     return true;
   };
 
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    // Only allow letters, spaces, hyphens, and apostrophes
+  const handleNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
     if (value === "" || /^[a-zA-Z\s'-]*$/.test(value)) {
       setForm({ ...form, name: value });
       validateField("name", value);
     }
   };
 
-  const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.toLowerCase();
+  const handleEmailChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value.toLowerCase();
     setForm({ ...form, email: value });
     validateField("email", value);
   };
 
-  const handleMobileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    // Only allow digits and limit to 10 digits
+  const handleMobileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
     if (value === "" || /^\d+$/.test(value)) {
-      const limitedValue = value.slice(0, 10); // Limit to 10 digits
+      const limitedValue = value.slice(0, 10);
       setForm({ ...form, mobile: limitedValue });
       validateField("mobile", limitedValue);
     }
   };
 
-  const handlePasswordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
+  const handlePasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value;
     setForm({ ...form, password: value });
+
     if (value) {
       validateField("password", value);
-    } else {
-      // Clear password error if field is empty (for edit mode)
-      setErrors((prev) => {
-        const newErrors = { ...prev };
-        delete newErrors.password;
-        return newErrors;
-      });
+      return;
     }
+
+    setErrors((prev) => {
+      const nextErrors = { ...prev };
+      delete nextErrors.password;
+      return nextErrors;
+    });
   };
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submit = async (event: React.FormEvent) => {
+    event.preventDefault();
 
-    // Validate all fields
     const nameValid = validateField("name", form.name);
     const emailValid = validateField("email", form.email);
     const mobileValid = validateField("mobile", form.mobile);
@@ -254,7 +252,7 @@ export function ManagerForm({
         id: form.id,
         name: form.name.trim(),
         email: form.email.trim().toLowerCase(),
-        mobile: form.mobile.trim(),
+        mobile: form.mobile.trim().slice(0, 10),
         status: !!form.status,
         permissions: form.permissions ?? [],
       };
@@ -262,41 +260,42 @@ export function ManagerForm({
       if (trimmedPassword) {
         payload.password = trimmedPassword;
       }
+
       try {
         setSubmitting(true);
         await onSubmit(payload);
-        onOpenChange(false);
       } catch {
-        // Toast messaging is handled by the caller.
+        // Toast handling stays with the parent caller.
       } finally {
         setSubmitting(false);
       }
-    } else {
-      if (!form.password?.trim()) {
-        setErrors((prev) => ({ ...prev, password: "Password is required" }));
-        return;
-      }
+      return;
+    }
 
-      const passwordValid = validateField("password", form.password);
+    if (!form.password?.trim()) {
+      setErrors((prev) => ({ ...prev, password: "Password is required" }));
+      return;
+    }
 
-      if (!nameValid || !emailValid || !mobileValid || !passwordValid) {
-        return;
-      }
+    const passwordValid = validateField("password", form.password);
+    if (!nameValid || !emailValid || !mobileValid || !passwordValid) {
+      return;
+    }
 
-      try {
-        setSubmitting(true);
-        await onSubmit({
-          name: form.name.trim(),
-          email: form.email.trim().toLowerCase(),
-          mobile: form.mobile.trim(),
-          password: form.password.trim(),
-        });
-        onOpenChange(false);
-      } catch {
-        // Toast messaging is handled by the caller.
-      } finally {
-        setSubmitting(false);
-      }
+    try {
+      setSubmitting(true);
+      await onSubmit({
+        name: form.name.trim(),
+        email: form.email.trim().toLowerCase(),
+        mobile: form.mobile.trim().slice(0, 10),
+        password: form.password.trim(),
+        permissions: form.permissions ?? [],
+      });
+      onOpenChange(false);
+    } catch {
+      // Toast handling stays with the parent caller.
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -308,7 +307,7 @@ export function ManagerForm({
             <DialogTitle>{isEdit ? (readOnly ? "View Manager" : "Edit Manager") : "Create Manager"}</DialogTitle>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
+          <div className="grid grid-cols-1 gap-4 py-4 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
               <Input
@@ -318,12 +317,10 @@ export function ManagerForm({
                 onBlur={() => validateField("name", form.name)}
                 placeholder="John Manager"
                 disabled={readOnly}
-                maxLength={10}
+                maxLength={80}
                 required
               />
-              {errors.name && (
-                <p className="text-sm text-destructive">{errors.name}</p>
-              )}
+              {errors.name ? <p className="text-sm text-destructive">{errors.name}</p> : null}
             </div>
 
             <div className="space-y-2">
@@ -338,9 +335,7 @@ export function ManagerForm({
                 disabled={readOnly}
                 required
               />
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email}</p>
-              )}
+              {errors.email ? <p className="text-sm text-destructive">{errors.email}</p> : null}
             </div>
 
             <div className="space-y-2">
@@ -353,14 +348,13 @@ export function ManagerForm({
                 onBlur={() => validateField("mobile", form.mobile)}
                 placeholder="1234567890"
                 disabled={readOnly}
+                maxLength={10}
                 required
               />
-              {errors.mobile && (
-                <p className="text-sm text-destructive">{errors.mobile}</p>
-              )}
+              {errors.mobile ? <p className="text-sm text-destructive">{errors.mobile}</p> : null}
             </div>
 
-            {!isEdit && (
+            {!isEdit ? (
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
@@ -393,13 +387,9 @@ export function ManagerForm({
                     )}
                   </Button>
                 </div>
-                {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password}</p>
-                )}
+                {errors.password ? <p className="text-sm text-destructive">{errors.password}</p> : null}
               </div>
-            )}
-
-            {isEdit && (
+            ) : (
               <div className="space-y-2">
                 <Label htmlFor="new-password">New Password</Label>
                 <div className="relative">
@@ -433,89 +423,85 @@ export function ManagerForm({
                     )}
                   </Button>
                 </div>
-                {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password}</p>
-                )}
-                <p className="text-xs text-muted-foreground">
-                  Leave blank to keep the existing password.
-                </p>
+                {errors.password ? <p className="text-sm text-destructive">{errors.password}</p> : null}
+                <p className="text-xs text-muted-foreground">Leave blank to keep the existing password.</p>
               </div>
             )}
 
-            {isEdit && (
+            {isEdit ? (
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
                 <div className="flex items-center gap-2">
                   <Checkbox
                     id="status"
                     checked={!!form.status}
-                    onCheckedChange={(v) => setForm({ ...form, status: !!v })}
+                    onCheckedChange={(value) => setForm({ ...form, status: !!value })}
                     disabled={readOnly}
                   />
                   <span className="text-sm text-muted-foreground">Active</span>
                 </div>
               </div>
-            )}
+            ) : null}
 
-            {/* Permissions — ONLY in Edit mode, category-wise & scrollable */}
-            {isEdit && (
-              <div className="md:col-span-2 space-y-3 rounded-md border p-4">
-                <div className="flex items-center justify-between">
-                  <Label>Permissions (by category)</Label>
-                  {!readOnly && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onFetchPermissions?.()}
-                    >
-                      Refresh
-                    </Button>
-                  )}
-                </div>
-
-                <div className="max-h-72 overflow-y-auto pr-2 space-y-4">
-                  {(groupedPermissions || []).map((grp) => (
-                    <div key={grp.category}>
-                      <div className="text-sm font-semibold mb-2">{grp.category}</div>
-                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-                        {grp.permissions.map((perm) => {
-                          const checked = (form.permissions ?? []).includes(perm.id);
-                          return (
-                            <label key={perm.id} className="flex items-center gap-2 text-sm">
-                              <Checkbox
-                                checked={checked}
-                                onCheckedChange={(v) => togglePermission(perm.id, !!v)}
-                                disabled={readOnly}
-                              />
-                              <span className="text-muted-foreground">
-                                {perm.name}
-                                {/* ID is not shown, but it's what we store/send */}
-                              </span>
-                            </label>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <p className="text-xs text-muted-foreground">
-                  Note: On update, the selected permission IDs are sent in the request.
-                </p>
+            <div className="md:col-span-2 space-y-3 rounded-md border p-4">
+              <div className="flex items-center justify-between">
+                <Label>Permissions (by category)</Label>
+                {!readOnly ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onFetchPermissions?.()}
+                  >
+                    Refresh
+                  </Button>
+                ) : null}
               </div>
-            )}
+
+              <div className="max-h-72 space-y-4 overflow-y-auto pr-2">
+                {groupedPermissions.map((group) => (
+                  <div key={group.category}>
+                    <div className="mb-2 text-sm font-semibold">{group.category}</div>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+                      {group.permissions.map((permission) => {
+                        const checked = (form.permissions ?? []).includes(permission.id);
+                        return (
+                          <label key={permission.id} className="flex items-center gap-2 text-sm">
+                            <Checkbox
+                              checked={checked}
+                              onCheckedChange={(value) => togglePermission(permission.id, !!value)}
+                              disabled={readOnly}
+                            />
+                            <span className="text-muted-foreground">{permission.name}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Selected permission IDs are sent when creating or updating a manager.
+              </p>
+            </div>
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={submitting}
+            >
               {readOnly ? "Close" : "Cancel"}
             </Button>
-            {!readOnly && (
-              <Button type="submit" disabled={submitting}>
-                {submitting ? (isEdit ? "Saving..." : "Creating...") : isEdit ? "Save Changes" : "Create"}
+            {!readOnly ? (
+              <Button type="submit" disabled={submitting} className="min-w-[9.5rem]">
+                {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                <span>{submitting ? (isEdit ? "Saving..." : "Creating...") : isEdit ? "Save Changes" : "Create"}</span>
               </Button>
-            )}
+            ) : null}
           </DialogFooter>
         </form>
       </DialogContent>

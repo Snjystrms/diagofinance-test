@@ -174,18 +174,16 @@ export function CenteredLoadingSurface({
       {...props}
     >
       <div
-        className="w-full max-w-sm rounded-[26px] border px-6 py-7 text-center shadow-sm"
-        style={panelStyle}
+        className="w-full max-w-sm rounded-[26px] border border-border/80 bg-card/96 px-6 py-6 text-center shadow-[0_24px_70px_-36px_rgba(15,23,42,0.85)] backdrop-blur-sm"
       >
         <div
-          className="mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] border"
-          style={panelStrongStyle}
+          className="mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] border border-border/80 bg-background/80"
         >
           <Skeleton className="h-5 w-5 rounded-full" />
         </div>
-        <p className="mt-4 text-sm font-semibold text-foreground">{title}</p>
+        <p className="mt-4 text-sm font-semibold tracking-[0.01em] text-foreground">{title}</p>
         {description ? (
-          <p className="mt-1.5 text-sm text-muted-foreground">{description}</p>
+          <p className="mt-1.5 text-sm leading-6 text-foreground/78">{description}</p>
         ) : null}
       </div>
     </div>

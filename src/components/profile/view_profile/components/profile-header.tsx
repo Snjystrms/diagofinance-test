@@ -97,13 +97,13 @@ export default function ProfileHeader() {
     .slice(0, 2) || "U";
 
   return (
-    <Card className="border-gray-200 dark:border-gray-700">
+    <Card className="border-border bg-card/95 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.7)]">
       <CardContent className="p-6">
         <div className="flex flex-col gap-6 md:flex-row md:items-center">
           <div className="relative">
-            <Avatar className="h-24 w-24 border-2 border-gray-200 dark:border-gray-700">
+            <Avatar className="h-24 w-24 border-2 border-border/80">
               <AvatarImage src={`https://bundui-images.netlify.app/avatars/08.png`} alt={user.name} />
-              <AvatarFallback className="text-2xl bg-primary/10 text-primary">
+              <AvatarFallback className="bg-primary/12 text-2xl text-primary">
                 {initials}
               </AvatarFallback>
             </Avatar>
@@ -116,7 +116,7 @@ export default function ProfileHeader() {
           
           <div className="flex-1 space-y-3">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <h1 className="text-2xl font-bold tracking-tight text-foreground">
                 {user.name || user.email}
               </h1>
               <p className="text-sm text-muted-foreground mt-1">{user.email}</p>
@@ -124,14 +124,14 @@ export default function ProfileHeader() {
             
             <div className="flex flex-wrap gap-3">
               {/* Account ID */}
-              <div className="flex items-center gap-2 bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800 rounded-lg px-3 py-2">
-                <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+              <div className="flex items-center gap-2 rounded-lg border border-primary/25 bg-primary/10 px-3 py-2 shadow-sm">
+                <span className="text-sm font-medium text-primary">
                   Account ID: {user.account_id}
                 </span>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-5 w-5 text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/50"
+                  className="h-5 w-5 text-primary hover:bg-primary/12 hover:text-primary"
                   onClick={handleCopyAccountId}
                 >
                   {copiedAccountId ? (
@@ -144,9 +144,9 @@ export default function ProfileHeader() {
 
               {/* Contact Number */}
               {user.mobile && (
-                <div className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2">
+                <div className="flex items-center gap-2 rounded-lg border border-border/80 bg-background/75 px-3 py-2 backdrop-blur-sm">
                   <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">
+                  <span className="text-sm text-foreground/88">
                     +{user.country_code} {user.mobile}
                   </span>
                 </div>
@@ -154,9 +154,9 @@ export default function ProfileHeader() {
 
               {/* Location */}
               {user.location && (
-                <div className="flex items-center gap-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-3 py-2">
+                <div className="flex items-center gap-2 rounded-lg border border-border/80 bg-background/75 px-3 py-2 backdrop-blur-sm">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">
+                  <span className="text-sm capitalize text-foreground/88">
                     {user.location}
                   </span>
                 </div>
@@ -165,18 +165,18 @@ export default function ProfileHeader() {
               {/* 2FA Status */}
               <div className={`flex items-center gap-2 border rounded-lg px-3 py-2 ${
                 is2FAEnabled 
-                  ? "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800" 
-                  : "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800"
+                  ? "border-green-500/30 bg-green-500/10" 
+                  : "border-red-500/30 bg-red-500/10"
               }`}>
                 <Shield className={`h-4 w-4 ${
                   is2FAEnabled 
-                    ? "text-green-600 dark:text-green-400" 
-                    : "text-red-600 dark:text-red-400"
+                    ? "text-green-400" 
+                    : "text-red-400"
                 }`} />
                 <span className={`text-sm font-medium ${
                   is2FAEnabled 
-                    ? "text-green-700 dark:text-green-300" 
-                    : "text-red-700 dark:text-red-300"
+                    ? "text-green-200" 
+                    : "text-red-200"
                 }`}>
                   {is2FAEnabled ? "Secured with 2FA" : "2FA Not Enabled"}
                 </span>
