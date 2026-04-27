@@ -2171,6 +2171,14 @@ export interface IbWalletData {
   transactions: IbWalletTransactions;
 }
 
+export interface IbWalletApiData {
+  partner_wallet?: number | string | IbWalletBalance;
+  wallet_balance?: number | string | IbWalletBalance;
+  client_wallet?: number | string | IbWalletBalance;
+  earning_summary?: Partial<IbWalletEarningSummary> | Record<string, unknown>;
+  transactions?: unknown;
+}
+
 export interface IbWalletResponse {
   success: boolean;
   message: string;
@@ -2285,7 +2293,7 @@ export const ibRequestsApi = {
       body: JSON.stringify(data),
     }),
   getIbWallet: (token: string) =>
-    apiCall<IbWalletData>(`/user/ib-wallet`, {
+    apiCall<IbWalletApiData>(`/user/ib-wallet`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),

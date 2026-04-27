@@ -6,6 +6,7 @@ import { QueryProvider } from "@/components/query-provider";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ClientCustomizationProvider } from "@/contexts/client-customization-context";
 import { Toaster } from "react-hot-toast";
+import { THEME_STORAGE_KEY } from "@/lib/client-presets";
 import { NuqsAdapter } from "nuqs/adapters/next/app"; // <-- required
 const interSans = Inter({
   variable: "--font-inter-sans",
@@ -22,6 +23,17 @@ export const metadata: Metadata = {
   description: "A modern CRM application built with Next.js",
 };
 
+const themeBootstrapScript = `
+(() => {
+  try {
+    const darkThemes = new Set(["ocean", "midnight", "charcoal", "navy", "emerald", "ruby", "sapphire", "dark-blue", "noir", "graphite"]);
+    const storedTheme = window.localStorage.getItem(${JSON.stringify(THEME_STORAGE_KEY)}) || "graphite";
+    const root = document.documentElement;
+    root.classList.toggle("dark", darkThemes.has(storedTheme));
+  } catch (_error) {}
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -31,6 +43,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="cryptomus" content="b4a2ebfe" />
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>
       <body
         suppressHydrationWarning

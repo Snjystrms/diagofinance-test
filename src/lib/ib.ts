@@ -193,6 +193,13 @@ function toString(value: unknown, fallback = "") {
 }
 
 function normalizeWalletBalance(raw: unknown, currency = "USD"): IbWalletBalance {
+  if (typeof raw === "number" || typeof raw === "string") {
+    return {
+      amount: toNumber(raw, 0),
+      currency,
+    };
+  }
+
   if (!isRecord(raw)) {
     return emptyBalance(currency);
   }
@@ -283,7 +290,12 @@ export function normalizeIbWalletData(raw: unknown): IbWalletData | null {
   const earningSummary = raw.earning_summary;
   const transactions = raw.transactions;
 
-  if (!walletBalance && !clientWallet && !earningSummary && !transactions) {
+  const hasWalletBalance = walletBalance !== undefined && walletBalance !== null;
+  const hasClientWallet = clientWallet !== undefined && clientWallet !== null;
+  const hasEarningSummary = earningSummary !== undefined && earningSummary !== null;
+  const hasTransactions = transactions !== undefined && transactions !== null;
+
+  if (!hasWalletBalance && !hasClientWallet && !hasEarningSummary && !hasTransactions) {
     return null;
   }
 

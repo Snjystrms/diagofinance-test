@@ -434,12 +434,18 @@ export default function ManageAccountsPage() {
             </div>
           </div>
 
-          <div className="flex gap-2">
-            <Button size="sm" className="flex-1" onClick={() => openDetails(account)}>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" className="min-w-[140px] flex-1" onClick={() => openDetails(account)}>
               <Eye className="h-4 w-4 mr-1" />
               View Details
             </Button>
-            <Button size="sm" variant="outline" className="flex-1" onClick={() => copyToClipboard(account.mt5_id, 'MT5 login')}>
+            <Button size="sm" variant="outline" className="min-w-[140px] flex-1" asChild>
+              <Link href={`/funds/internal-transfer?tab=wallet-to-mt5&accountId=${encodeURIComponent(account.account_id)}`}>
+                <DollarSign className="h-4 w-4 mr-1" />
+                Deposit Funds
+              </Link>
+            </Button>
+            <Button size="sm" variant="outline" className="min-w-[140px] flex-1" onClick={() => copyToClipboard(account.mt5_id, 'MT5 login')}>
               <Copy className="h-4 w-4 mr-1" />
               Copy Login
             </Button>

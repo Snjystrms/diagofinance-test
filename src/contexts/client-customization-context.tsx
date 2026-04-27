@@ -5,6 +5,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -53,11 +54,36 @@ export function ClientCustomizationProvider({ children }: { children: ReactNode 
   const allowThemeCustomization = customizationEnabled || !activePreset.locks.theme;
   const allowSidebarCustomization = customizationEnabled || !activePreset.locks.sidebar;
   const allowDashboardCustomization = customizationEnabled || !activePreset.locks.dashboardLayout;
-  const [themeId, setThemeIdState] = useState<string>(activePreset.themeId);
-  const [sidebarId, setSidebarIdState] = useState<SidebarId>(activePreset.sidebarId);
-  const [dashboardModes, setDashboardModes] = useState<Record<DashboardArea, DashboardMode>>({
-    admin: activePreset.dashboards.admin?.mode ?? "normal",
-    client: activePreset.dashboards.client?.mode ?? "normal",
+  const [themeId, setThemeIdState] = useState<string>(() => {
+    if (typeof window !== "undefined" && allowThemeCustomization) {
+      return window.localStorage.getItem(THEME_STORAGE_KEY) || activePreset.themeId;
+    }
+
+    return activePreset.themeId;
+  });
+  const [sidebarId, setSidebarIdState] = useState<SidebarId>(() => {
+    if (typeof window !== "undefined" && allowSidebarCustomization) {
+      return (window.localStorage.getItem(SIDEBAR_STORAGE_KEY) as SidebarId | null) || activePreset.sidebarId;
+    }
+
+    return activePreset.sidebarId;
+  });
+  const [dashboardModes, setDashboardModes] = useState<Record<DashboardArea, DashboardMode>>(() => {
+    const nextModes: Record<DashboardArea, DashboardMode> = {
+      admin: activePreset.dashboards.admin?.mode ?? "normal",
+      client: activePreset.dashboards.client?.mode ?? "normal",
+    };
+
+    if (typeof window !== "undefined" && allowDashboardCustomization) {
+      (["admin", "client"] as DashboardArea[]).forEach((area) => {
+        const storedMode = window.localStorage.getItem(getDashboardModeStorageKey(area));
+        if (storedMode === "normal" || storedMode === "custom") {
+          nextModes[area] = storedMode;
+        }
+      });
+    }
+
+    return nextModes;
   });
 
   useEffect(() => {
@@ -93,7 +119,7 @@ export function ClientCustomizationProvider({ children }: { children: ReactNode 
     setDashboardModes(nextModes);
   }, [activePreset, allowDashboardCustomization, allowSidebarCustomization, allowThemeCustomization]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     applyThemeById(themeId);
   }, [themeId]);
 

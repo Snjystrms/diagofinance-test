@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
+import { useSearchParams } from 'next/navigation'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
 import { Repeat, Wallet } from 'lucide-react'
@@ -96,6 +97,8 @@ type WalletOption = {
   isPrimary: boolean
 }
 
+type TransferTab = 'wallet-to-wallet' | 'wallet-to-mt5' | 'mt5-to-wallet' | 'mt5-to-mt5'
+
 function sanitizeComment(value?: string) {
   const trimmed = value?.trim()
   return trimmed ? trimmed : undefined
@@ -111,11 +114,13 @@ function formatWalletLabel(walletKey: string) {
 
 function InternalTransferContent() {
   const { token, user } = useAuth()
+  const searchParams = useSearchParams()
   const [mt5Accounts, setMt5Accounts] = useState<MT5Account[]>([])
   const [walletSummary, setWalletSummary] = useState<WalletSummaryData | null>(null)
   const [isLoadingResources, setIsLoadingResources] = useState(false)
   const [walletError, setWalletError] = useState<unknown | null>(null)
   const [accountsError, setAccountsError] = useState<unknown | null>(null)
+  const [activeTab, setActiveTab] = useState<TransferTab>('wallet-to-wallet')
 
   const mt5ToMt5Form = useForm<Mt5ToMt5FormValues>({
     resolver: zodResolver(mt5ToMt5Schema),
@@ -242,6 +247,8 @@ function InternalTransferContent() {
     () => walletOptions.find((wallet) => wallet.value !== defaultWalletValue)?.value || defaultWalletValue,
     [defaultWalletValue, walletOptions]
   )
+  const requestedTab = searchParams.get('tab')
+  const requestedAccountId = searchParams.get('accountId')
 
   useEffect(() => {
     if (!defaultWalletValue) {
@@ -267,6 +274,29 @@ function InternalTransferContent() {
     walletToMt5Form,
     walletToWalletForm,
   ])
+
+  useEffect(() => {
+    const validTabs: TransferTab[] = ['wallet-to-wallet', 'wallet-to-mt5', 'mt5-to-wallet', 'mt5-to-mt5']
+    if (requestedTab && validTabs.includes(requestedTab as TransferTab)) {
+      setActiveTab(requestedTab as TransferTab)
+    }
+  }, [requestedTab])
+
+  useEffect(() => {
+    if (!requestedAccountId || mt5Accounts.length === 0) {
+      return
+    }
+
+    const matchedAccount = mt5Accounts.find((account) => account.account_id === requestedAccountId)
+    if (!matchedAccount) {
+      return
+    }
+
+    walletToMt5Form.setValue('toAccountId', matchedAccount.account_id, {
+      shouldDirty: false,
+      shouldValidate: true,
+    })
+  }, [mt5Accounts, requestedAccountId, walletToMt5Form])
 
   const mainWallet = useMemo(
     () => walletOptions.find((wallet) => wallet.value === defaultWalletValue) || walletOptions[0] || null,
@@ -533,7 +563,7 @@ function InternalTransferContent() {
         </Card>
       </div>
 
-      <Tabs defaultValue="wallet-to-wallet" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TransferTab)} className="space-y-4">
         <TabsList className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4">
           <TabsTrigger value="wallet-to-wallet">Wallet to Wallet</TabsTrigger>
           <TabsTrigger value="wallet-to-mt5">Wallet to MT5</TabsTrigger>
