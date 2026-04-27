@@ -90,7 +90,7 @@ The application integrates with the following backend APIs:
    npm run dev
    ```
 
-5. **Open your browser**
+5. **Open your browser***
    Navigate to [http://localhost:3000](http://localhost:3000)
 
 ## Project Structure
