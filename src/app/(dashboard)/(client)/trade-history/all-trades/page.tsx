@@ -39,6 +39,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/auth-context';
 import { formatDateTimeInIST } from '@/lib/formatters';
 import {
@@ -55,6 +56,8 @@ import { cn } from '@/lib/utils';
 type TradeRow = Mt5SdkTradeRecord & {
   rowId: string;
 };
+
+type HistoryView = 'trades' | 'balance';
 
 const actionLabels: Record<number, string> = {
   0: 'Buy',
@@ -155,7 +158,18 @@ const formatMt5Timestamp = (seconds?: number, milliseconds?: number) => {
 };
 
 const getTradeTimestamp = (record: Mt5SdkTradeRecord) =>
-  formatMt5Timestamp(record.Time ?? record.TimeDone ?? record.TimeSetup, record.TimeMsc ?? record.TimeDoneMsc ?? record.TimeSetupMsc);
+  formatMt5Timestamp(
+    record.Time ?? record.TimeDone ?? record.TimeSetup,
+    record.TimeMsc ?? record.TimeDoneMsc ?? record.TimeSetupMsc
+  );
+
+const createDefaultFromDate = () => {
+  const date = new Date();
+  date.setDate(date.getDate() - 1);
+  return date;
+};
+
+const createDefaultToDate = () => new Date();
 
 const toIsoDateTime = (value: Date | undefined, boundary: 'start' | 'end') => {
   if (!value) {
@@ -188,6 +202,22 @@ const formatStatus = (record: Mt5SdkTradeRecord) => {
   return record.Entry !== undefined ? entryLabels[record.Entry] ?? `Entry ${record.Entry}` : '-';
 };
 
+const isTradeActivityRecord = (record: Mt5SdkTradeRecord) =>
+  record.record_type === 'order' || record.Action === 0 || record.Action === 1;
+
+const isBalanceActivityRecord = (record: Mt5SdkTradeRecord) =>
+  record.record_type === 'deal' && !isTradeActivityRecord(record);
+
+const getBalanceAmount = (record: Mt5SdkTradeRecord) => {
+  for (const value of [record.Profit, record.ProfitRaw, record.Commission, record.Fee, record.Storage]) {
+    if (isFiniteNumber(value)) {
+      return value;
+    }
+  }
+
+  return undefined;
+};
+
 const recordBadgeClassName = (recordType: string) =>
   recordType === 'deal'
     ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300'
@@ -210,8 +240,9 @@ export default function AllTradesPage() {
   const { token } = useAuth();
   const [accounts, setAccounts] = useState<UserMT5AccountListItem[]>([]);
   const [login, setLogin] = useState('');
-  const [fromDt, setFromDt] = useState<Date | undefined>();
-  const [toDt, setToDt] = useState<Date | undefined>();
+  const [fromDt, setFromDt] = useState<Date | undefined>(createDefaultFromDate);
+  const [toDt, setToDt] = useState<Date | undefined>(createDefaultToDate);
+  const [historyView, setHistoryView] = useState<HistoryView>('trades');
   const [positionsData, setPositionsData] = useState<Mt5SdkPositionsResponse | null>(null);
   const [historyData, setHistoryData] = useState<Mt5SdkTradeHistoryResponse | null>(null);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
@@ -306,14 +337,23 @@ export default function AllTradesPage() {
       })),
     [historyData]
   );
+  const tradeActivityRows = useMemo(
+    () => tradeRows.filter(isTradeActivityRecord),
+    [tradeRows]
+  );
+  const balanceRows = useMemo(
+    () => tradeRows.filter(isBalanceActivityRecord),
+    [tradeRows]
+  );
 
   const openPositions = positionsData?.items ?? [];
-  const dealCount = tradeRows.filter((record) => record.record_type === 'deal').length;
-  const orderCount = tradeRows.filter((record) => record.record_type === 'order').length;
+  const tradeDealCount = tradeActivityRows.filter((record) => record.record_type === 'deal').length;
+  const orderCount = tradeActivityRows.filter((record) => record.record_type === 'order').length;
   const floatingProfit = openPositions.reduce((total, position) => total + (position.Profit ?? 0), 0);
-  const realizedProfit = tradeRows.reduce((total, record) => total + (record.Profit ?? 0), 0);
+  const realizedProfit = tradeActivityRows.reduce((total, record) => total + (record.Profit ?? 0), 0);
+  const balanceNet = balanceRows.reduce((total, record) => total + (getBalanceAmount(record) ?? 0), 0);
 
-  const columns = useMemo<ColumnDef<TradeRow>[]>(
+  const tradeColumns = useMemo<ColumnDef<TradeRow>[]>(
     () => [
       {
         id: 'record_type',
@@ -405,6 +445,77 @@ export default function AllTradesPage() {
         accessorKey: 'Comment',
         cell: ({ row }) => (
           <span className="block max-w-52 truncate text-muted-foreground">
+            {row.original.Comment || '-'}
+          </span>
+        ),
+      },
+    ],
+    []
+  );
+
+  const balanceColumns = useMemo<ColumnDef<TradeRow>[]>(
+    () => [
+      {
+        id: 'time',
+        header: 'Time',
+        cell: ({ row }) => (
+          <div className="flex min-w-44 items-center gap-2 text-sm">
+            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+            <span>{getTradeTimestamp(row.original)}</span>
+          </div>
+        ),
+      },
+      {
+        id: 'activity',
+        header: 'Activity',
+        cell: ({ row }) => {
+          const label = formatSide(row.original);
+          return (
+            <div className="flex items-center gap-2">
+              {sideIcon(label)}
+              <span>{label}</span>
+            </div>
+          );
+        },
+      },
+      {
+        id: 'status',
+        header: 'Status',
+        cell: ({ row }) => formatStatus(row.original),
+      },
+      {
+        id: 'ticket',
+        header: 'Deal / Order',
+        cell: ({ row }) => (
+          <div className="space-y-1 text-xs">
+            <div>Deal: {row.original.Deal ?? '-'}</div>
+            <div>Order: {row.original.Order ?? '-'}</div>
+          </div>
+        ),
+      },
+      {
+        id: 'amount',
+        header: 'Amount',
+        cell: ({ row }) => {
+          const amount = getBalanceAmount(row.original) ?? 0;
+          return (
+            <span
+              className={cn(
+                'font-semibold',
+                amount > 0 ? 'text-emerald-600' : amount < 0 ? 'text-red-600' : 'text-muted-foreground'
+              )}
+            >
+              {formatProfit(getBalanceAmount(row.original))}
+            </span>
+          );
+        },
+      },
+      {
+        id: 'comment',
+        header: 'Comment',
+        accessorKey: 'Comment',
+        cell: ({ row }) => (
+          <span className="block max-w-80 truncate text-muted-foreground">
             {row.original.Comment || '-'}
           </span>
         ),
@@ -527,11 +638,21 @@ export default function AllTradesPage() {
             />
           ) : null}
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <MetricCard title="Open Positions" value={openPositions.length} />
-            <MetricCard title="History Records" value={tradeRows.length} description={`${dealCount} deals, ${orderCount} orders`} />
+            <MetricCard
+              title="Trade Records"
+              value={tradeActivityRows.length}
+              description={`${tradeDealCount} deals, ${orderCount} orders`}
+            />
+            <MetricCard
+              title="Balance Records"
+              value={balanceRows.length}
+              description={balanceRows.length > 0 ? `Net ${formatProfit(balanceNet)}` : 'No balance activity'}
+              tone={balanceNet > 0 ? 'positive' : balanceNet < 0 ? 'negative' : 'neutral'}
+            />
             <MetricCard title="Floating P/L" value={formatProfit(floatingProfit)} tone={floatingProfit >= 0 ? 'positive' : 'negative'} />
-            <MetricCard title="History P/L" value={formatProfit(realizedProfit)} tone={realizedProfit >= 0 ? 'positive' : 'negative'} />
+            <MetricCard title="Trade P/L" value={formatProfit(realizedProfit)} tone={realizedProfit >= 0 ? 'positive' : 'negative'} />
           </div>
 
           <Card>
@@ -585,27 +706,63 @@ export default function AllTradesPage() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Trade History</CardTitle>
-              <CardDescription>
-                {historyData ? `Showing ${historyData.count} records for login ${historyData.login}.` : 'Deals and orders returned by the trade history API.'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {isLoadingTrades ? (
-                <LoadingRows />
-              ) : tradeRows.length > 0 ? (
-                <AppDataTable<TradeRow>
-                  data={tradeRows}
-                  columns={columns}
-                  getRowId={(row) => row.rowId}
-                />
-              ) : (
-                <EmptyState title="No trade history" description="Load a login or adjust the date filters to view all trades." />
-              )}
-            </CardContent>
-          </Card>
+          <Tabs
+            value={historyView}
+            onValueChange={(value) => setHistoryView(value as HistoryView)}
+            className="space-y-0"
+          >
+            <Card>
+              <CardHeader className="gap-4 md:flex-row md:items-center md:justify-between">
+                <div className="space-y-1">
+                  <CardTitle>History</CardTitle>
+                  <CardDescription>
+                    {historyData
+                      ? `Showing ${historyData.count} records for login ${historyData.login}. Orders and buy/sell deals stay in Trades, while balance-style entries are separated under Balance Activity.`
+                      : 'Switch between trade activity and balance activity returned by the MT5 history API.'}
+                  </CardDescription>
+                </div>
+                <TabsList>
+                  <TabsTrigger value="trades">Trades</TabsTrigger>
+                  <TabsTrigger value="balance">Balance Activity</TabsTrigger>
+                </TabsList>
+              </CardHeader>
+              <CardContent>
+                <TabsContent value="trades" className="mt-0">
+                  {isLoadingTrades ? (
+                    <LoadingRows />
+                  ) : tradeActivityRows.length > 0 ? (
+                    <AppDataTable<TradeRow>
+                      data={tradeActivityRows}
+                      columns={tradeColumns}
+                      getRowId={(row) => row.rowId}
+                    />
+                  ) : (
+                    <EmptyState
+                      title="No trade activity"
+                      description="Only buy/sell deals and order records appear here. Adjust the date filters to load trade activity."
+                    />
+                  )}
+                </TabsContent>
+
+                <TabsContent value="balance" className="mt-0">
+                  {isLoadingTrades ? (
+                    <LoadingRows />
+                  ) : balanceRows.length > 0 ? (
+                    <AppDataTable<TradeRow>
+                      data={balanceRows}
+                      columns={balanceColumns}
+                      getRowId={(row) => row.rowId}
+                    />
+                  ) : (
+                    <EmptyState
+                      title="No balance activity"
+                      description="Balance, credit, commission, and other non-trade deal entries will appear here when available."
+                    />
+                  )}
+                </TabsContent>
+              </CardContent>
+            </Card>
+          </Tabs>
         </div>
       </div>
     </ProtectedRoute>

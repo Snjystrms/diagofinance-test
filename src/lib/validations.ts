@@ -113,6 +113,12 @@ export const resetPasswordSchema = z.object({
 export const tradingAccountSchema = z.object({
   accountType: z.string().min(1, 'Account type is required'),
   leverage: z.string().min(1, 'Leverage is required'),
+  balance: z
+    .string()
+    .optional()
+    .or(z.literal(''))
+    .refine((value) => !value || /^\d+(\.\d+)?$/.test(value), 'Balance must be a valid number')
+    .refine((value) => !value || Number(value) > 0, 'Balance must be greater than 0'),
   mainPassword: z.string()
     .min(8, 'Password must be at least 8 characters long')
     .regex(/[A-Z]/, 'Password must contain at least one uppercase letter')

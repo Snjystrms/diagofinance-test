@@ -32,8 +32,6 @@ import {
 } from '@/components/ui/form';
 import { ProtectedRoute } from '@/components/protected-route';
 import { Spinner } from '@/components/ui/spinner';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -42,34 +40,6 @@ import { ProfileCompletionDialog } from '@/components/profile-completion-dialog'
 import { useEffect } from 'react';
 import { Settings, Scale, FileText } from 'lucide-react';
 
-// Demo credentials for testing
-const DUMMY_CREDENTIALS = {
-  email: 'admin@example.com',
-  password: 'password123',
-};
-
-// Demo user data
-const DUMMY_USER = {
-  id: '1',
-  name: 'Admin User',
-  email: 'admin@example.com',
-  type: 'admin' as const,
-  role: 'admin',
-};
-
-// Demo user data for regular user
-const DUMMY_REGULAR_USER = {
-  id: '10',
-  name: 'Regular User',
-  email: 'user@example.com',
-  type: 'user' as const,
-  mobile: '1234567890',
-  status: true,
-  requires_usdt_transaction: false,
-  is_account_active: true,
-  sponsor_id: 'SPONSOR_123',
-};
-
 export function LoginClient() {
   const { loginMutation, forgotPasswordMutation } = useAuthMutations();
   const { login } = useAuth();
@@ -77,7 +47,6 @@ export function LoginClient() {
   const [isLoading, setIsLoading] = useState(false);
   const [isForgotPasswordLoading, setIsForgotPasswordLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
-  const [useDemoLogin, setUseDemoLogin] = useState(false); // Changed default to false (API mode)
   const [show2FA, setShow2FA] = useState(false);
   const [twoFACode, setTwoFACode] = useState('');
   const [pendingLoginData, setPendingLoginData] = useState<{ 
@@ -141,70 +110,46 @@ export function LoginClient() {
     setIsLoading(true);
 
     try {
-      if (useDemoLogin) {
-        // Demo login implementation
-        if (
-          data.email === DUMMY_CREDENTIALS.email &&
-          data.password === DUMMY_CREDENTIALS.password
-        ) {
-          // fake delay
-          await new Promise((resolve) => setTimeout(resolve, 1000));
-
-          const demoUser = DUMMY_USER; // Default to admin for demo
-          login(demoUser, 'dummy-token-12345');
-          toast.success('Login successful as admin! (Demo mode)');
-          router.push('/dashboard');
-        } else {
-          toast.error(
-            'Invalid demo credentials. Use admin@example.com / password123'
-          );
-        }
-      } else {
-        // Real API login
-        const response = await loginMutation.mutateAsync(data);
+      const response = await loginMutation.mutateAsync(data);
+      
+      // Check if 2FA is required (for both admin and user)
+      if (response?.requires_2fa || response?.data?.requires_2fa) {
+        const responseData = response.data || {};
+        const nestedData = (responseData as Record<string, unknown>)?.data || responseData;
+        const nestedDataObj = nestedData as Record<string, unknown>;
+        const userType = (nestedDataObj?.type as string | undefined) || 
+          ((nestedDataObj?.user as Record<string, unknown>)?.type as string | undefined) || 
+          ((nestedDataObj?.admin as Record<string, unknown>)?.type as string | undefined) || 
+          ((nestedDataObj?.manager as Record<string, unknown>)?.type as string | undefined) || 'user';
         
-        // Check if 2FA is required (for both admin and user)
-        if (response?.requires_2fa || response?.data?.requires_2fa) {
-          const responseData = response.data || {};
-          const nestedData = (responseData as Record<string, unknown>)?.data || responseData;
-          const nestedDataObj = nestedData as Record<string, unknown>;
-          const userType = (nestedDataObj?.type as string | undefined) || 
-            ((nestedDataObj?.user as Record<string, unknown>)?.type as string | undefined) || 
-            ((nestedDataObj?.admin as Record<string, unknown>)?.type as string | undefined) || 
-            ((nestedDataObj?.manager as Record<string, unknown>)?.type as string | undefined) || 'user';
-          
-          // Extract ID based on user type - check for specific ID fields first
-          let userId: string | number | undefined;
-          if (userType === 'admin') {
-            userId = (nestedDataObj?.admin_id as string | number | undefined) || 
-              ((nestedDataObj?.admin as Record<string, unknown>)?.id as string | number | undefined) || 
-              ((nestedDataObj?.user as Record<string, unknown>)?.id as string | number | undefined);
-          } else if (userType === 'manager') {
-            userId = (nestedDataObj?.manager_id as string | number | undefined) || 
-              ((nestedDataObj?.manager as Record<string, unknown>)?.id as string | number | undefined) || 
-              ((nestedDataObj?.user as Record<string, unknown>)?.id as string | number | undefined);
-          } else {
-            userId = (nestedDataObj?.user_id as string | number | undefined) || 
-              ((nestedDataObj?.user as Record<string, unknown>)?.id as string | number | undefined);
-          }
-          
-          if (userId) {
-            setPendingLoginData({
-              email: data.email,
-              password: data.password,
-              ...(userType === 'admin' ? { adminId: userId } : userType === 'manager' ? { managerId: userId } : { userId: userId }),
-              userType: userType as 'admin' | 'user' | 'manager',
-            });
-            setShow2FA(true);
-            toast.success('Please enter your 2FA code to complete login');
-          }
+        // Extract ID based on user type - check for specific ID fields first
+        let userId: string | number | undefined;
+        if (userType === 'admin') {
+          userId = (nestedDataObj?.admin_id as string | number | undefined) || 
+            ((nestedDataObj?.admin as Record<string, unknown>)?.id as string | number | undefined) || 
+            ((nestedDataObj?.user as Record<string, unknown>)?.id as string | number | undefined);
+        } else if (userType === 'manager') {
+          userId = (nestedDataObj?.manager_id as string | number | undefined) || 
+            ((nestedDataObj?.manager as Record<string, unknown>)?.id as string | number | undefined) || 
+            ((nestedDataObj?.user as Record<string, unknown>)?.id as string | number | undefined);
+        } else {
+          userId = (nestedDataObj?.user_id as string | number | undefined) || 
+            ((nestedDataObj?.user as Record<string, unknown>)?.id as string | number | undefined);
         }
-        // Otherwise loginMutation handles success & redirect
+
+        if (userId) {
+          setPendingLoginData({
+            email: data.email,
+            password: data.password,
+            ...(userType === 'admin' ? { adminId: userId } : userType === 'manager' ? { managerId: userId } : { userId: userId }),
+            userType: userType as 'admin' | 'user' | 'manager',
+          });
+          setShow2FA(true);
+          toast.success('Please enter your 2FA code to complete login');
+        }
       }
     } catch (_error) {
-      if (!useDemoLogin) {
-        toast.error('Login failed. Please check your credentials.');
-      }
+      toast.error('Login failed. Please check your credentials.');
     } finally {
       setIsLoading(false);
     }
@@ -392,43 +337,6 @@ export function LoginClient() {
                     </>
                   )}
               </p>
-
-              {/* Demo/API toggle only on login view */}
-              {!showForgotPassword && (
-                <div className="mt-4 flex items-center justify-center space-x-2">
-                  <Switch
-                    id="demo-mode"
-                    checked={useDemoLogin}
-                    onCheckedChange={setUseDemoLogin}
-                  />
-                  <Label htmlFor="demo-mode" className="text-sm">
-                    {useDemoLogin ? 'Demo Mode' : 'API Mode'}
-                  </Label>
-                </div>
-              )}
-
-              {/* Demo login notice */}
-              {/* {useDemoLogin && !showForgotPassword && (
-                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                  <p className="text-sm text-blue-800">
-                    <strong>Demo Mode:</strong> Use{' '}
-                    <code>admin@example.com</code> / <code>password123</code>
-                  </p>
-                  <p className="text-sm text-blue-700 mt-1">
-                    Select user type to see different sidebar navigation
-                  </p>
-                </div>
-              )} */}
-
-              {/* API login notice */}
-              {/* {!useDemoLogin && !showForgotPassword && (
-                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-md">
-                  <p className="text-sm text-green-800">
-                    <strong>API Mode:</strong> Connecting to real backend at{' '}
-                    <code>/auth/login</code>
-                  </p>
-                </div>
-              )} */}
             </div>
 
             <Card>
@@ -445,9 +353,7 @@ export function LoginClient() {
                     ? 'Enter the 6-digit code from your authenticator app'
                     : showForgotPassword
                       ? 'Enter your email to receive a password reset link'
-                      : useDemoLogin
-                        ? 'Enter demo credentials to test the application'
-                        : 'Enter your credentials to access your account'}
+                      : 'Enter your credentials to access your account'}
                 </CardDescription>
               </CardHeader>
             <CardContent>
@@ -571,11 +477,7 @@ export function LoginClient() {
                 <FormControl>
                   <Input
                     type="email"
-                    placeholder={
-                      useDemoLogin
-                        ? 'admin@example.com'
-                        : 'Enter your email'
-                    }
+                    placeholder="Enter your email"
                     {...field}
                   />
                 </FormControl>
@@ -592,12 +494,8 @@ export function LoginClient() {
                 <FormLabel>Password</FormLabel>
                 <FormControl>
                   <PasswordInput
-                    placeholder={
-                      useDemoLogin
-                        ? 'password123'
-                        : 'Enter your password'
-                    }
-                    autoComplete={useDemoLogin ? 'off' : 'current-password'}
+                    placeholder="Enter your password"
+                    autoComplete="current-password"
                     onChange={(e) => {
                       field.onChange(e);
                     }}
@@ -628,7 +526,7 @@ export function LoginClient() {
             {isLoading ? (
               <>
                 <Spinner size="sm" className="mr-2" />
-                {useDemoLogin ? 'Signing in (Demo)...' : 'Signing in...'}
+                Signing in...
               </>
             ) : (
               'Sign in'

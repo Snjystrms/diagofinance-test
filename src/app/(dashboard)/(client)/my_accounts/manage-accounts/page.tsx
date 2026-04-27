@@ -8,6 +8,7 @@ import {
   CheckCircle2,
   Clock,
   Copy,
+  DollarSign,
   Eye,
   Mail,
   MoreVertical,
@@ -26,20 +27,37 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
   userMT5AccountsApi,
+  type UserMT5DemoDepositData,
   type UserMT5AccountDetail,
   type UserMT5AccountListItem,
 } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 import { formatCurrency } from '@/lib/format';
+import { getFriendlyErrorMessage } from '@/lib/friendly-errors';
 import { formatDateTimeInIST } from '@/lib/formatters';
 
 type ManagedMT5Account = UserMT5AccountListItem & {
@@ -92,8 +110,9 @@ const getStatusBadge = (status: string | number | undefined) => {
 
 const groupAccounts = (accounts: ManagedMT5Account[]) => {
   const groups = {
-    mt4Live: [] as ManagedMT5Account[],
-    mt4Demo: [] as ManagedMT5Account[],
+    // MT4 account buckets are intentionally disabled for now.
+    // mt4Live: [] as ManagedMT5Account[],
+    // mt4Demo: [] as ManagedMT5Account[],
     mt5Live: [] as ManagedMT5Account[],
     mt5Demo: [] as ManagedMT5Account[],
   };
@@ -113,6 +132,7 @@ const groupAccounts = (accounts: ManagedMT5Account[]) => {
 
 const mt5AccountsRequests = new Map<string, Promise<ManagedMT5Account[]>>();
 const mt5AccountDetailRequests = new Map<string, Promise<UserMT5AccountDetail | null>>();
+const DEMO_DEPOSIT_OPTIONS = [100, 250, 500, 1000, 2500, 5000, 10000] as const;
 
 const loadAccountDetail = (account: UserMT5AccountListItem, token: string) => {
   const requestKey = `${token}:${account.id}`;
@@ -167,9 +187,14 @@ export default function ManageAccountsPage() {
   const [accounts, setAccounts] = useState<ManagedMT5Account[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<unknown | null>(null);
-  const [activeTab, setActiveTab] = useState<'mt5-live' | 'mt5-demo' | 'mt4-live' | 'mt4-demo'>('mt5-live');
+  // MT4 tabs are intentionally hidden for now. Restore the original union when MT4 UI returns.
+  // const [activeTab, setActiveTab] = useState<'mt5-live' | 'mt5-demo' | 'mt4-live' | 'mt4-demo'>('mt5-live');
+  const [activeTab, setActiveTab] = useState<'mt5-live' | 'mt5-demo'>('mt5-live');
   const [selectedAccount, setSelectedAccount] = useState<ManagedMT5Account | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [depositAccount, setDepositAccount] = useState<ManagedMT5Account | null>(null);
+  const [selectedDepositAmount, setSelectedDepositAmount] = useState('');
+  const [isSubmittingDeposit, setIsSubmittingDeposit] = useState(false);
 
   const fetchAccounts = useCallback(async () => {
     if (!token) {
@@ -201,10 +226,6 @@ export default function ManageAccountsPage() {
 
   const currentAccounts = useMemo(() => {
     switch (activeTab) {
-      case 'mt4-live':
-        return accountGroups.mt4Live;
-      case 'mt4-demo':
-        return accountGroups.mt4Demo;
       case 'mt5-demo':
         return accountGroups.mt5Demo;
       case 'mt5-live':
@@ -215,10 +236,6 @@ export default function ManageAccountsPage() {
 
   const activeTabTitle = useMemo(() => {
     switch (activeTab) {
-      case 'mt4-live':
-        return 'MT4 Live Accounts';
-      case 'mt4-demo':
-        return 'MT4 Demo Accounts';
       case 'mt5-demo':
         return 'MT5 Demo Accounts';
       case 'mt5-live':
@@ -237,11 +254,73 @@ export default function ManageAccountsPage() {
     setIsDetailsDialogOpen(true);
   };
 
-  const isMT4Tab = activeTab.startsWith('mt4');
+  const openDepositDialog = (account: ManagedMT5Account) => {
+    setDepositAccount(account);
+    setSelectedDepositAmount('');
+  };
+
+  const handleDepositDialogChange = (open: boolean) => {
+    if (!open) {
+      setDepositAccount(null);
+      setSelectedDepositAmount('');
+      setIsSubmittingDeposit(false);
+    }
+  };
+
+  const handleDemoDeposit = useCallback(async () => {
+    if (!token || !depositAccount) {
+      toast.error('Authentication required');
+      return;
+    }
+
+    const amount = Number.parseFloat(selectedDepositAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error('Select a deposit amount');
+      return;
+    }
+
+    try {
+      setIsSubmittingDeposit(true);
+      const response = await userMT5AccountsApi.demoDeposit(
+        {
+          account_ref: depositAccount.account_id,
+          amount,
+        },
+        token
+      );
+
+      const responseData = response.data as UserMT5DemoDepositData | undefined;
+
+      mt5AccountsRequests.delete(token);
+      mt5AccountDetailRequests.clear();
+      await fetchAccounts();
+
+      setDepositAccount(null);
+      setSelectedDepositAmount('');
+      const depositedAmount = responseData?.amount ?? amount;
+      toast.success(
+        response.message
+          ? `${response.message} (${formatCurrency(depositedAmount, 'USD')})`
+          : `Deposited ${formatCurrency(depositedAmount, 'USD')} successfully into ${depositAccount.account_id}.`
+      );
+    } catch (error) {
+      console.error('Demo MT5 deposit failed:', error);
+      toast.error(
+        getFriendlyErrorMessage(error, {
+          audience: 'client',
+          resource: 'demo MT5 deposit',
+          action: 'create',
+        })
+      );
+    } finally {
+      setIsSubmittingDeposit(false);
+    }
+  }, [depositAccount, fetchAccounts, selectedDepositAmount, token]);
 
   const AccountCard = ({ account }: { account: ManagedMT5Account }) => {
     const detail = account.detail;
     const accountMode = detail?.account_mode?.toLowerCase() === 'demo' ? 'DEMO' : 'LIVE';
+    const isDemoAccount = detail?.account_mode?.toLowerCase() === 'demo';
     const accountTypeName = detail?.accountType?.name ?? 'MT5 Account';
     const leverageValue = detail?.leverage ? `1:${detail.leverage}` : 'N/A';
     const groupName = detail?.group?.name ?? detail?.mt5_group_name ?? 'N/A';
@@ -365,6 +444,19 @@ export default function ManageAccountsPage() {
               Copy Login
             </Button>
           </div>
+
+          {isDemoAccount ? (
+            <div className="mt-4 border-t border-border/60 pt-4">
+              <Button
+                variant="ghost"
+                className="w-full justify-center text-primary hover:bg-primary/10 hover:text-primary"
+                onClick={() => openDepositDialog(account)}
+              >
+                <DollarSign className="mr-2 h-4 w-4" />
+                Deposit Funds
+              </Button>
+            </div>
+          ) : null}
         </CardContent>
       </Card>
     );
@@ -398,7 +490,7 @@ export default function ManageAccountsPage() {
         <Card className="mb-8 border border-border/60 bg-card/80 shadow-sm">
           <CardContent className="px-4 py-4">
             <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)} className="w-full">
-              <TabsList className="grid h-auto w-full grid-cols-4 rounded-lg bg-muted/50 p-1">
+              <TabsList className="grid h-auto w-full grid-cols-2 rounded-lg bg-muted/50 p-1">
                 <TabsTrigger
                   value="mt5-live"
                   className="rounded-md py-2 px-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
@@ -411,18 +503,8 @@ export default function ManageAccountsPage() {
                 >
                   MT5 Demo
                 </TabsTrigger>
-                <TabsTrigger
-                  value="mt4-live"
-                  className="rounded-md py-2 px-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                >
-                  MT4 Live
-                </TabsTrigger>
-                <TabsTrigger
-                  value="mt4-demo"
-                  className="rounded-md py-2 px-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                >
-                  MT4 Demo
-                </TabsTrigger>
+                {/* MT4 tabs intentionally hidden for now.
+                    Restore mt4-live and mt4-demo triggers here when MT4 UI is re-enabled. */}
               </TabsList>
             </Tabs>
           </CardContent>
@@ -440,25 +522,8 @@ export default function ManageAccountsPage() {
           />
         ) : null}
 
-        {isMT4Tab && !isLoading && !error && (
-          <Card className="mb-6 border-dashed border-amber-300 bg-amber-50/80 dark:border-amber-800 dark:bg-amber-950/20">
-            <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
-              <div>
-                <div className="mb-1 text-sm font-semibold text-amber-900 dark:text-amber-200">
-                  MT4 is coming soon
-                </div>
-                <p className="text-sm text-amber-800/80 dark:text-amber-300/80">
-                  MT4 account opening and management are not enabled yet. MT5 accounts are available now.
-                </p>
-              </div>
-              <Button asChild variant="outline">
-                <Link href="/my_accounts/open-trading-account">
-                  Open MT5 Account
-                </Link>
-              </Button>
-            </CardContent>
-          </Card>
-        )}
+        {/* MT4 coming-soon banner intentionally hidden for now.
+            Restore the previous MT4 notice card here when MT4 UI is re-enabled. */}
 
         {isLoading && (
           <div className="space-y-6">
@@ -494,12 +559,10 @@ export default function ManageAccountsPage() {
                     <Settings className="h-8 w-8 text-muted-foreground" />
                   </div>
                   <h3 className="mb-2 text-xl font-semibold">
-                    {isMT4Tab ? 'MT4 Accounts Coming Soon' : `No ${activeTabTitle}`}
+                    {`No ${activeTabTitle}`}
                   </h3>
                   <p className="mx-auto mb-6 max-w-md text-muted-foreground">
-                    {isMT4Tab
-                      ? 'MT4 account management is not available yet. Use the MT5 flow to create and review active trading accounts.'
-                      : `You don't have any ${activeTabTitle.toLowerCase()} yet. Open a new account to get started.`}
+                    {`You don't have any ${activeTabTitle.toLowerCase()} yet. Open a new account to get started.`}
                   </p>
                   <Button size="lg" asChild>
                     <Link href="/my_accounts/open-trading-account">
@@ -518,6 +581,56 @@ export default function ManageAccountsPage() {
           account={selectedAccount}
           initialDetail={selectedAccountDetail}
         />
+
+        <Dialog open={Boolean(depositAccount)} onOpenChange={handleDepositDialogChange}>
+          <DialogContent className="overflow-hidden border border-border/70 bg-card/95 p-0 shadow-xl sm:max-w-xl">
+            <DialogHeader className="border-b border-border/60 px-6 py-5">
+              <DialogTitle>Deposit Funds</DialogTitle>
+              <DialogDescription>
+                {depositAccount
+                  ? `Initiate deposit into ${depositAccount.account_id}`
+                  : 'Select a demo MT5 account and deposit amount.'}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-5 px-6 py-6">
+              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Demo deposit</div>
+                <div className="mt-2 text-sm text-foreground">
+                  Deposit a preset USD amount into this MT5 demo account and refresh the balance instantly.
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="text-sm font-medium text-foreground">Deposit Amount</div>
+                <Select value={selectedDepositAmount} onValueChange={setSelectedDepositAmount}>
+                  <SelectTrigger className="h-12 rounded-2xl border-border/70 bg-background/80 px-4">
+                    <SelectValue placeholder="Choose deposit amount" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DEMO_DEPOSIT_OPTIONS.map((amount) => (
+                      <SelectItem key={amount} value={String(amount)}>
+                        {`USD ${amount.toLocaleString('en-US')}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <DialogFooter className="gap-3 border-t border-border/60 px-6 py-5 sm:justify-center">
+              <Button variant="outline" className="min-w-36 rounded-xl" onClick={() => handleDepositDialogChange(false)}>
+                Close
+              </Button>
+              <Button
+                className="min-w-36 rounded-xl"
+                onClick={handleDemoDeposit}
+                disabled={isSubmittingDeposit || !selectedDepositAmount}
+              >
+                {isSubmittingDeposit ? 'Depositing...' : 'Deposit Now'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </ProtectedRoute>
   );

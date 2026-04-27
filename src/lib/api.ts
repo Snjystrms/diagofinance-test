@@ -1737,6 +1737,7 @@ export const accountTypesApi = {
 export interface UserMT5AccountCreateRequest {
   account_type_id: number;
   account_mode: "demo" | "live";
+  balance?: number;
   extra_fields: Record<string, unknown>;
   group_id: number;
   investor_password: string;
@@ -1822,6 +1823,31 @@ export interface UserMT5AccountDetail {
   };
 }
 
+export interface UserMT5DemoDepositRequest {
+  account_ref: string;
+  amount: number;
+}
+
+export interface UserMT5DemoDepositData {
+  mt5_account_id: string;
+  mt5_login: string | number;
+  amount: number;
+  mt5_balance_before: number;
+  mt5_balance_after: number;
+  wallet_balance_before: number;
+  wallet_balance_after: number;
+  comment: string;
+  mt5_result?: {
+    login?: number | string;
+    amount?: number;
+    comment?: string;
+    kind?: string;
+    method?: string;
+    result?: unknown;
+  };
+  demo: boolean;
+}
+
 // ---------- Admin MT5 Request Types ----------
 export interface MT5Request {
   uuid: string;
@@ -1878,6 +1904,13 @@ export const userMT5AccountsApi = {
     apiCall<{ mt5_account: UserMT5AccountDetail }>(`/user/mt5-account/${id}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  demoDeposit: (data: UserMT5DemoDepositRequest, token: string) =>
+    apiCall<UserMT5DemoDepositData>(`/user/mt5/demo-deposit`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     }),
 };
 

@@ -147,7 +147,9 @@ export function DashboardPageContent() {
   const [isStatisticsLoading, setIsStatisticsLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState<unknown | null>(null);
   const [statisticsPeriod, setStatisticsPeriod] = useState<7 | 30>(30);
-  const [activeTab, setActiveTab] = useState<'mt5-live' | 'mt5-demo' | 'mt4-live' | 'mt4-demo'>('mt5-live');
+  // MT4 dashboard tabs are intentionally hidden for now. Restore the original union when MT4 UI returns.
+  // const [activeTab, setActiveTab] = useState<'mt5-live' | 'mt5-demo' | 'mt4-live' | 'mt4-demo'>('mt5-live');
+  const [activeTab, setActiveTab] = useState<'mt5-live' | 'mt5-demo'>('mt5-live');
   const [selectedDashboardAccount, setSelectedDashboardAccount] = useState<DashboardTradingAccount | null>(null);
   const [isDashboardAccountDialogOpen, setIsDashboardAccountDialogOpen] = useState(false);
   const [dateRange] = useState<{ start_date?: string; end_date?: string }>({});
@@ -365,10 +367,6 @@ export function DashboardPageContent() {
   // Helper function to get tab title
   const getTabTitle = () => {
     switch (activeTab) {
-      case 'mt4-live':
-        return 'MT4 Live Accounts';
-      case 'mt4-demo':
-        return 'MT4 Demo Accounts';
       case 'mt5-live':
         return 'MT5 Live Accounts';
       case 'mt5-demo':
@@ -400,24 +398,14 @@ export function DashboardPageContent() {
     // Filter accounts based on active tab
     return allAccounts.filter((account) => {
       const isDemo = account.account_mode?.toLowerCase().includes('demo');
-      const isMT4 = activeTab.startsWith('mt4');
-      const isMT5 = activeTab.startsWith('mt5');
       const isLive = activeTab.includes('live');
       const isDemoTab = activeTab.includes('demo');
 
-      if (isMT4) {
-        // For now, we'll assume all accounts are MT5 since we don't have platform info
-        // This can be adjusted when platform data is available
-        return false;
+      if (isLive) {
+        return !isDemo;
       }
-
-      if (isMT5) {
-        if (isLive) {
-          return !isDemo;
-        }
-        if (isDemoTab) {
-          return isDemo;
-        }
+      if (isDemoTab) {
+        return isDemo;
       }
 
       return false;
@@ -1406,7 +1394,7 @@ export function DashboardPageContent() {
               <Card className="border-0 shadow-xl bg-card/70 backdrop-blur-sm">
                 <CardContent className="px-4 py-4">
                   <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)} className="w-full">
-                    <TabsList className="grid h-auto w-full grid-cols-4 rounded-lg bg-muted/50 p-1">
+                    <TabsList className="grid h-auto w-full grid-cols-2 rounded-lg bg-muted/50 p-1">
                       <TabsTrigger 
                         value="mt5-live" 
                         className="rounded-md py-2 px-2 text-sm transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
@@ -1429,28 +1417,8 @@ export function DashboardPageContent() {
                           <span className="hidden sm:inline text-xs">MT5 Demo</span>
                         </div>
                       </TabsTrigger>
-                      <TabsTrigger 
-                        value="mt4-live" 
-                        className="rounded-md py-2 px-2 text-sm transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
-                            4
-                          </div>
-                          <span className="hidden sm:inline text-xs">MT4 Live</span>
-                        </div>
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="mt4-demo" 
-                        className="rounded-md py-2 px-2 text-sm transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
-                            4
-                          </div>
-                          <span className="hidden sm:inline text-xs">MT4 Demo</span>
-                        </div>
-                      </TabsTrigger>
+                      {/* MT4 dashboard tabs intentionally hidden for now.
+                          Restore mt4-live and mt4-demo triggers here when MT4 UI is re-enabled. */}
                     </TabsList>
                   </Tabs>
                 </CardContent>
@@ -1471,7 +1439,6 @@ export function DashboardPageContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                   {currentAccounts.map((account) => {
                       const isDemo = account.account_mode?.toLowerCase().includes('demo');
-                      const isMT4 = activeTab.startsWith('mt4');
 
                       return (
                         <Card
@@ -1484,14 +1451,14 @@ export function DashboardPageContent() {
                               <div
                                 className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-primary/10 text-lg font-bold text-primary shadow-sm transition-transform duration-300 group-hover:scale-105"
                               >
-                                  <Image
-                                    src={isMT4 ? "/metatrader-4.svg" : "/metatrader-5.svg"}
-                                    alt={isMT4 ? "MetaTrader 4" : "MetaTrader 5"}
-                                    width={48}
-                                    height={48}
-                                    className="object-contain w-full h-full p-1.5"
-                                    priority
-                                  />
+                                <Image
+                                  src="/metatrader-5.svg"
+                                  alt="MetaTrader 5"
+                                  width={48}
+                                  height={48}
+                                  className="object-contain w-full h-full p-1.5"
+                                  priority
+                                />
                               </div>
                               <div className="min-w-0 flex-1 space-y-2">
                                 <div className="flex flex-wrap items-start gap-2">
@@ -1553,7 +1520,7 @@ export function DashboardPageContent() {
                                 <span className="text-xs text-muted-foreground">Platform</span>
                                 <div className="flex items-center gap-1.5">
                                   <TrendingUp className="h-3 w-3 text-primary" />
-                                  <span className="font-semibold text-sm text-foreground">{isMT4 ? 'MT4' : 'MT5'}</span>
+                                  <span className="font-semibold text-sm text-foreground">MT5</span>
                                 </div>
                               </div>
                               </div>
