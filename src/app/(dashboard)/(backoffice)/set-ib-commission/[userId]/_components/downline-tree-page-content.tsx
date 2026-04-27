@@ -59,6 +59,18 @@ const formatDateTime = (value?: string | null) => {
   return formatDateTimeInIST(value);
 };
 
+const USD_COMMISSION_FORMATTER = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+const formatCommissionAmount = (value?: number | null) => {
+  const amount = typeof value === 'number' && Number.isFinite(value) ? value : 0;
+  return USD_COMMISSION_FORMATTER.format(amount);
+};
+
 export function DownlineTreePageContent() {
   const params = useParams();
   const router = useRouter();
@@ -364,33 +376,39 @@ export function DownlineTreePageContent() {
   // Load user commissions
   const loadUserCommissions = useCallback(async (targetUserId: string | number) => {
     if (!token || !targetUserId) {
-      return;
+      return false;
     }
 
     try {
       setLoadingCommissions(true);
+      setSelectedUserId(targetUserId);
+      setCommissionData(null);
+      setCommissionDialogOpen(true);
+      setEditedCommissions({});
+      setEditingCommission(null);
       const response = await adminIbUserCommissionsApi.getUserCommissions(targetUserId, token);
       
       if (response.success && response.data) {
         const data = (response as unknown as { data: UserCommissionResponse["data"] }).data;
         setCommissionData(data);
-        setSelectedUserId(targetUserId);
-        setCommissionDialogOpen(true);
-        setEditedCommissions({});
-        setEditingCommission(null);
+        return true;
       } else {
+        setCommissionDialogOpen(false);
         toast.error(
           getAdminFriendlyErrorMessage("Failed to load commission data", {
             resource: "commission data",
             action: "load",
           })
         );
+        return false;
       }
     } catch (error: unknown) {
+      setCommissionDialogOpen(false);
       console.error("Failed to load user commissions:", error);
       toast.error(
         getAdminFriendlyErrorMessage(error, { resource: "commissions", action: "load" })
       );
+      return false;
     } finally {
       setLoadingCommissions(false);
     }
@@ -476,6 +494,38 @@ export function DownlineTreePageContent() {
         [field]: value,
       },
     }));
+  };
+
+  const renderCommissionAmountInput = (
+    commissionId: number,
+    field: keyof UserCommission,
+    value?: number | null,
+  ) => {
+    const normalizedValue =
+      typeof value === 'number' && Number.isFinite(value) ? value : 0;
+
+    return (
+      <div className="relative">
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">
+          $
+        </span>
+        <Input
+          type="number"
+          step="0.01"
+          min="0"
+          value={normalizedValue.toFixed(2)}
+          onChange={(event) => {
+            const nextValue = Number(event.target.value);
+            handleUpdateCommissionField(
+              commissionId,
+              field,
+              Number.isFinite(nextValue) ? nextValue : 0,
+            );
+          }}
+          className="h-9 border-dashed pl-7 text-right [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        />
+      </div>
+    );
   };
 
   // Handle node click for commission view
@@ -777,10 +827,16 @@ export function DownlineTreePageContent() {
           </DialogHeader>
 
           {loadingCommissions ? (
-            <BackofficeDetailDialogSkeleton fieldCount={8} sectionCount={2} />
+            <div className="flex flex-col items-center justify-center gap-3 py-8">
+              <Spinner className="h-8 w-8" />
+              <p className="text-sm text-muted-foreground">Loading commissions...</p>
+            </div>
           ) : commissionData ? (
             commissionData.commissions && commissionData.commissions.length > 0 ? (
               <div className="space-y-4">
+                <div className="rounded-lg border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                  All commission values in this table are shown in USD.
+                </div>
                 {/* Group commissions by MT5 Account */}
                 {(() => {
                   const groupedByAccount = commissionData.commissions.reduce(
@@ -853,106 +909,46 @@ export function DownlineTreePageContent() {
                                     {isEditing ? (
                                       <>
                                         <TableCell className="p-2">
-                                          <Input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            max="100"
-                                            value={((currentCommission.rate_ib ?? 0) * 100).toFixed(2)}
-                                            onChange={(e) =>
-                                              handleUpdateCommissionField(
-                                                commission.id,
-                                                "rate_ib",
-                                                parseFloat(e.target.value) / 100
-                                              )
-                                            }
-                                            className="w-full h-8 text-center"
-                                          />
+                                          {renderCommissionAmountInput(
+                                            commission.id,
+                                            'rate_ib',
+                                            currentCommission.rate_ib
+                                          )}
                                         </TableCell>
                                         <TableCell className="p-2">
-                                          <Input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            max="100"
-                                            value={((currentCommission.rate_sub_ib_1 ?? 0) * 100).toFixed(2)}
-                                            onChange={(e) =>
-                                              handleUpdateCommissionField(
-                                                commission.id,
-                                                "rate_sub_ib_1",
-                                                parseFloat(e.target.value) / 100
-                                              )
-                                            }
-                                            className="w-full h-8 text-center"
-                                          />
+                                          {renderCommissionAmountInput(
+                                            commission.id,
+                                            'rate_sub_ib_1',
+                                            currentCommission.rate_sub_ib_1
+                                          )}
                                         </TableCell>
                                         <TableCell className="p-2">
-                                          <Input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            max="100"
-                                            value={((currentCommission.rate_sub_ib_2 ?? 0) * 100).toFixed(2)}
-                                            onChange={(e) =>
-                                              handleUpdateCommissionField(
-                                                commission.id,
-                                                "rate_sub_ib_2",
-                                                parseFloat(e.target.value) / 100
-                                              )
-                                            }
-                                            className="w-full h-8 text-center"
-                                          />
+                                          {renderCommissionAmountInput(
+                                            commission.id,
+                                            'rate_sub_ib_2',
+                                            currentCommission.rate_sub_ib_2
+                                          )}
                                         </TableCell>
                                         <TableCell className="p-2">
-                                          <Input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            max="100"
-                                            value={((currentCommission.rate_sub_ib_3 ?? 0) * 100).toFixed(2)}
-                                            onChange={(e) =>
-                                              handleUpdateCommissionField(
-                                                commission.id,
-                                                "rate_sub_ib_3",
-                                                parseFloat(e.target.value) / 100
-                                              )
-                                            }
-                                            className="w-full h-8 text-center"
-                                          />
+                                          {renderCommissionAmountInput(
+                                            commission.id,
+                                            'rate_sub_ib_3',
+                                            currentCommission.rate_sub_ib_3
+                                          )}
                                         </TableCell>
                                         <TableCell className="p-2">
-                                          <Input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            max="100"
-                                            value={((currentCommission.rate_sub_ib_4 ?? 0) * 100).toFixed(2)}
-                                            onChange={(e) =>
-                                              handleUpdateCommissionField(
-                                                commission.id,
-                                                "rate_sub_ib_4",
-                                                parseFloat(e.target.value) / 100
-                                              )
-                                            }
-                                            className="w-full h-8 text-center"
-                                          />
+                                          {renderCommissionAmountInput(
+                                            commission.id,
+                                            'rate_sub_ib_4',
+                                            currentCommission.rate_sub_ib_4
+                                          )}
                                         </TableCell>
                                         <TableCell className="p-2">
-                                          <Input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            max="100"
-                                            value={((currentCommission.rate_sub_ib_5 ?? 0) * 100).toFixed(2)}
-                                            onChange={(e) =>
-                                              handleUpdateCommissionField(
-                                                commission.id,
-                                                "rate_sub_ib_5",
-                                                parseFloat(e.target.value) / 100
-                                              )
-                                            }
-                                            className="w-full h-8 text-center"
-                                          />
+                                          {renderCommissionAmountInput(
+                                            commission.id,
+                                            'rate_sub_ib_5',
+                                            currentCommission.rate_sub_ib_5
+                                          )}
                                         </TableCell>
                                         <TableCell className="p-2 text-center">
                                           <select
@@ -973,12 +969,12 @@ export function DownlineTreePageContent() {
                                       </>
                                     ) : (
                                       <>
-                                        <TableCell className="text-center">{(commission.rate_ib * 100).toFixed(2)}%</TableCell>
-                                        <TableCell className="text-center">{(commission.rate_sub_ib_1 * 100).toFixed(2)}%</TableCell>
-                                        <TableCell className="text-center">{(commission.rate_sub_ib_2 * 100).toFixed(2)}%</TableCell>
-                                        <TableCell className="text-center">{(commission.rate_sub_ib_3 * 100).toFixed(2)}%</TableCell>
-                                        <TableCell className="text-center">{(commission.rate_sub_ib_4 * 100).toFixed(2)}%</TableCell>
-                                        <TableCell className="text-center">{(commission.rate_sub_ib_5 * 100).toFixed(2)}%</TableCell>
+                                        <TableCell className="text-center font-medium">{formatCommissionAmount(commission.rate_ib)}</TableCell>
+                                        <TableCell className="text-center font-medium">{formatCommissionAmount(commission.rate_sub_ib_1)}</TableCell>
+                                        <TableCell className="text-center font-medium">{formatCommissionAmount(commission.rate_sub_ib_2)}</TableCell>
+                                        <TableCell className="text-center font-medium">{formatCommissionAmount(commission.rate_sub_ib_3)}</TableCell>
+                                        <TableCell className="text-center font-medium">{formatCommissionAmount(commission.rate_sub_ib_4)}</TableCell>
+                                        <TableCell className="text-center font-medium">{formatCommissionAmount(commission.rate_sub_ib_5)}</TableCell>
                                         <TableCell className="text-center">
                                           {commission.status ? (
                                             <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">

@@ -49,6 +49,7 @@ export default function SetIbCommissionPage() {
     total_pages: 1,
     total: 0,
   });
+  const [pendingDownlineUserId, setPendingDownlineUserId] = useState<number | null>(null);
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
@@ -163,6 +164,7 @@ export default function SetIbCommissionPage() {
   }, [loadUsers]);
 
   const handleViewDownline = useCallback((user: IbUserForCommission) => {
+    setPendingDownlineUserId(user.id);
     router.push(`/set-ib-commission/${user.id}`);
   }, [router]);
 
@@ -233,21 +235,27 @@ export default function SetIbCommissionPage() {
         enableSorting: false,
         cell: ({ row }) => {
           const user = row.original;
+          const isPending = pendingDownlineUserId === user.id;
           return (
             <Button
               size="sm"
               variant="outline"
               onClick={() => handleViewDownline(user)}
+              disabled={isPending}
               className="flex items-center gap-2"
             >
-              <Network className="h-4 w-4" />
+              {isPending ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <Network className="h-4 w-4" />
+              )}
               View Downline
             </Button>
           );
         },
       },
     ],
-    [handleViewDownline],
+    [handleViewDownline, pendingDownlineUserId],
   );
 
   const renderTableSection = () => {

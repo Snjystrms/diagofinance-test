@@ -419,6 +419,32 @@ const themeSwatches: ThemeSwatch[] = [
     }
   },
   {
+    id: "classic-bw",
+    name: "Classic B/W",
+    leftColor: "#000000",
+    rightColor: "#f5f5f5",
+    cssVariables: {
+      primary: "#fafafa",
+      secondary: "#d4d4d4",
+      accent: "#737373",
+      background: "#000000",
+      foreground: "#fafafa",
+      border: "#262626",
+      muted: "#111111",
+      mutedForeground: "#a3a3a3",
+      sidebar: {
+        background: "#050505",
+        foreground: "#fafafa",
+        primary: "#fafafa",
+        primaryForeground: "#050505",
+        accent: "#171717",
+        accentForeground: "#f5f5f5",
+        border: "#262626",
+        ring: "#d4d4d4"
+      }
+    }
+  },
+  {
     id: "graphite",
     name: "Graphite",
     leftColor: "#111827",

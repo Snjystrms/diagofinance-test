@@ -1,13 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import {
+  CircleDollarSign,
   Copy,
   Edit,
+  Layers3,
+  Network,
   RefreshCw,
   Save,
   Search,
@@ -27,7 +30,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Table,
@@ -39,6 +41,7 @@ import {
 } from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import {
+  API_BASE_URL,
   adminIbUsersApi,
   adminIbUserCommissionsApi,
   type AdminIbUser,
@@ -58,6 +61,18 @@ const formatDateTime = (value?: string | null) => {
     return value;
   }
   return formatDateTimeInIST(value);
+};
+
+const USD_COMMISSION_FORMATTER = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 2,
+});
+
+const formatCommissionAmount = (value?: number | null) => {
+  const amount = typeof value === "number" && Number.isFinite(value) ? value : 0;
+  return USD_COMMISSION_FORMATTER.format(amount);
 };
 
 const deriveFullName = (user: AdminIbUser) => {
@@ -92,6 +107,33 @@ const deriveIbName = (user: AdminIbUser) => {
 
 const derivePartnerId = (user: AdminIbUser) => {
   return user.partner_id ?? "—";
+};
+
+const getUserActionKey = (user: AdminIbUser) => {
+  return String(user.id ?? user.uuid ?? user.email ?? user.name ?? "");
+};
+
+const resolveNumericUserId = (user: AdminIbUser) => {
+  if (typeof user.id === "number" && Number.isFinite(user.id)) {
+    return user.id;
+  }
+
+  if (typeof user.id === "string") {
+    const trimmedId = user.id.trim();
+    if (trimmedId.length > 0 && !Number.isNaN(Number(trimmedId))) {
+      return trimmedId;
+    }
+  }
+
+  return null;
+};
+
+type RowActionType = "level" | "commission" | "tree";
+
+type UsersByLevelPreviewResponse = {
+  success?: boolean;
+  message?: string;
+  data?: unknown;
 };
 
 const deriveReferralLink = (user: AdminIbUser): string => {
@@ -137,6 +179,7 @@ const getStatusBadge = (status: number | string | boolean | undefined) => {
 
 export default function IbUsersPage() {
   const { token } = useAuth();
+  const router = useRouter();
 
   const [users, setUsers] = useState<AdminIbUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -156,6 +199,13 @@ export default function IbUsersPage() {
   const [editingCommission, setEditingCommission] = useState<UserCommission | null>(null);
   const [editedCommissions, setEditedCommissions] = useState<Record<number, Partial<UserCommission>>>({});
   const [savingCommission, setSavingCommission] = useState<number | null>(null);
+  const [rowActionState, setRowActionState] = useState<{
+    action: RowActionType | null;
+    userKey: string | null;
+  }>({
+    action: null,
+    userKey: null,
+  });
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
@@ -271,46 +321,124 @@ export default function IbUsersPage() {
 
   const loadUserCommissions = useCallback(async (userId: string | number) => {
     if (!token || !userId) {
-      return;
+      return false;
     }
 
     try {
       setLoadingCommissions(true);
+      setSelectedUserId(userId);
+      setCommissionData(null);
+      setCommissionDialogOpen(true);
       const response = await adminIbUserCommissionsApi.getUserCommissions(userId, token);
       
       if (response.success && response.data) {
         const data = (response as unknown as { data: UserCommissionResponse["data"] }).data;
         setCommissionData(data);
-        setSelectedUserId(userId);
-        setCommissionDialogOpen(true);
+        return true;
       } else {
+        setCommissionDialogOpen(false);
         toast.error(
           getAdminFriendlyErrorMessage("Failed to load commission data", {
             resource: "commission data",
             action: "load",
           })
         );
+        return false;
       }
     } catch (error: unknown) {
+      setCommissionDialogOpen(false);
       console.error("Failed to load user commissions:", error);
       toast.error(
         getAdminFriendlyErrorMessage(error, { resource: "commissions", action: "load" })
       );
+      return false;
     } finally {
       setLoadingCommissions(false);
     }
   }, [token]);
 
-  const handleViewCommission = useCallback((user: AdminIbUser) => {
-    const userId = user.id ?? user.uuid;
+  const handleViewCommission = useCallback(async (user: AdminIbUser) => {
+    const userId = resolveNumericUserId(user);
     if (!userId) {
       toast.error("User ID not available");
       return;
     }
+
     setEditedCommissions({});
     setEditingCommission(null);
-    void loadUserCommissions(userId);
+    setRowActionState({
+      action: "commission",
+      userKey: getUserActionKey(user),
+    });
+
+    try {
+      await loadUserCommissions(userId);
+    } finally {
+      setRowActionState({
+        action: null,
+        userKey: null,
+      });
+    }
   }, [loadUserCommissions]);
+
+  const handleOpenDownline = useCallback(
+    async (user: AdminIbUser, action: Extract<RowActionType, "level" | "tree">) => {
+      if (!token) {
+        toast.error("Authentication is required");
+        return;
+      }
+
+      const userId = resolveNumericUserId(user);
+      if (!userId) {
+        toast.error("User ID not available");
+        return;
+      }
+
+      setRowActionState({
+        action,
+        userKey: getUserActionKey(user),
+      });
+
+      let keepPendingUntilRouteChange = false;
+
+      try {
+        const response = await fetch(
+          `${API_BASE_URL}/admin/ib-management/users-by-level?user_id=${userId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+            cache: "no-store",
+          }
+        );
+
+        const payload = (await response.json()) as UsersByLevelPreviewResponse;
+
+        if (!response.ok || !payload.success || !payload.data) {
+          throw new Error(payload.message || "Failed to load downline users");
+        }
+
+        keepPendingUntilRouteChange = true;
+        router.push(`/set-ib-commission/${userId}`);
+      } catch (error: unknown) {
+        console.error("Failed to open downline view:", error);
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "downline users",
+            action: "load",
+          })
+        );
+      } finally {
+        if (!keepPendingUntilRouteChange) {
+          setRowActionState({
+            action: null,
+            userKey: null,
+          });
+        }
+      }
+    },
+    [router, token]
+  );
 
   const handleEditCommission = (commission: UserCommission) => {
     setEditingCommission(commission);
@@ -392,6 +520,48 @@ export default function IbUsersPage() {
         [field]: value,
       },
     }));
+  };
+
+  const isRowActionPending = useCallback(
+    (user: AdminIbUser, action: RowActionType) => {
+      return (
+        rowActionState.userKey === getUserActionKey(user) &&
+        rowActionState.action === action
+      );
+    },
+    [rowActionState]
+  );
+
+  const renderCommissionAmountInput = (
+    commissionId: number,
+    field: keyof UserCommission,
+    value?: number | null,
+  ) => {
+    const normalizedValue =
+      typeof value === "number" && Number.isFinite(value) ? value : 0;
+
+    return (
+      <div className="relative">
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">
+          $
+        </span>
+        <Input
+          type="number"
+          step="0.01"
+          min="0"
+          value={normalizedValue.toFixed(2)}
+          onChange={(event) => {
+            const nextValue = Number(event.target.value);
+            handleUpdateCommissionField(
+              commissionId,
+              field,
+              Number.isFinite(nextValue) ? nextValue : 0,
+            );
+          }}
+          className="h-9 border-dashed pl-7 text-right [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        />
+      </div>
+    );
   };
 
   const columns: ColumnDef<AdminIbUser>[] = useMemo(
@@ -508,9 +678,9 @@ export default function IbUsersPage() {
           return (
             <Button
               size="sm"
-              variant="destructive"
+              variant="outline"
               onClick={handleCopy}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="h-9 rounded-full border-slate-200 bg-background px-3.5 text-slate-700 shadow-sm transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-200 dark:hover:bg-slate-900/70"
             >
               <Copy className="mr-2 h-4 w-4" />
               Copy
@@ -524,47 +694,58 @@ export default function IbUsersPage() {
         enableSorting: false,
         cell: ({ row }) => {
           const user = row.original;
-
-          const handleViewLevel = () => {
-            // TODO: Implement view level functionality
-            const userId = user.id ?? user.uuid;
-            toast(`View Level for user: ${userId}`);
-          };
-
-          const handleViewCommissionClick = () => {
-            handleViewCommission(user);
-          };
-
-          const handleTreeChart = () => {
-            // TODO: Implement tree chart functionality
-            const userId = user.id ?? user.uuid;
-            toast(`Tree Chart for user: ${userId}`);
-          };
+          const loadingLevel = isRowActionPending(user, "level");
+          const loadingCommission = isRowActionPending(user, "commission");
+          const loadingTree = isRowActionPending(user, "tree");
 
           return (
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Button
                 size="sm"
-                variant="destructive"
-                onClick={handleViewLevel}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                variant="outline"
+                onClick={() => {
+                  void handleOpenDownline(user, "level");
+                }}
+                disabled={loadingLevel || loadingCommission || loadingTree}
+                className="h-9 rounded-full border-sky-200 bg-sky-50 px-3.5 text-sky-700 shadow-sm transition-colors hover:bg-sky-100 hover:text-sky-800 dark:border-sky-900/70 dark:bg-sky-950/30 dark:text-sky-200"
               >
+                {loadingLevel ? (
+                  <Spinner className="mr-2 h-4 w-4" />
+                ) : (
+                  <Layers3 className="mr-2 h-4 w-4" />
+                )}
                 View Level
               </Button>
               <Button
                 size="sm"
-                variant="destructive"
-                onClick={handleViewCommissionClick}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                variant="outline"
+                onClick={() => {
+                  void handleViewCommission(user);
+                }}
+                disabled={loadingLevel || loadingCommission || loadingTree}
+                className="h-9 rounded-full border-emerald-200 bg-emerald-50 px-3.5 text-emerald-700 shadow-sm transition-colors hover:bg-emerald-100 hover:text-emerald-800 dark:border-emerald-900/70 dark:bg-emerald-950/30 dark:text-emerald-200"
               >
+                {loadingCommission ? (
+                  <Spinner className="mr-2 h-4 w-4" />
+                ) : (
+                  <CircleDollarSign className="mr-2 h-4 w-4" />
+                )}
                 View Commission
               </Button>
               <Button
                 size="sm"
-                variant="destructive"
-                onClick={handleTreeChart}
-                className="bg-red-600 hover:bg-red-700 text-white"
+                variant="outline"
+                onClick={() => {
+                  void handleOpenDownline(user, "tree");
+                }}
+                disabled={loadingLevel || loadingCommission || loadingTree}
+                className="h-9 rounded-full border-amber-200 bg-amber-50 px-3.5 text-amber-700 shadow-sm transition-colors hover:bg-amber-100 hover:text-amber-800 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-200"
               >
+                {loadingTree ? (
+                  <Spinner className="mr-2 h-4 w-4" />
+                ) : (
+                  <Network className="mr-2 h-4 w-4" />
+                )}
                 Tree Chart
               </Button>
             </div>
@@ -572,7 +753,7 @@ export default function IbUsersPage() {
         },
       },
     ],
-    [handleViewCommission],
+    [handleOpenDownline, handleViewCommission, isRowActionPending],
   );
 
   const renderTableSection = () => {
@@ -621,7 +802,9 @@ export default function IbUsersPage() {
           const identifier =
             row.id ??
             row.uuid ??
-            `${row.email ?? row.name ?? Math.random().toString(36).slice(2)}`;
+            row.email ??
+            row.name ??
+            getUserActionKey(row);
           return String(identifier);
         }}
       />
@@ -703,11 +886,15 @@ export default function IbUsersPage() {
           </DialogHeader>
 
           {loadingCommissions ? (
-            <div className="flex items-center justify-center py-8">
+            <div className="flex flex-col items-center justify-center gap-3 py-8">
               <Spinner className="h-8 w-8" />
+              <p className="text-sm text-muted-foreground">Loading commissions...</p>
             </div>
           ) : commissionData ? (
             <div className="space-y-4">
+              <div className="rounded-lg border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
+                All commission values in this table are shown in USD.
+              </div>
               {/* Group commissions by MT5 Account */}
               {(() => {
                 const groupedByAccount = commissionData.commissions.reduce(
@@ -780,106 +967,46 @@ export default function IbUsersPage() {
                                     {isEditing ? (
                                       <>
                                         <TableCell className="p-2">
-                                          <Input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            max="100"
-                                            value={((currentCommission.rate_ib ?? 0) * 100).toFixed(2)}
-                                            onChange={(e) =>
-                                              handleUpdateCommissionField(
-                                                commission.id,
-                                                "rate_ib",
-                                                parseFloat(e.target.value) / 100
-                                              )
-                                            }
-                                            className="w-full h-8 text-center"
-                                          />
+                                          {renderCommissionAmountInput(
+                                            commission.id,
+                                            "rate_ib",
+                                            currentCommission.rate_ib
+                                          )}
                                         </TableCell>
                                         <TableCell className="p-2">
-                                          <Input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            max="100"
-                                            value={((currentCommission.rate_sub_ib_1 ?? 0) * 100).toFixed(2)}
-                                            onChange={(e) =>
-                                              handleUpdateCommissionField(
-                                                commission.id,
-                                                "rate_sub_ib_1",
-                                                parseFloat(e.target.value) / 100
-                                              )
-                                            }
-                                            className="w-full h-8 text-center"
-                                          />
+                                          {renderCommissionAmountInput(
+                                            commission.id,
+                                            "rate_sub_ib_1",
+                                            currentCommission.rate_sub_ib_1
+                                          )}
                                         </TableCell>
                                         <TableCell className="p-2">
-                                          <Input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            max="100"
-                                            value={((currentCommission.rate_sub_ib_2 ?? 0) * 100).toFixed(2)}
-                                            onChange={(e) =>
-                                              handleUpdateCommissionField(
-                                                commission.id,
-                                                "rate_sub_ib_2",
-                                                parseFloat(e.target.value) / 100
-                                              )
-                                            }
-                                            className="w-full h-8 text-center"
-                                          />
+                                          {renderCommissionAmountInput(
+                                            commission.id,
+                                            "rate_sub_ib_2",
+                                            currentCommission.rate_sub_ib_2
+                                          )}
                                         </TableCell>
                                         <TableCell className="p-2">
-                                          <Input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            max="100"
-                                            value={((currentCommission.rate_sub_ib_3 ?? 0) * 100).toFixed(2)}
-                                            onChange={(e) =>
-                                              handleUpdateCommissionField(
-                                                commission.id,
-                                                "rate_sub_ib_3",
-                                                parseFloat(e.target.value) / 100
-                                              )
-                                            }
-                                            className="w-full h-8 text-center"
-                                          />
+                                          {renderCommissionAmountInput(
+                                            commission.id,
+                                            "rate_sub_ib_3",
+                                            currentCommission.rate_sub_ib_3
+                                          )}
                                         </TableCell>
                                         <TableCell className="p-2">
-                                          <Input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            max="100"
-                                            value={((currentCommission.rate_sub_ib_4 ?? 0) * 100).toFixed(2)}
-                                            onChange={(e) =>
-                                              handleUpdateCommissionField(
-                                                commission.id,
-                                                "rate_sub_ib_4",
-                                                parseFloat(e.target.value) / 100
-                                              )
-                                            }
-                                            className="w-full h-8 text-center"
-                                          />
+                                          {renderCommissionAmountInput(
+                                            commission.id,
+                                            "rate_sub_ib_4",
+                                            currentCommission.rate_sub_ib_4
+                                          )}
                                         </TableCell>
                                         <TableCell className="p-2">
-                                          <Input
-                                            type="number"
-                                            step="0.01"
-                                            min="0"
-                                            max="100"
-                                            value={((currentCommission.rate_sub_ib_5 ?? 0) * 100).toFixed(2)}
-                                            onChange={(e) =>
-                                              handleUpdateCommissionField(
-                                                commission.id,
-                                                "rate_sub_ib_5",
-                                                parseFloat(e.target.value) / 100
-                                              )
-                                            }
-                                            className="w-full h-8 text-center"
-                                          />
+                                          {renderCommissionAmountInput(
+                                            commission.id,
+                                            "rate_sub_ib_5",
+                                            currentCommission.rate_sub_ib_5
+                                          )}
                                         </TableCell>
                                         <TableCell className="p-2 text-center">
                                           <select
@@ -900,12 +1027,12 @@ export default function IbUsersPage() {
                                       </>
                                     ) : (
                                       <>
-                                        <TableCell className="text-center">{(commission.rate_ib * 100).toFixed(2)}%</TableCell>
-                                        <TableCell className="text-center">{(commission.rate_sub_ib_1 * 100).toFixed(2)}%</TableCell>
-                                        <TableCell className="text-center">{(commission.rate_sub_ib_2 * 100).toFixed(2)}%</TableCell>
-                                        <TableCell className="text-center">{(commission.rate_sub_ib_3 * 100).toFixed(2)}%</TableCell>
-                                        <TableCell className="text-center">{(commission.rate_sub_ib_4 * 100).toFixed(2)}%</TableCell>
-                                        <TableCell className="text-center">{(commission.rate_sub_ib_5 * 100).toFixed(2)}%</TableCell>
+                                        <TableCell className="text-center font-medium">{formatCommissionAmount(commission.rate_ib)}</TableCell>
+                                        <TableCell className="text-center font-medium">{formatCommissionAmount(commission.rate_sub_ib_1)}</TableCell>
+                                        <TableCell className="text-center font-medium">{formatCommissionAmount(commission.rate_sub_ib_2)}</TableCell>
+                                        <TableCell className="text-center font-medium">{formatCommissionAmount(commission.rate_sub_ib_3)}</TableCell>
+                                        <TableCell className="text-center font-medium">{formatCommissionAmount(commission.rate_sub_ib_4)}</TableCell>
+                                        <TableCell className="text-center font-medium">{formatCommissionAmount(commission.rate_sub_ib_5)}</TableCell>
                                         <TableCell className="text-center">
                                           {commission.status ? (
                                             <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
