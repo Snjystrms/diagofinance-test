@@ -181,7 +181,7 @@ interface LoginResponse {
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
 
-### Adding New Pages
+### Adding New Pages ###
 
 1. Create page component in appropriate directory
 2. Add route protection if needed
