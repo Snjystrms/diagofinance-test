@@ -1748,6 +1748,7 @@ export interface UserMT5AccountCreateRequest {
 export interface UserMT5AccountCreateData {
   login: number | string;
   name: string;
+  server: string;
   group: string;
   leverage: number | string;
   main_password: string;
@@ -1926,6 +1927,8 @@ export interface Mt5SdkPosition {
   PriceSL?: number;
   PriceTP?: number;
   Profit?: number;
+  volume?: number | null;
+  volume_raw?: number | null;
   Volume?: number;
   VolumeExt?: number;
   TimeCreate?: number;
@@ -1965,6 +1968,8 @@ export interface Mt5SdkTradeRecord {
   Commission?: number;
   Fee?: number;
   Storage?: number;
+  volume?: number | null;
+  volume_raw?: number | null;
   Volume?: number;
   VolumeClosed?: number;
   VolumeExt?: number;
@@ -3941,6 +3946,17 @@ export interface AdminDashboardTransactionGraph {
   data: AdminDashboardTransactionGraphData[];
 }
 
+export interface AdminDashboardClientsGraphData {
+  date: string;
+  clients: number;
+}
+
+export interface AdminDashboardClientsGraph {
+  start_date: string;
+  end_date: string;
+  data: AdminDashboardClientsGraphData[];
+}
+
 export interface AdminDashboardSummaryMetrics {
   daily: {
     deposit: number;
@@ -3967,6 +3983,7 @@ export interface AdminDashboardSummaryMetrics {
 export interface AdminDashboardData {
   kpis: AdminDashboardKpis;
   transaction_graph: AdminDashboardTransactionGraph;
+  clients_graph: AdminDashboardClientsGraph;
   summary_metrics: AdminDashboardSummaryMetrics;
 }
 

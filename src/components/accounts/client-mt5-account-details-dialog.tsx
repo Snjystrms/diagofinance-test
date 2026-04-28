@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Copy, Mail, User, Wallet } from "lucide-react";
+import { Copy } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -18,9 +17,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { type UserMT5AccountDetail, userMT5AccountsApi } from "@/lib/api";
-import { formatCurrency } from "@/lib/format";
-import { formatDateTimeInIST } from "@/lib/formatters";
-
 type AccountSummary = {
   id: number;
   account_id: string;
@@ -30,18 +26,35 @@ type AccountSummary = {
   balance?: number | null;
 };
 
-function formatDateTime(value?: string) {
-  if (!value) {
-    return "N/A";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return formatDateTimeInIST(value);
+function formatMode(value?: string) {
+  return value?.toLowerCase() === "demo" ? "DEMO" : "LIVE";
 }
+
+function normalizeCurrencyCode(value?: string) {
+  if (!value) return "USD";
+
+  const match = value.toUpperCase().match(/\b[A-Z]{3}\b/);
+  if (match) {
+    return match[0];
+  }
+
+  const trimmed = value.trim().toUpperCase();
+  return trimmed.length >= 3 ? trimmed.slice(0, 3) : "USD";
+}
+
+function formatTradingAmount(amount: number | string | null | undefined, currency: string) {
+  const normalizedAmount =
+    amount === undefined || amount === null || Number.isNaN(Number(amount))
+      ? 0
+      : Number(amount);
+
+  return `${currency} ${normalizedAmount.toFixed(2)}`;
+}
+
+type DetailWithRuntimeMetrics = UserMT5AccountDetail & {
+  equity?: string | number;
+  free_margin?: string | number;
+};
 
 function StatusBadge({ status }: { status?: string | number }) {
   const normalizedStatus = String(status ?? "").toLowerCase();
@@ -71,6 +84,27 @@ function StatusBadge({ status }: { status?: string | number }) {
   );
 }
 
+function InfoMetric({
+  label,
+  value,
+  className = "",
+}: {
+  label: string;
+  value: string;
+  className?: string;
+}) {
+  return (
+    <div className={`space-y-1 ${className}`}>
+      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
+      <div className="whitespace-nowrap text-2xl font-semibold tracking-tight text-foreground">
+        {value}
+      </div>
+    </div>
+  );
+}
+
 export function ClientMt5AccountDetailsDialog({
   open,
   onOpenChange,
@@ -85,6 +119,14 @@ export function ClientMt5AccountDetailsDialog({
   const { token } = useAuth();
   const [detail, setDetail] = useState<UserMT5AccountDetail | null>(initialDetail);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const detailMetrics = detail as DetailWithRuntimeMetrics | null;
+  const currency = normalizeCurrencyCode(detail?.base_currency);
+  const accountTypeName = detail?.accountType?.name ?? "MT5 Account";
+  const balanceValue = formatTradingAmount(account?.balance, currency);
+  const equityValue = formatTradingAmount(detailMetrics?.equity, currency);
+  const freeMarginValue = formatTradingAmount(detailMetrics?.free_margin, currency);
+  const leverageValue = detail?.leverage ? `1:${detail.leverage}` : "N/A";
+  const mt5Mode = formatMode(detail?.account_mode);
 
   useEffect(() => {
     setDetail(initialDetail);
@@ -127,169 +169,112 @@ export function ClientMt5AccountDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[82vh] max-w-2xl overflow-y-auto">
+      <DialogContent className="max-h-[82vh] max-w-2xl overflow-y-auto rounded-2xl border border-border/70 p-0">
         <DialogHeader>
-          <DialogTitle>{detail?.accountType?.name ?? "MT5 Account Details"}</DialogTitle>
-          <DialogDescription>
-            Review the MT5 account credentials and metadata returned by the account management APIs.
-          </DialogDescription>
+          <div className="px-6 pt-6">
+            <DialogTitle className="text-3xl font-semibold tracking-tight text-foreground">
+              MT5 Account Details
+            </DialogTitle>
+          </div>
         </DialogHeader>
 
         {!account ? (
-          <div className="py-6 text-sm text-muted-foreground">No account details available.</div>
+          <div className="px-6 py-6 text-sm text-muted-foreground">No account details available.</div>
         ) : isLoadingDetail && !detail ? (
-          <div className="grid gap-3 py-1 md:grid-cols-2">
-            {Array.from({ length: 4 }).map((_, index) => (
-              <Card key={index}>
-                <CardHeader className="px-4 pb-2 pt-4">
-                  <Skeleton className="h-5 w-28" />
-                </CardHeader>
-                <CardContent className="space-y-2 px-4 pb-4">
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                  <Skeleton className="h-10 w-full" />
-                </CardContent>
-              </Card>
-            ))}
+          <div className="px-6 pb-4">
+          <Card className="overflow-hidden rounded-2xl border border-border/60">
+            <CardContent className="space-y-6 p-6">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div className="space-y-3">
+                  <Skeleton className="h-8 w-40" />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <Skeleton className="h-16 w-full" />
+                    <Skeleton className="h-16 w-full" />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Skeleton className="h-8 w-24" />
+                  <Skeleton className="h-8 w-20" />
+                  <Skeleton className="h-8 w-20" />
+                </div>
+              </div>
+              <div className="grid gap-4 border-t border-border/60 pt-6 md:grid-cols-3">
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+                <Skeleton className="h-16 w-full" />
+              </div>
+            </CardContent>
+          </Card>
           </div>
         ) : (
-          <div className="grid gap-3 py-1 md:grid-cols-2">
-            <Card>
-              <CardHeader className="px-4 pb-2 pt-4">
-                <CardTitle className="text-base">Identity</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 px-4 pb-4 text-sm">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-muted-foreground" />
-                  <span>{detail?.name ?? account.name ?? "N/A"}</span>
+          <div className="px-6 pb-4">
+          <Card className="overflow-hidden rounded-2xl border border-sky-100 bg-sky-50/40 shadow-sm">
+            <CardHeader className="space-y-6 bg-sky-50/50 p-6">
+              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+                <div className="min-w-0 flex-1 space-y-4">
+                  <CardTitle className="max-w-[18ch] text-2xl font-semibold leading-tight text-sky-900 sm:text-3xl">
+                    {accountTypeName}
+                  </CardTitle>
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-sky-700">Account ID</div>
+                      <div className="flex items-center gap-2">
+                        <code className="break-all text-2xl font-semibold tracking-tight text-sky-600 sm:text-3xl">
+                          {account.account_id}
+                        </code>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0 rounded-full text-sky-600 hover:bg-sky-100 hover:text-sky-700"
+                          onClick={() => copyToClipboard(account.account_id, "Account ID")}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-sky-700">Available Balance</div>
+                      <div className="whitespace-nowrap text-2xl font-semibold tracking-tight text-sky-600 sm:text-3xl">
+                        {balanceValue}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="break-all">{detail?.email ?? account.email ?? "N/A"}</span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                  <span className="text-muted-foreground">Mobile</span>
-                  <span>{detail?.mobile ?? "N/A"}</span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                  <span className="text-muted-foreground">Status</span>
+
+                <div className="flex shrink-0 flex-wrap items-center gap-2 lg:max-w-[220px] lg:justify-end">
                   <StatusBadge status={detail?.status} />
+                  <span className="rounded-md border border-sky-200 bg-white px-4 py-1.5 text-sm font-medium text-sky-900">
+                    MT5
+                  </span>
+                  <span className="rounded-md border border-amber-400/70 bg-white px-4 py-1.5 text-sm font-medium text-amber-600">
+                    {mt5Mode}
+                  </span>
                 </div>
-                <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                  <span className="text-muted-foreground">Mode</span>
-                  <span className="font-medium uppercase">{detail?.account_mode ?? "live"}</span>
-                </div>
-              </CardContent>
-            </Card>
+              </div>
+            </CardHeader>
 
-            <Card>
-              <CardHeader className="px-4 pb-2 pt-4">
-                <CardTitle className="text-base">Credentials</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 px-4 pb-4 text-sm">
-                <div className="rounded-lg bg-muted/40 px-3 py-2">
-                  <div className="mb-1 text-xs text-muted-foreground">Account ID</div>
-                  <div className="flex items-center justify-between gap-2">
-                    <code className="font-semibold">{account.account_id}</code>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => copyToClipboard(account.account_id, "Account ID")}>
-                      <Copy className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </div>
-                <div className="rounded-lg bg-muted/40 px-3 py-2">
-                  <div className="mb-1 text-xs text-muted-foreground">MT5 Login</div>
-                  <div className="flex items-center justify-between gap-2">
-                    <code className="font-semibold">{detail?.mt5_id ?? account.mt5_id ?? "N/A"}</code>
-                    {detail?.mt5_id ?? account.mt5_id ? (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => copyToClipboard(String(detail?.mt5_id ?? account.mt5_id), "MT5 login")}
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                      </Button>
-                    ) : null}
-                  </div>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                  <span className="text-muted-foreground">Platform</span>
-                  <span className="font-medium">MT5</span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                  <span className="text-muted-foreground">Group</span>
-                  <span className="break-all text-right">{detail?.group?.mt5_group_name ?? detail?.mt5_group_name ?? "N/A"}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="px-4 pb-2 pt-4">
-                <CardTitle className="text-base">Trading Setup</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 px-4 pb-4 text-sm">
-                <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                  <span className="text-muted-foreground">Balance</span>
-                  <span>{formatCurrency(Number(account.balance ?? 0), detail?.base_currency ?? "USD")}</span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                  <span className="text-muted-foreground">Account Type</span>
-                  <span className="text-right">{detail?.accountType?.name ?? "N/A"}</span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                  <span className="text-muted-foreground">Leverage</span>
-                  <span>{detail?.leverage ? `1:${detail.leverage}` : "N/A"}</span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                  <span className="text-muted-foreground">Spread From</span>
-                  <span>{detail?.spread_from ?? "N/A"}</span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                  <span className="text-muted-foreground">Maximum Leverage</span>
-                  <span className="text-right">{detail?.maximum_leverage ?? "N/A"}</span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                  <span className="text-muted-foreground">Base Currency</span>
-                  <span>{detail?.base_currency ?? "N/A"}</span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                  <span className="text-muted-foreground">Minimum Deposit</span>
-                  <span>{detail?.minimum_deposit ?? "N/A"}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="px-4 pb-2 pt-4">
-                <CardTitle className="text-base">Audit</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2 px-4 pb-4 text-sm">
-                <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                  <span className="text-muted-foreground">Created</span>
-                  <span className="text-right">{formatDateTime(detail?.created_at)}</span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                  <span className="text-muted-foreground">Updated</span>
-                  <span className="text-right">{formatDateTime(detail?.updated_at)}</span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                  <span className="text-muted-foreground">Stop Out Level</span>
-                  <span>{detail?.stop_out_level ?? "N/A"}</span>
-                </div>
-                <div className="flex items-center justify-between rounded-lg bg-muted/40 px-3 py-2">
-                  <span className="text-muted-foreground">Swap Free</span>
-                  <span>{detail?.swap_free_option ? "Enabled" : "Disabled"}</span>
-                </div>
-              </CardContent>
-            </Card>
+            <CardContent className="grid gap-6 bg-white/65 p-6 md:grid-cols-3">
+              <InfoMetric
+                label="Free Margin"
+                value={freeMarginValue}
+                className="md:border-r md:border-sky-100 md:pr-6"
+              />
+              <InfoMetric
+                label="Equity"
+                value={equityValue}
+                className="md:border-r md:border-sky-100 md:px-2"
+              />
+              <InfoMetric label="Leverage" value={leverageValue} className="md:pl-2" />
+            </CardContent>
+          </Card>
           </div>
         )}
 
-        <DialogFooter className="sm:justify-between">
-          <Button variant="outline" asChild>
+        <DialogFooter className="px-6 pb-6 sm:justify-between">
+          <Button variant="outline" className="rounded-xl border-sky-200 text-sky-800 hover:bg-sky-50 hover:text-sky-900" asChild>
             <Link href="/my_accounts/open-trading-account">Open Another Account</Link>
           </Button>
-          <Button onClick={() => onOpenChange(false)}>Close</Button>
+          <Button className="rounded-xl bg-sky-600 hover:bg-sky-700" onClick={() => onOpenChange(false)}>Close</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

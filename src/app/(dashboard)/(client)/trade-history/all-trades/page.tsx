@@ -218,6 +218,30 @@ const getBalanceAmount = (record: Mt5SdkTradeRecord) => {
   return undefined;
 };
 
+const getTradeVolume = (record: Mt5SdkTradeRecord) => {
+  if (record.volume !== undefined && record.volume !== null) {
+    return record.volume;
+  }
+
+  if (record.Volume !== undefined && record.Volume !== null) {
+    return record.Volume;
+  }
+
+  return undefined;
+};
+
+const getPositionVolume = (position: Mt5SdkPosition) => {
+  if (position.volume !== undefined && position.volume !== null) {
+    return position.volume;
+  }
+
+  if (position.Volume !== undefined && position.Volume !== null) {
+    return position.Volume;
+  }
+
+  return undefined;
+};
+
 const recordBadgeClassName = (recordType: string) =>
   recordType === 'deal'
     ? 'border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300'
@@ -425,7 +449,7 @@ export default function AllTradesPage() {
       {
         id: 'volume',
         header: 'Volume',
-        cell: ({ row }) => formatNumber(row.original.Volume ?? row.original.VolumeInitial ?? row.original.VolumeCurrent, 2),
+        cell: ({ row }) => formatNumber(getTradeVolume(row.original), 2),
       },
       {
         id: 'profit',
@@ -686,7 +710,7 @@ export default function AllTradesPage() {
                         <TableCell className="font-medium">{position.Position}</TableCell>
                         <TableCell>{position.Symbol}</TableCell>
                         <TableCell>{position.Action !== undefined ? actionLabels[position.Action] ?? `Action ${position.Action}` : '-'}</TableCell>
-                        <TableCell>{formatNumber(position.Volume, 2)}</TableCell>
+                        <TableCell>{formatNumber(getPositionVolume(position), 2)}</TableCell>
                         <TableCell>{formatNumber(position.PriceOpen)}</TableCell>
                         <TableCell>{formatNumber(position.PriceCurrent)}</TableCell>
                         <TableCell>{formatNumber(position.PriceSL)} / {formatNumber(position.PriceTP)}</TableCell>

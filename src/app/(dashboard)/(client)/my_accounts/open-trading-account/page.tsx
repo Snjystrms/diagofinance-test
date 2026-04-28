@@ -325,7 +325,7 @@ export default function OpenTradingAccountPage() {
         <div className="grid items-start gap-6 xl:grid-cols-[360px,minmax(0,1fr)]">
           <div className="space-y-6 xl:sticky xl:top-6">
             <Card className="overflow-hidden border border-primary/20 bg-gradient-to-br from-primary/10 via-card to-card shadow-sm">
-              <CardContent className="space-y-6 p-6">
+              {/* <CardContent className="space-y-6 p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="space-y-2">
                     <Badge className="rounded-full bg-primary/15 text-primary hover:bg-primary/15">
@@ -376,7 +376,7 @@ export default function OpenTradingAccountPage() {
                     </div>
                   </div>
                 </div>
-              </CardContent>
+              </CardContent> */}
             </Card>
           </div>
 
@@ -835,9 +835,9 @@ export default function OpenTradingAccountPage() {
                     </div>
                   </div>
                   <div className="min-w-0 p-4 bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl border border-border">
-                    <span className="text-sm font-medium text-muted-foreground">Group</span>
+                    <span className="text-sm font-medium text-muted-foreground">Server</span>
                     <div className="mt-1 break-words text-sm font-semibold text-foreground">
-                      {mt5RequestData.group}
+                      {mt5RequestData.server}
                     </div>
                   </div>
                   <div className="min-w-0 p-4 bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl border border-border">

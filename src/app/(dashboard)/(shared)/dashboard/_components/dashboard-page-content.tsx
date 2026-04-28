@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { AccountTypeCardGrid } from "@/components/accounts/account-type-card-grid"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { ApiErrorState } from "@/components/errors/api-error-state"
+import { ClientCardGridSkeleton } from "@/components/loading/client-page-skeletons"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -62,6 +64,7 @@ import { useClientCustomization } from "@/contexts/client-customization-context"
 
 import { formatCurrency } from "@/lib/formatters"
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors"
+import { useActiveAccountTypes } from "@/hooks/use-active-account-types"
 import { normalizeIbWalletData } from "@/lib/ib"
 
 const formatAmount = (amount?: number) => {
@@ -363,6 +366,22 @@ export function DashboardPageContent() {
   const walletCurrency = dashboardData?.wallet?.currency ?? "USD";
   const depositsCurrency = dashboardData?.deposits?.currency ?? "USD";
   const withdrawalsCurrency = dashboardData?.withdrawals?.currency ?? "USD";
+  const totalMt5Accounts = mtAccountSummary.reduce(
+    (total, accountType) => total + (accountType.accounts?.length ?? 0),
+    0
+  );
+  const hasAnyMt5Accounts =
+    totalMt5Accounts > 0 || Boolean(dashboardData?.mt5_users?.length);
+
+  const {
+    data: activeAccountTypes = [],
+    isLoading: isAccountTypesLoading,
+    error: accountTypesError,
+    refetch: refetchAccountTypes,
+  } = useActiveAccountTypes({
+    token,
+    enabled: isUser && !isDashboardLoading && !dashboardError && !hasAnyMt5Accounts,
+  });
 
   // Helper function to get tab title
   const getTabTitle = () => {
@@ -413,6 +432,14 @@ export function DashboardPageContent() {
   };
 
   const currentAccounts = getCurrentAccounts();
+  const createAccountMode = activeTab === "mt5-demo" ? "demo" : "live";
+  const createAccountHref = `/my_accounts/open-trading-account?mode=${createAccountMode}`;
+  const createAccountTitle =
+    activeTab === "mt5-demo" ? "Create MT5 Demo Account" : "Create MT5 Live Account";
+  const createAccountDescription =
+    activeTab === "mt5-demo"
+      ? "Spin up another demo login to test strategies, EAs, or fresh risk setups."
+      : "Open an additional live MT5 account to separate strategies or funded capital.";
 
   const openDashboardAccountDetails = (account: DashboardTradingAccount) => {
     setSelectedDashboardAccount(account);
@@ -1388,202 +1415,242 @@ export function DashboardPageContent() {
           )}
 
           {/* Trading Accounts Grid */}
-          {(mtAccountSummary.length > 0 || dashboardData?.mt5_users?.length) && (
-            <div className="space-y-6">
-              {/* Platform Tabs */}
-              <Card className="border-0 shadow-xl bg-card/70 backdrop-blur-sm">
-                <CardContent className="px-4 py-4">
-                  <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)} className="w-full">
-                    <TabsList className="grid h-auto w-full grid-cols-2 rounded-lg bg-muted/50 p-1">
-                      <TabsTrigger 
-                        value="mt5-live" 
-                        className="rounded-md py-2 px-2 text-sm transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
-                            5
-                          </div>
-                          <span className="hidden sm:inline text-xs">MT5 Live</span>
-                        </div>
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="mt5-demo" 
-                        className="rounded-md py-2 px-2 text-sm transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
-                            5
-                          </div>
-                          <span className="hidden sm:inline text-xs">MT5 Demo</span>
-                        </div>
-                      </TabsTrigger>
-                      {/* MT4 dashboard tabs intentionally hidden for now.
-                          Restore mt4-live and mt4-demo triggers here when MT4 UI is re-enabled. */}
-                    </TabsList>
-                  </Tabs>
-                </CardContent>
-              </Card>
-
-              {/* Section Header */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-2xl font-bold text-foreground">{getTabTitle()}</h2>
-                  <p className="text-muted-foreground">
-                    {currentAccounts.length} account{currentAccounts.length !== 1 ? 's' : ''} found
-                  </p>
-                </div>
-              </div>
-
-              {/* Accounts Grid */}
-              {currentAccounts.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {currentAccounts.map((account) => {
-                      const isDemo = account.account_mode?.toLowerCase().includes('demo');
-
-                      return (
-                        <Card
-                          key={account.id}
-                          className="group h-full border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-lg"
+          <div className="space-y-6">
+            {hasAnyMt5Accounts ? (
+              <>
+                {/* Platform Tabs */}
+                <Card className="border-0 bg-card/70 shadow-xl backdrop-blur-sm">
+                  <CardContent className="px-4 py-4">
+                    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)} className="w-full">
+                      <TabsList className="grid h-auto w-full grid-cols-2 rounded-lg bg-muted/50 p-1">
+                        <TabsTrigger
+                          value="mt5-live"
+                          className="rounded-md px-2 py-2 text-sm transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                         >
-                          <CardContent className="flex h-full flex-col p-5 sm:p-6">
-                            {/* Header */}
-                            <div className="mb-5 flex items-start gap-3">
-                              <div
-                                className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-primary/10 text-lg font-bold text-primary shadow-sm transition-transform duration-300 group-hover:scale-105"
+                          <div className="flex items-center gap-1.5">
+                            <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
+                              5
+                            </div>
+                            <span className="hidden text-xs sm:inline">MT5 Live</span>
+                          </div>
+                        </TabsTrigger>
+                        <TabsTrigger
+                          value="mt5-demo"
+                          className="rounded-md px-2 py-2 text-sm transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
+                              5
+                            </div>
+                            <span className="hidden text-xs sm:inline">MT5 Demo</span>
+                          </div>
+                        </TabsTrigger>
+                        {/* MT4 dashboard tabs intentionally hidden for now.
+                            Restore mt4-live and mt4-demo triggers here when MT4 UI is re-enabled. */}
+                      </TabsList>
+                    </Tabs>
+                  </CardContent>
+                </Card>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground">{getTabTitle()}</h2>
+                    <p className="text-muted-foreground">
+                      {currentAccounts.length} account{currentAccounts.length !== 1 ? 's' : ''} found
+                    </p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {currentAccounts.map((account) => {
+                    const isDemo = account.account_mode?.toLowerCase().includes('demo');
+
+                    return (
+                      <Card
+                        key={account.id}
+                        className="group h-full border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-lg"
+                      >
+                        <CardContent className="flex h-full flex-col p-5 sm:p-6">
+                          <div className="mb-5 flex items-start gap-3">
+                            <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border/60 bg-primary/10 text-lg font-bold text-primary shadow-sm transition-transform duration-300 group-hover:scale-105">
+                              <Image
+                                src="/metatrader-5.svg"
+                                alt="MetaTrader 5"
+                                width={48}
+                                height={48}
+                                className="h-full w-full object-contain p-1.5"
+                                priority
+                              />
+                            </div>
+                            <div className="min-w-0 flex-1 space-y-2">
+                              <div className="flex flex-wrap items-start gap-2">
+                                <h3 className="min-w-0 flex-1 text-lg font-bold leading-snug text-foreground">
+                                  {account.accountType?.account_type_name || 'Trading Account'}
+                                </h3>
+                                <Badge className="shrink-0 border-0 bg-primary/10 text-primary">
+                                  <CheckCircle2 className="mr-1 h-3 w-3" />
+                                  Active
+                                </Badge>
+                              </div>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Badge variant="outline" className="border-border text-xs">
+                                  {isDemo ? 'DEMO' : 'LIVE'}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {account.accountType?.currency || 'USD'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mb-5">
+                            <label className="mb-2 block text-xs font-medium text-muted-foreground">
+                              Account ID
+                            </label>
+                            <div className="flex min-w-0 items-center gap-2">
+                              <code className="min-w-0 flex-1 truncate rounded-xl border border-border/60 bg-muted/40 px-3 py-2.5 font-mono text-xs font-medium text-foreground sm:text-sm">
+                                {account.account_id}
+                              </code>
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-10 w-10 shrink-0 rounded-xl border-border/70 bg-background/80"
+                                onClick={() => {
+                                  navigator.clipboard.writeText(account.account_id.toString());
+                                  toast.success('Account ID copied to clipboard!');
+                                }}
                               >
-                                <Image
-                                  src="/metatrader-5.svg"
-                                  alt="MetaTrader 5"
-                                  width={48}
-                                  height={48}
-                                  className="object-contain w-full h-full p-1.5"
-                                  priority
-                                />
-                              </div>
-                              <div className="min-w-0 flex-1 space-y-2">
-                                <div className="flex flex-wrap items-start gap-2">
-                                    <h3 className="min-w-0 flex-1 text-lg font-bold leading-snug text-foreground">
-                                      {account.accountType?.account_type_name || 'Trading Account'}
-                                    </h3>
-                                    <Badge className="shrink-0 border-0 bg-primary/10 text-primary">
-                                      <CheckCircle2 className="h-3 w-3 mr-1" />
-                                      Active
-                                    </Badge>
-                                  </div>
-                                  <div className="flex flex-wrap items-center gap-2">
-                                    <Badge variant="outline" className="border-border text-xs">
-                                      {isDemo ? 'DEMO' : 'LIVE'}
-                                    </Badge>
-                                    <span className="text-xs text-muted-foreground">
-                                      {account.accountType?.currency || 'USD'}
-                                    </span>
-                                  </div>
-                              </div>
+                                <Copy className="h-4 w-4" />
+                              </Button>
                             </div>
+                          </div>
 
-                            {/* Account ID */}
-                            <div className="mb-5">
-                              <label className="text-xs font-medium text-muted-foreground mb-2 block">
-                                Account ID
-                              </label>
-                              <div className="flex min-w-0 items-center gap-2">
-                                <code className="min-w-0 flex-1 truncate rounded-xl border border-border/60 bg-muted/40 px-3 py-2.5 font-mono text-xs font-medium text-foreground sm:text-sm">
-                                  {account.account_id}
-                                </code>
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  className="h-10 w-10 shrink-0 rounded-xl border-border/70 bg-background/80"
-                                  onClick={() => {
-                                    navigator.clipboard.writeText(account.account_id.toString());
-                                    toast.success('Account ID copied to clipboard!');
-                                  }}
-                                >
-                                  <Copy className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-
-                            {/* Account Metrics */}
-                            <div className="mb-5 grid grid-cols-2 gap-3">
-                              <div className="rounded-xl border border-border/40 bg-muted/15 p-3">
-                                <div className="space-y-1">
+                          <div className="mb-5 grid grid-cols-2 gap-3">
+                            <div className="rounded-xl border border-border/40 bg-muted/15 p-3">
+                              <div className="space-y-1">
                                 <span className="text-xs text-muted-foreground">Leverage</span>
                                 <div className="flex items-center gap-1.5">
                                   <Zap className="h-3 w-3 text-primary" />
-                                  <span className="font-semibold text-sm text-foreground">{account.leverage || '1:100'}</span>
+                                  <span className="text-sm font-semibold text-foreground">{account.leverage || '1:100'}</span>
                                 </div>
                               </div>
-                              </div>
-                              <div className="rounded-xl border border-border/40 bg-muted/15 p-3">
-                                <div className="space-y-1">
+                            </div>
+                            <div className="rounded-xl border border-border/40 bg-muted/15 p-3">
+                              <div className="space-y-1">
                                 <span className="text-xs text-muted-foreground">Platform</span>
                                 <div className="flex items-center gap-1.5">
                                   <TrendingUp className="h-3 w-3 text-primary" />
-                                  <span className="font-semibold text-sm text-foreground">MT5</span>
+                                  <span className="text-sm font-semibold text-foreground">MT5</span>
                                 </div>
                               </div>
-                              </div>
                             </div>
+                          </div>
 
-                            {/* Financial Metrics */}
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/30 p-3.5">
-                                <span className="text-sm font-medium text-foreground">Balance</span>
-                                <span className="truncate text-right font-bold text-primary">
-                                  {formatCurrency(account.balance, account.accountType?.currency || 'USD')}
-                                </span>
-                              </div>
-                              <div className="grid grid-cols-2 gap-2.5">
-                                <div className="rounded-xl border border-border/30 bg-muted/20 p-3 text-center">
-                                  <div className="text-xs text-muted-foreground">Equity</div>
-                                  <div className="font-semibold text-sm text-foreground">{formatCurrency(account.equity, account.accountType?.currency || 'USD')}</div>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/30 p-3.5">
+                              <span className="text-sm font-medium text-foreground">Balance</span>
+                              <span className="truncate text-right font-bold text-primary">
+                                {formatCurrency(account.balance, account.accountType?.currency || 'USD')}
+                              </span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2.5">
+                              <div className="rounded-xl border border-border/30 bg-muted/20 p-3 text-center">
+                                <div className="text-xs text-muted-foreground">Equity</div>
+                                <div className="text-sm font-semibold text-foreground">
+                                  {formatCurrency(account.equity, account.accountType?.currency || 'USD')}
                                 </div>
-                                <div className="rounded-xl border border-border/30 bg-muted/20 p-3 text-center">
-                                  <div className="text-xs text-muted-foreground">Free Margin</div>
-                                  <div className="font-semibold text-sm text-foreground">{formatCurrency(account.free_margin, account.accountType?.currency || 'USD')}</div>
+                              </div>
+                              <div className="rounded-xl border border-border/30 bg-muted/20 p-3 text-center">
+                                <div className="text-xs text-muted-foreground">Free Margin</div>
+                                <div className="text-sm font-semibold text-foreground">
+                                  {formatCurrency(account.free_margin, account.accountType?.currency || 'USD')}
                                 </div>
                               </div>
                             </div>
+                          </div>
 
-                            {/* Action Buttons */}
-                            <div className="mt-auto flex gap-2 pt-5">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="h-10 flex-1 border-border bg-background hover:bg-accent hover:text-accent-foreground"
-                                onClick={() => openDashboardAccountDetails(account)}
-                              >
-                                <Eye className="mr-1.5 h-4 w-4 shrink-0" />
-                                View Details
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      );
+                          <div className="mt-auto flex gap-2 pt-5">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-10 flex-1 border-border bg-background hover:bg-accent hover:text-accent-foreground"
+                              onClick={() => openDashboardAccountDetails(account)}
+                            >
+                              <Eye className="mr-1.5 h-4 w-4 shrink-0" />
+                              View Details
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
                   })}
+
+                  <Card className="group h-full border border-dashed border-primary/35 bg-gradient-to-br from-primary/10 via-card to-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/60 hover:shadow-lg">
+                    <CardContent className="flex h-full flex-col p-5 sm:p-6">
+                      <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+                        <PlusCircle className="h-6 w-6" />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-lg font-bold text-foreground">{createAccountTitle}</h3>
+                        <p className="text-sm leading-6 text-muted-foreground">
+                          {currentAccounts.length === 0
+                            ? `No ${getTabTitle().toLowerCase()} yet. ${createAccountDescription}`
+                            : createAccountDescription}
+                        </p>
+                      </div>
+                      <Button
+                        asChild
+                        className="mt-auto h-11 justify-between rounded-xl bg-primary/95 px-4 text-primary-foreground shadow-sm hover:bg-primary"
+                      >
+                        <Link href={createAccountHref}>
+                          Open {activeTab === "mt5-demo" ? "Demo" : "Live"} Account
+                          <ArrowRight className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </CardContent>
+                  </Card>
                 </div>
-              ) : (
-                <Card className="border-dashed border-2 border-border">
-                  <CardContent className="text-center py-12">
-                    <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Settings className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <h3 className="text-xl font-semibold mb-2 text-foreground">No {getTabTitle()} Found</h3>
-                    <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                      You don&apos;t have any {getTabTitle().toLowerCase()} yet. Create a new account to get started.
-                    </p>
-                    <Button size="lg" asChild className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground">
-                      <Link href="/my_accounts/open-trading-account">
-                        Open {getTabTitle()}
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
+              </>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-bold text-foreground">Open Your First MT5 Account</h2>
+                  <p className="max-w-2xl text-muted-foreground">
+                    You don&apos;t have any MT5 accounts yet. Choose an account type below and create a live or demo login directly from the dashboard.
+                  </p>
+                </div>
+
+                {accountTypesError ? (
+                  <ApiErrorState
+                    error={accountTypesError}
+                    audience="client"
+                    resource="account types"
+                    action="load"
+                    variant="inline"
+                    onRetry={() => {
+                      void refetchAccountTypes();
+                    }}
+                  />
+                ) : isAccountTypesLoading ? (
+                  <ClientCardGridSkeleton />
+                ) : activeAccountTypes.length > 0 ? (
+                  <AccountTypeCardGrid accountTypes={activeAccountTypes} />
+                ) : (
+                  <Card className="border-2 border-dashed border-border">
+                    <CardContent className="py-12 text-center">
+                      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
+                        <Settings className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <h3 className="mb-2 text-xl font-semibold text-foreground">No Account Types Available</h3>
+                      <p className="mx-auto max-w-md text-muted-foreground">
+                        There are no MT5 account types available right now.
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+              </>
+            )}
+          </div>
           <ClientMt5AccountDetailsDialog
             open={isDashboardAccountDialogOpen}
             onOpenChange={setIsDashboardAccountDialogOpen}

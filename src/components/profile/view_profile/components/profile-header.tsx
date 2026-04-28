@@ -163,20 +163,20 @@ export default function ProfileHeader() {
               )}
 
               {/* 2FA Status */}
-              <div className={`flex items-center gap-2 border rounded-lg px-3 py-2 ${
+              <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 shadow-sm ${
                 is2FAEnabled 
-                  ? "border-green-500/30 bg-green-500/10" 
-                  : "border-red-500/30 bg-red-500/10"
+                  ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30" 
+                  : "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30"
               }`}>
                 <Shield className={`h-4 w-4 ${
                   is2FAEnabled 
-                    ? "text-green-400" 
-                    : "text-red-400"
+                    ? "text-green-600 dark:text-green-400" 
+                    : "text-red-600 dark:text-red-400"
                 }`} />
                 <span className={`text-sm font-medium ${
                   is2FAEnabled 
-                    ? "text-green-200" 
-                    : "text-red-200"
+                    ? "text-green-700 dark:text-green-300" 
+                    : "text-red-700 dark:text-red-300"
                 }`}>
                   {is2FAEnabled ? "Secured with 2FA" : "2FA Not Enabled"}
                 </span>

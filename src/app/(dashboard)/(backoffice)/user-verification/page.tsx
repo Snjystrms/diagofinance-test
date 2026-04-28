@@ -24,7 +24,7 @@ import {
 
 import { Eye, CheckCircle2, XCircle, Calendar, FileText, User, Mail, Hash, Clock, AlertCircle, Image as ImageIcon } from "lucide-react";
 
-import { adminKycApi, API_BASE_URL, kycFileUrl } from "@/lib/api";
+import { adminKycApi, kycFileUrl } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 // If you already have auth context, import it. Fallback to localStorage token.
@@ -34,6 +34,7 @@ import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 /* ---------------- Types (based on your response) ---------------- */
 type DocStatusNum = 0 | 1 | 2; // 0 pending, 1 approved, 2 rejected
 type DocKey = "poi_front_file_status" | "poa_front_file_status" | "poa_back_file_status" | "other_file_status";
+type DocFileKey = "poi_front_file" | "poa_front_file" | "poa_back_file" | "other_file";
 
 type ListRow = {
   uuid: string;
@@ -59,7 +60,8 @@ type UserKycDetail = {
     first_name?: string | null;
     last_name?: string | null;
     email: string;
-    kyc_status: string; // keep for backward compat
+    kyc_status?: string; // keep for backward compat
+    verification_status?: string;
   };
   submitted_at: string;
   summary: Record<string, unknown>;
@@ -72,6 +74,8 @@ type UserKycDetail = {
       url?: string;
     }
   >;
+  document_files?: Partial<Record<DocFileKey, string>>;
+  document_urls?: Partial<Record<DocFileKey, string>>;
   rejection_comments?: Partial<Record<DocKey, string>>;
   kyc_status?: string; // <-- NEW: top-level kyc_status from API
 };
@@ -185,9 +189,63 @@ const docLabel: Record<DocKey, string> = {
   other_file_status: "Other",
 };
 
+const docFileKeyByStatusKey: Record<DocKey, DocFileKey> = {
+  poi_front_file_status: "poi_front_file",
+  poa_front_file_status: "poa_front_file",
+  poa_back_file_status: "poa_back_file",
+  other_file_status: "other_file",
+};
+
 const numToWord = (n: DocStatusNum) => (n === 1 ? "approved" : n === 2 ? "rejected" : "pending");
 
 const wordToNum = (w: string): DocStatusNum => (w === "approved" ? 1 : w === "rejected" ? 2 : 0);
+
+const normalizeDocStatus = (value: unknown): DocStatusNum => {
+  if (value === 1 || value === "1" || value === "approved") return 1;
+  if (value === 2 || value === "2" || value === "rejected") return 2;
+  return 0;
+};
+
+const normalizeKycDetail = (raw: UserKycDetail): UserKycDetail => {
+  const normalizedDocuments = {} as UserKycDetail["documents"];
+
+  (Object.keys(docLabel) as DocKey[]).forEach((docKey) => {
+    const fileKey = docFileKeyByStatusKey[docKey];
+    const rawEntry = raw.documents?.[docKey] as
+      | { status?: unknown; comment?: string; file?: string | null; url?: string | null }
+      | DocStatusNum
+      | null
+      | undefined;
+    const nestedEntry =
+      rawEntry && typeof rawEntry === "object" ? rawEntry : undefined;
+    const file = nestedEntry?.file ?? raw.document_files?.[fileKey] ?? "";
+    const url =
+      nestedEntry?.url ??
+      raw.document_urls?.[fileKey] ??
+      (file ? kycFileUrl(file) : undefined);
+
+    normalizedDocuments[docKey] = {
+      status: normalizeDocStatus(nestedEntry?.status ?? rawEntry),
+      comment: nestedEntry?.comment ?? raw.rejection_comments?.[docKey] ?? "",
+      file,
+      url,
+    };
+  });
+
+  return {
+    ...raw,
+    user: {
+      ...raw.user,
+      kyc_status:
+        raw.user?.kyc_status ??
+        raw.user?.verification_status ??
+        raw.kyc_status ??
+        "none",
+    },
+    kyc_status: raw.kyc_status ?? raw.user?.verification_status ?? raw.user?.kyc_status ?? "none",
+    documents: normalizedDocuments,
+  };
+};
 
 /* ---------------- Page ---------------- */
 export default function UserVerificationPage() {
@@ -327,21 +385,21 @@ export default function UserVerificationPage() {
       setDetail(null);
       try {
         const res = await adminKycApi.getUserKyc(user_uuid, token);
-        const d = (res.data || {}) as UserKycDetail;
+        const d = normalizeKycDetail((res.data || {}) as UserKycDetail);
         setDetail(d);
         // seed local states
         const init: Record<DocKey, DocStatusNum> = {
-          poi_front_file_status: d.documents?.poi_front_file_status?.status ?? 0,
-          poa_front_file_status: d.documents?.poa_front_file_status?.status ?? 0,
-          poa_back_file_status: d.documents?.poa_back_file_status?.status ?? 0,
-          other_file_status: d.documents?.other_file_status?.status ?? 0,
+          poi_front_file_status: d.documents.poi_front_file_status.status,
+          poa_front_file_status: d.documents.poa_front_file_status.status,
+          poa_back_file_status: d.documents.poa_back_file_status.status,
+          other_file_status: d.documents.other_file_status.status,
         };
         setDocStatuses(init);
         const initC: Partial<Record<DocKey, string>> = {
-          poi_front_file_status: d.documents?.poi_front_file_status?.comment || "",
-          poa_front_file_status: d.documents?.poa_front_file_status?.comment || "",
-          poa_back_file_status: d.documents?.poa_back_file_status?.comment || "",
-          other_file_status: d.documents?.other_file_status?.comment || "",
+          poi_front_file_status: d.documents.poi_front_file_status.comment || "",
+          poa_front_file_status: d.documents.poa_front_file_status.comment || "",
+          poa_back_file_status: d.documents.poa_back_file_status.comment || "",
+          other_file_status: d.documents.other_file_status.comment || "",
         };
         setDocComments(initC);
       } catch (e: unknown) {

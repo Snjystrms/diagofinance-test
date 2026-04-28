@@ -10,6 +10,10 @@ import {
   CheckCircle2,
   TrendingDown,
   Wallet,
+  UserCheck,
+  UserX,
+  FileClock,
+  Landmark,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { AdminDashboardData } from "@/lib/api";
@@ -32,9 +36,10 @@ interface AdminDashboardViewProps {
 export function AdminDashboardView({ adminDashboardData }: AdminDashboardViewProps) {
   const kpis = adminDashboardData?.kpis;
   const transactionGraph = adminDashboardData?.transaction_graph;
+  const clientsGraph = adminDashboardData?.clients_graph;
   const summaryMetrics = adminDashboardData?.summary_metrics;
 
-  const chartData = useMemo(() => {
+  const transactionChartData = useMemo(() => {
     if (!transactionGraph?.data) return [];
     return transactionGraph.data.map((item) => ({
       date: new Date(item.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
@@ -44,11 +49,152 @@ export function AdminDashboardView({ adminDashboardData }: AdminDashboardViewPro
     }));
   }, [transactionGraph]);
 
-  const chartConfig = {
+  const clientsChartData = useMemo(() => {
+    if (!clientsGraph?.data) return [];
+    return clientsGraph.data.map((item) => ({
+      date: new Date(item.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
+      clients: item.clients,
+    }));
+  }, [clientsGraph]);
+
+  const transactionChartConfig = {
     deposit: { label: "Deposit", color: "#22c55e" },
     withdraw: { label: "Withdraw", color: "#ef4444" },
     ib_withdraw: { label: "IB Withdraw", color: "#3b82f6" },
   };
+
+  const clientsChartConfig = {
+    clients: { label: "Clients", color: "#8b5cf6" },
+  };
+
+  const primaryKpiCards = [
+    {
+      title: "Total Clients",
+      value: kpis?.total_clients ?? 0,
+      description: "All registered clients",
+      icon: Users,
+      className:
+        "border-indigo-500/30 hover:border-indigo-500/50 bg-gradient-to-br from-indigo-500/10 via-blue-500/5 to-transparent",
+      iconClassName: "text-indigo-600 dark:text-indigo-400",
+      valueClassName: "text-indigo-600 dark:text-indigo-400",
+    },
+    {
+      title: "Total IB",
+      value: kpis?.total_ib ?? 0,
+      description: "Introducing Brokers",
+      icon: Building2,
+      className:
+        "border-blue-500/30 hover:border-blue-500/50 bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent",
+      iconClassName: "text-blue-600 dark:text-blue-400",
+      valueClassName: "text-blue-600 dark:text-blue-400",
+    },
+    {
+      title: "Pending Clients",
+      value: kpis?.pending_clients ?? 0,
+      description: "Awaiting approval",
+      icon: Clock,
+      className:
+        "border-amber-500/30 hover:border-amber-500/50 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent",
+      iconClassName: "text-amber-600 dark:text-amber-400",
+      valueClassName: "text-amber-600 dark:text-amber-400",
+    },
+    {
+      title: "Active Traders",
+      value: kpis?.active_traders ?? 0,
+      description: "Currently trading",
+      icon: TrendingUp,
+      className:
+        "border-green-500/30 hover:border-green-500/50 bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-transparent",
+      iconClassName: "text-green-600 dark:text-green-400",
+      valueClassName: "text-green-600 dark:text-green-400",
+    },
+  ];
+
+  const secondaryKpiCards = [
+    {
+      title: "Approved Deposits",
+      value: kpis?.approved_deposit ?? 0,
+      description: "Total approved",
+      icon: CheckCircle2,
+      className:
+        "border-green-500/30 hover:border-green-500/50 bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-transparent",
+      iconClassName: "text-green-600 dark:text-green-400",
+      valueClassName: "text-green-600 dark:text-green-400",
+    },
+    {
+      title: "Pending Deposits",
+      value: kpis?.pending_deposit ?? 0,
+      description: "Awaiting approval",
+      icon: Clock,
+      className:
+        "border-amber-500/30 hover:border-amber-500/50 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent",
+      iconClassName: "text-amber-600 dark:text-amber-400",
+      valueClassName: "text-amber-600 dark:text-amber-400",
+    },
+    {
+      title: "Pending Withdrawals",
+      value: kpis?.pending_withdraw ?? 0,
+      description: "Awaiting processing",
+      icon: TrendingDown,
+      className:
+        "border-red-500/30 hover:border-red-500/50 bg-gradient-to-br from-red-500/10 via-rose-500/5 to-transparent",
+      iconClassName: "text-red-600 dark:text-red-400",
+      valueClassName: "text-red-600 dark:text-red-400",
+    },
+    {
+      title: "Pending IB Withdrawals",
+      value: kpis?.pending_ib_withdraw ?? 0,
+      description: "IB withdrawal requests",
+      icon: Wallet,
+      className:
+        "border-purple-500/30 hover:border-purple-500/50 bg-gradient-to-br from-purple-500/10 via-violet-500/5 to-transparent",
+      iconClassName: "text-purple-600 dark:text-purple-400",
+      valueClassName: "text-purple-600 dark:text-purple-400",
+    },
+  ];
+
+  const tertiaryKpiCards = [
+    {
+      title: "FTD Users",
+      value: kpis?.ftd_users ?? 0,
+      description: "First-time deposit users",
+      icon: UserCheck,
+      className:
+        "border-emerald-500/30 hover:border-emerald-500/50 bg-gradient-to-br from-emerald-500/10 via-lime-500/5 to-transparent",
+      iconClassName: "text-emerald-600 dark:text-emerald-400",
+      valueClassName: "text-emerald-600 dark:text-emerald-400",
+    },
+    {
+      title: "Non-FTD Users",
+      value: kpis?.non_ftd_users ?? 0,
+      description: "Users without first deposit",
+      icon: UserX,
+      className:
+        "border-slate-500/30 hover:border-slate-500/50 bg-gradient-to-br from-slate-500/10 via-zinc-500/5 to-transparent",
+      iconClassName: "text-slate-600 dark:text-slate-300",
+      valueClassName: "text-slate-700 dark:text-slate-200",
+    },
+    {
+      title: "Pending IB Requests",
+      value: kpis?.pending_ib_request ?? 0,
+      description: "Waiting for IB approval",
+      icon: FileClock,
+      className:
+        "border-cyan-500/30 hover:border-cyan-500/50 bg-gradient-to-br from-cyan-500/10 via-sky-500/5 to-transparent",
+      iconClassName: "text-cyan-600 dark:text-cyan-400",
+      valueClassName: "text-cyan-600 dark:text-cyan-400",
+    },
+    {
+      title: "Pending Bank Details",
+      value: kpis?.pending_bank_details_request ?? 0,
+      description: "Bank detail review queue",
+      icon: Landmark,
+      className:
+        "border-fuchsia-500/30 hover:border-fuchsia-500/50 bg-gradient-to-br from-fuchsia-500/10 via-pink-500/5 to-transparent",
+      iconClassName: "text-fuchsia-600 dark:text-fuchsia-400",
+      valueClassName: "text-fuchsia-600 dark:text-fuchsia-400",
+    },
+  ];
 
   return (
     <div className="min-h-full w-full p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-background via-background to-muted/20">
@@ -63,132 +209,152 @@ export function AdminDashboardView({ adminDashboardData }: AdminDashboardViewPro
 
       {/* KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <Card className="hover:shadow-md transition-shadow duration-300 border-2 border-indigo-500/30 hover:border-indigo-500/50 bg-gradient-to-br from-indigo-500/10 via-blue-500/5 to-transparent">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
-            <Users className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{kpis?.total_clients ?? 0}</div>
-            <p className="text-xs text-muted-foreground">All registered clients</p>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow duration-300 border-2 border-blue-500/30 hover:border-blue-500/50 bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total IB</CardTitle>
-            <Building2 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">{kpis?.total_ib ?? 0}</div>
-            <p className="text-xs text-muted-foreground">Introducing Brokers</p>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow duration-300 border-2 border-amber-500/30 hover:border-amber-500/50 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Clients</CardTitle>
-            <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{kpis?.pending_clients ?? 0}</div>
-            <p className="text-xs text-muted-foreground">Awaiting approval</p>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow duration-300 border-2 border-green-500/30 hover:border-green-500/50 bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-transparent">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Traders</CardTitle>
-            <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{kpis?.active_traders ?? 0}</div>
-            <p className="text-xs text-muted-foreground">Currently trading</p>
-          </CardContent>
-        </Card>
+        {primaryKpiCards.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <Card
+              key={item.title}
+              className={`hover:shadow-md transition-shadow duration-300 border-2 ${item.className}`}
+            >
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
+                <Icon className={`h-4 w-4 ${item.iconClassName}`} />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${item.valueClassName}`}>{item.value}</div>
+                <p className="text-xs text-muted-foreground">{item.description}</p>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {/* Additional KPI Cards Row */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        <Card className="hover:shadow-md transition-shadow duration-300 border-2 border-green-500/30 hover:border-green-500/50 bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-transparent">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Approved Deposits</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-green-600 dark:text-green-400">{kpis?.approved_deposit ?? 0}</div>
-            <p className="text-xs text-muted-foreground">Total approved</p>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow duration-300 border-2 border-amber-500/30 hover:border-amber-500/50 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Deposits</CardTitle>
-            <Clock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400">{kpis?.pending_deposit ?? 0}</div>
-            <p className="text-xs text-muted-foreground">Awaiting approval</p>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow duration-300 border-2 border-red-500/30 hover:border-red-500/50 bg-gradient-to-br from-red-500/10 via-rose-500/5 to-transparent">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Withdrawals</CardTitle>
-            <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-red-600 dark:text-red-400">{kpis?.pending_withdraw ?? 0}</div>
-            <p className="text-xs text-muted-foreground">Awaiting processing</p>
-          </CardContent>
-        </Card>
-        <Card className="hover:shadow-md transition-shadow duration-300 border-2 border-purple-500/30 hover:border-purple-500/50 bg-gradient-to-br from-purple-500/10 via-violet-500/5 to-transparent">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending IB Withdrawals</CardTitle>
-            <Wallet className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">{kpis?.pending_ib_withdraw ?? 0}</div>
-            <p className="text-xs text-muted-foreground">IB withdrawal requests</p>
-          </CardContent>
-        </Card>
+        {secondaryKpiCards.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <Card
+              key={item.title}
+              className={`hover:shadow-md transition-shadow duration-300 border-2 ${item.className}`}
+            >
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
+                <Icon className={`h-4 w-4 ${item.iconClassName}`} />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${item.valueClassName}`}>{item.value}</div>
+                <p className="text-xs text-muted-foreground">{item.description}</p>
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
-      {/* Transaction Graph */}
-      {transactionGraph && (
-        <Card className="mb-6">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-lg font-bold">Transaction Graph</CardTitle>
-                <CardDescription>
-                  {transactionGraph.start_date && transactionGraph.end_date
-                    ? `${new Date(transactionGraph.start_date).toLocaleDateString()} - ${new Date(transactionGraph.end_date).toLocaleDateString()}`
-                    : "Transaction overview"}
-                </CardDescription>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+        {tertiaryKpiCards.map((item) => {
+          const Icon = item.icon;
+
+          return (
+            <Card
+              key={item.title}
+              className={`hover:shadow-md transition-shadow duration-300 border-2 ${item.className}`}
+            >
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
+                <Icon className={`h-4 w-4 ${item.iconClassName}`} />
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${item.valueClassName}`}>{item.value}</div>
+                <p className="text-xs text-muted-foreground">{item.description}</p>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+
+      {/* Charts */}
+      <div className="mb-6 grid gap-6 xl:grid-cols-2">
+        {transactionGraph && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg font-bold">Transaction Graph</CardTitle>
+                  <CardDescription>
+                    {transactionGraph.start_date && transactionGraph.end_date
+                      ? `${new Date(transactionGraph.start_date).toLocaleDateString()} - ${new Date(transactionGraph.end_date).toLocaleDateString()}`
+                      : "Transaction overview"}
+                  </CardDescription>
+                </div>
               </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {chartData.length > 0 ? (
-              <div className="h-[300px] w-full">
-                <ChartContainer config={chartConfig} className="h-full w-full">
-                  <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" opacity={0.3} />
-                    <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                    <ChartTooltip
-                      content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />}
-                    />
-                    <Line type="monotone" dataKey="deposit" stroke={chartConfig.deposit.color} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                    <Line type="monotone" dataKey="withdraw" stroke={chartConfig.withdraw.color} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                    <Line type="monotone" dataKey="ib_withdraw" stroke={chartConfig.ib_withdraw.color} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                  </LineChart>
-                </ChartContainer>
+            </CardHeader>
+            <CardContent>
+              {transactionChartData.length > 0 ? (
+                <div className="h-[300px] w-full">
+                  <ChartContainer config={transactionChartConfig} className="h-full w-full">
+                    <LineChart data={transactionChartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" opacity={0.3} />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                      <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                      <ChartTooltip
+                        content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />}
+                      />
+                      <Line type="monotone" dataKey="deposit" stroke={transactionChartConfig.deposit.color} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                      <Line type="monotone" dataKey="withdraw" stroke={transactionChartConfig.withdraw.color} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                      <Line type="monotone" dataKey="ib_withdraw" stroke={transactionChartConfig.ib_withdraw.color} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                    </LineChart>
+                  </ChartContainer>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  No transaction data available
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {clientsGraph && (
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg font-bold">Client Growth Graph</CardTitle>
+                  <CardDescription>
+                    {clientsGraph.start_date && clientsGraph.end_date
+                      ? `${new Date(clientsGraph.start_date).toLocaleDateString()} - ${new Date(clientsGraph.end_date).toLocaleDateString()}`
+                      : "New client registrations"}
+                  </CardDescription>
+                </div>
               </div>
-            ) : (
-              <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                No transaction data available
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+            </CardHeader>
+            <CardContent>
+              {clientsChartData.length > 0 ? (
+                <div className="h-[300px] w-full">
+                  <ChartContainer config={clientsChartConfig} className="h-full w-full">
+                    <LineChart data={clientsChartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" opacity={0.3} />
+                      <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                      <YAxis allowDecimals={false} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                      <ChartTooltip
+                        content={<ChartTooltipContent formatter={(value) => `${Number(value)} clients`} />}
+                      />
+                      <Line type="monotone" dataKey="clients" stroke={clientsChartConfig.clients.color} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
+                    </LineChart>
+                  </ChartContainer>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+                  No client graph data available
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
 
       {/* Summary Metrics */}
       {summaryMetrics && (
