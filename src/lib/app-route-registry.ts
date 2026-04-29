@@ -531,6 +531,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     managerCategories: ["User Management"],
   },
   {
+    path: "/add-bank-details",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "user-management",
+    navLabel: "Add Bank Details",
+    managerCategories: ["User Management"],
+  },
+  {
     path: "/usdt-transactions",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,

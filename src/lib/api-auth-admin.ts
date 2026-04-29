@@ -432,6 +432,32 @@ export interface UserBankDetailsData extends UserBankDetailsPayload {
   user_id: number;
 }
 
+export interface AdminBankDetailsUser {
+  id: number;
+  name: string;
+  email: string;
+  mobile: string;
+  uuid: string;
+}
+
+export interface AdminBankDetailItem extends UserBankDetailsPayload {
+  id: number;
+  uuid: string;
+  user_id: number;
+  user?: AdminBankDetailsUser;
+}
+
+export interface AdminBankDetailsListData {
+  count: number;
+  rows: AdminBankDetailItem[];
+}
+
+export interface AdminBankDetailCreateBody extends UserBankDetailsPayload {
+  user_uuid: string;
+}
+
+export type AdminBankDetailUpdateBody = UserBankDetailsPayload;
+
 export interface Permission {
   id: number;
   name: string;
@@ -968,6 +994,83 @@ export const authApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),
+};
+
+export const adminBankDetailsApi = {
+  list: (token: string) => {
+    if (!token) {
+      throw new Error("Token is required to fetch bank details");
+    }
+
+    return apiCall<AdminBankDetailsListData>(`/admin/bank-details`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  create: (body: AdminBankDetailCreateBody, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to create bank details");
+    }
+
+    return apiCall<AdminBankDetailItem>(`/admin/bank-details`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  },
+
+  getByUuid: (uuid: string, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to fetch bank detail");
+    }
+
+    if (!uuid.trim()) {
+      throw new Error("Bank detail UUID is required");
+    }
+
+    return apiCall<AdminBankDetailItem>(`/admin/bank-details/${uuid}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  update: (uuid: string, body: AdminBankDetailUpdateBody, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to update bank detail");
+    }
+
+    if (!uuid.trim()) {
+      throw new Error("Bank detail UUID is required");
+    }
+
+    return apiCall<AdminBankDetailItem>(`/admin/bank-details/${uuid}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  },
+
+  delete: (uuid: string, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to delete bank detail");
+    }
+
+    if (!uuid.trim()) {
+      throw new Error("Bank detail UUID is required");
+    }
+
+    return apiCall(`/admin/bank-details/${uuid}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
 };
 
 export const admin2FAApi = {
