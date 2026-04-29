@@ -5,6 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import toast from "react-hot-toast";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import {
+  Database,
   RefreshCw,
   Search,
 } from "lucide-react";
@@ -445,7 +446,10 @@ export default function AllUsersMT5AccountsPage() {
         <div className="container mx-auto space-y-6 p-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight">All Users MT5 Accounts</h1>
+              <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+                <Database className="h-6 w-6 text-primary" />
+                All Users MT5 Accounts
+              </h1>
               <p className="text-sm text-muted-foreground">
                 View and manage all MT5 trading accounts for users.
               </p>

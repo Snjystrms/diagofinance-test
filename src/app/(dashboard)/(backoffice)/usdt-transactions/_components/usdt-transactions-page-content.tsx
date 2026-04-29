@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { CheckCircle2, XCircle, Eye, Calendar, FileImage, RefreshCw } from "lucide-react";
+import { CheckCircle2, XCircle, Eye, Calendar, FileImage, RefreshCw, CircleDollarSign } from "lucide-react";
 
 import {
   adminUSDTDepositApi,
@@ -687,7 +687,10 @@ export function USDTTransactionsPageContent() {
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">USDT Transactions</h1>
+            <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+              <CircleDollarSign className="h-6 w-6 text-primary" />
+              USDT Transactions
+            </h1>
             <p className="text-sm text-muted-foreground">
               Manage and review USDT deposit and withdrawal requests
             </p>

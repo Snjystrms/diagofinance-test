@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { useSearchParams } from 'next/navigation'
 import { z } from 'zod'
 import toast from 'react-hot-toast'
-import { Repeat, Wallet } from 'lucide-react'
+import { Repeat, Wallet, ArrowLeftRight } from 'lucide-react'
 
 import { ApiErrorState } from '@/components/errors/api-error-state'
 import { Button } from '@/components/ui/button'
@@ -457,7 +457,8 @@ function InternalTransferContent() {
     <div className="space-y-6">
       <div className="space-y-2">
         <div>
-          <h1 className="text-3xl font-semibold text-foreground mb-1">
+          <h1 className="mb-1 flex items-center gap-2 text-3xl font-semibold text-foreground">
+            <ArrowLeftRight className="h-6 w-6 text-primary" />
             Internal Transfers
           </h1>
           <p className="text-base text-muted-foreground max-w-2xl">

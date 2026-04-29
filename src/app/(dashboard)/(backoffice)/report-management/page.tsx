@@ -26,7 +26,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, RefreshCw, Download, Filter, ChevronDown } from "lucide-react";
+import { CalendarIcon, RefreshCw, Download, Filter, ChevronDown, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import {
@@ -405,7 +405,10 @@ export default function ReportManagementPage() {
         {/* Header Section */}
         <div className="flex items-center justify-between">
         <div>
-            <h1 className="text-2xl font-semibold">Deposit Report</h1>
+            <h1 className="flex items-center gap-2 text-2xl font-semibold">
+              <BarChart3 className="h-6 w-6 text-primary" />
+              Deposit Report
+            </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
               Manage and view deposit transactions
             </p>

@@ -14,6 +14,7 @@ import {
   UserX,
   FileClock,
   Landmark,
+  LayoutGrid,
 } from "lucide-react";
 import dynamic from "next/dynamic";
 import type { AdminDashboardData } from "@/lib/api";
@@ -199,7 +200,8 @@ export function AdminDashboardView({ adminDashboardData }: AdminDashboardViewPro
   return (
     <div className="min-h-full w-full p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-background via-background to-muted/20">
       <div className="mb-6">
-        <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+        <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
+          <LayoutGrid className="h-6 w-6 text-primary" />
           Admin Dashboard
         </h1>
         <p className="text-muted-foreground text-sm mt-1">

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Mail, Send, Inbox, Archive } from "lucide-react"
+import { Mail, Send, Inbox } from "lucide-react"
 
 export default function EmailsPage() {
   return (
@@ -8,7 +8,10 @@ export default function EmailsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold">Emails</h1>
+            <h1 className="flex items-center gap-2 text-3xl font-bold">
+              <Mail className="h-6 w-6 text-primary" />
+              Emails
+            </h1>
             <p className="text-muted-foreground">
               Manage your email communications and templates.
             </p>

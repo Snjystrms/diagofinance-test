@@ -7,6 +7,7 @@ import { Download, RefreshCw } from "lucide-react";
 
 interface ReportPageWrapperProps {
   title: string;
+  titleIcon?: React.ReactNode;
   description?: string;
   isLoading?: boolean;
   isEmpty?: boolean;
@@ -24,6 +25,7 @@ interface ReportPageWrapperProps {
  */
 export function ReportPageWrapper({
   title,
+  titleIcon,
   description,
   isLoading,
   isEmpty,
@@ -51,7 +53,10 @@ export function ReportPageWrapper({
       <div className="container mx-auto space-y-6 px-4 py-10 md:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold">{title}</h1>
+            <h1 className="flex items-center gap-2 text-2xl font-semibold">
+              {titleIcon}
+              {title}
+            </h1>
             {description ? (
               <p className="mt-0.5 text-sm text-muted-foreground">{description}</p>
             ) : null}
@@ -94,7 +99,10 @@ export function ReportPageWrapper({
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h1 className="text-2xl font-semibold">{title}</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-semibold">
+            {titleIcon}
+            {title}
+          </h1>
           {description && (
             <p className="text-sm text-muted-foreground mt-0.5">{description}</p>
           )}

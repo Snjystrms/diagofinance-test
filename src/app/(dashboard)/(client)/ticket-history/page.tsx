@@ -1,11 +1,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Ticket } from "lucide-react"
 
 export default function TicketHistoryPage() {
   return (
     
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Ticket History</h1>
+          <h1 className="flex items-center gap-2 text-3xl font-bold">
+            <Ticket className="h-6 w-6 text-primary" />
+            Ticket History
+          </h1>
           <p className="text-muted-foreground">
             View your support ticket history and status.
           </p>

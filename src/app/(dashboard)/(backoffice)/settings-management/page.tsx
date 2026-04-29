@@ -1,13 +1,16 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { TrendingUp, TrendingDown, DollarSign, Users, Building2, Calendar } from "lucide-react"
+import { TrendingUp, DollarSign, Users, Building2, BarChart3 } from "lucide-react"
 
 export default function AnalyticsPage() {
   return (
     
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Analytics</h1>
+          <h1 className="flex items-center gap-2 text-3xl font-bold">
+            <BarChart3 className="h-6 w-6 text-primary" />
+            Analytics
+          </h1>
           <p className="text-muted-foreground">
             Insights and metrics about your business performance.
           </p>

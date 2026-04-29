@@ -22,7 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Eye, CheckCircle2, XCircle, Calendar, FileText, User, Mail, Hash, Clock, AlertCircle, Image as ImageIcon } from "lucide-react";
+import { Eye, CheckCircle2, XCircle, Calendar, FileText, User, Mail, Hash, Clock, AlertCircle, Shield, Image as ImageIcon } from "lucide-react";
 
 import { adminKycApi, kycFileUrl } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
@@ -605,7 +605,10 @@ const buildReviewPayload = () => {
     <div className="container mx-auto p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">User Verification (KYC)</h1>
+          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+            <Shield className="h-6 w-6 text-primary" />
+            User Verification (KYC)
+          </h1>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={loadList}>Refresh</Button>

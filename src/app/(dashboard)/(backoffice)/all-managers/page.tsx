@@ -10,7 +10,7 @@ import { PermissionAwareCrudDataTable } from "@/components/permission-aware-crud
 import { PermissionAwareButton } from "@/components/permission-aware-button";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { BackofficeDetailDialogSkeleton } from "@/components/loading/backoffice-page-skeletons";
-import { Plus } from "lucide-react";
+import { Plus, UserPlus } from "lucide-react";
 import { getColumns } from "./columns";
 import {
   adminManagersApi,
@@ -376,7 +376,10 @@ export default function AllManagersPage() {
         <div className="container mx-auto px-4 md:px-6 lg:px-8 py-10 space-y-4">
           <div className="flex items-center justify-between">
             <div className="space-y-1">
-              <h2 className="text-2xl font-semibold tracking-tight">Managers</h2>
+              <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+                <UserPlus className="h-6 w-6 text-primary" />
+                Managers
+              </h1>
               <p className="text-sm text-muted-foreground">
                 Create, update, and manage managers & their permissions
               </p>

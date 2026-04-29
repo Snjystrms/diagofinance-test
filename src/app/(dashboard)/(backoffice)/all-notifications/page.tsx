@@ -367,7 +367,8 @@ export default function AllNotificationsPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="space-y-2">
-            <h1 className="text-3xl font-semibold text-foreground mb-1">
+            <h1 className="mb-1 flex items-center gap-2 text-3xl font-semibold text-foreground">
+              <Bell className="h-6 w-6 text-primary" />
               All Notifications
             </h1>
             <p className="text-base text-muted-foreground">
@@ -380,7 +381,7 @@ export default function AllNotificationsPage() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-card p-4 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
-              <Bell className="h-5 w-5 text-primary" />
+              <Bell className="h-6 w-6 text-primary" />
               <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Total</p>
             </div>
             <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{summary.total}</p>

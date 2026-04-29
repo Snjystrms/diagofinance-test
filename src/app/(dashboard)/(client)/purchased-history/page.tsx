@@ -1,11 +1,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { ShoppingCart } from "lucide-react"
 
 export default function PurchasedHistoryPage() {
   return (
     
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Purchased History</h1>
+          <h1 className="flex items-center gap-2 text-3xl font-bold">
+            <ShoppingCart className="h-6 w-6 text-primary" />
+            Purchased History
+          </h1>
           <p className="text-muted-foreground">
             View your purchase history and related information.
           </p>

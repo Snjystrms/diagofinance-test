@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import toast from "react-hot-toast";
-import { FileImage, Upload, X, Loader2 } from "lucide-react";
+import { FileImage, Upload, X, Loader2, Newspaper } from "lucide-react";
 import { adminNewsApi, type NewsCreateBody } from "@/lib/api";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
@@ -154,7 +154,10 @@ export default function NewsManagementPage() {
     
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">News Management</h1>
+          <h1 className="flex items-center gap-2 text-3xl font-bold">
+            <Newspaper className="h-6 w-6 text-primary" />
+            News Management
+          </h1>
           <p className="text-muted-foreground">
             Create and manage news articles for your platform.
           </p>

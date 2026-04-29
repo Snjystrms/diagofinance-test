@@ -554,7 +554,10 @@ export default function AllTradesPage() {
         <div className="space-y-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="space-y-2">
-              <h1 className="text-3xl font-semibold text-foreground">All Trades</h1>
+              <h1 className="flex items-center gap-2 text-3xl font-semibold text-foreground">
+                <History className="h-6 w-6 text-primary" />
+                All Trades
+              </h1>
               <p className="max-w-2xl text-base text-muted-foreground">
                 Review open MT5 positions and historical deal/order records for a selected trading login.
               </p>

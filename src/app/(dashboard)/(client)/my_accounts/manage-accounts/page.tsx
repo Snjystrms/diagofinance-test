@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
+  Award,
   BarChart3,
   CheckCircle2,
   Clock,
@@ -477,7 +478,8 @@ export default function ManageAccountsPage() {
         <div className="mb-8">
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="space-y-2">
-              <h1 className="text-3xl font-semibold text-foreground mb-1">
+              <h1 className="mb-1 flex items-center gap-2 text-3xl font-semibold text-foreground">
+                <Award className="h-6 w-6 text-primary" />
                 Manage Accounts
               </h1>
               <p className="text-base text-muted-foreground">

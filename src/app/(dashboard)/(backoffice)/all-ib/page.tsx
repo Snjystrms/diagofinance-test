@@ -9,6 +9,7 @@ import {
   Loader2,
   RefreshCw,
   Search,
+  UserCheck,
   XCircle,
 } from "lucide-react";
 
@@ -648,7 +649,10 @@ export default function IbManagementPage() {
         <div className="container mx-auto space-y-6 p-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight">IB Requests</h1>
+              <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+                <UserCheck className="h-6 w-6 text-primary" />
+                IB Requests
+              </h1>
               <p className="text-sm text-muted-foreground">
                 Review and process Introducing Broker applications submitted by users.
               </p>

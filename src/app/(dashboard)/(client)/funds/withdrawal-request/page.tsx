@@ -227,7 +227,8 @@ function WithdrawalRequestContent() {
         {/* Header */}
         <div className="mb-8">
           <div className="space-y-2">
-            <h1 className="text-3xl font-semibold text-foreground mb-1">
+            <h1 className="mb-1 flex items-center gap-2 text-3xl font-semibold text-foreground">
+              <ArrowUpRight className="h-6 w-6 text-primary" />
               Withdraw USDT
             </h1>
             <p className="text-base text-muted-foreground">

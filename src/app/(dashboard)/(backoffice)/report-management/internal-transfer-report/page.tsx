@@ -10,7 +10,7 @@ import { AppDataTable } from "@/components/app-data-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { CalendarIcon, RefreshCw, Download, Search, X } from "lucide-react";
+import { CalendarIcon, RefreshCw, Download, Search, X, ArrowLeftRight } from "lucide-react";
 import * as XLSX from "xlsx";
 
 import {
@@ -320,6 +320,7 @@ export default function InternalTransferReportPage() {
   return (
     <ReportPageWrapper
       title="Internal Transfer Report"
+      titleIcon={<ArrowLeftRight className="h-6 w-6 text-primary" />}
       description="Manage and view internal transfer transactions"
       isLoading={loading}
       isEmpty={rows.length === 0}

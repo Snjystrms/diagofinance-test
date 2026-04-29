@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import toast from "react-hot-toast";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
-import { Search, RefreshCw, Network } from "lucide-react";
+import { Search, RefreshCw, Network, CircleDollarSign } from "lucide-react";
 
 import { useRouter } from "next/navigation";
 import { AppDataTable } from "@/components/app-data-table";
@@ -311,7 +311,10 @@ export default function SetIbCommissionPage() {
         <div className="container mx-auto space-y-6 p-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight">Set IB Commission</h1>
+              <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+                <CircleDollarSign className="h-6 w-6 text-primary" />
+                Set IB Commission
+              </h1>
               <p className="text-sm text-muted-foreground">
                 View and manage IB users for commission settings.
               </p>

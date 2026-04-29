@@ -1,11 +1,15 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { History } from "lucide-react"
 
 export default function WithdrawalHistoryPage() {
   return (
     
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold">Withdrawal History</h1>
+          <h1 className="flex items-center gap-2 text-3xl font-bold">
+            <History className="h-6 w-6 text-primary" />
+            Withdrawal History
+          </h1>
           <p className="text-muted-foreground">
             View your withdrawal transaction history.
           </p>

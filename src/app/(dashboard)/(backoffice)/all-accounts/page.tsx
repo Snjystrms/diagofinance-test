@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Package } from "lucide-react";
 import { adminAccountTypesApi, type AccountTypeItem, type AccountTypeUpsertBody } from "@/lib/api";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
@@ -251,6 +252,15 @@ export default function AllAccountsPage() {
     <ProtectedRoute>
       
         <div className="container mx-auto px-4 md:px-6 lg:px-8 py-10">
+          <div className="mb-4 space-y-1">
+            <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+              <Package className="h-6 w-6 text-primary" />
+              All Accounts
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Create, update, and manage account types
+            </p>
+          </div>
           {/* Filters */}
           <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="space-y-1">

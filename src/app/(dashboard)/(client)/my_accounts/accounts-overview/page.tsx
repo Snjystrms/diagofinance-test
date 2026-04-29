@@ -1,6 +1,6 @@
 'use client';
 
-import { SquareStack } from 'lucide-react';
+import { BarChart3, SquareStack } from 'lucide-react';
 
 import { AccountTypeCardGrid } from '@/components/accounts/account-type-card-grid';
 import { ApiErrorState } from '@/components/errors/api-error-state';
@@ -24,7 +24,8 @@ export default function AccountsOverviewPage() {
         {/* Header Section */}
         <div className="mb-8">
           <div className="space-y-2">
-            <h1 className="text-3xl font-semibold text-foreground mb-1">
+            <h1 className="mb-1 flex items-center gap-2 text-3xl font-semibold text-foreground">
+              <BarChart3 className="h-6 w-6 text-primary" />
               Accounts Overview
             </h1>
             <p className="text-base text-muted-foreground max-w-2xl">

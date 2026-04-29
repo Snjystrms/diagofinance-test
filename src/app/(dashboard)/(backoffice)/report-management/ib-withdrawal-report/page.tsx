@@ -16,7 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, RefreshCw, Download, Filter, ChevronDown } from "lucide-react";
+import { CalendarIcon, RefreshCw, Download, Filter, ChevronDown, Landmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import * as XLSX from "xlsx";
 
@@ -410,6 +410,7 @@ export default function IbWithdrawalReportPage() {
   return (
     <ReportPageWrapper
       title="IB Withdrawal Report"
+      titleIcon={<Landmark className="h-6 w-6 text-primary" />}
       description="Manage and view IB withdrawal transactions"
       isLoading={loading}
       isEmpty={rows.length === 0}

@@ -981,7 +981,10 @@ export function DashboardPageContent() {
           <div className="mb-8 rounded-3xl border border-border/50 bg-card p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="space-y-2">
-                <h1 className="text-3xl font-semibold">Dashboard</h1>
+                <h1 className="flex items-center gap-2 text-3xl font-semibold">
+                  <LayoutGrid className="h-6 w-6 text-primary" />
+                  Dashboard
+                </h1>
                 <p className="text-base text-muted-foreground max-w-2xl">
                   Welcome back! Here&apos;s what&apos;s happening with your account today.
                 </p>
