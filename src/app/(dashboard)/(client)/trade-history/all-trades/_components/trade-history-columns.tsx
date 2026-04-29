@@ -1,0 +1,96 @@
+'use client';
+
+import type { ColumnDef } from '@tanstack/react-table';
+
+import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
+
+import { formatTradeNumber, type TradeRow } from '../_lib/trade-history';
+
+const getTypeClasses = (type: TradeRow['normalizedType']) =>
+  type === 'deal'
+    ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+    : 'border-sky-200 bg-sky-50 text-sky-700';
+
+const getProfitClasses = (profit: number | null) => {
+  if (typeof profit === 'number' && profit > 0) return 'text-emerald-600';
+  if (typeof profit === 'number' && profit < 0) return 'text-red-600';
+  return 'text-muted-foreground';
+};
+
+export const tradeHistoryColumns: ColumnDef<TradeRow>[] = [
+  {
+    id: 'type',
+    header: 'Type',
+    cell: ({ row }) => (
+      <Badge variant="outline" className={cn('capitalize', getTypeClasses(row.original.normalizedType))}>
+        {row.original.type || '-'}
+      </Badge>
+    ),
+  },
+  {
+    id: 'time',
+    header: 'Time (IST)',
+    accessorKey: 'time_ist',
+  },
+  {
+    id: 'symbol',
+    header: 'Symbol',
+    accessorKey: 'symbol',
+    cell: ({ row }) => row.original.symbol || '-',
+  },
+  {
+    id: 'side',
+    header: 'Side',
+    accessorKey: 'side',
+    cell: ({ row }) => row.original.side || '-',
+  },
+  {
+    id: 'status',
+    header: 'Status',
+    accessorKey: 'status',
+    cell: ({ row }) => row.original.status || '-',
+  },
+  {
+    id: 'tickets',
+    header: 'Deal / Order / Position',
+    cell: ({ row }) => (
+      <div className="space-y-1 text-xs">
+        <div>Deal: {row.original.deal ?? '-'}</div>
+        <div>Order: {row.original.order ?? '-'}</div>
+        <div>Position: {row.original.position ?? '-'}</div>
+      </div>
+    ),
+  },
+  {
+    id: 'price',
+    header: 'Price',
+    cell: ({ row }) => formatTradeNumber(row.original.price, 5),
+  },
+  {
+    id: 'volume',
+    header: 'Volume',
+    cell: ({ row }) => formatTradeNumber(row.original.volume, 2),
+  },
+  {
+    id: 'profit',
+    header: 'Profit',
+    cell: ({ row }) => (
+      <span className={cn('font-semibold', getProfitClasses(row.original.profit))}>
+        {formatTradeNumber(row.original.profit, 2)}
+      </span>
+    ),
+  },
+  {
+    id: 'comment',
+    header: 'Comment',
+    accessorKey: 'comment',
+    cell: ({ row }) => row.original.comment || '-',
+  },
+  {
+    id: 'mt5_ticket',
+    header: 'MT5 Ticket',
+    accessorKey: 'mt5_ticket',
+    cell: ({ row }) => row.original.mt5_ticket ?? '-',
+  },
+];

@@ -36,6 +36,7 @@ import {
   authApi,
   admin2FAApi,
   manager2FAApi,
+  type UserBankDetailsData,
   type ProfileViewResponse,
   type UserProfileUpdatePayload,
 } from "@/lib/api";
@@ -145,6 +146,8 @@ export default function ProfileContent() {
   const [cityMode, setCityMode] = useState<LocationMode>("select");
   const [bankCountryMode, setBankCountryMode] = useState<LocationMode>("select");
   const [selectedBankCountryId, setSelectedBankCountryId] = useState<number | null>(null);
+  const [bankDetailsRecordId, setBankDetailsRecordId] = useState<number | null>(null);
+  const [bankDetailsSaving, setBankDetailsSaving] = useState(false);
   const [locationHydrated, setLocationHydrated] = useState(false);
   const [bankDetails, setBankDetails] = useState<BankDetailsFormState>({
     client: "primary-client",
@@ -176,6 +179,20 @@ export default function ProfileContent() {
     setBankDetails((current) => ({
       ...current,
       [field]: value,
+    }));
+  };
+
+  const applyBankDetailsToForm = (details: UserBankDetailsData) => {
+    setBankDetailsRecordId(details.id);
+    setBankDetails((current) => ({
+      ...current,
+      accountName: details.account_holder_name ?? "",
+      accountNumber: details.account_number ?? "",
+      ifscSwiftCode: details.swift_ifsc_code ?? "",
+      ibanNumber: details.iban_number ?? "",
+      bankName: details.bank_name ?? "",
+      bankAddress: details.address ?? "",
+      country: details.country ?? "",
     }));
   };
 
@@ -514,8 +531,56 @@ export default function ProfileContent() {
     updateBankDetails("country", country.name);
   };
 
-  const handleBankDetailsSubmit = () => {
-    toast.success("Bank details are stored locally for now. API wiring is still pending.");
+  const handleBankDetailsSubmit = async () => {
+    if (!token) {
+      toast.error("Authentication required");
+      return;
+    }
+
+    const payload = {
+      account_holder_name: bankDetails.accountName.trim(),
+      account_number: bankDetails.accountNumber.trim(),
+      iban_number: bankDetails.ibanNumber.trim(),
+      swift_ifsc_code: bankDetails.ifscSwiftCode.trim(),
+      bank_name: bankDetails.bankName.trim(),
+      address: bankDetails.bankAddress.trim(),
+      country: bankDetails.country.trim(),
+    };
+
+    if (
+      !payload.account_holder_name ||
+      !payload.account_number ||
+      !payload.swift_ifsc_code ||
+      !payload.bank_name ||
+      !payload.address ||
+      !payload.country
+    ) {
+      toast.error("Please fill all required bank details fields.");
+      return;
+    }
+
+    try {
+      setBankDetailsSaving(true);
+      const response = bankDetailsRecordId
+        ? await authApi.updateBankDetails(payload, token)
+        : await authApi.createBankDetails(payload, token);
+
+      if (response.data) {
+        applyBankDetailsToForm(response.data);
+      }
+
+      toast.success(
+        response.message ||
+          (bankDetailsRecordId
+            ? "Bank details updated successfully"
+            : "Bank details added successfully")
+      );
+    } catch (error) {
+      console.error("Error saving bank details:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to save bank details");
+    } finally {
+      setBankDetailsSaving(false);
+    }
   };
 
   useEffect(() => {
@@ -639,31 +704,20 @@ export default function ProfileContent() {
   }, [countryOptions, locationHydrated, profileData]);
 
   useEffect(() => {
-    if (bankDetails.country || !profileData?.personal_information.country || countryOptions.length === 0) {
+    if (!bankDetails.country || countryOptions.length === 0) {
       return;
     }
 
-    const matchedBankCountry = findLocationOptionByName(
-      countryOptions,
-      profileData.personal_information.country
-    );
-
+    const matchedBankCountry = findLocationOptionByName(countryOptions, bankDetails.country);
     if (matchedBankCountry) {
       setBankCountryMode("select");
       setSelectedBankCountryId(matchedBankCountry.id);
-      setBankDetails((current) => ({
-        ...current,
-        country: matchedBankCountry.name,
-      }));
       return;
     }
 
     setBankCountryMode("other");
-    setBankDetails((current) => ({
-      ...current,
-      country: profileData.personal_information.country ?? "",
-    }));
-  }, [bankDetails.country, countryOptions, profileData?.personal_information.country]);
+    setSelectedBankCountryId(null);
+  }, [bankDetails.country, countryOptions]);
 
   // Load profile data on mount
   useEffect(() => {
@@ -672,10 +726,13 @@ export default function ProfileContent() {
 
       try {
         setLoading(true);
-        const response = await authApi.getProfileView(token);
-        
-        if (response.success && response.data) {
-          const normalizedProfile = normalizeProfileResponse(response.data);
+        const [profileResponse, bankResponse] = await Promise.all([
+          authApi.getProfileView(token),
+          authApi.getBankDetails(token).catch(() => null),
+        ]);
+
+        if (profileResponse.data) {
+          const normalizedProfile = normalizeProfileResponse(profileResponse.data);
           setProfileData(normalizedProfile);
           setIs2FAEnabled(Boolean(normalizedProfile.user?.google_2FA_status));
           
@@ -696,6 +753,12 @@ export default function ProfileContent() {
             setDobMonth(undefined);
             setDobValue("");
           }
+        }
+
+        if (bankResponse?.data) {
+          applyBankDetailsToForm(bankResponse.data);
+        } else {
+          setBankDetailsRecordId(null);
         }
       } catch (error) {
         console.error("Error loading profile:", error);
@@ -1918,7 +1981,7 @@ export default function ProfileContent() {
             <CardHeader>
               <CardTitle>Add Bank Details</CardTitle>
               <CardDescription>
-                This section is static for now and stays on the client until the bank-details API is wired.
+                Add or update your bank details. Existing values are loaded automatically when available.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -2055,8 +2118,15 @@ export default function ProfileContent() {
                 </div>
               </div>
               <div className="flex justify-start">
-                <Button type="button" onClick={handleBankDetailsSubmit}>
-                  Submit
+                <Button type="button" onClick={handleBankDetailsSubmit} disabled={bankDetailsSaving}>
+                  {bankDetailsSaving ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    bankDetailsRecordId ? "Update Bank Details" : "Submit"
+                  )}
                 </Button>
               </div>
             </CardContent>
@@ -2073,4 +2143,3 @@ export default function ProfileContent() {
     </div>
   );
 }
-
