@@ -92,7 +92,7 @@ export default function WalletOverviewPage() {
 
   const formatAmount = (amount: string | number) => {
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount
-    return numAmount.toLocaleString('en-US', {
+    return Math.abs(numAmount).toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 8
     })

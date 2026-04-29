@@ -18,6 +18,21 @@ export default function ProfileHeader() {
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
   const [copiedAccountId, setCopiedAccountId] = useState(false);
 
+  const normalizeProfileResponse = (data: ProfileViewResponse): ProfileViewResponse => ({
+    ...data,
+    user: {
+      ...data.user,
+      country_code: String(data.user.country_code).startsWith("+")
+        ? data.user.country_code
+        : `+${data.user.country_code}`,
+      google_2FA_status: Boolean(data.user.google_2FA_status),
+    },
+    legal_information: {
+      ...data.legal_information,
+      politically_exposed: Boolean(data.legal_information.politically_exposed),
+    },
+  });
+
   useEffect(() => {
     const loadProfile = async () => {
       if (!token) return;
@@ -27,8 +42,9 @@ export default function ProfileHeader() {
         const response = await authApi.getProfileView(token);
         
         if (response.success && response.data) {
-          setProfileData(response.data);
-          setIs2FAEnabled(response.data.user?.google_2FA_status || false);
+          const normalizedProfile = normalizeProfileResponse(response.data);
+          setProfileData(normalizedProfile);
+          setIs2FAEnabled(Boolean(normalizedProfile.user?.google_2FA_status));
         }
       } catch (error) {
         console.error("Error loading profile:", error);
@@ -41,26 +57,29 @@ export default function ProfileHeader() {
     loadProfile();
   }, [token]);
 
-  // Listen for 2FA status changes from profile-content
+  // Listen for profile changes from profile-content
   useEffect(() => {
-    const handle2FAStatusChange = async () => {
+    const handleProfileRefresh = async () => {
       if (!token) return;
       
       try {
         const response = await authApi.getProfileView(token);
         if (response.success && response.data) {
-          setProfileData(response.data);
-          setIs2FAEnabled(response.data.user?.google_2FA_status || false);
+          const normalizedProfile = normalizeProfileResponse(response.data);
+          setProfileData(normalizedProfile);
+          setIs2FAEnabled(Boolean(normalizedProfile.user?.google_2FA_status));
         }
       } catch (error) {
         console.error("Error refreshing profile:", error);
       }
     };
 
-    window.addEventListener('2fa-status-changed', handle2FAStatusChange);
+    window.addEventListener('2fa-status-changed', handleProfileRefresh);
+    window.addEventListener('profile-updated', handleProfileRefresh);
     
     return () => {
-      window.removeEventListener('2fa-status-changed', handle2FAStatusChange);
+      window.removeEventListener('2fa-status-changed', handleProfileRefresh);
+      window.removeEventListener('profile-updated', handleProfileRefresh);
     };
   }, [token]);
 
@@ -147,7 +166,7 @@ export default function ProfileHeader() {
                 <div className="flex items-center gap-2 rounded-lg border border-border/80 bg-background/75 px-3 py-2 backdrop-blur-sm">
                   <Phone className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm text-foreground/88">
-                    +{user.country_code} {user.mobile}
+                    {user.country_code} {user.mobile}
                   </span>
                 </div>
               )}

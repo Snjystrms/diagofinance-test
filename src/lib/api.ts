@@ -360,9 +360,9 @@ export interface ProfileViewUser {
   email: string;
   account_id: string;
   mobile: string;
-  country_code: number;
+  country_code: number | string;
   location: string;
-  google_2FA_status: boolean;
+  google_2FA_status: boolean | number;
   verification_status: string;
   verification_status_code: number;
 }
@@ -404,6 +404,44 @@ export interface ProfileViewLegalInformation {
   purpose_of_opening_account: string | null;
   estimated_annual_amount: number | null;
 }
+
+export interface UserBasicProfileUpdateRequest {
+  first_name: string;
+  last_name: string;
+  mobile: string;
+  country_code: string;
+}
+
+export interface UserPersonalInformationUpdateRequest {
+  dob: string;
+  address: string;
+  passport_id_number: string;
+  pin_code: string;
+  nationality: string;
+  employment_status: string;
+  tax_number: string;
+  other_id_number?: string;
+  client_type: string;
+  country: string;
+  state: string;
+  city: string;
+}
+
+export interface UserLegalInformationUpdateRequest {
+  politically_exposed: boolean;
+  annual_income: number;
+  source_of_income: string;
+  estimated_net_worth: number;
+  purpose_of_opening_account: string;
+  estimated_annual_amount: number;
+}
+
+export type UserProfileUpdateRequest =
+  UserBasicProfileUpdateRequest &
+  UserPersonalInformationUpdateRequest &
+  UserLegalInformationUpdateRequest;
+
+export type UserProfileUpdatePayload = Partial<UserProfileUpdateRequest>;
 
 export interface ProfileViewKycDocuments {
   poi_front_file: string | null;
@@ -1025,6 +1063,13 @@ export const authApi = {
     apiCall<ProfileViewResponse>(`/user/profile/view`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  updateProfile: (data: UserProfileUpdatePayload, token: string) =>
+    apiCall<ProfileViewResponse>(`/user/profile/update`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
     }),
 
   getUserDashboard: (token: string) =>

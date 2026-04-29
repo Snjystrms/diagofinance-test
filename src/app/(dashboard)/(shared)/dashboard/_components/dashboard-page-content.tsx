@@ -945,10 +945,6 @@ export function DashboardPageContent() {
                     </Button>
                   </div>
                 ) : null}
-                <Badge variant="outline" className="px-4 py-2 text-xs font-semibold border-primary/30 bg-primary/5">
-                  <Activity className="h-3 w-3 mr-1.5 text-primary" />
-                  Live Data
-                </Badge>
               </div>
             </div>
           </div>
