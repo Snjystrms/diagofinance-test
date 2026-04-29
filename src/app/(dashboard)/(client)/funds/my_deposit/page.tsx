@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { getUserDepositRequests, type DepositRequestItem } from '@/utils/operations'
 import { binanceDepositApi, coinsbuyDepositApi, type DepositListItem, type BinanceDepositStatusResponse, type CoinsBuyDepositStatusResponse, type DepositListResponse } from '@/lib/api'
 import { getFriendlyErrorMessage } from '@/lib/friendly-errors'
+import { CLIENT_WALLET_REFRESH_EVENT } from '@/lib/client-events'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import toast from 'react-hot-toast'
 import { type ColumnDef } from '@tanstack/react-table'
@@ -638,6 +639,18 @@ export default function MyDepositPage() {
     if (total > 0 && perPage) return Math.ceil(total / perPage)
     return 1
   }, [totalPages, total, perPage])
+
+  useEffect(() => {
+    const handleWalletRefresh = () => {
+      void refetchLocalDeposits()
+      void refetchCryptoDeposits()
+    }
+
+    window.addEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh)
+    return () => {
+      window.removeEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh)
+    }
+  }, [refetchCryptoDeposits, refetchLocalDeposits])
 
   if (loading && depositRequests.length === 0 && binanceDeposits.length === 0) {
     return (

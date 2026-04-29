@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { submitUSDTDeposit } from "@/utils/operations";
 import { walletApi, binanceDepositApi, coinsbuyDepositApi, type WalletSummaryData, type BinanceDepositCreateResponse, type CoinsBuyDepositCreateResponse } from "@/lib/api";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
+import { CLIENT_WALLET_REFRESH_EVENT, notifyWalletRefresh } from "@/lib/client-events";
 import { Skeleton } from "@/components/ui/skeleton";
 import toast from "react-hot-toast";
 import { formatDateTimeInIST } from "@/lib/formatters";
@@ -105,6 +106,17 @@ function USDTDepositContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
+  useEffect(() => {
+    const handleWalletRefresh = () => {
+      void fetchWalletSummary();
+    };
+
+    window.addEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh);
+    return () => {
+      window.removeEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh);
+    };
+  }, [token]);
+
   // Check if user needs to pay registration fee
   const needsRegistrationFee = user && user.type === 'user' && user.is_account_active === false;
 
@@ -184,6 +196,7 @@ function USDTDepositContent() {
       const qrContent = depositData?.qr_content || depositData?.checkout_url || depositData?.universal_url;
       
       if (qrContent) {
+        notifyWalletRefresh();
         window.location.href = qrContent;
       } else {
         console.error("Binance deposit response data:", JSON.stringify(depositData, null, 2));
@@ -265,6 +278,7 @@ function USDTDepositContent() {
 
       // Show success toast and reset form
       toast.success("CoinsBuy deposit created successfully!");
+      notifyWalletRefresh();
       setIsSubmittingCoinsbuy(false);
       setCoinsbuyAmount("");
     } catch (err) {
@@ -324,6 +338,7 @@ function USDTDepositContent() {
 
       setDepositStatus("submitted");
       setIsSubmitting(false);
+      notifyWalletRefresh();
       
       // Simulate confirmation after a delay (in real app, this would come from backend)
       setTimeout(() => {

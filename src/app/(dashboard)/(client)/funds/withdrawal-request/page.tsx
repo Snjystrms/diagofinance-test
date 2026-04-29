@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/auth-context";
 import { withdrawalApi, walletApi, type WithdrawalResponse, type WalletSummaryData, type WithdrawalItem } from "@/lib/api";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
+import { CLIENT_WALLET_REFRESH_EVENT, notifyWalletRefresh } from "@/lib/client-events";
 import {
   Wallet,
   DollarSign,
@@ -81,6 +82,17 @@ function WithdrawalRequestContent() {
 
   useEffect(() => {
     fetchWalletSummary();
+  }, [token]);
+
+  useEffect(() => {
+    const handleWalletRefresh = () => {
+      void fetchWalletSummary();
+    };
+
+    window.addEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh);
+    return () => {
+      window.removeEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh);
+    };
   }, [token]);
 
   // Calculate remaining balance
@@ -178,6 +190,7 @@ function WithdrawalRequestContent() {
       
       // Refresh wallet balance after successful withdrawal
       fetchWalletSummary();
+      notifyWalletRefresh();
       
       // Reset form after successful submission
       setTimeout(() => {

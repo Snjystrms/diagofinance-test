@@ -7,6 +7,7 @@ import { ListPageSkeleton } from '@/components/loading/page-loading-skeleton'
 import { useAuth } from '@/contexts/auth-context'
 import { withdrawalApi, type WithdrawalItem } from '@/lib/api'
 import { getFriendlyErrorMessage } from '@/lib/friendly-errors'
+import { CLIENT_WALLET_REFRESH_EVENT, notifyWalletRefresh } from '@/lib/client-events'
 import { type ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -319,6 +320,19 @@ export default function WithdrawPage() {
     }
   }, [page, perPage, token])
 
+  useEffect(() => {
+    const handleWalletRefresh = () => {
+      if (page && perPage) {
+        void fetchWithdrawals(page, perPage)
+      }
+    }
+
+    window.addEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh)
+    return () => {
+      window.removeEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh)
+    }
+  }, [page, perPage, token])
+
   // Recalculate pageCount based on total
   const pageCount = useMemo(() => {
     if (totalPages > 0) return totalPages
@@ -410,6 +424,7 @@ export default function WithdrawPage() {
       if (page && perPage) {
         await fetchWithdrawals(page, perPage)
       }
+      notifyWalletRefresh()
 
       // Reset form and close dialog after 2 seconds
       setTimeout(() => {

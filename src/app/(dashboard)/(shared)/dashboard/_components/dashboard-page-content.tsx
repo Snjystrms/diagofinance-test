@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { AccountTypeCardGrid } from "@/components/accounts/account-type-card-grid"
@@ -60,12 +60,14 @@ const AdminDashboardView = dynamic(() => import("../admin-dashboard-view").then(
 })
 import toast from "react-hot-toast"
 import { useQuery } from "@tanstack/react-query"
+import { useQueryClient } from "@tanstack/react-query"
 import { useClientCustomization } from "@/contexts/client-customization-context"
 
 import { formatCurrency } from "@/lib/formatters"
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors"
 import { useActiveAccountTypes } from "@/hooks/use-active-account-types"
 import { normalizeIbWalletData } from "@/lib/ib"
+import { CLIENT_WALLET_REFRESH_EVENT } from "@/lib/client-events"
 
 const formatAmount = (amount?: number) => {
   const numAmount = typeof amount === 'number' ? amount : 0
@@ -102,6 +104,7 @@ export function DashboardPageContent() {
   const { user, token } = auth;
   const { canCustomizeDashboard, getDashboardMode, getDashboardPreset, setDashboardMode } =
     useClientCustomization();
+  const queryClient = useQueryClient();
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [incompleteSections, setIncompleteSections] = useState<Array<{
     key: "personal_information" | "legal_information" | "documents_verification";
@@ -138,6 +141,7 @@ export function DashboardPageContent() {
     enabled: Boolean(token) && isUser,
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
+    refetchOnMount: "always",
   });
 
   const [dashboardData, setDashboardData] = useState<UserDashboardData | null>(null);
@@ -168,6 +172,51 @@ export function DashboardPageContent() {
   const handleDashboardModeChange = (mode: 'normal' | 'custom') => {
     setDashboardMode(dashboardArea, mode);
   };
+
+  const refreshClientDashboardData = useCallback(async () => {
+    if (!isUser || !token) {
+      return;
+    }
+
+    try {
+      const [userDashboardResult, tradingResponse, ibWalletResponse, depositsStatsResponse, withdrawalsStatsResponse] = await Promise.all([
+        authApi.getUserDashboard(token),
+        authApi.getTradingAccountsSummary(token),
+        ibRequestsApi.getIbWallet(token).catch((err) => {
+          console.log("IB Wallet not available (user may not be IB):", err);
+          return null;
+        }),
+        authApi.getWalletStatistics(token, "deposits", statisticsPeriod),
+        authApi.getWalletStatistics(token, "withdrawals", statisticsPeriod),
+      ]);
+
+      if (userDashboardResult.success && userDashboardResult.data) {
+        setDashboardData(userDashboardResult.data);
+      }
+
+      if (tradingResponse.success) {
+        setTradingSummary(tradingResponse.data ?? null);
+      }
+
+      if (ibWalletResponse?.success && ibWalletResponse.data) {
+        setIbWalletData(normalizeIbWalletData(ibWalletResponse.data));
+      } else {
+        setIbWalletData(null);
+      }
+
+      if (depositsStatsResponse.success && depositsStatsResponse.data) {
+        setDepositsStatistics(depositsStatsResponse.data.statistics ?? []);
+      }
+
+      if (withdrawalsStatsResponse.success && withdrawalsStatsResponse.data) {
+        setWithdrawalsStatistics(withdrawalsStatsResponse.data.statistics ?? []);
+      }
+    } catch (error) {
+      console.error("Failed to refresh dashboard after transaction:", error);
+    } finally {
+      void queryClient.invalidateQueries({ queryKey: ["userDashboard", token] });
+    }
+  }, [isUser, queryClient, statisticsPeriod, token]);
 
   // Check for incomplete profile sections on mount
   useEffect(() => {
@@ -341,6 +390,21 @@ export function DashboardPageContent() {
       isMounted = false;
     };
   }, [isUser, token, statisticsPeriod]);
+
+  useEffect(() => {
+    if (!isUser || !token) {
+      return;
+    }
+
+    const handleWalletRefresh = () => {
+      void refreshClientDashboardData();
+    };
+
+    window.addEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh);
+    return () => {
+      window.removeEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh);
+    };
+  }, [isUser, refreshClientDashboardData, token]);
 
   const profileTimeline: ActivityTimelineItem[] = useMemo(() => {
     const checklist = dashboardData?.profile_status?.checklist;

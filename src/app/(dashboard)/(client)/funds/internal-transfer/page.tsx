@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useSearchParams } from 'next/navigation'
@@ -35,6 +35,7 @@ import {
 import { formatCurrency } from '@/lib/format'
 import { getFriendlyErrorMessage } from '@/lib/friendly-errors'
 import { useAuth } from '@/contexts/auth-context'
+import { notifyWalletRefresh } from '@/lib/client-events'
 
 const amountFieldSchema = z
   .string()
@@ -162,54 +163,54 @@ function InternalTransferContent() {
     },
   })
 
-  useEffect(() => {
+  const loadTransferResources = useCallback(async () => {
     if (!token) {
       return
     }
 
-    const loadTransferResources = async () => {
-      setIsLoadingResources(true)
-      setWalletError(null)
-      setAccountsError(null)
+    setIsLoadingResources(true)
+    setWalletError(null)
+    setAccountsError(null)
 
-      const [walletResult, accountsResult] = await Promise.allSettled([
-        walletApi.getSummary(token),
-        mt5AccountsApi.getAll(token),
-      ])
+    const [walletResult, accountsResult] = await Promise.allSettled([
+      walletApi.getSummary(token),
+      mt5AccountsApi.getAll(token),
+    ])
 
-      if (walletResult.status === 'fulfilled') {
-        const response = walletResult.value
-        if (response.success && response.data) {
-          setWalletSummary(response.data)
-        } else {
-          setWalletSummary(null)
-          setWalletError(response.message || 'Unable to load wallet summary')
-        }
+    if (walletResult.status === 'fulfilled') {
+      const response = walletResult.value
+      if (response.success && response.data) {
+        setWalletSummary(response.data)
       } else {
-        console.error('Failed to load wallet summary', walletResult.reason)
         setWalletSummary(null)
-        setWalletError(walletResult.reason)
+        setWalletError(response.message || 'Unable to load wallet summary')
       }
-
-      if (accountsResult.status === 'fulfilled') {
-        const response = accountsResult.value
-        if (response.success && response.data?.mt5_accounts) {
-          setMt5Accounts(response.data.mt5_accounts)
-        } else {
-          setMt5Accounts([])
-          setAccountsError('Unable to load MT5 accounts')
-        }
-      } else {
-        console.error('Failed to load MT5 accounts', accountsResult.reason)
-        setMt5Accounts([])
-        setAccountsError(accountsResult.reason)
-      }
-
-      setIsLoadingResources(false)
+    } else {
+      console.error('Failed to load wallet summary', walletResult.reason)
+      setWalletSummary(null)
+      setWalletError(walletResult.reason)
     }
 
-    void loadTransferResources()
+    if (accountsResult.status === 'fulfilled') {
+      const response = accountsResult.value
+      if (response.success && response.data?.mt5_accounts) {
+        setMt5Accounts(response.data.mt5_accounts)
+      } else {
+        setMt5Accounts([])
+        setAccountsError('Unable to load MT5 accounts')
+      }
+    } else {
+      console.error('Failed to load MT5 accounts', accountsResult.reason)
+      setMt5Accounts([])
+      setAccountsError(accountsResult.reason)
+    }
+
+    setIsLoadingResources(false)
   }, [token])
+
+  useEffect(() => {
+    void loadTransferResources()
+  }, [loadTransferResources])
 
   const mt5AccountOptions = useMemo(() => mt5Accounts.map((account) => ({
       id: account.account_id,
@@ -322,6 +323,8 @@ function InternalTransferContent() {
       const response = await internalTransferApi.mt5ToMt5(payload, token)
       if (response.success) {
         toast.success(response.message || 'Transfer completed successfully')
+        await loadTransferResources()
+        notifyWalletRefresh()
         mt5ToMt5Form.reset({
           fromAccountId: values.fromAccountId,
           toAccountId: values.toAccountId,
@@ -356,6 +359,8 @@ function InternalTransferContent() {
       const response = await internalTransferApi.userWalletToUserWallet(payload, token)
       if (response.success) {
         toast.success(response.message || 'Transfer completed successfully')
+        await loadTransferResources()
+        notifyWalletRefresh()
         walletToWalletForm.reset({
           fromWalletType: values.fromWalletType,
           toWalletType: values.toWalletType,
@@ -389,6 +394,8 @@ function InternalTransferContent() {
       const response = await internalTransferApi.userWalletToMt5(payload, token)
       if (response.success) {
         toast.success(response.message || 'Transfer completed successfully')
+        await loadTransferResources()
+        notifyWalletRefresh()
         walletToMt5Form.reset({
           fromWalletType: values.fromWalletType,
           toAccountId: values.toAccountId,
@@ -423,6 +430,8 @@ function InternalTransferContent() {
       const response = await internalTransferApi.mt5ToUserWallet(payload, token)
       if (response.success) {
         toast.success(response.message || 'Transfer completed successfully')
+        await loadTransferResources()
+        notifyWalletRefresh()
         mt5ToWalletForm.reset({
           fromAccountId: values.fromAccountId,
           toWalletType: values.toWalletType,

@@ -62,7 +62,6 @@ import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
 
 const DEFAULT_GROUP_ID = 1;
-const DEFAULT_INVESTOR_PASSWORD = 'OptionalInv@123';
 
 const LEVERAGE_CHOICES = [
   { value: 50, label: '1:50 - Lower exposure' },
@@ -111,7 +110,7 @@ export default function OpenTradingAccountPage() {
       balance: '10000',
       leverage: '100',
       mainPassword: '',
-      investorPassword: DEFAULT_INVESTOR_PASSWORD,
+      investorPassword: '',
     },
   });
 
@@ -289,7 +288,7 @@ export default function OpenTradingAccountPage() {
         balance: accountMode === 'demo' ? '10000' : '',
         leverage: '100',
         mainPassword: '',
-        investorPassword: DEFAULT_INVESTOR_PASSWORD,
+        investorPassword: '',
       });
       toast.success(response.message || 'MT5 account created successfully!');
     } catch (error) {

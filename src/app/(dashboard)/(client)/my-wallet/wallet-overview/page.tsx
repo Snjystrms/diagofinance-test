@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/auth-context'
 import { walletApi, type WalletSummaryData } from '@/lib/api'
+import { CLIENT_WALLET_REFRESH_EVENT } from '@/lib/client-events'
 import { ApiErrorState } from '@/components/errors/api-error-state'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -64,6 +65,17 @@ export default function WalletOverviewPage() {
 
   useEffect(() => {
     fetchWalletSummary()
+  }, [token])
+
+  useEffect(() => {
+    const handleWalletRefresh = () => {
+      void fetchWalletSummary()
+    }
+
+    window.addEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh)
+    return () => {
+      window.removeEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh)
+    }
   }, [token])
 
   const copyToClipboard = (text: string) => {
