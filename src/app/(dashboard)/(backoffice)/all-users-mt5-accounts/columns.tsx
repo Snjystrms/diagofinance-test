@@ -1,17 +1,11 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { Calendar, CreditCard, Eye, MoreHorizontal, Pencil, Server, Trash2, User } from "lucide-react";
+import { Calendar, CreditCard, Eye, Pencil, Server, Trash2, User } from "lucide-react";
 
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import type { AdminMT5Account } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
 
@@ -187,41 +181,40 @@ const RowActions = ({ row, onView, onEdit, onDelete }: RowActionsProps) => {
   const accountId = row.original.id ?? row.original.account_id ?? row.original.mt5_id;
 
   return (
-    <div className="flex items-center justify-end gap-1">
+    <div className="flex items-center justify-end gap-2">
       <Button
         type="button"
-        variant="ghost"
+        variant="outline"
         size="icon"
         className="h-8 w-8"
         onClick={() => onView(row.original)}
         disabled={!accountId}
+        title="View account details"
       >
         <Eye className="h-4 w-4" />
         <span className="sr-only">View account details</span>
       </Button>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Open menu</span>
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={() => onEdit(row.original)}>
-            <Pencil className="mr-2 h-4 w-4" />
-            Edit
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => accountId && onDelete(accountId)}
-            className="text-red-600"
-            disabled={!accountId}
-          >
-            <Trash2 className="mr-2 h-4 w-4" />
-            Delete
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="h-8 w-8"
+        onClick={() => onEdit(row.original)}
+        title="Edit account"
+      >
+        <Pencil className="h-4 w-4" />
+      </Button>
+      <Button
+        type="button"
+        variant="outline"
+        size="icon"
+        className="h-8 w-8"
+        onClick={() => accountId && onDelete(accountId)}
+        disabled={!accountId}
+        title="Delete account"
+      >
+        <Trash2 className="h-4 w-4" />
+      </Button>
     </div>
   );
 };

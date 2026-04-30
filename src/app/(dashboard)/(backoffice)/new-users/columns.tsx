@@ -1,18 +1,13 @@
 "use client";
 
+import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Calendar, Globe, Mail, MoreHorizontal, Pencil, Phone, Trash2, User } from "lucide-react";
+import { Calendar, Eye, Globe, Mail, Pencil, Phone, Trash2, User } from "lucide-react";
 
 import type { PendingUser } from "@/lib/api";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { formatDateTimeInIST } from "@/lib/formatters";
 
 const formatDateTime = (value?: string) => {
@@ -58,25 +53,63 @@ function RowActions({
   onEdit: (user: PendingUser) => void;
   onDelete: (user: PendingUser) => void;
 }) {
+  const hasDetailRoute = Boolean(row.original.uuid?.trim());
+  const detailHref = hasDetailRoute ? `/new-users/${encodeURIComponent(row.original.uuid!.trim())}` : null;
+
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="h-8 w-8 p-0">
-          <span className="sr-only">Open menu</span>
-          <MoreHorizontal className="h-4 w-4" />
+    <div className="flex flex-col items-end gap-1">
+      <div className="flex items-center justify-end gap-2">
+        {detailHref ? (
+          <Button
+            asChild
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+          >
+            <Link href={detailHref} aria-label={`View details for ${row.original.name || "user"}`}>
+              <Eye className="h-4 w-4" />
+            </Link>
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            disabled
+            className="h-8 w-8 text-amber-600/80"
+            aria-label={`UUID unavailable for ${row.original.name || "user"}`}
+            title="UUID unavailable"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+        )}
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => onEdit(row.original)}
+          title={`Edit ${row.original.name || "user"}`}
+        >
+          <Pencil className="h-4 w-4" />
         </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => onEdit(row.original)}>
-          <Pencil className="mr-2 h-4 w-4" />
-          Edit
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onDelete(row.original)} className="text-red-600">
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => onDelete(row.original)}
+          title={`Delete ${row.original.name || "user"}`}
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      </div>
+      {!hasDetailRoute ? (
+        <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
+          UUID unavailable
+        </span>
+      ) : null}
+    </div>
   );
 }
 

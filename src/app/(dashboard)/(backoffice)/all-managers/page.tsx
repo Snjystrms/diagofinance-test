@@ -326,10 +326,9 @@ export default function AllManagersPage() {
     () =>
       getColumns({
         onToggleStatus: handleToggleStatus,
-        onView: (row) => handleViewManager(row.id),
         actionLoadingId,
       }),
-    [handleToggleStatus, actionLoadingId, handleViewManager]
+    [handleToggleStatus, actionLoadingId]
   );
 
   const categorizedView: Record<string, PermissionLite[]> = useMemo(() => {
@@ -413,6 +412,7 @@ export default function AllManagersPage() {
             }}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
+            onView={(row) => handleViewManager(row.id)}
             rowIsReadOnly={() => false}
             onFetchItem={fetchManagerDetail}
           />

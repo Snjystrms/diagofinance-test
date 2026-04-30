@@ -4,8 +4,7 @@
 import type { Column, ColumnDef } from "@tanstack/react-table";
 import type { ManagerRow } from "./page";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
-import { CalendarDays, Mail, Phone, User2, Eye } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { CalendarDays, Mail, Phone, User2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { formatDateTimeInIST } from "@/lib/formatters";
 
@@ -13,7 +12,6 @@ const fmtDate = (s?: string) => (s ? formatDateTimeInIST(s) : "-");
 
 export const getColumns = (opts: {
   onToggleStatus: (id: string, next: boolean) => void;
-  onView: (row: ManagerRow) => void;
   actionLoadingId?: string | null;
 }): ColumnDef<ManagerRow>[] => [
   {
@@ -89,20 +87,5 @@ export const getColumns = (opts: {
         <span className="text-foreground">{fmtDate(row.original.created_at)}</span>
       </div>
     ),
-  },
-  {
-    id: "view",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="View" />,
-    cell: ({ row }) => (
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={() => opts.onView(row.original)}
-        title="View details"
-      >
-        <Eye className="h-4 w-4" />
-      </Button>
-    ),
-    enableSorting: false,
   },
 ];

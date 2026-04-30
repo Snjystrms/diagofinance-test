@@ -1,4 +1,4 @@
-import { API_BASE_URL, PaginationMeta, apiCall, toFormBody } from "./api-core";
+import { API_BASE_URL, type ApiResponse, PaginationMeta, apiCall, toFormBody } from "./api-core";
 
 export interface RegisterRequest {
   first_name: string;
@@ -257,6 +257,203 @@ export type AdminUserDetailApiData =
         data?: PendingUser;
       };
     };
+
+export interface AdminUserProfileDetails {
+  id?: number;
+  user_id?: number;
+  manager_id?: number | null;
+  uuid?: string;
+  gender?: string | null;
+  address?: string | null;
+  country?: string | null;
+  state?: string | null;
+  city?: string | null;
+  dob?: string | null;
+  pin_code?: string | null;
+  passport_id_number?: string | null;
+  tax_number?: string | null;
+  other_id_number?: string | null;
+  nationality?: string | null;
+  employment_status?: string | null;
+  client_type?: string | null;
+  politically_exposed?: number | boolean | null;
+  annual_income?: string | null;
+  source_of_income?: string | null;
+  estimated_net_worth?: string | null;
+  purpose_of_opening_account?: string | null;
+  estimated_annual_amount?: string | null;
+  pin?: string | null;
+  device_json?: string | null;
+  ip_address?: string | null;
+  referral_code?: string | null;
+  last_login_at?: string | null;
+  sign_up_from?: number | string | null;
+  status?: number | string | boolean | null;
+  self_wallet?: number | string | null;
+  ib_wallet?: number | string | null;
+  ib_name?: string | null;
+  is_ib_user?: number | boolean | null;
+  promote_is_ib_user?: number | boolean | null;
+  referral_receive_status?: number | boolean | null;
+  poi_front_file?: string | null;
+  poa_front_file?: string | null;
+  poa_back_file?: string | null;
+  other_file?: string | null;
+  poi_front_file_status?: number | string | null;
+  poa_front_file_status?: number | string | null;
+  poa_back_file_status?: number | string | null;
+  other_file_status?: number | string | null;
+  file_rejection_comment?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+  [key: string]: unknown;
+}
+
+export interface AdminUserDetailsData {
+  totalPendingDeposit?: number;
+  totalPendingWithdraw?: number;
+  totalRejectedDeposit?: number;
+  totalRejectedWithdraw?: number;
+  uuid?: string;
+  name?: string;
+  email?: string;
+  mt5Users?: Array<Record<string, unknown>>;
+  userDetails?: AdminUserProfileDetails | null;
+  hasUserDetails?: boolean;
+}
+
+export type AdminUserDetailsApiData =
+  | AdminUserDetailsData
+  | {
+      data?: AdminUserDetailsData;
+    };
+
+export interface AdminUserMt5AccountItem {
+  id: number;
+  account_id: string;
+  mt5_id?: string | null;
+  group_name?: string | null;
+  investor_password?: string | null;
+  main_password?: string | null;
+  date?: string | null;
+  [key: string]: unknown;
+}
+
+export interface AdminUserMt5TabDetailsData {
+  totalDeposit?: number;
+  totalWithdraw?: number;
+  totalMt5Account?: number;
+  mt5Accounts?: AdminUserMt5AccountItem[];
+}
+
+export type AdminUserMt5TabDetailsApiData =
+  | AdminUserMt5TabDetailsData
+  | {
+      data?: AdminUserMt5TabDetailsData;
+    };
+
+export interface AdminPaginatedCollection<T> {
+  data: T[];
+  current_page?: number;
+  per_page?: number;
+  total?: number;
+  last_page?: number;
+  from?: number;
+  to?: number;
+}
+
+export type AdminPaginatedApiData<T> =
+  | AdminPaginatedCollection<T>
+  | {
+      data?: AdminPaginatedCollection<T> | T[];
+    }
+  | T[];
+
+export interface AdminUserTransactionUser {
+  name?: string;
+  email?: string;
+  mobile?: string;
+  uuid?: string;
+}
+
+export interface AdminUserTransactionItem {
+  id: number;
+  amount?: number | string;
+  created_at?: string;
+  status?: number | string;
+  admin_comment?: string | null;
+  user_comment?: string | null;
+  transaction_hash?: string | null;
+  payment_method?: string | null;
+  mt5_id?: string | null;
+  note?: string | null;
+  comment?: string | null;
+  user?: AdminUserTransactionUser;
+  [key: string]: unknown;
+}
+
+export interface AdminUserBankDetailUser {
+  id?: number;
+  name?: string;
+  email?: string;
+  mobile?: string;
+  uuid?: string;
+}
+
+export interface AdminUserBankDetailItem {
+  id: number;
+  uuid?: string;
+  user_id?: number;
+  account_holder_name?: string | null;
+  account_number?: string | null;
+  iban_number?: string | null;
+  swift_ifsc_code?: string | null;
+  bank_name?: string | null;
+  address?: string | null;
+  country?: string | null;
+  user?: AdminUserBankDetailUser;
+  [key: string]: unknown;
+}
+
+export interface AdminUserActivityLogItem {
+  ip_address?: string | null;
+  created_at?: string | null;
+  browser_name?: string | null;
+  browser_version?: string | null;
+  device_name?: string | null;
+  os_name?: string | null;
+  status?: number | string | null;
+  [key: string]: unknown;
+}
+
+export interface AdminUserWalletHistoryItem {
+  id: number;
+  payment_type?: string | null;
+  amount?: number | string;
+  mode?: number | string | null;
+  remark?: string | null;
+  status?: number | string | null;
+  created_at?: string | null;
+  wallet_type?: string | null;
+  balance_before?: number | string | null;
+  balance_after?: number | string | null;
+  [key: string]: unknown;
+}
+
+export interface AdminUserReferralItem {
+  id?: number | string;
+  uuid?: string;
+  name?: string;
+  email?: string;
+  mobile?: string;
+  referral_code?: string;
+  created_at?: string;
+  [key: string]: unknown;
+}
+
+export type AdminUserWalletHistoryResponse = ApiResponse<AdminUserWalletHistoryItem[]> & {
+  pagination?: PaginationMeta;
+};
 
 export interface KycUploadResponse {
   status: number;
@@ -672,11 +869,34 @@ export const adminGroupsApi = {
   },
 };
 
+const ensureAdminUserToken = (token: string, action: string) => {
+  if (!token) {
+    throw new Error(`Token is required to ${action}`);
+  }
+};
+
+const ensureAdminUserIdentifier = (value: number | string | undefined | null, action: string) => {
+  if (value === undefined || value === null || `${value}` === "") {
+    throw new Error(`A valid user identifier is required to ${action}`);
+  }
+};
+
+const ensureAdminUserUuid = (uuid: string | undefined | null, action: string) => {
+  if (!uuid || !uuid.trim()) {
+    throw new Error(`A valid user uuid is required to ${action}`);
+  }
+};
+
+const buildPaginatedQuery = (page = 1, limit = 10) => {
+  const qs = new URLSearchParams();
+  qs.set("page", String(page));
+  qs.set("limit", String(limit));
+  return qs.toString();
+};
+
 export const adminUsersApi = {
   list: ({ token, page = 1, limit = 10, search, status, isApproved }: AdminUsersListParams) => {
-    if (!token) {
-      throw new Error("Token is required to fetch admin users");
-    }
+    ensureAdminUserToken(token, "fetch admin users");
 
     const qs = new URLSearchParams();
     qs.set("page", String(page));
@@ -703,9 +923,7 @@ export const adminUsersApi = {
   },
 
   create: (body: AdminUserCreateBody, token: string) => {
-    if (!token) {
-      throw new Error("Token is required to create admin user");
-    }
+    ensureAdminUserToken(token, "create admin user");
 
     const sanitizedBody = Object.entries(body).reduce<Record<string, string>>((acc, [key, value]) => {
       if (value === undefined || value === null) {
@@ -732,13 +950,8 @@ export const adminUsersApi = {
   },
 
   detail: (id: number | string, token: string) => {
-    if (!token) {
-      throw new Error("Token is required to fetch admin user detail");
-    }
-
-    if (id === undefined || id === null || `${id}` === "") {
-      throw new Error("A valid user identifier is required to fetch admin user detail");
-    }
+    ensureAdminUserToken(token, "fetch admin user detail");
+    ensureAdminUserIdentifier(id, "fetch admin user detail");
 
     return apiCall<AdminUserDetailApiData>(`/admin/user-management/crud/users/${id}`, {
       method: "GET",
@@ -747,13 +960,8 @@ export const adminUsersApi = {
   },
 
   update: (id: number | string, body: AdminUserUpdateBody, token: string) => {
-    if (!token) {
-      throw new Error("Token is required to update admin user");
-    }
-
-    if (id === undefined || id === null || `${id}` === "") {
-      throw new Error("A valid user identifier is required to update admin user");
-    }
+    ensureAdminUserToken(token, "update admin user");
+    ensureAdminUserIdentifier(id, "update admin user");
 
     const sanitizedBody = Object.entries(body).reduce<Record<string, string>>((acc, [key, value]) => {
       if (value === undefined || value === null) {
@@ -780,18 +988,113 @@ export const adminUsersApi = {
   },
 
   delete: (id: number | string, token: string) => {
-    if (!token) {
-      throw new Error("Token is required to delete admin user");
-    }
-
-    if (id === undefined || id === null || `${id}` === "") {
-      throw new Error("A valid user identifier is required to delete admin user");
-    }
+    ensureAdminUserToken(token, "delete admin user");
+    ensureAdminUserIdentifier(id, "delete admin user");
 
     return apiCall(`/admin/user-management/crud/users/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
+  },
+
+  detailByUuid: (uuid: string, token: string) => {
+    ensureAdminUserToken(token, "fetch admin user profile");
+    ensureAdminUserUuid(uuid, "fetch admin user profile");
+
+    return apiCall<AdminUserDetailsApiData>(`/admin/user-management/users/user-details/${uuid}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  mt5TabDetails: (uuid: string, token: string) => {
+    ensureAdminUserToken(token, "fetch admin user MT5 details");
+    ensureAdminUserUuid(uuid, "fetch admin user MT5 details");
+
+    return apiCall<AdminUserMt5TabDetailsApiData>(`/admin/user-management/users/${uuid}/mt5-tab-details`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  deposits: (uuid: string, token: string, page = 1, limit = 10) => {
+    ensureAdminUserToken(token, "fetch admin user deposits");
+    ensureAdminUserUuid(uuid, "fetch admin user deposits");
+
+    return apiCall<AdminPaginatedApiData<AdminUserTransactionItem>>(
+      `/admin/user-management/users/${uuid}/deposit?${buildPaginatedQuery(page, limit)}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+  },
+
+  withdrawals: (uuid: string, token: string, page = 1, limit = 10) => {
+    ensureAdminUserToken(token, "fetch admin user withdrawals");
+    ensureAdminUserUuid(uuid, "fetch admin user withdrawals");
+
+    return apiCall<AdminPaginatedApiData<AdminUserTransactionItem>>(
+      `/admin/user-management/users/${uuid}/withdraw?${buildPaginatedQuery(page, limit)}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+  },
+
+  bankDetails: (uuid: string, token: string, page = 1, limit = 10) => {
+    ensureAdminUserToken(token, "fetch admin user bank details");
+    ensureAdminUserUuid(uuid, "fetch admin user bank details");
+
+    return apiCall<AdminPaginatedApiData<AdminUserBankDetailItem>>(
+      `/admin/user-management/users/${uuid}/bank-details/list?${buildPaginatedQuery(page, limit)}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+  },
+
+  activityLog: (uuid: string, token: string, page = 1, limit = 10) => {
+    ensureAdminUserToken(token, "fetch admin user activity log");
+    ensureAdminUserUuid(uuid, "fetch admin user activity log");
+
+    return apiCall<AdminPaginatedApiData<AdminUserActivityLogItem>>(
+      `/admin/user-management/users/${uuid}/active-log?${buildPaginatedQuery(page, limit)}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+  },
+
+  walletHistory: async (uuid: string, token: string, page = 1, limit = 10): Promise<AdminUserWalletHistoryResponse> => {
+    ensureAdminUserToken(token, "fetch admin user wallet history");
+    ensureAdminUserUuid(uuid, "fetch admin user wallet history");
+
+    const response = await apiCall<AdminUserWalletHistoryItem[]>(
+      `/admin/user-management/users/${uuid}/wallet-history?${buildPaginatedQuery(page, limit)}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    return response as AdminUserWalletHistoryResponse;
+  },
+
+  referralBy: (uuid: string, token: string, page = 1, limit = 10) => {
+    ensureAdminUserToken(token, "fetch admin user referral details");
+    ensureAdminUserUuid(uuid, "fetch admin user referral details");
+
+    return apiCall<AdminPaginatedApiData<AdminUserReferralItem>>(
+      `/admin/user-management/users/${uuid}/referral-by?${buildPaginatedQuery(page, limit)}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
   },
 };
 
