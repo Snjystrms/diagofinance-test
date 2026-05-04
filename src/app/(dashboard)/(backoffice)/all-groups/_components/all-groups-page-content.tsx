@@ -362,6 +362,7 @@ export function AllGroupsPageContent() {
                                 onClick={() => handleDelete(group)}
                                 disabled={mutationInProgress}
                                 title="Delete group"
+                                className="text-destructive hover:text-destructive/80"
                               >
                                 <Trash2 className="h-4 w-4" />
                               </Button>

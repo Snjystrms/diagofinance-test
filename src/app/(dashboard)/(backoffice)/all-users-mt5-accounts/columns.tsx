@@ -208,7 +208,7 @@ const RowActions = ({ row, onView, onEdit, onDelete }: RowActionsProps) => {
         type="button"
         variant="outline"
         size="icon"
-        className="h-8 w-8"
+        className="h-8 w-8 text-destructive hover:text-destructive/80"
         onClick={() => accountId && onDelete(accountId)}
         disabled={!accountId}
         title="Delete account"

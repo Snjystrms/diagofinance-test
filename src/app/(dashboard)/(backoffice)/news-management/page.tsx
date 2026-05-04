@@ -304,7 +304,7 @@ export default function NewsManagementPage() {
         cell: ({ row }) => (
           <div className="flex items-center gap-1">
             <Button
-              variant="ghost"
+              variant="outline"
               size="icon"
               className="h-8 w-8"
               onClick={() => {
@@ -320,9 +320,9 @@ export default function NewsManagementPage() {
               )}
             </Button>
             <Button
-              variant="ghost"
+              variant="outline"
               size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive"
+              className="h-8 w-8 text-destructive hover:text-destructive/80"
               onClick={() => {
                 setDeletingId(row.original.id);
                 setIsDeleteOpen(true);

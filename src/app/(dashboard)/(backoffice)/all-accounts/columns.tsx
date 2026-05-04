@@ -11,8 +11,11 @@ import { Gauge, Layers, Cog, Coins, Swords } from "lucide-react";
 const fmtDate = (s?: string) => (s ? formatDateTimeInIST(s) : "-");
 
 const LeverBadge = ({ type, value }: { type: string; value: number }) => (
-  <Badge variant="secondary" className="gap-1">
-    <Gauge className="h-3 w-3" />
+  <Badge
+    variant="outline"
+    className="gap-1 border-border bg-muted/50 text-foreground dark:bg-muted/30"
+  >
+    <Gauge className="h-3 w-3 text-primary" />
     {type === "dynamic" ? `Up to 1:${value} (dynamic)` : `1:${value} (fixed)`}
   </Badge>
 );
@@ -83,7 +86,13 @@ export const getColumns = (opts: {
     accessorKey: "swap_free_option",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Swap Free" />,
     cell: ({ row }) => (
-      <Badge className={row.original.swap_free_option ? "bg-green-100 text-green-800" : "bg-slate-100 text-slate-800"}>
+      <Badge
+        className={
+          row.original.swap_free_option
+            ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 border-green-200 dark:border-green-800"
+            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+        }
+      >
         {row.original.swap_free_option ? "Yes" : "No"}
       </Badge>
     ),
@@ -101,7 +110,16 @@ export const getColumns = (opts: {
           aria-label="Toggle status"
           disabled={opts.actionLoadingId === row.original.id}
         />
-        <span className="text-sm">{row.original.status ? "Active" : "Inactive"}</span>
+        <Badge
+          variant="outline"
+          className={
+            row.original.status
+              ? "border-green-500 text-green-700 bg-green-50 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800"
+              : "border-slate-400 text-slate-600 bg-slate-50 dark:bg-slate-800/40 dark:text-slate-400 dark:border-slate-700"
+          }
+        >
+          {row.original.status ? "Active" : "Inactive"}
+        </Badge>
       </div>
     ),
     enableColumnFilter: true,

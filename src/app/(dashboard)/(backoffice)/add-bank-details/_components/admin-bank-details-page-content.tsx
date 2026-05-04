@@ -294,6 +294,7 @@ export function AdminBankDetailsPageContent() {
               onClick={() => setDeleteCandidate(row.original)}
               disabled={!canMutate}
               title="Delete bank detail"
+              className="text-destructive hover:text-destructive/80"
             >
               <Trash2 className="h-4 w-4" />
             </Button>

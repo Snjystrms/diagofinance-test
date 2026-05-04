@@ -97,7 +97,7 @@ function RowActions({
           type="button"
           variant="outline"
           size="icon"
-          className="h-8 w-8"
+          className="h-8 w-8 text-destructive hover:text-destructive/80"
           onClick={() => onDelete(row.original)}
           title={`Delete ${row.original.name || "user"}`}
         >
