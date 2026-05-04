@@ -199,13 +199,11 @@ export default function ReportManagementPage() {
         sort_order: sortOrder || undefined,
       });
 
-      // The API response structure: { success, message, data: [...], pagination: {...}, filters: {...} }
-      const payload = response.data as unknown as DepositReportListPayload;
+      // apiCall returns the raw JSON body directly.
+      // The response IS { success, message, data: [...], pagination: {...}, filters: {...} }
+      const payload = response as unknown as DepositReportListPayload;
       const reportItems = Array.isArray(payload?.data) ? payload.data : [];
-      
-      console.log("Report items:", reportItems);
-      console.log("Pagination:", payload?.pagination);
-      
+
       setRows(reportItems);
 
       const paginationData = payload?.pagination;

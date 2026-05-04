@@ -429,7 +429,7 @@ export default function IbDashboardPage() {
             <div className="ib-portal-note rounded-3xl border p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">IB Plan</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">IB User</p>
                   <p className="mt-2 text-2xl font-semibold text-foreground">{partner_info.ib_plan || "N/A"}</p>
                 </div>
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-background/70 bg-background/80">

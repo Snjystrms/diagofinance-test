@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
-import { ArrowRightLeft, Loader2, RefreshCw, Wallet } from "lucide-react";
+import { ArrowRightLeft, CheckCircle2, Loader2, RefreshCw, Wallet } from "lucide-react";
 
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { IbMetricCard, IbPageHeader, IbPageShell, IbSectionCard } from "@/components/ib/ib-page-primitives";
@@ -15,6 +15,22 @@ import { useAuth } from "@/contexts/auth-context";
 import { type IbDashboardResponse, type IbInternalTransferRequest, ibRequestsApi } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
+
+/* ─── Transfer response types ──────────────────────────────────────────── */
+
+type WalletSnapshot = {
+  before: number;
+  after: number;
+  currency: string;
+};
+
+type TransferResult = {
+  amount: number;
+  ib_wallet: WalletSnapshot;
+  client_wallet: WalletSnapshot;
+  debit_uuid: string;
+  credit_uuid: string;
+};
 
 function TransferLoadingState() {
   return (
@@ -65,6 +81,7 @@ export default function TransferPage() {
   const [transferAmount, setTransferAmount] = useState("");
   const [transferComment, setTransferComment] = useState("");
   const [isTransferring, setIsTransferring] = useState(false);
+  const [transferResult, setTransferResult] = useState<TransferResult | null>(null);
 
   const fetchDashboard = useCallback(async () => {
     if (!token) {
@@ -115,22 +132,38 @@ export default function TransferPage() {
 
     try {
       setIsTransferring(true);
+      setTransferResult(null);
       const payload: IbInternalTransferRequest = {
         amount,
         ...(transferComment.trim() ? { comment: transferComment.trim() } : {}),
       };
 
       const response = await ibRequestsApi.internalTransfer(payload, token);
-      if (response.success) {
-        toast.success(response.message || "Transfer completed successfully");
+      const raw = response as unknown as { success: boolean; message?: string; data?: TransferResult };
+
+      if (raw.success && raw.data) {
+        const result = raw.data;
+        setTransferResult(result);
+
+        // Update the local dashboard snapshot so wallet cards reflect the new balances
+        // without waiting for a full refetch.
+        setDashboardData((prev) => {
+          if (!prev) return prev;
+          return {
+            ...prev,
+            partner_wallet: { ...prev.partner_wallet, balance: result.ib_wallet.after },
+            client_wallet:  { ...prev.client_wallet,  balance: result.client_wallet.after },
+          };
+        });
+
+        toast.success(raw.message || "Transfer completed successfully");
         setTransferAmount("");
         setTransferComment("");
-        await fetchDashboard();
         return;
       }
 
       toast.error(
-        getFriendlyErrorMessage(response.message || "Transfer failed", {
+        getFriendlyErrorMessage((raw as { message?: string }).message || "Transfer failed", {
           audience: "client",
           resource: "IB transfer",
           action: "submit",
@@ -148,7 +181,7 @@ export default function TransferPage() {
     } finally {
       setIsTransferring(false);
     }
-  }, [dashboardData, fetchDashboard, token, transferAmount, transferComment]);
+  }, [dashboardData, token, transferAmount, transferComment]);
 
   if (isLoading) {
     return <TransferLoadingState />;
@@ -271,29 +304,107 @@ export default function TransferPage() {
           </div>
         </IbSectionCard>
 
-        <IbSectionCard title="Transfer preview" description="Balances after applying the entered amount.">
-          <div className="space-y-4">
-            <div className="rounded-3xl border border-border/60 bg-muted/20 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Partner Wallet After Transfer
-              </p>
-              <p className="mt-2 text-xl font-semibold text-foreground">
-                {formatCurrency(projectedPartnerBalance, partner_wallet.currency)}
-              </p>
+        {/* Receipt after a confirmed transfer */}
+        {transferResult ? (
+          <IbSectionCard
+            title="Transfer confirmed"
+            description="The balances below are the actual values returned by the server."
+          >
+            <div className="space-y-4">
+              {/* Success banner */}
+              <div className="flex items-center gap-3 rounded-2xl border border-emerald-500/30 bg-emerald-50 px-4 py-3 dark:bg-emerald-950/20">
+                <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <div>
+                  <p className="text-sm font-semibold text-emerald-800 dark:text-emerald-300">
+                    {formatCurrency(transferResult.amount, transferResult.ib_wallet.currency)} transferred successfully
+                  </p>
+                  <p className="text-xs text-emerald-700/70 dark:text-emerald-400/70">
+                    IB wallet → Client wallet
+                  </p>
+                </div>
+              </div>
+
+              {/* Wallet snapshots */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    IB Wallet
+                  </p>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Before</span>
+                      <span>{formatCurrency(transferResult.ib_wallet.before, transferResult.ib_wallet.currency)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-semibold">
+                      <span className="text-muted-foreground">After</span>
+                      <span className="text-foreground">{formatCurrency(transferResult.ib_wallet.after, transferResult.ib_wallet.currency)}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Client Wallet
+                  </p>
+                  <div className="flex flex-col gap-1">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Before</span>
+                      <span>{formatCurrency(transferResult.client_wallet.before, transferResult.client_wallet.currency)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-semibold">
+                      <span className="text-muted-foreground">After</span>
+                      <span className="text-emerald-600 dark:text-emerald-400">{formatCurrency(transferResult.client_wallet.after, transferResult.client_wallet.currency)}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Transaction IDs */}
+              <div className="rounded-2xl border border-border/60 bg-muted/10 p-4 space-y-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Transaction references
+                </p>
+                <div className="space-y-1.5">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs text-muted-foreground">Debit ID</span>
+                    <span className="font-mono text-xs break-all text-foreground">{transferResult.debit_uuid}</span>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs text-muted-foreground">Credit ID</span>
+                    <span className="font-mono text-xs break-all text-foreground">{transferResult.credit_uuid}</span>
+                  </div>
+                </div>
+              </div>
+
+              <Button variant="outline" size="sm" onClick={() => setTransferResult(null)}>
+                Dismiss
+              </Button>
             </div>
-            <div className="rounded-3xl border border-border/60 bg-muted/20 p-4">
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Client Wallet After Transfer
-              </p>
-              <p className="mt-2 text-xl font-semibold text-foreground">
-                {formatCurrency(projectedClientBalance, client_wallet.currency)}
-              </p>
+          </IbSectionCard>
+        ) : (
+          <IbSectionCard title="Transfer preview" description="Estimated balances after applying the entered amount.">
+            <div className="space-y-4">
+              <div className="rounded-3xl border border-border/60 bg-muted/20 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Partner Wallet After Transfer
+                </p>
+                <p className="mt-2 text-xl font-semibold text-foreground">
+                  {formatCurrency(projectedPartnerBalance, partner_wallet.currency)}
+                </p>
+              </div>
+              <div className="rounded-3xl border border-border/60 bg-muted/20 p-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Client Wallet After Transfer
+                </p>
+                <p className="mt-2 text-xl font-semibold text-foreground">
+                  {formatCurrency(projectedClientBalance, client_wallet.currency)}
+                </p>
+              </div>
+              <div className="ib-portal-note rounded-3xl border p-4 text-sm text-muted-foreground">
+                Transfers are immediate and reflected in the IB wallet history once the backend confirms the operation.
+              </div>
             </div>
-            <div className="ib-portal-note rounded-3xl border p-4 text-sm text-muted-foreground">
-              Transfers are immediate and reflected in the IB wallet history once the backend confirms the operation.
-            </div>
-          </div>
-        </IbSectionCard>
+          </IbSectionCard>
+        )}
       </div>
     </IbPageShell>
   );
