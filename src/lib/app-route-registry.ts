@@ -10,6 +10,7 @@ import {
   Home,
   LifeBuoy,
   Mail,
+  Megaphone,
   Package,
   Settings2,
   Shield,
@@ -45,10 +46,12 @@ type SidebarSectionId =
   | "account-management"
   | "group-management"
   | "support"
+  | "announcements"
   | "notification"
   | "reports"
   | "marketing-management"
   | "news-management"
+  | "promotion-management"
   | "settings-management";
 
 export interface AppRouteDefinition {
@@ -171,6 +174,14 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     roles: CLIENT_ROLES,
   },
   {
+    id: "announcements",
+    title: "Announcements",
+    url: "/announcements",
+    icon: Megaphone,
+    audience: "client",
+    roles: CLIENT_ROLES,
+  },
+  {
     id: "user-management",
     title: "User Management",
     url: "/new-users",
@@ -286,6 +297,15 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     managerCategories: ["News Management"],
+  },
+  {
+    id: "promotion-management",
+    title: "Promotion Management",
+    url: "/promotion-management",
+    icon: Gift,
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    managerCategories: ["Promotion Management"],
   },
   {
     id: "settings-management",
@@ -419,6 +439,20 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     roles: CLIENT_ROLES,
     sidebarSection: "help-support",
     navLabel: "Raise Ticket",
+  },
+  {
+    path: "/user-news",
+    audience: "client",
+    roles: CLIENT_ROLES,
+    sidebarSection: "announcements",
+    navLabel: "News",
+  },
+  {
+    path: "/user-promotions",
+    audience: "client",
+    roles: CLIENT_ROLES,
+    sidebarSection: "announcements",
+    navLabel: "Promotions",
   },
   {
     path: "/ib-dashboard",
@@ -681,6 +715,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "news-management",
     navLabel: "News Management",
     managerCategories: ["News Management"],
+  },
+  {
+    path: "/promotion-management",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "promotion-management",
+    navLabel: "Promotion Management",
+    managerCategories: ["Promotion Management"],
   },
   {
     path: "/settings-management",

@@ -1104,6 +1104,16 @@ export interface NewsCreateBody {
   short_description: string;
   image?: File | string;
   status: string | number;
+  type?: "news" | "promotion";
+}
+
+export interface NewsUpdateBody {
+  title?: string;
+  description?: string;
+  short_description?: string;
+  image?: File | string;
+  status?: string | number;
+  type?: "news" | "promotion";
 }
 
 export interface NewsItem {
@@ -1112,9 +1122,25 @@ export interface NewsItem {
   description: string;
   short_description: string;
   image?: string;
+  image_url?: string;
   status: number | string;
+  type?: "news" | "promotion";
   created_at?: string;
   updated_at?: string;
+}
+
+export interface NewsPagination {
+  current_page: number;
+  total_pages: number;
+  total_news: number;
+  per_page: number;
+  showing_from: number;
+  showing_to: number;
+}
+
+export interface NewsListData {
+  news: NewsItem[];
+  pagination: NewsPagination;
 }
 
 export interface NewsCreateResponse {
@@ -1126,6 +1152,22 @@ export interface NewsCreateResponse {
 }
 
 export const adminNewsApi = {
+  list: (params: { token: string; page?: number; per_page?: number; type?: "news" | "promotion" | "all" }) => {
+    const { token, page = 1, per_page = 10, type } = params;
+    const query = new URLSearchParams({ page: String(page), per_page: String(per_page) });
+    if (type && type !== "all") query.set("type", type);
+    return apiCall<NewsListData>(`/admin/news/list?${query.toString()}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  get: (id: string | number, token: string) =>
+    apiCall<{ success: boolean; message: string; data?: NewsItem }>(`/admin/news/${id}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
   create: (body: NewsCreateBody, token: string) => {
     if (!token) {
       throw new Error("Token is required to create news");
@@ -1138,6 +1180,7 @@ export const adminNewsApi = {
       formData.append("short_description", body.short_description);
       formData.append("image", body.image);
       formData.append("status", String(body.status));
+      if (body.type) formData.append("type", body.type);
 
       return apiCall<NewsCreateResponse>(`/admin/news/create`, {
         method: "POST",
@@ -1155,9 +1198,81 @@ export const adminNewsApi = {
         short_description: body.short_description,
         image: body.image || "",
         status: String(body.status),
+        type: body.type || "news",
       }),
     });
   },
+
+  update: (id: string | number, body: NewsUpdateBody, token: string) => {
+    if (body.image instanceof File) {
+      const formData = new FormData();
+      if (body.title !== undefined) formData.append("title", body.title);
+      if (body.description !== undefined) formData.append("description", body.description);
+      if (body.short_description !== undefined) formData.append("short_description", body.short_description);
+      formData.append("image", body.image);
+      if (body.status !== undefined) formData.append("status", String(body.status));
+      if (body.type) formData.append("type", body.type);
+
+      return apiCall<NewsCreateResponse>(`/admin/news/${id}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+    }
+
+    return apiCall<NewsCreateResponse>(`/admin/news/${id}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...(body.title !== undefined && { title: body.title }),
+        ...(body.description !== undefined && { description: body.description }),
+        ...(body.short_description !== undefined && { short_description: body.short_description }),
+        ...(body.image !== undefined && { image: body.image }),
+        ...(body.status !== undefined && { status: body.status }),
+        ...(body.type !== undefined && { type: body.type }),
+      }),
+    });
+  },
+
+  delete: (id: string | number, token: string) =>
+    apiCall<{ success: boolean; message: string }>(`/admin/news/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  toggleStatus: (id: string | number, status: 0 | 1, token: string) =>
+    apiCall<{ success: boolean; message: string }>(`/admin/news/${id}/toggle-status`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ status }),
+    }),
+};
+
+export interface UserNewsListResponse {
+  data: NewsItem[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+  };
+}
+
+export const userNewsApi = {
+  list: (params: { token: string; page?: number; per_page?: number }) => {
+    const { token, page = 1, per_page = 100 } = params;
+    const query = new URLSearchParams({ page: String(page), per_page: String(per_page) });
+    return apiCall<UserNewsListResponse>(`/user/news/list?${query.toString()}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  get: (id: string | number, token: string) =>
+    apiCall<NewsItem>(`/user/news/${id}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
 };
 
 export const authApi = {

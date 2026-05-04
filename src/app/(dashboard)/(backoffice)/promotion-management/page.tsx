@@ -12,18 +12,17 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { DeleteDialog } from "@/components/dialogs/delete-dialog";
-import { Newspaper, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Megaphone, Plus, Pencil, Trash2, Loader2, ImageIcon } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Switch } from "@/components/ui/switch";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { adminNewsApi, type NewsItem } from "@/lib/api-auth-admin";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
-import { NewsForm, type NewsFormValue } from "./news-form";
+import { NewsForm, type NewsFormValue } from "../news-management/news-form";
 import Image from "next/image";
-import { ImageIcon } from "lucide-react";
 
-export type NewsRow = {
+type PromotionRow = {
   id: string;
   title: string;
   description: string;
@@ -36,7 +35,7 @@ export type NewsRow = {
   updated_at?: string;
 };
 
-const normalize = (item: NewsItem): NewsRow => ({
+const normalize = (item: NewsItem): PromotionRow => ({
   id: String(item.id),
   title: item.title ?? "",
   description: item.description ?? "",
@@ -44,14 +43,14 @@ const normalize = (item: NewsItem): NewsRow => ({
   image: item.image,
   image_url: item.image_url,
   status: Number(item.status) === 1,
-  type: (item.type as "news" | "promotion") ?? "news",
+  type: (item.type as "news" | "promotion") ?? "promotion",
   created_at: item.created_at,
   updated_at: item.updated_at,
 });
 
 const fmtDate = (s?: string) => (s ? formatDateTimeInIST(s) : "-");
 
-export default function NewsManagementPage() {
+export default function PromotionManagementPage() {
   const { token } = useAuth();
   const queryClient = useQueryClient();
 
@@ -59,11 +58,9 @@ export default function NewsManagementPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
-  // Form dialog state
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingItem, setEditingItem] = useState<NewsRow | null>(null);
+  const [editingItem, setEditingItem] = useState<PromotionRow | null>(null);
 
-  // Delete dialog state
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
@@ -73,10 +70,10 @@ export default function NewsManagementPage() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["news", token, "news"],
+    queryKey: ["news", token, "promotion"],
     queryFn: async () => {
-      const res = await adminNewsApi.list({ token: token!, type: "news", per_page: 100 });
-      return (res?.data?.news ?? []).filter((item) => item.type === "news").map(normalize);
+      const res = await adminNewsApi.list({ token: token!, type: "promotion", per_page: 100 });
+      return (res?.data?.news ?? []).filter((item) => item.type === "promotion").map(normalize);
     },
     enabled: Boolean(token),
     staleTime: 60 * 1000,
@@ -84,17 +81,17 @@ export default function NewsManagementPage() {
   });
 
   const invalidate = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ["news", token, "news"] });
+    queryClient.invalidateQueries({ queryKey: ["news", token, "promotion"] });
   }, [queryClient, token]);
 
   const filtered = useMemo(() => {
     let d = rows;
-    if (statusFilter === "active") d = d.filter((r: NewsRow) => r.status);
-    else if (statusFilter === "inactive") d = d.filter((r: NewsRow) => !r.status);
+    if (statusFilter === "active") d = d.filter((r: PromotionRow) => r.status);
+    else if (statusFilter === "inactive") d = d.filter((r: PromotionRow) => !r.status);
     if (search.trim().length >= 3) {
       const q = search.toLowerCase();
       d = d.filter(
-        (r: NewsRow) =>
+        (r: PromotionRow) =>
           r.title.toLowerCase().includes(q) ||
           r.short_description.toLowerCase().includes(q)
       );
@@ -102,7 +99,6 @@ export default function NewsManagementPage() {
     return d;
   }, [rows, statusFilter, search]);
 
-  // CREATE
   const handleCreate = async (form: NewsFormValue) => {
     if (!token) return;
     try {
@@ -118,22 +114,21 @@ export default function NewsManagementPage() {
           short_description: form.short_description,
           status: form.status ? 1 : 0,
           image,
-          type: "news",
+          type: "promotion",
         },
         token
       );
       if (res?.success) {
-        toast.success(res.message || "News created");
+        toast.success(res.message || "Promotion created");
         invalidate();
       } else {
-        toast.error(res?.message || "Failed to create news");
+        toast.error(res?.message || "Failed to create promotion");
       }
     } catch (e) {
-      toast.error(getAdminFriendlyErrorMessage(e, { resource: "news", action: "create" }));
+      toast.error(getAdminFriendlyErrorMessage(e, { resource: "promotions", action: "create" }));
     }
   };
 
-  // UPDATE
   const handleUpdate = async (form: NewsFormValue) => {
     if (!token || !form.id) return;
     try {
@@ -154,17 +149,16 @@ export default function NewsManagementPage() {
         token
       );
       if (res?.success) {
-        toast.success(res.message || "News updated");
+        toast.success(res.message || "Promotion updated");
         invalidate();
       } else {
-        toast.error(res?.message || "Failed to update news");
+        toast.error(res?.message || "Failed to update promotion");
       }
     } catch (e) {
-      toast.error(getAdminFriendlyErrorMessage(e, { resource: "news", action: "update" }));
+      toast.error(getAdminFriendlyErrorMessage(e, { resource: "promotions", action: "update" }));
     }
   };
 
-  // TOGGLE STATUS
   const handleToggleStatus = async (id: string, current: boolean) => {
     if (!token) return;
     try {
@@ -173,22 +167,21 @@ export default function NewsManagementPage() {
       toast.success(res?.message || "Status updated");
       invalidate();
     } catch (e) {
-      toast.error(getAdminFriendlyErrorMessage(e, { resource: "news", action: "update" }));
+      toast.error(getAdminFriendlyErrorMessage(e, { resource: "promotions", action: "update" }));
     } finally {
       setActionLoadingId(null);
     }
   };
 
-  // DELETE
   const handleDelete = async () => {
     if (!token || !deletingId) return;
     try {
       setActionLoadingId(deletingId);
       const res = await adminNewsApi.delete(deletingId, token);
-      toast.success(res?.message || "News deleted");
+      toast.success(res?.message || "Promotion deleted");
       invalidate();
     } catch (e) {
-      toast.error(getAdminFriendlyErrorMessage(e, { resource: "news", action: "delete" }));
+      toast.error(getAdminFriendlyErrorMessage(e, { resource: "promotions", action: "delete" }));
     } finally {
       setActionLoadingId(null);
       setDeletingId(null);
@@ -204,7 +197,7 @@ export default function NewsManagementPage() {
     }
   };
 
-  const columns = useMemo<ColumnDef<NewsRow>[]>(
+  const columns = useMemo<ColumnDef<PromotionRow>[]>(
     () => [
       {
         id: "image",
@@ -269,7 +262,7 @@ export default function NewsManagementPage() {
               variant="outline"
               className={
                 row.original.status
-                  ? "border-green-500 text-green-700 bg-green-50"
+                  ? "border-emerald-500 text-emerald-700 bg-emerald-50"
                   : "border-slate-400 text-slate-600 bg-slate-50"
               }
             >
@@ -283,7 +276,7 @@ export default function NewsManagementPage() {
         accessorKey: "type",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
         cell: ({ row }) => (
-          <Badge className="bg-blue-100 text-blue-700 border-blue-300 capitalize">
+          <Badge className="bg-purple-100 text-purple-700 border-purple-300 capitalize">
             {row.original.type}
           </Badge>
         ),
@@ -347,11 +340,11 @@ export default function NewsManagementPage() {
         <div className="mb-6 flex items-start justify-between">
           <div className="space-y-1">
             <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-              <Newspaper className="h-6 w-6 text-primary" />
-              News Management
+              <Megaphone className="h-6 w-6 text-primary" />
+              Promotion Management
             </h1>
             <p className="text-sm text-muted-foreground">
-              Create, edit, and manage news articles
+              Create, edit, and manage promotional content
             </p>
           </div>
           <Button
@@ -362,16 +355,16 @@ export default function NewsManagementPage() {
             className="gap-2"
           >
             <Plus className="h-4 w-4" />
-            Add News
+            Add Promotion
           </Button>
         </div>
 
         {/* Filters */}
         <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
           <div className="space-y-1 md:col-span-2">
-            <Label htmlFor="search-news">Search</Label>
+            <Label htmlFor="search-promo">Search</Label>
             <Input
-              id="search-news"
+              id="search-promo"
               placeholder="Type at least 3 characters..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -397,7 +390,10 @@ export default function NewsManagementPage() {
 
         {isError && (
           <div className="mb-4 rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-            Failed to load news. <button onClick={() => refetch()} className="underline">Retry</button>
+            Failed to load promotions.{" "}
+            <button onClick={() => refetch()} className="underline">
+              Retry
+            </button>
           </div>
         )}
 
@@ -418,7 +414,7 @@ export default function NewsManagementPage() {
           }}
           onSubmit={handleFormSubmit}
           initialData={editingItem}
-          newsType="news"
+          newsType="promotion"
         />
 
         {/* Delete Confirmation */}
@@ -429,8 +425,8 @@ export default function NewsManagementPage() {
             if (!o) setDeletingId(null);
           }}
           onConfirm={handleDelete}
-          title="Delete News"
-          description="Are you sure you want to delete this news article? This action cannot be undone."
+          title="Delete Promotion"
+          description="Are you sure you want to delete this promotion? This action cannot be undone."
         />
       </div>
     </ProtectedRoute>

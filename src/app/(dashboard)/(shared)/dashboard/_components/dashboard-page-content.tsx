@@ -53,7 +53,9 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { ProfileCompletionDialog } from "@/components/profile-completion-dialog"
-import { authApi, ibRequestsApi, adminDashboardApi, adminNotificationApi, type TradingAccountSummaryItem, type TradingAccountsSummaryResponse, type UserDashboardData, type IbWalletData, type AdminDashboardData } from "@/lib/api"
+import { authApi, ibRequestsApi, adminDashboardApi, adminNotificationApi, userNewsApi, type TradingAccountSummaryItem, type TradingAccountsSummaryResponse, type UserDashboardData, type IbWalletData, type AdminDashboardData } from "@/lib/api"
+import { NewsPromotionCarousel } from "@/components/news-promotion-carousel"
+import type { NewsItem } from "@/lib/api-auth-admin"
 const AdminDashboardView = dynamic(() => import("../admin-dashboard-view").then((m) => ({ default: m.AdminDashboardView })), {
   ssr: false,
   loading: () => <AdminDashboardSkeleton />,
@@ -143,6 +145,23 @@ export function DashboardPageContent() {
     refetchOnWindowFocus: false,
     refetchOnMount: "always",
   });
+
+  const { data: userNewsData } = useQuery({
+    queryKey: ["userNews", token, "all"],
+    queryFn: async () => {
+      const res = await userNewsApi.list({ token: token!, per_page: 100 });
+      const all: NewsItem[] = Array.isArray(res?.data)
+        ? (res.data as unknown as NewsItem[])
+        : (res?.data?.data ?? []);
+      return all;
+    },
+    enabled: Boolean(token) && isUser,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  const dashboardNewsItems = (userNewsData ?? []).filter((i) => i.type === "news");
+  const dashboardPromoItems = (userNewsData ?? []).filter((i) => i.type === "promotion");
 
   const [dashboardData, setDashboardData] = useState<UserDashboardData | null>(null);
   const [adminDashboardData, setAdminDashboardData] = useState<AdminDashboardData | null>(null);
@@ -1111,6 +1130,26 @@ export function DashboardPageContent() {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* News & Promotions Carousel Row */}
+              {(dashboardNewsItems.length > 0 || dashboardPromoItems.length > 0) && (
+                <div className={`grid gap-4 ${dashboardNewsItems.length > 0 && dashboardPromoItems.length > 0 ? "sm:grid-cols-2" : "grid-cols-1 max-w-lg"}`}>
+                  {dashboardNewsItems.length > 0 && (
+                    <NewsPromotionCarousel
+                      items={dashboardNewsItems}
+                      type="news"
+                      viewAllHref="/user-news"
+                    />
+                  )}
+                  {dashboardPromoItems.length > 0 && (
+                    <NewsPromotionCarousel
+                      items={dashboardPromoItems}
+                      type="promotion"
+                      viewAllHref="/user-promotions"
+                    />
+                  )}
+                </div>
+              )}
 
               {/* Top Cards Row - Enhanced grid */}
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
