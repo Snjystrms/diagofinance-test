@@ -80,13 +80,15 @@ export function KycVerificationPageContent() {
   const [reuploadingKey, setReuploadingKey] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<{ url: string; label: string } | null>(null);
 
-  const selectedCount = [poiFrontFile, poaFrontFile, poaBackFile, otherFile].filter(Boolean).length;
+  const requiredSelectedCount = [poiFrontFile, poaFrontFile, poaBackFile].filter(Boolean).length;
+  const hasOptionalOtherSelection = Boolean(otherFile || otherType);
+  const isOptionalOtherComplete = !hasOptionalOtherSelection || Boolean(otherFile && otherType);
   const progress = useMemo(
     () =>
       phase === 'approved' || phase === 'under_review'
         ? 100
-        : (selectedCount / 4) * 100,
-    [selectedCount, phase]
+        : (requiredSelectedCount / 3) * 100,
+    [requiredSelectedCount, phase]
   );
 
   const validateImage = (f: File | null) => {
@@ -135,8 +137,9 @@ export function KycVerificationPageContent() {
 
   const canSubmit =
     phase === 'draft' &&
-    !!(poiFrontFile && poaFrontFile && poaBackFile && otherFile) &&
-    !!(poiType && poaType && otherType);
+    !!(poiFrontFile && poaFrontFile && poaBackFile) &&
+    !!(poiType && poaType) &&
+    isOptionalOtherComplete;
 
   const submitKycDocuments = async () => {
     if (!token) {
@@ -144,7 +147,7 @@ export function KycVerificationPageContent() {
       return;
     }
     if (!canSubmit) {
-      toast.error('Please select all required documents and document types.');
+      toast.error('Please upload POI and POA documents with their document types. Other documents are optional.');
       return;
     }
     try {
@@ -153,7 +156,9 @@ export function KycVerificationPageContent() {
       fd.append('poi_front_file', poiFrontFile!);
       fd.append('poa_front_file', poaFrontFile!);
       fd.append('poa_back_file', poaBackFile!);
-      fd.append('other_file', otherFile!);
+      if (otherFile) {
+        fd.append('other_file', otherFile);
+      }
 
       const res = await authApi.uploadProfileDocuments(fd, token);
       toast.success(res?.message || 'User document uploaded successfully');

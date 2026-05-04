@@ -133,7 +133,7 @@ const groupAccounts = (accounts: ManagedMT5Account[]) => {
 
 const mt5AccountsRequests = new Map<string, Promise<ManagedMT5Account[]>>();
 const mt5AccountDetailRequests = new Map<string, Promise<UserMT5AccountDetail | null>>();
-const DEMO_DEPOSIT_OPTIONS = [100, 250, 500, 1000, 2500, 5000, 10000] as const;
+const DEMO_DEPOSIT_OPTIONS = [100, 250, 500, 1000, 2500, 5000, 10000, 100000] as const;
 
 const loadAccountDetail = (account: UserMT5AccountListItem, token: string) => {
   const requestKey = `${token}:${account.id}`;
@@ -440,12 +440,14 @@ export default function ManageAccountsPage() {
               <Eye className="h-4 w-4 mr-1" />
               View Details
             </Button>
-            <Button size="sm" variant="outline" className="min-w-[140px] flex-1" asChild>
-              <Link href={`/funds/internal-transfer?tab=wallet-to-mt5&accountId=${encodeURIComponent(account.account_id)}`}>
-                <DollarSign className="h-4 w-4 mr-1" />
-                Deposit Funds
-              </Link>
-            </Button>
+            {!isDemoAccount ? (
+              <Button size="sm" variant="outline" className="min-w-[140px] flex-1" asChild>
+                <Link href={`/funds/internal-transfer?tab=wallet-to-mt5&accountId=${encodeURIComponent(account.account_id)}`}>
+                  <DollarSign className="h-4 w-4 mr-1" />
+                  Deposit Funds
+                </Link>
+              </Button>
+            ) : null}
             <Button size="sm" variant="outline" className="min-w-[140px] flex-1" onClick={() => copyToClipboard(account.mt5_id, 'MT5 login')}>
               <Copy className="h-4 w-4 mr-1" />
               Copy Login

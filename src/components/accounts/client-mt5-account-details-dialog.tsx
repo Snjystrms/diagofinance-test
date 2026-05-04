@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Copy } from "lucide-react";
+import { BarChart3, Copy, Mail, User, Wallet, Zap } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -17,6 +18,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { type UserMT5AccountDetail, userMT5AccountsApi } from "@/lib/api";
+
 type AccountSummary = {
   id: number;
   account_id: string;
@@ -88,19 +90,17 @@ function InfoMetric({
   label,
   value,
   className = "",
+  valueClassName = "",
 }: {
   label: string;
   value: string;
   className?: string;
+  valueClassName?: string;
 }) {
   return (
-    <div className={`space-y-1 ${className}`}>
-      <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </div>
-      <div className="whitespace-nowrap text-2xl font-semibold tracking-tight text-foreground">
-        {value}
-      </div>
+    <div className={`rounded-lg bg-white/40 p-3 dark:bg-black/10 ${className}`}>
+      <div className="mb-1 text-xs text-muted-foreground">{label}</div>
+      <div className={`text-sm font-semibold text-foreground ${valueClassName}`}>{value}</div>
     </div>
   );
 }
@@ -127,6 +127,10 @@ export function ClientMt5AccountDetailsDialog({
   const freeMarginValue = formatTradingAmount(detailMetrics?.free_margin, currency);
   const leverageValue = detail?.leverage ? `1:${detail.leverage}` : "N/A";
   const mt5Mode = formatMode(detail?.account_mode);
+  const groupName = detail?.group?.name ?? detail?.mt5_group_name ?? "N/A";
+  const accountHolder = detail?.name ?? account?.name ?? "N/A";
+  const emailValue = detail?.email ?? account?.email ?? "N/A";
+  const mt5Login = account?.mt5_id ?? "N/A";
 
   useEffect(() => {
     setDetail(initialDetail);
@@ -169,112 +173,167 @@ export function ClientMt5AccountDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[82vh] max-w-2xl overflow-y-auto rounded-2xl border border-border/70 p-0">
-        <DialogHeader>
-          <div className="px-6 pt-6">
-            <DialogTitle className="text-3xl font-semibold tracking-tight text-foreground">
-              MT5 Account Details
-            </DialogTitle>
-          </div>
+      <DialogContent className="max-h-[82vh] overflow-hidden border border-border/70 bg-card/95 p-0 shadow-xl sm:max-w-4xl">
+        <DialogHeader className="border-b border-border/60 px-6 py-5">
+          <DialogTitle className="text-2xl font-semibold tracking-tight text-foreground">
+            MT5 Account Details
+          </DialogTitle>
+          <DialogDescription>
+            Review login, account metadata, and runtime trading metrics for this MT5 account.
+          </DialogDescription>
         </DialogHeader>
 
         {!account ? (
           <div className="px-6 py-6 text-sm text-muted-foreground">No account details available.</div>
         ) : isLoadingDetail && !detail ? (
-          <div className="px-6 pb-4">
-          <Card className="overflow-hidden rounded-2xl border border-border/60">
-            <CardContent className="space-y-6 p-6">
-              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div className="space-y-3">
-                  <Skeleton className="h-8 w-40" />
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <Skeleton className="h-16 w-full" />
-                    <Skeleton className="h-16 w-full" />
+          <div className="px-6 py-6">
+            <Card className="overflow-hidden border border-border/60 bg-gradient-to-br from-card to-muted/20 shadow-sm">
+              <CardContent className="space-y-6 p-6">
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-12 w-12 rounded-xl" />
+                    <div className="space-y-2">
+                      <Skeleton className="h-7 w-48" />
+                      <div className="flex gap-2">
+                        <Skeleton className="h-5 w-16 rounded-full" />
+                        <Skeleton className="h-5 w-20 rounded-full" />
+                      </div>
+                    </div>
                   </div>
+                  <Skeleton className="h-9 w-28 rounded-lg" />
                 </div>
-                <div className="flex gap-2">
-                  <Skeleton className="h-8 w-24" />
-                  <Skeleton className="h-8 w-20" />
-                  <Skeleton className="h-8 w-20" />
+
+                <div className="grid gap-3 md:grid-cols-2">
+                  <Skeleton className="h-24 w-full rounded-lg" />
+                  <Skeleton className="h-24 w-full rounded-lg" />
                 </div>
-              </div>
-              <div className="grid gap-4 border-t border-border/60 pt-6 md:grid-cols-3">
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-                <Skeleton className="h-16 w-full" />
-              </div>
-            </CardContent>
-          </Card>
+
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  <Skeleton className="h-20 w-full rounded-lg" />
+                  <Skeleton className="h-20 w-full rounded-lg" />
+                  <Skeleton className="h-20 w-full rounded-lg" />
+                  <Skeleton className="h-20 w-full rounded-lg" />
+                  <Skeleton className="h-20 w-full rounded-lg" />
+                  <Skeleton className="h-20 w-full rounded-lg" />
+                </div>
+              </CardContent>
+            </Card>
           </div>
         ) : (
-          <div className="px-6 pb-4">
-          <Card className="overflow-hidden rounded-2xl border border-sky-100 bg-sky-50/40 shadow-sm">
-            <CardHeader className="space-y-6 bg-sky-50/50 p-6">
-              <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-                <div className="min-w-0 flex-1 space-y-4">
-                  <CardTitle className="max-w-[18ch] text-2xl font-semibold leading-tight text-sky-900 sm:text-3xl">
-                    {accountTypeName}
-                  </CardTitle>
-                  <div className="grid gap-5 sm:grid-cols-2">
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium text-sky-700">Account ID</div>
-                      <div className="flex items-center gap-2">
-                        <code className="break-all text-2xl font-semibold tracking-tight text-sky-600 sm:text-3xl">
-                          {account.account_id}
-                        </code>
+          <div className="max-h-[calc(82vh-9rem)] overflow-y-auto px-6 py-6">
+            <Card className="overflow-hidden border border-border/60 bg-gradient-to-br from-card to-muted/20 shadow-sm">
+              <CardHeader className="space-y-6 border-b border-border/60 bg-transparent p-6">
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground shadow-sm">
+                      5
+                    </div>
+                    <div>
+                      <div className="mb-1 flex flex-wrap items-center gap-2">
+                        <CardTitle className="text-lg font-bold text-foreground">
+                          {accountTypeName}
+                        </CardTitle>
+                        <StatusBadge status={detail?.status} />
+                      </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-md border border-border/70 bg-background px-2.5 py-1 text-xs font-medium">
+                          {mt5Mode}
+                        </span>
+                        <span className="text-xs text-muted-foreground">{groupName}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <span className="rounded-md border border-border/70 bg-background px-3 py-1.5 text-sm font-medium text-foreground">
+                    MT5
+                  </span>
+                </div>
+              </CardHeader>
+
+              <CardContent className="space-y-4 p-6">
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="rounded-lg bg-white/60 p-3 dark:bg-black/20">
+                    <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                      <Wallet className="h-3 w-3" />
+                      Account ID
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <code className="break-all text-sm font-semibold">{account.account_id}</code>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 shrink-0"
+                        onClick={() => copyToClipboard(account.account_id, "Account ID")}
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg bg-white/60 p-3 dark:bg-black/20">
+                    <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                      <BarChart3 className="h-3 w-3" />
+                      MT5 Login
+                    </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <code className="break-all text-sm font-semibold">{mt5Login}</code>
+                      {account.mt5_id ? (
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 shrink-0 rounded-full text-sky-600 hover:bg-sky-100 hover:text-sky-700"
-                          onClick={() => copyToClipboard(account.account_id, "Account ID")}
+                          className="h-8 w-8 shrink-0"
+                          onClick={() => copyToClipboard(mt5Login, "MT5 login")}
                         >
-                          <Copy className="h-4 w-4" />
+                          <Copy className="h-3.5 w-3.5" />
                         </Button>
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="text-sm font-medium text-sky-700">Available Balance</div>
-                      <div className="whitespace-nowrap text-2xl font-semibold tracking-tight text-sky-600 sm:text-3xl">
-                        {balanceValue}
-                      </div>
+                      ) : null}
                     </div>
                   </div>
                 </div>
 
-                <div className="flex shrink-0 flex-wrap items-center gap-2 lg:max-w-[220px] lg:justify-end">
-                  <StatusBadge status={detail?.status} />
-                  <span className="rounded-md border border-sky-200 bg-white px-4 py-1.5 text-sm font-medium text-sky-900">
-                    MT5
-                  </span>
-                  <span className="rounded-md border border-amber-400/70 bg-white px-4 py-1.5 text-sm font-medium text-amber-600">
-                    {mt5Mode}
-                  </span>
+                <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                  <InfoMetric label="Balance" value={balanceValue} valueClassName="text-primary" />
+                  <InfoMetric label="Equity" value={equityValue} />
+                  <InfoMetric label="Free Margin" value={freeMarginValue} />
+                  <InfoMetric label="Leverage" value={leverageValue} />
+                  <InfoMetric label="Account Holder" value={accountHolder} />
+                  <InfoMetric label="Email" value={emailValue} valueClassName="break-all" />
                 </div>
-              </div>
-            </CardHeader>
 
-            <CardContent className="grid gap-6 bg-white/65 p-6 md:grid-cols-3">
-              <InfoMetric
-                label="Free Margin"
-                value={freeMarginValue}
-                className="md:border-r md:border-sky-100 md:pr-6"
-              />
-              <InfoMetric
-                label="Equity"
-                value={equityValue}
-                className="md:border-r md:border-sky-100 md:px-2"
-              />
-              <InfoMetric label="Leverage" value={leverageValue} className="md:pl-2" />
-            </CardContent>
-          </Card>
+                <div className="grid gap-3 md:grid-cols-3">
+                  <div className="rounded-lg bg-white/40 p-3 dark:bg-black/10">
+                    <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+                      <Zap className="h-3.5 w-3.5 text-orange-500" />
+                      Platform
+                    </div>
+                    <div className="text-sm font-semibold">MetaTrader 5</div>
+                  </div>
+                  <div className="rounded-lg bg-white/40 p-3 dark:bg-black/10">
+                    <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+                      <User className="h-3.5 w-3.5" />
+                      Mode
+                    </div>
+                    <div className="text-sm font-semibold">{mt5Mode}</div>
+                  </div>
+                  <div className="rounded-lg bg-white/40 p-3 dark:bg-black/10">
+                    <div className="mb-1 flex items-center gap-2 text-xs text-muted-foreground">
+                      <Mail className="h-3.5 w-3.5" />
+                      Group
+                    </div>
+                    <div className="text-sm font-semibold">{groupName}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 
-        <DialogFooter className="px-6 pb-6 sm:justify-between">
-          <Button variant="outline" className="rounded-xl border-sky-200 text-sky-800 hover:bg-sky-50 hover:text-sky-900" asChild>
+        <DialogFooter className="gap-3 border-t border-border/60 px-6 py-5 sm:justify-between">
+          <Button variant="outline" className="rounded-xl" asChild>
             <Link href="/my_accounts/open-trading-account">Open Another Account</Link>
           </Button>
-          <Button className="rounded-xl bg-sky-600 hover:bg-sky-700" onClick={() => onOpenChange(false)}>Close</Button>
+          <Button className="rounded-xl" onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
