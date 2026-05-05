@@ -206,13 +206,6 @@ export default function BecomePartnerPage() {
                 training sessions, campaign assets, and real-time analytics to
                 keep you ahead in every market you enter.
               </p>
-              <a
-                href="mailto:partners@crmapp.com"
-                className="mt-6 inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-              >
-                Talk to Partner Desk
-                <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-              </a>
             </div>
           </div>
         </div>
@@ -239,13 +232,7 @@ export default function BecomePartnerPage() {
             </p>
           </div>
           <div className="flex items-end lg:justify-end">
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            >
-              Apply Now
-              <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
+         
           </div>
         </div>
       </section>

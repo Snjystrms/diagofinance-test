@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import {
   CheckCircle2,
+  Eye,
   Loader2,
   RefreshCw,
   Search,
@@ -29,6 +30,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/auth-context";
 import { adminIbRequestsApi, type AdminIbRequest } from "@/lib/api";
@@ -223,7 +225,8 @@ export default function IbManagementPage() {
   });
 
   const [processingId, setProcessingId] = useState<string | number | null>(null);
-  const [actionType, setActionType] = useState<"approve" | "reject">("approve");
+  const [actionType, setActionType] = useState<"approve" | "reject" | "review">("approve");
+  const [selectedDecision, setSelectedDecision] = useState<"approve" | "reject">("approve");
   const [actionRequest, setActionRequest] = useState<AdminIbRequest | null>(null);
   const [actionIbName, setActionIbName] = useState("");
   const [actionComment, setActionComment] = useState("");
@@ -346,30 +349,37 @@ export default function IbManagementPage() {
   }, [loadRequests]);
 
   const openActionDialog = useCallback(
-    (request: AdminIbRequest, type: "approve" | "reject") => {
+    (request: AdminIbRequest, type: "approve" | "reject" | "review") => {
       setActionType(type);
       setActionRequest(request);
       setProcessingId(null);
 
+      const statusCode = asStatusCode(request);
+      setSelectedDecision(
+        type === "review" ? (statusCode === 2 ? "reject" : "approve") : type
+      );
+
       const defaultIbName = request.ib_name ?? deriveFullName(request);
       setActionIbName(defaultIbName === "—" ? "" : defaultIbName);
-      setActionComment(
-        type === "reject"
-          ? ""
-          : deriveAdminComment(request) ?? "",
-      );
+      if (type === "reject") {
+        setActionComment("");
+        return;
+      }
+
+      setActionComment(deriveAdminComment(request) ?? "");
     },
     [],
   );
 
   const closeActionDialog = useCallback(() => {
     setActionRequest(null);
+    setSelectedDecision("approve");
     setActionComment("");
     setActionIbName("");
     setProcessingId(null);
   }, []);
 
-  const handleActionSubmit = useCallback(async () => {
+  const performStatusUpdate = useCallback(async (nextAction: "approve" | "reject") => {
     if (!token || !actionRequest) {
       return;
     }
@@ -383,32 +393,36 @@ export default function IbManagementPage() {
 
     const comment = actionComment.trim();
     const ibName = actionIbName.trim();
+    const requiresIbName = nextAction === "approve";
 
-    if (actionType === "approve" && !ibName) {
+    if (requiresIbName && !ibName) {
       toast.error("IB name is required to approve the request.");
-      return;
-    }
-
-    if (actionType === "reject" && comment.length < 5) {
-      toast.error("Please provide a rejection comment (minimum 5 characters).");
       return;
     }
 
     try {
       setProcessingId(identifier);
 
+      const body =
+        nextAction === "approve"
+          ? {
+              status: 1,
+              ib_name: ibName,
+              admin_comment: comment || undefined,
+            }
+          : {
+              status: 2,
+              admin_comment: comment,
+            };
+
       await adminIbRequestsApi.updateStatus(
         identifier,
-        {
-          status: actionType === "approve" ? 1 : 2,
-          ib_name: ibName || undefined,
-          admin_comment: comment || undefined,
-        },
+        body,
         token,
       );
 
       toast.success(
-        actionType === "approve"
+        nextAction === "approve"
           ? "IB request approved successfully."
           : "IB request rejected successfully.",
       );
@@ -426,12 +440,15 @@ export default function IbManagementPage() {
   }, [
     token,
     actionRequest,
-    actionType,
     actionComment,
     actionIbName,
     closeActionDialog,
     loadRequests,
   ]);
+
+  const handleActionSubmit = useCallback(async () => {
+    await performStatusUpdate(selectedDecision);
+  }, [performStatusUpdate, selectedDecision]);
 
   const columns: ColumnDef<AdminIbRequest>[] = useMemo(
     () => [
@@ -546,9 +563,19 @@ export default function IbManagementPage() {
 
           if (statusCode !== 0) {
             return (
-              <span className="text-sm text-muted-foreground">
-                {statusCode === 1 ? "Approved" : "Rejected"}
-              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => openActionDialog(request, "review")}
+                disabled={isProcessing}
+              >
+                {isProcessing ? (
+                  <Spinner className="mr-2 h-4 w-4" />
+                ) : (
+                  <Eye className="mr-2 h-4 w-4" />
+                )}
+                Review
+              </Button>
             );
           }
 
@@ -587,6 +614,20 @@ export default function IbManagementPage() {
     ],
     [processingId, openActionDialog],
   );
+
+  const currentStatusCode = actionRequest ? asStatusCode(actionRequest) : null;
+  const isReviewMode = actionType === "review";
+  const isApproveDecision = selectedDecision === "approve";
+  const dialogTitle =
+    isReviewMode
+      ? currentStatusCode === 1
+        ? "Review Approved IB"
+        : "Review Rejected IB"
+      : "Update IB Request";
+  const dialogDescription =
+    isReviewMode
+      ? "Use the decision selector to move this IB request between approved and rejected states."
+      : "Choose the final decision inside the modal, then save it.";
 
   const renderTableSection = () => {
     if (loadError && requests.length === 0) {
@@ -728,14 +769,8 @@ export default function IbManagementPage() {
       <Dialog open={Boolean(actionRequest)} onOpenChange={(open) => (open ? null : closeActionDialog())}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>
-              {actionType === "approve" ? "Approve IB Request" : "Reject IB Request"}
-            </DialogTitle>
-            <DialogDescription>
-              {actionType === "approve"
-                ? "Confirm the IB name and optionally add an internal note before approving this request."
-                : "Provide a reason that will be shared with the applicant about why the request is rejected."}
-            </DialogDescription>
+            <DialogTitle>{dialogTitle}</DialogTitle>
+            <DialogDescription>{dialogDescription}</DialogDescription>
           </DialogHeader>
 
           {actionRequest ? (
@@ -752,9 +787,43 @@ export default function IbManagementPage() {
                 </div>
               </div>
 
+              {isReviewMode ? (
+                <div className="flex items-center justify-between rounded-md border border-border/60 bg-background px-3 py-2.5 text-sm">
+                  <span className="font-medium text-foreground">Current decision</span>
+                  {getStatusBadge(currentStatusCode ?? 0)}
+                </div>
+              ) : null}
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Decision</label>
+                <Tabs
+                  value={selectedDecision}
+                  onValueChange={(value) => {
+                    if (value === "approve" || value === "reject") {
+                      setSelectedDecision(value);
+                    }
+                  }}
+                  className="w-full"
+                >
+                  <TabsList className="grid h-auto w-full grid-cols-2 rounded-2xl bg-muted/50 p-1">
+                    <TabsTrigger value="approve" className="rounded-xl">
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Approve
+                    </TabsTrigger>
+                    <TabsTrigger value="reject" className="rounded-xl">
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Reject
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+                <p className="text-xs text-muted-foreground">
+                  Switching the decision here updates what will be sent in the PATCH request.
+                </p>
+              </div>
+
               <div className="space-y-2">
                 <label htmlFor="ib-name" className="text-sm font-medium">
-                  IB Name {actionType === "approve" ? "*" : "(optional)"}
+                  {isApproveDecision ? "IB Name *" : "IB Name (not used for reject)"}
                 </label>
                 <Input
                   id="ib-name"
@@ -762,16 +831,20 @@ export default function IbManagementPage() {
                   onChange={(event) => setActionIbName(event.target.value)}
                   placeholder="Enter the display name for this IB"
                 />
-                {actionType === "approve" ? (
+                {isApproveDecision ? (
                   <p className="text-xs text-muted-foreground">
                     This name will be stored on the partner profile after approval.
                   </p>
-                ) : null}
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    Rejection ignores the IB name field. Keep it only if you may switch back to approve.
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
                 <label htmlFor="admin-comment" className="text-sm font-medium">
-                  {actionType === "approve" ? "Admin Comment (optional)" : "Rejection Comment *"}
+                  {isApproveDecision ? "Admin Comment (optional)" : "Rejection Comment (optional)"}
                 </label>
                 <Textarea
                   id="admin-comment"
@@ -779,30 +852,31 @@ export default function IbManagementPage() {
                   onChange={(event) => setActionComment(event.target.value)}
                   rows={4}
                   placeholder={
-                    actionType === "approve"
+                    isApproveDecision
                       ? "Add any internal notes (optional)"
-                      : "Explain why this request is being rejected"
+                      : "Explain why this request is being rejected (optional)"
                   }
                 />
-                {actionType === "reject" ? (
+                {!isApproveDecision ? (
                   <p className="text-xs text-muted-foreground">
-                    Minimum 5 characters. This message is shared with the applicant.
+                    Leave this empty if you do not want to send a rejection note.
                   </p>
                 ) : null}
               </div>
             </div>
           ) : null}
 
-          <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={closeActionDialog}>
+          <DialogFooter className="gap-3 pt-2 sm:justify-end">
+            <Button variant="outline" onClick={closeActionDialog} className="px-5">
               Cancel
             </Button>
             <Button
+              variant={isApproveDecision ? "default" : "destructive"}
               onClick={handleActionSubmit}
+              className="px-5"
               disabled={
                 processingId !== null ||
-                (actionType === "approve" && !actionIbName.trim()) ||
-                (actionType === "reject" && actionComment.trim().length < 5)
+                (isApproveDecision && !actionIbName.trim())
               }
             >
               {processingId !== null ? (
@@ -810,15 +884,15 @@ export default function IbManagementPage() {
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Processing...
                 </>
-              ) : actionType === "approve" ? (
+              ) : isApproveDecision ? (
                 <>
                   <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Approve Request
+                  Save as Approved
                 </>
               ) : (
                 <>
                   <XCircle className="mr-2 h-4 w-4" />
-                  Reject Request
+                  Save as Rejected
                 </>
               )}
             </Button>

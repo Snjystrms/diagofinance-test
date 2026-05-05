@@ -12,7 +12,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Eye, EyeOff, Loader2 } from "lucide-react";
 
 export type ManagerRow = {
   id: string;
@@ -73,6 +73,12 @@ export function ManagerForm({
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
+  const [collapsedCategories, setCollapsedCategories] = useState<Record<string, boolean>>({});
+
+  const selectedPermissions = useMemo(
+    () => new Set(form.permissions ?? []),
+    [form.permissions]
+  );
 
   useEffect(() => {
     if (open && (!allPermissions.length || !groupedPermissions.length)) {
@@ -108,6 +114,20 @@ export function ManagerForm({
     setSubmitting(false);
   }, [isEdit, initialData, open]);
 
+  useEffect(() => {
+    if (!groupedPermissions.length) return;
+
+    setCollapsedCategories((prev) => {
+      const nextState: Record<string, boolean> = {};
+
+      groupedPermissions.forEach((group) => {
+        nextState[group.category] = prev[group.category] ?? false;
+      });
+
+      return nextState;
+    });
+  }, [groupedPermissions]);
+
   const togglePermission = (permissionId: number, checked: boolean) => {
     setForm((prev) => {
       const current = new Set(prev.permissions ?? []);
@@ -118,6 +138,29 @@ export function ManagerForm({
       }
       return { ...prev, permissions: Array.from(current) };
     });
+  };
+
+  const toggleCategoryPermissions = (group: PermissionGroup, checked: boolean) => {
+    setForm((prev) => {
+      const current = new Set(prev.permissions ?? []);
+
+      group.permissions.forEach((permission) => {
+        if (checked) {
+          current.add(permission.id);
+        } else {
+          current.delete(permission.id);
+        }
+      });
+
+      return { ...prev, permissions: Array.from(current) };
+    });
+  };
+
+  const toggleCategoryCollapsed = (category: string) => {
+    setCollapsedCategories((prev) => ({
+      ...prev,
+      [category]: !prev[category],
+    }));
   };
 
   const validateField = (field: string, value: string) => {
@@ -459,26 +502,77 @@ export function ManagerForm({
               </div>
 
               <div className="max-h-72 space-y-4 overflow-y-auto pr-2">
-                {groupedPermissions.map((group) => (
-                  <div key={group.category}>
-                    <div className="mb-2 text-sm font-semibold">{group.category}</div>
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
-                      {group.permissions.map((permission) => {
-                        const checked = (form.permissions ?? []).includes(permission.id);
-                        return (
-                          <label key={permission.id} className="flex items-center gap-2 text-sm">
-                            <Checkbox
-                              checked={checked}
-                              onCheckedChange={(value) => togglePermission(permission.id, !!value)}
-                              disabled={readOnly}
-                            />
-                            <span className="text-muted-foreground">{permission.name}</span>
-                          </label>
-                        );
-                      })}
+                {groupedPermissions.map((group) => {
+                  const totalPermissions = group.permissions.length;
+                  const checkedCount = group.permissions.filter((permission) =>
+                    selectedPermissions.has(permission.id)
+                  ).length;
+                  const isAllChecked = totalPermissions > 0 && checkedCount === totalPermissions;
+                  const isPartiallyChecked =
+                    checkedCount > 0 && checkedCount < totalPermissions;
+                  const isCollapsed = collapsedCategories[group.category] ?? false;
+
+                  return (
+                    <div key={group.category} className="rounded-lg border border-border/70 bg-muted/20">
+                      <div className="flex items-center gap-3 px-3 py-3">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="h-8 px-2 text-muted-foreground hover:text-foreground"
+                          onClick={() => toggleCategoryCollapsed(group.category)}
+                          aria-label={isCollapsed ? `Expand ${group.category}` : `Collapse ${group.category}`}
+                        >
+                          {isCollapsed ? (
+                            <ChevronRight className="h-4 w-4" />
+                          ) : (
+                            <ChevronDown className="h-4 w-4" />
+                          )}
+                        </Button>
+
+                        <div className="flex min-w-0 flex-1 items-center gap-3">
+                          <Checkbox
+                            checked={isAllChecked ? true : isPartiallyChecked ? "indeterminate" : false}
+                            onCheckedChange={(value) =>
+                              toggleCategoryPermissions(group, value === true || value === "indeterminate")
+                            }
+                            disabled={readOnly || totalPermissions === 0}
+                          />
+                          <button
+                            type="button"
+                            className="min-w-0 flex-1 text-left"
+                            onClick={() => toggleCategoryCollapsed(group.category)}
+                          >
+                            <div className="truncate text-sm font-semibold text-foreground">
+                              {group.category}
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {checkedCount}/{totalPermissions} selected
+                            </div>
+                          </button>
+                        </div>
+                      </div>
+
+                      {!isCollapsed ? (
+                        <div className="grid grid-cols-1 gap-3 border-t border-border/60 px-4 py-4 sm:grid-cols-2 md:grid-cols-3">
+                          {group.permissions.map((permission) => {
+                            const checked = selectedPermissions.has(permission.id);
+                            return (
+                              <label key={permission.id} className="flex items-center gap-2 text-sm">
+                                <Checkbox
+                                  checked={checked}
+                                  onCheckedChange={(value) => togglePermission(permission.id, !!value)}
+                                  disabled={readOnly}
+                                />
+                                <span className="text-muted-foreground">{permission.name}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      ) : null}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               <p className="text-xs text-muted-foreground">

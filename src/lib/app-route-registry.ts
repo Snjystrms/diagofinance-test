@@ -609,7 +609,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "ib-management",
-    navLabel: "All IB",
+    navLabel: "IB Request",
     managerCategories: ["IB Management"],
   },
   {
@@ -730,7 +730,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     roles: BACKOFFICE_ROLES,
     sidebarSection: "bank-details",
     navLabel: "Deposit Bank Details",
-    managerCategories: ["Deposit Bank Details"],
+    managerCategories: ["Settings"],
   },
   {
     path: "/ib-plans",
