@@ -354,7 +354,7 @@ export function Header() {
               <DropdownMenuItem onClick={() => router.push('/profile/view_profile')}>
                 Profile
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push('/settings-management')}>
+              <DropdownMenuItem onClick={() => router.push('/bank-details')}>
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />

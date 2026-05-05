@@ -655,6 +655,30 @@ export interface AdminBankDetailCreateBody extends UserBankDetailsPayload {
 
 export type AdminBankDetailUpdateBody = UserBankDetailsPayload;
 
+export interface BrokerBankDetailPayload {
+  account_holder_name: string;
+  account_number: string;
+  address: string;
+  bank_name: string;
+  country: string;
+  iban_number: string;
+  swift_ifsc_code: string;
+  is_active: boolean;
+}
+
+export interface BrokerBankDetailItem
+  extends Omit<BrokerBankDetailPayload, "is_active"> {
+  id: number;
+  is_active: number | boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface AdminBrokerBankDetailsListData {
+  count: number;
+  rows: BrokerBankDetailItem[];
+}
+
 export interface Permission {
   id: number;
   name: string;
@@ -1485,6 +1509,99 @@ export const adminBankDetailsApi = {
     }
 
     return apiCall(`/admin/bank-details/${uuid}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
+
+export const userBrokerBankDetailsApi = {
+  list: (token: string) => {
+    if (!token) {
+      throw new Error("Token is required to fetch broker bank details");
+    }
+
+    return apiCall<BrokerBankDetailItem[]>(`/user/broker-bank-details`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
+
+export const adminBrokerBankDetailsApi = {
+  list: (token: string) => {
+    if (!token) {
+      throw new Error("Token is required to fetch broker bank details");
+    }
+
+    return apiCall<AdminBrokerBankDetailsListData>(`/admin/broker-bank-details`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  create: (body: BrokerBankDetailPayload, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to create broker bank details");
+    }
+
+    return apiCall<BrokerBankDetailItem>(`/admin/broker-bank-details`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  },
+
+  getById: (id: number | string, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to fetch broker bank detail");
+    }
+
+    const detailId = String(id).trim();
+    if (!detailId) {
+      throw new Error("Broker bank detail ID is required");
+    }
+
+    return apiCall<BrokerBankDetailItem>(`/admin/broker-bank-details/${detailId}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  update: (id: number | string, body: BrokerBankDetailPayload, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to update broker bank detail");
+    }
+
+    const detailId = String(id).trim();
+    if (!detailId) {
+      throw new Error("Broker bank detail ID is required");
+    }
+
+    return apiCall<BrokerBankDetailItem>(`/admin/broker-bank-details/${detailId}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  },
+
+  delete: (id: number | string, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to delete broker bank detail");
+    }
+
+    const detailId = String(id).trim();
+    if (!detailId) {
+      throw new Error("Broker bank detail ID is required");
+    }
+
+    return apiCall(`/admin/broker-bank-details/${detailId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });

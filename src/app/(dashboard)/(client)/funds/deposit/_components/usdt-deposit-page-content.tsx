@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import { submitUSDTDeposit } from "@/utils/operations";
-import { walletApi, binanceDepositApi, coinsbuyDepositApi, bankDepositApi, type WalletSummaryData, type BinanceDepositCreateResponse, type CoinsBuyDepositCreateResponse, type BankDepositRecord } from "@/lib/api";
+import { walletApi, binanceDepositApi, coinsbuyDepositApi, bankDepositApi, userBrokerBankDetailsApi, type WalletSummaryData, type BinanceDepositCreateResponse, type CoinsBuyDepositCreateResponse, type BankDepositRecord, type BrokerBankDetailItem } from "@/lib/api";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { CLIENT_WALLET_REFRESH_EVENT, notifyWalletRefresh } from "@/lib/client-events";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,6 +38,9 @@ import {
   CheckCircle2,
   Loader2
 } from "lucide-react";
+
+const isBrokerBankDetailActive = (detail: BrokerBankDetailItem) =>
+  detail.is_active === true || detail.is_active === 1;
 
 function USDTDepositContent() {
   const { user, token } = useAuth();
@@ -71,6 +74,9 @@ function USDTDepositContent() {
   const [bankSubmitResult, setBankSubmitResult] = useState<{ id: number; status: string; created_at: string } | null>(null);
   const [bankRequests, setBankRequests] = useState<BankDepositRecord[]>([]);
   const [bankRequestsLoading, setBankRequestsLoading] = useState(false);
+  const [brokerBankDetails, setBrokerBankDetails] = useState<BrokerBankDetailItem[]>([]);
+  const [brokerBankDetailsLoading, setBrokerBankDetailsLoading] = useState(false);
+  const [brokerBankDetailsError, setBrokerBankDetailsError] = useState<string | null>(null);
   const wallets = walletData ? Object.values(walletData.wallets || {}) : [];
   const primaryWallet = wallets.find((wallet) => wallet.is_primary) || wallets[0];
   const currency = primaryWallet?.currency || "USDT";
@@ -95,6 +101,10 @@ function USDTDepositContent() {
   const typedAmountNum = parseFloat(amount) || 0;
   const depositReadiness =
     availableBalance > 0 ? Math.min(100, Math.round((typedAmountNum / availableBalance) * 100)) : 0;
+  const visibleBrokerBankDetails = useMemo(() => {
+    const activeDetails = brokerBankDetails.filter((detail) => isBrokerBankDetailActive(detail));
+    return activeDetails.length > 0 ? activeDetails : brokerBankDetails;
+  }, [brokerBankDetails]);
 
   const fetchWalletSummary = async () => {
     if (!token) {
@@ -322,9 +332,39 @@ function USDTDepositContent() {
     }
   }, [token]);
 
+  const fetchBrokerBankDetails = useCallback(async () => {
+    if (!token) {
+      setBrokerBankDetails([]);
+      setBrokerBankDetailsError(null);
+      return;
+    }
+
+    try {
+      setBrokerBankDetailsLoading(true);
+      setBrokerBankDetailsError(null);
+      const response = await userBrokerBankDetailsApi.list(token);
+      setBrokerBankDetails(Array.isArray(response.data) ? response.data : []);
+    } catch (fetchError) {
+      console.error("Failed to fetch broker bank details:", fetchError);
+      setBrokerBankDetails([]);
+      setBrokerBankDetailsError(
+        getFriendlyErrorMessage(fetchError, {
+          audience: "client",
+          resource: "bank account details",
+          action: "load",
+        })
+      );
+    } finally {
+      setBrokerBankDetailsLoading(false);
+    }
+  }, [token]);
+
   useEffect(() => {
-    if (activeTab === "bank") void fetchBankRequests();
-  }, [activeTab, fetchBankRequests]);
+    if (activeTab === "bank") {
+      void fetchBankRequests();
+      void fetchBrokerBankDetails();
+    }
+  }, [activeTab, fetchBankRequests, fetchBrokerBankDetails]);
 
   const handleBankSubmit = async () => {
     setBankError(null);
@@ -1226,39 +1266,112 @@ function USDTDepositContent() {
                 {/* Left — Bank account details (dummy) */}
                 <div className="space-y-6">
                   <Card className="border border-border/60 bg-card shadow-sm">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2 text-xl font-bold">
-                        <div className="rounded-lg border border-primary/20 bg-primary/10 p-1.5">
-                          <Building2 className="h-5 w-5 text-primary" />
-                        </div>
-                        Bank Account Details
-                      </CardTitle>
-                      <CardDescription>
-                        Transfer funds to the account below, then submit the Transaction ID.
-                      </CardDescription>
+                    <CardHeader className="flex flex-row items-start justify-between gap-4">
+                      <div className="space-y-1">
+                        <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                          <div className="rounded-lg border border-primary/20 bg-primary/10 p-1.5">
+                            <Building2 className="h-5 w-5 text-primary" />
+                          </div>
+                          Bank Account Details
+                        </CardTitle>
+                        <CardDescription>
+                          Transfer funds to one of the approved accounts below, then submit the Transaction ID.
+                        </CardDescription>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={fetchBrokerBankDetails}
+                        disabled={brokerBankDetailsLoading}
+                        aria-label="Refresh bank account details"
+                      >
+                        <RefreshCw
+                          className={`h-3.5 w-3.5 ${brokerBankDetailsLoading ? "animate-spin" : ""}`}
+                        />
+                      </Button>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {/* Account info rows */}
-                      {[
-                        { label: "Bank Name",       value: "GrayBulls Capital Bank" },
-                        { label: "Account Name",    value: "GrayBulls Advisors Pvt Ltd" },
-                        { label: "Account Number",  value: "1234 5678 9012 3456" },
-                        { label: "IFSC / SWIFT",    value: "GRBL0001234" },
-                        { label: "Branch",          value: "Mumbai, Maharashtra" },
-                        { label: "Account Type",    value: "Current Account" },
-                      ].map(({ label, value }) => (
-                        <div
-                          key={label}
-                          className="flex items-center justify-between gap-4 rounded-xl border border-border/50 bg-muted/20 px-4 py-3"
-                        >
-                          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                            {label}
-                          </span>
-                          <span className="font-mono text-sm font-medium text-foreground text-right break-all">
-                            {value}
-                          </span>
+                      {brokerBankDetailsLoading ? (
+                        <div className="space-y-3">
+                          {[1, 2].map((item) => (
+                            <div
+                              key={item}
+                              className="rounded-2xl border border-border/50 bg-muted/20 p-4"
+                            >
+                              <Skeleton className="mb-3 h-5 w-40" />
+                              <div className="grid gap-3 md:grid-cols-2">
+                                {[1, 2, 3, 4].map((field) => (
+                                  <div key={field} className="space-y-2">
+                                    <Skeleton className="h-3 w-24" />
+                                    <Skeleton className="h-5 w-full" />
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      ))}
+                      ) : brokerBankDetailsError ? (
+                        <ApiErrorState
+                          message={brokerBankDetailsError}
+                          audience="client"
+                          resource="bank account details"
+                          action="load"
+                          variant="inline"
+                        />
+                      ) : visibleBrokerBankDetails.length === 0 ? (
+                        <div className="rounded-xl border border-dashed border-border/60 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+                          Bank deposit details are not available right now. Please contact support before sending funds.
+                        </div>
+                      ) : (
+                        <div className="space-y-4">
+                          {visibleBrokerBankDetails.map((detail) => {
+                            const active = isBrokerBankDetailActive(detail);
+
+                            return (
+                              <div
+                                key={detail.id}
+                                className="rounded-2xl border border-border/60 bg-muted/20 p-4 shadow-sm"
+                              >
+                                <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+                                  <div>
+                                    <div className="text-base font-semibold text-foreground">
+                                      {detail.bank_name}
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      {detail.country}
+                                    </div>
+                                  </div>
+                                  <Badge variant={active ? "default" : "secondary"}>
+                                    {active ? "Active" : "Inactive"}
+                                  </Badge>
+                                </div>
+
+                                <div className="grid gap-3 md:grid-cols-2">
+                                  {[
+                                    { label: "Account Name", value: detail.account_holder_name },
+                                    { label: "Account Number", value: detail.account_number },
+                                    { label: "IBAN Number", value: detail.iban_number },
+                                    { label: "IFSC / SWIFT", value: detail.swift_ifsc_code },
+                                    { label: "Address", value: detail.address },
+                                  ].map(({ label, value }) => (
+                                    <div
+                                      key={`${detail.id}-${label}`}
+                                      className="rounded-xl border border-border/50 bg-background/80 px-4 py-3"
+                                    >
+                                      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                        {label}
+                                      </div>
+                                      <div className="mt-1 break-all font-mono text-sm font-medium text-foreground">
+                                        {value || "-"}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
 
                       <div className="rounded-xl border border-amber-300/60 bg-amber-50/80 p-4 dark:border-amber-800 dark:bg-amber-950/30">
                         <div className="flex items-start gap-3">
@@ -1369,7 +1482,12 @@ function USDTDepositContent() {
 
                       <Button
                         onClick={handleBankSubmit}
-                        disabled={isSubmittingBank || !bankAmount.trim() || !bankTxId.trim()}
+                        disabled={
+                          isSubmittingBank ||
+                          !bankAmount.trim() ||
+                          !bankTxId.trim() ||
+                          visibleBrokerBankDetails.length === 0
+                        }
                         className="h-11 w-full rounded-xl text-base font-semibold"
                       >
                         {isSubmittingBank ? (
