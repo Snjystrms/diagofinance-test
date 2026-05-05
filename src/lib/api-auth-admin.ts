@@ -2104,6 +2104,84 @@ export interface AdminWithdrawalDecisionResponse {
   approved_at: string;
 }
 
+/* ─── User bank deposit ──────────────────────────────────────────────────── */
+
+export interface BankDepositRequest {
+  amount: number;
+  transaction_id: string;
+}
+
+export interface BankDepositSubmitData {
+  id: number;
+  transaction_id: string;
+  payment_proof_url: string | null;
+  amount: number;
+  status: string;
+  created_at: string;
+}
+
+export interface BankDepositRecord {
+  id: number;
+  user_id: number;
+  amount: number;
+  transaction_id: string;
+  payment_proof_url: string | null;
+  status: string;
+  admin_notes: string | null;
+  approved_by: string | null;
+  approved_by_manager_id: string | null;
+  approved_at: string | null;
+  created_at: string;
+  updated_at: string;
+  walletTransaction?: {
+    id: number;
+    amount: number;
+    balance_before: number;
+    balance_after: number;
+    created_at: string;
+  };
+}
+
+export interface BankDepositListData {
+  requests: BankDepositRecord[];
+  pagination: {
+    current_page: number;
+    total_pages: number;
+    total_records: number;
+    limit: number;
+  };
+}
+
+export const bankDepositApi = {
+  submit: (data: BankDepositRequest, token: string) =>
+    apiCall<{ success: boolean; message: string; data: BankDepositSubmitData }>(
+      `/user/bank-deposit/submit`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      },
+    ),
+
+  listRequests: (token: string, page = 1, limit = 10) =>
+    apiCall<{ success: boolean; data: BankDepositListData }>(
+      `/user/bank-deposit/user-requests?page=${page}&limit=${limit}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
+
+  getRequest: (id: number | string, token: string) =>
+    apiCall<{ success: boolean; data: BankDepositRecord }>(
+      `/user/bank-deposit/user-requests/${id}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
+};
+
 export const adminWithdrawalApi = {
   listAll: (page: number = 1, limit: number = 10, token: string, status?: string) => {
     const qs = new URLSearchParams();

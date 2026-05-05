@@ -139,6 +139,23 @@ export interface UserMT5DemoDepositData {
   demo: boolean;
 }
 
+export interface UserMT5PasswordResetRequest {
+  new_password: string;
+}
+
+export interface UserMT5MainPasswordResetData {
+  accountId: number;
+  main_password: string;
+}
+
+export interface UserMT5InvestorPasswordResetData {
+  accountId: number;
+  investor_password: string;
+}
+
+const buildMt5PasswordResetQuery = (length: number) =>
+  new URLSearchParams({ length: String(length) }).toString();
+
 export interface UserMT5TradesHistoryItem {
   type: string;
   time_ist: string;
@@ -230,6 +247,33 @@ export const userMT5AccountsApi = {
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }),
+
+  resetMainPassword: (
+    id: string | number,
+    data: UserMT5PasswordResetRequest,
+    token: string,
+    length: number = data.new_password.length
+  ) =>
+    apiCall<UserMT5MainPasswordResetData>(`/user/mt5-account/${id}/reset-main-password?${buildMt5PasswordResetQuery(length)}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+
+  resetInvestorPassword: (
+    id: string | number,
+    data: UserMT5PasswordResetRequest,
+    token: string,
+    length: number = data.new_password.length
+  ) =>
+    apiCall<UserMT5InvestorPasswordResetData>(
+      `/user/mt5-account/${id}/reset-investor-password?${buildMt5PasswordResetQuery(length)}`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }
+    ),
 
   getTradesHistory: (
     params: {

@@ -5,28 +5,19 @@ import Link from 'next/link';
 import {
   ArrowRight,
   Award,
-  BarChart3,
-  CheckCircle2,
-  Clock,
   Copy,
   DollarSign,
-  Eye,
-  Mail,
-  MoreVertical,
+  Key,
   Settings,
-  User,
-  Wallet,
-  XCircle,
-  Zap,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ApiErrorState } from '@/components/errors/api-error-state';
-import { ClientMt5AccountDetailsDialog } from '@/components/accounts/client-mt5-account-details-dialog';
+import { ClientMt5AccountCard } from '@/components/accounts/client-mt5-account-card';
+import { ClientMt5PasswordResetDialog } from '@/components/accounts/client-mt5-password-reset-dialog';
 import { ClientCardGridSkeleton } from '@/components/loading/client-page-skeletons';
 import { ProtectedRoute } from '@/components/protected-route';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -35,12 +26,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import {
   Select,
   SelectContent,
@@ -59,54 +44,9 @@ import {
 import { useAuth } from '@/contexts/auth-context';
 import { formatCurrency } from '@/lib/format';
 import { getFriendlyErrorMessage } from '@/lib/friendly-errors';
-import { formatDateTimeInIST } from '@/lib/formatters';
 
 type ManagedMT5Account = UserMT5AccountListItem & {
   detail: UserMT5AccountDetail | null;
-};
-
-const formatDateTime = (value?: string) => {
-  if (!value) {
-    return 'N/A';
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-
-  return formatDateTimeInIST(value);
-};
-
-const getStatusBadge = (status: string | number | undefined) => {
-  const normalizedStatus = String(status ?? '').toLowerCase();
-  const isActive = status === 1 || normalizedStatus === '1' || normalizedStatus === 'live' || normalizedStatus === 'active';
-  const isPending = status === 0 || normalizedStatus === '0' || normalizedStatus === 'pending' || normalizedStatus === 'inactive';
-
-  if (isActive) {
-    return (
-      <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-0">
-        <CheckCircle2 className="h-3 w-3 mr-1" />
-        Active
-      </Badge>
-    );
-  }
-
-  if (isPending) {
-    return (
-      <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 border-0">
-        <Clock className="h-3 w-3 mr-1" />
-        Pending
-      </Badge>
-    );
-  }
-
-  return (
-    <Badge className="bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 border-0">
-      <XCircle className="h-3 w-3 mr-1" />
-      {normalizedStatus ? normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1) : 'Unknown'}
-    </Badge>
-  );
 };
 
 const groupAccounts = (accounts: ManagedMT5Account[]) => {
@@ -191,8 +131,7 @@ export default function ManageAccountsPage() {
   // MT4 tabs are intentionally hidden for now. Restore the original union when MT4 UI returns.
   // const [activeTab, setActiveTab] = useState<'mt5-live' | 'mt5-demo' | 'mt4-live' | 'mt4-demo'>('mt5-live');
   const [activeTab, setActiveTab] = useState<'mt5-live' | 'mt5-demo'>('mt5-live');
-  const [selectedAccount, setSelectedAccount] = useState<ManagedMT5Account | null>(null);
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+  const [resetPasswordAccount, setResetPasswordAccount] = useState<ManagedMT5Account | null>(null);
   const [depositAccount, setDepositAccount] = useState<ManagedMT5Account | null>(null);
   const [selectedDepositAmount, setSelectedDepositAmount] = useState('');
   const [isSubmittingDeposit, setIsSubmittingDeposit] = useState(false);
@@ -250,14 +189,15 @@ export default function ManageAccountsPage() {
     toast.success(`${label} copied to clipboard!`);
   };
 
-  const openDetails = (account: ManagedMT5Account) => {
-    setSelectedAccount(account);
-    setIsDetailsDialogOpen(true);
-  };
-
   const openDepositDialog = (account: ManagedMT5Account) => {
     setDepositAccount(account);
     setSelectedDepositAmount('');
+  };
+
+  const handleResetPasswordDialogChange = (open: boolean) => {
+    if (!open) {
+      setResetPasswordAccount(null);
+    }
   };
 
   const handleDepositDialogChange = (open: boolean) => {
@@ -320,158 +260,48 @@ export default function ManageAccountsPage() {
 
   const AccountCard = ({ account }: { account: ManagedMT5Account }) => {
     const detail = account.detail;
-    const accountMode = detail?.account_mode?.toLowerCase() === 'demo' ? 'DEMO' : 'LIVE';
     const isDemoAccount = detail?.account_mode?.toLowerCase() === 'demo';
     const accountTypeName = detail?.accountType?.name ?? 'MT5 Account';
-    const leverageValue = detail?.leverage ? `1:${detail.leverage}` : 'N/A';
-    const groupName = detail?.group?.name ?? detail?.mt5_group_name ?? 'N/A';
-    const balanceValue = formatCurrency(Number(account.balance ?? 0), detail?.base_currency ?? 'USD');
+    const menuActions = [
+      {
+        label: 'Reset Password',
+        icon: Key,
+        onSelect: () => setResetPasswordAccount(account),
+      },
+      {
+        label: 'Copy MT5 Login',
+        icon: Copy,
+        onSelect: () => copyToClipboard(account.mt5_id, 'MT5 login'),
+      },
+      {
+        label: 'Copy Account ID',
+        icon: Copy,
+        onSelect: () => copyToClipboard(account.account_id, 'Account ID'),
+      },
+    ];
 
     return (
-      <Card className="border border-border/60 bg-gradient-to-br from-card to-muted/20 shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-lg">
-        <CardContent className="p-6">
-          <div className="mb-4 flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground shadow-sm">
-                5
-              </div>
-              <div>
-                <div className="mb-1 flex flex-wrap items-center gap-2">
-                  <h3 className="text-lg font-bold">{accountTypeName}</h3>
-                  {getStatusBadge(detail?.status)}
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge variant="outline" className="text-xs">
-                    {accountMode}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">{groupName}</span>
-                </div>
-              </div>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
-                  <MoreVertical className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => openDetails(account)}>
-                  <Eye className="h-4 w-4 mr-2" />
-                  View Details
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => copyToClipboard(account.mt5_id, 'MT5 login')}>
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copy MT5 Login
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => copyToClipboard(account.account_id, 'Account ID')}>
-                  <Wallet className="h-4 w-4 mr-2" />
-                  Copy Account ID
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-
-          <div className="mb-4 space-y-3">
-            <div className="rounded-lg bg-white/60 p-3 dark:bg-black/20">
-              <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                <Wallet className="h-3 w-3" />
-                Account ID
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <code className="text-sm font-semibold">{account.account_id}</code>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 shrink-0"
-                  onClick={() => copyToClipboard(account.account_id, 'Account ID')}
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="rounded-lg bg-white/60 p-3 dark:bg-black/20">
-              <div className="mb-1 flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                <BarChart3 className="h-3 w-3" />
-                MT5 Login
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <code className="text-sm font-semibold">{account.mt5_id}</code>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 shrink-0"
-                  onClick={() => copyToClipboard(account.mt5_id, 'MT5 login')}
-                >
-                  <Copy className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-4 grid grid-cols-2 gap-3">
-            <div className="rounded-lg bg-white/40 p-3 dark:bg-black/10">
-              <div className="mb-1 text-xs text-muted-foreground">Balance</div>
-              <div className="text-sm font-semibold text-primary">{balanceValue}</div>
-            </div>
-            <div className="rounded-lg bg-white/40 p-3 dark:bg-black/10">
-              <div className="mb-1 text-xs text-muted-foreground">Leverage</div>
-              <div className="flex items-center gap-1 text-sm font-semibold">
-                <Zap className="h-3.5 w-3.5 text-orange-500" />
-                {leverageValue}
-              </div>
-            </div>
-            <div className="rounded-lg bg-white/40 p-3 dark:bg-black/10">
-              <div className="mb-1 text-xs text-muted-foreground">Spread</div>
-              <div className="text-sm font-semibold">{detail?.spread_from ?? 'N/A'}</div>
-            </div>
-            <div className="rounded-lg bg-white/40 p-3 dark:bg-black/10">
-              <div className="mb-1 text-xs text-muted-foreground">Account Holder</div>
-              <div className="text-sm font-semibold">{detail?.name ?? account.name}</div>
-            </div>
-            <div className="rounded-lg bg-white/40 p-3 dark:bg-black/10">
-              <div className="mb-1 text-xs text-muted-foreground">Email</div>
-              <div className="truncate text-sm font-semibold">{detail?.email ?? account.email}</div>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" className="min-w-[140px] flex-1" onClick={() => openDetails(account)}>
-              <Eye className="h-4 w-4 mr-1" />
-              View Details
-            </Button>
-            {!isDemoAccount ? (
-              <Button size="sm" variant="outline" className="min-w-[140px] flex-1" asChild>
-                <Link href={`/funds/internal-transfer?tab=wallet-to-mt5&accountId=${encodeURIComponent(account.account_id)}`}>
-                  <DollarSign className="h-4 w-4 mr-1" />
-                  Deposit Funds
-                </Link>
-              </Button>
-            ) : null}
-            <Button size="sm" variant="outline" className="min-w-[140px] flex-1" onClick={() => copyToClipboard(account.mt5_id, 'MT5 login')}>
-              <Copy className="h-4 w-4 mr-1" />
-              Copy Login
-            </Button>
-          </div>
-
-          {isDemoAccount ? (
-            <div className="mt-4 border-t border-border/60 pt-4">
-              <Button
-                variant="ghost"
-                className="w-full justify-center text-primary hover:bg-primary/10 hover:text-primary"
-                onClick={() => openDepositDialog(account)}
-              >
-                <DollarSign className="mr-2 h-4 w-4" />
-                Deposit Funds
-              </Button>
-            </div>
-          ) : null}
-        </CardContent>
-      </Card>
+      <ClientMt5AccountCard
+        title={accountTypeName}
+        status={detail?.status}
+        mode={detail?.account_mode}
+        currency={detail?.base_currency ?? 'USD'}
+        accountId={account.account_id}
+        mt5Login={account.mt5_id}
+        balance={Number(account.balance ?? 0)}
+        balanceCurrency={detail?.base_currency ?? 'USD'}
+        leverage={detail?.leverage}
+        spread={detail?.spread_from ?? detail?.accountType?.spread_from ?? 'N/A'}
+        depositHref={
+          isDemoAccount
+            ? undefined
+            : `/funds/internal-transfer?tab=wallet-to-mt5&accountId=${encodeURIComponent(account.account_id)}`
+        }
+        onDeposit={isDemoAccount ? () => openDepositDialog(account) : undefined}
+        menuActions={menuActions}
+      />
     );
   };
-
-  const selectedAccountDetail = selectedAccount?.detail;
 
   return (
     <ProtectedRoute>
@@ -585,11 +415,12 @@ export default function ManageAccountsPage() {
             )}
           </div>
         )}
-        <ClientMt5AccountDetailsDialog
-          open={isDetailsDialogOpen}
-          onOpenChange={setIsDetailsDialogOpen}
-          account={selectedAccount}
-          initialDetail={selectedAccountDetail}
+        <ClientMt5PasswordResetDialog
+          open={Boolean(resetPasswordAccount)}
+          onOpenChange={handleResetPasswordDialogChange}
+          accountId={resetPasswordAccount?.id ?? null}
+          accountLabel={resetPasswordAccount?.account_id ?? null}
+          token={token}
         />
 
         <Dialog open={Boolean(depositAccount)} onOpenChange={handleDepositDialogChange}>
@@ -604,13 +435,13 @@ export default function ManageAccountsPage() {
             </DialogHeader>
 
             <div className="space-y-5 px-6 py-6">
-              <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+              {/* <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
                 <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Demo deposit</div>
                 <div className="mt-2 text-sm text-foreground">
                   Deposit a preset USD amount into this MT5 demo account and refresh the balance instantly.
                 </div>
-              </div>
-              <div className="space-y-2">
+              </div> */}
+              <div className="mx-auto max-w-sm w-full space-y-2 flex flex-col items-center justify-center text-center">
                 <div className="text-sm font-medium text-foreground">Deposit Amount</div>
                 <Select value={selectedDepositAmount} onValueChange={setSelectedDepositAmount}>
                   <SelectTrigger className="h-12 rounded-2xl border-border/70 bg-background/80 px-4">

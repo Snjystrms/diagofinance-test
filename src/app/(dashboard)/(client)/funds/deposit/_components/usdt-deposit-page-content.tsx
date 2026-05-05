@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,9 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import { submitUSDTDeposit } from "@/utils/operations";
-import { walletApi, binanceDepositApi, coinsbuyDepositApi, type WalletSummaryData, type BinanceDepositCreateResponse, type CoinsBuyDepositCreateResponse } from "@/lib/api";
+import { walletApi, binanceDepositApi, coinsbuyDepositApi, bankDepositApi, type WalletSummaryData, type BinanceDepositCreateResponse, type CoinsBuyDepositCreateResponse, type BankDepositRecord } from "@/lib/api";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { CLIENT_WALLET_REFRESH_EVENT, notifyWalletRefresh } from "@/lib/client-events";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,12 +32,16 @@ import {
   Upload,
   X,
   RefreshCw,
-  TrendingUp
+  TrendingUp,
+  Building2,
+  FileText,
+  CheckCircle2,
+  Loader2
 } from "lucide-react";
 
 function USDTDepositContent() {
   const { user, token } = useAuth();
-  const [activeTab, setActiveTab] = useState<"local" | "crypto">("local");
+  const [activeTab, setActiveTab] = useState<"local" | "crypto" | "bank">("local");
   const [amount, setAmount] = useState("");
   const [transactionHash, setTransactionHash] = useState("");
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
@@ -57,6 +62,15 @@ function USDTDepositContent() {
   const [coinsbuyAmount, setCoinsbuyAmount] = useState("");
   const [isSubmittingCoinsbuy, setIsSubmittingCoinsbuy] = useState(false);
   const [cryptoPaymentMethod, setCryptoPaymentMethod] = useState<"binance" | "coinsbuy">("binance");
+
+  // Bank deposit state
+  const [bankAmount, setBankAmount] = useState("");
+  const [bankTxId, setBankTxId] = useState("");
+  const [bankError, setBankError] = useState<string | null>(null);
+  const [isSubmittingBank, setIsSubmittingBank] = useState(false);
+  const [bankSubmitResult, setBankSubmitResult] = useState<{ id: number; status: string; created_at: string } | null>(null);
+  const [bankRequests, setBankRequests] = useState<BankDepositRecord[]>([]);
+  const [bankRequestsLoading, setBankRequestsLoading] = useState(false);
   const wallets = walletData ? Object.values(walletData.wallets || {}) : [];
   const primaryWallet = wallets.find((wallet) => wallet.is_primary) || wallets[0];
   const currency = primaryWallet?.currency || "USDT";
@@ -292,6 +306,63 @@ function USDTDepositContent() {
     }
   };
 
+  const fetchBankRequests = useCallback(async () => {
+    if (!token) return;
+    try {
+      setBankRequestsLoading(true);
+      const res = await bankDepositApi.listRequests(token);
+      const raw = res as unknown as { success: boolean; data: { requests: BankDepositRecord[] } };
+      if (raw.success && Array.isArray(raw.data?.requests)) {
+        setBankRequests(raw.data.requests);
+      }
+    } catch (e) {
+      console.error("Failed to fetch bank requests:", e);
+    } finally {
+      setBankRequestsLoading(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    if (activeTab === "bank") void fetchBankRequests();
+  }, [activeTab, fetchBankRequests]);
+
+  const handleBankSubmit = async () => {
+    setBankError(null);
+    const amountNum = parseFloat(bankAmount);
+    if (!bankAmount.trim() || isNaN(amountNum) || amountNum <= 0) {
+      setBankError("Please enter a valid amount");
+      return;
+    }
+    if (!bankTxId.trim()) {
+      setBankError("Transaction ID is required");
+      return;
+    }
+    if (!token) {
+      setBankError("Authentication required");
+      return;
+    }
+    try {
+      setIsSubmittingBank(true);
+      const res = await bankDepositApi.submit({ amount: amountNum, transaction_id: bankTxId.trim() }, token);
+      const raw = res as unknown as { success: boolean; message?: string; data?: { id: number; status: string; created_at: string } };
+      if (raw.success && raw.data) {
+        setBankSubmitResult(raw.data);
+        setBankAmount("");
+        setBankTxId("");
+        toast.success(raw.message || "Bank deposit request submitted successfully");
+        void fetchBankRequests();
+        notifyWalletRefresh();
+      } else {
+        setBankError((raw as { message?: string }).message || "Submission failed");
+      }
+    } catch (e) {
+      console.error("Bank deposit error:", e);
+      setBankError(getFriendlyErrorMessage(e, { audience: "client", resource: "bank deposit", action: "submit" }));
+    } finally {
+      setIsSubmittingBank(false);
+    }
+  };
+
   const handleSubmitHash = async () => {
     setError(null);
 
@@ -422,10 +493,11 @@ function USDTDepositContent() {
         </div>
 
         {/* Deposit type toggle */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "local" | "crypto")} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "local" | "crypto" | "bank")} className="space-y-6">
           <TabsList>
             <TabsTrigger value="local">Local</TabsTrigger>
             <TabsTrigger value="crypto">Cryptocurrency</TabsTrigger>
+            <TabsTrigger value="bank">Bank Deposit</TabsTrigger>
           </TabsList>
 
           {/* Wallet Summary Card - Enhanced */}
@@ -1145,6 +1217,241 @@ function USDTDepositContent() {
                 </Card>
               </div>
               )}
+            </TabsContent>
+
+            {/* ── Bank Transfer tab ── */}
+            <TabsContent value="bank" className="space-y-8">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+                {/* Left — Bank account details (dummy) */}
+                <div className="space-y-6">
+                  <Card className="border border-border/60 bg-card shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                        <div className="rounded-lg border border-primary/20 bg-primary/10 p-1.5">
+                          <Building2 className="h-5 w-5 text-primary" />
+                        </div>
+                        Bank Account Details
+                      </CardTitle>
+                      <CardDescription>
+                        Transfer funds to the account below, then submit the Transaction ID.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {/* Account info rows */}
+                      {[
+                        { label: "Bank Name",       value: "GrayBulls Capital Bank" },
+                        { label: "Account Name",    value: "GrayBulls Advisors Pvt Ltd" },
+                        { label: "Account Number",  value: "1234 5678 9012 3456" },
+                        { label: "IFSC / SWIFT",    value: "GRBL0001234" },
+                        { label: "Branch",          value: "Mumbai, Maharashtra" },
+                        { label: "Account Type",    value: "Current Account" },
+                      ].map(({ label, value }) => (
+                        <div
+                          key={label}
+                          className="flex items-center justify-between gap-4 rounded-xl border border-border/50 bg-muted/20 px-4 py-3"
+                        >
+                          <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            {label}
+                          </span>
+                          <span className="font-mono text-sm font-medium text-foreground text-right break-all">
+                            {value}
+                          </span>
+                        </div>
+                      ))}
+
+                      <div className="rounded-xl border border-amber-300/60 bg-amber-50/80 p-4 dark:border-amber-800 dark:bg-amber-950/30">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+                          <div className="text-xs text-amber-800 dark:text-amber-200 space-y-1">
+                            <p className="font-semibold">Before transferring:</p>
+                            <ul className="space-y-0.5 list-none">
+                              <li>• Keep a record of the Transaction / Reference ID</li>
+                              <li>• Transfers typically reflect within 1–2 business days</li>
+                              <li>• Minimum deposit: <strong>$10 USD</strong> equivalent</li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Right — Submit form + history */}
+                <div className="space-y-6">
+
+                  {/* Submit form */}
+                  <Card className="border border-border/60 bg-card shadow-sm">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2 text-xl font-bold">
+                        <div className="rounded-lg border border-primary/20 bg-primary/10 p-1.5">
+                          <FileText className="h-5 w-5 text-primary" />
+                        </div>
+                        Submit Transfer
+                      </CardTitle>
+                      <CardDescription>
+                        Enter the amount and transaction ID from your bank transfer.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-5">
+
+                      {/* Success receipt */}
+                      {bankSubmitResult && (
+                        <div className="rounded-xl border border-emerald-500/30 bg-emerald-50 p-4 dark:bg-emerald-950/20 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                            <p className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm">
+                              Request submitted successfully
+                            </p>
+                          </div>
+                          <p className="text-xs text-emerald-700/70 dark:text-emerald-400/70">
+                            Request ID: <span className="font-mono font-semibold">#{bankSubmitResult.id}</span>
+                            &nbsp;·&nbsp;Status: <Badge variant="outline" className="text-xs border-emerald-500/40 text-emerald-700 dark:text-emerald-300">{bankSubmitResult.status}</Badge>
+                          </p>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-xs text-emerald-700 dark:text-emerald-400 h-7 px-2"
+                            onClick={() => setBankSubmitResult(null)}
+                          >
+                            Dismiss
+                          </Button>
+                        </div>
+                      )}
+
+                      {bankError && (
+                        <div className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                          {bankError}
+                        </div>
+                      )}
+
+                      {/* Amount */}
+                      <div className="space-y-2">
+                        <Label htmlFor="bank-amount" className="text-sm font-semibold">
+                          Amount (USD) <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="relative">
+                          <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="bank-amount"
+                            type="number"
+                            step="0.01"
+                            min="0.01"
+                            value={bankAmount}
+                            onChange={(e) => setBankAmount(e.target.value)}
+                            className="pl-9 h-11 rounded-xl"
+                            placeholder="100.00"
+                            disabled={isSubmittingBank}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Transaction ID */}
+                      <div className="space-y-2">
+                        <Label htmlFor="bank-txid" className="text-sm font-semibold">
+                          Transaction / Reference ID <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="relative">
+                          <Hash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            id="bank-txid"
+                            value={bankTxId}
+                            onChange={(e) => setBankTxId(e.target.value)}
+                            className="pl-9 h-11 rounded-xl"
+                            placeholder="e.g. TXN1234567890"
+                            disabled={isSubmittingBank}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Found on your bank statement or payment receipt.
+                        </p>
+                      </div>
+
+                      <Button
+                        onClick={handleBankSubmit}
+                        disabled={isSubmittingBank || !bankAmount.trim() || !bankTxId.trim()}
+                        className="h-11 w-full rounded-xl text-base font-semibold"
+                      >
+                        {isSubmittingBank ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Submitting...
+                          </>
+                        ) : (
+                          <>
+                            <ShieldCheck className="mr-2 h-4 w-4" />
+                            Submit Deposit Request
+                          </>
+                        )}
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {/* Request history */}
+                  <Card className="border border-border/60 bg-card shadow-sm">
+                    <CardHeader className="flex flex-row items-center justify-between gap-4 pb-3">
+                      <div>
+                        <CardTitle className="text-base font-semibold">Your Requests</CardTitle>
+                        <CardDescription className="text-xs">Recent bank deposit submissions</CardDescription>
+                      </div>
+                      <Button variant="outline" size="sm" onClick={fetchBankRequests} disabled={bankRequestsLoading}>
+                        <RefreshCw className={`h-3.5 w-3.5 ${bankRequestsLoading ? "animate-spin" : ""}`} />
+                      </Button>
+                    </CardHeader>
+                    <CardContent className="p-0">
+                      {bankRequestsLoading ? (
+                        <div className="space-y-2 p-4">
+                          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
+                        </div>
+                      ) : bankRequests.length === 0 ? (
+                        <div className="flex flex-col items-center justify-center gap-2 py-10 text-center text-muted-foreground">
+                          <FileText className="h-8 w-8 opacity-40" />
+                          <p className="text-sm">No bank deposit requests yet</p>
+                        </div>
+                      ) : (
+                        <div className="overflow-x-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-muted/30">
+                                <TableHead className="text-xs">ID</TableHead>
+                                <TableHead className="text-xs">Amount</TableHead>
+                                <TableHead className="text-xs">Txn ID</TableHead>
+                                <TableHead className="text-xs">Status</TableHead>
+                                <TableHead className="text-xs">Date</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {bankRequests.map((req) => {
+                                const statusColor =
+                                  req.status === "approved"
+                                    ? "border-emerald-500/40 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20"
+                                    : req.status === "rejected"
+                                    ? "border-red-500/40 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20"
+                                    : "border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20";
+                                return (
+                                  <TableRow key={req.id}>
+                                    <TableCell className="font-mono text-xs">#{req.id}</TableCell>
+                                    <TableCell className="text-sm font-semibold">${Number(req.amount).toFixed(2)}</TableCell>
+                                    <TableCell className="font-mono text-xs max-w-[80px] truncate">{req.transaction_id}</TableCell>
+                                    <TableCell>
+                                      <Badge variant="outline" className={`text-xs capitalize ${statusColor}`}>
+                                        {req.status}
+                                      </Badge>
+                                    </TableCell>
+                                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                                      {formatDateTimeInIST(req.created_at)}
+                                    </TableCell>
+                                  </TableRow>
+                                );
+                              })}
+                            </TableBody>
+                          </Table>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
       </div>
