@@ -2,7 +2,7 @@
 
 A complete authentication system built with Next.js, TanStack Query, and shadcn/ui components.
 
-## Features ##           
+## Features           
 
 - ✅ **User Registration** - Complete registration form with validation
 - ✅ **Email Verification** - OTP verification system
