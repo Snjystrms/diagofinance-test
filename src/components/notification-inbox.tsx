@@ -118,8 +118,8 @@ export function NotificationInbox({ mode = "user", shouldFetchUnreadCount = fals
 
     try {
       setUnreadCount(await loadUnreadCount(mode, token));
-    } catch (error) {
-      console.error("Failed to fetch unread count:", error);
+    } catch {
+      setUnreadCount(0);
     }
   }, [token, mode, shouldFetchUnreadCount]);
 

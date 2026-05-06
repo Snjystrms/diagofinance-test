@@ -194,11 +194,9 @@ export function ClientMt5AccountCard({
               />
             </div>
             <div className="min-w-0 space-y-2">
-              <div className="flex flex-wrap items-start gap-2">
-                <h3 className="min-w-0 flex-1 text-lg font-bold leading-snug text-foreground">{title}</h3>
-                {getStatusBadge(status)}
-              </div>
+              <h3 className="break-words text-lg font-bold leading-snug text-foreground">{title}</h3>
               <div className="flex flex-wrap items-center gap-2">
+                {getStatusBadge(status)}
                 <Badge variant="outline" className="border-border text-xs">
                   {accountMode}
                 </Badge>

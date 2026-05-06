@@ -151,13 +151,13 @@ export function Header() {
           <SidebarTrigger className="-ml-1 flex-shrink-0" onClick={handleSidebarTriggerClick} />
           
           {/* Search Bar - Desktop */}
-          <div className="relative hidden lg:block flex-shrink-0">
+          {/* <div className="relative hidden lg:block flex-shrink-0">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search..."
               className="pl-8 w-64 xl:w-80"
             />
-          </div>
+          </div> */}
         </div>
         
         {/* Center Section - Account ID */}
@@ -203,13 +203,13 @@ export function Header() {
         {/* Right Section */}
         <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
           {/* Search Bar - Mobile/Tablet */}
-          <div className="relative lg:hidden flex-shrink-0">
+          {/* <div className="relative lg:hidden flex-shrink-0">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search..."
               className="pl-8 w-40 sm:w-48 md:w-56"
             />
-          </div>
+          </div> */}
           
           {/* 2FA Button */}
           <Button 

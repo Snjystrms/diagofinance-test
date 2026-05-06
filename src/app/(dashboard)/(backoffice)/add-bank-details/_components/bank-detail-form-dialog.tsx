@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
+import { GetCountries } from "react-country-state-city";
+
 import {
   Dialog,
   DialogContent,
@@ -22,6 +25,11 @@ import {
 import type { AdminBankDetailItem } from "@/lib/api";
 
 import type { AdminUserOption, BankDetailFormValues } from "../_lib/bank-details";
+
+type CountryOption = {
+  id: number;
+  name: string;
+};
 
 type BankDetailFormDialogProps = {
   detail?: AdminBankDetailItem | null;
@@ -83,11 +91,37 @@ export function BankDetailFormDialog({
   values,
   onValuesChange,
 }: BankDetailFormDialogProps) {
+  const [countryOptions, setCountryOptions] = useState<CountryOption[]>([]);
   const isCreateMode = mode === "create";
   const title = isCreateMode ? "Add bank details" : "Edit bank details";
   const description = isCreateMode
     ? "Select a user, then create a bank-details record."
     : "Update the selected bank-details record.";
+  const countryValue = useMemo(() => {
+    const matched = countryOptions.find((country) => country.name === values.country);
+    return matched ? String(matched.id) : "";
+  }, [countryOptions, values.country]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadCountries = async () => {
+      try {
+        const countries = ((await GetCountries()) as CountryOption[])
+          .slice()
+          .sort((left, right) => left.name.localeCompare(right.name));
+        if (isMounted) {
+          setCountryOptions(countries);
+        }
+      } catch (error) {
+        console.error("Failed to load countries:", error);
+      }
+    };
+
+    void loadCountries();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -190,14 +224,30 @@ export function BankDetailFormDialog({
               placeholder="Example: HDFC Bank"
               disabled={submitting}
             />
-            <Field
-              id="country"
-              label="Country"
-              value={values.country}
-              onChange={(country) => onValuesChange({ ...values, country })}
-              placeholder="Example: India"
-              disabled={submitting}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="country-select">Country</Label>
+              <Select
+                value={countryValue}
+                onValueChange={(selectedCountryId) => {
+                  const selectedCountry = countryOptions.find(
+                    (country) => String(country.id) === selectedCountryId
+                  );
+                  onValuesChange({ ...values, country: selectedCountry?.name ?? "" });
+                }}
+                disabled={submitting}
+              >
+                <SelectTrigger id="country-select">
+                  <SelectValue placeholder="Select country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countryOptions.map((country) => (
+                    <SelectItem key={country.id} value={String(country.id)}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="bank-address">Address</Label>
               <Input

@@ -16,14 +16,15 @@ import {
   Landmark,
   LayoutGrid,
 } from "lucide-react";
+import { EnhancedDashboardCharts } from "./_components/EnhancedDashboardCharts";
 import dynamic from "next/dynamic";
 import type { AdminDashboardData } from "@/lib/api";
 
 const ChartContainer = dynamic(() => import("@/components/ui/chart").then((m) => ({ default: m.ChartContainer })), { ssr: false });
 const ChartTooltip = dynamic(() => import("@/components/ui/chart").then((m) => ({ default: m.ChartTooltip })), { ssr: false });
 const ChartTooltipContent = dynamic(() => import("@/components/ui/chart").then((m) => ({ default: m.ChartTooltipContent })), { ssr: false });
-const LineChart = dynamic(() => import("recharts").then((m) => ({ default: m.LineChart })), { ssr: false });
-const Line = dynamic(() => import("recharts").then((m) => ({ default: m.Line })), { ssr: false });
+const AreaChart = dynamic(() => import("recharts").then((m) => ({ default: m.AreaChart })), { ssr: false });
+const Area = dynamic(() => import("recharts").then((m) => ({ default: m.Area })), { ssr: false });
 const CartesianGrid = dynamic(() => import("recharts").then((m) => ({ default: m.CartesianGrid })), { ssr: false });
 const XAxis = dynamic(() => import("recharts").then((m) => ({ default: m.XAxis })), { ssr: false });
 const YAxis = dynamic(() => import("recharts").then((m) => ({ default: m.YAxis })), { ssr: false });
@@ -67,6 +68,28 @@ export function AdminDashboardView({ adminDashboardData }: AdminDashboardViewPro
   const clientsChartConfig = {
     clients: { label: "Clients", color: "#8b5cf6" },
   };
+
+  const transactionSummary = useMemo(() => {
+    if (!transactionChartData.length) {
+      return { total: 0, growthPercent: 0 };
+    }
+    const first = transactionChartData[0];
+    const last = transactionChartData[transactionChartData.length - 1];
+    const firstTotal = Number(first.deposit) + Number(first.withdraw) + Number(first.ib_withdraw);
+    const lastTotal = Number(last.deposit) + Number(last.withdraw) + Number(last.ib_withdraw);
+    const growthPercent = firstTotal > 0 ? ((lastTotal - firstTotal) / firstTotal) * 100 : 0;
+    return { total: lastTotal, growthPercent };
+  }, [transactionChartData]);
+
+  const clientsSummary = useMemo(() => {
+    if (!clientsChartData.length) {
+      return { total: 0, growthPercent: 0 };
+    }
+    const first = Number(clientsChartData[0].clients);
+    const last = Number(clientsChartData[clientsChartData.length - 1].clients);
+    const growthPercent = first > 0 ? ((last - first) / first) * 100 : 0;
+    return { total: last, growthPercent };
+  }, [clientsChartData]);
 
   const primaryKpiCards = [
     {
@@ -278,85 +301,7 @@ export function AdminDashboardView({ adminDashboardData }: AdminDashboardViewPro
       </div>
 
       {/* Charts */}
-      <div className="mb-6 grid gap-6 xl:grid-cols-2">
-        {transactionGraph && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg font-bold">Transaction Graph</CardTitle>
-                  <CardDescription>
-                    {transactionGraph.start_date && transactionGraph.end_date
-                      ? `${new Date(transactionGraph.start_date).toLocaleDateString()} - ${new Date(transactionGraph.end_date).toLocaleDateString()}`
-                      : "Transaction overview"}
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {transactionChartData.length > 0 ? (
-                <div className="h-[300px] w-full">
-                  <ChartContainer config={transactionChartConfig} className="h-full w-full">
-                    <LineChart data={transactionChartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" opacity={0.3} />
-                      <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                      <YAxis tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                      <ChartTooltip
-                        content={<ChartTooltipContent formatter={(value) => formatCurrency(Number(value))} />}
-                      />
-                      <Line type="monotone" dataKey="deposit" stroke={transactionChartConfig.deposit.color} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                      <Line type="monotone" dataKey="withdraw" stroke={transactionChartConfig.withdraw.color} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                      <Line type="monotone" dataKey="ib_withdraw" stroke={transactionChartConfig.ib_withdraw.color} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                    </LineChart>
-                  </ChartContainer>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                  No transaction data available
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {clientsGraph && (
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg font-bold">Client Growth Graph</CardTitle>
-                  <CardDescription>
-                    {clientsGraph.start_date && clientsGraph.end_date
-                      ? `${new Date(clientsGraph.start_date).toLocaleDateString()} - ${new Date(clientsGraph.end_date).toLocaleDateString()}`
-                      : "New client registrations"}
-                  </CardDescription>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {clientsChartData.length > 0 ? (
-                <div className="h-[300px] w-full">
-                  <ChartContainer config={clientsChartConfig} className="h-full w-full">
-                    <LineChart data={clientsChartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--muted))" opacity={0.3} />
-                      <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                      <YAxis allowDecimals={false} tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                      <ChartTooltip
-                        content={<ChartTooltipContent formatter={(value) => `${Number(value)} clients`} />}
-                      />
-                      <Line type="monotone" dataKey="clients" stroke={clientsChartConfig.clients.color} strokeWidth={2} dot={false} activeDot={{ r: 4 }} />
-                    </LineChart>
-                  </ChartContainer>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-                  No client graph data available
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-      </div>
+     <EnhancedDashboardCharts adminDashboardData={adminDashboardData} />
 
       {/* Summary Metrics */}
       {summaryMetrics && (

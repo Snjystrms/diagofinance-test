@@ -4,15 +4,18 @@ import { useCallback, useEffect, useState } from 'react';
 import { parseAsInteger, useQueryState } from 'nuqs';
 
 import {
+  mt5SdkApi,
   userMT5AccountsApi,
   type UserMT5AccountListItem,
-} from '@/lib/api';
+} from '@/lib/api-trading-ib';
 
 import {
   createDefaultFromDate,
   createDefaultToDate,
+  mapPositionRows,
   mapTradeRows,
   toIsoDateTime,
+  type PositionRow,
   type TradeRow,
 } from '../_lib/trade-history';
 
@@ -21,10 +24,13 @@ export const useTradeHistory = (token: string | null | undefined) => {
   const [login, setLogin] = useState('');
   const [fromDt, setFromDt] = useState<Date | undefined>(createDefaultFromDate);
   const [toDt, setToDt] = useState<Date | undefined>(createDefaultToDate);
+  const [positions, setPositions] = useState<PositionRow[]>([]);
   const [rows, setRows] = useState<TradeRow[]>([]);
   const [isLoadingAccounts, setIsLoadingAccounts] = useState(true);
+  const [isLoadingPositions, setIsLoadingPositions] = useState(false);
   const [isLoadingTrades, setIsLoadingTrades] = useState(false);
   const [error, setError] = useState<unknown | null>(null);
+  const [positionsError, setPositionsError] = useState<string | null>(null);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1));
@@ -102,11 +108,39 @@ export const useTradeHistory = (token: string | null | undefined) => {
     }
   }, [fromDt, login, page, perPage, toDt, token]);
 
+  const refreshPositions = useCallback(async () => {
+    const normalizedLogin = login.trim();
+    if (!token || !normalizedLogin) return;
+
+    try {
+      setIsLoadingPositions(true);
+      setPositionsError(null);
+
+      const response = await mt5SdkApi.getPositions(normalizedLogin, token);
+      setPositions(mapPositionRows(response.items ?? []));
+    } catch (fetchError) {
+      setPositions([]);
+      setPositionsError(fetchError instanceof Error ? fetchError.message : 'Failed to load live positions');
+    } finally {
+      setIsLoadingPositions(false);
+    }
+  }, [login, token]);
+
+  const refreshAll = useCallback(async () => {
+    await Promise.allSettled([refreshTrades(), refreshPositions()]);
+  }, [refreshPositions, refreshTrades]);
+
   useEffect(() => {
     if (!isLoadingAccounts && login) {
       void refreshTrades();
     }
   }, [isLoadingAccounts, login, refreshTrades]);
+
+  useEffect(() => {
+    if (!isLoadingAccounts && login) {
+      void refreshPositions();
+    }
+  }, [isLoadingAccounts, login, refreshPositions]);
 
   const handlePerPageChange = (value: number) => {
     void setPerPage(value);
@@ -118,9 +152,13 @@ export const useTradeHistory = (token: string | null | undefined) => {
     error,
     fromDt,
     isLoadingAccounts,
+    isLoadingPositions,
     isLoadingTrades,
     login,
     perPage,
+    positions,
+    positionsError,
+    refreshAll,
     refreshTrades,
     rows,
     setFromDt,

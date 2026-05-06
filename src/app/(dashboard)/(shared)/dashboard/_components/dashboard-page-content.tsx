@@ -115,7 +115,7 @@ const formatLabel = (label?: string) => {
     .join(" ");
 };
 
-const DEMO_DEPOSIT_OPTIONS = [100, 250, 500, 1000, 2500, 5000, 10000, 100000] as const;
+const DEMO_DEPOSIT_OPTIONS = [1000, 2500, 5000, 10000, 100000] as const;
 
 type DashboardTradingAccount = {
   id: number;
@@ -154,9 +154,13 @@ export function DashboardPageContent() {
     queryKey: ["adminUnreadCount", token],
     queryFn: async () => {
       if (!token) return 0;
-      const response = await adminNotificationApi.getUnreadCount(token);
-      if (response.success && response.data) {
-        return response.data.unread_count || 0;
+      try {
+        const response = await adminNotificationApi.getUnreadCount(token);
+        if (response.success && response.data) {
+          return response.data.unread_count || 0;
+        }
+      } catch {
+        return 0;
       }
       return 0;
     },
@@ -192,6 +196,15 @@ export function DashboardPageContent() {
 
   const dashboardNewsItems = (userNewsData ?? []).filter((i) => i.type === "news");
   const dashboardPromoItems = (userNewsData ?? []).filter((i) => i.type === "promotion");
+  const dashboardNewsPromotionItems = useMemo(
+    () =>
+      [...dashboardNewsItems, ...dashboardPromoItems].sort((a, b) => {
+        const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return bTime - aTime;
+      }),
+    [dashboardNewsItems, dashboardPromoItems]
+  );
 
   const [dashboardData, setDashboardData] = useState<UserDashboardData | null>(null);
   const [adminDashboardData, setAdminDashboardData] = useState<AdminDashboardData | null>(null);
@@ -200,9 +213,11 @@ export function DashboardPageContent() {
   const [depositsStatistics, setDepositsStatistics] = useState<Array<{ day: string; date: string; amount: number }>>([]);
   const [withdrawalsStatistics, setWithdrawalsStatistics] = useState<Array<{ day: string; date: string; amount: number }>>([]);
   const [isDashboardLoading, setIsDashboardLoading] = useState(isUser || isAdmin);
-  const [isStatisticsLoading, setIsStatisticsLoading] = useState(false);
+  const [isDepositsStatisticsLoading, setIsDepositsStatisticsLoading] = useState(false);
+  const [isWithdrawalsStatisticsLoading, setIsWithdrawalsStatisticsLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState<unknown | null>(null);
-  const [statisticsPeriod, setStatisticsPeriod] = useState<7 | 30>(30);
+  const [depositStatisticsPeriod, setDepositStatisticsPeriod] = useState<7 | 30>(30);
+  const [withdrawalStatisticsPeriod, setWithdrawalStatisticsPeriod] = useState<7 | 30>(30);
   // MT4 dashboard tabs are intentionally hidden for now. Restore the original union when MT4 UI returns.
   // const [activeTab, setActiveTab] = useState<'mt5-live' | 'mt5-demo' | 'mt4-live' | 'mt4-demo'>('mt5-live');
   const [activeTab, setActiveTab] = useState<'mt5-live' | 'mt5-demo'>('mt5-live');
@@ -237,8 +252,8 @@ export function DashboardPageContent() {
           console.log("IB Wallet not available (user may not be IB):", err);
           return null;
         }),
-        authApi.getWalletStatistics(token, "deposits", statisticsPeriod),
-        authApi.getWalletStatistics(token, "withdrawals", statisticsPeriod),
+        authApi.getWalletStatistics(token, "deposits", depositStatisticsPeriod),
+        authApi.getWalletStatistics(token, "withdrawals", withdrawalStatisticsPeriod),
       ]);
 
       if (userDashboardResult.success && userDashboardResult.data) {
@@ -267,7 +282,7 @@ export function DashboardPageContent() {
     } finally {
       void queryClient.invalidateQueries({ queryKey: ["userDashboard", token] });
     }
-  }, [isUser, queryClient, statisticsPeriod, token]);
+  }, [depositStatisticsPeriod, isUser, queryClient, token, withdrawalStatisticsPeriod]);
 
   // Check for incomplete profile sections on mount
   useEffect(() => {
@@ -396,51 +411,82 @@ export function DashboardPageContent() {
     };
   }, [isAdmin, token, dateRange.start_date, dateRange.end_date]);
 
-  // Separate effect for statistics (runs when period changes)
+  // Separate effects for statistics so each chart can manage its own period independently.
   useEffect(() => {
     if (!isUser || !token) {
       return;
     }
 
     let isMounted = true;
-    const fetchStatistics = async () => {
-      setIsStatisticsLoading(true);
+    const fetchDepositStatistics = async () => {
+      setIsDepositsStatisticsLoading(true);
       try {
-        const [depositsStatsResponse, withdrawalsStatsResponse] = await Promise.all([
-          authApi.getWalletStatistics(token, "deposits", statisticsPeriod),
-          authApi.getWalletStatistics(token, "withdrawals", statisticsPeriod)
-        ]);
+        const depositsStatsResponse = await authApi.getWalletStatistics(token, "deposits", depositStatisticsPeriod);
 
         if (!isMounted) return;
 
         if (depositsStatsResponse.success && depositsStatsResponse.data) {
           setDepositsStatistics(depositsStatsResponse.data.statistics ?? []);
         }
-
-        if (withdrawalsStatsResponse.success && withdrawalsStatsResponse.data) {
-          setWithdrawalsStatistics(withdrawalsStatsResponse.data.statistics ?? []);
-        }
       } catch (error: unknown) {
-        console.error("Failed to fetch statistics:", error);
+        console.error("Failed to fetch deposit statistics:", error);
         if (isMounted) {
           toast.error(getFriendlyErrorMessage(error, {
             audience: "client",
-            resource: "statistics",
+            resource: "deposit statistics",
             action: "load",
           }));
         }
       } finally {
         if (isMounted) {
-          setIsStatisticsLoading(false);
+          setIsDepositsStatisticsLoading(false);
         }
       }
     };
 
-    fetchStatistics();
+    fetchDepositStatistics();
     return () => {
       isMounted = false;
     };
-  }, [isUser, token, statisticsPeriod]);
+  }, [depositStatisticsPeriod, isUser, token]);
+
+  useEffect(() => {
+    if (!isUser || !token) {
+      return;
+    }
+
+    let isMounted = true;
+    const fetchWithdrawalStatistics = async () => {
+      setIsWithdrawalsStatisticsLoading(true);
+      try {
+        const withdrawalsStatsResponse = await authApi.getWalletStatistics(token, "withdrawals", withdrawalStatisticsPeriod);
+
+        if (!isMounted) return;
+
+        if (withdrawalsStatsResponse.success && withdrawalsStatsResponse.data) {
+          setWithdrawalsStatistics(withdrawalsStatsResponse.data.statistics ?? []);
+        }
+      } catch (error: unknown) {
+        console.error("Failed to fetch withdrawal statistics:", error);
+        if (isMounted) {
+          toast.error(getFriendlyErrorMessage(error, {
+            audience: "client",
+            resource: "withdrawal statistics",
+            action: "load",
+          }));
+        }
+      } finally {
+        if (isMounted) {
+          setIsWithdrawalsStatisticsLoading(false);
+        }
+      }
+    };
+
+    fetchWithdrawalStatistics();
+    return () => {
+      isMounted = false;
+    };
+  }, [isUser, token, withdrawalStatisticsPeriod]);
 
   useEffect(() => {
     if (!isUser || !token) {
@@ -918,7 +964,7 @@ export function DashboardPageContent() {
       {
         id: 'deposits-chart',
         title: 'Deposits Chart',
-        component: isStatisticsLoading ? (
+        component: isDepositsStatisticsLoading ? (
           <Card className="relative flex w-full max-w-full flex-col gap-6 overflow-hidden rounded-2xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-muted/20 shadow-lg md:p-6 h-full">
                 <CardHeader className="relative flex flex-col items-start gap-4.5 space-y-0 p-0 md:flex-row md:items-center md:justify-between md:gap-0">
                   <div className="flex items-center gap-2.5">
@@ -940,7 +986,7 @@ export function DashboardPageContent() {
                 title="Deposits"
                 subtitle={
                   depositsStatistics.length
-                    ? `${depositsCurrency} Deposits (Last ${statisticsPeriod} days)`
+                    ? `${depositsCurrency} Deposits (Last ${depositStatisticsPeriod} days)`
                     : "Deposits"
                 }
                 icon={
@@ -963,8 +1009,8 @@ export function DashboardPageContent() {
                 primaryColor="#22c55e"
                 emptyStateLabel="No deposit data available"
                 formatValue={(value) => formatCurrency(value, depositsCurrency)}
-                selectedPeriod={statisticsPeriod === 7 ? "7d" : "1m"}
-                onPeriodChange={(period) => setStatisticsPeriod(period === "7d" ? 7 : 30)}
+                selectedPeriod={depositStatisticsPeriod === 7 ? "7d" : "1m"}
+                onPeriodChange={(period) => setDepositStatisticsPeriod(period === "7d" ? 7 : 30)}
               />
         ),
         defaultLayout: { x: 0, y: 8, w: 6, h: 6, minW: 4, minH: 4 },
@@ -973,7 +1019,7 @@ export function DashboardPageContent() {
       {
         id: 'withdrawals-chart',
         title: 'Withdrawals Chart',
-        component: isStatisticsLoading ? (
+        component: isWithdrawalsStatisticsLoading ? (
           <Card className="relative flex w-full max-w-full flex-col gap-6 overflow-hidden rounded-2xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-muted/20 shadow-lg md:p-6 h-full">
             <CardHeader className="relative flex flex-col items-start gap-4.5 space-y-0 p-0 md:flex-row md:items-center md:justify-between md:gap-0">
               <div className="flex items-center gap-2.5">
@@ -995,7 +1041,7 @@ export function DashboardPageContent() {
                 title="Withdrawals"
                 subtitle={
                   withdrawalsStatistics.length
-                    ? `${withdrawalsCurrency} Withdrawals (Last ${statisticsPeriod} days)`
+                    ? `${withdrawalsCurrency} Withdrawals (Last ${withdrawalStatisticsPeriod} days)`
                     : "Withdrawals"
                 }
                 icon={
@@ -1018,8 +1064,8 @@ export function DashboardPageContent() {
                 primaryColor="#ef4444"
                 emptyStateLabel="No withdrawal data available"
                 formatValue={(value) => formatCurrency(value, withdrawalsCurrency)}
-                selectedPeriod={statisticsPeriod === 7 ? "7d" : "1m"}
-                onPeriodChange={(period) => setStatisticsPeriod(period === "7d" ? 7 : 30)}
+                selectedPeriod={withdrawalStatisticsPeriod === 7 ? "7d" : "1m"}
+                onPeriodChange={(period) => setWithdrawalStatisticsPeriod(period === "7d" ? 7 : 30)}
               />
         ),
         defaultLayout: { x: 6, y: 8, w: 6, h: 6, minW: 4, minH: 4 },
@@ -1067,8 +1113,10 @@ export function DashboardPageContent() {
     profileTimeline,
     depositsStatistics,
     withdrawalsStatistics,
-    statisticsPeriod,
-    isStatisticsLoading,
+    depositStatisticsPeriod,
+    withdrawalStatisticsPeriod,
+    isDepositsStatisticsLoading,
+    isWithdrawalsStatisticsLoading,
     ibWalletData,
   ]);
   
@@ -1232,24 +1280,22 @@ export function DashboardPageContent() {
               </div>
 
               {/* News & Promotions Carousel Row */}
-              {(dashboardNewsItems.length > 0 || dashboardPromoItems.length > 0) && (
-                <div className={`grid gap-4 ${dashboardNewsItems.length > 0 && dashboardPromoItems.length > 0 ? "sm:grid-cols-2" : "grid-cols-1 max-w-lg"}`}>
-                  {dashboardNewsItems.length > 0 && (
+              {/* {dashboardNewsPromotionItems.length > 0 && (
+                <section className="rounded-3xl border border-border/60 bg-card/80 p-4 shadow-sm sm:p-5">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-base font-bold tracking-tight text-foreground sm:text-lg">
+                      News & Promotions
+                    </h2>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
                     <NewsPromotionCarousel
-                      items={dashboardNewsItems}
-                      type="news"
+                      items={dashboardNewsPromotionItems}
+                      type="mixed"
                       viewAllHref="/user-news"
                     />
-                  )}
-                  {dashboardPromoItems.length > 0 && (
-                    <NewsPromotionCarousel
-                      items={dashboardPromoItems}
-                      type="promotion"
-                      viewAllHref="/user-promotions"
-                    />
-                  )}
-                </div>
-              )}
+                  </div>
+                </section>
+              )} */}
 
               {/* Top Cards Row - Enhanced grid */}
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -1489,9 +1535,8 @@ export function DashboardPageContent() {
               </div>
 
               {/* Deposits and Withdrawals Charts */}
-              {isStatisticsLoading ? (
-                <div className="grid gap-4 xl:grid-cols-2">
-                  {/* Skeleton for Deposits Chart */}
+              <div className="grid gap-4 xl:grid-cols-2">
+                {isDepositsStatisticsLoading ? (
                   <Card className="relative flex w-full max-w-full flex-col gap-6 overflow-hidden rounded-2xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-muted/20 shadow-lg md:p-6">
                     <CardHeader className="relative flex flex-col items-start gap-4.5 space-y-0 p-0 md:flex-row md:items-center md:justify-between md:gap-0">
                       <div className="flex items-center gap-2.5">
@@ -1512,36 +1557,12 @@ export function DashboardPageContent() {
                       </div>
                     </CardContent>
                   </Card>
-
-                  {/* Skeleton for Withdrawals Chart */}
-                  <Card className="relative flex w-full max-w-full flex-col gap-6 overflow-hidden rounded-2xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-muted/20 shadow-lg md:p-6">
-                    <CardHeader className="relative flex flex-col items-start gap-4.5 space-y-0 p-0 md:flex-row md:items-center md:justify-between md:gap-0">
-                      <div className="flex items-center gap-2.5">
-                        <Skeleton className="h-8 w-8 rounded-lg" />
-                        <Skeleton className="h-5 w-24" />
-                      </div>
-                    </CardHeader>
-                    <CardContent className="relative flex flex-col gap-4 p-0">
-                      <div className="flex w-full gap-1 rounded-lg border border-border/50 bg-muted/30 p-1">
-                        <Skeleton className="h-9 flex-1" />
-                        <Skeleton className="h-9 flex-1" />
-                      </div>
-                      <Skeleton className="h-32 w-full rounded-lg" />
-                      <Skeleton className="h-[225px] w-full rounded-lg" />
-                      <div className="flex gap-1">
-                        <Skeleton className="h-9 flex-1" />
-                        <Skeleton className="h-9 flex-1" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              ) : (
-                <div className="grid gap-4 xl:grid-cols-2">
+                ) : (
                   <DashboardTrendChart
                     title="Deposits"
                     subtitle={
                       depositsStatistics.length
-                        ? `${depositsCurrency} Deposits (Last ${statisticsPeriod} days)`
+                        ? `${depositsCurrency} Deposits (Last ${depositStatisticsPeriod} days)`
                         : "Deposits"
                     }
                     icon={
@@ -1564,15 +1585,38 @@ export function DashboardPageContent() {
                     primaryColor="#22c55e"
                     emptyStateLabel="No deposit data available"
                     formatValue={(value) => formatCurrency(value, depositsCurrency)}
-                    selectedPeriod={statisticsPeriod === 7 ? "7d" : "1m"}
-                    onPeriodChange={(period) => setStatisticsPeriod(period === "7d" ? 7 : 30)}
+                    selectedPeriod={depositStatisticsPeriod === 7 ? "7d" : "1m"}
+                    onPeriodChange={(period) => setDepositStatisticsPeriod(period === "7d" ? 7 : 30)}
                   />
+                )}
 
+                {isWithdrawalsStatisticsLoading ? (
+                  <Card className="relative flex w-full max-w-full flex-col gap-6 overflow-hidden rounded-2xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-muted/20 shadow-lg md:p-6">
+                    <CardHeader className="relative flex flex-col items-start gap-4.5 space-y-0 p-0 md:flex-row md:items-center md:justify-between md:gap-0">
+                      <div className="flex items-center gap-2.5">
+                        <Skeleton className="h-8 w-8 rounded-lg" />
+                        <Skeleton className="h-5 w-24" />
+                      </div>
+                    </CardHeader>
+                    <CardContent className="relative flex flex-col gap-4 p-0">
+                      <div className="flex w-full gap-1 rounded-lg border border-border/50 bg-muted/30 p-1">
+                        <Skeleton className="h-9 flex-1" />
+                        <Skeleton className="h-9 flex-1" />
+                      </div>
+                      <Skeleton className="h-32 w-full rounded-lg" />
+                      <Skeleton className="h-[225px] w-full rounded-lg" />
+                      <div className="flex gap-1">
+                        <Skeleton className="h-9 flex-1" />
+                        <Skeleton className="h-9 flex-1" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
                   <DashboardTrendChart
                     title="Withdrawals"
                     subtitle={
                       withdrawalsStatistics.length
-                        ? `${withdrawalsCurrency} Withdrawals (Last ${statisticsPeriod} days)`
+                        ? `${withdrawalsCurrency} Withdrawals (Last ${withdrawalStatisticsPeriod} days)`
                         : "Withdrawals"
                     }
                     icon={
@@ -1595,11 +1639,11 @@ export function DashboardPageContent() {
                     primaryColor="#ef4444"
                     emptyStateLabel="No withdrawal data available"
                     formatValue={(value) => formatCurrency(value, withdrawalsCurrency)}
-                    selectedPeriod={statisticsPeriod === 7 ? "7d" : "1m"}
-                    onPeriodChange={(period) => setStatisticsPeriod(period === "7d" ? 7 : 30)}
+                    selectedPeriod={withdrawalStatisticsPeriod === 7 ? "7d" : "1m"}
+                    onPeriodChange={(period) => setWithdrawalStatisticsPeriod(period === "7d" ? 7 : 30)}
                   />
-                </div>
-              )}
+                )}
+              </div>
             </>
           ) : (
             /* Custom Dashboard View with Drag and Drop */

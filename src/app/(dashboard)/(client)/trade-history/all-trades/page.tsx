@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
 
+import { LivePositionsTable } from './_components/live-positions-table';
 import { TradeHistoryFilters } from './_components/trade-history-filters';
 import { TradeHistoryTable } from './_components/trade-history-table';
 import { useTradeHistory } from './_hooks/use-trade-history';
@@ -19,10 +20,13 @@ export default function AllTradesPage() {
     error,
     fromDt,
     isLoadingAccounts,
+    isLoadingPositions,
     isLoadingTrades,
     login,
     perPage,
-    refreshTrades,
+    positions,
+    positionsError,
+    refreshAll,
     rows,
     setFromDt,
     setLogin,
@@ -47,8 +51,14 @@ export default function AllTradesPage() {
                 Trade history from your MT5 account.
               </p>
             </div>
-            <Button variant="outline" onClick={() => void refreshTrades()} disabled={isLoadingTrades || !login.trim()}>
-              <RefreshCw className={cn('mr-2 h-4 w-4', isLoadingTrades && 'animate-spin')} />
+            <Button
+              variant="outline"
+              onClick={() => void refreshAll()}
+              disabled={(isLoadingTrades || isLoadingPositions) || !login.trim()}
+            >
+              <RefreshCw
+                className={cn('mr-2 h-4 w-4', (isLoadingTrades || isLoadingPositions) && 'animate-spin')}
+              />
               Refresh
             </Button>
           </div>
@@ -76,6 +86,12 @@ export default function AllTradesPage() {
               action="load"
             />
           ) : null}
+
+          <LivePositionsTable
+            error={positionsError}
+            isLoading={isLoadingPositions}
+            rows={positions}
+          />
 
           <TradeHistoryTable
             isLoading={isLoadingTrades}

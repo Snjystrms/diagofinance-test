@@ -679,6 +679,71 @@ export interface AdminBrokerBankDetailsListData {
   rows: BrokerBankDetailItem[];
 }
 
+export interface AdminBonusLedgerMt5User {
+  id: number;
+  account_id: string;
+  name: string;
+  self_wallet?: number | null;
+}
+
+export interface AdminBonusLedgerUser {
+  id: number;
+  email: string;
+}
+
+export interface AdminBonusLedgerItem {
+  id: number;
+  mt5_user_id: number;
+  user_id: number;
+  amount: number;
+  equity: number;
+  type: "IN" | "OUT" | string;
+  comment: string | null;
+  admin_id: number | null;
+  created_at: string;
+  updated_at: string;
+  mt5User?: AdminBonusLedgerMt5User | null;
+  user?: AdminBonusLedgerUser | null;
+}
+
+export interface AdminBonusListPagination {
+  current_page: number;
+  total_pages: number;
+  total_records: number;
+  per_page: number;
+}
+
+export interface AdminBonusListData {
+  bonuses: AdminBonusLedgerItem[];
+  pagination: AdminBonusListPagination;
+}
+
+export interface AdminBonusMt5UserOption {
+  id: number;
+  account_id: string;
+  name: string;
+  email: string;
+  current_balance: number;
+}
+
+export interface AdminBonusMutateBody {
+  amount: number;
+  comment?: string;
+  mt5_id: string;
+}
+
+export interface AdminBonusMutationResult {
+  bonus_id: number;
+  mt5_account_id: string;
+  amount: number;
+  previous_equity: number;
+  new_equity: number;
+  wallet_id: number;
+  wallet_balance_before: number;
+  wallet_balance_after: number;
+  comment: string | null;
+}
+
 export interface Permission {
   id: number;
   name: string;
@@ -1604,6 +1669,75 @@ export const adminBrokerBankDetailsApi = {
     return apiCall(`/admin/broker-bank-details/${detailId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
+
+export const adminBonusApi = {
+  list: (
+    {
+      page,
+      per_page,
+    }: {
+      page?: number;
+      per_page?: number;
+    },
+    token: string
+  ) => {
+    if (!token) {
+      throw new Error("Token is required to fetch bonus list");
+    }
+
+    const qs = new URLSearchParams();
+    if (page) qs.set("page", String(page));
+    if (per_page) qs.set("per_page", String(per_page));
+
+    const suffix = qs.toString() ? `?${qs.toString()}` : "";
+
+    return apiCall<AdminBonusListData>(`/admin/bonus/list${suffix}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  listMt5Users: (token: string) => {
+    if (!token) {
+      throw new Error("Token is required to fetch MT5 users");
+    }
+
+    return apiCall<AdminBonusMt5UserOption[]>(`/admin/bonus/mt5-users`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  give: (body: AdminBonusMutateBody, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to give bonus");
+    }
+
+    return apiCall<AdminBonusMutationResult>(`/admin/bonus/give`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  },
+
+  remove: (body: AdminBonusMutateBody, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to remove bonus");
+    }
+
+    return apiCall<AdminBonusMutationResult>(`/admin/bonus/remove`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
     });
   },
 };

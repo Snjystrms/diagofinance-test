@@ -9,7 +9,7 @@ import { format } from "date-fns";
 import { AppDataTable } from "@/components/app-data-table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { CalendarIcon, RefreshCw, Download, Search, X } from "lucide-react";
+import { CalendarIcon, Search, X } from "lucide-react";
 import * as XLSX from "xlsx";
 
 import {
@@ -19,6 +19,7 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { ReportPageWrapper } from "@/components/report-page-wrapper";
+import type { ReportExportFormat } from "@/components/report-page-wrapper";
 import { fmtDateTime } from "@/lib/formatters";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
@@ -126,14 +127,15 @@ export default function LoginActivityReportPage() {
     setPage,
   ]);
 
-  const handleExportExcel = useCallback(async () => {
+  const handleExport = useCallback(async (formatType: ReportExportFormat) => {
     if (!token) {
       toast.error("Authentication required to export data");
       return;
     }
 
     try {
-      toast.loading("Preparing Excel export...", { id: "export-excel" });
+      const exportToastId = `export-${formatType}`;
+      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
 
       // Fetch all data for export (use a large per_page to get all records)
       const response = await adminLoginActivityReportApi.list({
@@ -147,12 +149,11 @@ export default function LoginActivityReportPage() {
       const reportItems = Array.isArray(payload?.data) ? payload.data : [];
 
       if (reportItems.length === 0) {
-        toast.error("No data to export", { id: "export-excel" });
+        toast.error("No data to export", { id: exportToastId });
         return;
       }
 
-      // Prepare data for Excel
-      const excelData = reportItems.map((item) => ({
+      const exportData = reportItems.map((item) => ({
         ID: item.id,
         "User ID": item.user_id || "—",
         "User Name": item.user?.name || item.name || "—",
@@ -170,28 +171,36 @@ export default function LoginActivityReportPage() {
         "Created At": fmtDateTime(item.created_at),
       }));
 
-      // Create workbook and worksheet
-      const worksheet = XLSX.utils.json_to_sheet(excelData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Login Activity Report");
-
-      // Generate filename with current date
-      const filename = `login-activity-report-${format(new Date(), "yyyy-MM-dd-HHmmss")}.xlsx`;
-
-      // Write file
-      XLSX.writeFile(workbook, filename);
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const filenameBase = `login-activity-report-${format(new Date(), "yyyy-MM-dd-HHmmss")}`;
+      let filename = `${filenameBase}.xlsx`;
+      if (formatType === "xlsx") {
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Login Activity Report");
+        XLSX.writeFile(workbook, filename);
+      } else {
+        const csv = XLSX.utils.sheet_to_csv(worksheet);
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        filename = `${filenameBase}.csv`;
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
 
       toast.success(`Exported ${reportItems.length} records to ${filename}`, {
-        id: "export-excel",
+        id: exportToastId,
       });
     } catch (error: unknown) {
-      console.error("Failed to export Excel:", error);
+      console.error(`Failed to export ${formatType}:`, error);
       toast.error(
         getAdminFriendlyErrorMessage(error, {
           resource: "login activity report",
           action: "export",
         }),
-        { id: "export-excel" }
+        { id: `export-${formatType}` }
       );
     }
   }, [
@@ -335,35 +344,11 @@ export default function LoginActivityReportPage() {
       isLoading={loading}
       isEmpty={rows.length === 0}
       error={loadError}
-      onExport={handleExportExcel}
+      onExport={handleExport}
       onRefresh={() => void loadReport()}
       isRefreshing={loading}
     >
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div />
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportExcel}
-              disabled={loading || rows.length === 0}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export Excel
-            </Button>
-
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={loadReport} 
-              disabled={loading}
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            </Button>
-          </div>
-        </div>
-
         {/* Search Section */}
         <div className="rounded-lg border bg-card p-5">
           <div className="space-y-4">

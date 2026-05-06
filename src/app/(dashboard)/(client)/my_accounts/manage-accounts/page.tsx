@@ -73,7 +73,7 @@ const groupAccounts = (accounts: ManagedMT5Account[]) => {
 
 const mt5AccountsRequests = new Map<string, Promise<ManagedMT5Account[]>>();
 const mt5AccountDetailRequests = new Map<string, Promise<UserMT5AccountDetail | null>>();
-const DEMO_DEPOSIT_OPTIONS = [100, 250, 500, 1000, 2500, 5000, 10000, 100000] as const;
+const DEMO_DEPOSIT_OPTIONS = [1000, 2500, 5000, 10000, 100000] as const;
 
 const loadAccountDetail = (account: UserMT5AccountListItem, token: string) => {
   const requestKey = `${token}:${account.id}`;

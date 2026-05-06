@@ -1,4 +1,4 @@
-import type { UserMT5TradesHistoryItem } from '@/lib/api';
+import type { Mt5SdkPosition, UserMT5TradesHistoryItem } from '@/lib/api-trading-ib';
 
 export const createDefaultFromDate = () => {
   const date = new Date();
@@ -27,9 +27,47 @@ export const formatTradeNumber = (value?: number | null, max = 8) => {
   return value.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: max });
 };
 
+const formatUnixToIst = (value?: number) => {
+  if (!value) return '-';
+
+  return new Intl.DateTimeFormat('en-IN', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'Asia/Kolkata',
+  }).format(new Date(value * 1000));
+};
+
+const getPositionSide = (action?: number) => {
+  if (action === 0) return 'buy';
+  if (action === 1) return 'sell';
+  return 'open';
+};
+
+const getPositionVolume = (item: Mt5SdkPosition) => {
+  if (typeof item.volume === 'number') return item.volume;
+  if (typeof item.Volume === 'number') return item.Volume;
+  return null;
+};
+
 export type TradeRow = UserMT5TradesHistoryItem & {
   rowId: string;
   normalizedType: 'order' | 'deal' | 'other';
+};
+
+export type PositionRow = {
+  rowId: string;
+  login: number;
+  position: number;
+  symbol: string;
+  side: string;
+  time_ist: string;
+  price_open: number | null;
+  price_current: number | null;
+  price_sl: number | null;
+  price_tp: number | null;
+  volume: number | null;
+  profit: number | null;
+  comment: string | null;
 };
 
 export const mapTradeRows = (items: UserMT5TradesHistoryItem[]): TradeRow[] =>
@@ -42,3 +80,20 @@ export const mapTradeRows = (items: UserMT5TradesHistoryItem[]): TradeRow[] =>
       normalizedType: type === 'order' ? 'order' : type === 'deal' ? 'deal' : 'other',
     };
   });
+
+export const mapPositionRows = (items: Mt5SdkPosition[]): PositionRow[] =>
+  items.map((item, index) => ({
+    rowId: `${item.Position}-${index}`,
+    login: item.Login,
+    position: item.Position,
+    symbol: item.Symbol || '-',
+    side: getPositionSide(item.Action),
+    time_ist: formatUnixToIst(item.TimeCreate ?? item.TimeUpdate),
+    price_open: item.PriceOpen ?? null,
+    price_current: item.PriceCurrent ?? null,
+    price_sl: item.PriceSL ?? null,
+    price_tp: item.PriceTP ?? null,
+    volume: getPositionVolume(item),
+    profit: item.Profit ?? null,
+    comment: item.Comment ?? null,
+  }));

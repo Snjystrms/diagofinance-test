@@ -16,7 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, RefreshCw, Download, Filter, ChevronDown, Landmark } from "lucide-react";
+import { CalendarIcon, Search, Landmark } from "lucide-react";
 import { cn } from "@/lib/utils";
 import * as XLSX from "xlsx";
 
@@ -27,6 +27,7 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { ReportPageWrapper } from "@/components/report-page-wrapper";
+import type { ReportExportFormat } from "@/components/report-page-wrapper";
 import { fmtDateTime, formatAmount } from "@/lib/formatters";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
@@ -73,8 +74,7 @@ export default function IbWithdrawalReportPage() {
   const [perPage, setPerPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
-  
+
   // Filters - only date range for IB withdrawal report
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [fromDateStr, setFromDateStr] = useQueryState(
@@ -200,14 +200,15 @@ export default function IbWithdrawalReportPage() {
     setPage,
   ]);
 
-  const handleExportExcel = useCallback(async () => {
+  const handleExport = useCallback(async (formatType: ReportExportFormat) => {
     if (!token) {
       toast.error("Authentication required to export data");
       return;
     }
 
     try {
-      toast.loading("Preparing Excel export...", { id: "export-excel" });
+      const exportToastId = `export-${formatType}`;
+      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
 
       // Fetch all data for export (use a large per_page to get all records)
       const response = await adminIbWithdrawalReportApi.list({
@@ -222,12 +223,11 @@ export default function IbWithdrawalReportPage() {
       const reportItems = Array.isArray(payload?.data) ? payload.data : [];
 
       if (reportItems.length === 0) {
-        toast.error("No data to export", { id: "export-excel" });
+        toast.error("No data to export", { id: exportToastId });
         return;
       }
 
-      // Prepare data for Excel
-      const excelData = reportItems.map((item) => ({
+      const exportData = reportItems.map((item) => ({
         ID: item.id,
         "IB Name": item.ib_name || "—",
         "Partner ID": item.partner_id || "—",
@@ -251,28 +251,36 @@ export default function IbWithdrawalReportPage() {
         "Approved At": fmtDateTime(item.approved_at),
       }));
 
-      // Create workbook and worksheet
-      const worksheet = XLSX.utils.json_to_sheet(excelData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "IB Withdrawal Report");
-
-      // Generate filename with current date
-      const filename = `ib-withdrawal-report-${format(new Date(), "yyyy-MM-dd-HHmmss")}.xlsx`;
-
-      // Write file
-      XLSX.writeFile(workbook, filename);
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const filenameBase = `ib-withdrawal-report-${format(new Date(), "yyyy-MM-dd-HHmmss")}`;
+      let filename = `${filenameBase}.xlsx`;
+      if (formatType === "xlsx") {
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "IB Withdrawal Report");
+        XLSX.writeFile(workbook, filename);
+      } else {
+        const csv = XLSX.utils.sheet_to_csv(worksheet);
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        filename = `${filenameBase}.csv`;
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
 
       toast.success(`Exported ${reportItems.length} records to ${filename}`, {
-        id: "export-excel",
+        id: exportToastId,
       });
     } catch (error: unknown) {
-      console.error("Failed to export Excel:", error);
+      console.error(`Failed to export ${formatType}:`, error);
       toast.error(
         getAdminFriendlyErrorMessage(error, {
           resource: "IB withdrawal report",
           action: "export",
         }),
-        { id: "export-excel" }
+        { id: `export-${formatType}` }
       );
     }
   }, [
@@ -415,152 +423,82 @@ export default function IbWithdrawalReportPage() {
       isLoading={loading}
       isEmpty={rows.length === 0}
       error={loadError}
+      onExport={handleExport}
       onRefresh={() => void loadReport()}
       isRefreshing={loading}
     >
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Manage and view IB withdrawal transactions
-            </p>
+        <div className="rounded-lg border bg-card p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-base font-semibold">
+              <Search className="h-4 w-4" />
+              Filters
+            </h2>
+            {activeFilterCount > 0 ? (
+              <Button variant="ghost" size="sm" onClick={handleResetFilters}>
+                Reset
+              </Button>
+            ) : null}
           </div>
-          <div className="flex items-center gap-2">
-            <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  className="relative "
-
-                >
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filter
-                  <ChevronDown className="h-4 w-4 ml-2" />
-                  {activeFilterCount > 0 && (
-                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[600px] p-5 absolute right-1  " align="start">
-                <div className="space-y-5">
-                  {/* Filter Header */}
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-semibold">Filters</h3>
-                    {total > 0 && (
-                      <span className="text-xs text-muted-foreground">
-                        {total} total records
-                      </span>
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full h-9 justify-start text-left font-normal",
+                      !fromDate && "text-muted-foreground"
                     )}
-                  </div>
-
-                  {/* Main Filters - Date Range Only */}
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* From Date */}
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full h-9 justify-start text-left font-normal",
-                              !fromDate && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                            {fromDate ? format(fromDate, "MMM dd, yyyy") : <span>Select date</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={fromDate}
-                            onSelect={(date) => {
-                              handleDateChange(date, "from");
-                              setPage(1);
-                            }}
-                            initialFocus
-                            captionLayout="dropdown"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-
-                    {/* To Date */}
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-muted-foreground">To Date</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full h-9 justify-start text-left font-normal",
-                              !toDate && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                            {toDate ? format(toDate, "MMM dd, yyyy") : <span>Select date</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={toDate}
-                            onSelect={(date) => {
-                              handleDateChange(date, "to");
-                              setPage(1);
-                            }}
-                            initialFocus
-                            captionLayout="dropdown"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex items-center justify-end gap-2 pt-2 border-t">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        handleResetFilters();
-                        setFilterPopoverOpen(false);
-                      }}
-                    >
-                      Reset
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => setFilterPopoverOpen(false)}
-                    >
-                      Apply
-                    </Button>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportExcel}
-              disabled={loading || rows.length === 0}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export Excel
-            </Button>
-
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={loadReport} 
-              disabled={loading}
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            </Button>
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {fromDate ? format(fromDate, "MMM dd, yyyy") : <span>Select date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={fromDate}
+                    onSelect={(date) => {
+                      handleDateChange(date, "from");
+                      setPage(1);
+                    }}
+                    initialFocus
+                    captionLayout="dropdown"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">To Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full h-9 justify-start text-left font-normal",
+                      !toDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {toDate ? format(toDate, "MMM dd, yyyy") : <span>Select date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={toDate}
+                    onSelect={(date) => {
+                      handleDateChange(date, "to");
+                      setPage(1);
+                    }}
+                    initialFocus
+                    captionLayout="dropdown"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
           </div>
         </div>
 

@@ -99,7 +99,7 @@ export const crmData = {
   },
   teams: [
     {
-      name: "Affiliate CRM Platform",
+      name: "Forex CRM Platform",
       logo: Shield,
       plan: "Enterprise",
     },

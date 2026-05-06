@@ -23,7 +23,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { CalendarIcon, RefreshCw, Download, Filter, ChevronDown, TrendingDown } from "lucide-react";
+import { CalendarIcon, Search, TrendingDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import * as XLSX from "xlsx";
 
@@ -34,6 +34,7 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { ReportPageWrapper } from "@/components/report-page-wrapper";
+import type { ReportExportFormat } from "@/components/report-page-wrapper";
 import { fmtDateTime, formatAmount } from "@/lib/formatters";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
@@ -80,8 +81,7 @@ export default function WithdrawalReportPage() {
   const [perPage, setPerPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [filterPopoverOpen, setFilterPopoverOpen] = useState(false);
-  
+
   // Filters
   const [statusFilter, setStatusFilter] = useQueryState(
     "status",
@@ -249,14 +249,15 @@ export default function WithdrawalReportPage() {
     setPage,
   ]);
 
-  const handleExportExcel = useCallback(async () => {
+  const handleExport = useCallback(async (formatType: ReportExportFormat) => {
     if (!token) {
       toast.error("Authentication required to export data");
       return;
     }
 
     try {
-      toast.loading("Preparing Excel export...", { id: "export-excel" });
+      const exportToastId = `export-${formatType}`;
+      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
 
       // Fetch all data for export (use a large per_page to get all records)
       const response = await adminWithdrawalReportApi.list({
@@ -283,12 +284,11 @@ export default function WithdrawalReportPage() {
       const reportItems = Array.isArray(payload?.data) ? payload.data : [];
 
       if (reportItems.length === 0) {
-        toast.error("No data to export", { id: "export-excel" });
+        toast.error("No data to export", { id: exportToastId });
         return;
       }
 
-      // Prepare data for Excel
-      const excelData = reportItems.map((item) => ({
+      const exportData = reportItems.map((item) => ({
         ID: item.id,
         "User Name": item.name || "—",
         "User Email": item.email || "—",
@@ -311,28 +311,36 @@ export default function WithdrawalReportPage() {
         "Approved At": fmtDateTime(item.approved_at),
       }));
 
-      // Create workbook and worksheet
-      const worksheet = XLSX.utils.json_to_sheet(excelData);
-      const workbook = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(workbook, worksheet, "Withdrawal Report");
-
-      // Generate filename with current date
-      const filename = `withdrawal-report-${format(new Date(), "yyyy-MM-dd-HHmmss")}.xlsx`;
-
-      // Write file
-      XLSX.writeFile(workbook, filename);
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const filenameBase = `withdrawal-report-${format(new Date(), "yyyy-MM-dd-HHmmss")}`;
+      let filename = `${filenameBase}.xlsx`;
+      if (formatType === "xlsx") {
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Withdrawal Report");
+        XLSX.writeFile(workbook, filename);
+      } else {
+        const csv = XLSX.utils.sheet_to_csv(worksheet);
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        filename = `${filenameBase}.csv`;
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      }
 
       toast.success(`Exported ${reportItems.length} records to ${filename}`, {
-        id: "export-excel",
+        id: exportToastId,
       });
     } catch (error: unknown) {
-      console.error("Failed to export Excel:", error);
+      console.error(`Failed to export ${formatType}:`, error);
       toast.error(
         getAdminFriendlyErrorMessage(error, {
           resource: "withdrawal report",
           action: "export",
         }),
-        { id: "export-excel" }
+        { id: `export-${formatType}` }
       );
     }
   }, [
@@ -467,243 +475,156 @@ export default function WithdrawalReportPage() {
       isLoading={loading}
       isEmpty={rows.length === 0}
       error={loadError}
-      onExport={handleExportExcel}
+      onExport={handleExport}
       onRefresh={() => void loadReport()}
       isRefreshing={loading}
     >
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <div />
-          <div className="flex items-center gap-2">
-            <Popover open={filterPopoverOpen} onOpenChange={setFilterPopoverOpen}>
-              <PopoverTrigger asChild>
-                <Button 
-                  variant="outline" 
-                  className="relative "
-
-                >
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filter
-                  <ChevronDown className="h-4 w-4 ml-2" />
-                  {activeFilterCount > 0 && (
-                    <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-primary text-primary-foreground text-xs flex items-center justify-center">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-[600px] p-5 absolute right-1  " align="start">
-                <div className="space-y-5">
-                  {/* Filter Header */}
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-base font-semibold">Filters</h3>
-                    {total > 0 && (
-                      <span className="text-xs text-muted-foreground">
-                        {total} total records
-                      </span>
+        <div className="rounded-lg border bg-card p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-base font-semibold">
+              <Search className="h-4 w-4" />
+              Filters
+            </h2>
+            {activeFilterCount > 0 ? (
+              <Button variant="ghost" size="sm" onClick={handleResetFilters}>
+                Reset
+              </Button>
+            ) : null}
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+            <div className="space-y-1.5">
+              <Label htmlFor="status-filter" className="text-xs font-medium text-muted-foreground">Status</Label>
+              <Select
+                value={statusFilter || undefined}
+                onValueChange={(value) => {
+                  setStatusFilter(value === "all" ? null : value);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger id="status-filter" className="h-9">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="payment-method-filter" className="text-xs font-medium text-muted-foreground">Payment Method</Label>
+              <Select
+                value={paymentMethodFilter || undefined}
+                onValueChange={(value) => {
+                  setPaymentMethodFilter(value === "all" ? null : value);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger id="payment-method-filter" className="h-9">
+                  <SelectValue placeholder="All Methods" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Methods</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full h-9 justify-start text-left font-normal",
+                      !fromDate && "text-muted-foreground"
                     )}
-                  </div>
-
-                  {/* Main Filters */}
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Status Filter */}
-                    <div className="space-y-1.5">
-                      <Label htmlFor="status-filter-popover" className="text-xs font-medium text-muted-foreground">
-                        Status
-                      </Label>
-                      <Select
-                        value={statusFilter || undefined}
-                        onValueChange={(value) => {
-                          setStatusFilter(value === "all" ? null : value);
-                          setPage(1);
-                        }}
-                      >
-                        <SelectTrigger id="status-filter-popover" className="h-9">
-                          <SelectValue placeholder="All Status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Status</SelectItem>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="approved">Approved</SelectItem>
-                          <SelectItem value="rejected">Rejected</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Payment Method Filter */}
-                    <div className="space-y-1.5">
-                      <Label htmlFor="payment-method-filter-popover" className="text-xs font-medium text-muted-foreground">
-                        Payment Method
-                      </Label>
-                      <Select
-                        value={paymentMethodFilter || undefined}
-                        onValueChange={(value) => {
-                          setPaymentMethodFilter(value === "all" ? null : value);
-                          setPage(1);
-                        }}
-                      >
-                        <SelectTrigger id="payment-method-filter-popover" className="h-9">
-                          <SelectValue placeholder="All Methods" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Methods</SelectItem>
-                          {/* Add more payment methods as needed */}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* From Date */}
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full h-9 justify-start text-left font-normal",
-                              !fromDate && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                            {fromDate ? format(fromDate, "MMM dd, yyyy") : <span>Select date</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={fromDate}
-                            onSelect={(date) => {
-                              handleDateChange(date, "from");
-                              setPage(1);
-                            }}
-                            initialFocus
-                            captionLayout="dropdown"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-
-                    {/* To Date */}
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-medium text-muted-foreground">To Date</Label>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                            className={cn(
-                              "w-full h-9 justify-start text-left font-normal",
-                              !toDate && "text-muted-foreground"
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                            {toDate ? format(toDate, "MMM dd, yyyy") : <span>Select date</span>}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={toDate}
-                            onSelect={(date) => {
-                              handleDateChange(date, "to");
-                              setPage(1);
-                            }}
-                            initialFocus
-                            captionLayout="dropdown"
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  </div>
-
-                  {/* Sort Controls - Separated by border */}
-                  <div className="pt-4 border-t">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1.5">
-                        <Label htmlFor="sort-column-popover" className="text-xs font-medium text-muted-foreground">
-                          Sort By
-                        </Label>
-                        <Select
-                          value={sortColumn || undefined}
-                          onValueChange={(value) => {
-                            setSortColumn(value);
-                            setPage(1);
-                          }}
-                        >
-                          <SelectTrigger id="sort-column-popover" className="h-9">
-                            <SelectValue placeholder="Select column" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="created_at">Created At</SelectItem>
-                            <SelectItem value="amount">Amount</SelectItem>
-                            <SelectItem value="status">Status</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <Label htmlFor="sort-order-popover" className="text-xs font-medium text-muted-foreground">
-                          Order
-                        </Label>
-                        <Select
-                          value={sortOrder || undefined}
-                          onValueChange={(value: "ASC" | "DESC") => {
-                            setSortOrder(value);
-                            setPage(1);
-                          }}
-                        >
-                          <SelectTrigger id="sort-order-popover" className="h-9">
-                            <SelectValue placeholder="Select order" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="ASC">Ascending</SelectItem>
-                            <SelectItem value="DESC">Descending</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex items-center justify-end gap-2 pt-2 border-t">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        handleResetFilters();
-                        setFilterPopoverOpen(false);
-                      }}
-                    >
-                      Reset
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => setFilterPopoverOpen(false)}
-                    >
-                      Apply
-                    </Button>
-                  </div>
-                </div>
-              </PopoverContent>
-            </Popover>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExportExcel}
-              disabled={loading || rows.length === 0}
-            >
-              <Download className="h-4 w-4 mr-2" />
-              Export Excel
-            </Button>
-
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={loadReport} 
-              disabled={loading}
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            </Button>
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {fromDate ? format(fromDate, "MMM dd, yyyy") : <span>Select date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={fromDate}
+                    onSelect={(date) => {
+                      handleDateChange(date, "from");
+                      setPage(1);
+                    }}
+                    initialFocus
+                    captionLayout="dropdown"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">To Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full h-9 justify-start text-left font-normal",
+                      !toDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {toDate ? format(toDate, "MMM dd, yyyy") : <span>Select date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={toDate}
+                    onSelect={(date) => {
+                      handleDateChange(date, "to");
+                      setPage(1);
+                    }}
+                    initialFocus
+                    captionLayout="dropdown"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sort-column" className="text-xs font-medium text-muted-foreground">Sort By</Label>
+              <Select
+                value={sortColumn || undefined}
+                onValueChange={(value) => {
+                  setSortColumn(value);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger id="sort-column" className="h-9">
+                  <SelectValue placeholder="Select column" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="created_at">Created At</SelectItem>
+                  <SelectItem value="amount">Amount</SelectItem>
+                  <SelectItem value="status">Status</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sort-order" className="text-xs font-medium text-muted-foreground">Order</Label>
+              <Select
+                value={sortOrder || undefined}
+                onValueChange={(value: "ASC" | "DESC") => {
+                  setSortOrder(value);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger id="sort-order" className="h-9">
+                  <SelectValue placeholder="Select order" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ASC">Ascending</SelectItem>
+                  <SelectItem value="DESC">Descending</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 

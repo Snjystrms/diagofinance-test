@@ -3,7 +3,15 @@
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Button } from "@/components/ui/button";
-import { Download, RefreshCw } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown, Download, RefreshCw } from "lucide-react";
+
+export type ReportExportFormat = "xlsx" | "csv";
 
 interface ReportPageWrapperProps {
   title: string;
@@ -12,7 +20,7 @@ interface ReportPageWrapperProps {
   isLoading?: boolean;
   isEmpty?: boolean;
   error?: unknown;
-  onExport?: () => void;
+  onExport?: (format: ReportExportFormat) => void;
   onRefresh?: () => void;
   isRefreshing?: boolean;
   filters?: React.ReactNode;
@@ -36,6 +44,22 @@ export function ReportPageWrapper({
   filters,
   children,
 }: ReportPageWrapperProps) {
+  const exportButton = onExport ? (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="outline" size="sm" className="gap-2">
+          <Download className="h-4 w-4" />
+          Export
+          <ChevronDown className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        <DropdownMenuItem onClick={() => onExport("xlsx")}>Export Excel (.xlsx)</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onExport("csv")}>Export CSV (.csv)</DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  ) : null;
+
   if (isLoading && isEmpty) {
     return (
       <ListPageSkeleton
@@ -75,12 +99,7 @@ export function ReportPageWrapper({
                 Refresh
               </Button>
             ) : null}
-            {onExport ? (
-              <Button variant="outline" size="sm" onClick={onExport} className="gap-2">
-                <Download className="h-4 w-4" />
-                Export
-              </Button>
-            ) : null}
+            {exportButton}
           </div>
         </div>
         <ApiErrorState
@@ -121,12 +140,7 @@ export function ReportPageWrapper({
               Refresh
             </Button>
           )}
-          {onExport && (
-            <Button variant="outline" size="sm" onClick={onExport} className="gap-2">
-              <Download className="h-4 w-4" />
-              Export
-            </Button>
-          )}
+          {exportButton}
         </div>
       </div>
       {children}

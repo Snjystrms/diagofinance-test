@@ -71,7 +71,7 @@ const LEVERAGE_CHOICES = [
   { value: 1000, label: '1:1000 - Very high flexibility' },
   { value: 2000, label: '1:2000 - Maximum available' },
 ] as const;
-const DEMO_BALANCE_CHOICES = [100, 200, 300, 400, 500, 1000, 5000, 10000] as const;
+const DEMO_BALANCE_CHOICES = [1000, 2500, 5000, 10000, 100000] as const;
 
 const getMaximumLeverageValue = (accountType?: AccountType) => {
   if (!accountType) {
