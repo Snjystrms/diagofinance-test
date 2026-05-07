@@ -14,8 +14,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Package } from "lucide-react";
-import { adminAccountTypesApi, type AccountTypeItem, type AccountTypeUpsertBody } from "@/lib/api";
+import {
+  adminAccountTypesApi,
+  type AccountTypeCommissionItem,
+  type AccountTypeItem,
+  type AccountTypeUpsertBody,
+} from "@/lib/api";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
+
+export type AccountTypeCommissionRow = {
+  id?: string;
+  account_type_id?: string;
+  is_default: boolean;
+  level: string;
+  rate_ib: number;
+  rate_sub_ib_1: number;
+  rate_sub_ib_2: number;
+  rate_sub_ib_3: number;
+  rate_sub_ib_4: number;
+  rate_sub_ib_5: number;
+  status: boolean;
+  created_at?: string;
+  updated_at?: string;
+};
 
 // Row type for the table
 export type AccountTypeRow = {
@@ -32,16 +53,127 @@ export type AccountTypeRow = {
   status: boolean;
   created_at?: string;
   updated_at?: string;
+  ib_commissions: AccountTypeCommissionRow[];
 };
 
 // ---- helpers: normalize / serialize ----
+const ACCOUNT_TYPE_LEVELS = [
+  "IB",
+  "Level-1",
+  "Level-2",
+  "Level-3",
+  "Level-4",
+  "Level-5",
+] as const;
+
+const COMMISSION_LEVEL_ORDER = ACCOUNT_TYPE_LEVELS.reduce<Record<string, number>>(
+  (accumulator, level, index) => {
+    accumulator[level] = index;
+    return accumulator;
+  },
+  {},
+);
+
+const toNumericValue = (
+  value: unknown,
+  fallback = 0,
+  options?: { preferLastMatch?: boolean },
+) => {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    const parsed = Number(trimmed);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+
+    const matches = trimmed.match(/-?\d+(\.\d+)?/g);
+    if (matches && matches.length > 0) {
+      const candidate = options?.preferLastMatch
+        ? matches[matches.length - 1]
+        : matches[0];
+      const extracted = Number(candidate);
+      if (Number.isFinite(extracted)) {
+        return extracted;
+      }
+    }
+  }
+
+  return fallback;
+};
+
+const toStringValue = (value: unknown, fallback = "") => {
+  if (value === null || value === undefined) {
+    return fallback;
+  }
+
+  return String(value);
+};
+
+const createDefaultCommissionRows = (): AccountTypeCommissionRow[] =>
+  ACCOUNT_TYPE_LEVELS.map((level, index) => ({
+    is_default: index === 0,
+    level,
+    rate_ib: 0,
+    rate_sub_ib_1: 0,
+    rate_sub_ib_2: 0,
+    rate_sub_ib_3: 0,
+    rate_sub_ib_4: 0,
+    rate_sub_ib_5: 0,
+    status: true,
+  }));
+
+const normalizeCommissions = (
+  commissions?: AccountTypeCommissionItem[],
+): AccountTypeCommissionRow[] => {
+  const normalized = (commissions ?? []).map((commission) => ({
+    id:
+      commission.id !== undefined && commission.id !== null
+        ? String(commission.id)
+        : undefined,
+    account_type_id:
+      commission.account_type_id !== undefined &&
+      commission.account_type_id !== null
+        ? String(commission.account_type_id)
+        : undefined,
+    is_default: coerceBoolean(commission.is_default, commission.level === "IB"),
+    level: commission.level,
+    rate_ib: toNumericValue(commission.rate_ib),
+    rate_sub_ib_1: toNumericValue(commission.rate_sub_ib_1),
+    rate_sub_ib_2: toNumericValue(commission.rate_sub_ib_2),
+    rate_sub_ib_3: toNumericValue(commission.rate_sub_ib_3),
+    rate_sub_ib_4: toNumericValue(commission.rate_sub_ib_4),
+    rate_sub_ib_5: toNumericValue(commission.rate_sub_ib_5),
+    status: coerceBoolean(commission.status, true),
+    created_at: commission.created_at,
+    updated_at: commission.updated_at,
+  }));
+
+  const mergedByLevel = new Map<string, AccountTypeCommissionRow>();
+  for (const row of createDefaultCommissionRows()) {
+    mergedByLevel.set(row.level, row);
+  }
+  for (const row of normalized) {
+    mergedByLevel.set(row.level, row);
+  }
+
+  return Array.from(mergedByLevel.values()).sort(
+    (left, right) =>
+      (COMMISSION_LEVEL_ORDER[left.level] ?? 99) -
+      (COMMISSION_LEVEL_ORDER[right.level] ?? 99),
+  );
+};
+
 const normalize = (a: AccountTypeItem): AccountTypeRow => ({
   id: String(a.id),
   name: a.name ?? "",
-  spread_from: a.spread_from ?? "",
-  maximum_leverage: a.maximum_leverage ?? "",
-  leverage_type: (a.leverage_type as string) ?? "",
-  leverage_value: Number(a.leverage_value ?? 0),
+  spread_from: toStringValue(a.spread_from),
+  maximum_leverage: toStringValue(a.maximum_leverage),
+  leverage_type: (a.leverage_type as string) ?? "dynamic",
+  leverage_value: toNumericValue(a.leverage_value),
   stop_out_level:
     typeof a.stop_out_level === "number"
       ? a.stop_out_level.toFixed(2)
@@ -50,12 +182,46 @@ const normalize = (a: AccountTypeItem): AccountTypeRow => ({
     typeof a.hedge_margin === "number"
       ? a.hedge_margin.toFixed(2)
       : String(a.hedge_margin ?? "0.00"),
-  swap_free_option: Boolean(a.swap_free_option),
+  swap_free_option: coerceBoolean(a.swap_free_option),
   base_currency: a.base_currency ?? "",
-  status: Boolean(a.status),
+  status: coerceBoolean(a.status, true),
   created_at: a.created_at,
   updated_at: a.updated_at,
+  ib_commissions: normalizeCommissions(a.ib_commissions),
 });
+
+const extractSingleAccountType = (payload: unknown): AccountTypeItem | null => {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const payloadObj = payload as Record<string, unknown>;
+
+  if (
+    payloadObj.accountType &&
+    typeof payloadObj.accountType === "object" &&
+    !Array.isArray(payloadObj.accountType)
+  ) {
+    return payloadObj.accountType as AccountTypeItem;
+  }
+
+  if (
+    payloadObj.data &&
+    typeof payloadObj.data === "object" &&
+    !Array.isArray(payloadObj.data)
+  ) {
+    const nestedData = payloadObj.data as Record<string, unknown>;
+    if (
+      nestedData.accountType &&
+      typeof nestedData.accountType === "object" &&
+      !Array.isArray(nestedData.accountType)
+    ) {
+      return nestedData.accountType as AccountTypeItem;
+    }
+  }
+
+  return payloadObj as unknown as AccountTypeItem;
+};
 
 const coerceBoolean = (value: unknown, fallback = false) => {
   if (typeof value === "boolean") return value;
@@ -70,19 +236,33 @@ const coerceBoolean = (value: unknown, fallback = false) => {
 
 const serialize = (r: Partial<AccountTypeRow>): AccountTypeUpsertBody => ({
   name: r.name && r.name.trim() !== "" ? r.name.trim() : "",
-  spread_from: r.spread_from ?? "",
-  maximum_leverage: r.maximum_leverage ?? "",
+  spread_from: toNumericValue(r.spread_from, 0),
+  maximum_leverage: toNumericValue(r.maximum_leverage, 0, {
+    preferLastMatch: true,
+  }),
   leverage_type: (r.leverage_type as string) ?? "dynamic",
-  leverage_value: Number(r.leverage_value ?? 0),
+  leverage_value: toNumericValue(r.leverage_value),
   stop_out_level: Number(
-    typeof r.stop_out_level === "string" ? parseFloat(r.stop_out_level) : r.stop_out_level ?? 0
+    toNumericValue(r.stop_out_level)
   ),
   hedge_margin: Number(
-    typeof r.hedge_margin === "string" ? parseFloat(r.hedge_margin) : r.hedge_margin ?? 0
+    toNumericValue(r.hedge_margin)
   ),
   swap_free_option: coerceBoolean(r.swap_free_option, true),
   base_currency: r.base_currency ?? "",
   status: coerceBoolean(r.status, true),
+  ib_commissions: (r.ib_commissions ?? []).map((commission) => ({
+    ...(commission.id ? { id: commission.id } : {}),
+    is_default: coerceBoolean(commission.is_default, commission.level === "IB"),
+    level: commission.level,
+    rate_ib: toNumericValue(commission.rate_ib),
+    rate_sub_ib_1: toNumericValue(commission.rate_sub_ib_1),
+    rate_sub_ib_2: toNumericValue(commission.rate_sub_ib_2),
+    rate_sub_ib_3: toNumericValue(commission.rate_sub_ib_3),
+    rate_sub_ib_4: toNumericValue(commission.rate_sub_ib_4),
+    rate_sub_ib_5: toNumericValue(commission.rate_sub_ib_5),
+    status: coerceBoolean(commission.status, true),
+  })),
 });
 
 // simple debounce hook
@@ -99,6 +279,8 @@ export default function AllAccountsPage() {
   const { token } = useAuth();
   const queryClient = useQueryClient();
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewItem, setViewItem] = useState<AccountTypeRow | null>(null);
 
   // filters
   const [statusFilter, setStatusFilter] = useState<"all" | "true" | "false">("all");
@@ -134,6 +316,24 @@ export default function AllAccountsPage() {
   const fetchList = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["accountTypes", token] });
   }, [queryClient, token]);
+
+  const fetchAccountTypeDetail = useCallback(
+    async (id: string): Promise<AccountTypeRow> => {
+      if (!token) {
+        throw new Error("Missing auth token");
+      }
+
+      const response = await adminAccountTypesApi.getById(id, token);
+      const accountType = extractSingleAccountType(response?.data);
+
+      if (!accountType || accountType.id === undefined || accountType.id === null) {
+        throw new Error("Account type details unavailable");
+      }
+
+      return normalize(accountType);
+    },
+    [token],
+  );
 
   // CREATE
   const handleAdd = async (payload: Omit<AccountTypeRow, "id">) => {
@@ -223,6 +423,28 @@ export default function AllAccountsPage() {
       setActionLoadingId(null);
     }
   };
+
+  const handleViewAccountType = useCallback(
+    async (id: string) => {
+      try {
+        setActionLoadingId(id);
+        const accountType = await fetchAccountTypeDetail(id);
+        setViewItem(accountType);
+        setViewOpen(true);
+      } catch (error: unknown) {
+        console.error("View account type error:", error);
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "account type details",
+            action: "load",
+          }),
+        );
+      } finally {
+        setActionLoadingId(null);
+      }
+    },
+    [fetchAccountTypeDetail],
+  );
 
   const columns = useMemo(
     () => getColumns({ onToggleStatus: handleToggleStatus, actionLoadingId }),
@@ -326,7 +548,24 @@ export default function AllAccountsPage() {
             }}
             onUpdate={handleUpdate}
             onDelete={handleDelete}
+            onView={(row) => {
+              void handleViewAccountType(row.id);
+            }}
+            onFetchItem={fetchAccountTypeDetail}
             rowIsReadOnly={() => false}
+          />
+
+          <AccountTypeForm
+            open={viewOpen}
+            onOpenChange={(open) => {
+              setViewOpen(open);
+              if (!open) {
+                setViewItem(null);
+              }
+            }}
+            initialData={viewItem}
+            readOnly={true}
+            onSubmit={() => {}}
           />
         </div>
       

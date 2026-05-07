@@ -269,8 +269,8 @@ export default function AllNotificationsPage() {
         header: "Message",
         accessorKey: "message",
         cell: ({ row }) => (
-          <div className="max-w-2xl">
-            <p className="text-sm">{row.original.message}</p>
+          <div className="max-w-[420px] min-w-0 whitespace-normal break-words lg:max-w-[640px]">
+            <p className="text-sm leading-5">{row.original.message}</p>
           </div>
         ),
       },
@@ -279,7 +279,7 @@ export default function AllNotificationsPage() {
         header: "Created At",
         accessorKey: "created_at",
         cell: ({ row }) => (
-          <div className="flex items-center gap-2 text-sm">
+          <div className="flex min-w-[220px] items-center gap-2 whitespace-nowrap text-sm">
             <Calendar className="h-4 w-4 text-muted-foreground" />
             <span>{formatDateTime(row.original.created_at)}</span>
           </div>

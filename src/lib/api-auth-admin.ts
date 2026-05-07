@@ -1,4 +1,4 @@
-import { API_BASE_URL, type ApiResponse, PaginationMeta, apiCall, toFormBody } from "./api-core";
+import { API_BASE_URL, type ApiResponse, PaginationMeta, apiCall } from "./api-core";
 
 export interface RegisterRequest {
   first_name: string;
@@ -54,6 +54,15 @@ export interface TwoFactorSetupResponse {
   otpauthUrl: string;
   testToken: string;
   instructions: string[];
+}
+
+export interface AdminManagedTwoFactorSetupResponse {
+  user_id?: number;
+  manager_id?: string | number;
+  email: string;
+  secret: string;
+  qrCode: string;
+  otpauthUrl: string;
 }
 
 export interface TwoFactorVerifyRequest {
@@ -795,8 +804,8 @@ export type ManagerUpdateBody = {
 
 export type AccountTypeUpsertBody = {
   name: string;
-  spread_from: string;
-  maximum_leverage: string;
+  spread_from: string | number;
+  maximum_leverage: string | number;
   leverage_type: "fixed" | "dynamic" | string;
   leverage_value: number;
   stop_out_level: number;
@@ -804,22 +813,51 @@ export type AccountTypeUpsertBody = {
   swap_free_option: boolean;
   base_currency: string;
   status: boolean;
+  ib_commissions: Array<{
+    id?: number | string;
+    is_default?: boolean;
+    level: string;
+    rate_ib: number;
+    rate_sub_ib_1: number;
+    rate_sub_ib_2: number;
+    rate_sub_ib_3: number;
+    rate_sub_ib_4: number;
+    rate_sub_ib_5: number;
+    status: boolean;
+  }>;
 };
+
+export interface AccountTypeCommissionItem {
+  id?: number | string;
+  account_type_id?: number | string;
+  is_default?: boolean;
+  level: string;
+  rate_ib: number | string | null;
+  rate_sub_ib_1: number | string | null;
+  rate_sub_ib_2: number | string | null;
+  rate_sub_ib_3: number | string | null;
+  rate_sub_ib_4: number | string | null;
+  rate_sub_ib_5: number | string | null;
+  status: boolean | number | string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 export interface AccountTypeItem {
   id: number | string;
   name: string;
-  spread_from: string;
-  maximum_leverage: string;
+  spread_from: string | number | null;
+  maximum_leverage: string | number | null;
   leverage_type: "fixed" | "dynamic" | string;
-  leverage_value: number;
+  leverage_value: number | string | null;
   stop_out_level: string | number | null;
   hedge_margin: string | number | null;
-  swap_free_option: boolean;
+  swap_free_option: boolean | number | string;
   base_currency: string;
-  status: boolean;
+  status: boolean | number | string;
   created_at?: string;
   updated_at?: string;
+  ib_commissions?: AccountTypeCommissionItem[];
 }
 
 export interface AdminGroupItem {
@@ -866,25 +904,32 @@ export const adminAccountTypesApi = {
   },
 
   create: (body: AccountTypeUpsertBody, token: string) =>
-    apiCall<AccountTypeItem>(`/admin/account-types/create`, {
+    apiCall<{ accountType?: AccountTypeItem } | AccountTypeItem>(`/admin/account-types/create`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
-        "Content-Type": "application/x-www-form-urlencoded",
-        Accept: "application/json",
-      },
-      body: toFormBody(body),
-    }),
-
-  update: (id: string | number, body: AccountTypeUpsertBody, token: string) =>
-    apiCall<AccountTypeItem>(`/admin/account-types/${id}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
         Accept: "application/json",
       },
       body: JSON.stringify(body),
+    }),
+
+  update: (id: string | number, body: AccountTypeUpsertBody, token: string) =>
+    apiCall<{ accountType?: AccountTypeItem } | AccountTypeItem>(`/admin/account-types/${id}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      },
+      body: JSON.stringify(body),
+    }),
+
+  getById: (id: string | number, token: string) =>
+    apiCall<{ accountType?: AccountTypeItem } | AccountTypeItem>(`/admin/account-types/${id}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      },
     }),
 
   toggleStatus: (id: number | string, token: string) =>
@@ -1773,6 +1818,28 @@ export const admin2FAApi = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
+  }),
+};
+
+export const adminClient2FAApi = {
+  enable: (userId: string | number, token: string) =>
+    apiCall<AdminManagedTwoFactorSetupResponse>(`/admin/client/${userId}/2fa/enable`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    }),
+
+  disable: (userId: string | number, token: string) =>
+    apiCall<TwoFactorDisableResponse>(`/admin/client/${userId}/2fa/disable`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
     }),
 };
 
@@ -1807,6 +1874,28 @@ export const manager2FAApi = {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
+    }),
+};
+
+export const adminManagedManager2FAApi = {
+  enable: (managerId: string | number, token: string) =>
+    apiCall<AdminManagedTwoFactorSetupResponse>(`/admin/manager/${managerId}/2fa/enable`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    }),
+
+  disable: (managerId: string | number, token: string) =>
+    apiCall<TwoFactorDisableResponse>(`/admin/manager/${managerId}/2fa/disable`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
     }),
 };
 

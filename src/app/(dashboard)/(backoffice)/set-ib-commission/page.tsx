@@ -2,23 +2,53 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import toast from "react-hot-toast";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
-import { Search, RefreshCw, Network, CircleDollarSign } from "lucide-react";
+import toast from "react-hot-toast";
+import {
+  CircleDollarSign,
+  PencilLine,
+  RefreshCw,
+  Save,
+  Search,
+  ShieldCheck,
+  X,
+} from "lucide-react";
 
-import { useRouter } from "next/navigation";
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useAuth } from "@/contexts/auth-context";
 import {
-  adminIbUsersApi,
-} from "@/lib/api";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Spinner } from "@/components/ui/spinner";
+import { Switch } from "@/components/ui/switch";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { useAuth } from "@/contexts/auth-context";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
-
+import { adminIbUsersApi } from "@/lib/api";
+import {
+  adminIbUserCommissionsApi,
+  type UserCommission,
+  type UserCommissionResponse,
+} from "@/lib/api-trading-ib";
+import { formatDateTimeInIST } from "@/lib/formatters";
 
 interface IbUserForCommission {
   id: number;
@@ -36,9 +66,89 @@ interface IbUserForCommission {
   created_at: string;
 }
 
+type EditableCommissionFields = Pick<
+  UserCommission,
+  | "rate_ib"
+  | "rate_sub_ib_1"
+  | "rate_sub_ib_2"
+  | "rate_sub_ib_3"
+  | "rate_sub_ib_4"
+  | "rate_sub_ib_5"
+  | "status"
+>;
+
+type EditableCommissionFieldKey = keyof EditableCommissionFields;
+
+type CommissionGroup = {
+  key: string;
+  mt5AccountId: string;
+  mt5UserName: string;
+  accountTypeId: number;
+  commissions: UserCommission[];
+};
+
+const COMMISSION_LEVEL_ORDER: Record<string, number> = {
+  IB: 0,
+  "Level-1": 1,
+  "Level-2": 2,
+  "Level-3": 3,
+  "Level-4": 4,
+  "Level-5": 5,
+};
+
+const formatDateTime = (value?: string | null) => {
+  if (!value) {
+    return "-";
+  }
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  return formatDateTimeInIST(value);
+};
+
+const formatCommissionAmount = (value?: number | null) => {
+  const normalizedValue =
+    typeof value === "number" && Number.isFinite(value) ? value : 0;
+  return `$${normalizedValue.toFixed(2)}`;
+};
+
+const groupCommissionsByAccount = (commissions: UserCommission[]) => {
+  const grouped = commissions.reduce<Record<string, CommissionGroup>>(
+    (accumulator, commission) => {
+      const key = `${commission.mt5_account_id}_${commission.account_type_id}`;
+
+      if (!accumulator[key]) {
+        accumulator[key] = {
+          key,
+          mt5AccountId: commission.mt5_account_id,
+          mt5UserName: commission.mt5_user_name,
+          accountTypeId: commission.account_type_id,
+          commissions: [],
+        };
+      }
+
+      accumulator[key].commissions.push(commission);
+      return accumulator;
+    },
+    {},
+  );
+
+  return Object.values(grouped).map((group) => ({
+    ...group,
+    commissions: [...group.commissions].sort((left, right) => {
+      return (
+        (COMMISSION_LEVEL_ORDER[left.level] ?? 99) -
+        (COMMISSION_LEVEL_ORDER[right.level] ?? 99)
+      );
+    }),
+  }));
+};
+
 export default function SetIbCommissionPage() {
   const { token } = useAuth();
-  const router = useRouter();
 
   const [users, setUsers] = useState<IbUserForCommission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -49,7 +159,16 @@ export default function SetIbCommissionPage() {
     total_pages: 1,
     total: 0,
   });
-  const [pendingDownlineUserId, setPendingDownlineUserId] = useState<number | null>(null);
+  const [pendingCommissionUserId, setPendingCommissionUserId] = useState<number | null>(null);
+  const [commissionDialogOpen, setCommissionDialogOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  const [commissionData, setCommissionData] = useState<UserCommissionResponse["data"] | null>(null);
+  const [loadingCommissions, setLoadingCommissions] = useState(false);
+  const [editingCommissionId, setEditingCommissionId] = useState<number | null>(null);
+  const [editedCommissions, setEditedCommissions] = useState<
+    Record<number, EditableCommissionFields>
+  >({});
+  const [savingCommissionId, setSavingCommissionId] = useState<number | null>(null);
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
@@ -57,7 +176,6 @@ export default function SetIbCommissionPage() {
     "search",
     parseAsString.withDefault(""),
   );
-
   const [searchInput, setSearchInput] = useState(search ?? "");
 
   useEffect(() => {
@@ -88,19 +206,29 @@ export default function SetIbCommissionPage() {
       });
 
       const payload = response?.data;
+      const payloadObj = payload as Record<string, unknown>;
 
       const extractItems = (data: unknown): IbUserForCommission[] => {
         const dataObj = data as Record<string, unknown>;
+
         if (!data) return [];
         if (Array.isArray(data)) return data as IbUserForCommission[];
         if (Array.isArray(dataObj.items)) return dataObj.items as IbUserForCommission[];
         if (Array.isArray(dataObj.users)) return dataObj.users as IbUserForCommission[];
         if (Array.isArray(dataObj.data)) return dataObj.data as IbUserForCommission[];
-        if (dataObj.data && Array.isArray((dataObj.data as Record<string, unknown>).items)) {
-          return ((dataObj.data as Record<string, unknown>).items as IbUserForCommission[]);
+        if (
+          dataObj.data &&
+          Array.isArray((dataObj.data as Record<string, unknown>).items)
+        ) {
+          return (dataObj.data as Record<string, unknown>)
+            .items as IbUserForCommission[];
         }
-        if (dataObj.data && Array.isArray((dataObj.data as Record<string, unknown>).data)) {
-          return ((dataObj.data as Record<string, unknown>).data as IbUserForCommission[]);
+        if (
+          dataObj.data &&
+          Array.isArray((dataObj.data as Record<string, unknown>).data)
+        ) {
+          return (dataObj.data as Record<string, unknown>)
+            .data as IbUserForCommission[];
         }
         if (Array.isArray(dataObj.results)) return dataObj.results as IbUserForCommission[];
         return [];
@@ -109,16 +237,21 @@ export default function SetIbCommissionPage() {
       const items = extractItems(payload);
       setUsers(items);
 
-      const payloadObj = payload as Record<string, unknown>;
-      const paginationSource =
-        ((payload && (payloadObj.pagination as Record<string, unknown> | undefined)) ??
-        (payload && ((payloadObj.meta as Record<string, unknown> | undefined)?.pagination as Record<string, unknown> | undefined)) ??
-        ((payload &&
-          payloadObj.data &&
-          !Array.isArray(payloadObj.data)) ? 
-          (((payloadObj.data as Record<string, unknown>).pagination as Record<string, unknown> | undefined) ?? 
-          ((payloadObj.data as Record<string, unknown>).meta as Record<string, unknown> | undefined)?.pagination as Record<string, unknown> | undefined) :
-          undefined));
+      const paginationSource = (
+        (payload &&
+          (payloadObj.pagination as Record<string, unknown> | undefined)) ??
+        (payload &&
+          ((payloadObj.meta as Record<string, unknown> | undefined)
+            ?.pagination as Record<string, unknown> | undefined)) ??
+        (payload && payloadObj.data && !Array.isArray(payloadObj.data)
+          ? ((payloadObj.data as Record<string, unknown>).pagination as
+              | Record<string, unknown>
+              | undefined) ??
+            ((payloadObj.data as Record<string, unknown>).meta as
+              | Record<string, unknown>
+              | undefined)?.pagination
+          : undefined)
+      ) as Record<string, unknown> | undefined;
 
       const total =
         (paginationSource?.total as number | undefined) ??
@@ -151,7 +284,10 @@ export default function SetIbCommissionPage() {
       console.error("Failed to load IB users:", error);
       setLoadError(error);
       toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "IB users", action: "load" })
+        getAdminFriendlyErrorMessage(error, {
+          resource: "IB users",
+          action: "load",
+        }),
       );
       setUsers([]);
     } finally {
@@ -163,10 +299,208 @@ export default function SetIbCommissionPage() {
     void loadUsers();
   }, [loadUsers]);
 
-  const handleViewDownline = useCallback((user: IbUserForCommission) => {
-    setPendingDownlineUserId(user.id);
-    router.push(`/set-ib-commission/${user.id}`);
-  }, [router]);
+  const resetCommissionDialogState = useCallback(() => {
+    setCommissionDialogOpen(false);
+    setSelectedUserId(null);
+    setCommissionData(null);
+    setLoadingCommissions(false);
+    setEditingCommissionId(null);
+    setEditedCommissions({});
+    setSavingCommissionId(null);
+  }, []);
+
+  const loadUserCommissions = useCallback(
+    async (user: IbUserForCommission) => {
+      if (!token) {
+        toast.error("Authentication is required");
+        return;
+      }
+
+      try {
+        setPendingCommissionUserId(user.id);
+        setSelectedUserId(user.id);
+        setCommissionData(null);
+        setEditingCommissionId(null);
+        setEditedCommissions({});
+        setCommissionDialogOpen(true);
+        setLoadingCommissions(true);
+
+        const response = await adminIbUserCommissionsApi.getUserCommissions(
+          user.id,
+          token,
+        );
+
+        const payload = response.data as
+          | UserCommissionResponse["data"]
+          | undefined;
+
+        if (!response.success || !payload) {
+          throw new Error("Failed to load commission data");
+        }
+
+        setCommissionData(payload);
+      } catch (error: unknown) {
+        console.error("Failed to load user commissions:", error);
+        resetCommissionDialogState();
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "commissions",
+            action: "load",
+          }),
+        );
+      } finally {
+        setLoadingCommissions(false);
+        setPendingCommissionUserId(null);
+      }
+    },
+    [resetCommissionDialogState, token],
+  );
+
+  const handleDialogOpenChange = (open: boolean) => {
+    if (!open) {
+      resetCommissionDialogState();
+      return;
+    }
+
+    setCommissionDialogOpen(true);
+  };
+
+  const handleEditCommission = (commission: UserCommission) => {
+    setEditingCommissionId(commission.id);
+    setEditedCommissions({
+      [commission.id]: {
+        rate_ib: commission.rate_ib,
+        rate_sub_ib_1: commission.rate_sub_ib_1,
+        rate_sub_ib_2: commission.rate_sub_ib_2,
+        rate_sub_ib_3: commission.rate_sub_ib_3,
+        rate_sub_ib_4: commission.rate_sub_ib_4,
+        rate_sub_ib_5: commission.rate_sub_ib_5,
+        status: Boolean(commission.status),
+      },
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingCommissionId(null);
+    setEditedCommissions({});
+  };
+
+  const handleUpdateCommissionField = (
+    commissionId: number,
+    field: EditableCommissionFieldKey,
+    value: number | boolean,
+  ) => {
+    setEditedCommissions((previous) => ({
+      ...previous,
+      [commissionId]: {
+        ...previous[commissionId],
+        [field]: value,
+      } as EditableCommissionFields,
+    }));
+  };
+
+  const handleSaveCommission = useCallback(
+    async (commission: UserCommission) => {
+      if (!token || !selectedUserId) {
+        return;
+      }
+
+      const editedData = editedCommissions[commission.id];
+      if (!editedData) {
+        return;
+      }
+
+      try {
+        setSavingCommissionId(commission.id);
+
+        const updatedCommission: UserCommission = {
+          ...commission,
+          ...editedData,
+        };
+
+        await adminIbUserCommissionsApi.patchUserCommission(
+          selectedUserId,
+          updatedCommission,
+          token,
+        );
+
+        setCommissionData((previous) => {
+          if (!previous) {
+            return previous;
+          }
+
+          return {
+            ...previous,
+            commissions: previous.commissions.map((item) =>
+              item.id === commission.id ? updatedCommission : item,
+            ),
+          };
+        });
+
+        toast.success("Commission updated successfully");
+        setEditingCommissionId(null);
+        setEditedCommissions({});
+      } catch (error: unknown) {
+        console.error("Failed to update commission:", error);
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "commissions",
+            action: "update",
+          }),
+        );
+      } finally {
+        setSavingCommissionId(null);
+      }
+    },
+    [editedCommissions, selectedUserId, token],
+  );
+
+  const groupedCommissions = useMemo(() => {
+    return commissionData ? groupCommissionsByAccount(commissionData.commissions) : [];
+  }, [commissionData]);
+
+  const commissionSummary = useMemo(() => {
+    const activeRules =
+      commissionData?.commissions.filter((item) => Boolean(item.status)).length ?? 0;
+
+    return {
+      accountCount: groupedCommissions.length,
+      ruleCount: commissionData?.commissions.length ?? 0,
+      activeRules,
+    };
+  }, [commissionData, groupedCommissions.length]);
+
+  const renderCommissionInput = (
+    commissionId: number,
+    field: Exclude<EditableCommissionFieldKey, "status">,
+    value?: number | null,
+  ) => {
+    const normalizedValue =
+      typeof value === "number" && Number.isFinite(value) ? value : 0;
+
+    return (
+      <div className="relative min-w-[112px]">
+        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-muted-foreground">
+          $
+        </span>
+        <Input
+          type="number"
+          min="0"
+          step="0.01"
+          value={normalizedValue.toFixed(2)}
+          onChange={(event) => {
+            const nextValue = Number(event.target.value);
+            handleUpdateCommissionField(
+              commissionId,
+              field,
+              Number.isFinite(nextValue) ? nextValue : 0,
+            );
+          }}
+          className="h-9 pl-7 text-right [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        />
+      </div>
+    );
+  };
 
   const columns: ColumnDef<IbUserForCommission>[] = useMemo(
     () => [
@@ -175,11 +509,12 @@ export default function SetIbCommissionPage() {
         header: "User",
         cell: ({ row }) => {
           const user = row.original;
+
           return (
             <div className="space-y-1">
               <div className="font-medium">{user.name}</div>
               <div className="text-sm text-muted-foreground">{user.email}</div>
-              <div className="text-xs text-muted-foreground">{user.phone}</div>
+              <div className="text-xs text-muted-foreground">{user.phone || "-"}</div>
             </div>
           );
         },
@@ -189,16 +524,19 @@ export default function SetIbCommissionPage() {
         header: "IB Information",
         cell: ({ row }) => {
           const user = row.original;
+
           return (
             <div className="space-y-1 text-sm">
               <div>
-                <span className="font-medium">IB Name:</span> {user.ib_name}
+                <span className="font-medium">IB Name:</span> {user.ib_name || "-"}
               </div>
               <div>
-                <span className="font-medium">Marketing Name:</span> {user.marketing_name}
+                <span className="font-medium">Marketing Name:</span>{" "}
+                {user.marketing_name || "-"}
               </div>
               <div>
-                <span className="font-medium">Referral Code:</span> {user.referral_code}
+                <span className="font-medium">Referral Code:</span>{" "}
+                {user.referral_code || "-"}
               </div>
             </div>
           );
@@ -207,55 +545,58 @@ export default function SetIbCommissionPage() {
       {
         id: "country",
         header: "Country",
-        accessorKey: "country",
-        cell: ({ row }) => (
-          <div className="text-sm">{row.original.country}</div>
-        ),
+        cell: ({ row }) => <div className="text-sm">{row.original.country || "-"}</div>,
       },
       {
         id: "commission",
         header: "Commission",
         cell: ({ row }) => {
           const user = row.original;
+
           return (
             <div className="space-y-1 text-sm">
               <div>
-                <span className="font-medium">Total:</span> {user.total_commission.toFixed(2)}
+                <span className="font-medium">Total:</span>{" "}
+                {formatCommissionAmount(user.total_commission)}
               </div>
               <div>
-                <span className="font-medium">Available:</span> {user.available_commission.toFixed(2)}
+                <span className="font-medium">Available:</span>{" "}
+                {formatCommissionAmount(user.available_commission)}
               </div>
             </div>
           );
         },
       },
       {
-        id: "tree",
-        header: "Tree",
+        id: "actions",
+        header: "Action",
         enableSorting: false,
         cell: ({ row }) => {
           const user = row.original;
-          const isPending = pendingDownlineUserId === user.id;
+          const isPending = pendingCommissionUserId === user.id;
+
           return (
             <Button
               size="sm"
               variant="outline"
-              onClick={() => handleViewDownline(user)}
+              onClick={() => {
+                void loadUserCommissions(user);
+              }}
               disabled={isPending}
-              className="flex items-center gap-2"
+              className="h-9 rounded-full border-primary/20 bg-primary/5 px-3.5 text-primary shadow-sm transition-colors hover:bg-primary/10"
             >
               {isPending ? (
-                <RefreshCw className="h-4 w-4 animate-spin" />
+                <Spinner className="mr-2 h-4 w-4" />
               ) : (
-                <Network className="h-4 w-4" />
+                <CircleDollarSign className="mr-2 h-4 w-4" />
               )}
-              View Downline
+              View Commission
             </Button>
           );
         },
       },
     ],
-    [handleViewDownline, pendingDownlineUserId],
+    [loadUserCommissions, pendingCommissionUserId],
   );
 
   const renderTableSection = () => {
@@ -285,10 +626,13 @@ export default function SetIbCommissionPage() {
             No IB Users
           </div>
           <p className="max-w-md text-sm text-muted-foreground">
-            There are currently no IB users matching your filters. Adjust the filters or refresh to check for new users.
+            There are currently no IB users matching your filters. Adjust the
+            filters or refresh to check for new users.
           </p>
           <Button variant="outline" onClick={loadUsers} disabled={loading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
+            />
             Refresh
           </Button>
         </div>
@@ -306,7 +650,7 @@ export default function SetIbCommissionPage() {
   };
 
   return (
-    
+    <>
       <div className="min-h-screen bg-background">
         <div className="container mx-auto space-y-6 p-6">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -316,11 +660,14 @@ export default function SetIbCommissionPage() {
                 Set IB Commission
               </h1>
               <p className="text-sm text-muted-foreground">
-                View and manage IB users for commission settings.
+                Review IB users and update commission rules from a grouped,
+                account-level modal.
               </p>
             </div>
             <Button variant="outline" onClick={loadUsers} disabled={loading}>
-              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
+              />
               Refresh
             </Button>
           </div>
@@ -357,21 +704,385 @@ export default function SetIbCommissionPage() {
             </div>
 
             <div className="text-sm text-muted-foreground">
-              Showing page {pagination.current_page} of {pagination.total_pages} •{" "}
-              {pagination.total} total users
+              Showing page {pagination.current_page} of {pagination.total_pages} |
+              {" "}{pagination.total} total users
             </div>
           </div>
 
-          <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-4">
+          <div className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
             {renderTableSection()}
           </div>
         </div>
       </div>
-    
+
+      <Dialog open={commissionDialogOpen} onOpenChange={handleDialogOpenChange}>
+        <DialogContent className="flex max-h-[90vh] w-[98vw] max-w-[98vw] flex-col overflow-hidden p-0 sm:w-[78vw] sm:max-w-[78vw]">
+          <DialogHeader className="border-b border-border/60 px-6 py-5">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <CircleDollarSign className="h-5 w-5 text-primary" />
+              Commission Matrix
+            </DialogTitle>
+            <DialogDescription>
+              Open a user, review commission blocks by MT5 account, then edit only
+              the rows you want to change.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-5">
+            {loadingCommissions ? (
+              <div className="flex flex-col items-center justify-center gap-3 py-16">
+                <Spinner className="h-8 w-8" />
+                <p className="text-sm text-muted-foreground">
+                  Loading commission rules...
+                </p>
+              </div>
+            ) : commissionData ? (
+              <div className="flex flex-col gap-5">
+                <div className="grid gap-4 lg:grid-cols-[1.3fr_0.7fr]">
+                  <div className="rounded-3xl border border-border/60 bg-card px-5 py-4 shadow-sm">
+                    <div className="flex flex-wrap items-start justify-between gap-4">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                          Selected User
+                        </p>
+                        <h3 className="mt-2 text-xl font-semibold text-foreground">
+                          {commissionData.user.name}
+                        </h3>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {commissionData.user.email}
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="rounded-full px-3 py-1">
+                        User ID {commissionData.user.id}
+                      </Badge>
+                    </div>
+                    <div className="mt-4 rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
+                      Rates are grouped by MT5 account and account type. Expand a
+                      section, edit a level, and save only that row.
+                    </div>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                    <div className="rounded-3xl border border-border/60 bg-card px-4 py-4 shadow-sm">
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                        MT5 Accounts
+                      </p>
+                      <p className="mt-2 text-3xl font-semibold text-foreground">
+                        {commissionSummary.accountCount}
+                      </p>
+                    </div>
+                    <div className="rounded-3xl border border-border/60 bg-card px-4 py-4 shadow-sm">
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                        Total Rules
+                      </p>
+                      <p className="mt-2 text-3xl font-semibold text-foreground">
+                        {commissionSummary.ruleCount}
+                      </p>
+                    </div>
+                    <div className="rounded-3xl border border-border/60 bg-card px-4 py-4 shadow-sm">
+                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                        Active Rules
+                      </p>
+                      <p className="mt-2 text-3xl font-semibold text-foreground">
+                        {commissionSummary.activeRules}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {groupedCommissions.length > 0 ? (
+                  <Accordion
+                    type="multiple"
+                    defaultValue={groupedCommissions.map((group) => group.key)}
+                    className="rounded-3xl border border-border/60 bg-muted/10"
+                  >
+                    {groupedCommissions.map((group) => {
+                      const hasEditingRow = group.commissions.some(
+                        (commission) => commission.id === editingCommissionId,
+                      );
+
+                      return (
+                        <AccordionItem
+                          key={group.key}
+                          value={group.key}
+                          className="border-border/60 px-5"
+                        >
+                          <AccordionTrigger className="py-5 text-left hover:no-underline">
+                            <div className="flex flex-1 flex-wrap items-center gap-3">
+                              <div>
+                                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                  MT5 Account
+                                </p>
+                                <p className="mt-1 text-lg font-semibold text-foreground">
+                                  {group.mt5AccountId}
+                                </p>
+                              </div>
+                              <Badge variant="outline" className="rounded-full">
+                                Account Type {group.accountTypeId}
+                              </Badge>
+                              <Badge variant="outline" className="rounded-full">
+                                {group.commissions.length} levels
+                              </Badge>
+                              {hasEditingRow ? (
+                                <Badge className="rounded-full bg-primary/10 text-primary hover:bg-primary/10">
+                                  Editing
+                                </Badge>
+                              ) : null}
+                            </div>
+                          </AccordionTrigger>
+                          <AccordionContent className="pb-5">
+                            <div className="flex flex-col gap-4">
+                              <div className="rounded-3xl border border-border/60 bg-card px-4 py-4 shadow-sm">
+                                <div className="flex flex-wrap items-center justify-between gap-4">
+                                  <div>
+                                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                                      MT5 User
+                                    </p>
+                                    <p className="mt-1 text-base font-semibold text-foreground">
+                                      {group.mt5UserName}
+                                    </p>
+                                  </div>
+                                  <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                                    <ShieldCheck className="h-4 w-4" />
+                                    Account group ready for review
+                                  </div>
+                                </div>
+                              </div>
+
+                              <div className="overflow-hidden rounded-3xl border border-border/60 bg-card shadow-sm">
+                                <div className="overflow-x-auto">
+                                  <Table>
+                                    <TableHeader>
+                                      <TableRow className="bg-muted/30">
+                                        <TableHead className="min-w-[110px]">Level</TableHead>
+                                        <TableHead>Rate IB</TableHead>
+                                        <TableHead>Sub IB 1</TableHead>
+                                        <TableHead>Sub IB 2</TableHead>
+                                        <TableHead>Sub IB 3</TableHead>
+                                        <TableHead>Sub IB 4</TableHead>
+                                        <TableHead>Sub IB 5</TableHead>
+                                        <TableHead className="min-w-[110px] text-center">
+                                          Status
+                                        </TableHead>
+                                        <TableHead className="min-w-[140px]">
+                                          Updated
+                                        </TableHead>
+                                        <TableHead className="min-w-[160px] text-right">
+                                          Action
+                                        </TableHead>
+                                      </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                      {group.commissions.map((commission) => {
+                                        const editedData = editedCommissions[commission.id];
+                                        const currentCommission = editedData
+                                          ? { ...commission, ...editedData }
+                                          : commission;
+                                        const isEditing =
+                                          editingCommissionId === commission.id;
+                                        const isSaving =
+                                          savingCommissionId === commission.id;
+
+                                        return (
+                                          <TableRow key={commission.id}>
+                                            <TableCell className="font-medium">
+                                              {commission.level}
+                                            </TableCell>
+                                            {isEditing ? (
+                                              <>
+                                                <TableCell>
+                                                  {renderCommissionInput(
+                                                    commission.id,
+                                                    "rate_ib",
+                                                    currentCommission.rate_ib,
+                                                  )}
+                                                </TableCell>
+                                                <TableCell>
+                                                  {renderCommissionInput(
+                                                    commission.id,
+                                                    "rate_sub_ib_1",
+                                                    currentCommission.rate_sub_ib_1,
+                                                  )}
+                                                </TableCell>
+                                                <TableCell>
+                                                  {renderCommissionInput(
+                                                    commission.id,
+                                                    "rate_sub_ib_2",
+                                                    currentCommission.rate_sub_ib_2,
+                                                  )}
+                                                </TableCell>
+                                                <TableCell>
+                                                  {renderCommissionInput(
+                                                    commission.id,
+                                                    "rate_sub_ib_3",
+                                                    currentCommission.rate_sub_ib_3,
+                                                  )}
+                                                </TableCell>
+                                                <TableCell>
+                                                  {renderCommissionInput(
+                                                    commission.id,
+                                                    "rate_sub_ib_4",
+                                                    currentCommission.rate_sub_ib_4,
+                                                  )}
+                                                </TableCell>
+                                                <TableCell>
+                                                  {renderCommissionInput(
+                                                    commission.id,
+                                                    "rate_sub_ib_5",
+                                                    currentCommission.rate_sub_ib_5,
+                                                  )}
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                  <div className="flex items-center justify-center gap-2">
+                                                    <Switch
+                                                      checked={Boolean(
+                                                        currentCommission.status,
+                                                      )}
+                                                      onCheckedChange={(checked) => {
+                                                        handleUpdateCommissionField(
+                                                          commission.id,
+                                                          "status",
+                                                          checked,
+                                                        );
+                                                      }}
+                                                    />
+                                                    <span className="text-xs font-medium text-muted-foreground">
+                                                      {currentCommission.status
+                                                        ? "Active"
+                                                        : "Inactive"}
+                                                    </span>
+                                                  </div>
+                                                </TableCell>
+                                              </>
+                                            ) : (
+                                              <>
+                                                <TableCell>
+                                                  {formatCommissionAmount(
+                                                    commission.rate_ib,
+                                                  )}
+                                                </TableCell>
+                                                <TableCell>
+                                                  {formatCommissionAmount(
+                                                    commission.rate_sub_ib_1,
+                                                  )}
+                                                </TableCell>
+                                                <TableCell>
+                                                  {formatCommissionAmount(
+                                                    commission.rate_sub_ib_2,
+                                                  )}
+                                                </TableCell>
+                                                <TableCell>
+                                                  {formatCommissionAmount(
+                                                    commission.rate_sub_ib_3,
+                                                  )}
+                                                </TableCell>
+                                                <TableCell>
+                                                  {formatCommissionAmount(
+                                                    commission.rate_sub_ib_4,
+                                                  )}
+                                                </TableCell>
+                                                <TableCell>
+                                                  {formatCommissionAmount(
+                                                    commission.rate_sub_ib_5,
+                                                  )}
+                                                </TableCell>
+                                                <TableCell className="text-center">
+                                                  {Boolean(commission.status) ? (
+                                                    <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+                                                      Active
+                                                    </Badge>
+                                                  ) : (
+                                                    <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-950/40 dark:text-gray-300">
+                                                      Inactive
+                                                    </Badge>
+                                                  )}
+                                                </TableCell>
+                                              </>
+                                            )}
+                                            <TableCell className="text-sm text-muted-foreground">
+                                              {formatDateTime(commission.updated_at)}
+                                            </TableCell>
+                                            <TableCell>
+                                              <div className="flex justify-end gap-2">
+                                                {isEditing ? (
+                                                  <>
+                                                    <Button
+                                                      size="sm"
+                                                      onClick={() => {
+                                                        void handleSaveCommission(
+                                                          commission,
+                                                        );
+                                                      }}
+                                                      disabled={isSaving}
+                                                    >
+                                                      {isSaving ? (
+                                                        <Spinner className="mr-2 h-4 w-4" />
+                                                      ) : (
+                                                        <Save className="mr-2 h-4 w-4" />
+                                                      )}
+                                                      Save
+                                                    </Button>
+                                                    <Button
+                                                      size="sm"
+                                                      variant="outline"
+                                                      onClick={handleCancelEdit}
+                                                      disabled={isSaving}
+                                                    >
+                                                      <X className="mr-2 h-4 w-4" />
+                                                      Cancel
+                                                    </Button>
+                                                  </>
+                                                ) : (
+                                                  <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    onClick={() => {
+                                                      handleEditCommission(commission);
+                                                    }}
+                                                  >
+                                                    <PencilLine className="mr-2 h-4 w-4" />
+                                                    Edit
+                                                  </Button>
+                                                )}
+                                              </div>
+                                            </TableCell>
+                                          </TableRow>
+                                        );
+                                      })}
+                                    </TableBody>
+                                  </Table>
+                                </div>
+                              </div>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      );
+                    })}
+                  </Accordion>
+                ) : (
+                  <div className="rounded-3xl border border-dashed border-border/70 px-6 py-10 text-center text-sm text-muted-foreground">
+                    No commission rules were returned for this user.
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="rounded-3xl border border-dashed border-border/70 px-6 py-10 text-center text-sm text-muted-foreground">
+                No commission data available.
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="border-t border-border/60 px-6 py-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => handleDialogOpenChange(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
-
-
-
-
-

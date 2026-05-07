@@ -36,7 +36,7 @@ const TeamNode = ({ data }: NodeProps<GraphNode>) => {
       <div
         className="h-10 w-10 rounded-full flex items-center justify-center text-white text-xs font-semibold shadow"
         style={{ backgroundColor: color }}
-        title={data.isRoot ? "Root" : data.username}
+        title={data.username}
       >
         <UserIcon className="h-4 w-4 opacity-90" />
       </div>
@@ -49,7 +49,7 @@ const TeamNode = ({ data }: NodeProps<GraphNode>) => {
           )}
           title={data.username}
         >
-          {data.isRoot ? "Root" : data.username}
+          {data.username}
         </div>
 
         <div className="text-[11px] text-muted-foreground">

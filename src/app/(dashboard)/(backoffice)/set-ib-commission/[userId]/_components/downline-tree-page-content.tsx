@@ -71,11 +71,24 @@ const formatCommissionAmount = (value?: number | null) => {
   return USD_COMMISSION_FORMATTER.format(amount);
 };
 
-export function DownlineTreePageContent() {
+type DownlineTreePageContentProps = {
+  userId?: number | null;
+  onBack?: () => void;
+  backHref?: string;
+  backLabel?: string;
+};
+
+export function DownlineTreePageContent({
+  userId: userIdProp,
+  onBack,
+  backHref = '/set-ib-commission',
+  backLabel = 'Back to Set IB Commission',
+}: DownlineTreePageContentProps = {}) {
   const params = useParams();
   const router = useRouter();
   const { token } = useAuth();
-  const userId = params?.userId ? parseInt(String(params.userId), 10) : null;
+  const routeUserId = params?.userId ? parseInt(String(params.userId), 10) : null;
+  const userId = userIdProp ?? routeUserId;
 
   const [nodesById, setNodesById] = useState<Record<string, NodeRecord>>({});
   const [edges, setEdges] = useState<Array<{ source: string; target: string }>>([]);
@@ -84,6 +97,7 @@ export function DownlineTreePageContent() {
   const [highlightId, setHighlightId] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [userName, setUserName] = useState<string>('');
+  const [reloadKey, setReloadKey] = useState(0);
 
   // Commission dialog state
   const [commissionDialogOpen, setCommissionDialogOpen] = useState(false);
@@ -93,6 +107,15 @@ export function DownlineTreePageContent() {
   const [editingCommission, setEditingCommission] = useState<UserCommission | null>(null);
   const [editedCommissions, setEditedCommissions] = useState<Record<number, Partial<UserCommission>>>({});
   const [savingCommission, setSavingCommission] = useState<number | null>(null);
+
+  const handleBack = useCallback(() => {
+    if (onBack) {
+      onBack();
+      return;
+    }
+
+    router.push(backHref);
+  }, [backHref, onBack, router]);
 
   // ============ data fetching ============
   const fetchUsersByLevel = useCallback(
@@ -279,7 +302,7 @@ export function DownlineTreePageContent() {
     return () => {
       mounted = false;
     };
-  }, [userId, token, fetchUsersByLevel]);
+  }, [fetchUsersByLevel, reloadKey, token, userId]);
 
   // expand a node IN PLACE - fetch deeper levels
   const expandSponsor = useCallback(
@@ -745,9 +768,9 @@ export function DownlineTreePageContent() {
         <div className="p-8 flex items-center justify-center h-[70vh] bg-background">
           <div className="flex flex-col items-center space-y-3">
             <p className="text-sm text-muted-foreground">Invalid user ID</p>
-            <Button onClick={() => router.push('/set-ib-commission')}>
+            <Button onClick={handleBack}>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Set IB Commission
+              {backLabel}
             </Button>
           </div>
         </div>
@@ -765,7 +788,7 @@ export function DownlineTreePageContent() {
           resource="downline tree"
           action="load"
           onRetry={() => {
-            router.refresh();
+            setReloadKey((current) => current + 1);
           }}
         />
       </div>
@@ -787,7 +810,7 @@ export function DownlineTreePageContent() {
       <div className="min-h-screen bg-background">
         <div className="container mx-auto space-y-6 p-6">
           <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => router.push('/set-ib-commission')}>
+            <Button variant="outline" onClick={handleBack}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
             </Button>
@@ -1056,9 +1079,6 @@ export function DownlineTreePageContent() {
     </>
   );
 }
-
-
-
 
 
 

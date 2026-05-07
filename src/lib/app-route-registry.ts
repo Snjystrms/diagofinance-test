@@ -52,7 +52,7 @@ type SidebarSectionId =
   | "marketing-management"
   | "news-management"
   | "promotion-management"
-  | "bank-details";
+  | "settings";
 
 export interface AppRouteDefinition {
   path: string;
@@ -308,13 +308,13 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     managerCategories: ["Promotion Management"],
   },
   {
-    id: "bank-details",
+    id: "settings",
     title: "Settings",
-    url: "/bank-details",
+    url: "/user-2fa",
     icon: Settings2,
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
-    managerCategories: ["Deposit Bank Details"],
+    managerCategories: ["Settings", "Manager 2fa", "Deposit Bank Details"],
   },
 ];
 
@@ -725,12 +725,28 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     managerCategories: ["Promotion Management"],
   },
   {
+    path: "/user-2fa",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "settings",
+    navLabel: "User 2FA",
+    managerCategories: ["Settings"],
+  },
+  {
+    path: "/manager-2fa",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "settings",
+    navLabel: "Manager 2FA",
+    managerCategories: ["Settings", "Manager 2fa"],
+  },
+  {
     path: "/bank-details",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
-    sidebarSection: "bank-details",
+    sidebarSection: "settings",
     navLabel: "Deposit Bank Details",
-    managerCategories: ["Settings"],
+    managerCategories: ["Settings", "Deposit Bank Details"],
   },
   {
     path: "/ib-plans",
