@@ -49,7 +49,7 @@ type SidebarSectionId =
   | "announcements"
   | "notification"
   | "reports"
-  | "marketing-management"
+  // | "marketing-management"
   | "news-management"
   | "promotion-management"
   | "settings";
@@ -280,15 +280,15 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     roles: BACKOFFICE_ROLES,
     managerCategories: ["Report Management"],
   },
-  {
-    id: "marketing-management",
-    title: "Marketing Management",
-    url: "/marketing-management",
-    icon: TrendingUp,
-    audience: "backoffice",
-    roles: BACKOFFICE_ROLES,
-    managerCategories: ["Marketing Management"],
-  },
+  // {
+  //   id: "marketing-management",
+  //   title: "Marketing Management",
+  //   url: "/marketing-management",
+  //   icon: TrendingUp,
+  //   audience: "backoffice",
+  //   roles: BACKOFFICE_ROLES,
+  //   managerCategories: ["Marketing Management"],
+  // },
   {
     id: "news-management",
     title: "News Management",
@@ -700,14 +700,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     navLabel: "Login Activity Report",
     managerCategories: ["Report Management"],
   },
-  {
-    path: "/marketing-management",
-    audience: "backoffice",
-    roles: BACKOFFICE_ROLES,
-    sidebarSection: "marketing-management",
-    navLabel: "Marketing Management",
-    managerCategories: ["Marketing Management"],
-  },
+  // {
+  //   path: "/marketing-management",
+  //   audience: "backoffice",
+  //   roles: BACKOFFICE_ROLES,
+  //   sidebarSection: "marketing-management",
+  //   navLabel: "Marketing Management",
+  //   managerCategories: ["Marketing Management"],
+  // },
   {
     path: "/news-management",
     audience: "backoffice",

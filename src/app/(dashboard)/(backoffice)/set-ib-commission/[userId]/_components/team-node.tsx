@@ -52,12 +52,12 @@ const TeamNode = ({ data }: NodeProps<GraphNode>) => {
           {data.username}
         </div>
 
-        <div className="text-[11px] text-muted-foreground">
+        {/* <div className="text-[11px] text-muted-foreground">
           Package Sum: {fmtMoney(data.packageSum)}
         </div>
         <div className="text-[11px] text-muted-foreground">
           BV: {fmtNum(data.totalBV)}
-        </div>
+        </div> */}
 
         {!data.isRoot && (
           <div className="mt-0.5 inline-flex items-center gap-1 text-[10px] text-muted-foreground">

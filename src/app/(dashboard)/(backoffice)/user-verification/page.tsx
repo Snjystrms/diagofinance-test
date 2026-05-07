@@ -257,7 +257,7 @@ export default function UserVerificationPage() {
   const [rows, setRows] = useState<ListRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("attention");
+  const [statusFilter, setStatusFilter] = useState<string>("0");
 
   // modal
   const [open, setOpen] = useState(false);

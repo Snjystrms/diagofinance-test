@@ -1,4 +1,4 @@
-import { API_BASE_URL, type ApiResponse, PaginationMeta, apiCall } from "./api-core";
+import { API_BASE_URL, type ApiResponse, PaginationMeta, apiCall, ApiRequestError } from "./api-core";
 
 export interface RegisterRequest {
   first_name: string;
@@ -208,6 +208,7 @@ export interface PendingUser {
   sponsor_id: string;
   referral_code?: string;
   status: string;
+  two_fa_enabled?: boolean | number | string;
   email_verified: number;
   payment_verified: number;
   created_at: string;
@@ -779,6 +780,7 @@ export interface ManagerItem {
   email: string;
   mobile: string;
   status: boolean;
+  two_fa_enabled?: boolean | number | string;
   total_client?: number;
   created_at?: string;
   updated_at?: string;
@@ -1822,25 +1824,53 @@ export const admin2FAApi = {
 };
 
 export const adminClient2FAApi = {
-  enable: (userId: string | number, token: string) =>
-    apiCall<AdminManagedTwoFactorSetupResponse>(`/admin/client/${userId}/2fa/enable`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({}),
-    }),
+  enable: async (userId: string | number, token: string) => {
+    try {
+      return await apiCall<AdminManagedTwoFactorSetupResponse>(`/admin/client/${userId}/2fa/enable`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      });
+    } catch (err: unknown) {
+      if (err instanceof ApiRequestError && err.status === 405) {
+        return await apiCall<AdminManagedTwoFactorSetupResponse>(`/admin/client/${userId}/2fa/enable`, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+        });
+      }
+      throw err;
+    }
+  },
 
-  disable: (userId: string | number, token: string) =>
-    apiCall<TwoFactorDisableResponse>(`/admin/client/${userId}/2fa/disable`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({}),
-    }),
+  disable: async (userId: string | number, token: string) => {
+    try {
+      return await apiCall<TwoFactorDisableResponse>(`/admin/client/${userId}/2fa/disable`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      });
+    } catch (err: unknown) {
+      if (err instanceof ApiRequestError && err.status === 405) {
+        return await apiCall<TwoFactorDisableResponse>(`/admin/client/${userId}/2fa/disable`, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+      throw err;
+    }
+  },
 };
 
 export const manager2FAApi = {
@@ -1878,25 +1908,53 @@ export const manager2FAApi = {
 };
 
 export const adminManagedManager2FAApi = {
-  enable: (managerId: string | number, token: string) =>
-    apiCall<AdminManagedTwoFactorSetupResponse>(`/admin/manager/${managerId}/2fa/enable`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({}),
-    }),
+  enable: async (managerId: string | number, token: string) => {
+    try {
+      return await apiCall<AdminManagedTwoFactorSetupResponse>(`/admin/manager/${managerId}/2fa/enable`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      });
+    } catch (err: unknown) {
+      if (err instanceof ApiRequestError && err.status === 405) {
+        return await apiCall<AdminManagedTwoFactorSetupResponse>(`/admin/manager/${managerId}/2fa/enable`, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({}),
+        });
+      }
+      throw err;
+    }
+  },
 
-  disable: (managerId: string | number, token: string) =>
-    apiCall<TwoFactorDisableResponse>(`/admin/manager/${managerId}/2fa/disable`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({}),
-    }),
+  disable: async (managerId: string | number, token: string) => {
+    try {
+      return await apiCall<TwoFactorDisableResponse>(`/admin/manager/${managerId}/2fa/disable`, {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      });
+    } catch (err: unknown) {
+      if (err instanceof ApiRequestError && err.status === 405) {
+        return await apiCall<TwoFactorDisableResponse>(`/admin/manager/${managerId}/2fa/disable`, {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+      throw err;
+    }
+  },
 };
 
 export const adminKycApi = {

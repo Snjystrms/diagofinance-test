@@ -11,8 +11,8 @@ import {
   QrCode,
   RefreshCw,
   Search,
-  Shield,
   ShieldOff,
+  Shield,
   UserCog,
   Users,
 } from "lucide-react";
@@ -33,6 +33,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/auth-context";
 import {
   adminClient2FAApi,
@@ -58,6 +59,7 @@ type TwoFactorRow = {
   statusText: string;
   secondaryText: string;
   created_at?: string;
+  twoFaEnabled: boolean;
 };
 
 type SetupResult = AdminManagedTwoFactorSetupResponse & {
@@ -95,6 +97,7 @@ const transformUser = (raw: Record<string, unknown>): PendingUser => {
     sponsor_id: String(raw.sponsor_id ?? ""),
     referral_code: String(raw.referral_code ?? ""),
     status: String(raw.status ?? ""),
+    two_fa_enabled: raw.two_fa_enabled as boolean | number | string | undefined,
     email_verified:
       typeof raw.email_verified === "number"
         ? raw.email_verified
@@ -154,6 +157,16 @@ const normalizeUserStatus = (status: string) => {
   }
 };
 
+const toBoolean = (value: boolean | number | string | null | undefined) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value === 1;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    return normalized === "1" || normalized === "true";
+  }
+  return false;
+};
+
 const normalizeUserRow = (user: PendingUser): TwoFactorRow => ({
   id: user.id,
   name: user.name || "-",
@@ -162,6 +175,7 @@ const normalizeUserRow = (user: PendingUser): TwoFactorRow => ({
   statusText: normalizeUserStatus(user.status),
   secondaryText: user.username ? `@${user.username}` : user.sponsor_id || "Client",
   created_at: user.created_at,
+  twoFaEnabled: toBoolean(user.two_fa_enabled),
 });
 
 const normalizeManagerRow = (manager: ManagerItem): TwoFactorRow => ({
@@ -172,6 +186,7 @@ const normalizeManagerRow = (manager: ManagerItem): TwoFactorRow => ({
   statusText: manager.status ? "Active" : "Inactive",
   secondaryText: manager.uuid || "Manager",
   created_at: manager.created_at,
+  twoFaEnabled: toBoolean(manager.two_fa_enabled),
 });
 
 const getPageCopy = (mode: TwoFactorManagementMode) => {
@@ -197,8 +212,7 @@ const getPageCopy = (mode: TwoFactorManagementMode) => {
 const getColumns = (
   rowsTypeLabel: string,
   actionLoadingKey: string | null,
-  onEnable: (row: TwoFactorRow) => void,
-  onDisable: (row: TwoFactorRow) => void
+  onToggle: (row: TwoFactorRow, nextChecked: boolean) => void
 ): ColumnDef<TwoFactorRow>[] => [
   {
     id: "person",
@@ -224,14 +238,35 @@ const getColumns = (
     ),
   },
   {
-    id: "status",
-    accessorKey: "statusText",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
-    cell: ({ row }) => (
-      <Badge variant="outline" className="font-medium">
-        {row.original.statusText}
-      </Badge>
-    ),
+    id: "twoFa",
+    accessorKey: "twoFaEnabled",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="2FA" />,
+    cell: ({ row }) => {
+      const isBusy =
+        actionLoadingKey === `enable:${row.original.id}` ||
+        actionLoadingKey === `disable:${row.original.id}`;
+
+      return (
+        <div className="flex items-center justify-end gap-3">
+          <span className={`
+  text-[11px] font-medium px-2 py-0.5 rounded-full border
+  ${row.original.twoFaEnabled 
+    ? "bg-green-50 text-green-700 border-green-600/30" 
+    : "bg-red-50 text-red-700 border-red-600/30"}
+`}>
+  {isBusy
+    ? row.original.twoFaEnabled ? "Disabling..." : "Enabling..."
+    : row.original.twoFaEnabled ? "Active" : "Disabled"}
+</span>
+          <Switch
+            checked={row.original.twoFaEnabled}
+            disabled={Boolean(actionLoadingKey)}
+            onCheckedChange={(checked) => onToggle(row.original, checked)}
+            aria-label={`Toggle 2FA for ${row.original.name}`}
+          />
+        </div>
+      );
+    },
   },
   {
     id: "created_at",
@@ -244,39 +279,14 @@ const getColumns = (
     ),
   },
   {
-    id: "actions",
-    header: "Actions",
-    enableSorting: false,
-    cell: ({ row }) => {
-      const enableLoading = actionLoadingKey === `enable:${row.original.id}`;
-      const disableLoading = actionLoadingKey === `disable:${row.original.id}`;
-
-      return (
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            onClick={() => onEnable(row.original)}
-            disabled={Boolean(actionLoadingKey)}
-          >
-            <Shield className={`h-4 w-4 ${enableLoading ? "animate-pulse" : ""}`} />
-            {enableLoading ? "Enabling..." : "Enable 2FA"}
-          </Button>
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            className="text-destructive hover:text-destructive"
-            onClick={() => onDisable(row.original)}
-            disabled={Boolean(actionLoadingKey)}
-          >
-            <ShieldOff className={`h-4 w-4 ${disableLoading ? "animate-pulse" : ""}`} />
-            {disableLoading ? "Disabling..." : "Disable 2FA"}
-          </Button>
-        </div>
-      );
-    },
+    id: "account",
+    accessorKey: "statusText",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Account" />,
+    cell: ({ row }) => (
+      <Badge variant="outline" className="font-medium">
+        {row.original.statusText}
+      </Badge>
+    ),
   },
 ];
 
@@ -382,6 +392,11 @@ export function TwoFactorManagementPageContent({
           ...data,
           entityName: row.name,
         });
+        setRows((prev) =>
+          prev.map((item) =>
+            item.id === row.id ? { ...item, twoFaEnabled: true } : item
+          )
+        );
 
         toast.success(
           response?.message ||
@@ -412,6 +427,11 @@ export function TwoFactorManagementPageContent({
           ? await adminManagedManager2FAApi.disable(disableTarget.id, token)
           : await adminClient2FAApi.disable(disableTarget.id, token);
 
+      setRows((prev) =>
+        prev.map((item) =>
+          item.id === disableTarget.id ? { ...item, twoFaEnabled: false } : item
+        )
+      );
       toast.success(
         response?.message ||
           `${copy.typeLabel} 2FA disabled successfully`
@@ -435,15 +455,23 @@ export function TwoFactorManagementPageContent({
       getColumns(
         copy.typeLabel,
         actionLoadingKey,
-        (row) => {
-          void handleEnable(row);
-        },
-        (row) => {
+        (row, nextChecked) => {
+          if (nextChecked) {
+            void handleEnable(row);
+            return;
+          }
+
           setDisableTarget(row);
         }
       ),
     [actionLoadingKey, copy.typeLabel, handleEnable]
   );
+
+  const enabledCount = useMemo(
+    () => rows.filter((row) => row.twoFaEnabled).length,
+    [rows]
+  );
+  const disabledCount = rows.length - enabledCount;
 
   if (loadError && rows.length === 0) {
     return (
@@ -493,16 +521,18 @@ export function TwoFactorManagementPageContent({
                 <div className="mt-2 text-2xl font-semibold">{rows.length}</div>
               </div>
               <div className="rounded-lg border bg-card p-4 shadow-sm">
-                <div className="text-sm text-muted-foreground">Enable Flow</div>
-                <div className="mt-2 text-sm">
-                  Generates a new QR code and secret to share with the {copy.typeLabel.toLowerCase()}.
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Shield className="h-4 w-4 text-green-600" />
+                  2FA Enabled
                 </div>
+                <div className="mt-2 text-2xl font-semibold">{enabledCount}</div>
               </div>
               <div className="rounded-lg border bg-card p-4 shadow-sm">
-                <div className="text-sm text-muted-foreground">Disable Flow</div>
-                <div className="mt-2 text-sm">
-                  Removes the current authenticator setup immediately.
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <ShieldOff className="h-4 w-4 text-muted-foreground" />
+                  2FA Disabled
                 </div>
+                <div className="mt-2 text-2xl font-semibold">{disabledCount}</div>
               </div>
             </div>
 
@@ -533,9 +563,6 @@ export function TwoFactorManagementPageContent({
                     Clear
                   </Button>
                 ) : null}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Enable returns the QR code immediately. Disable sends an empty JSON body as required by the API.
               </div>
             </div>
 
