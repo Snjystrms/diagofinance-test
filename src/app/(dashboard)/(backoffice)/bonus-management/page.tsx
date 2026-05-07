@@ -41,7 +41,6 @@ import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import {
   adminBonusApi,
   type AdminBonusLedgerItem,
-  type AdminBonusMt5UserOption,
 } from "@/lib/api";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { formatDateTimeInIST } from "@/lib/formatters";

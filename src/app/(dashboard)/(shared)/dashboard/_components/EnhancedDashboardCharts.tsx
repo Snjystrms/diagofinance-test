@@ -11,7 +11,6 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  ReferenceLine,
 } from "recharts";
 import { TrendingUp, TrendingDown, Users } from "lucide-react";
 import type { AdminDashboardData } from "@/lib/api";
@@ -31,6 +30,33 @@ type ChartColorPalette = {
   background: string;
   positive: string;
   negative: string;
+};
+
+type TransactionMetricKey = "deposit" | "withdraw" | "ib_withdraw";
+
+type TransactionChartPoint = {
+  date: string;
+  deposit: number;
+  withdraw: number;
+  ib_withdraw: number;
+};
+
+type ClientChartPoint = {
+  date: string;
+  clients: number;
+};
+
+type ChartTooltipEntry = {
+  dataKey?: string;
+  color?: string;
+  name?: string;
+  value?: number | string | null;
+};
+
+type ChartDotProps = {
+  index?: number;
+  cx?: number;
+  cy?: number;
 };
 
 const fallbackChartColors: ChartColorPalette = {
@@ -53,7 +79,7 @@ function TransactionTooltip({
   chartColors,
 }: {
   active?: boolean;
-  payload?: readonly any[];
+  payload?: readonly ChartTooltipEntry[];
   label?: string | number;
   chartColors: ChartColorPalette;
 }) {
@@ -67,7 +93,7 @@ function TransactionTooltip({
   return (
     <div className="min-w-[160px] rounded-xl border border-border/60 bg-card/95 p-3 shadow-2xl backdrop-blur-md">
       <p className="mb-2 text-[11px] font-semibold tracking-widest text-muted-foreground uppercase">{label}</p>
-      {payload.map((entry: any) => (
+      {payload.map((entry) => (
         <div key={entry.dataKey} className="flex items-center justify-between gap-6 mb-1">
           <span className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
             <span className="inline-block h-2 w-2 rounded-full" style={{ background: getSeriesColor(entry?.dataKey, entry?.color) }} />
@@ -87,7 +113,7 @@ function ClientTooltip({
   color,
 }: {
   active?: boolean;
-  payload?: readonly any[];
+  payload?: readonly ChartTooltipEntry[];
   label?: string | number;
   color: string;
 }) {
@@ -215,22 +241,22 @@ export function EnhancedDashboardCharts({ adminDashboardData }: EnhancedChartsPr
   }, []);
 
   // ── Transaction data ──
-  const transactionChartData = useMemo(() => {
+  const transactionChartData = useMemo<TransactionChartPoint[]>(() => {
     if (!transactionGraph?.data) return [];
     return transactionGraph.data.map((item) => ({
       date: new Date(item.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      deposit: item.deposit,
-      withdraw: item.withdraw,
-      ib_withdraw: item.ib_withdraw,
+      deposit: Number(item.deposit ?? 0),
+      withdraw: Number(item.withdraw ?? 0),
+      ib_withdraw: Number(item.ib_withdraw ?? 0),
     }));
   }, [transactionGraph]);
 
   // ── Client data ──
-  const clientsChartData = useMemo(() => {
+  const clientsChartData = useMemo<ClientChartPoint[]>(() => {
     if (!clientsGraph?.data) return [];
     return clientsGraph.data.map((item) => ({
       date: new Date(item.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-      clients: item.clients,
+      clients: Number(item.clients ?? 0),
     }));
   }, [clientsGraph]);
 
@@ -269,25 +295,25 @@ export function EnhancedDashboardCharts({ adminDashboardData }: EnhancedChartsPr
   }, [clientsChartData]);
 
   // ── Active dot renderers ──
-  const depositDot = (props: any) => {
+  const depositDot = (props: ChartDotProps) => {
     const { index, cx, cy } = props;
     return index === transactionChartData.length - 1 ? (
       <GlowDot key="deposit-end" cx={cx} cy={cy} color={chartColors.deposit} innerColor={chartColors.background} />
     ) : <g key={`deposit-${index}`} />;
   };
-  const withdrawDot = (props: any) => {
+  const withdrawDot = (props: ChartDotProps) => {
     const { index, cx, cy } = props;
     return index === transactionChartData.length - 1 ? (
       <GlowDot key="withdraw-end" cx={cx} cy={cy} color={chartColors.withdraw} innerColor={chartColors.background} />
     ) : <g key={`withdraw-${index}`} />;
   };
-  const ibDot = (props: any) => {
+  const ibDot = (props: ChartDotProps) => {
     const { index, cx, cy } = props;
     return index === transactionChartData.length - 1 ? (
       <GlowDot key="ib-end" cx={cx} cy={cy} color={chartColors.ibWithdraw} innerColor={chartColors.background} />
     ) : <g key={`ib-${index}`} />;
   };
-  const clientDot = (props: any) => {
+  const clientDot = (props: ChartDotProps) => {
     const { index, cx, cy } = props;
     return index === clientsChartData.length - 1 ? (
       <GlowDot key="client-end" cx={cx} cy={cy} color={chartColors.clients} innerColor={chartColors.background} />
@@ -433,12 +459,12 @@ export function EnhancedDashboardCharts({ adminDashboardData }: EnhancedChartsPr
           {/* bottom stat strip */}
           <div className="relative grid grid-cols-3 divide-x divide-border/60 border-t border-border/60">
             {[
-              { label: "Deposit", color: chartColors.deposit, key: "deposit" },
-              { label: "Withdraw", color: chartColors.withdraw, key: "withdraw" },
-              { label: "IB Withdraw", color: chartColors.ibWithdraw, key: "ib_withdraw" },
+              { label: "Deposit", color: chartColors.deposit, key: "deposit" as TransactionMetricKey },
+              { label: "Withdraw", color: chartColors.withdraw, key: "withdraw" as TransactionMetricKey },
+              { label: "IB Withdraw", color: chartColors.ibWithdraw, key: "ib_withdraw" as TransactionMetricKey },
             ].map(({ label, color, key }) => {
               const latest = transactionChartData[transactionChartData.length - 1];
-              const val = latest ? Number((latest as any)[key]) : 0;
+              const val = latest ? Number(latest[key]) : 0;
               return (
                 <div key={key} className="px-4 py-3 flex items-center gap-2.5">
                   <span className="h-2 w-2 rounded-full flex-shrink-0" style={{ background: color, boxShadow: `0 0 6px ${color}` }} />
