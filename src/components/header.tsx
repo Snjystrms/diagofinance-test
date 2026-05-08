@@ -259,10 +259,10 @@ export function Header() {
           </DropdownMenu>
         </div>
 
-        <ThemeCustomizer open={themeCustomizerOpen} onOpenChange={setThemeCustomizerOpen} />
-        <SidebarSelector open={sidebarSelectorOpen} onOpenChange={setSidebarSelectorOpen} />
       </header>
-      
+
+      <ThemeCustomizer open={themeCustomizerOpen} onOpenChange={setThemeCustomizerOpen} />
+      <SidebarSelector open={sidebarSelectorOpen} onOpenChange={setSidebarSelectorOpen} />
       <TwoFactorModal 
         open={twoFactorModalOpen}
         onOpenChange={setTwoFactorModalOpen}
