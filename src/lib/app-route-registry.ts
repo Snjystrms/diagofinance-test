@@ -561,7 +561,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "user-management",
-    navLabel: "User Verification",
+    navLabel: "User KYC",
     managerCategories: ["User Management"],
   },
   {

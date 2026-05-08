@@ -70,7 +70,7 @@ const getSubItemIcon = (title: string) => {
     // User Management sub-items
     "All Users": Users,
     "All Users MT5 Accounts": Database,
-    "User Verification": Shield,
+    "User KYC": Shield,
     "User Status": Activity,
     
     // Transaction Management sub-items

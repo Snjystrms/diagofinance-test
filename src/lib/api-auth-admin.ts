@@ -2602,3 +2602,28 @@ export const adminWithdrawalApi = {
       body: JSON.stringify(data),
     }),
 };
+
+export interface BroadcastEmailRequest {
+  subject: string;
+  body: string;
+  emails?: string[];
+}
+
+export interface BroadcastEmailResponse {
+  success: boolean;
+  message: string;
+  data: {
+    total: number;
+    sent: number;
+    failed: number;
+  };
+}
+
+export const adminBroadcastEmailApi = {
+  send: (data: BroadcastEmailRequest, token: string) =>
+    apiCall<BroadcastEmailResponse>("/admin/user-management/broadcast-email", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+};
