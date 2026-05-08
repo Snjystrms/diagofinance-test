@@ -17,6 +17,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ThemeCustomizer } from "@/components/theme-customizer"
 import { SidebarSelector } from "@/components/sidebar-selector"
 import { useAuth } from "@/contexts/auth-context"
+import { useSessionLogout } from "@/hooks/use-session-logout"
 import { usePathname, useRouter } from "next/navigation"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 import { authApi, admin2FAApi, manager2FAApi } from "@/lib/api"
@@ -26,7 +27,7 @@ import { NotificationInbox } from "@/components/notification-inbox"
 import { useClientCustomization } from "@/contexts/client-customization-context"
 
 export function Header() {
-  const { user, token, logout } = useAuth();
+  const { user, token } = useAuth();
   const queryClient = useQueryClient();
   const {
     canCustomizeTheme,
@@ -37,6 +38,7 @@ export function Header() {
   } = useClientCustomization();
   const router = useRouter();
   const pathname = usePathname();
+  const sessionLogout = useSessionLogout();
   const [themeCustomizerOpen, setThemeCustomizerOpen] = useState(false);
   const [sidebarSelectorOpen, setSidebarSelectorOpen] = useState(false);
   const [twoFactorModalOpen, setTwoFactorModalOpen] = useState(false);
@@ -104,25 +106,6 @@ export function Header() {
       [dashboardUser?.first_name, dashboardUser?.last_name].filter(Boolean).join(" ");
     setDashboardName(displayName || null);
   }, [userDashboardData, user?.type]);
-
-  const handleLogout = async () => {
-    try {
-      if (token) {
-        await authApi.logout(token);
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "";
-      if (message && !message.toLowerCase().includes("invalid token type")) {
-        console.warn("Logout API failed, completing local logout");
-      }
-      // Even if the API call fails, we still want to log out locally
-    } finally {
-      // Perform local logout regardless of API success
-      logout();
-      router.push('/login');
-      toast.success('You have been logged out successfully');
-    }
-  };
 
   const handle2FAStatusChange = () => {
     // Toggle the 2FA status and refresh the status from API
@@ -268,7 +251,7 @@ export function Header() {
                 Settings
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
+              <DropdownMenuItem onClick={() => void sessionLogout()}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Log out
               </DropdownMenuItem>

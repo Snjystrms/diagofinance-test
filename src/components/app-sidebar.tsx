@@ -19,6 +19,7 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
+import { SidebarLogoutButton } from "@/components/sidebar-logout-button"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth();
@@ -87,8 +88,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </>
         )}
       </SidebarContent>
-      <SidebarFooter>
-        {/* <NavUser user={userDisplayInfo} /> */}
+      <SidebarFooter className="p-3">
+        <SidebarLogoutButton />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

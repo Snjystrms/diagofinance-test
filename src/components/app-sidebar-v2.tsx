@@ -39,6 +39,7 @@ import {
   Building2
 } from "lucide-react"
 import { NavUser } from "@/components/nav-user"
+import { SidebarLogoutButton } from "@/components/sidebar-logout-button"
 import {
   Sidebar,
   SidebarContent,
@@ -347,13 +348,8 @@ export function AppSidebarV2({ ...props }: React.ComponentProps<typeof Sidebar>)
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter>
-          {user && (
-            <NavUser user={{
-              name: user.name || "User",
-              email: user.email || "user@example.com"
-            }} />
-          )}
+        <SidebarFooter className="p-3">
+          <SidebarLogoutButton />
         </SidebarFooter>
       </Sidebar>
 

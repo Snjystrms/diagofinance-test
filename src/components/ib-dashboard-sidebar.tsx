@@ -12,19 +12,22 @@ import {
   Users, 
   PieChart,
   Gem,
-  Loader2
+  Loader2,
+  LogOut
 } from "lucide-react"
 import { usePathname, useRouter } from "next/navigation"
 import { formatCurrency } from "@/lib/format"
 import { cn } from "@/lib/utils"
 import { useSidebar } from "@/components/ui/sidebar"
 import { getFallbackIbWalletData, getIbWalletSnapshot, normalizeIbWalletData } from "@/lib/ib"
+import { useSessionLogout } from "@/hooks/use-session-logout"
 
 export function IbDashboardSidebar() {
   const { user, token } = useAuth()
   const pathname = usePathname()
   const router = useRouter()
   const { state } = useSidebar()
+  const sessionLogout = useSessionLogout()
   const isCollapsed = state === "collapsed"
   const [dashboardData, setDashboardData] = useState<IbDashboardResponse | null>(null)
   const [walletData, setWalletData] = useState<IbWalletData | null>(null)
@@ -152,6 +155,13 @@ export function IbDashboardSidebar() {
         >
           <ArrowLeft className="h-5 w-5" />
         </button>
+        <button
+          onClick={() => void sessionLogout()}
+          className="rounded-2xl border border-sidebar-border bg-sidebar-accent/45 p-2.5 text-sidebar-foreground transition-all duration-200 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+          title="Log out"
+        >
+          <LogOut className="h-5 w-5" />
+        </button>
       </div>
     )
   }
@@ -237,13 +247,20 @@ export function IbDashboardSidebar() {
         </div>
       </div>
 
-      <div className="p-4 pt-0">
+      <div className="p-4 pt-0 space-y-2">
         <button
           onClick={() => router.push("/dashboard")}
           className="flex w-full items-center justify-center gap-2 rounded-[24px] border border-sidebar-border bg-sidebar-accent/55 px-4 py-3 text-sm font-semibold text-sidebar-foreground transition-all duration-200 hover:bg-sidebar-accent"
         >
           <ArrowLeft className="h-4 w-4" />
           Client Portal
+        </button>
+        <button
+          onClick={() => void sessionLogout()}
+          className="flex w-full items-center justify-center gap-2 rounded-[24px] border border-sidebar-border/60 bg-transparent px-4 py-3 text-sm font-medium text-sidebar-foreground/70 transition-all duration-200 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
+        >
+          <LogOut className="h-4 w-4" />
+          Log out
         </button>
       </div>
     </div>

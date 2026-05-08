@@ -23,12 +23,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import {
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar,
-} from "@/components/ui/sidebar"
+import { useSessionLogout } from "@/hooks/use-session-logout"
+import { useSidebar } from "@/components/ui/sidebar"
+import { SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar"
 
 export function NavUser({
   user,
@@ -42,6 +39,7 @@ export function NavUser({
   const { isMobile, state } = useSidebar()
   const isCollapsed = state === "collapsed"
   const fallbackName = user.name?.trim()?.charAt(0)?.toUpperCase() || "U"
+  const sessionLogout = useSessionLogout()
 
   return (
     <SidebarMenu>
@@ -108,7 +106,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={() => void sessionLogout()}>
               <LogOut />
               Log out
             </DropdownMenuItem>
