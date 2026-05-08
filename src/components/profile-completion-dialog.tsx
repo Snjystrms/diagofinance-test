@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, FileText, Scale, Settings, ArrowRight } from "lucide-react";
+import { AlertCircle, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface IncompleteSection {
@@ -47,10 +47,10 @@ export function ProfileCompletionDialog({
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
-            <AlertCircle className="h-5 w-5 text-orange-500" />
+            <AlertCircle className="h-5 w-5 text-primary" />
             Complete Your Profile
           </DialogTitle>
-          <DialogDescription className="pt-2 text-base text-foreground/72">
+          <DialogDescription className="pt-2 text-base text-muted-foreground">
             Please complete the following sections to verify your account and unlock all features.
           </DialogDescription>
         </DialogHeader>
@@ -59,18 +59,17 @@ export function ProfileCompletionDialog({
           {incompleteSections.map((section) => (
             <div
               key={section.key}
-              className="flex items-start gap-4 rounded-xl border border-orange-500/35 bg-card/96 p-4 shadow-[0_18px_40px_-28px_rgba(249,115,22,0.45)] backdrop-blur-sm"
+              className="flex items-start gap-4 rounded-xl border border-primary/25 bg-primary/5 p-4 backdrop-blur-sm"
             >
-              <div className="flex-shrink-0 rounded-lg border border-orange-500/20 bg-orange-500/12 p-2 text-orange-400">
+              <div className="flex-shrink-0 rounded-lg border border-primary/20 bg-primary/10 p-2 text-primary">
                 {section.icon}
               </div>
               <div className="flex-1">
                 <h4 className="mb-1 text-sm font-semibold text-foreground">{section.title}</h4>
-                <p className="mb-3 text-sm text-foreground/70">{section.message}</p>
+                <p className="mb-3 text-sm text-muted-foreground">{section.message}</p>
                 <Button
                   size="sm"
                   onClick={() => handleNavigate(section.route)}
-                  className="bg-orange-600 text-white shadow-[0_12px_24px_-16px_rgba(249,115,22,0.9)] hover:bg-orange-500"
                 >
                   Complete Now
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -85,10 +84,7 @@ export function ProfileCompletionDialog({
             I&apos;ll do this later
           </Button>
           {incompleteSections.length > 0 && (
-            <Button
-              onClick={() => handleNavigate(incompleteSections[0].route)}
-              className="bg-orange-600 text-white hover:bg-orange-500"
-            >
+            <Button onClick={() => handleNavigate(incompleteSections[0].route)}>
               Complete All Sections
             </Button>
           )}

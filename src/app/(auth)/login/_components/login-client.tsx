@@ -36,9 +36,6 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { ProfileCompletionDialog } from '@/components/profile-completion-dialog';
-import { useEffect } from 'react';
-import { Settings, Scale, FileText } from 'lucide-react';
 
 export function LoginClient() {
   const { loginMutation, forgotPasswordMutation } = useAuthMutations();
@@ -58,38 +55,7 @@ export function LoginClient() {
     userType?: 'admin' | 'user' | 'manager';
   } | null>(null);
   const [isVerifying2FA, setIsVerifying2FA] = useState(false);
-  const [showProfileDialog, setShowProfileDialog] = useState(false);
-  const [incompleteSections, setIncompleteSections] = useState<Array<{
-    key: "personal_information" | "legal_information" | "documents_verification";
-    title: string;
-    message: string;
-    route: string;
-  }>>([]);
 
-  // Check for incomplete profile sections after navigation
-  useEffect(() => {
-    const checkIncompleteSections = () => {
-      const stored = sessionStorage.getItem('incomplete_profile_sections');
-      if (stored) {
-        try {
-          const sections = JSON.parse(stored);
-          if (Array.isArray(sections) && sections.length > 0) {
-            setIncompleteSections(sections);
-            setShowProfileDialog(true);
-            sessionStorage.removeItem('incomplete_profile_sections');
-          }
-        } catch (error) {
-          console.error('Error parsing incomplete sections:', error);
-        }
-      }
-    };
-
-    // Check immediately and also after a short delay to catch navigation
-    checkIncompleteSections();
-    const timer = setTimeout(checkIncompleteSections, 500);
-    
-    return () => clearTimeout(timer);
-  }, []);
 
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -228,7 +194,7 @@ export function LoginClient() {
               const profileResponse = await authApi.getProfileView(token);
               if (profileResponse.success && profileResponse.data) {
                 const verificationStatus = profileResponse.data.verification_status;
-                const incomplete: typeof incompleteSections = [];
+                const incomplete: Array<{ key: "personal_information" | "legal_information" | "documents_verification"; title: string; message: string; route: string }> = [];
                 
                 if (verificationStatus.personal_information.status !== "completed") {
                   incomplete.push({
@@ -258,8 +224,7 @@ export function LoginClient() {
                 }
                 
                 if (incomplete.length > 0) {
-                  setIncompleteSections(incomplete);
-                  setShowProfileDialog(true);
+                  sessionStorage.setItem('incomplete_profile_sections', JSON.stringify(incomplete));
                 }
               }
             } catch (error) {
@@ -543,21 +508,6 @@ export function LoginClient() {
         </div>
       </div>
       
-      {/* Profile Completion Dialog */}
-      <ProfileCompletionDialog
-        open={showProfileDialog}
-        onOpenChange={setShowProfileDialog}
-        incompleteSections={incompleteSections.map(section => ({
-          ...section,
-          icon: section.key === 'personal_information' ? (
-            <Settings className="h-5 w-5 text-orange-600" />
-          ) : section.key === 'legal_information' ? (
-            <Scale className="h-5 w-5 text-orange-600" />
-          ) : (
-            <FileText className="h-5 w-5 text-orange-600" />
-          ),
-        }))}
-      />
     </ProtectedRoute>
   );
 }
