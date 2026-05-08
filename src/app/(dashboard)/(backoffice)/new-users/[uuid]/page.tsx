@@ -547,13 +547,13 @@ export default function NewUserDetailPage() {
         setProfileError(null);
 
         const [profileResponse, mt5Response] = await Promise.all([
-          adminUsersApi.detailByUuid(uuid, token),
+          adminUsersApi.detail(uuid, token),
           adminUsersApi.mt5TabDetails(uuid, token),
         ]);
 
         if (cancelled) return;
 
-        const normalizedProfile = normalizeUserDetails(profileResponse.data ?? null);
+        const normalizedProfile = normalizeUserDetails((profileResponse.data ?? null) as AdminUserDetailsApiData | null);
         if (!normalizedProfile) {
           throw new Error("User profile payload is empty.");
         }

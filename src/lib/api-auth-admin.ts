@@ -2627,3 +2627,90 @@ export const adminBroadcastEmailApi = {
       body: JSON.stringify(data),
     }),
 };
+
+// ─── Payment Methods ──────────────────────────────────────────────────────────
+
+export interface PaymentMethod {
+  id: number;
+  type: string;
+  status: number;
+  name: string;
+  description: string | null;
+  logo_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PaymentMethodListResponse {
+  status: number;
+  message: string;
+  data: {
+    count: number;
+    rows: PaymentMethod[];
+  };
+}
+
+export interface PaymentMethodResponse {
+  status: number;
+  message: string;
+  data: PaymentMethod;
+}
+
+export interface PaymentMethodRequest {
+  type: string;
+  name: string;
+  description?: string;
+  status: number;
+}
+
+// ─── User-facing Payment Methods ─────────────────────────────────────────────
+
+export interface UserPaymentMethod {
+  id: number;
+  type: string;
+  name: string;
+  description: string | null;
+  logo_url: string | null;
+}
+
+export const userPaymentMethodsApi = {
+  list: (token: string) =>
+    apiCall<{ status: number; message: string; data: UserPaymentMethod[] }>(
+      "/user/payment-methods",
+      { method: "GET", headers: { Authorization: `Bearer ${token}` } }
+    ),
+};
+
+export const adminPaymentMethodsApi = {
+  list: (token: string) =>
+    apiCall<PaymentMethodListResponse>("/admin/payment-methods", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  create: (data: PaymentMethodRequest, token: string) =>
+    apiCall<PaymentMethodResponse>("/admin/payment-methods", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+
+  update: (id: number, data: PaymentMethodRequest, token: string) =>
+    apiCall<PaymentMethodResponse>(`/admin/payment-methods/${id}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+
+  toggleStatus: (id: number, token: string) =>
+    apiCall<PaymentMethodResponse>(`/admin/payment-methods/${id}/toggle-status`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  delete: (id: number, token: string) =>
+    apiCall<{ status: number; message: string }>(`/admin/payment-methods/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};

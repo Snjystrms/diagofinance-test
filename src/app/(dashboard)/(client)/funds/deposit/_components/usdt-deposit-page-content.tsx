@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAuth } from "@/contexts/auth-context";
 import { submitUSDTDeposit } from "@/utils/operations";
 import { walletApi, binanceDepositApi, coinsbuyDepositApi, bankDepositApi, userBrokerBankDetailsApi, type WalletSummaryData, type BinanceDepositCreateResponse, type CoinsBuyDepositCreateResponse, type BankDepositRecord, type BrokerBankDetailItem } from "@/lib/api";
+import { userPaymentMethodsApi, type UserPaymentMethod } from "@/lib/api-auth-admin";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { CLIENT_WALLET_REFRESH_EVENT, notifyWalletRefresh } from "@/lib/client-events";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,9 +43,24 @@ import {
 const isBrokerBankDetailActive = (detail: BrokerBankDetailItem) =>
   detail.is_active === true || detail.is_active === 1;
 
+function ComingSoonTab({ name, description }: { name: string; description?: string | null }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 py-20 text-muted-foreground">
+      <Clock className="h-10 w-10 opacity-40" />
+      <p className="text-lg font-semibold text-foreground">{name}</p>
+      {description && <p className="text-sm">{description}</p>}
+      <Badge variant="outline">Coming Soon</Badge>
+    </div>
+  );
+}
+
 function USDTDepositContent() {
   const { user, token } = useAuth();
-  const [activeTab, setActiveTab] = useState<"local" | "crypto" | "bank">("local");
+  const [activeTab, setActiveTab] = useState<string>("local");
+
+  // Payment methods from API
+  const [paymentMethods, setPaymentMethods] = useState<UserPaymentMethod[]>([]);
+  const [pmLoading, setPmLoading] = useState(true);
   const [amount, setAmount] = useState("");
   const [transactionHash, setTransactionHash] = useState("");
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
@@ -64,7 +80,6 @@ function USDTDepositContent() {
   // CoinsBuy deposit state
   const [coinsbuyAmount, setCoinsbuyAmount] = useState("");
   const [isSubmittingCoinsbuy, setIsSubmittingCoinsbuy] = useState(false);
-  const [cryptoPaymentMethod, setCryptoPaymentMethod] = useState<"binance" | "coinsbuy">("binance");
 
   // Bank deposit state
   const [bankAmount, setBankAmount] = useState("");
@@ -105,6 +120,34 @@ function USDTDepositContent() {
     const activeDetails = brokerBankDetails.filter((detail) => isBrokerBankDetailActive(detail));
     return activeDetails.length > 0 ? activeDetails : brokerBankDetails;
   }, [brokerBankDetails]);
+
+  // Derive which tabs to show from API response
+  const hasLocal    = paymentMethods.some(p => p.type === "local");
+  const hasBinance  = paymentMethods.some(p => p.type === "binance_pay");
+  const hasCoinsbuy = paymentMethods.some(p => p.type === "coinsbuy");
+  const hasBank     = paymentMethods.some(p => p.type === "bank_transfer");
+  const KNOWN_TYPES = ["local", "binance_pay", "coinsbuy", "bank_transfer"];
+  const comingSoonMethods = paymentMethods.filter(p => !KNOWN_TYPES.includes(p.type));
+
+  // Fetch active payment methods and set default tab
+  useEffect(() => {
+    if (!token) { setPmLoading(false); return; }
+    userPaymentMethodsApi.list(token)
+      .then(res => {
+        const methods = (res as unknown as { data?: UserPaymentMethod[] })?.data ?? [];
+        setPaymentMethods(methods);
+        // Set initial tab to the first available known type
+        const hasL  = methods.some(p => p.type === "local");
+        const hasBi = methods.some(p => p.type === "binance_pay");
+        const hasCo = methods.some(p => p.type === "coinsbuy");
+        const hasB  = methods.some(p => p.type === "bank_transfer");
+        const fallback = methods.find(p => !KNOWN_TYPES.includes(p.type))?.type;
+        setActiveTab(hasL ? "local" : hasBi ? "binance_pay" : hasCo ? "coinsbuy" : hasB ? "bank" : fallback ?? "local");
+      })
+      .catch(() => {})
+      .finally(() => setPmLoading(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   const fetchWalletSummary = async () => {
     if (!token) {
@@ -533,12 +576,24 @@ function USDTDepositContent() {
         </div>
 
         {/* Deposit type toggle */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "local" | "crypto" | "bank")} className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="local">Local</TabsTrigger>
-            <TabsTrigger value="crypto">Cryptocurrency</TabsTrigger>
-            <TabsTrigger value="bank">Bank Deposit</TabsTrigger>
-          </TabsList>
+        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v)} className="space-y-6">
+          {pmLoading ? (
+            <div className="flex gap-2">
+              <Skeleton className="h-9 w-24 rounded-lg" />
+              <Skeleton className="h-9 w-32 rounded-lg" />
+              <Skeleton className="h-9 w-28 rounded-lg" />
+            </div>
+          ) : (
+            <TabsList>
+              {hasLocal    && <TabsTrigger value="local">Local</TabsTrigger>}
+              {hasBinance  && <TabsTrigger value="binance_pay">Binance Pay</TabsTrigger>}
+              {hasCoinsbuy && <TabsTrigger value="coinsbuy">CoinsBuy</TabsTrigger>}
+              {hasBank     && <TabsTrigger value="bank">Bank Deposit</TabsTrigger>}
+              {comingSoonMethods.map(p => (
+                <TabsTrigger key={p.type} value={p.type}>{p.name}</TabsTrigger>
+              ))}
+            </TabsList>
+          )}
 
           {/* Wallet Summary Card - Enhanced */}
           <Card className="border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-md">
@@ -623,7 +678,7 @@ function USDTDepositContent() {
             </CardContent>
           </Card>
 
-            <TabsContent value="local" className="space-y-8">
+            {hasLocal && <TabsContent value="local" className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 
                 {/* Left Column - QR Code and Details */}
@@ -945,42 +1000,12 @@ function USDTDepositContent() {
               </CardContent>
             </Card>
           </div>
-            </TabsContent>
+            </TabsContent>}
 
-            <TabsContent value="crypto" className="space-y-8">
-              {/* Payment Method Selection - Enhanced with Tabs */}
-              <Card className="border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-md">
-                <CardContent className="p-4 relative z-10">
-                  <Tabs value={cryptoPaymentMethod} onValueChange={(value) => setCryptoPaymentMethod(value as "binance" | "coinsbuy")} className="w-full">
-                    <TabsList className="w-full bg-muted/50 p-1 rounded-xl">
-                      <TabsTrigger 
-                        value="binance" 
-                        className="flex-1 rounded-lg transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                      >
-                        <img 
-                          src="https://binance.com/favicon.ico" 
-                          alt="Binance" 
-                          className="h-4 w-4 mr-2"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
-                        Binance Pay
-                      </TabsTrigger>
-                      <TabsTrigger 
-                        value="coinsbuy" 
-                        className="flex-1 rounded-lg transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-                      >
-                        <Wallet className="h-4 w-4 mr-2" />
-                        CoinsBuy
-                      </TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                </CardContent>
-              </Card>
-
+            {/* ── Binance Pay tab ── */}
+            {hasBinance && <TabsContent value="binance_pay" className="space-y-8">
               {/* Binance Pay Content */}
-              {cryptoPaymentMethod === "binance" && (
+              {(
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Left Column - Binance Info */}
                 <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-background to-muted/30 group">
@@ -1130,9 +1155,12 @@ function USDTDepositContent() {
                 </Card>
               </div>
               )}
+            </TabsContent>}
 
+            {/* ── CoinsBuy tab ── */}
+            {hasCoinsbuy && <TabsContent value="coinsbuy" className="space-y-8">
               {/* CoinsBuy Content */}
-              {cryptoPaymentMethod === "coinsbuy" && (
+              {(
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Left Column - CoinsBuy Info */}
                 <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-background to-muted/30 group">
@@ -1257,10 +1285,10 @@ function USDTDepositContent() {
                 </Card>
               </div>
               )}
-            </TabsContent>
+            </TabsContent>}
 
             {/* ── Bank Transfer tab ── */}
-            <TabsContent value="bank" className="space-y-8">
+            {hasBank && <TabsContent value="bank" className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
                 {/* Left — Bank account details (dummy) */}
@@ -1570,7 +1598,14 @@ function USDTDepositContent() {
                   </Card>
                 </div>
               </div>
-            </TabsContent>
+            </TabsContent>}
+
+            {/* ── Coming-soon tabs for unrecognised payment method types ── */}
+            {comingSoonMethods.map(p => (
+              <TabsContent key={p.type} value={p.type} className="space-y-8">
+                <ComingSoonTab name={p.name} description={p.description} />
+              </TabsContent>
+            ))}
           </Tabs>
       </div>
     </div>

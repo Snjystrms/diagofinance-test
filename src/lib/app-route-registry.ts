@@ -741,6 +741,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     managerCategories: ["Settings", "Manager 2fa"],
   },
   {
+    path: "/psp-setting",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "settings",
+    navLabel: "PSP Setting",
+    managerCategories: ["Settings", "PSP Setting"],
+  },
+  {
     path: "/bank-details",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
