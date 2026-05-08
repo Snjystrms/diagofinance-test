@@ -401,7 +401,7 @@ export function AccountTypeForm({
                       </div>
 
                       <div className="flex flex-wrap items-center gap-4">
-                        <div className="flex items-center gap-2">
+                        {/* <div className="flex items-center gap-2">
                           <Switch
                             checked={commission.is_default}
                             onCheckedChange={(value) => {
@@ -413,7 +413,7 @@ export function AccountTypeForm({
                             disabled={disabled}
                           />
                           <span className="text-sm">Default</span>
-                        </div>
+                        </div> */}
 
                         <div className="flex items-center gap-2">
                           <Switch

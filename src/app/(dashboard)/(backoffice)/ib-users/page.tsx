@@ -52,6 +52,11 @@ const deriveSponsorId = (user: AdminIbUser) => user.sponsor_id ?? "-";
 
 const deriveIbName = (user: AdminIbUser) => user.ib_name ?? "-";
 
+const deriveTotalCommission = (user: AdminIbUser): string => {
+  const val = user.total_commission;
+  return val != null ? String(val) : "-";
+};
+
 const derivePartnerId = (user: AdminIbUser) => user.partner_id ?? "-";
 
 const getUserActionKey = (user: AdminIbUser) => {
@@ -358,20 +363,21 @@ export default function IbUsersPage() {
       },
       {
         id: "ib_info",
-        header: "IB Information",
+        header: "Total Commission",
         cell: ({ row }) => {
           const user = row.original;
           const ibName = deriveIbName(user);
           const partnerId = derivePartnerId(user);
           const sponsorId = deriveSponsorId(user);
-
+          const totalCommission = deriveTotalCommission(user);
           return (
             <div className="space-y-1 text-sm">
-              {ibName !== "-" ? (
-                <div>
-                  <span className="font-medium">IB Name:</span> {ibName}
+              {totalCommission !== "-" ? (
+                <div className="text-center">
+                  {totalCommission}
                 </div>
               ) : null}
+              
               {partnerId !== "-" ? (
                 <div>
                   <span className="font-medium">Partner ID:</span> {partnerId}

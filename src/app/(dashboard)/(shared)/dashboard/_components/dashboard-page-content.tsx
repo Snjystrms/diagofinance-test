@@ -1145,16 +1145,26 @@ export function DashboardPageContent() {
             }
           `}</style>
           {/* Header Section */}
-          <div className="mb-8 rounded-3xl border border-border/50 bg-card p-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-8 ib-portal-hero rounded-[28px] border px-6 py-6 sm:px-7">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
               <div className="space-y-2">
-                <h1 className="flex items-center gap-2 text-3xl font-semibold">
-                  <LayoutGrid className="h-6 w-6 text-primary" />
-                  Dashboard
-                </h1>
-                <p className="text-base text-muted-foreground max-w-2xl">
-                  Welcome back! Here&apos;s what&apos;s happening with your account today.
-                </p>
+                <div className="ib-portal-kicker inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.22em]">
+                  <Sparkles className="h-3.5 w-3.5" />
+                  Client Portal
+                </div>
+                <div className="space-y-1">
+                  <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2.15rem]">
+                    {(() => {
+                      const h = new Date().getHours();
+                      const greeting = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+                      const firstName = user?.name?.split(" ")[0];
+                      return firstName ? `${greeting}, ${firstName}` : greeting;
+                    })()}
+                  </h1>
+                  <p className="max-w-3xl text-sm text-muted-foreground sm:text-base">
+                    Welcome back! Here&apos;s what&apos;s happening with your account today.
+                  </p>
+                </div>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 {canCustomizeDashboard ? (
@@ -1201,8 +1211,8 @@ export function DashboardPageContent() {
               {/* Key Metrics Summary Row */}
               <div className="grid gap-4 sm:grid-cols-3 mb-6">
                 {/* Total Deposits Card */}
-                <Card className="relative overflow-hidden border-2 border-indigo-500/30 hover:border-indigo-500/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-indigo-500/10 via-blue-500/5 to-transparent rounded-3xl group">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/10 to-blue-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
+                <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/8 to-blue-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
                   <CardContent className="relative z-10 pt-6 pb-6 px-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex-1">
@@ -1210,26 +1220,26 @@ export function DashboardPageContent() {
                           <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
                           Total Deposits
                         </div>
-                        <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400 tabular-nums">
+                        <p className="text-2xl font-bold text-foreground tabular-nums">
                           {formatCurrency(
                             dashboardData?.deposits?.total ?? 0,
                             depositsCurrency
                           )}
                         </p>
                       </div>
-                      <div className="p-3 rounded-2xl bg-gradient-to-br from-indigo-500/20 to-blue-500/20 border border-indigo-500/30 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                        <TrendingUp className="h-6 w-6 text-indigo-600 dark:text-indigo-400" />
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                        <TrendingUp className="h-5 w-5 text-foreground" />
                       </div>
                     </div>
-                    <div className="pt-3 border-t border-indigo-500/20">
+                    <div className="pt-3 border-t border-border/50">
                       <p className="text-xs text-muted-foreground">All time deposits</p>
                     </div>
                   </CardContent>
                 </Card>
                 
                 {/* Total Withdrawals Card */}
-                <Card className="relative overflow-hidden border-2 border-amber-500/30 hover:border-amber-500/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent rounded-3xl group">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/10 to-orange-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
+                <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-amber">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/8 to-orange-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
                   <CardContent className="relative z-10 pt-6 pb-6 px-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex-1">
@@ -1237,26 +1247,26 @@ export function DashboardPageContent() {
                           <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
                           Total Withdrawals
                         </div>
-                        <p className="text-2xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
+                        <p className="text-2xl font-bold text-foreground tabular-nums">
                           {formatCurrency(
                             dashboardData?.withdrawals?.total ?? 0,
                             withdrawalsCurrency
                           )}
                         </p>
                       </div>
-                      <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                        <TrendingDown className="h-6 w-6 text-amber-600 dark:text-amber-400" />
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                        <TrendingDown className="h-5 w-5 text-foreground" />
                       </div>
                     </div>
-                    <div className="pt-3 border-t border-amber-500/20">
+                    <div className="pt-3 border-t border-border/50">
                       <p className="text-xs text-muted-foreground">All time withdrawals</p>
                     </div>
                   </CardContent>
                 </Card>
 
                 {/* Trading Accounts Card */}
-                <Card className="relative overflow-hidden border-2 border-violet-500/30 hover:border-violet-500/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-violet-500/10 via-purple-500/5 to-transparent rounded-3xl group">
-                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-500/10 to-purple-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
+                <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-emerald">
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-500/8 to-purple-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
                   <CardContent className="relative z-10 pt-6 pb-6 px-6">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex-1">
@@ -1264,15 +1274,15 @@ export function DashboardPageContent() {
                           <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
                           Trading Accounts
                         </div>
-                        <p className="text-2xl font-bold text-violet-600 dark:text-violet-400 tabular-nums">
+                        <p className="text-2xl font-bold text-foreground tabular-nums">
                           {overallAccounts?.total_accounts ?? dashboardData?.account_types?.total_accounts ?? 0}
                         </p>
                       </div>
-                      <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500/20 to-purple-500/20 border border-violet-500/30 group-hover:scale-110 transition-transform duration-300 shadow-lg">
-                        <Building2 className="h-6 w-6 text-violet-600 dark:text-violet-400" />
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                        <Building2 className="h-5 w-5 text-foreground" />
                       </div>
                     </div>
-                    <div className="pt-3 border-t border-violet-500/20">
+                    <div className="pt-3 border-t border-border/50">
                       <p className="text-xs text-muted-foreground">Active MT5 accounts</p>
                     </div>
                   </CardContent>
@@ -1362,23 +1372,23 @@ export function DashboardPageContent() {
 
                 {/* Partner Wallet Card - Enhanced */}
                 {hasIbWalletData && ibWalletData && (
-                  <Card className="sm:col-span-1 lg:col-span-1 relative overflow-hidden border-2 border-blue-500/30 hover:border-blue-500/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-transparent rounded-3xl group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
+                  <Card className="sm:col-span-1 lg:col-span-1 relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/8 to-indigo-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
                     <CardHeader className="relative z-10 pb-3 px-6 pt-6">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="uppercase tracking-wider text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-2">
+                        <p className="uppercase tracking-wider text-xs font-semibold text-muted-foreground flex items-center gap-2">
                           <Wallet className="h-3.5 w-3.5" />
                           Partner Wallet
                         </p>
-                        <div className="p-1.5 rounded-lg bg-blue-500/10 backdrop-blur-sm border border-blue-500/20">
-                          <Wallet className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm">
+                          <Wallet className="h-4 w-4 text-foreground" />
                         </div>
                       </div>
                       <div className="flex items-baseline gap-2 mt-2">
-                        <span className="text-4xl font-extrabold leading-tight drop-shadow-lg text-blue-600 dark:text-blue-400">
+                        <span className="text-4xl font-extrabold leading-tight text-foreground">
                           {formatAmount(ibWalletData.wallet_balance.amount)}
                         </span>
-                        <span className="text-lg font-bold text-blue-600/80 dark:text-blue-400/80">
+                        <span className="text-lg font-semibold text-muted-foreground">
                           {ibWalletData.wallet_balance.currency}
                         </span>
                       </div>
@@ -1392,7 +1402,7 @@ export function DashboardPageContent() {
                               Your partner earnings and balance.
                             </p>
                           </div>
-                          <div className="space-y-2 pt-2 border-t border-blue-500/20">
+                          <div className="space-y-2 pt-2 border-t border-border/50">
                             <div className="flex items-center justify-between text-xs">
                               <span className="text-muted-foreground">Client Wallet:</span>
                               <span className="font-semibold text-foreground">
@@ -1455,11 +1465,11 @@ export function DashboardPageContent() {
 
                 {/* Profile Status Card - Enhanced */}
                 <div className="sm:col-span-2 lg:col-span-1">
-                  <Card className="rounded-3xl h-full relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-background to-muted/30 group">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
-                    <CardHeader className="flex flex-row items-center justify-between pb-3 pt-5 px-5 relative z-10 border-b bg-gradient-to-r from-transparent to-primary/5">
+                  <Card className="rounded-[28px] h-full relative overflow-hidden border shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/8 to-purple-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
+                    <CardHeader className="flex flex-row items-center justify-between pb-3 pt-5 px-5 relative z-10 border-b border-border/50">
                       <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-gradient-to-br from-primary/10 to-purple-500/10 border border-primary/20">
+                        <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm">
                           <Target className="h-4 w-4 text-primary" />
                         </div>
                         <div>
@@ -1674,9 +1684,7 @@ export function DashboardPageContent() {
                           className="rounded-md px-2 py-2 text-sm transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                         >
                           <div className="flex items-center gap-1.5">
-                            <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
-                              5
-                            </div>
+                            <Activity className="h-4 w-4" />
                             <span className="hidden text-xs sm:inline">MT5 Live</span>
                           </div>
                         </TabsTrigger>
@@ -1685,9 +1693,7 @@ export function DashboardPageContent() {
                           className="rounded-md px-2 py-2 text-sm transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
                         >
                           <div className="flex items-center gap-1.5">
-                            <div className="flex h-5 w-5 items-center justify-center rounded bg-primary/10 text-xs font-bold text-primary">
-                              5
-                            </div>
+                            <Target className="h-4 w-4" />
                             <span className="hidden text-xs sm:inline">MT5 Demo</span>
                           </div>
                         </TabsTrigger>
@@ -1884,7 +1890,7 @@ export function DashboardPageContent() {
               variant="panel"
             />
           ) : (
-            <AdminDashboardView adminDashboardData={adminDashboardData} />
+            <AdminDashboardView adminDashboardData={adminDashboardData} userName={user?.name} />
           )}
         </>
       )}

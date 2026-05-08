@@ -160,22 +160,16 @@ export default function InternalTransferReportPage() {
 
       const exportData = reportItems.map((item) => ({
         ID: item.id,
-        "User ID": item.user_id || "—",
-        "User Name": item.user?.name || "—",
-        "User Email": item.user?.email || "—",
+        "User Name": item.name || "—",
+        "User Email": item.email || "—",
         "From Account": item.from_account || "—",
         "To Account": item.to_account || "—",
-        "From Wallet Type": item.from_wallet_type || "—",
-        "To Wallet Type": item.to_wallet_type || "—",
-        "From MT5 Account ID": item.from_mt5_account_id || "—",
-        "To MT5 Account ID": item.to_mt5_account_id || "—",
         "Amount (USDT)": formatAmount(item.amount),
-        "Transfer Type": item.transfer_type || "—",
-        "Transfer Mode": item.transfer_mode || "—",
-        "Remarks": item.remarks || item.comment || "—",
-        "Status": item.status_text || (item.status ? String(item.status) : "—"),
+        "Comment": item.comment || "—",
+        "Marketing Name": item.marketing_name || "—",
+        "Type": item.type ?? "—",
+        "Status": item.status === 1 ? "Success" : item.status != null ? "Pending" : "—",
         "Created At": fmtDateTime(item.created_at),
-        "Updated At": fmtDateTime(item.updated_at),
       }));
 
       const worksheet = XLSX.utils.json_to_sheet(exportData);
@@ -235,14 +229,15 @@ export default function InternalTransferReportPage() {
       {
         id: "user",
         header: "User",
-        accessorKey: "user",
+        accessorKey: "name",
         cell: ({ row }) => {
-          const user = row.original.user;
-          if (!user) return <span className="text-muted-foreground">—</span>;
+          const name = row.original.name;
+          const email = row.original.email;
+          if (!name && !email) return <span className="text-muted-foreground">—</span>;
           return (
             <div className="space-y-0.5">
-              <div className="font-medium">{user.name || "—"}</div>
-              <div className="text-xs text-muted-foreground">{user.email || "—"}</div>
+              <div className="font-medium">{name || "—"}</div>
+              <div className="text-xs text-muted-foreground">{email || "—"}</div>
             </div>
           );
         },
@@ -250,29 +245,17 @@ export default function InternalTransferReportPage() {
       {
         id: "transfer_details",
         header: "Transfer Details",
-        accessorKey: "transfer_type",
-        cell: ({ row }) => {
-          const fromAccount = row.original.from_account || row.original.from_wallet_type || row.original.from_mt5_account_id;
-          const toAccount = row.original.to_account || row.original.to_wallet_type || row.original.to_mt5_account_id;
-          const transferType = row.original.transfer_type;
-          const transferMode = row.original.transfer_mode;
-          
-          return (
-            <div className="space-y-0.5">
-              <div className="text-sm">
-                <span className="text-muted-foreground">From:</span> {fromAccount || "—"}
-              </div>
-              <div className="text-sm">
-                <span className="text-muted-foreground">To:</span> {toAccount || "—"}
-              </div>
-              {(transferType || transferMode) && (
-                <div className="text-xs text-muted-foreground">
-                  {transferType && transferMode ? `${transferType} / ${transferMode}` : transferType || transferMode}
-                </div>
-              )}
+        accessorKey: "from_account",
+        cell: ({ row }) => (
+          <div className="space-y-0.5">
+            <div className="text-sm">
+              <span className="text-muted-foreground">From:</span> {row.original.from_account || "—"}
             </div>
-          );
-        },
+            <div className="text-sm">
+              <span className="text-muted-foreground">To:</span> {row.original.to_account || "—"}
+            </div>
+          </div>
+        ),
       },
       {
         id: "amount",
@@ -283,18 +266,18 @@ export default function InternalTransferReportPage() {
         ),
       },
       {
-        id: "remarks",
-        header: "Remarks",
-        accessorKey: "remarks",
+        id: "comment",
+        header: "Comment",
+        accessorKey: "comment",
         cell: ({ row }) => {
-          const remarks = row.original.remarks || row.original.comment;
-          if (!remarks) return <span className="text-muted-foreground">—</span>;
+          const comment = row.original.comment;
+          if (!comment) return <span className="text-muted-foreground">—</span>;
           return (
             <span
               className="text-sm max-w-[200px] truncate block"
-              title={String(remarks)}
+              title={String(comment)}
             >
-              {remarks}
+              {comment}
             </span>
           );
         },
@@ -304,10 +287,19 @@ export default function InternalTransferReportPage() {
         header: "Status",
         accessorKey: "status",
         cell: ({ row }) => {
-          const status = row.original.status_text || row.original.status;
-          if (!status) return <span className="text-muted-foreground">—</span>;
+          const status = row.original.status;
+          if (status == null) return <span className="text-muted-foreground">—</span>;
+          const isSuccess = status === 1;
           return (
-            <span className="text-sm">{String(status)}</span>
+            <span
+              className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${
+                isSuccess
+                  ? "bg-green-50 text-green-700 border-green-600/30"
+                  : "bg-yellow-50 text-yellow-700 border-yellow-600/30"
+              }`}
+            >
+              {isSuccess ? "Success" : "Pending"}
+            </span>
           );
         },
       },

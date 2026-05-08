@@ -121,7 +121,7 @@ function InternalTransferContent() {
   const [isLoadingResources, setIsLoadingResources] = useState(false)
   const [walletError, setWalletError] = useState<unknown | null>(null)
   const [accountsError, setAccountsError] = useState<unknown | null>(null)
-  const [activeTab, setActiveTab] = useState<TransferTab>('wallet-to-wallet')
+  const [activeTab, setActiveTab] = useState<TransferTab>('wallet-to-mt5')
 
   const mt5ToMt5Form = useForm<Mt5ToMt5FormValues>({
     resolver: zodResolver(mt5ToMt5Schema),
@@ -574,14 +574,14 @@ function InternalTransferContent() {
       </div>
 
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TransferTab)} className="space-y-4">
-        <TabsList className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-4">
-          <TabsTrigger value="wallet-to-wallet">Wallet to Wallet</TabsTrigger>
+        <TabsList className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
+          {/* <TabsTrigger value="wallet-to-wallet">Wallet to Wallet</TabsTrigger> */}
           <TabsTrigger value="wallet-to-mt5">Wallet to MT5</TabsTrigger>
           <TabsTrigger value="mt5-to-wallet">MT5 to Wallet</TabsTrigger>
           <TabsTrigger value="mt5-to-mt5">MT5 to MT5</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="wallet-to-wallet">
+        {/* <TabsContent value="wallet-to-wallet">
           <Card>
             <CardHeader>
               <CardTitle>Transfer between wallets</CardTitle>
@@ -699,7 +699,7 @@ function InternalTransferContent() {
               </Form>
             </CardContent>
           </Card>
-        </TabsContent>
+        </TabsContent> */}
 
         <TabsContent value="wallet-to-mt5">
           <Card>

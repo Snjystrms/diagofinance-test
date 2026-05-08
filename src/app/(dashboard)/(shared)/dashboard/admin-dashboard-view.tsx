@@ -14,7 +14,7 @@ import {
   UserX,
   FileClock,
   Landmark,
-  LayoutGrid,
+  Sparkles,
 } from "lucide-react";
 import { EnhancedDashboardCharts } from "./_components/EnhancedDashboardCharts";
 import dynamic from "next/dynamic";
@@ -33,9 +33,10 @@ import { formatCurrency } from "@/lib/formatters";
 
 interface AdminDashboardViewProps {
   adminDashboardData: AdminDashboardData | null;
+  userName?: string;
 }
 
-export function AdminDashboardView({ adminDashboardData }: AdminDashboardViewProps) {
+export function AdminDashboardView({ adminDashboardData, userName }: AdminDashboardViewProps) {
   const kpis = adminDashboardData?.kpis;
   const transactionGraph = adminDashboardData?.transaction_graph;
   const clientsGraph = adminDashboardData?.clients_graph;
@@ -92,213 +93,84 @@ export function AdminDashboardView({ adminDashboardData }: AdminDashboardViewPro
   }, [clientsChartData]);
 
   const primaryKpiCards = [
-    {
-      title: "Total Clients",
-      value: kpis?.total_clients ?? 0,
-      description: "All registered clients",
-      icon: Users,
-      className:
-        "border-indigo-500/30 hover:border-indigo-500/50 bg-gradient-to-br from-indigo-500/10 via-blue-500/5 to-transparent",
-      iconClassName: "text-indigo-600 dark:text-indigo-400",
-      valueClassName: "text-indigo-600 dark:text-indigo-400",
-    },
-    {
-      title: "Total IB",
-      value: kpis?.total_ib ?? 0,
-      description: "Introducing Brokers",
-      icon: Building2,
-      className:
-        "border-blue-500/30 hover:border-blue-500/50 bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-transparent",
-      iconClassName: "text-blue-600 dark:text-blue-400",
-      valueClassName: "text-blue-600 dark:text-blue-400",
-    },
-    {
-      title: "Pending Clients",
-      value: kpis?.pending_clients ?? 0,
-      description: "Awaiting approval",
-      icon: Clock,
-      className:
-        "border-amber-500/30 hover:border-amber-500/50 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent",
-      iconClassName: "text-amber-600 dark:text-amber-400",
-      valueClassName: "text-amber-600 dark:text-amber-400",
-    },
-    {
-      title: "Active Traders",
-      value: kpis?.active_traders ?? 0,
-      description: "Currently trading",
-      icon: TrendingUp,
-      className:
-        "border-green-500/30 hover:border-green-500/50 bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-transparent",
-      iconClassName: "text-green-600 dark:text-green-400",
-      valueClassName: "text-green-600 dark:text-green-400",
-    },
+    { title: "Total Clients",   value: kpis?.total_clients ?? 0,  description: "All registered clients", icon: Users,     ibVariant: "ib-portal-surface-primary" },
+    { title: "Total IB",        value: kpis?.total_ib ?? 0,       description: "Introducing Brokers",    icon: Building2, ibVariant: "ib-portal-surface-primary" },
+    { title: "Pending Clients", value: kpis?.pending_clients ?? 0, description: "Awaiting approval",     icon: Clock,     ibVariant: "ib-portal-surface-amber"   },
+    { title: "Active Traders",  value: kpis?.active_traders ?? 0, description: "Currently trading",      icon: TrendingUp, ibVariant: "ib-portal-surface-emerald" },
   ];
 
   const secondaryKpiCards = [
-    {
-      title: "Approved Deposits",
-      value: kpis?.approved_deposit ?? 0,
-      description: "Total approved",
-      icon: CheckCircle2,
-      className:
-        "border-green-500/30 hover:border-green-500/50 bg-gradient-to-br from-green-500/10 via-emerald-500/5 to-transparent",
-      iconClassName: "text-green-600 dark:text-green-400",
-      valueClassName: "text-green-600 dark:text-green-400",
-    },
-    {
-      title: "Pending Deposits",
-      value: kpis?.pending_deposit ?? 0,
-      description: "Awaiting approval",
-      icon: Clock,
-      className:
-        "border-amber-500/30 hover:border-amber-500/50 bg-gradient-to-br from-amber-500/10 via-orange-500/5 to-transparent",
-      iconClassName: "text-amber-600 dark:text-amber-400",
-      valueClassName: "text-amber-600 dark:text-amber-400",
-    },
-    {
-      title: "Pending Withdrawals",
-      value: kpis?.pending_withdraw ?? 0,
-      description: "Awaiting processing",
-      icon: TrendingDown,
-      className:
-        "border-red-500/30 hover:border-red-500/50 bg-gradient-to-br from-red-500/10 via-rose-500/5 to-transparent",
-      iconClassName: "text-red-600 dark:text-red-400",
-      valueClassName: "text-red-600 dark:text-red-400",
-    },
-    {
-      title: "Pending IB Withdrawals",
-      value: kpis?.pending_ib_withdraw ?? 0,
-      description: "IB withdrawal requests",
-      icon: Wallet,
-      className:
-        "border-purple-500/30 hover:border-purple-500/50 bg-gradient-to-br from-purple-500/10 via-violet-500/5 to-transparent",
-      iconClassName: "text-purple-600 dark:text-purple-400",
-      valueClassName: "text-purple-600 dark:text-purple-400",
-    },
+    { title: "Approved Deposits",     value: kpis?.approved_deposit ?? 0,   description: "Total approved",         icon: CheckCircle2, ibVariant: "ib-portal-surface-emerald" },
+    { title: "Pending Deposits",      value: kpis?.pending_deposit ?? 0,    description: "Awaiting approval",      icon: Clock,        ibVariant: "ib-portal-surface-amber"   },
+    { title: "Pending Withdrawals",   value: kpis?.pending_withdraw ?? 0,   description: "Awaiting processing",    icon: TrendingDown, ibVariant: "ib-portal-surface-amber"   },
+    { title: "Pending IB Withdrawals",value: kpis?.pending_ib_withdraw ?? 0,description: "IB withdrawal requests", icon: Wallet,       ibVariant: "ib-portal-surface-primary" },
   ];
 
   const tertiaryKpiCards = [
-    {
-      title: "FTD Users",
-      value: kpis?.ftd_users ?? 0,
-      description: "First-time deposit users",
-      icon: UserCheck,
-      className:
-        "border-emerald-500/30 hover:border-emerald-500/50 bg-gradient-to-br from-emerald-500/10 via-lime-500/5 to-transparent",
-      iconClassName: "text-emerald-600 dark:text-emerald-400",
-      valueClassName: "text-emerald-600 dark:text-emerald-400",
-    },
-    {
-      title: "Non-FTD Users",
-      value: kpis?.non_ftd_users ?? 0,
-      description: "Users without first deposit",
-      icon: UserX,
-      className:
-        "border-slate-500/30 hover:border-slate-500/50 bg-gradient-to-br from-slate-500/10 via-zinc-500/5 to-transparent",
-      iconClassName: "text-slate-600 dark:text-slate-300",
-      valueClassName: "text-slate-700 dark:text-slate-200",
-    },
-    {
-      title: "Pending IB Requests",
-      value: kpis?.pending_ib_request ?? 0,
-      description: "Waiting for IB approval",
-      icon: FileClock,
-      className:
-        "border-cyan-500/30 hover:border-cyan-500/50 bg-gradient-to-br from-cyan-500/10 via-sky-500/5 to-transparent",
-      iconClassName: "text-cyan-600 dark:text-cyan-400",
-      valueClassName: "text-cyan-600 dark:text-cyan-400",
-    },
-    {
-      title: "Pending Bank Details",
-      value: kpis?.pending_bank_details_request ?? 0,
-      description: "Bank detail review queue",
-      icon: Landmark,
-      className:
-        "border-fuchsia-500/30 hover:border-fuchsia-500/50 bg-gradient-to-br from-fuchsia-500/10 via-pink-500/5 to-transparent",
-      iconClassName: "text-fuchsia-600 dark:text-fuchsia-400",
-      valueClassName: "text-fuchsia-600 dark:text-fuchsia-400",
-    },
+    { title: "FTD Users",           value: kpis?.ftd_users ?? 0,                   description: "First-time deposit users",  icon: UserCheck, ibVariant: "ib-portal-surface-emerald" },
+    { title: "Non-FTD Users",       value: kpis?.non_ftd_users ?? 0,               description: "Users without first deposit",icon: UserX,    ibVariant: "ib-portal-surface"         },
+    { title: "Pending IB Requests", value: kpis?.pending_ib_request ?? 0,          description: "Waiting for IB approval",   icon: FileClock, ibVariant: "ib-portal-surface-emerald" },
+    { title: "Pending Bank Details",value: kpis?.pending_bank_details_request ?? 0,description: "Bank detail review queue",  icon: Landmark,  ibVariant: "ib-portal-surface-primary" },
   ];
 
+  const greeting = (() => {
+    const h = new Date().getHours();
+    const g = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+    const firstName = userName?.split(" ")[0];
+    return firstName ? `${g}, ${firstName}` : g;
+  })();
+
+  const KpiGrid = ({ cards }: { cards: typeof primaryKpiCards }) => (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
+      {cards.map((item) => {
+        const Icon = item.icon;
+        return (
+          <Card
+            key={item.title}
+            className={`relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ${item.ibVariant}`}
+          >
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground leading-tight">
+                  {item.title}
+                </p>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                  <Icon className="h-4 w-4 text-foreground" />
+                </div>
+              </div>
+              <div className="text-2xl font-semibold tracking-tight text-foreground">{item.value}</div>
+              <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
+            </CardContent>
+          </Card>
+        );
+      })}
+    </div>
+  );
+
   return (
-    <div className="min-h-full w-full p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-background via-background to-muted/20">
-      <div className="mb-6">
-        <h1 className="flex items-center gap-2 text-2xl sm:text-3xl font-bold bg-gradient-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">
-          <LayoutGrid className="h-6 w-6 text-primary" />
-          Admin Dashboard
-        </h1>
-        <p className="text-muted-foreground text-sm mt-1">
-          Welcome back! Here&apos;s what&apos;s happening with your business today.
-        </p>
+    <div className="min-h-full w-full p-4 lg:p-6 xl:p-8">
+      {/* Header */}
+      <div className="mb-6 ib-portal-hero rounded-[28px] border px-6 py-6 sm:px-7">
+        <div className="space-y-2">
+          <div className="ib-portal-kicker inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.22em]">
+            <Sparkles className="h-3.5 w-3.5" />
+            Admin Portal
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2.15rem]">
+              {greeting}
+            </h1>
+            <p className="max-w-3xl text-sm text-muted-foreground sm:text-base">
+              Here&apos;s what&apos;s happening with your business today.
+            </p>
+          </div>
+        </div>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        {primaryKpiCards.map((item) => {
-          const Icon = item.icon;
-
-          return (
-            <Card
-              key={item.title}
-              className={`hover:shadow-md transition-shadow duration-300 border-2 ${item.className}`}
-            >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
-                <Icon className={`h-4 w-4 ${item.iconClassName}`} />
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold ${item.valueClassName}`}>{item.value}</div>
-                <p className="text-xs text-muted-foreground">{item.description}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Additional KPI Cards Row */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        {secondaryKpiCards.map((item) => {
-          const Icon = item.icon;
-
-          return (
-            <Card
-              key={item.title}
-              className={`hover:shadow-md transition-shadow duration-300 border-2 ${item.className}`}
-            >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
-                <Icon className={`h-4 w-4 ${item.iconClassName}`} />
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold ${item.valueClassName}`}>{item.value}</div>
-                <p className="text-xs text-muted-foreground">{item.description}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
-
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-        {tertiaryKpiCards.map((item) => {
-          const Icon = item.icon;
-
-          return (
-            <Card
-              key={item.title}
-              className={`hover:shadow-md transition-shadow duration-300 border-2 ${item.className}`}
-            >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
-                <Icon className={`h-4 w-4 ${item.iconClassName}`} />
-              </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold ${item.valueClassName}`}>{item.value}</div>
-                <p className="text-xs text-muted-foreground">{item.description}</p>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      {/* KPI Card rows */}
+      <KpiGrid cards={primaryKpiCards} />
+      <KpiGrid cards={secondaryKpiCards} />
+      <KpiGrid cards={tertiaryKpiCards} />
 
       {/* Charts */}
      <EnhancedDashboardCharts adminDashboardData={adminDashboardData} />

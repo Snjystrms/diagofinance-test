@@ -269,12 +269,12 @@ export default function BonusManagementPage() {
           <span className="font-semibold">{formatMoney(row.original.amount)}</span>
         ),
       },
-      {
-        id: "equity",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Equity Ref." />,
-        accessorFn: (row) => row.equity,
-        cell: ({ row }) => formatMoney(row.original.equity),
-      },
+      // {
+      //   id: "equity",
+      //   header: ({ column }) => <DataTableColumnHeader column={column} title="Equity Ref." />,
+      //   accessorFn: (row) => row.equity,
+      //   cell: ({ row }) => formatMoney(row.original.equity),
+      // },
       {
         id: "comment",
         header: "Comment",

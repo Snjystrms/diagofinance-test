@@ -10,6 +10,7 @@ import { PermissionAwareCrudDataTable } from "@/components/permission-aware-crud
 import { PermissionAwareButton } from "@/components/permission-aware-button";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { BackofficeDetailDialogSkeleton } from "@/components/loading/backoffice-page-skeletons";
+import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Plus, UserPlus } from "lucide-react";
 import { getColumns } from "./columns";
 import {
@@ -349,6 +350,14 @@ export default function AllManagersPage() {
     });
     return ordered;
   }, [viewItem, permIndex, groupedPerms]);
+
+  if (loading) {
+    return (
+      <ProtectedRoute>
+        <ListPageSkeleton columnCount={5} rowCount={8} actionCount={1} />
+      </ProtectedRoute>
+    );
+  }
 
   if (isError && data.length === 0) {
     return (

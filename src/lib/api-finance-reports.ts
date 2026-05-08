@@ -822,27 +822,18 @@ export const adminIbWithdrawalReportApi = {
 
 export interface InternalTransferReportItem {
   id: number | string;
-  user_id?: number | string;
+  name?: string | null;
+  email?: string | null;
+  name_email?: string | null;
   from_account?: string | null;
   to_account?: string | null;
-  from_wallet_type?: string | null;
-  to_wallet_type?: string | null;
-  from_mt5_account_id?: string | null;
-  to_mt5_account_id?: string | null;
   amount: number | string;
-  remarks?: string | null;
-  comment?: string | null;
-  transfer_type?: string | null;
-  transfer_mode?: string | null;
-  status?: number | string;
-  status_text?: string;
+  date?: string | null;
   created_at: string;
-  updated_at?: string;
-  user?: {
-    id?: number | string;
-    name?: string;
-    email?: string;
-  };
+  marketing_name?: string | null;
+  comment?: string | null;
+  type?: number | null;
+  status?: number | null;
 }
 
 export interface InternalTransferReportListParams {
