@@ -1428,36 +1428,37 @@ export function DashboardPageContent() {
                   </Card>
                 )}
 
-                {/* Deposit Funds Card - Enhanced */}
+                {/* Deposit Funds Card */}
                 {(!dashboardData?.wallet?.balance || dashboardData.wallet.balance === 0) && (
-                  <Card className="sm:col-span-1 lg:col-span-1 relative overflow-hidden border-2 border-dashed border-primary/30 hover:border-primary/50 transition-all duration-300 hover:shadow-lg bg-gradient-to-br from-primary/5 via-purple-500/5 to-pink-500/5 group">
-                    <div className="absolute inset-0 bg-gradient-to-r from-primary/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                    <CardContent className="pt-6 pb-6 relative z-10">
+                  <Card className="sm:col-span-1 lg:col-span-1 relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/8 to-purple-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
+                    <CardContent className="pt-6 pb-6 px-6 relative z-10">
                       <div className="flex flex-col items-center justify-center text-center space-y-4">
-                        <div className="relative w-24 h-24 flex items-center justify-center animate-pulse">
-                          <div className="absolute inset-0 border-2 border-dashed border-primary/40 rounded-full animate-spin-slow" style={{ animation: 'spin 8s linear infinite' }}></div>
-                          <div className="absolute inset-2 border-2 border-primary/20 rounded-full"></div>
-                          <div className="relative p-4 rounded-full bg-gradient-to-br from-primary/20 to-purple-500/20 border border-primary/30">
-                            <Wallet className="h-8 w-8 text-primary" />
+                        <div className="relative w-20 h-20 flex items-center justify-center">
+                          <div className="absolute inset-0 rounded-full border border-dashed border-border/60" style={{ animation: 'spin 10s linear infinite' }} />
+                          <div className="flex h-full w-full items-center justify-center rounded-full border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-105 transition-transform duration-300">
+                            <Wallet className="h-7 w-7 text-foreground" />
                           </div>
-                          <div className="absolute -bottom-1 -right-1 animate-bounce">
-                            <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg border-2 border-background">
-                              <PlusCircle className="h-4 w-4 text-white" />
+                          <div className="absolute -bottom-1 -right-1">
+                            <div className="flex h-6 w-6 items-center justify-center rounded-full border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm">
+                              <PlusCircle className="h-3.5 w-3.5 text-foreground" />
                             </div>
                           </div>
                         </div>
-                        <div className="space-y-1.5">
-                          <h3 className="text-lg font-bold text-foreground">Wallet Empty</h3>
-                          <p className="text-sm text-muted-foreground">
+                        <div className="space-y-1">
+                          <h3 className="text-base font-semibold text-foreground">Wallet Empty</h3>
+                          <p className="text-xs text-muted-foreground">
                             Deposit funds to start your trading journey
                           </p>
                         </div>
-                        <Link href="/funds/deposit" className="w-full mt-2">
-                          <Button size="sm" className="w-full bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 text-white shadow-lg hover:shadow-xl transition-all duration-300">
-                            <PlusCircle className="h-4 w-4 mr-2" />
-                            Deposit Funds
-                          </Button>
-                        </Link>
+                        <div className="pt-1 border-t border-border/50 w-full">
+                          <Link href="/funds/deposit" className="w-full block mt-3">
+                            <Button size="sm" className="w-full">
+                              <PlusCircle className="h-4 w-4 mr-2" />
+                              Deposit Funds
+                            </Button>
+                          </Link>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
