@@ -96,6 +96,48 @@ const COMMISSION_LEVEL_ORDER: Record<string, number> = {
   "Level-5": 5,
 };
 
+const EDITABLE_RATE_FIELDS = [
+  "rate_ib",
+  "rate_sub_ib_1",
+  "rate_sub_ib_2",
+  "rate_sub_ib_3",
+  "rate_sub_ib_4",
+  "rate_sub_ib_5",
+] as const satisfies readonly Exclude<EditableCommissionFieldKey, "status">[];
+
+const rateDraftKey = (commissionId: number, field: string) => `${commissionId}:${field}`;
+
+/** Allow only digits and a single decimal point so users can type naturally (e.g. "12.", "0.5"). */
+const sanitizeCommissionRateInput = (raw: string) => {
+  let out = "";
+  let seenDot = false;
+  for (const ch of raw) {
+    if (ch >= "0" && ch <= "9") {
+      out += ch;
+      continue;
+    }
+    if (ch === "." && !seenDot) {
+      seenDot = true;
+      out += ".";
+    }
+  }
+  return out;
+};
+
+const commissionRateStringFromApi = (value: unknown) => {
+  if (value === null || value === undefined || value === "") return "";
+  const n = Number(value);
+  if (!Number.isFinite(n)) return "";
+  return String(n);
+};
+
+const parseCommissionRateDraft = (s: string) => {
+  const t = s.trim();
+  if (t === "" || t === ".") return 0;
+  const n = Number(t);
+  return Number.isFinite(n) ? n : 0;
+};
+
 const formatDateTime = (value?: string | null) => {
   if (!value) {
     return "-";
@@ -168,6 +210,8 @@ export default function SetIbCommissionPage() {
   const [editedCommissions, setEditedCommissions] = useState<
     Record<number, EditableCommissionFields>
   >({});
+  /** Raw strings while editing commission rates (avoid forced decimals / fighting `type="number"`). */
+  const [commissionRateDrafts, setCommissionRateDrafts] = useState<Record<string, string>>({});
   const [savingCommissionId, setSavingCommissionId] = useState<number | null>(null);
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
@@ -306,6 +350,7 @@ export default function SetIbCommissionPage() {
     setLoadingCommissions(false);
     setEditingCommissionId(null);
     setEditedCommissions({});
+    setCommissionRateDrafts({});
     setSavingCommissionId(null);
   }, []);
 
@@ -322,6 +367,7 @@ export default function SetIbCommissionPage() {
         setCommissionData(null);
         setEditingCommissionId(null);
         setEditedCommissions({});
+        setCommissionRateDrafts({});
         setCommissionDialogOpen(true);
         setLoadingCommissions(true);
 
@@ -378,11 +424,19 @@ export default function SetIbCommissionPage() {
         status: Boolean(commission.status),
       },
     });
+    const drafts: Record<string, string> = {};
+    for (const field of EDITABLE_RATE_FIELDS) {
+      drafts[rateDraftKey(commission.id, field)] = commissionRateStringFromApi(
+        commission[field],
+      );
+    }
+    setCommissionRateDrafts(drafts);
   };
 
   const handleCancelEdit = () => {
     setEditingCommissionId(null);
     setEditedCommissions({});
+    setCommissionRateDrafts({});
   };
 
   const handleUpdateCommissionField = (
@@ -413,9 +467,35 @@ export default function SetIbCommissionPage() {
       try {
         setSavingCommissionId(commission.id);
 
+        const parsedRates: Pick<
+          UserCommission,
+          | "rate_ib"
+          | "rate_sub_ib_1"
+          | "rate_sub_ib_2"
+          | "rate_sub_ib_3"
+          | "rate_sub_ib_4"
+          | "rate_sub_ib_5"
+        > = {
+          rate_ib: 0,
+          rate_sub_ib_1: 0,
+          rate_sub_ib_2: 0,
+          rate_sub_ib_3: 0,
+          rate_sub_ib_4: 0,
+          rate_sub_ib_5: 0,
+        };
+        for (const field of EDITABLE_RATE_FIELDS) {
+          const key = rateDraftKey(commission.id, field);
+          const draft =
+            key in commissionRateDrafts
+              ? commissionRateDrafts[key]
+              : commissionRateStringFromApi(commission[field]);
+          parsedRates[field] = parseCommissionRateDraft(draft);
+        }
+
         const updatedCommission: UserCommission = {
           ...commission,
           ...editedData,
+          ...parsedRates,
         };
 
         await adminIbUserCommissionsApi.patchUserCommission(
@@ -440,6 +520,7 @@ export default function SetIbCommissionPage() {
         toast.success("Commission updated successfully");
         setEditingCommissionId(null);
         setEditedCommissions({});
+        setCommissionRateDrafts({});
       } catch (error: unknown) {
         console.error("Failed to update commission:", error);
         toast.error(
@@ -452,7 +533,7 @@ export default function SetIbCommissionPage() {
         setSavingCommissionId(null);
       }
     },
-    [editedCommissions, selectedUserId, token],
+    [commissionRateDrafts, editedCommissions, selectedUserId, token],
   );
 
   const groupedCommissions = useMemo(() => {
@@ -473,10 +554,13 @@ export default function SetIbCommissionPage() {
   const renderCommissionInput = (
     commissionId: number,
     field: Exclude<EditableCommissionFieldKey, "status">,
-    value?: number | null,
+    fallbackFromApi?: number | null,
   ) => {
-    const normalizedValue =
-      typeof value === "number" && Number.isFinite(value) ? value : 0;
+    const key = rateDraftKey(commissionId, field);
+    const displayValue =
+      key in commissionRateDrafts
+        ? commissionRateDrafts[key]
+        : commissionRateStringFromApi(fallbackFromApi);
 
     return (
       <div className="relative min-w-[112px]">
@@ -484,19 +568,17 @@ export default function SetIbCommissionPage() {
           $
         </span>
         <Input
-          type="number"
-          min="0"
-          step="0.01"
-          value={normalizedValue.toFixed(2)}
+          type="text"
+          inputMode="decimal"
+          autoComplete="off"
+          value={displayValue}
           onChange={(event) => {
-            const nextValue = Number(event.target.value);
-            handleUpdateCommissionField(
-              commissionId,
-              field,
-              Number.isFinite(nextValue) ? nextValue : 0,
-            );
+            setCommissionRateDrafts((previous) => ({
+              ...previous,
+              [key]: sanitizeCommissionRateInput(event.target.value),
+            }));
           }}
-          className="h-9 pl-7 text-right [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+          className="h-9 pl-7 text-right"
         />
       </div>
     );

@@ -975,6 +975,35 @@ export function getManagerNavigation(groupedPermissions?: GroupedPermissions[]):
   });
 }
 
+/** Flat links for compact UI (e.g. header dropdown). Omits `/dashboard`; max 2 items; empty when manager has no real sections. */
+export function getManagerHeaderQuickLinks(
+  groupedPermissions?: GroupedPermissions[]
+): { title: string; url: string }[] {
+  const nav = getManagerNavigation(groupedPermissions);
+  const out: { title: string; url: string }[] = [];
+  const seen = new Set<string>();
+
+  const push = (title: string, url: string) => {
+    if (!url || url === "#" || !url.startsWith("/")) return;
+    if (url === "/dashboard") return;
+    if (seen.has(url)) return;
+    seen.add(url);
+    out.push({ title, url });
+  };
+
+  for (const item of nav) {
+    if (item.items?.length) {
+      for (const sub of item.items) {
+        push(sub.title, sub.url);
+      }
+    } else {
+      push(item.title, item.url);
+    }
+  }
+
+  return out.slice(0, 2);
+}
+
 export function getSidebarNavigation(
   user?: Pick<SidebarContext, "isIbUser" | "managerPermissions" | "subadminPermissions"> & {
     type?: UserType;

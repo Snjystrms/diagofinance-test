@@ -1,7 +1,7 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { User, LogOut, Palette, Shield, Layout, Copy } from "lucide-react"
+import { useState, useEffect, useMemo } from "react"
+import { User, LogOut, Palette, Shield, Layout, Copy, Ticket, Wallet, UserCheck } from "lucide-react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -25,6 +25,7 @@ import toast from "react-hot-toast"
 import { TwoFactorModal } from "@/components/two-factor-modal"
 import { NotificationInbox } from "@/components/notification-inbox"
 import { useClientCustomization } from "@/contexts/client-customization-context"
+import { getManagerHeaderQuickLinks } from "@/lib/app-route-registry"
 
 export function Header() {
   const { user, token } = useAuth();
@@ -50,6 +51,25 @@ export function Header() {
   const canExportPreset =
     customizationEnabled && (canCustomizeTheme || canCustomizeSidebar || canCustomizeDashboard);
   const isDashboardRoute = pathname === "/dashboard";
+  const isClientUser = user?.type === "user";
+  const isAdminLike =
+    user?.type === "admin" || user?.type === "subadmin";
+  const isManagerUser = user?.type === "manager";
+
+  const managerQuickLinks = useMemo(
+    () =>
+      isManagerUser
+        ? getManagerHeaderQuickLinks(user?.managerPermissions)
+        : [],
+    [isManagerUser, user?.managerPermissions],
+  );
+
+  const showAccountMenuMiddle =
+    !!user &&
+    (isAdminLike ||
+      isClientUser ||
+      (isManagerUser && managerQuickLinks.length > 0) ||
+      (!isAdminLike && !isClientUser && !isManagerUser));
 
   // Share the userDashboard data with dashboard page via React Query cache.
   const { data: userDashboardData } = useQuery({
@@ -243,13 +263,67 @@ export function Header() {
                   <p className="text-xs leading-none text-muted-foreground">{user?.email || "user@example.com"}</p>
                 </div>
               </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => router.push("/profile/view_profile")}>
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => router.push("/bank-details")}>
-                Settings
-              </DropdownMenuItem>
+              {showAccountMenuMiddle ? (
+                <>
+                  <DropdownMenuSeparator />
+                  {isAdminLike ? (
+                    <>
+                      <DropdownMenuItem
+                        onClick={() => router.push("/user-verification")}
+                      >
+                        <UserCheck className="mr-2 h-4 w-4 shrink-0" />
+                        User KYC
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => router.push("/all-tickets")}
+                      >
+                        <Ticket className="mr-2 h-4 w-4 shrink-0" />
+                        Tickets
+                      </DropdownMenuItem>
+                    </>
+                  ) : isClientUser ? (
+                    <>
+                      <DropdownMenuItem
+                        onClick={() => router.push("/profile/view_profile")}
+                      >
+                        <User className="mr-2 h-4 w-4 shrink-0" />
+                        Profile
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => router.push("/funds/deposit")}
+                      >
+                        <Wallet className="mr-2 h-4 w-4 shrink-0" />
+                        Add funds
+                      </DropdownMenuItem>
+                    </>
+                  ) : isManagerUser ? (
+                    <>
+                      {managerQuickLinks.map((link) => (
+                        <DropdownMenuItem
+                          key={link.url}
+                          onClick={() => router.push(link.url)}
+                        >
+                          {link.title}
+                        </DropdownMenuItem>
+                      ))}
+                    </>
+                  ) : (
+                    <>
+                      <DropdownMenuItem
+                        onClick={() => router.push("/profile/view_profile")}
+                      >
+                        <User className="mr-2 h-4 w-4 shrink-0" />
+                        Profile
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => router.push("/bank-details")}
+                      >
+                        Settings
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </>
+              ) : null}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => void sessionLogout()}>
                 <LogOut className="mr-2 h-4 w-4" />
