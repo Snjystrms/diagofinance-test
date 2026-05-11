@@ -135,9 +135,20 @@ export function USDTTransactionsPageContent() {
     return set;
   }, [statusFeatureOptions]);
 
-  const canTakeAction = useMemo(
+  const canTakeDepositAction = useMemo(
     () => hasFeature("transaction", "approveRejectDeposit"),
     [hasFeature]
+  );
+
+  const canTakeWithdrawalAction = useMemo(
+    () => hasFeature("transaction", "approveRejectWithdrawal"),
+    [hasFeature]
+  );
+
+  const canTakeAction = useMemo(
+    () =>
+      activeTab === "deposits" ? canTakeDepositAction : canTakeWithdrawalAction,
+    [activeTab, canTakeDepositAction, canTakeWithdrawalAction]
   );
 
   const canViewStatus = useCallback(
@@ -645,7 +656,7 @@ export function USDTTransactionsPageContent() {
       
         <div className="flex items-center justify-center min-h-[60vh]">
           <p className="text-muted-foreground">
-            You do not have permission to view USDT deposit transactions.
+            You do not have permission to view USDT deposit or withdrawal transactions.
           </p>
         </div>
       

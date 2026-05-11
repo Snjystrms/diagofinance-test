@@ -3,6 +3,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
+import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import {
   adminPaymentMethodsApi,
   type PaymentMethod,
@@ -129,6 +130,10 @@ function MethodForm({
 export default function PspSettingPage() {
   const { token } = useAuth();
   const queryClient = useQueryClient();
+  const { hasFeature, isManager } = useManagerPermissions();
+
+  const canManagePspSettings =
+    !isManager || hasFeature("settingsManagement", "pspSetting");
 
   const [editTarget, setEditTarget] = useState<PaymentMethod | null>(null);
   const [editForm, setEditForm] = useState<PaymentMethodRequest>(defaultForm());
@@ -139,7 +144,7 @@ export default function PspSettingPage() {
   const { data, isLoading } = useQuery({
     queryKey: ["payment-methods", token],
     queryFn: () => adminPaymentMethodsApi.list(token!),
-    enabled: Boolean(token),
+    enabled: Boolean(token) && (!isManager || canManagePspSettings),
     staleTime: 60_000,
   });
 
@@ -211,6 +216,16 @@ export default function PspSettingPage() {
   };
 
   // ── render ──────────────────────────────────────────────────────────────────
+  if (isManager && !canManagePspSettings) {
+    return (
+      <div className="space-y-6 p-6">
+        <p className="text-muted-foreground">
+          You do not have permission to manage PSP settings.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 p-6">
 

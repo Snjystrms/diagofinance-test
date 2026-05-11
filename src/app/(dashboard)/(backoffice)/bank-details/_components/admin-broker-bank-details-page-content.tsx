@@ -27,6 +27,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
+import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import {
   adminBrokerBankDetailsApi,
   type BrokerBankDetailItem,
@@ -51,6 +52,17 @@ type DialogMode = "create" | "edit" | null;
 export function AdminBrokerBankDetailsPageContent() {
   const { token } = useAuth();
   const queryClient = useQueryClient();
+
+  const { hasFeature, isManager } = useManagerPermissions();
+
+  const canViewList =
+    !isManager || hasFeature("settingsManagement", "brokerDepositAccountList");
+  const canCreate =
+    !isManager || hasFeature("settingsManagement", "createBrokerDepositAccount");
+  const canEdit =
+    !isManager || hasFeature("settingsManagement", "editBrokerDepositAccount");
+  const canDelete =
+    !isManager || hasFeature("settingsManagement", "deleteBrokerDepositAccount");
 
   const [search, setSearch] = useState("");
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
@@ -80,7 +92,7 @@ export function AdminBrokerBankDetailsPageContent() {
       const response = await adminBrokerBankDetailsApi.list(token!);
       return response.data ?? { count: 0, rows: [] };
     },
-    enabled: Boolean(token),
+    enabled: Boolean(token) && (!isManager || canViewList),
     staleTime: 60 * 1000,
   });
 
@@ -304,44 +316,62 @@ export function AdminBrokerBankDetailsPageContent() {
         enableSorting: false,
         cell: ({ row }) => (
           <div className="flex justify-end gap-2">
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={() => {
-                void openViewDialog(row.original.id);
-              }}
-              title="View bank detail"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={() => {
-                void openEditDialog(row.original.id);
-              }}
-              title="Edit bank detail"
-            >
-              <Pencil className="h-4 w-4" />
-            </Button>
-            <Button
-              type="button"
-              variant="outline"
-              size="icon"
-              onClick={() => setDeleteCandidate(row.original)}
-              title="Delete bank detail"
-              className="text-destructive hover:text-destructive/80"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {canViewList && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  void openViewDialog(row.original.id);
+                }}
+                title="View bank detail"
+              >
+                <Eye className="h-4 w-4" />
+              </Button>
+            )}
+            {canEdit && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => {
+                  void openEditDialog(row.original.id);
+                }}
+                title="Edit bank detail"
+              >
+                <Pencil className="h-4 w-4" />
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setDeleteCandidate(row.original)}
+                title="Delete bank detail"
+                className="text-destructive hover:text-destructive/80"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         ),
       },
     ],
-    [openEditDialog, openViewDialog]
+    [canDelete, canEdit, canViewList, openEditDialog, openViewDialog]
   );
+
+  if (isManager && !canViewList) {
+    return (
+      <ProtectedRoute>
+        <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+          <p className="text-muted-foreground">
+            You do not have permission to view broker deposit accounts.
+          </p>
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   if (isError && rows.length === 0) {
     return (
@@ -395,7 +425,7 @@ export function AdminBrokerBankDetailsPageContent() {
               />
               Refresh
             </Button>
-            <Button onClick={openCreateDialog}>
+            <Button onClick={openCreateDialog} disabled={!canCreate}>
               <Plus className="mr-2 h-4 w-4" />
               Add Bank Detail
             </Button>

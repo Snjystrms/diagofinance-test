@@ -26,6 +26,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
+import { ApiRequestError } from "@/lib/api-core";
 import {
   adminUsersApi,
   type AdminPaginatedApiData,
@@ -113,6 +114,16 @@ const formatDateTime = (value?: string | null) => {
     return value;
   }
 };
+
+/** HTTP status when the API surfaced an error response (see ApiRequestError). */
+function getErrorHttpStatus(error: unknown): number | undefined {
+  if (error instanceof ApiRequestError) return error.status;
+  if (error && typeof error === "object" && "status" in error) {
+    const n = (error as { status: unknown }).status;
+    return typeof n === "number" ? n : undefined;
+  }
+  return undefined;
+}
 
 const formatNumericValue = (value: unknown) => {
   const numeric = typeof value === "number" ? value : Number(value ?? 0);
@@ -384,7 +395,7 @@ function PaginationControls({
 
 export default function NewUserDetailPage() {
   const params = useParams<{ id: string }>();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
   const id = typeof idParam === "string" ? decodeURIComponent(idParam) : "";
 
@@ -564,27 +575,38 @@ export default function NewUserDetailPage() {
         }
 
         if (cancelled) return;
-        setUserUuid(resolvedUuid);
-
-        const mt5Response = await adminUsersApi.mt5TabDetails(resolvedUuid, token);
-
-        if (cancelled) return;
 
         const crudUserData = extractCrudUserFromDetailPayload(detailResponse?.data);
         if (!crudUserData) {
           throw new Error("User profile payload is empty.");
         }
 
-        const normalizedMt5 = normalizeMt5TabDetails(mt5Response.data ?? null);
-
+        setUserUuid(resolvedUuid);
         setCrudUser(crudUserData);
-        setMt5Summary(normalizedMt5);
-        setMt5AccountsState({
-          rows: normalizedMt5?.mt5Accounts ?? [],
-          loading: false,
-          error: null,
-          loaded: true,
-        });
+
+        try {
+          const mt5Response = await adminUsersApi.mt5TabDetails(resolvedUuid, token);
+          if (cancelled) return;
+
+          const normalizedMt5 = normalizeMt5TabDetails(mt5Response.data ?? null);
+          setMt5Summary(normalizedMt5);
+          setMt5AccountsState({
+            rows: normalizedMt5?.mt5Accounts ?? [],
+            loading: false,
+            error: null,
+            loaded: true,
+          });
+        } catch (mt5Error) {
+          if (cancelled) return;
+          console.error(`Failed to load MT5 tab details for user ${resolvedUuid}:`, mt5Error);
+          setMt5Summary(null);
+          setMt5AccountsState({
+            rows: [],
+            loading: false,
+            error: mt5Error,
+            loaded: true,
+          });
+        }
       } catch (error) {
         if (cancelled) return;
         console.error(`Failed to load user profile for ID ${id}:`, error);
@@ -605,7 +627,7 @@ export default function NewUserDetailPage() {
   }, [token, id, profileReloadToken]);
 
   useEffect(() => {
-    if (!token || !userUuid || loadingProfile || profileError) return;
+    if (!token || !userUuid || loadingProfile) return;
 
     switch (activeTab) {
       case "deposits":
@@ -656,7 +678,6 @@ export default function NewUserDetailPage() {
     loadWalletHistoryPage,
     loadWithdrawalsPage,
     loadingProfile,
-    profileError,
     referralState.loaded,
     referralState.loading,
     token,
@@ -692,6 +713,9 @@ export default function NewUserDetailPage() {
   );
 
   if (profileError && !crudUser) {
+    const isManagerPermissionDenied =
+      user?.type === "manager" && getErrorHttpStatus(profileError) === 401;
+
     return (
       <ProtectedRoute>
         <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
@@ -705,6 +729,12 @@ export default function NewUserDetailPage() {
               setProfileError(null);
               setProfileReloadToken((value) => value + 1);
             }}
+            title={isManagerPermissionDenied ? "Insufficient permissions" : undefined}
+            unauthorizedMessage={
+              isManagerPermissionDenied
+                ? "Your manager role does not include access to this user profile. Ask an administrator if you need it."
+                : undefined
+            }
           />
         </div>
       </ProtectedRoute>
@@ -716,6 +746,7 @@ export default function NewUserDetailPage() {
     retry: () => void,
     emptyTitle: string,
     emptyDescription: string,
+    errorResource: string,
     content: ReactNode,
   ) => {
     if (state.loading && !state.loaded) {
@@ -723,14 +754,23 @@ export default function NewUserDetailPage() {
     }
 
     if (state.error) {
+      const isManagerPermissionDenied =
+        user?.type === "manager" && getErrorHttpStatus(state.error) === 401;
+
       return (
         <ApiErrorState
           error={state.error}
           audience="admin"
           variant="panel"
-          resource={emptyTitle.toLowerCase()}
+          resource={errorResource}
           action="load"
           onRetry={retry}
+          title={isManagerPermissionDenied ? "Insufficient permissions" : undefined}
+          unauthorizedMessage={
+            isManagerPermissionDenied
+              ? "Your manager role does not include access to this section. Ask an administrator if you need it."
+              : undefined
+          }
         />
       );
     }
@@ -865,17 +905,38 @@ export default function NewUserDetailPage() {
                 </CardContent>
               </Card>
 
-              <div className="grid gap-4 md:grid-cols-3">
-                {summaryCards.map((card) => (
-                  <SummaryMetric
-                    key={card.title}
-                    title={card.title}
-                    value={card.value}
-                    description={card.description}
-                    icon={card.icon}
-                  />
-                ))}
-              </div>
+              {mt5AccountsState.error ? (
+                <ApiErrorState
+                  error={mt5AccountsState.error}
+                  audience="admin"
+                  variant="panel"
+                  resource="MT5 account summary"
+                  action="load"
+                  onRetry={() => setProfileReloadToken((value) => value + 1)}
+                  title={
+                    user?.type === "manager" && getErrorHttpStatus(mt5AccountsState.error) === 401
+                      ? "Insufficient permissions"
+                      : undefined
+                  }
+                  unauthorizedMessage={
+                    user?.type === "manager" && getErrorHttpStatus(mt5AccountsState.error) === 401
+                      ? "Your manager role does not include access to MT5 totals for this user. Ask an administrator if you need it."
+                      : undefined
+                  }
+                />
+              ) : (
+                <div className="grid gap-4 md:grid-cols-3">
+                  {summaryCards.map((card) => (
+                    <SummaryMetric
+                      key={card.title}
+                      title={card.title}
+                      value={card.value}
+                      description={card.description}
+                      icon={card.icon}
+                    />
+                  ))}
+                </div>
+              )}
 
               <div className="grid gap-4 lg:grid-cols-2">
                 <Card className="border-border/70 shadow-sm">
@@ -940,6 +1001,7 @@ export default function NewUserDetailPage() {
                         },
                         "No deposits found",
                         "This user does not have any deposit records yet.",
+                        "deposits",
                         <div className="space-y-4">
                           <Table>
                             <TableHeader>
@@ -984,6 +1046,7 @@ export default function NewUserDetailPage() {
                         },
                         "No withdrawals found",
                         "This user does not have any withdrawal records yet.",
+                        "withdrawals",
                         <div className="space-y-4">
                           <Table>
                             <TableHeader>
@@ -1028,6 +1091,7 @@ export default function NewUserDetailPage() {
                         },
                         "No MT5 accounts found",
                         "No MT5 trading accounts are linked to this user.",
+                        "MT5 accounts",
                         <div className="space-y-4">
                           <div className="grid gap-3 md:grid-cols-3">
                             <DetailItem label="Total Deposit" value={formatNumericValue(mt5Summary?.totalDeposit ?? 0)} />
@@ -1070,6 +1134,7 @@ export default function NewUserDetailPage() {
                         },
                         "No bank details found",
                         "The user has not added any withdrawal bank accounts yet.",
+                        "bank details",
                         <div className="space-y-4">
                           <Table>
                             <TableHeader>
@@ -1117,6 +1182,7 @@ export default function NewUserDetailPage() {
                         },
                         "No activity found",
                         "No login activity has been recorded for this user yet.",
+                        "activity log",
                         <div className="space-y-4">
                           <Table>
                             <TableHeader>
@@ -1161,6 +1227,7 @@ export default function NewUserDetailPage() {
                         },
                         "No referrals found",
                         "This user does not currently have any downstream referrals.",
+                        "referral data",
                         <div className="space-y-4">
                           <Table>
                             <TableHeader>
@@ -1203,6 +1270,7 @@ export default function NewUserDetailPage() {
                         },
                         "No wallet history found",
                         "There are no wallet balance mutations recorded for this user yet.",
+                        "wallet history",
                         <div className="space-y-4">
                           <Table>
                             <TableHeader>

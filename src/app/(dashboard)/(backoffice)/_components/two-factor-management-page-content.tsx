@@ -48,6 +48,7 @@ import {
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
+import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 
 type TwoFactorManagementMode = "user" | "manager";
 
@@ -212,6 +213,7 @@ const getPageCopy = (mode: TwoFactorManagementMode) => {
 const getColumns = (
   rowsTypeLabel: string,
   actionLoadingKey: string | null,
+  toggleDisabled: boolean,
   onToggle: (row: TwoFactorRow, nextChecked: boolean) => void
 ): ColumnDef<TwoFactorRow>[] => [
   {
@@ -250,7 +252,7 @@ const getColumns = (
         <div className="flex items-center gap-2">
           <Switch
             checked={row.original.twoFaEnabled}
-            disabled={Boolean(actionLoadingKey)}
+            disabled={Boolean(actionLoadingKey) || toggleDisabled}
             onCheckedChange={(checked) => onToggle(row.original, checked)}
             aria-label={`Toggle 2FA for ${row.original.name}`}
           />
@@ -296,6 +298,19 @@ export function TwoFactorManagementPageContent({
 }) {
   const { token } = useAuth();
   const copy = getPageCopy(mode);
+  const { isManager, hasFeature } = useManagerPermissions();
+
+  const canViewList =
+    !isManager ||
+    (mode === "user"
+      ? hasFeature("settingsManagement", "user2faList")
+      : hasFeature("settingsManagement", "manager2faList"));
+
+  const canToggleExternal2fa =
+    !isManager ||
+    (mode === "user"
+      ? hasFeature("settingsManagement", "enabledDisabledUser2fa")
+      : hasFeature("settingsManagement", "enabledDisabledManager2fa"));
 
   const [rows, setRows] = useState<TwoFactorRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -312,6 +327,12 @@ export function TwoFactorManagementPageContent({
 
   const loadRows = useCallback(async () => {
     if (!token) {
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+
+    if (isManager && !canViewList) {
       setRows([]);
       setLoading(false);
       return;
@@ -355,7 +376,7 @@ export function TwoFactorManagementPageContent({
     } finally {
       setLoading(false);
     }
-  }, [mode, searchQuery, token]);
+  }, [canViewList, isManager, mode, searchQuery, token]);
 
   useEffect(() => {
     void loadRows();
@@ -374,6 +395,11 @@ export function TwoFactorManagementPageContent({
   const handleEnable = useCallback(
     async (row: TwoFactorRow) => {
       if (!token) return;
+
+      if (isManager && !canToggleExternal2fa) {
+        toast.error("You do not have permission to enable 2FA");
+        return;
+      }
 
       try {
         setActionLoadingKey(`enable:${row.id}`);
@@ -413,11 +439,16 @@ export function TwoFactorManagementPageContent({
         setActionLoadingKey(null);
       }
     },
-    [copy.typeLabel, mode, token]
+    [canToggleExternal2fa, copy.typeLabel, isManager, mode, token]
   );
 
   const handleDisableConfirm = useCallback(async () => {
     if (!token || !disableTarget) return;
+
+    if (isManager && !canToggleExternal2fa) {
+      toast.error("You do not have permission to disable 2FA");
+      return;
+    }
 
     try {
       setActionLoadingKey(`disable:${disableTarget.id}`);
@@ -447,13 +478,21 @@ export function TwoFactorManagementPageContent({
     } finally {
       setActionLoadingKey(null);
     }
-  }, [copy.typeLabel, disableTarget, mode, token]);
+  }, [
+    canToggleExternal2fa,
+    copy.typeLabel,
+    disableTarget,
+    isManager,
+    mode,
+    token,
+  ]);
 
   const columns = useMemo(
     () =>
       getColumns(
         copy.typeLabel,
         actionLoadingKey,
+        isManager && !canToggleExternal2fa,
         (row, nextChecked) => {
           if (nextChecked) {
             void handleEnable(row);
@@ -463,7 +502,13 @@ export function TwoFactorManagementPageContent({
           setDisableTarget(row);
         }
       ),
-    [actionLoadingKey, copy.typeLabel, handleEnable]
+    [
+      actionLoadingKey,
+      canToggleExternal2fa,
+      copy.typeLabel,
+      handleEnable,
+      isManager,
+    ]
   );
 
   const enabledCount = useMemo(
@@ -471,6 +516,18 @@ export function TwoFactorManagementPageContent({
     [rows]
   );
   const disabledCount = rows.length - enabledCount;
+
+  if (isManager && !canViewList) {
+    return (
+      <ProtectedRoute>
+        <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+          <p className="text-muted-foreground">
+            You do not have permission to view this section.
+          </p>
+        </div>
+      </ProtectedRoute>
+    );
+  }
 
   if (loadError && rows.length === 0) {
     return (

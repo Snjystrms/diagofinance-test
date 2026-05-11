@@ -91,6 +91,8 @@ const SHARED_ROLES: AppRole[] = ["admin", "manager", "user", "subadmin"];
 const CLIENT_ROLES: AppRole[] = ["user"];
 const BACKOFFICE_ROLES: AppRole[] = ["admin", "manager"];
 
+/** Manager routes: `managerCategories` unions legacy labels with `/permissions/permissions` categories. Some sections (e.g. Promotion, PSP) may gain API categories later—keep existing strings until backend parity. */
+
 export const crmData = {
   user: {
     name: "Admin User",
@@ -224,7 +226,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     icon: Mail,
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
-    managerCategories: ["E-Mail Management"],
+    managerCategories: ["E-Mail Management", "Email Management"],
   },
   {
     id: "ib-management",
@@ -314,7 +316,13 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     icon: Settings2,
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
-    managerCategories: ["Settings", "Manager 2fa", "Deposit Bank Details"],
+    managerCategories: [
+      "Settings",
+      "Manager 2fa",
+      "Deposit Bank Details",
+      "Setting Management",
+      "PSP Setting",
+    ],
   },
 ];
 
@@ -602,7 +610,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     roles: BACKOFFICE_ROLES,
     sidebarSection: "email-management",
     navLabel: "E-Mail Management",
-    managerCategories: ["E-Mail Management"],
+    managerCategories: ["E-Mail Management", "Email Management"],
   },
   {
     path: "/all-ib",
@@ -730,7 +738,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     roles: BACKOFFICE_ROLES,
     sidebarSection: "settings",
     navLabel: "User 2FA",
-    managerCategories: ["Settings"],
+    managerCategories: ["Settings", "Setting Management"],
   },
   {
     path: "/manager-2fa",
@@ -738,7 +746,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     roles: BACKOFFICE_ROLES,
     sidebarSection: "settings",
     navLabel: "Manager 2FA",
-    managerCategories: ["Settings", "Manager 2fa"],
+    managerCategories: ["Settings", "Manager 2fa", "Setting Management"],
   },
   {
     path: "/psp-setting",
@@ -746,7 +754,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     roles: BACKOFFICE_ROLES,
     sidebarSection: "settings",
     navLabel: "PSP Setting",
-    managerCategories: ["Settings", "PSP Setting"],
+    managerCategories: ["Settings", "PSP Setting", "Setting Management"],
   },
   {
     path: "/bank-details",
@@ -754,7 +762,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     roles: BACKOFFICE_ROLES,
     sidebarSection: "settings",
     navLabel: "Deposit Bank Details",
-    managerCategories: ["Settings", "Deposit Bank Details"],
+    managerCategories: ["Settings", "Deposit Bank Details", "Setting Management"],
   },
   {
     path: "/ib-plans",

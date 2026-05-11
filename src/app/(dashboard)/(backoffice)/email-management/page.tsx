@@ -17,6 +17,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import toast from "react-hot-toast";
+
+import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import {
   Mail,
   Send,
@@ -31,6 +33,15 @@ import {
 
 export default function EmailManagementPage() {
   const { token } = useAuth();
+  const { isManager, hasFeature } = useManagerPermissions();
+
+  const canSendBroadcast =
+    !isManager ||
+    hasFeature("emailManagement", "broadcastEmail") ||
+    hasFeature("emailManagement", "sendEmail");
+
+  const canSearchClientEmails =
+    !isManager || hasFeature("emailManagement", "getClientEmails");
 
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -60,7 +71,7 @@ export default function EmailManagementPage() {
         (Array.isArray(raw) ? (raw as PendingUser[]) : []);
       return list;
     },
-    enabled: Boolean(token) && !isBroadcastAll,
+    enabled: Boolean(token) && (!isManager || canSearchClientEmails) && !isBroadcastAll,
     staleTime: 2 * 60 * 1000,
   });
 
@@ -112,6 +123,10 @@ export default function EmailManagementPage() {
   // ---- send ----
   const handleSend = async () => {
     if (!token) { toast.error("Authentication required"); return; }
+    if (isManager && !canSendBroadcast) {
+      toast.error("You do not have permission to send broadcasts");
+      return;
+    }
     if (!subject.trim()) { toast.error("Subject is required"); return; }
     if (!body.trim()) { toast.error("Email body is required"); return; }
     if (!isBroadcastAll && emails.length === 0) {
@@ -342,7 +357,7 @@ export default function EmailManagementPage() {
 
           {/* Actions */}
           <div className="flex items-center gap-3">
-            <Button onClick={handleSend} disabled={loading} className="gap-2">
+            <Button onClick={handleSend} disabled={loading || (isManager && !canSendBroadcast)} className="gap-2">
               {loading ? (
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
               ) : (
