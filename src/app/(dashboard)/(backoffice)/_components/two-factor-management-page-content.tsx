@@ -256,7 +256,7 @@ const getColumns = (
             onCheckedChange={(checked) => onToggle(row.original, checked)}
             aria-label={`Toggle 2FA for ${row.original.name}`}
           />
-          <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${
+          {/* <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${
             row.original.twoFaEnabled
               ? "bg-green-50 text-green-700 border-green-600/30"
               : "bg-red-50 text-red-700 border-red-600/30"
@@ -264,7 +264,7 @@ const getColumns = (
             {isBusy
               ? row.original.twoFaEnabled ? "Disabling..." : "Enabling..."
               : row.original.twoFaEnabled ? "Active" : "Disabled"}
-          </span>
+          </span> */}
         </div>
       );
     },
