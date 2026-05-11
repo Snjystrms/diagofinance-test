@@ -74,7 +74,7 @@ The application integrates with the following backend APIs:
    cd crm-app
    ```
 
-2. **Install dependencies****
+2. **Install dependencies**
    ```bash
    npm install
    ```
