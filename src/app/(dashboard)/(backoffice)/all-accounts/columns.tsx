@@ -110,7 +110,7 @@ export const getColumns = (opts: {
           aria-label="Toggle status"
           disabled={opts.actionLoadingId === row.original.id}
         />
-        <Badge
+        {/* <Badge
           variant="outline"
           className={
             row.original.status
@@ -119,7 +119,7 @@ export const getColumns = (opts: {
           }
         >
           {row.original.status ? "Active" : "Inactive"}
-        </Badge>
+        </Badge> */}
       </div>
     ),
     enableColumnFilter: true,

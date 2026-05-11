@@ -89,25 +89,19 @@ type KycStatusOption = {
 
 const KYC_STATUS_OPTIONS: KycStatusOption[] = [
   {
-    value: "attention",
-    label: "All (Pending + Rejected)",
-    featureKey: ["pendingDocumentsList", "rejectDocumentList"],
-    statuses: ["pending", "rejected"],
-  },
-  {
-    value: "pending",
+    value: "0",
     label: "Pending",
     featureKey: "pendingDocumentsList",
     statuses: ["pending"],
   },
   {
-    value: "approved",
+    value: "1",
     label: "Approved",
     featureKey: "approveDocumentsList",
     statuses: ["approved", "full-verified", "semi-verified"],
   },
   {
-    value: "rejected",
+    value: "2",
     label: "Rejected",
     featureKey: "rejectDocumentList",
     statuses: ["rejected"],
@@ -257,7 +251,7 @@ export default function UserVerificationPage() {
   const [rows, setRows] = useState<ListRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("0");
+  const [statusFilter, setStatusFilter] = useState<string>("1");
 
   // modal
   const [open, setOpen] = useState(false);
@@ -314,12 +308,7 @@ export default function UserVerificationPage() {
     try {
       setLoading(true);
       setLoadError(null);
-      let apiStatus: string | number = statusFilter;
-      if (statusFilter === "pending") apiStatus = 0;
-      else if (statusFilter === "approved") apiStatus = 1;
-      else if (statusFilter === "rejected") apiStatus = 2;
-
-      const res = await adminKycApi.listPending(apiStatus, token);
+      const res = await adminKycApi.listPending(Number(statusFilter), token);
       const data = res?.data as { items?: ListRow[] } | undefined;
       const items = data?.items ?? [];
       setRows(items);
@@ -360,11 +349,6 @@ export default function UserVerificationPage() {
     if (!isManager) return rows;
     if (!statusFeatureOptions.length || statusFilter === "none") {
       return [];
-    }
-    if (statusFilter === "attention") {
-      const option = statusFeatureOptions.find((opt) => opt.value === "attention");
-      const allowedSet = new Set(option ? option.normalizedStatuses : allowedKycStatusesSet);
-      return rows.filter((row) => allowedSet.has((row.kyc_status || "").toLowerCase()));
     }
     const option = statusFeatureOptions.find((opt) => opt.value === statusFilter);
     if (!option) {

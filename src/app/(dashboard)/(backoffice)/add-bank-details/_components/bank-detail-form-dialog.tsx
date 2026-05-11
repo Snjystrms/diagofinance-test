@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { SearchSelectField } from "@/components/search-select-field";
 import {
   Select,
   SelectContent,
@@ -101,6 +102,10 @@ export function BankDetailFormDialog({
     const matched = countryOptions.find((country) => country.name === values.country);
     return matched ? String(matched.id) : "";
   }, [countryOptions, values.country]);
+  const selectedUser = useMemo(
+    () => userOptions.find((user) => user.uuid === values.user_uuid) ?? null,
+    [userOptions, values.user_uuid]
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -137,42 +142,38 @@ export function BankDetailFormDialog({
           <div className="grid gap-4 py-2 md:grid-cols-2">
             {isCreateMode ? (
               <>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="user-search">Search user</Label>
-                  <Input
-                    id="user-search"
-                    value={userSearch}
-                    onChange={(event) => onUserSearchChange(event.target.value)}
-                    placeholder="Search by name, email, or mobile"
-                    disabled={submitting}
-                  />
-                </div>
-                <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="user-select">User</Label>
-                  <Select
-                    value={values.user_uuid}
-                    onValueChange={(userUuid) => onValuesChange({ ...values, user_uuid: userUuid })}
-                    disabled={submitting || isLoadingUsers}
-                  >
-                    <SelectTrigger id="user-select">
-                      <SelectValue
-                        placeholder={isLoadingUsers ? "Loading users..." : "Select a user"}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {userOptions.map((user) => (
-                        <SelectItem key={user.uuid} value={user.uuid}>
-                          {user.name} - {user.email}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  {values.user_uuid && detail?.user ? (
-                    <p className="text-xs text-muted-foreground">
-                      Selected user: {detail.user.name} ({detail.user.email})
-                    </p>
-                  ) : null}
-                </div>
+                <SearchSelectField
+                  id="user-search"
+                  label="User"
+                  className="md:col-span-2"
+                  options={userOptions}
+                  searchValue={userSearch}
+                  selectedValue={values.user_uuid}
+                  placeholder="Search by name, email, or mobile"
+                  disabled={submitting}
+                  loading={isLoadingUsers}
+                  loadingMessage="Searching users..."
+                  idleMessage="Start typing to search users."
+                  emptyMessage="No users found."
+                  helperText={
+                    selectedUser ? `Selected user: ${selectedUser.name} (${selectedUser.email})` : null
+                  }
+                  onSearchValueChange={(value) => {
+                    onUserSearchChange(value);
+                    onValuesChange({ ...values, user_uuid: "" });
+                  }}
+                  onOptionSelect={(user) => {
+                    onUserSearchChange(user.email || user.name);
+                    onValuesChange({ ...values, user_uuid: user.uuid });
+                  }}
+                  getOptionValue={(user) => user.uuid}
+                  getOptionLabel={(user) => user.name}
+                  getOptionDescription={(user) =>
+                    [user.email, user.mobile ? `Mobile: ${user.mobile}` : null]
+                      .filter(Boolean)
+                      .join(" | ")
+                  }
+                />
               </>
             ) : (
               <div className="rounded-md border bg-muted/40 p-3 text-sm md:col-span-2">

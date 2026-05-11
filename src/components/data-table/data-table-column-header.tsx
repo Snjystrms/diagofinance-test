@@ -6,14 +6,12 @@ import {
   ChevronsUpDown,
   ChevronUp,
   EyeOff,
-  X,
 } from "lucide-react";
 
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
@@ -44,16 +42,16 @@ export function DataTableColumnHeader<TData, TValue>({
         {...props}
       >
         {title}
-        {column.getCanSort() &&
+        {/* {column.getCanSort() &&
           (column.getIsSorted() === "desc" ? (
             <ChevronDown />
           ) : column.getIsSorted() === "asc" ? (
             <ChevronUp />
           ) : (
             <ChevronsUpDown />
-          ))}
+          ))} */}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-28">
+      {/* <DropdownMenuContent align="start" className="w-28">
         {column.getCanSort() && (
           <>
             <DropdownMenuCheckboxItem
@@ -72,15 +70,6 @@ export function DataTableColumnHeader<TData, TValue>({
               <ChevronDown />
               Desc
             </DropdownMenuCheckboxItem>
-            {column.getIsSorted() && (
-              <DropdownMenuItem
-                className="pl-2 [&_svg]:text-muted-foreground"
-                onClick={() => column.clearSorting()}
-              >
-                <X />
-                Reset
-              </DropdownMenuItem>
-            )}
           </>
         )}
         {column.getCanHide() && (
@@ -93,7 +82,7 @@ export function DataTableColumnHeader<TData, TValue>({
             Hide
           </DropdownMenuCheckboxItem>
         )}
-      </DropdownMenuContent>
+      </DropdownMenuContent> */}
     </DropdownMenu>
   );
 }

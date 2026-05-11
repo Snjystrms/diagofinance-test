@@ -1,23 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+import toast from "react-hot-toast";
+
+import { SearchSelectField } from "@/components/search-select-field";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Spinner } from "@/components/ui/spinner";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
-import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/auth-context";
-import { Check, ChevronsUpDown, Eye, EyeOff } from "lucide-react";
-import { cn } from "@/lib/utils";
-import type { CreateMT5AccountRequest, PendingUser, AccountType } from "@/lib/api";
-import { adminUsersApi, accountTypesApi } from "@/lib/api";
+import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
+import { accountTypesApi, adminUsersApi } from "@/lib/api";
+import type { AccountType, CreateMT5AccountRequest, PendingUser } from "@/lib/api";
 
 interface CreateAccountDialogProps {
   open: boolean;
@@ -42,41 +41,33 @@ export function CreateAccountDialog({
     user_id: 0,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // User search state
-  // const [userSearchOpen, setUserSearchOpen] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [users, setUsers] = useState<PendingUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null);
-
-  // Account type state
   const [accountTypes, setAccountTypes] = useState<AccountType[]>([]);
   const [loadingAccountTypes, setLoadingAccountTypes] = useState(false);
-  // const [accountTypeSearchOpen, setAccountTypeSearchOpen] = useState(false);
-  // const [accountTypeSearchQuery, setAccountTypeSearchQuery] = useState("");
   const [selectedAccountType, setSelectedAccountType] = useState<AccountType | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Load account types
   useEffect(() => {
     if (open && token) {
-      loadAccountTypes();
+      void loadAccountTypes();
     }
   }, [open, token]);
 
   const loadAccountTypes = async () => {
     if (!token) return;
+
     try {
       setLoadingAccountTypes(true);
       const response = await accountTypesApi.getActive(token);
-      // Handle ApiResponse structure: { success, message, data: AccountType[] }
-      const types = Array.isArray(response) 
-        ? response 
-        : (response?.data && Array.isArray(response.data) 
-            ? response.data 
-            : []);
+      const types = Array.isArray(response)
+        ? response
+        : response?.data && Array.isArray(response.data)
+          ? response.data
+          : [];
       setAccountTypes(types);
     } catch (error) {
       console.error("Failed to load account types:", error);
@@ -91,12 +82,12 @@ export function CreateAccountDialog({
     }
   };
 
-  // Debounced user search
   const debouncedUserSearch = useDebouncedCallback(async (search: string) => {
     if (!token || !search.trim()) {
       setUsers([]);
       return;
     }
+
     try {
       setLoadingUsers(true);
       const response = await adminUsersApi.list({
@@ -105,15 +96,20 @@ export function CreateAccountDialog({
         limit: 50,
         search: search.trim(),
       });
-      
+
       const data = response?.data;
-      const userList = 
-        (data && 'users' in data ? (data.users as PendingUser[]) : undefined) ||
-        (data && 'items' in data ? (data.items as PendingUser[]) : undefined) ||
+      const userList =
+        (data && "users" in data ? (data.users as PendingUser[]) : undefined) ||
+        (data && "items" in data ? (data.items as PendingUser[]) : undefined) ||
         (Array.isArray(data) ? (data as PendingUser[]) : undefined) ||
-        (data && typeof data === 'object' && 'data' in data && Array.isArray((data as { data?: unknown }).data) ? ((data as { data: PendingUser[] }).data) : undefined) ||
+        (data &&
+        typeof data === "object" &&
+        "data" in data &&
+        Array.isArray((data as { data?: unknown }).data)
+          ? (data as { data: PendingUser[] }).data
+          : undefined) ||
         [];
-      
+
       setUsers(userList);
     } catch (error) {
       console.error("Failed to search users:", error);
@@ -137,30 +133,27 @@ export function CreateAccountDialog({
   }, [userSearchQuery, debouncedUserSearch]);
 
   useEffect(() => {
-    if (open) {
-      // Reset form when dialog opens
-      setFormData({
-        account_type_id: 0,
-        account_mode: "demo",
-        leverage_temp: 50,
-        currency: "USD",
-        swap_free: false,
-        password: "",
-        confirm_password: "",
-        user_id: 0,
-      });
-      setSelectedUser(null);
-      setSelectedAccountType(null);
-      setUserSearchQuery("");
-      // setAccountTypeSearchQuery("");
-      setUsers([]);
-    }
+    if (!open) return;
+
+    setFormData({
+      account_type_id: 0,
+      account_mode: "demo",
+      leverage_temp: 50,
+      currency: "USD",
+      swap_free: false,
+      password: "",
+      confirm_password: "",
+      user_id: 0,
+    });
+    setSelectedUser(null);
+    setSelectedAccountType(null);
+    setUserSearchQuery("");
+    setUsers([]);
   }, [open]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
 
-    // Validation
     if (!formData.account_type_id || formData.account_type_id === 0) {
       toast.error("Please select an account type");
       return;
@@ -192,246 +185,95 @@ export function CreateAccountDialog({
       onOpenChange(false);
     } catch (error) {
       console.error("Error creating account:", error);
-      // Error is already handled in the parent component
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const handleUserSearchChange = (value: string) => {
+    setUserSearchQuery(value);
+    setSelectedUser(null);
+    setFormData((prev) => ({ ...prev, user_id: 0 }));
+  };
+
+  const handleUserSelect = (user: PendingUser) => {
+    setSelectedUser(user);
+    setUserSearchQuery(user.email || user.name || String(user.id));
+    setFormData((prev) => ({
+      ...prev,
+      user_id: Number(user.id),
+    }));
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[600px]">
         <DialogHeader>
           <DialogTitle>Create MT5 Account</DialogTitle>
         </DialogHeader>
+
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
-              {/* <div className="space-y-2">
-                <Label>User *</Label>
-                <Popover open={userSearchOpen} onOpenChange={setUserSearchOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={userSearchOpen}
-                      className="w-full justify-between"
-                    >
-                      {selectedUser
-                        ? `${selectedUser.name || ""} (ID: ${selectedUser.id})`
-                        : "Search and select user..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                    <Command>
-                      <CommandInput
-                        placeholder="Search users by name, email..."
-                        value={userSearchQuery}
-                        onValueChange={setUserSearchQuery}
-                      />
-                      <CommandList>
-                        {loadingUsers ? (
-                          <div className="flex items-center justify-center p-4">
-                            <Spinner className="h-4 w-4" />
-                          </div>
-                        ) : (
-                          <>
-                            <CommandEmpty>
-                              {userSearchQuery ? "No users found." : "Start typing to search users..."}
-                            </CommandEmpty>
-                            <CommandGroup>
-                              {users.map((user) => (
-                                <CommandItem
-                                  key={user.id}
-                                  value={`${user.name} ${user.email} ${user.id}`}
-                                  onSelect={() => {
-                                    setSelectedUser(user);
-                                    setFormData({ ...formData, user_id: Number(user.id) });
-                                    setUserSearchOpen(false);
-                                    setUserSearchQuery("");
-                                  }}
-                                >
-                                  <Check
-                                    className={cn(
-                                      "mr-2 h-4 w-4",
-                                      selectedUser?.id === user.id ? "opacity-100" : "opacity-0"
-                                    )}
-                                  />
-                                  <div className="flex flex-col">
-                                    <span>
-                                      {user.name}
-                                    </span>
-                                    <span className="text-xs text-muted-foreground">
-                                      {user.email} • ID: {user.id}
-                                    </span>
-                                  </div>
-                                </CommandItem>
-                              ))}
-                            </CommandGroup>
-                          </>
-                        )}
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div> */}
+              <SearchSelectField
+                id="user-search"
+                label="User *"
+                options={users}
+                searchValue={userSearchQuery}
+                selectedValue={selectedUser ? String(selectedUser.id) : ""}
+                placeholder="Search users by name, email, or mobile"
+                loading={loadingUsers}
+                loadingMessage="Searching users..."
+                idleMessage="Start typing to search users."
+                emptyMessage="No users found."
+                onSearchValueChange={handleUserSearchChange}
+                onOptionSelect={handleUserSelect}
+                getOptionValue={(user) => String(user.id)}
+                getOptionLabel={(user) => user.name || user.email || `User ${user.id}`}
+                getOptionDescription={(user) =>
+                  [user.email, user.mobile ? `Mobile: ${user.mobile}` : null, `ID: ${user.id}`]
+                    .filter(Boolean)
+                    .join(" | ")
+                }
+              />
+
               <div className="space-y-2">
-  <Label>User *</Label>
-
-  {/* Search input to fetch users */}
-  <Input
-    placeholder="Search users by name, email..."
-    value={userSearchQuery}
-    onChange={(e) => setUserSearchQuery(e.target.value)}
-  />
-
-  {/* Users dropdown */}
-  <Select
-    value={selectedUser?.id ? String(selectedUser.id) : ""}
-    onValueChange={(value) => {
-      const user = users.find((u) => String(u.id) === value) || null;
-      setSelectedUser(user);
-      setFormData((prev) => ({
-        ...prev,
-        user_id: user ? Number(user.id) : 0,
-      }));
-      if (user) {
-        setUserSearchQuery(user.email || user.name || "");
-      }
-    }}
-    disabled={loadingUsers || users.length === 0}
-  >
-    <SelectTrigger className="w-full mt-2">
-      <SelectValue
-        placeholder={
-          loadingUsers
-            ? "Loading users..."
-            : users.length === 0
-            ? "Type above to search users"
-            : "Select user"
-        }
-      />
-    </SelectTrigger>
-    <SelectContent>
-      {users.map((user) => (
-        <SelectItem key={user.id} value={String(user.id)}>
-          <div className="flex flex-col">
-            <span>{user.name}</span>
-            <span className="text-xs text-muted-foreground">
-              {user.email} • ID: {user.id}
-            </span>
-          </div>
-        </SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
-              </div>
-
-              {/* <div className="space-y-2">
                 <Label>Account Type *</Label>
-                <Popover open={accountTypeSearchOpen} onOpenChange={setAccountTypeSearchOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      role="combobox"
-                      aria-expanded={accountTypeSearchOpen}
-                      className="w-full justify-between"
-                      disabled={loadingAccountTypes}
-                    >
-                      {selectedAccountType
-                        ? selectedAccountType.name
-                        : loadingAccountTypes
-                        ? "Loading..."
-                        : "Select account type..."}
-                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
-                    <Command>
-                      <CommandInput
-                        placeholder="Search account types..."
-                        value={accountTypeSearchQuery}
-                        onValueChange={setAccountTypeSearchQuery}
-                      />
-                      <CommandList>
-                        <CommandEmpty>No account types found.</CommandEmpty>
-                        <CommandGroup>
-                          {accountTypes
-                            .filter((type) =>
-                              accountTypeSearchQuery
-                                ? type.name.toLowerCase().includes(accountTypeSearchQuery.toLowerCase())
-                                : true
-                            )
-                            .map((type) => (
-                              <CommandItem
-                                key={type.id}
-                                value={type.name}
-                                onSelect={() => {
-                                  setSelectedAccountType(type);
-                                  setFormData({ ...formData, account_type_id: Number(type.id) });
-                                  setAccountTypeSearchOpen(false);
-                                  setAccountTypeSearchQuery("");
-                                }}
-                              >
-                                <Check
-                                  className={cn(
-                                    "mr-2 h-4 w-4",
-                                    selectedAccountType?.id === type.id ? "opacity-100" : "opacity-0"
-                                  )}
-                                />
-                                <div className="flex flex-col">
-                                  <span>{type.name}</span>
-                                  <span className="text-xs text-muted-foreground">
-                                    Leverage: {type.maximum_leverage} • Spread: {type.spread_from}
-                                  </span>
-                                </div>
-                              </CommandItem>
-                            ))}
-                        </CommandGroup>
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-              </div> */}
-              <div className="space-y-2">
-  <Label>Account Type *</Label>
-  <Select
-    value={selectedAccountType?.id ? String(selectedAccountType.id) : ""}
-    onValueChange={(value) => {
-      const type = accountTypes.find((t) => String(t.id) === value) || null;
-      setSelectedAccountType(type);
-      setFormData((prev) => ({
-        ...prev,
-        account_type_id: type ? Number(type.id) : 0,
-      }));
-    }}
-    disabled={loadingAccountTypes || accountTypes.length === 0}
-  >
-    <SelectTrigger className="w-full">
-      <SelectValue
-        placeholder={
-          loadingAccountTypes
-            ? "Loading account types..."
-            : "Select account type..."
-        }
-      />
-    </SelectTrigger>
-    <SelectContent>
-      {accountTypes.map((type) => (
-        <SelectItem key={type.id} value={String(type.id)}>
-          <div className="flex flex-col">
-            <span>{type.name}</span>
-            <span className="text-xs text-muted-foreground">
-              Leverage: {type.maximum_leverage} • Spread: {type.spread_from}
-            </span>
-          </div>
-        </SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
+                <Select
+                  value={selectedAccountType?.id ? String(selectedAccountType.id) : ""}
+                  onValueChange={(value) => {
+                    const type = accountTypes.find((item) => String(item.id) === value) || null;
+                    setSelectedAccountType(type);
+                    setFormData((prev) => ({
+                      ...prev,
+                      account_type_id: type ? Number(type.id) : 0,
+                    }));
+                  }}
+                  disabled={loadingAccountTypes || accountTypes.length === 0}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue
+                      placeholder={
+                        loadingAccountTypes
+                          ? "Loading account types..."
+                          : "Select account type..."
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accountTypes.map((type) => (
+                      <SelectItem key={type.id} value={String(type.id)}>
+                        <div className="flex flex-col">
+                          <span>{type.name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            Leverage: {type.maximum_leverage} | Spread: {type.spread_from}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -440,7 +282,7 @@ export function CreateAccountDialog({
                 <Select
                   value={formData.account_mode}
                   onValueChange={(value: "demo" | "live") =>
-                    setFormData({ ...formData, account_mode: value })
+                    setFormData((prev) => ({ ...prev, account_mode: value }))
                   }
                 >
                   <SelectTrigger id="account_mode">
@@ -452,13 +294,12 @@ export function CreateAccountDialog({
                   </SelectContent>
                 </Select>
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="currency">Currency *</Label>
                 <Select
                   value={formData.currency}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, currency: value })
-                  }
+                  onValueChange={(value) => setFormData((prev) => ({ ...prev, currency: value }))}
                 >
                   <SelectTrigger id="currency">
                     <SelectValue placeholder="Select currency" />
@@ -482,23 +323,24 @@ export function CreateAccountDialog({
                   id="leverage_temp"
                   type="number"
                   value={formData.leverage_temp || ""}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      leverage_temp: e.target.value ? Number(e.target.value) : 0,
-                    })
+                  onChange={(event) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      leverage_temp: event.target.value ? Number(event.target.value) : 0,
+                    }))
                   }
                   placeholder="Enter leverage"
                   required
                 />
               </div>
-              <div className="space-y-2 flex items-end">
+
+              <div className="flex items-end space-y-2">
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     id="swap_free"
                     checked={formData.swap_free}
                     onCheckedChange={(checked) =>
-                      setFormData({ ...formData, swap_free: checked === true })
+                      setFormData((prev) => ({ ...prev, swap_free: checked === true }))
                     }
                   />
                   <Label htmlFor="swap_free" className="cursor-pointer">
@@ -512,17 +354,17 @@ export function CreateAccountDialog({
               <div className="space-y-2">
                 <Label htmlFor="password">Password *</Label>
                 <div className="relative">
-                <Input
-                  id="password"
+                  <Input
+                    id="password"
                     type={showPassword ? "text" : "password"}
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  placeholder="Enter password"
-                  required
-                  minLength={6}
-                />
+                    value={formData.password}
+                    onChange={(event) =>
+                      setFormData((prev) => ({ ...prev, password: event.target.value }))
+                    }
+                    placeholder="Enter password"
+                    required
+                    minLength={6}
+                  />
                   <Button
                     type="button"
                     variant="ghost"
@@ -534,20 +376,21 @@ export function CreateAccountDialog({
                   </Button>
                 </div>
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="confirm_password">Confirm Password *</Label>
                 <div className="relative">
-                <Input
-                  id="confirm_password"
+                  <Input
+                    id="confirm_password"
                     type={showConfirmPassword ? "text" : "password"}
-                  value={formData.confirm_password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, confirm_password: e.target.value })
-                  }
-                  placeholder="Confirm password"
-                  required
-                  minLength={6}
-                />
+                    value={formData.confirm_password}
+                    onChange={(event) =>
+                      setFormData((prev) => ({ ...prev, confirm_password: event.target.value }))
+                    }
+                    placeholder="Confirm password"
+                    required
+                    minLength={6}
+                  />
                   <Button
                     type="button"
                     variant="ghost"
@@ -561,6 +404,7 @@ export function CreateAccountDialog({
               </div>
             </div>
           </div>
+
           <DialogFooter>
             <Button
               type="button"
@@ -586,4 +430,3 @@ export function CreateAccountDialog({
     </Dialog>
   );
 }
-

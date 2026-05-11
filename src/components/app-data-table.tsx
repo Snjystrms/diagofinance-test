@@ -3,14 +3,7 @@
 import * as React from "react";
 import { type ColumnDef } from "@tanstack/react-table";
 import { useDataTable } from "@/hooks/use-data-table";
-// import { DataTable } from "@/components/data-table";
-// import { DataTableToolbar } from "@/components/data-table-toolbar";
-// For advanced UI, swap in DataTableAdvancedToolbar with FilterList/SortList
 import { DataTable } from "./data-table/data-table";
-import { DataTableToolbar } from "./data-table/data-table-toolbar";
-import { DataTableAdvancedToolbar } from "./data-table/data-table-advanced-toolbar";
-import { DataTableFilterList } from "./data-table/data-table-filter-list";
-import { DataTableSortList } from "./data-table/data-table-sort-list";
 
 type AppDataTableProps<TData> = {
   data: TData[];
@@ -24,7 +17,7 @@ export function AppDataTable<TData>({
   data,
   columns,
   pageCount = 1,
-  advanced = false,
+  advanced: _advanced = false,
   actionBar,
   getRowId,
 }: AppDataTableProps<TData>) {
@@ -45,24 +38,5 @@ export function AppDataTable<TData>({
     }),
   });
 
-  // Standard toolbar
-  if (!advanced) {
-    return (
-      <DataTable table={table} actionBar={actionBar}>
-        <DataTableToolbar table={table} />
-      </DataTable>
-    );
-  }
-
-  // Advanced toolbar - use advanced components if available
-  if (advanced && DataTableAdvancedToolbar && DataTableFilterList && DataTableSortList) {
-    return (
-      <DataTable table={table} actionBar={actionBar}>
-        <DataTableAdvancedToolbar table={table}>
-          <DataTableFilterList table={table} />
-          <DataTableSortList table={table} />
-        </DataTableAdvancedToolbar>
-      </DataTable>
-    );
-  }
+  return <DataTable table={table} actionBar={actionBar} />;
 }

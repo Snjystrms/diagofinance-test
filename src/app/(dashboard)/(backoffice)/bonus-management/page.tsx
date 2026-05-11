@@ -20,6 +20,7 @@ import { DataTableColumnHeader } from "@/components/data-table/data-table-column
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ProtectedRoute } from "@/components/protected-route";
+import { SearchSelectField } from "@/components/search-select-field";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -165,12 +166,12 @@ export default function BonusManagementPage() {
   });
 
   const filteredMt5Users = useMemo(() => {
-    if (!deferredUserSearch) return mt5Users;
+    if (!deferredUserSearch) return mt5Users.slice(0, 50);
 
     return mt5Users.filter((item) => {
       const haystack = `${item.account_id} ${item.name} ${item.email}`.toLowerCase();
       return haystack.includes(deferredUserSearch);
-    });
+    }).slice(0, 50);
   }, [deferredUserSearch, mt5Users]);
 
   const selectedMt5User = useMemo(
@@ -483,38 +484,29 @@ export default function BonusManagementPage() {
 
             <div className="space-y-5">
               <div className="space-y-2">
-                <Label htmlFor="bonus-user-search">Find MT5 Account</Label>
-                <div className="relative">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    id="bonus-user-search"
-                    placeholder="Search by account, name or email"
-                    className="pl-9"
-                    value={userSearch}
-                    onChange={(event) => setUserSearch(event.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="bonus-mt5-account">MT5 Account</Label>
-                <Select
-                  value={form.mt5_id}
-                  onValueChange={(value) => setForm((current) => ({ ...current, mt5_id: value }))}
-                >
-                  <SelectTrigger id="bonus-mt5-account" className="w-full">
-                    <SelectValue
-                      placeholder={isLoadingMt5Users ? "Loading MT5 accounts..." : "Select MT5 account"}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {filteredMt5Users.map((item) => (
-                      <SelectItem key={item.id} value={item.account_id}>
-                        {item.account_id} - {item.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <SearchSelectField
+                  id="bonus-user-search"
+                  label="Find MT5 Account"
+                  options={filteredMt5Users}
+                  searchValue={userSearch}
+                  selectedValue={form.mt5_id}
+                  placeholder="Search by account, name, or email"
+                  loading={isLoadingMt5Users}
+                  loadingMessage="Loading MT5 accounts..."
+                  idleMessage="Start typing to search MT5 accounts."
+                  emptyMessage="No MT5 accounts found."
+                  onSearchValueChange={(value) => {
+                    setUserSearch(value);
+                    setForm((current) => ({ ...current, mt5_id: "" }));
+                  }}
+                  onOptionSelect={(item) => {
+                    setUserSearch(item.account_id);
+                    setForm((current) => ({ ...current, mt5_id: item.account_id }));
+                  }}
+                  getOptionValue={(item) => item.account_id}
+                  getOptionLabel={(item) => item.account_id}
+                  getOptionDescription={(item) => `${item.name} | ${item.email}`}
+                />
                 {isMt5UsersError ? (
                   <p className="text-xs text-destructive">
                     {getAdminFriendlyErrorMessage(mt5UsersError, { resource: "MT5 users", action: "load" })}

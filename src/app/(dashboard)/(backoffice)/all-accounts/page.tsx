@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/auth-context";
 import { ApiErrorState } from "@/components/errors/api-error-state";
+import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ProtectedRoute } from "@/components/protected-route";
 import { PermissionAwareCrudDataTable } from "@/components/permission-aware-crud-table";
 import { getColumns } from "./columns";
@@ -466,6 +467,19 @@ export default function AllAccountsPage() {
             }}
           />
         </div>
+      </ProtectedRoute>
+    );
+  }
+
+  if (loading && data.length === 0) {
+    return (
+      <ProtectedRoute>
+        <ListPageSkeleton
+          actionCount={1}
+          columnCount={8}
+          rowCount={8}
+          filterPillCount={2}
+        />
       </ProtectedRoute>
     );
   }
