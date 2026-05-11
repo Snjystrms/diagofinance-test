@@ -37,12 +37,14 @@ export function DeleteDialog({
         </DialogHeader>
         <DialogFooter className="mt-4">
           <Button
+            type="button"
             variant="outline"
             onClick={() => onOpenChange(false)}
           >
             {cancelText}
           </Button>
           <Button
+            type="button"
             variant={variant === "destructive" ? "destructive" : "default"}
             onClick={() => {
               onConfirm();

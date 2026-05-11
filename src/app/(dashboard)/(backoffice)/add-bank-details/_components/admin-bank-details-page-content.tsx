@@ -28,8 +28,11 @@ import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import {
   emptyBankDetailForm,
   extractAdminUserOptions,
+  extractBankDetailListRows,
   filterBankDetails,
   mapBankDetailToForm,
+  normalizeAdminBankDetailRow,
+  resolveBankDetailRouteId,
   toBankDetailCreatePayload,
   toBankDetailUpdatePayload,
   validateBankDetailForm,
@@ -53,7 +56,6 @@ export function AdminBankDetailsPageContent() {
   const [formValues, setFormValues] = useState<BankDetailFormValues>(emptyBankDetailForm);
   const [userSearch, setUserSearch] = useState("");
   const [selectedDetail, setSelectedDetail] = useState<AdminBankDetailItem | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
   const [deleteCandidate, setDeleteCandidate] = useState<AdminBankDetailItem | null>(null);
 
@@ -71,7 +73,21 @@ export function AdminBankDetailsPageContent() {
     queryKey,
     queryFn: async () => {
       const response = await adminBankDetailsApi.list(token!);
-      return response.data ?? { count: 0, rows: [] };
+      const payload = response.data ?? { count: 0, rows: [] };
+      const rawRows = extractBankDetailListRows(payload as unknown);
+      const rows = rawRows
+        .map((row) => normalizeAdminBankDetailRow(row))
+        .filter((row): row is AdminBankDetailItem => row !== null);
+
+      const payloadRecord = payload as { count?: number; pagination?: { total?: number } };
+      const count =
+        typeof payloadRecord.count === "number"
+          ? payloadRecord.count
+          : typeof payloadRecord.pagination?.total === "number"
+            ? payloadRecord.pagination.total
+            : rows.length;
+
+      return { count: count ?? rows.length, rows };
     },
     enabled: Boolean(token) && canList,
     staleTime: 60 * 1000,
@@ -161,23 +177,6 @@ export function AdminBankDetailsPageContent() {
     [rows]
   );
 
-  const loadBankDetail = useCallback(async (uuid: string) => {
-    if (!token) return null;
-
-    setDetailLoading(true);
-    try {
-      const response = await adminBankDetailsApi.getByUuid(uuid, token);
-      return response.data ?? null;
-    } catch (error) {
-      toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "bank detail", action: "load" })
-      );
-      return null;
-    } finally {
-      setDetailLoading(false);
-    }
-  }, [token]);
-
   const openCreateDialog = () => {
     setSelectedDetail(null);
     setFormValues(emptyBankDetailForm());
@@ -185,22 +184,16 @@ export function AdminBankDetailsPageContent() {
     setDialogMode("create");
   };
 
-  const openEditDialog = useCallback(async (uuid: string) => {
-    const detail = await loadBankDetail(uuid);
-    if (!detail) return;
-
-    setSelectedDetail(detail);
-    setFormValues(mapBankDetailToForm(detail));
+  const openEditDialog = useCallback((item: AdminBankDetailItem) => {
+    setSelectedDetail(item);
+    setFormValues(mapBankDetailToForm(item));
     setDialogMode("edit");
-  }, [loadBankDetail]);
+  }, []);
 
-  const openViewDialog = useCallback(async (uuid: string) => {
+  const openViewDialog = useCallback((item: AdminBankDetailItem) => {
+    setSelectedDetail(item);
     setViewOpen(true);
-    const detail = await loadBankDetail(uuid);
-    if (detail) {
-      setSelectedDetail(detail);
-    }
-  }, [loadBankDetail]);
+  }, []);
 
   const handleDialogSubmit = () => {
     const validationError = validateBankDetailForm(formValues, {
@@ -218,7 +211,12 @@ export function AdminBankDetailsPageContent() {
     }
 
     if (dialogMode === "edit" && selectedDetail) {
-      updateMutation.mutate({ uuid: selectedDetail.uuid, values: formValues });
+      const routeId = resolveBankDetailRouteId(selectedDetail);
+      if (!routeId) {
+        toast.error("This record has no usable id or UUID. Refresh and try again.");
+        return;
+      }
+      updateMutation.mutate({ uuid: routeId, values: formValues });
     }
   };
 
@@ -268,9 +266,7 @@ export function AdminBankDetailsPageContent() {
               type="button"
               variant="outline"
               size="icon"
-              onClick={() => {
-                void openViewDialog(row.original.uuid);
-              }}
+              onClick={() => openViewDialog(row.original)}
               title="View bank detail"
             >
               <Eye className="h-4 w-4" />
@@ -279,9 +275,7 @@ export function AdminBankDetailsPageContent() {
               type="button"
               variant="outline"
               size="icon"
-              onClick={() => {
-                void openEditDialog(row.original.uuid);
-              }}
+              onClick={() => openEditDialog(row.original)}
               disabled={!canMutate}
               title="Edit bank detail"
             >
@@ -408,7 +402,7 @@ export function AdminBankDetailsPageContent() {
             <div>
               <CardTitle>Bank Details List</CardTitle>
               <CardDescription>
-                Search by user, account holder, bank name, account number, or UUID.
+                Search by user, account holder, bank name, account number.
               </CardDescription>
             </div>
             {canList ? (
@@ -437,7 +431,10 @@ export function AdminBankDetailsPageContent() {
                     data={filteredRows}
                     columns={columns}
                     pageCount={1}
-                    getRowId={(row) => row.uuid}
+                    getRowId={(row) =>
+                      resolveBankDetailRouteId(row) ??
+                      `fallback-${row.user_id}-${row.account_number}-${row.bank_name}`
+                    }
                   />
                 )}
               </>
@@ -451,7 +448,7 @@ export function AdminBankDetailsPageContent() {
 
         <BankDetailFormDialog
           detail={selectedDetail}
-          isLoadingDetail={detailLoading}
+          isLoadingDetail={false}
           isLoadingUsers={isFetchingUsers}
           mode={dialogMode === "edit" ? "edit" : "create"}
           onOpenChange={(open) => {
@@ -474,7 +471,7 @@ export function AdminBankDetailsPageContent() {
 
         <BankDetailViewDialog
           detail={selectedDetail}
-          loading={detailLoading}
+          loading={false}
           open={viewOpen}
           onOpenChange={(open) => {
             setViewOpen(open);
@@ -492,9 +489,13 @@ export function AdminBankDetailsPageContent() {
             }
           }}
           onConfirm={() => {
-            if (deleteCandidate) {
-              deleteMutation.mutate(deleteCandidate.uuid);
+            if (!deleteCandidate || !token) return;
+            const routeId = resolveBankDetailRouteId(deleteCandidate);
+            if (!routeId) {
+              toast.error("Cannot delete: missing record identifier.");
+              return;
             }
+            deleteMutation.mutate(routeId);
           }}
           title="Delete Bank Details"
           description={`Are you sure you want to delete the bank details for ${deleteCandidate?.user?.name || deleteCandidate?.account_holder_name || "this record"}? This action cannot be undone.`}

@@ -861,9 +861,9 @@ export default function SetIbCommissionPage() {
                                         <TableHead>Sub IB 3</TableHead>
                                         <TableHead>Sub IB 4</TableHead>
                                         <TableHead>Sub IB 5</TableHead>
-                                        <TableHead className="min-w-[110px] text-center">
+                                        {/* <TableHead className="min-w-[110px] text-center">
                                           Status
-                                        </TableHead>
+                                        </TableHead> */}
                                         <TableHead className="min-w-[140px]">
                                           Updated
                                         </TableHead>
@@ -932,7 +932,7 @@ export default function SetIbCommissionPage() {
                                                     currentCommission.rate_sub_ib_5,
                                                   )}
                                                 </TableCell>
-                                                <TableCell className="text-center">
+                                                {/* <TableCell className="text-center">
                                                   <div className="flex items-center justify-center gap-2">
                                                     <Switch
                                                       checked={Boolean(
@@ -952,7 +952,7 @@ export default function SetIbCommissionPage() {
                                                         : "Inactive"}
                                                     </span>
                                                   </div>
-                                                </TableCell>
+                                                </TableCell> */}
                                               </>
                                             ) : (
                                               <>
@@ -986,7 +986,7 @@ export default function SetIbCommissionPage() {
                                                     commission.rate_sub_ib_5,
                                                   )}
                                                 </TableCell>
-                                                <TableCell className="text-center">
+                                                {/* <TableCell className="text-center">
                                                   {Boolean(commission.status) ? (
                                                     <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
                                                       Active
@@ -996,7 +996,7 @@ export default function SetIbCommissionPage() {
                                                       Inactive
                                                     </Badge>
                                                   )}
-                                                </TableCell>
+                                                </TableCell> */}
                                               </>
                                             )}
                                             <TableCell className="text-sm text-muted-foreground">

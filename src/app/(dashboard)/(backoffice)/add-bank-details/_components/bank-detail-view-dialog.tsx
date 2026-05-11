@@ -49,13 +49,11 @@ export function BankDetailViewDialog({
               <DetailRow label="User name" value={detail.user?.name} />
               <DetailRow label="User email" value={detail.user?.email} />
               <DetailRow label="User mobile" value={detail.user?.mobile} />
-              <DetailRow label="User UUID" value={detail.user?.uuid} />
             </div>
 
             <Separator />
 
             <div className="grid gap-4 md:grid-cols-2">
-              <DetailRow label="Record UUID" value={detail.uuid} />
               <DetailRow label="Account holder name" value={detail.account_holder_name} />
               <DetailRow label="Account number" value={detail.account_number} />
               <DetailRow label="IBAN number" value={detail.iban_number} />

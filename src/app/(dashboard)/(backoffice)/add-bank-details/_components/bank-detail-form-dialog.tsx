@@ -178,9 +178,6 @@ export function BankDetailFormDialog({
               <div className="rounded-md border bg-muted/40 p-3 text-sm md:col-span-2">
                 <div className="font-medium">{detail?.user?.name || "-"}</div>
                 <div className="text-muted-foreground">{detail?.user?.email || "-"}</div>
-                <div className="mt-1 font-mono text-xs text-muted-foreground">
-                  {detail?.user?.uuid || values.user_uuid}
-                </div>
               </div>
             )}
 

@@ -1582,11 +1582,12 @@ export const adminBankDetailsApi = {
       throw new Error("Token is required to fetch bank detail");
     }
 
-    if (!uuid.trim()) {
+    const id = String(uuid ?? "").trim();
+    if (!id) {
       throw new Error("Bank detail UUID is required");
     }
 
-    return apiCall<AdminBankDetailItem>(`/admin/bank-details/${uuid}`, {
+    return apiCall<AdminBankDetailItem>(`/admin/bank-details/${encodeURIComponent(id)}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -1597,11 +1598,12 @@ export const adminBankDetailsApi = {
       throw new Error("Token is required to update bank detail");
     }
 
-    if (!uuid.trim()) {
+    const id = String(uuid ?? "").trim();
+    if (!id) {
       throw new Error("Bank detail UUID is required");
     }
 
-    return apiCall<AdminBankDetailItem>(`/admin/bank-details/${uuid}`, {
+    return apiCall<AdminBankDetailItem>(`/admin/bank-details/${encodeURIComponent(id)}`, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -1616,11 +1618,12 @@ export const adminBankDetailsApi = {
       throw new Error("Token is required to delete bank detail");
     }
 
-    if (!uuid.trim()) {
+    const id = String(uuid ?? "").trim();
+    if (!id) {
       throw new Error("Bank detail UUID is required");
     }
 
-    return apiCall(`/admin/bank-details/${uuid}`, {
+    return apiCall(`/admin/bank-details/${encodeURIComponent(id)}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
