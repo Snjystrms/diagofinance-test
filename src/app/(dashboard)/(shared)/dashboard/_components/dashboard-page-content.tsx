@@ -72,6 +72,7 @@ import {
   authApi,
   ibRequestsApi,
   adminDashboardApi,
+  managerDashboardApi,
   adminNotificationApi,
   userNewsApi,
   userMT5AccountsApi,
@@ -80,11 +81,16 @@ import {
   type UserDashboardData,
   type IbWalletData,
   type AdminDashboardData,
+  type ManagerDashboardData,
   type UserMT5DemoDepositData,
 } from "@/lib/api"
 import { NewsPromotionCarousel } from "@/components/news-promotion-carousel"
 import type { NewsItem } from "@/lib/api-auth-admin"
 const AdminDashboardView = dynamic(() => import("../admin-dashboard-view").then((m) => ({ default: m.AdminDashboardView })), {
+  ssr: false,
+  loading: () => <AdminDashboardSkeleton />,
+})
+const ManagerDashboardView = dynamic(() => import("../manager-dashboard-view").then((m) => ({ default: m.ManagerDashboardView })), {
   ssr: false,
   loading: () => <AdminDashboardSkeleton />,
 })
@@ -146,7 +152,8 @@ export function DashboardPageContent() {
   }>>([]);
 
   const isUser = user?.type === "user";
-  const isAdmin = user?.type === "admin" || user?.type === "subadmin" || user?.type === "manager";
+  const isManager = user?.type === "manager";
+  const isAdmin = user?.type === "admin" || user?.type === "subadmin" || isManager;
 
   // Dashboard-only poller for admin/manager unread count.
   // Header reads this value from React Query cache without fetching.
@@ -208,6 +215,7 @@ export function DashboardPageContent() {
 
   const [dashboardData, setDashboardData] = useState<UserDashboardData | null>(null);
   const [adminDashboardData, setAdminDashboardData] = useState<AdminDashboardData | null>(null);
+  const [managerDashboardData, setManagerDashboardData] = useState<ManagerDashboardData | null>(null);
   const [tradingSummary, setTradingSummary] = useState<TradingAccountsSummaryResponse | null>(null);
   const [ibWalletData, setIbWalletData] = useState<IbWalletData | null>(null);
   const [depositsStatistics, setDepositsStatistics] = useState<Array<{ day: string; date: string; amount: number }>>([]);
@@ -371,7 +379,7 @@ export function DashboardPageContent() {
     };
   }, [isUser, token, isAdmin]);
 
-  // Admin dashboard data load
+  // Admin / Manager dashboard data load
   useEffect(() => {
     if (!isAdmin || !token) {
       return;
@@ -382,17 +390,22 @@ export function DashboardPageContent() {
       setIsDashboardLoading(true);
       setDashboardError(null);
       try {
-        const response = await adminDashboardApi.getDashboard({
-          token,
-          ...dateRange,
-        });
-
-        if (!isMounted) return;
-
-        if (response.success && response.data) {
-          setAdminDashboardData(response.data);
+        if (isManager) {
+          const response = await managerDashboardApi.getDashboard({ token, ...dateRange });
+          if (!isMounted) return;
+          if (response.success && response.data) {
+            setManagerDashboardData(response.data);
+          } else {
+            setDashboardError("Unable to load manager dashboard");
+          }
         } else {
-          setDashboardError("Unable to load admin dashboard");
+          const response = await adminDashboardApi.getDashboard({ token, ...dateRange });
+          if (!isMounted) return;
+          if (response.success && response.data) {
+            setAdminDashboardData(response.data);
+          } else {
+            setDashboardError("Unable to load admin dashboard");
+          }
         }
       } catch (error: unknown) {
         if (isMounted) {
@@ -409,7 +422,7 @@ export function DashboardPageContent() {
     return () => {
       isMounted = false;
     };
-  }, [isAdmin, token, dateRange.start_date, dateRange.end_date]);
+  }, [isAdmin, isManager, token, dateRange.start_date, dateRange.end_date]);
 
   // Separate effects for statistics so each chart can manage its own period independently.
   useEffect(() => {
@@ -1886,10 +1899,12 @@ export function DashboardPageContent() {
             <ApiErrorState
               error={dashboardError}
               audience="admin"
-              resource="admin dashboard"
+              resource="dashboard"
               action="load"
               variant="panel"
             />
+          ) : isManager ? (
+            <ManagerDashboardView managerDashboardData={managerDashboardData} userName={user?.name} />
           ) : (
             <AdminDashboardView adminDashboardData={adminDashboardData} userName={user?.name} />
           )}

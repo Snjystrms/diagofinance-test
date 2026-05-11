@@ -53,8 +53,8 @@ function RowActions({
   onEdit: (user: PendingUser) => void;
   onDelete: (user: PendingUser) => void;
 }) {
-  const hasDetailRoute = Boolean(row.original.uuid?.trim());
-  const detailHref = hasDetailRoute ? `/new-users/${encodeURIComponent(row.original.uuid!.trim())}` : null;
+  const hasDetailRoute = Boolean(row.original.id);
+  const detailHref = hasDetailRoute ? `/new-users/${row.original.id}` : null;
 
   return (
     <div className="flex flex-col items-end gap-1">
@@ -77,8 +77,8 @@ function RowActions({
             size="icon"
             disabled
             className="h-8 w-8 text-amber-600/80"
-            aria-label={`UUID unavailable for ${row.original.name || "user"}`}
-            title="UUID unavailable"
+            aria-label={`ID unavailable for ${row.original.name || "user"}`}
+            title="ID unavailable"
           >
             <Eye className="h-4 w-4" />
           </Button>
@@ -106,7 +106,7 @@ function RowActions({
       </div>
       {!hasDetailRoute ? (
         <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
-          UUID unavailable
+          ID unavailable
         </span>
       ) : null}
     </div>

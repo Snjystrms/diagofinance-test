@@ -7,16 +7,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
   ArrowLeft,
-  CircleDollarSign,
-  CreditCard,
   Globe,
-  History,
   Mail,
   MapPin,
+  Phone,
   RefreshCw,
   ShieldCheck,
   UserRound,
-  Wallet,
 } from "lucide-react";
 
 import { ApiErrorState } from "@/components/errors/api-error-state";
@@ -34,8 +31,6 @@ import {
   type AdminPaginatedApiData,
   type AdminUserActivityLogItem,
   type AdminUserBankDetailItem,
-  type AdminUserDetailsApiData,
-  type AdminUserDetailsData,
   type AdminUserMt5AccountItem,
   type AdminUserMt5TabDetailsApiData,
   type AdminUserMt5TabDetailsData,
@@ -44,7 +39,7 @@ import {
   type AdminUserWalletHistoryItem,
   type PaginationMeta,
 } from "@/lib/api";
-import { formatDate, formatDateTimeInIST } from "@/lib/formatters";
+import { formatDateTimeInIST } from "@/lib/formatters";
 
 const DEFAULT_PAGE_SIZE = 10;
 
@@ -72,13 +67,28 @@ type CollectionState<T> = {
   loaded: boolean;
 };
 
-type DeviceSnapshot = {
-  browser_name?: string;
-  browser_version?: string;
-  device_name?: string;
-  os_name?: string;
-  userAgent?: string;
-};
+interface CrudUserDetails {
+  id: number;
+  uuid: string;
+  sponsor_id?: string | null;
+  sponsor_by?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  mobile?: string | null;
+  country?: string | null;
+  state?: string | null;
+  city?: string | null;
+  address?: string | null;
+  status?: number | string | null;
+  is_approved?: number | string | null;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  rejection_reason?: string | null;
+  referral_code?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+}
 
 const createPaginatedState = <T,>(): PaginatedTabState<T> => ({
   rows: [],
@@ -171,29 +181,6 @@ const statusBadge = (value: unknown, mode: "profile" | "transaction" | "activity
   return <Badge variant="outline">{value ? String(value) : "Unknown"}</Badge>;
 };
 
-const signUpSourceLabel = (value: unknown) => {
-  const normalized = `${value ?? ""}`.trim();
-  switch (normalized) {
-    case "1":
-      return "Web CRM";
-    case "2":
-      return "Mobile App";
-    case "3":
-      return "Manager Panel";
-    default:
-      return normalized || "-";
-  }
-};
-
-const parseDeviceJson = (value?: string | null): DeviceSnapshot | null => {
-  if (!value) return null;
-  try {
-    const parsed = JSON.parse(value) as DeviceSnapshot;
-    return typeof parsed === "object" && parsed ? parsed : null;
-  } catch {
-    return null;
-  }
-};
 
 const readPagination = (value: unknown): PaginationMeta | null => {
   if (!value || typeof value !== "object") return null;
@@ -230,12 +217,17 @@ const withFallbackPagination = (pagination: PaginationMeta | null, page: number,
   };
 };
 
-const normalizeUserDetails = (payload?: AdminUserDetailsApiData | null): AdminUserDetailsData | null => {
-  if (!payload) return null;
-  if ("data" in payload && payload.data && typeof payload.data === "object" && !Array.isArray(payload.data)) {
-    return payload.data;
+const extractCrudUserFromDetailPayload = (payload: unknown): CrudUserDetails | null => {
+  if (!payload || typeof payload !== "object") return null;
+  const record = payload as Record<string, unknown>;
+  if (record.data && typeof record.data === "object") {
+    const data = record.data as Record<string, unknown>;
+    if (data.user && typeof data.user === "object") return data.user as CrudUserDetails;
+    if (typeof (data as unknown as CrudUserDetails).id === "number") return data as unknown as CrudUserDetails;
   }
-  return payload as AdminUserDetailsData;
+  if (record.user && typeof record.user === "object") return record.user as CrudUserDetails;
+  if (typeof (record as unknown as CrudUserDetails).id === "number") return record as unknown as CrudUserDetails;
+  return null;
 };
 
 const normalizeMt5TabDetails = (payload?: AdminUserMt5TabDetailsApiData | null): AdminUserMt5TabDetailsData | null => {
@@ -279,6 +271,25 @@ const normalizePaginatedRows = <T,>(
   }
 
   return { rows: [], pagination: rootPagination ?? null };
+};
+
+const resolveUuidFromDetailPayload = (payload: unknown): string | null => {
+  if (!payload || typeof payload !== "object") return null;
+  const record = payload as Record<string, unknown>;
+  if (typeof record.uuid === "string" && record.uuid) return record.uuid;
+  if (record.user && typeof record.user === "object") {
+    const user = record.user as Record<string, unknown>;
+    if (typeof user.uuid === "string" && user.uuid) return user.uuid;
+  }
+  if (record.data && typeof record.data === "object") {
+    const data = record.data as Record<string, unknown>;
+    if (typeof data.uuid === "string" && data.uuid) return data.uuid;
+    if (data.user && typeof data.user === "object") {
+      const user = data.user as Record<string, unknown>;
+      if (typeof user.uuid === "string" && user.uuid) return user.uuid;
+    }
+  }
+  return null;
 };
 
 function DetailItem({ label, value }: { label: string; value: ReactNode }) {
@@ -372,13 +383,14 @@ function PaginationControls({
 }
 
 export default function NewUserDetailPage() {
-  const params = useParams<{ uuid: string }>();
+  const params = useParams<{ id: string }>();
   const { token } = useAuth();
-  const uuidParam = Array.isArray(params.uuid) ? params.uuid[0] : params.uuid;
-  const uuid = typeof uuidParam === "string" ? decodeURIComponent(uuidParam) : "";
+  const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
+  const id = typeof idParam === "string" ? decodeURIComponent(idParam) : "";
 
   const [activeTab, setActiveTab] = useState<TabKey>("deposits");
-  const [profile, setProfile] = useState<AdminUserDetailsData | null>(null);
+  const [userUuid, setUserUuid] = useState<string>("");
+  const [crudUser, setCrudUser] = useState<CrudUserDetails | null>(null);
   const [mt5Summary, setMt5Summary] = useState<AdminUserMt5TabDetailsData | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [profileError, setProfileError] = useState<unknown | null>(null);
@@ -392,14 +404,11 @@ export default function NewUserDetailPage() {
   const [walletHistoryState, setWalletHistoryState] = useState(() => createPaginatedState<AdminUserWalletHistoryItem>());
   const [mt5AccountsState, setMt5AccountsState] = useState(() => createCollectionState<AdminUserMt5AccountItem>());
 
-  const userDetails = profile?.userDetails ?? null;
-  const deviceSnapshot = parseDeviceJson(userDetails?.device_json as string | null | undefined);
-
   const loadDepositsPage = useCallback(async (page = 1) => {
-    if (!token || !uuid) return;
+    if (!token || !userUuid) return;
     try {
       setDepositsState((prev) => ({ ...prev, loading: true, error: null }));
-      const response = await adminUsersApi.deposits(uuid, token, page, DEFAULT_PAGE_SIZE);
+      const response = await adminUsersApi.deposits(userUuid, token, page, DEFAULT_PAGE_SIZE);
       const normalized = normalizePaginatedRows(response.data);
       setDepositsState({
         rows: normalized.rows,
@@ -409,17 +418,17 @@ export default function NewUserDetailPage() {
         loaded: true,
       });
     } catch (error) {
-      console.error(`Failed to load deposits for ${uuid}:`, error);
+      console.error(`Failed to load deposits for user ${id}:`, error);
       setDepositsState((prev) => ({ ...prev, loading: false, error, loaded: true }));
       toast.error(getAdminFriendlyErrorMessage(error, { resource: "user deposits", action: "load" }));
     }
-  }, [profileReloadToken, token, uuid]);
+  }, [profileReloadToken, token, userUuid, id]);
 
   const loadWithdrawalsPage = useCallback(async (page = 1) => {
-    if (!token || !uuid) return;
+    if (!token || !userUuid) return;
     try {
       setWithdrawalsState((prev) => ({ ...prev, loading: true, error: null }));
-      const response = await adminUsersApi.withdrawals(uuid, token, page, DEFAULT_PAGE_SIZE);
+      const response = await adminUsersApi.withdrawals(userUuid, token, page, DEFAULT_PAGE_SIZE);
       const normalized = normalizePaginatedRows(response.data);
       setWithdrawalsState({
         rows: normalized.rows,
@@ -429,17 +438,17 @@ export default function NewUserDetailPage() {
         loaded: true,
       });
     } catch (error) {
-      console.error(`Failed to load withdrawals for ${uuid}:`, error);
+      console.error(`Failed to load withdrawals for user ${id}:`, error);
       setWithdrawalsState((prev) => ({ ...prev, loading: false, error, loaded: true }));
       toast.error(getAdminFriendlyErrorMessage(error, { resource: "user withdrawals", action: "load" }));
     }
-  }, [token, uuid]);
+  }, [token, userUuid, id]);
 
   const loadBankDetailsPage = useCallback(async (page = 1) => {
-    if (!token || !uuid) return;
+    if (!token || !userUuid) return;
     try {
       setBankDetailsState((prev) => ({ ...prev, loading: true, error: null }));
-      const response = await adminUsersApi.bankDetails(uuid, token, page, DEFAULT_PAGE_SIZE);
+      const response = await adminUsersApi.bankDetails(userUuid, token, page, DEFAULT_PAGE_SIZE);
       const normalized = normalizePaginatedRows(response.data);
       setBankDetailsState({
         rows: normalized.rows,
@@ -449,17 +458,17 @@ export default function NewUserDetailPage() {
         loaded: true,
       });
     } catch (error) {
-      console.error(`Failed to load bank details for ${uuid}:`, error);
+      console.error(`Failed to load bank details for user ${id}:`, error);
       setBankDetailsState((prev) => ({ ...prev, loading: false, error, loaded: true }));
       toast.error(getAdminFriendlyErrorMessage(error, { resource: "bank details", action: "load" }));
     }
-  }, [token, uuid]);
+  }, [token, userUuid, id]);
 
   const loadActivityPage = useCallback(async (page = 1) => {
-    if (!token || !uuid) return;
+    if (!token || !userUuid) return;
     try {
       setActivityState((prev) => ({ ...prev, loading: true, error: null }));
-      const response = await adminUsersApi.activityLog(uuid, token, page, DEFAULT_PAGE_SIZE);
+      const response = await adminUsersApi.activityLog(userUuid, token, page, DEFAULT_PAGE_SIZE);
       const normalized = normalizePaginatedRows(response.data);
       setActivityState({
         rows: normalized.rows,
@@ -469,17 +478,17 @@ export default function NewUserDetailPage() {
         loaded: true,
       });
     } catch (error) {
-      console.error(`Failed to load activity log for ${uuid}:`, error);
+      console.error(`Failed to load activity log for user ${id}:`, error);
       setActivityState((prev) => ({ ...prev, loading: false, error, loaded: true }));
       toast.error(getAdminFriendlyErrorMessage(error, { resource: "activity log", action: "load" }));
     }
-  }, [token, uuid]);
+  }, [token, userUuid, id]);
 
   const loadReferralPage = useCallback(async (page = 1) => {
-    if (!token || !uuid) return;
+    if (!token || !userUuid) return;
     try {
       setReferralState((prev) => ({ ...prev, loading: true, error: null }));
-      const response = await adminUsersApi.referralBy(uuid, token, page, DEFAULT_PAGE_SIZE);
+      const response = await adminUsersApi.referralBy(userUuid, token, page, DEFAULT_PAGE_SIZE);
       const normalized = normalizePaginatedRows(response.data);
       setReferralState({
         rows: normalized.rows,
@@ -489,17 +498,17 @@ export default function NewUserDetailPage() {
         loaded: true,
       });
     } catch (error) {
-      console.error(`Failed to load referral data for ${uuid}:`, error);
+      console.error(`Failed to load referral data for user ${id}:`, error);
       setReferralState((prev) => ({ ...prev, loading: false, error, loaded: true }));
       toast.error(getAdminFriendlyErrorMessage(error, { resource: "referral details", action: "load" }));
     }
-  }, [token, uuid]);
+  }, [token, userUuid, id]);
 
   const loadWalletHistoryPage = useCallback(async (page = 1) => {
-    if (!token || !uuid) return;
+    if (!token || !userUuid) return;
     try {
       setWalletHistoryState((prev) => ({ ...prev, loading: true, error: null }));
-      const response = await adminUsersApi.walletHistory(uuid, token, page, DEFAULT_PAGE_SIZE);
+      const response = await adminUsersApi.walletHistory(userUuid, token, page, DEFAULT_PAGE_SIZE);
       const normalized = normalizePaginatedRows(response.data, response.pagination ?? null);
       setWalletHistoryState({
         rows: normalized.rows,
@@ -509,15 +518,16 @@ export default function NewUserDetailPage() {
         loaded: true,
       });
     } catch (error) {
-      console.error(`Failed to load wallet history for ${uuid}:`, error);
+      console.error(`Failed to load wallet history for user ${id}:`, error);
       setWalletHistoryState((prev) => ({ ...prev, loading: false, error, loaded: true }));
       toast.error(getAdminFriendlyErrorMessage(error, { resource: "wallet history", action: "load" }));
     }
-  }, [token, uuid]);
+  }, [token, userUuid, id]);
 
   useEffect(() => {
     setActiveTab("deposits");
-    setProfile(null);
+    setUserUuid("");
+    setCrudUser(null);
     setMt5Summary(null);
     setProfileError(null);
     setDepositsState(createPaginatedState<AdminUserTransactionItem>());
@@ -528,9 +538,9 @@ export default function NewUserDetailPage() {
     setWalletHistoryState(createPaginatedState<AdminUserWalletHistoryItem>());
     setMt5AccountsState(createCollectionState<AdminUserMt5AccountItem>());
 
-    if (!uuid) {
+    if (!id) {
       setLoadingProfile(false);
-      setProfileError(new Error("User UUID is missing from the route."));
+      setProfileError(new Error("User ID is missing from the route."));
       return;
     }
 
@@ -546,21 +556,28 @@ export default function NewUserDetailPage() {
         setLoadingProfile(true);
         setProfileError(null);
 
-        const [profileResponse, mt5Response] = await Promise.all([
-          adminUsersApi.detail(uuid, token),
-          adminUsersApi.mt5TabDetails(uuid, token),
-        ]);
+        const detailResponse = await adminUsersApi.detail(id, token);
+        const resolvedUuid = resolveUuidFromDetailPayload(detailResponse?.data);
+
+        if (!resolvedUuid) {
+          throw new Error("Could not resolve user UUID from detail response.");
+        }
+
+        if (cancelled) return;
+        setUserUuid(resolvedUuid);
+
+        const mt5Response = await adminUsersApi.mt5TabDetails(resolvedUuid, token);
 
         if (cancelled) return;
 
-        const normalizedProfile = normalizeUserDetails((profileResponse.data ?? null) as AdminUserDetailsApiData | null);
-        if (!normalizedProfile) {
+        const crudUserData = extractCrudUserFromDetailPayload(detailResponse?.data);
+        if (!crudUserData) {
           throw new Error("User profile payload is empty.");
         }
 
         const normalizedMt5 = normalizeMt5TabDetails(mt5Response.data ?? null);
 
-        setProfile(normalizedProfile);
+        setCrudUser(crudUserData);
         setMt5Summary(normalizedMt5);
         setMt5AccountsState({
           rows: normalizedMt5?.mt5Accounts ?? [],
@@ -570,7 +587,7 @@ export default function NewUserDetailPage() {
         });
       } catch (error) {
         if (cancelled) return;
-        console.error(`Failed to load user profile for ${uuid}:`, error);
+        console.error(`Failed to load user profile for ID ${id}:`, error);
         setProfileError(error);
         toast.error(getAdminFriendlyErrorMessage(error, { resource: "user details", action: "load" }));
       } finally {
@@ -585,10 +602,10 @@ export default function NewUserDetailPage() {
     return () => {
       cancelled = true;
     };
-  }, [token, uuid]);
+  }, [token, id, profileReloadToken]);
 
   useEffect(() => {
-    if (!token || !uuid || loadingProfile || profileError) return;
+    if (!token || !userUuid || loadingProfile || profileError) return;
 
     switch (activeTab) {
       case "deposits":
@@ -643,7 +660,7 @@ export default function NewUserDetailPage() {
     referralState.loaded,
     referralState.loading,
     token,
-    uuid,
+    userUuid,
     walletHistoryState.loaded,
     walletHistoryState.loading,
     withdrawalsState.loaded,
@@ -653,46 +670,28 @@ export default function NewUserDetailPage() {
   const summaryCards = useMemo(
     () => [
       {
-        title: "Pending Deposits",
-        value: formatNumericValue(profile?.totalPendingDeposit ?? 0),
-        description: "Deposits awaiting approval",
-        icon: CircleDollarSign,
-      },
-      {
-        title: "Pending Withdrawals",
-        value: formatNumericValue(profile?.totalPendingWithdraw ?? 0),
-        description: "Withdrawals awaiting approval",
-        icon: Wallet,
-      },
-      {
-        title: "Rejected Deposits",
-        value: formatNumericValue(profile?.totalRejectedDeposit ?? 0),
-        description: "Deposits sent back to the user",
-        icon: CreditCard,
-      },
-      {
-        title: "Rejected Withdrawals",
-        value: formatNumericValue(profile?.totalRejectedWithdraw ?? 0),
-        description: "Withdrawals declined by the team",
-        icon: History,
-      },
-      {
         title: "MT5 Accounts",
         value: formatNumericValue(mt5Summary?.totalMt5Account ?? 0),
         description: "Trading accounts linked to this user",
         icon: ShieldCheck,
       },
+      {
+        title: "Total MT5 Deposit",
+        value: formatNumericValue(mt5Summary?.totalDeposit ?? 0),
+        description: "Cumulative deposits across MT5 accounts",
+        icon: ShieldCheck,
+      },
+      {
+        title: "Total MT5 Withdraw",
+        value: formatNumericValue(mt5Summary?.totalWithdraw ?? 0),
+        description: "Cumulative withdrawals across MT5 accounts",
+        icon: ShieldCheck,
+      },
     ],
-    [
-      mt5Summary?.totalMt5Account,
-      profile?.totalPendingDeposit,
-      profile?.totalPendingWithdraw,
-      profile?.totalRejectedDeposit,
-      profile?.totalRejectedWithdraw,
-    ],
+    [mt5Summary?.totalMt5Account, mt5Summary?.totalDeposit, mt5Summary?.totalWithdraw],
   );
 
-  if (profileError && !profile) {
+  if (profileError && !crudUser) {
     return (
       <ProtectedRoute>
         <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
@@ -773,7 +772,7 @@ export default function NewUserDetailPage() {
             </Button>
           </div>
 
-          {loadingProfile && !profile ? (
+          {loadingProfile && !crudUser ? (
             <div className="space-y-4">
               <TableSectionSkeleton columnCount={5} rowCount={3} />
               <TableSectionSkeleton columnCount={4} rowCount={4} />
@@ -783,7 +782,7 @@ export default function NewUserDetailPage() {
               <Card className="overflow-hidden border-border/70 shadow-sm">
                 <CardContent className="relative overflow-hidden p-0">
                   <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,63,94,0.16),transparent_36%),radial-gradient(circle_at_right,rgba(245,158,11,0.12),transparent_28%)]" />
-                  <div className="relative grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr),360px]">
+                  <div className="relative grid gap-6 p-6 lg:grid-cols-[minmax(0,1fr),320px]">
                     <div className="space-y-5">
                       <div className="flex flex-wrap items-start gap-4">
                         <div className="flex h-16 w-16 items-center justify-center rounded-3xl border border-primary/20 bg-primary/10 text-primary shadow-sm">
@@ -792,99 +791,81 @@ export default function NewUserDetailPage() {
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <h2 className="text-3xl font-semibold tracking-tight text-foreground">
-                              {profile?.name || "Unknown User"}
+                              {[crudUser?.first_name, crudUser?.last_name].filter(Boolean).join(" ") || "Unknown User"}
                             </h2>
-                            {statusBadge(userDetails?.status, "profile")}
-                            {profile?.hasUserDetails ? (
-                              <Badge className="bg-sky-500/10 text-sky-700 dark:text-sky-300">Profile Ready</Badge>
+                            {statusBadge(crudUser?.status, "profile")}
+                            {normalizeBooleanLabel(crudUser?.is_approved) === "Yes" ? (
+                              <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Approved</Badge>
                             ) : (
-                              <Badge variant="secondary">Profile Partial</Badge>
+                              <Badge variant="secondary">Pending Approval</Badge>
                             )}
-                            {normalizeBooleanLabel(userDetails?.politically_exposed, "PEP", "Non-PEP") === "PEP" ? (
-                              <Badge className="bg-amber-500/10 text-amber-700 dark:text-amber-300">PEP</Badge>
-                            ) : null}
                           </div>
                           <div className="mt-3 flex flex-wrap gap-3 text-sm text-muted-foreground">
                             <span className="inline-flex items-center gap-2">
                               <Mail className="h-4 w-4" />
-                              {profile?.email || "-"}
+                              {crudUser?.email || "-"}
+                            </span>
+                            <span className="inline-flex items-center gap-2">
+                              <Phone className="h-4 w-4" />
+                              {crudUser?.mobile || "-"}
                             </span>
                             <span className="inline-flex items-center gap-2">
                               <Globe className="h-4 w-4" />
-                              {userDetails?.country || "-"}
+                              {crudUser?.country || "-"}
                             </span>
                             <span className="inline-flex items-center gap-2">
                               <MapPin className="h-4 w-4" />
-                              {[userDetails?.city, userDetails?.state].filter(Boolean).join(", ") || "Location not shared"}
+                              {[crudUser?.city, crudUser?.state].filter(Boolean).join(", ") || "Location not shared"}
                             </span>
                           </div>
                         </div>
                       </div>
 
                       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        <DetailItem label="Client Type" value={userDetails?.client_type || "-"} />
-                        <DetailItem label="Signup Source" value={signUpSourceLabel(userDetails?.sign_up_from)} />
-                        <DetailItem label="Last Login" value={formatDateTime(userDetails?.last_login_at)} />
-                        <DetailItem label="Referral Code" value={userDetails?.referral_code || "-"} />
+                        <DetailItem label="Sponsor ID" value={crudUser?.sponsor_id || "-"} />
+                        <DetailItem label="Sponsor By" value={crudUser?.sponsor_by || "-"} />
+                        <DetailItem label="Referral Code" value={crudUser?.referral_code || "-"} />
+                        <DetailItem label="Registered" value={formatDateTime(crudUser?.created_at)} />
                       </div>
                     </div>
 
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                      <Card className="border-primary/15 bg-background/80 shadow-none">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-base">Device Snapshot</CardTitle>
-                          <CardDescription>Most recent known sign-in device</CardDescription>
-                        </CardHeader>
-                        <CardContent className="grid gap-3 text-sm">
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-muted-foreground">Browser</span>
-                            <span className="font-medium">
-                              {deviceSnapshot?.browser_name
-                                ? `${deviceSnapshot.browser_name} ${deviceSnapshot.browser_version ?? ""}`.trim()
-                                : "-"}
+                    <Card className="border-border/70 bg-background/80 shadow-none">
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base">Account Status</CardTitle>
+                        <CardDescription>Approval state recorded in CRM</CardDescription>
+                      </CardHeader>
+                      <CardContent className="grid gap-3 text-sm">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-muted-foreground">Status</span>
+                          <span className="font-medium">{statusBadge(crudUser?.status, "profile")}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-muted-foreground">Is Approved</span>
+                          <span className="font-medium">{normalizeBooleanLabel(crudUser?.is_approved)}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-muted-foreground">Approved By</span>
+                          <span className="truncate text-right font-medium">{crudUser?.approved_by || "-"}</span>
+                        </div>
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-muted-foreground">Approved At</span>
+                          <span className="font-medium">{formatDateTime(crudUser?.approved_at)}</span>
+                        </div>
+                        {crudUser?.rejection_reason ? (
+                          <div className="flex items-start justify-between gap-3">
+                            <span className="text-muted-foreground">Rejection</span>
+                            <span className="max-w-[180px] text-right font-medium text-rose-600 dark:text-rose-400">
+                              {crudUser.rejection_reason}
                             </span>
                           </div>
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-muted-foreground">Device</span>
-                            <span className="font-medium">{deviceSnapshot?.device_name || "-"}</span>
-                          </div>
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-muted-foreground">OS</span>
-                            <span className="font-medium">{deviceSnapshot?.os_name || "-"}</span>
-                          </div>
-                        </CardContent>
-                      </Card>
-
-                      <Card className="border-border/70 bg-background/80 shadow-none">
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-base">Account Controls</CardTitle>
-                          <CardDescription>Operational flags recorded in CRM</CardDescription>
-                        </CardHeader>
-                        <CardContent className="grid gap-3 text-sm">
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-muted-foreground">Self Wallet</span>
-                            <span className="font-medium">{normalizeBooleanLabel(userDetails?.self_wallet)}</span>
-                          </div>
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-muted-foreground">IB Wallet</span>
-                            <span className="font-medium">{normalizeBooleanLabel(userDetails?.ib_wallet)}</span>
-                          </div>
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-muted-foreground">IB User</span>
-                            <span className="font-medium">{normalizeBooleanLabel(userDetails?.is_ib_user)}</span>
-                          </div>
-                          <div className="flex items-center justify-between gap-3">
-                            <span className="text-muted-foreground">IP Address</span>
-                            <span className="font-medium">{userDetails?.ip_address || "-"}</span>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </div>
+                        ) : null}
+                      </CardContent>
+                    </Card>
                   </div>
                 </CardContent>
               </Card>
 
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <div className="grid gap-4 md:grid-cols-3">
                 {summaryCards.map((card) => (
                   <SummaryMetric
                     key={card.title}
@@ -899,35 +880,35 @@ export default function NewUserDetailPage() {
               <div className="grid gap-4 lg:grid-cols-2">
                 <Card className="border-border/70 shadow-sm">
                   <CardHeader>
-                    <CardTitle className="text-lg">Profile Snapshot</CardTitle>
-                    <CardDescription>Identity and residential details captured for this user.</CardDescription>
+                    <CardTitle className="text-lg">User Details</CardTitle>
+                    <CardDescription>Identity and address information from CRM.</CardDescription>
                   </CardHeader>
                   <CardContent className="grid gap-3 sm:grid-cols-2">
-                    <DetailItem label="User UUID" value={profile?.uuid || "-"} />
-                    <DetailItem label="Profile UUID" value={userDetails?.uuid || "-"} />
-                    <DetailItem label="Country" value={userDetails?.country || "-"} />
-                    <DetailItem label="State" value={userDetails?.state || "-"} />
-                    <DetailItem label="City" value={userDetails?.city || "-"} />
-                    <DetailItem label="Address" value={userDetails?.address || "-"} />
-                    <DetailItem label="Date of Birth" value={userDetails?.dob ? formatDate(userDetails.dob) : "-"} />
-                    <DetailItem label="Nationality" value={userDetails?.nationality || "-"} />
+                    <DetailItem label="User ID" value={crudUser?.id ?? "-"} />
+                    <DetailItem label="UUID" value={crudUser?.uuid || "-"} />
+                    <DetailItem label="Country" value={crudUser?.country || "-"} />
+                    <DetailItem label="State" value={crudUser?.state || "-"} />
+                    <DetailItem label="City" value={crudUser?.city || "-"} />
+                    <DetailItem label="Address" value={crudUser?.address || "-"} />
+                    <DetailItem label="Created At" value={formatDateTime(crudUser?.created_at)} />
+                    <DetailItem label="Updated At" value={formatDateTime(crudUser?.updated_at)} />
                   </CardContent>
                 </Card>
 
                 <Card className="border-border/70 shadow-sm">
                   <CardHeader>
-                    <CardTitle className="text-lg">Compliance Snapshot</CardTitle>
-                    <CardDescription>Source-of-funds and onboarding context available in the CRM.</CardDescription>
+                    <CardTitle className="text-lg">Account &amp; Sponsor</CardTitle>
+                    <CardDescription>Sponsorship chain and approval details.</CardDescription>
                   </CardHeader>
                   <CardContent className="grid gap-3 sm:grid-cols-2">
-                    <DetailItem label="Employment Status" value={userDetails?.employment_status || "-"} />
-                    <DetailItem label="Annual Income" value={userDetails?.annual_income || "-"} />
-                    <DetailItem label="Net Worth" value={userDetails?.estimated_net_worth || "-"} />
-                    <DetailItem label="Source of Income" value={userDetails?.source_of_income || "-"} />
-                    <DetailItem label="Opening Purpose" value={userDetails?.purpose_of_opening_account || "-"} />
-                    <DetailItem label="Estimated Annual Amount" value={userDetails?.estimated_annual_amount || "-"} />
-                    <DetailItem label="Passport / ID" value={userDetails?.passport_id_number || userDetails?.other_id_number || "-"} />
-                    <DetailItem label="Tax Number" value={userDetails?.tax_number || "-"} />
+                    <DetailItem label="Sponsor ID" value={crudUser?.sponsor_id || "-"} />
+                    <DetailItem label="Sponsor By" value={crudUser?.sponsor_by || "-"} />
+                    <DetailItem label="Referral Code" value={crudUser?.referral_code || "-"} />
+                    <DetailItem label="Mobile" value={crudUser?.mobile || "-"} />
+                    <DetailItem label="Is Approved" value={normalizeBooleanLabel(crudUser?.is_approved)} />
+                    <DetailItem label="Approved By" value={crudUser?.approved_by || "-"} />
+                    <DetailItem label="Approved At" value={formatDateTime(crudUser?.approved_at)} />
+                    <DetailItem label="Rejection Reason" value={crudUser?.rejection_reason || "-"} />
                   </CardContent>
                 </Card>
               </div>
@@ -1193,7 +1174,7 @@ export default function NewUserDetailPage() {
                             </TableHeader>
                             <TableBody>
                               {referralState.rows.map((item, index) => (
-                                <TableRow key={`${item.uuid ?? item.email ?? "ref"}-${index}`}>
+                                <TableRow key={`${item.id ?? item.email ?? "ref"}-${index}`}>
                                   <TableCell className="font-medium">{item.name || "-"}</TableCell>
                                   <TableCell>{item.email || "-"}</TableCell>
                                   <TableCell>{item.mobile || "-"}</TableCell>

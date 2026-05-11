@@ -1053,3 +1053,81 @@ export const adminDashboardApi = {
     });
   },
 };
+
+export interface ManagerInfo {
+  id: number;
+  name: string;
+  email: string;
+  status: number;
+  total_client: number;
+}
+
+export interface ManagerClientsStats {
+  total: number;
+  new_today: number;
+  new_this_week: number;
+  new_this_month: number;
+  pending_approval: number;
+  ftd_count: number;
+  non_ftd_count: number;
+  active_last_30_days: number;
+}
+
+export interface ManagerDepositsStats {
+  pending_count: number;
+  pending_amount: number;
+  approved_today_count: number;
+  approved_today_amount: number;
+  approved_this_month_count: number;
+  approved_this_month_amount: number;
+  approved_all_time_count: number;
+  approved_all_time_amount: number;
+}
+
+export interface ManagerWithdrawalsStats {
+  pending_count: number;
+  pending_amount: number;
+  approved_today_count: number;
+  approved_today_amount: number;
+  approved_this_month_count: number;
+  approved_this_month_amount: number;
+  approved_all_time_count: number;
+  approved_all_time_amount: number;
+  rejected_this_month_count: number;
+}
+
+export interface ManagerTransactionStats {
+  deposits?: ManagerDepositsStats;
+  withdrawals?: ManagerWithdrawalsStats;
+}
+
+export interface ManagerStats {
+  clients?: ManagerClientsStats;
+  transactions?: ManagerTransactionStats;
+}
+
+export interface ManagerDashboardData {
+  manager?: ManagerInfo;
+  permissions?: string[];
+  stats?: ManagerStats;
+}
+
+export const managerDashboardApi = {
+  getDashboard: (params: AdminDashboardParams) => {
+    const { token, start_date, end_date } = params;
+    if (!token) {
+      throw new Error("Token is required to fetch manager dashboard");
+    }
+
+    const qs = new URLSearchParams();
+    if (start_date) qs.set("start_date", start_date);
+    if (end_date) qs.set("end_date", end_date);
+
+    const endpoint = `/manager/dashboard${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<ManagerDashboardData>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
