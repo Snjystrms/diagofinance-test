@@ -356,13 +356,28 @@ export default function NewUsersPage() {
     }
   }, [token, userToDelete, loadUsers]);
 
+  const handleToggleStatus = useCallback(async (user: PendingUser, newStatus: number) => {
+    if (!token) return;
+    try {
+      await adminUsersApi.updateStatus(user.id, newStatus, token);
+      toast.success(newStatus === 1 ? "User activated successfully" : "User deactivated successfully");
+      await loadUsers();
+    } catch (err) {
+      console.error("Failed to toggle user status:", err);
+      toast.error(
+        getAdminFriendlyErrorMessage(err, { resource: "user status", action: "update" })
+      );
+      throw err;
+    }
+  }, [token, loadUsers]);
+
   const totalUsers = paginationMeta?.total ?? users.length;
   const totalPages =
     paginationMeta?.total_pages ??
     paginationMeta?.last_page ??
     (totalUsers && perPage ? Math.ceil(totalUsers / perPage) : 1);
 
-  const columns = useMemo(() => getColumnsWithActions(handleEdit, handleDelete), [handleEdit, handleDelete]);
+  const columns = useMemo(() => getColumnsWithActions(handleEdit, handleDelete, handleToggleStatus), [handleEdit, handleDelete, handleToggleStatus]);
 
   if (loadError && users.length === 0) {
     return (

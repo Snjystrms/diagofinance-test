@@ -1133,6 +1133,20 @@ export const adminUsersApi = {
     });
   },
 
+  updateStatus: (id: number | string, status: number, token: string) => {
+    ensureAdminUserToken(token, "update user status");
+    ensureAdminUserIdentifier(id, "update user status");
+
+    return apiCall(`/admin/user-management/crud/users/${id}/status`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status }),
+    });
+  },
+
   detailByUuid: (uuid: string, token: string) => {
     ensureAdminUserToken(token, "fetch admin user profile");
     ensureAdminUserUuid(uuid, "fetch admin user profile");

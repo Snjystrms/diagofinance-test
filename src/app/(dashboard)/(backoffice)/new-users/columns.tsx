@@ -3,11 +3,13 @@
 import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Calendar, Eye, Globe, Mail, Pencil, Phone, Trash2, User } from "lucide-react";
+import toast from "react-hot-toast";
 
 import type { PendingUser } from "@/lib/api";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { formatDateTimeInIST } from "@/lib/formatters";
 
 const formatDateTime = (value?: string) => {
@@ -116,6 +118,7 @@ function RowActions({
 export const getColumnsWithActions = (
   onEdit: (user: PendingUser) => void,
   onDelete: (user: PendingUser) => void,
+  onToggleStatus: (user: PendingUser, newStatus: number) => Promise<void>,
 ): ColumnDef<PendingUser>[] => [
   {
     id: "sr_no",
@@ -169,9 +172,28 @@ export const getColumnsWithActions = (
     header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
     cell: ({ row }) => {
       const user = row.original;
+      const statusValue = Number(user.status) || 0;
+      const isActive = statusValue === 1;
+
       return (
         <div className="space-y-2">
-          {getStatusBadge(user.status)}
+          <div className="flex items-center gap-2">
+            <Switch
+              checked={isActive}
+              onCheckedChange={async (checked) => {
+                const newStatus = checked ? 1 : 0;
+                try {
+                  await onToggleStatus(user, newStatus);
+                } catch {
+                  toast.error("Failed to update status");
+                }
+              }}
+              aria-label={`Toggle status for ${user.name || "user"}`}
+            />
+            <span className="text-sm font-medium">
+              {isActive ? "Active" : "Inactive"}
+            </span>
+          </div>
           <div className="space-y-1">
             {user.email_verified === 1 ? (
               <Badge variant="outline" className="text-xs">
