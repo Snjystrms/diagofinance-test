@@ -758,6 +758,7 @@ export interface IbWithdrawalReportItem {
   partner_id?: string;
   amount: number | string;
   payment_method?: string;
+  withdraw_to?: string;
   payment_method_id?: number | string;
   wallet_address?: string | null;
   chain_id?: string | null;
@@ -895,6 +896,7 @@ export interface LoginActivityReportItem {
   user_agent?: string;
   location?: string;
   country?: string;
+  state?: string;
   city?: string;
   status?: string | number;
   login_at?: string;

@@ -271,7 +271,7 @@ export default function PspSettingPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-border/60 hover:bg-transparent">
-                    <TableHead className="w-14 text-center">ID</TableHead>
+                    <TableHead className="w-14 text-center">Sr. No.</TableHead>
                     <TableHead>Name</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Description</TableHead>
@@ -281,10 +281,10 @@ export default function PspSettingPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.map((pm) => (
+                  {rows.map((pm, index) => (
                     <TableRow key={pm.id} className="border-border/60">
-                      <TableCell className="text-center text-sm text-muted-foreground">
-                        {pm.id}
+                      <TableCell className="font-medium">
+                        {index + 1}
                       </TableCell>
 
                       <TableCell className="font-medium">{pm.name}</TableCell>
@@ -307,7 +307,7 @@ export default function PspSettingPage() {
                             aria-label="Toggle status"
                             disabled={togglingId === pm.id}
                           />
-                          <Badge
+                          {/* <Badge
                             variant="outline"
                             className={
                               pm.status === 1
@@ -316,7 +316,7 @@ export default function PspSettingPage() {
                             }
                           >
                             {pm.status === 1 ? "Active" : "Inactive"}
-                          </Badge>
+                          </Badge> */}
                         </div>
                       </TableCell>
 

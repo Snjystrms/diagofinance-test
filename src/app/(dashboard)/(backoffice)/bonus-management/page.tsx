@@ -223,6 +223,12 @@ export default function BonusManagementPage() {
   const columns = useMemo<ColumnDef<AdminBonusLedgerItem>[]>(
     () => [
       {
+        id: "sr_no",
+        header: "Sr. No.",
+        cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+        enableSorting: false,
+      },
+      {
         id: "account",
         header: ({ column }) => <DataTableColumnHeader column={column} title="MT5 Account" />,
         accessorFn: (row) => row.mt5User?.account_id ?? "",

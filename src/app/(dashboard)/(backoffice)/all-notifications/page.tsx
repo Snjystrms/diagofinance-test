@@ -252,10 +252,10 @@ export default function AllNotificationsPage() {
     () => [
       {
         id: "id",
-        header: "ID",
+        header: "Sr. No.",
         accessorKey: "id",
         cell: ({ row }) => (
-          <span className="font-mono text-xs text-muted-foreground">{row.original.id}</span>
+          <span className="font-medium">{row.index + 1}</span>
         ),
       },
       {

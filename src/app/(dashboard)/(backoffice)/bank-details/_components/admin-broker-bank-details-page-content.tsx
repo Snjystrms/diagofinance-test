@@ -252,6 +252,14 @@ export function AdminBrokerBankDetailsPageContent() {
 
   const columns = useMemo<ColumnDef<BrokerBankDetailItem>[]>(
     () => [
+         {
+        id: "id",
+        header: "Sr. No.",
+        accessorKey: "id",
+        cell: ({ row }) => (
+          <span className="font-medium">{row.index + 1}</span>
+        ),
+      },
       {
         id: "account_holder_name",
         header: "Account Holder",

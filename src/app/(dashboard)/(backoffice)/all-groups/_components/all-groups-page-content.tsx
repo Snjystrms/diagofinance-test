@@ -324,7 +324,7 @@ export function AllGroupsPageContent() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead className="w-[90px]">ID</TableHead>
+                      <TableHead className="w-[90px]">Sr. No.</TableHead>
                       <TableHead>Group Name</TableHead>
                       <TableHead>MT5 Group Name</TableHead>
                       <TableHead>Status</TableHead>
@@ -333,9 +333,9 @@ export function AllGroupsPageContent() {
                   </TableHeader>
                   <TableBody>
                     {filteredGroups.length > 0 ? (
-                      filteredGroups.map((group) => (
+                      filteredGroups.map((group, index) => (
                         <TableRow key={group.id}>
-                          <TableCell className="font-medium">{group.id}</TableCell>
+                          <TableCell className="font-medium">{index + 1}</TableCell>
                           <TableCell>{group.name}</TableCell>
                           <TableCell>{group.mt5_group_name || "-"}</TableCell>
                           <TableCell>

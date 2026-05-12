@@ -219,10 +219,10 @@ export default function LoginActivityReportPage() {
     () => [
       {
         id: "id",
-        header: "ID",
+        header: "Sr. No.",
         accessorKey: "id",
         cell: ({ row }) => (
-          <span className="font-mono text-sm">{row.original.id}</span>
+          <span className="font-mono text-sm">{row.index + 1}</span>
         ),
       },
       {
@@ -254,38 +254,38 @@ export default function LoginActivityReportPage() {
           );
         },
       },
-      {
-        id: "browser_device",
-        header: "Browser / Device",
-        accessorKey: "browser",
-        cell: ({ row }) => {
-          const browser = row.original.browser;
-          const device = row.original.device;
-          const platform = row.original.platform;
+      // {
+      //   id: "browser_device",
+      //   header: "Browser / Device",
+      //   accessorKey: "browser",
+      //   cell: ({ row }) => {
+      //     const browser = row.original.browser;
+      //     const device = row.original.device;
+      //     const platform = row.original.platform;
           
-          return (
-            <div className="space-y-0.5">
-              {browser && (
-                <div className="text-sm">{browser}</div>
-              )}
-              {(device || platform) && (
-                <div className="text-xs text-muted-foreground">
-                  {device && platform ? `${device} / ${platform}` : device || platform}
-                </div>
-              )}
-              {!browser && !device && !platform && (
-                <span className="text-muted-foreground">—</span>
-              )}
-            </div>
-          );
-        },
-      },
+      //     return (
+      //       <div className="space-y-0.5">
+      //         {browser && (
+      //           <div className="text-sm">{browser}</div>
+      //         )}
+      //         {(device || platform) && (
+      //           <div className="text-xs text-muted-foreground">
+      //             {device && platform ? `${device} / ${platform}` : device || platform}
+      //           </div>
+      //         )}
+      //         {!browser && !device && !platform && (
+      //           <span className="text-muted-foreground">—</span>
+      //         )}
+      //       </div>
+      //     );
+      //   },
+      // },
       {
         id: "location",
         header: "Location",
         accessorKey: "location",
         cell: ({ row }) => {
-          const location = row.original.location;
+          const location = row.original.state;
           const country = row.original.country;
           const city = row.original.city;
           
@@ -307,18 +307,18 @@ export default function LoginActivityReportPage() {
           );
         },
       },
-      {
-        id: "status",
-        header: "Status",
-        accessorKey: "status",
-        cell: ({ row }) => {
-          const status = row.original.status;
-          if (!status) return <span className="text-muted-foreground">—</span>;
-          return (
-            <span className="text-sm">{String(status)}</span>
-          );
-        },
-      },
+      // {
+      //   id: "status",
+      //   header: "Status",
+      //   accessorKey: "status",
+      //   cell: ({ row }) => {
+      //     const status = row.original.status;
+      //     if (!status) return <span className="text-muted-foreground">—</span>;
+      //     return (
+      //       <span className="text-sm">{String(status)}</span>
+      //     );
+      //   },
+      // },
       {
         id: "login_at",
         header: "Login Time",

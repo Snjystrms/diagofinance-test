@@ -74,6 +74,12 @@ const getModeBadge = (mode: AdminMT5Account["account_mode"]) => {
 
 export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
   {
+    id: "sr_no",
+    header: "Sr. No.",
+    cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+    enableSorting: false,
+  },
+  {
     id: "account_id",
     accessorKey: "account_id",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Account" />,

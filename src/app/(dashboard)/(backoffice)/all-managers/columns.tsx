@@ -15,6 +15,12 @@ export const getColumns = (opts: {
   actionLoadingId?: string | null;
 }): ColumnDef<ManagerRow>[] => [
   {
+    id: "sr_no",
+    header: "Sr. No.",
+    cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+    enableSorting: false,
+  },
+  {
     id: "name",
     accessorKey: "name",
     header: ({ column }: { column: Column<ManagerRow, unknown> }) => (

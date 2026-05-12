@@ -200,6 +200,12 @@ export default function PromotionManagementPage() {
   const columns = useMemo<ColumnDef<PromotionRow>[]>(
     () => [
       {
+        id: "sr_no",
+        header: "Sr. No.",
+        cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+        enableSorting: false,
+      },
+      {
         id: "image",
         header: "Image",
         cell: ({ row }) =>
@@ -258,7 +264,7 @@ export default function PromotionManagementPage() {
               disabled={actionLoadingId === row.original.id}
               aria-label="Toggle status"
             />
-            <Badge
+            {/* <Badge
               variant="outline"
               className={
                 row.original.status
@@ -267,7 +273,7 @@ export default function PromotionManagementPage() {
               }
             >
               {row.original.status ? "Active" : "Inactive"}
-            </Badge>
+            </Badge> */}
           </div>
         ),
       },

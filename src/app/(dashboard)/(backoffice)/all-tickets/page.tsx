@@ -390,13 +390,13 @@ export default function AdminTicketsPage() {
       {
         id: "ticket",
         header: "Ticket",
-        accessorFn: (row) => row.id,
+        accessorFn: (_row, index) => index + 1,
         cell: ({ row }) => {
           const ticket = row.original;
           return (
             <div className="space-y-1 text-sm">
-              <div className="font-semibold">#{ticket.id}</div>
-              <div className="text-muted-foreground text-xs">{ticket.uuid.slice(0, 8)}...</div>
+              <div className="font-semibold">{(row.index ?? 0) + 1}</div>
+              {/* <div className="text-muted-foreground text-xs">{ticket.uuid.slice(0, 8)}...</div> */}
             </div>
           );
         },
@@ -413,7 +413,6 @@ export default function AdminTicketsPage() {
                 {user ? `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || user.email : "—"}
               </div>
               <div className="text-xs text-muted-foreground">{user?.email ?? "—"}</div>
-              <div className="text-xs text-muted-foreground">{user?.uuid ?? ""}</div>
             </div>
           );
         },

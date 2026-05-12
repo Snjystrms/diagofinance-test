@@ -434,9 +434,9 @@ export function USDTTransactionsPageContent() {
     () => [
       {
         id: "id",
-        header: "ID",
+        header: "Sr. No.",
         accessorKey: "id",
-        cell: ({ row }) => <span className="font-mono text-sm">{row.original.id}</span>,
+        cell: ({ row }) => <span className="font-mono text-sm">{row.index + 1}</span>,
       },
       {
         id: "user",
@@ -549,9 +549,9 @@ export function USDTTransactionsPageContent() {
     () => [
       {
         id: "id",
-        header: "ID",
+        header: "Sr. No.",
         accessorKey: "id",
-        cell: ({ row }) => <span className="font-mono text-sm">{row.original.id}</span>,
+        cell: ({ row }) => <span className="font-mono text-sm">{row.index + 1}</span>,
       },
       {
         id: "user",

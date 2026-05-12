@@ -207,6 +207,12 @@ export default function NewsManagementPage() {
   const columns = useMemo<ColumnDef<NewsRow>[]>(
     () => [
       {
+        id: "sr_no",
+        header: "Sr. No.",
+        cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+        enableSorting: false,
+      },
+      {
         id: "image",
         header: "Image",
         cell: ({ row }) =>
@@ -265,7 +271,7 @@ export default function NewsManagementPage() {
               disabled={actionLoadingId === row.original.id}
               aria-label="Toggle status"
             />
-            <Badge
+            {/* <Badge
               variant="outline"
               className={
                 row.original.status
@@ -274,7 +280,7 @@ export default function NewsManagementPage() {
               }
             >
               {row.original.status ? "Active" : "Inactive"}
-            </Badge>
+            </Badge> */}
           </div>
         ),
       },

@@ -454,17 +454,16 @@ export default function IbManagementPage() {
     () => [
       {
         id: "request",
-        header: "Request",
-        accessorFn: (row) => deriveRequestId(row) ?? "—",
+        header: "Sr. No.",
+        accessorFn: (_row, index) => index + 1,
         cell: ({ row }) => {
           const request = row.original;
-          const identifier = deriveRequestId(request);
           const ibName = request.ib_name;
 
           return (
-            <div className="space-y-1">
+            <div className="space-y-1"> 
               <div className="font-medium">
-                {identifier !== null ? `#${identifier}` : "—"}
+                {(row.index ?? 0) + 1}
               </div>
               {ibName ? (
                 <div className="text-sm text-muted-foreground">{ibName}</div>

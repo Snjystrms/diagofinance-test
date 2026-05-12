@@ -217,12 +217,18 @@ const getColumns = (
   onToggle: (row: TwoFactorRow, nextChecked: boolean) => void
 ): ColumnDef<TwoFactorRow>[] => [
   {
+    id: "sr_no",
+    header: "Sr. No.",
+    cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+    enableSorting: false,
+  },
+  {
     id: "person",
     header: ({ column }) => <DataTableColumnHeader column={column} title={rowsTypeLabel} />,
     cell: ({ row }) => (
       <div className="space-y-1">
         <div className="font-medium">{row.original.name}</div>
-        <div className="text-xs text-muted-foreground">{row.original.secondaryText}</div>
+        {/* <div className="text-xs text-muted-foreground">{row.original.secondaryText}</div> */}
       </div>
     ),
   },
@@ -624,7 +630,7 @@ export function TwoFactorManagementPageContent({
 
             <div className="rounded-lg border bg-card p-4 shadow-sm">
               {loading && rows.length === 0 ? (
-                <TableSectionSkeleton columnCount={5} rowCount={8} />
+                <TableSectionSkeleton columnCount={6} rowCount={8} />
               ) : rows.length === 0 ? (
                 <div className="py-12 text-center text-sm text-muted-foreground">
                   {copy.emptyLabel}

@@ -946,7 +946,7 @@ export default function NewUserDetailPage() {
                   </CardHeader>
                   <CardContent className="grid gap-3 sm:grid-cols-2">
                     <DetailItem label="User ID" value={crudUser?.id ?? "-"} />
-                    <DetailItem label="UUID" value={crudUser?.uuid || "-"} />
+                    {/* <DetailItem label="UUID" value={crudUser?.uuid || "-"} /> */}
                     <DetailItem label="Country" value={crudUser?.country || "-"} />
                     <DetailItem label="State" value={crudUser?.state || "-"} />
                     <DetailItem label="City" value={crudUser?.city || "-"} />
@@ -1006,7 +1006,7 @@ export default function NewUserDetailPage() {
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead>ID</TableHead>
+                                <TableHead>Sr. No.</TableHead>
                                 <TableHead>Amount</TableHead>
                                 <TableHead>Transaction Hash</TableHead>
                                 <TableHead>User Comment</TableHead>
@@ -1015,9 +1015,9 @@ export default function NewUserDetailPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {depositsState.rows.map((item) => (
+                              {depositsState.rows.map((item, index) => (
                                 <TableRow key={item.id}>
-                                  <TableCell className="font-medium">{item.id}</TableCell>
+                                  <TableCell className="font-medium">{index + 1}</TableCell>
                                   <TableCell>{formatNumericValue(item.amount)}</TableCell>
                                   <TableCell className="max-w-[200px] truncate">{item.transaction_hash || "-"}</TableCell>
                                   <TableCell className="max-w-[220px] truncate">{item.user_comment || "-"}</TableCell>
@@ -1051,7 +1051,7 @@ export default function NewUserDetailPage() {
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                <TableHead>ID</TableHead>
+                                <TableHead>Sr. No.</TableHead>
                                 <TableHead>Amount</TableHead>
                                 <TableHead>Transaction Hash</TableHead>
                                 <TableHead>User Comment</TableHead>
@@ -1060,9 +1060,9 @@ export default function NewUserDetailPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {withdrawalsState.rows.map((item) => (
+                              {withdrawalsState.rows.map((item, index) => (
                                 <TableRow key={item.id}>
-                                  <TableCell className="font-medium">{item.id}</TableCell>
+                                  <TableCell className="font-medium">{index + 1}</TableCell>
                                   <TableCell>{formatNumericValue(item.amount)}</TableCell>
                                   <TableCell className="max-w-[200px] truncate">{item.transaction_hash || "-"}</TableCell>
                                   <TableCell className="max-w-[220px] truncate">{item.user_comment || "-"}</TableCell>

@@ -235,7 +235,7 @@ export default function IbWithdrawalReportPage() {
         "User Email": item.email || "—",
         "Amount (USDT)": formatAmount(item.amount),
         "Payment Method": item.payment_method || "—",
-        "Wallet Address": item.wallet_address || "—",
+        "Wallet Address": item.withdraw_to || "—",
         "Chain ID": item.chain_id || "—",
         "Transaction Hash": item.transaction_hash || "—",
         Status:
@@ -301,28 +301,28 @@ export default function IbWithdrawalReportPage() {
     () => [
       {
         id: "id",
-        header: "ID",
+        header: "Sr. No.",
         accessorKey: "id",
         cell: ({ row }) => (
-          <span className="font-mono text-sm">{row.original.id}</span>
+          <span className="font-mono text-sm">{row.index + 1}</span>
         ),
       },
-      {
-        id: "ib_info",
-        header: "IB Info",
-        accessorKey: "ib_name",
-        cell: ({ row }) => {
-          const ibName = row.original.ib_name;
-          const partnerId = row.original.partner_id;
-          if (!ibName && !partnerId) return <span className="text-muted-foreground">—</span>;
-          return (
-            <div className="space-y-0.5">
-              <div className="font-medium">{ibName || "—"}</div>
-              <div className="text-xs text-muted-foreground">{partnerId ? `ID: ${partnerId}` : "—"}</div>
-            </div>
-          );
-        },
-      },
+      // {
+      //   id: "ib_info",
+      //   header: "IB Info",
+      //   accessorKey: "ib_name",
+      //   cell: ({ row }) => {
+      //     const ibName = row.original.ib_name;
+      //     const partnerId = row.original.partner_id;
+      //     if (!ibName && !partnerId) return <span className="text-muted-foreground">—</span>;
+      //     return (
+      //       <div className="space-y-0.5">
+      //         <div className="font-medium">{ibName || "—"}</div>
+      //         <div className="text-xs text-muted-foreground">{partnerId ? `ID: ${partnerId}` : "—"}</div>
+      //       </div>
+      //     );
+      //   },
+      // },
       {
         id: "user",
         header: "User",
@@ -365,7 +365,7 @@ export default function IbWithdrawalReportPage() {
         header: "Wallet Address",
         accessorKey: "wallet_address",
         cell: ({ row }) => {
-          const address = row.original.wallet_address;
+          const address = row.original.withdraw_to;
           if (!address) return <span className="text-muted-foreground">—</span>;
           return (
             <span

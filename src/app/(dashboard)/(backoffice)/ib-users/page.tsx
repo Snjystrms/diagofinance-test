@@ -343,6 +343,12 @@ export default function IbUsersPage() {
   const columns: ColumnDef<AdminIbUser>[] = useMemo(
     () => [
       {
+        id: "sr_no",
+        header: "Sr. No.",
+        cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+        enableSorting: false,
+      },
+      {
         id: "user",
         header: "User",
         cell: ({ row }) => {

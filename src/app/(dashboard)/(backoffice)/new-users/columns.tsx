@@ -118,6 +118,12 @@ export const getColumnsWithActions = (
   onDelete: (user: PendingUser) => void,
 ): ColumnDef<PendingUser>[] => [
   {
+    id: "sr_no",
+    header: "Sr. No.",
+    cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+    enableSorting: false,
+  },
+  {
     id: "user",
     header: ({ column }) => <DataTableColumnHeader column={column} title="User" />,
     cell: ({ row }) => {

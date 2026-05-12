@@ -220,10 +220,10 @@ export default function InternalTransferReportPage() {
     () => [
       {
         id: "id",
-        header: "ID",
+        header: "Sr. No.",
         accessorKey: "id",
         cell: ({ row }) => (
-          <span className="font-mono text-sm">{row.original.id}</span>
+          <span className="font-mono text-sm">{row.index + 1}</span>
         ),
       },
       {

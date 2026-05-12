@@ -401,10 +401,10 @@ export default function UserVerificationPage() {
   const columns: ColumnDef<ListRow>[] = useMemo(
     () => [
       {
-        id: "uuid",
-        header: "UUID",
-        accessorKey: "uuid",
-        cell: ({ row }) => <span className="font-mono text-xs">{row.original.uuid}</span>,
+        id: "sr_no",
+        header: "Sr. No.",
+        cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+        enableSorting: false,
       },
       {
         id: "name",
