@@ -24,91 +24,12 @@ import toast from 'react-hot-toast';
 import clsx from 'clsx';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Spinner } from '@/components/ui/spinner';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/auth-context';
-import { API_BASE_URL } from '@/lib/api';
 import { User as UserIcon, CheckCircle2, XCircle } from 'lucide-react';
-
-/* ======================== API types ======================== */
-
-type IbUser = {
-  id: number;
-  name: string;
-  email: string;
-  sponsor_id?: string;
-};
-
-type UserByLevel = {
-  id: number;
-  uuid: string;
-  name: string;
-  email: string;
-  phone?: string;
-  country?: string;
-  sponsor_id?: string | null;
-  sponsor_by?: string | null;
-  ib_name?: string;
-  level: string;
-  created_at: string;
-};
-
-type UsersByLevelResponse = {
-  success: boolean;
-  data?: {
-    ib_user?: IbUser;
-    specified_user?: IbUser;
-    users_by_level?: {
-      IB?: UserByLevel[];
-      "Level-1"?: UserByLevel[];
-      "Level-2"?: UserByLevel[];
-      "Level-3"?: UserByLevel[];
-      "Level-4"?: UserByLevel[];
-      "Level-5"?: UserByLevel[];
-    };
-    totals?: {
-      IB?: number;
-      "Level-1"?: number;
-      "Level-2"?: number;
-      "Level-3"?: number;
-      "Level-4"?: number;
-      "Level-5"?: number;
-      total?: number;
-    };
-  };
-  message?: string;
-};
+import { fetchUsersByLevel, levelColor, levelToDepth, NODE_H, NODE_W, toastNoDownline, type UserByLevel, type UsersByLevelResponse } from '@/lib/downline-tree';
 
 /* ======================== visuals ======================== */
-const toastNoDownline = (who?: string) =>
-  toast(who ? `No downline members under ${who}.` : `No downline members.`, {
-    icon: '📭',
-  });
-
-const NODE_W = 220;
-const NODE_H = 90;
-
-const levelColor = (level: number | string = 1) => {
-  const levelNum = typeof level === 'string' ? parseInt(level.replace('Level-', '')) || 0 : level;
-  const map: Record<number, string> = {
-    0: '#0ea5e9', // IB level
-    1: '#2563eb',
-    2: '#7c3aed',
-    3: '#9333ea',
-    4: '#db2777',
-    5: '#ea580c',
-    6: '#ca8a04',
-    7: '#16a34a',
-    8: '#0891b2',
-    9: '#0ea5e9',
-    10: '#0ea5e9',
-  };
-  return map[levelNum] ?? '#2563eb';
-};
-
-const levelToDepth = (level: string): number => {
-  if (level === 'IB') return 0;
-  const match = level.match(/Level-(\d+)/);
-  return match ? parseInt(match[1], 10) : 1;
-};
 
 const fmtNum = (n?: number) =>
   new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(Number(n || 0));
@@ -171,7 +92,9 @@ const TeamNode: React.FC<NodeProps<GraphNode>> = ({ data }) => {
       className={clsx(
         'relative rounded-xl border shadow-sm px-3 py-2 w-[220px] h-[90px] flex items-center gap-3 backdrop-blur-sm cursor-pointer',
         'bg-card text-foreground',
-        data.isRoot ? 'border-sky-300 dark:border-sky-500/60' : 'border-border',
+        data.isRoot
+          ? 'border-sky-500 dark:border-sky-400 shadow-lg shadow-sky-500/20'
+          : 'border-border',
         'hover:ring-2 hover:ring-sky-500/30',
         highlightCls
       )}
@@ -196,7 +119,7 @@ const TeamNode: React.FC<NodeProps<GraphNode>> = ({ data }) => {
           )}
           title={data.username}
         >
-          {data.isRoot ? 'Root' : data.username}
+          {data.username}
         </div>
 
         {/* <div className="text-[11px] text-muted-foreground">
@@ -206,7 +129,14 @@ const TeamNode: React.FC<NodeProps<GraphNode>> = ({ data }) => {
           BV: {fmtNum(data.totalBV)}
         </div> */}
 
-        {!data.isRoot && (
+        {data.isRoot ? (
+          <div className="mt-0.5 flex flex-wrap items-center gap-1">
+            <Badge className="text-[9px] h-4 px-1 py-0 bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-700">
+              <CheckCircle2 className="h-3 w-3 mr-1" />
+              IB
+            </Badge>
+          </div>
+        ) : (
           <div className="mt-0.5 inline-flex items-center gap-1 text-[10px] text-muted-foreground">
             <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
             {typeof data.level === 'string' ? data.level : `Level ${data.level}`}
@@ -257,26 +187,10 @@ export function DownlineTreeDialog({ open, onOpenChange, userId, userName }: Dow
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
 
   // ============ data fetching ============
-  const fetchUsersByLevel = useCallback(
-    async (targetUserId: number): Promise<UsersByLevelResponse['data'] | null> => {
+  const fetchDownlineUsers = useCallback(
+    async (targetUserId: number) => {
       if (!token) return null;
-      const url = `${API_BASE_URL}/admin/ib-management/users-by-level?user_id=${targetUserId}`;
-      try {
-        const res = await fetch(url, {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: 'no-store',
-        });
-        const json: UsersByLevelResponse = await res.json();
-        if (!json.success || !json.data) {
-          toast.error(json?.message || 'Failed to fetch downline users');
-          return null;
-        }
-        return json.data;
-      } catch (error) {
-        console.error('Failed to fetch users by level:', error);
-        toast.error('Failed to fetch downline users');
-        return null;
-      }
+      return fetchUsersByLevel(targetUserId, token);
     },
     [token]
   );
@@ -294,7 +208,7 @@ export function DownlineTreeDialog({ open, onOpenChange, userId, userName }: Dow
       setExpanded({});
       setHighlightId(null);
 
-      const data = await fetchUsersByLevel(userId);
+      const data = await fetchUsersByLevel(userId, token);
       if (!mounted || !data) {
         setLoading(false);
         return;
@@ -461,7 +375,8 @@ export function DownlineTreeDialog({ open, onOpenChange, userId, userName }: Dow
       }
 
       setHighlightId(sponsorId);
-      const data = await fetchUsersByLevel(targetUserId);
+      if (!token) return;
+      const data = await fetchUsersByLevel(targetUserId, token);
       if (!data) {
         setHighlightId(null);
         return;

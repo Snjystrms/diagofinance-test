@@ -44,9 +44,9 @@ import { API_BASE_URL, adminIbUserCommissionsApi, type UserCommission, type User
 import { getAdminFriendlyErrorMessage } from '@/lib/admin-friendly-errors';
 import { nodeTypes } from './team-node';
 import { formatDateTimeInIST } from '@/lib/formatters';
-import { NODE_H, NODE_W, levelColor, levelToDepth, toastNoDownline } from '../_lib/graph-helpers';
+import { fetchUsersByLevel, NODE_H, NODE_W, levelColor, levelToDepth, toastNoDownline, type UserByLevel, type UsersByLevelResponse } from '@/lib/downline-tree';
+import type { GraphEdge, GraphNode, NodeRecord, TeamNodeData } from '../_types';
 import { useIsDark } from '../_hooks/use-is-dark';
-import type { GraphEdge, GraphNode, NodeRecord, TeamNodeData, UserByLevel, UsersByLevelResponse } from '../_types';
 
 const formatDateTime = (value?: string | null) => {
   if (!value) {
@@ -118,33 +118,10 @@ export function DownlineTreePageContent({
   }, [backHref, onBack, router]);
 
   // ============ data fetching ============
-  const fetchUsersByLevel = useCallback(
-    async (targetUserId: number): Promise<UsersByLevelResponse['data'] | null> => {
+  const fetchDownlineUsers = useCallback(
+    async (targetUserId: number) => {
       if (!token) return null;
-      const url = `${API_BASE_URL}/admin/ib-management/users-by-level?user_id=${targetUserId}`;
-      try {
-        const res = await fetch(url, {
-          headers: { Authorization: `Bearer ${token}` },
-          cache: 'no-store',
-        });
-        const json: UsersByLevelResponse = await res.json();
-        if (!json.success || !json.data) {
-          toast.error(
-            getAdminFriendlyErrorMessage(json?.message || 'Failed to fetch downline users', {
-              resource: 'downline users',
-              action: 'load',
-            })
-          );
-          return null;
-        }
-        return json.data;
-      } catch (error) {
-        console.error('Failed to fetch users by level:', error);
-        toast.error(
-          getAdminFriendlyErrorMessage(error, { resource: 'downline users', action: 'load' })
-        );
-        return null;
-      }
+      return fetchUsersByLevel(targetUserId, token);
     },
     [token]
   );
@@ -162,7 +139,7 @@ export function DownlineTreePageContent({
       setExpanded({});
       setHighlightId(null);
 
-      const data = await fetchUsersByLevel(userId);
+      const data = await fetchDownlineUsers(userId);
       if (!mounted || !data) {
         if (!data) {
           setLoadError(new Error("Failed to load downline tree"));
@@ -195,6 +172,7 @@ export function DownlineTreePageContent({
         depth: 0,
         isRoot: true,
         userId: ibUser.id,
+        isIb: true,
       };
 
       const nextNodes: Record<string, NodeRecord> = { [rootId]: root };
@@ -240,6 +218,7 @@ export function DownlineTreePageContent({
             depth,
             isRoot: false,
             userId: user.id,
+            isIb: !!user.ib_name,
           };
         }
 
@@ -275,6 +254,7 @@ export function DownlineTreePageContent({
                   depth: parentDepth,
                   isRoot: false,
                   userId: parentUser.id,
+                  isIb: !!parentUser.ib_name,
                 };
               }
             }
@@ -302,7 +282,7 @@ export function DownlineTreePageContent({
     return () => {
       mounted = false;
     };
-  }, [fetchUsersByLevel, reloadKey, token, userId]);
+  }, [fetchDownlineUsers, reloadKey, token, userId]);
 
   // expand a node IN PLACE - fetch deeper levels
   const expandSponsor = useCallback(
@@ -326,7 +306,7 @@ export function DownlineTreePageContent({
       }
 
       setHighlightId(sponsorId);
-      const data = await fetchUsersByLevel(targetUserId);
+      const data = await fetchDownlineUsers(targetUserId);
       if (!data) {
         setHighlightId(null);
         return;
@@ -367,6 +347,7 @@ export function DownlineTreePageContent({
               status: 1,
               depth: (parent.depth ?? 0) + depth,
               userId: user.id,
+              isIb: !!user.ib_name,
             };
           }
         }
@@ -393,7 +374,7 @@ export function DownlineTreePageContent({
       setExpanded((e) => ({ ...e, [sponsorId]: true }));
       setTimeout(() => setHighlightId((id) => (id === sponsorId ? null : id)), 1500);
     },
-    [expanded, nodesById, fetchUsersByLevel]
+    [expanded, nodesById, fetchDownlineUsers]
   );
 
   // Load user commissions
@@ -593,6 +574,7 @@ export function DownlineTreePageContent({
           isRoot: n.isRoot,
           highlighted: highlightId === n.sponsorId,
           userId: n.userId,
+          isIb: n.isIb,
         },
         style: { width: NODE_W, height: NODE_H },
         sourcePosition: Position.Bottom,

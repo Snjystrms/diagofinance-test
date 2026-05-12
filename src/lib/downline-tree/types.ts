@@ -57,6 +57,7 @@ export interface TeamNodeData extends Record<string, unknown> {
   isRoot?: boolean;
   highlighted?: boolean;
   userId?: string | number;
+  isIb?: boolean;
 }
 
 export type GraphNode = Node<TeamNodeData, "teamNode">;
