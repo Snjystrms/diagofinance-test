@@ -913,10 +913,8 @@ export const adminIbUsersApi = {
 
 export interface UserCommission {
   id: number;
-  mt5_user_id: number;
-  mt5_account_id: string;
-  mt5_user_name: string;
   account_type_id: number;
+  account_type_name: string;
   level: string;
   rate_ib: number;
   rate_sub_ib_1: number;
@@ -944,8 +942,6 @@ export interface UserCommissionResponse {
 export type UserCommissionUpdateBody = {
   commissions: Array<{
     id?: number;
-    mt5_user_id: number;
-    mt5_account_id: string;
     account_type_id: number;
     level: string;
     rate_ib: number;
@@ -1009,8 +1005,8 @@ export const adminIbUserCommissionsApi = {
     const endpoint = `/admin/ib-management/user-commissions/${userId}`;
     const commissionData = {
       id: commission.id,
-      mt5_user_id: commission.mt5_user_id,
-      mt5_account_id: commission.mt5_account_id,
+      // mt5_user_id: commission.mt5_user_id,
+      // mt5_account_id: commission.mt5_account_id,
       account_type_id: commission.account_type_id,
       level: commission.level,
       rate_ib: commission.rate_ib,

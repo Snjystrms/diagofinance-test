@@ -84,8 +84,14 @@ export default function WalletOverviewPage() {
     setTimeout(() => setCopiedAddress(null), 2000)
   }
 
+  const isCreditTransaction = (type: string) => {
+    return type.includes('deposit') || type.includes('transfer_in') || type.includes('bonus')
+  }
+
   const getTransactionIcon = (type: string) => {
-    if (type.includes('deposit') || type.includes('transfer_in')) {
+    if (type.includes('bonus')) {
+      return <Sparkles className="h-4 w-4 text-emerald-600" />
+    } else if (isCreditTransaction(type)) {
       return <ArrowDownRight className="h-4 w-4 text-green-600" />
     } else if (type.includes('withdraw') || type.includes('transfer_out')) {
       return <ArrowUpRight className="h-4 w-4 text-red-600" />
@@ -94,7 +100,9 @@ export default function WalletOverviewPage() {
   }
 
   const getTransactionColor = (type: string) => {
-    if (type.includes('deposit') || type.includes('transfer_in')) {
+    if (type.includes('bonus')) {
+      return 'text-emerald-600 dark:text-emerald-400'
+    } else if (isCreditTransaction(type)) {
       return 'text-green-600 dark:text-green-400'
     } else if (type.includes('withdraw') || type.includes('transfer_out')) {
       return 'text-red-600 dark:text-red-400'
@@ -157,6 +165,7 @@ export default function WalletOverviewPage() {
 
   const wallets = walletData ? Object.values(walletData.wallets) : []
   const mainWallet = wallets.find(w => w.is_primary) || wallets[0]
+  const mt5Wallets = walletData?.mt5_wallets ?? []
 
   return (
     
@@ -304,6 +313,68 @@ export default function WalletOverviewPage() {
             </Card>
           </div>
 
+          {mt5Wallets.length > 0 ? (
+            <Card className="shadow-lg">
+              <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-transparent">
+                <CardTitle className="flex items-center gap-3 text-xl">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Wallet className="h-5 w-5 text-primary" />
+                  </div>
+                  MT5 Wallet Accounts
+                </CardTitle>
+                <CardDescription className="text-base mt-1">
+                  Account-linked MT5 wallet balances and status. Wallet addresses are hidden.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {mt5Wallets.map((wallet) => (
+                    <div
+                      key={wallet.id}
+                      className="rounded-2xl border bg-card p-5 shadow-sm transition-colors hover:border-primary/30"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">
+                            MT5 User ID
+                          </p>
+                          <p className="text-2xl font-bold text-foreground">
+                            {wallet.mt5_user_id}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="capitalize">
+                          {wallet.wallet_type}
+                        </Badge>
+                      </div>
+
+                      <div className="mt-4 space-y-3">
+                        <div>
+                          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                            Balance
+                          </p>
+                          <p className="mt-1 text-lg font-semibold text-foreground">
+                            ${formatAmount(wallet.balance)} {wallet.currency}
+                          </p>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge variant="secondary" className="capitalize">
+                            {wallet.status}
+                          </Badge>
+                          {wallet.is_primary ? (
+                            <Badge className="bg-primary/10 text-primary hover:bg-primary/10">
+                              Primary
+                            </Badge>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          ) : null}
+
           {/* Recent Transactions */}
           <Card className="shadow-lg">
             <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-transparent">
@@ -328,8 +399,9 @@ export default function WalletOverviewPage() {
                       <div className="flex items-center gap-4 flex-1">
                         <div
                           className={`p-3 rounded-xl transition-all duration-300 ${
-                            transaction.type.includes('deposit') ||
-                            transaction.type.includes('transfer_in')
+                            transaction.type.includes('bonus')
+                              ? 'bg-emerald-100 dark:bg-emerald-900/20 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-900/30'
+                              : isCreditTransaction(transaction.type)
                               ? 'bg-green-100 dark:bg-green-900/20 group-hover:bg-green-200 dark:group-hover:bg-green-900/30'
                               : transaction.type.includes('withdraw') ||
                                 transaction.type.includes('transfer_out')
@@ -350,6 +422,14 @@ export default function WalletOverviewPage() {
                             >
                               {transaction.wallet_type}
                             </Badge>
+                            {transaction.mt5_user_id ? (
+                              <Badge
+                                variant="outline"
+                                className="text-xs border-border/60 bg-background"
+                              >
+                                MT5 ID: {transaction.mt5_user_id}
+                              </Badge>
+                            ) : null}
                           </div>
                           <p className="text-sm text-muted-foreground truncate mb-1">
                             {transaction.description}
@@ -368,8 +448,7 @@ export default function WalletOverviewPage() {
                             transaction.type
                           )}`}
                         >
-                          {transaction.type.includes('deposit') ||
-                          transaction.type.includes('transfer_in')
+                          {isCreditTransaction(transaction.type)
                             ? '+'
                             : '-'}
                           ${formatAmount(transaction.amount)}

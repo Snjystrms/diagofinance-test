@@ -144,6 +144,12 @@ export default function TransactionsHistoryPage() {
   const columns: ColumnDef<Transaction>[] = useMemo(
     () => [
       {
+        id: "sr_no",
+        header: "Sr. No.",
+        cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+        enableSorting: false,
+      },
+      {
         id: 'type',
         header: 'Type',
         accessorKey: 'type',
@@ -337,92 +343,72 @@ export default function TransactionsHistoryPage() {
               Refresh
             </Button>
           </div>
+        
+       {/* Filters */}
+<Card className="border-border/50">
+  <CardHeader className="pb-3">
+    <CardTitle className="flex items-center gap-2 text-lg">
+      <div className="p-1.5 bg-primary/10 rounded-lg">
+        <Filter className="h-4 w-4 text-primary" />
+      </div>
+      Filters
+    </CardTitle>
+  </CardHeader>
+  <CardContent className="pt-0">
+    {/* md:justify-end pushes the filter dropdowns to the right on desktop */}
+    <div className="flex flex-col md:flex-row md:justify-end md:space-x-4 space-y-4 md:space-y-0 w-full">
+      
+      {/* Replaced md:w-1/3 with md:w-48 for a cleaner, non-stretched dropdown width */}
+      <div className="space-y-2 md:w-48">
+        <Label htmlFor="transaction-type" className="text-sm font-medium">
+          Transaction Type
+        </Label>
+        <Select
+          value={transactionType}
+          onValueChange={(value) => {
+            setTransactionType(value)
+            handleFilterChange()
+          }}
+        >
+          <SelectTrigger id="transaction-type" className="h-9">
+            <SelectValue placeholder="All types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="deposit">Deposit</SelectItem>
+            <SelectItem value="withdrawal">Withdrawal</SelectItem>
+            <SelectItem value="internal transfer">Internal Transfer</SelectItem>
+            <SelectItem value="transfer_in">Transfer In</SelectItem>
+            <SelectItem value="transfer_out">Transfer Out</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
 
-          {/* Filters */}
-          <Card className="border-border/50">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <div className="p-1.5 bg-primary/10 rounded-lg">
-                  <Filter className="h-4 w-4 text-primary" />
-                </div>
-                Filters
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-            <div className="flex flex-col md:flex-row md:space-x-4 space-y-4 md:space-y-0">
-             <div className="space-y-2 md:w-1/3">
-                  <Label htmlFor="transaction-type" className="text-sm font-medium">
-                    Transaction Type
-                  </Label>
-                  <Select
-                    value={transactionType}
-                    onValueChange={(value) => {
-                      setTransactionType(value)
-                      handleFilterChange()
-                    }}
-                  >
-                    <SelectTrigger id="transaction-type" className="h-9">
-                      <SelectValue placeholder="All types" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="deposit">Deposit</SelectItem>
-                      <SelectItem value="withdrawal">Withdrawal</SelectItem>
-                      <SelectItem value="internal transfer">Internal Transfer</SelectItem>
-                      <SelectItem value="transfer_in">Transfer In</SelectItem>
-                      <SelectItem value="transfer_out">Transfer Out</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2 md:w-1/3">
-                  <Label htmlFor="wallet-type" className="text-sm font-medium">
-                    Wallet Type
-                  </Label>
-                  <Select
-                    value={walletType}
-                    onValueChange={(value) => {
-                      setWalletType(value)
-                      handleFilterChange()
-                    }}
-                  >
-                    <SelectTrigger id="wallet-type" className="h-9">
-                      <SelectValue placeholder="All wallets" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Wallets</SelectItem>
-                      <SelectItem value="main">Main</SelectItem>
-                      <SelectItem value="bonus">Bonus</SelectItem>
-                      <SelectItem value="commission">Commission</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2 md:w-1/3">
-                  <Label htmlFor="per-page" className="text-sm font-medium">
-                    Items Per Page
-                  </Label>
-                  <Select
-                    value={String(perPage)}
-                    onValueChange={(value) => {
-                      setPerPage(Number(value))
-                      setPage(1)
-                    }}
-                  >
-                    <SelectTrigger id="per-page" className="h-9">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="20">20</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                      <SelectItem value="100">100</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+      <div className="space-y-2 md:w-48">
+        <Label htmlFor="wallet-type" className="text-sm font-medium">
+          Wallet Type
+        </Label>
+        <Select
+          value={walletType}
+          onValueChange={(value) => {
+            setWalletType(value)
+            handleFilterChange()
+          }}
+        >
+          <SelectTrigger id="wallet-type" className="h-9">
+            <SelectValue placeholder="All wallets" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Wallets</SelectItem>
+            <SelectItem value="main">Main</SelectItem>
+            <SelectItem value="bonus">Bonus</SelectItem>
+            <SelectItem value="commission">Commission</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  </CardContent>
+</Card>
 
           {/* Transactions Table */}
           <Card>

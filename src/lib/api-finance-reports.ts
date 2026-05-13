@@ -38,11 +38,18 @@ export interface WalletSummaryWallet {
   is_primary: boolean;
 }
 
+export interface WalletSummaryMt5Wallet extends WalletSummaryWallet {
+  mt5_user_id: number;
+  wallet_type: string;
+}
+
 export interface WalletSummaryTransaction {
   id: number;
+  wallet_id?: number;
   wallet_type: string;
+  mt5_user_id?: number | null;
   type: string;
-  amount: string;
+  amount: string | number;
   description: string;
   created_at: string;
 }
@@ -52,6 +59,7 @@ export interface WalletSummaryData {
   wallets: {
     [key: string]: WalletSummaryWallet;
   };
+  mt5_wallets?: WalletSummaryMt5Wallet[];
   recent_transactions: WalletSummaryTransaction[];
 }
 

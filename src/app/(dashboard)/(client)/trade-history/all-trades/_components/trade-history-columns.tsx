@@ -19,6 +19,12 @@ const getProfitClasses = (profit: number | null) => {
 };
 
 export const tradeHistoryColumns: ColumnDef<TradeRow>[] = [
+        {
+        id: "sr_no",
+        header: "Sr. No.",
+        cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+        enableSorting: false,
+      },
   {
     id: 'type',
     header: 'Type',

@@ -81,9 +81,8 @@ type EditableCommissionFieldKey = keyof EditableCommissionFields;
 
 type CommissionGroup = {
   key: string;
-  mt5AccountId: string;
-  mt5UserName: string;
   accountTypeId: number;
+  accountTypeName: string;
   commissions: UserCommission[];
 };
 
@@ -160,14 +159,13 @@ const formatCommissionAmount = (value?: number | null) => {
 const groupCommissionsByAccount = (commissions: UserCommission[]) => {
   const grouped = commissions.reduce<Record<string, CommissionGroup>>(
     (accumulator, commission) => {
-      const key = `${commission.mt5_account_id}_${commission.account_type_id}`;
+      const key = `${commission.account_type_id}`;
 
       if (!accumulator[key]) {
         accumulator[key] = {
           key,
-          mt5AccountId: commission.mt5_account_id,
-          mt5UserName: commission.mt5_user_name,
           accountTypeId: commission.account_type_id,
+          accountTypeName: commission.account_type_name,
           commissions: [],
         };
       }
@@ -541,15 +539,10 @@ export default function SetIbCommissionPage() {
   }, [commissionData]);
 
   const commissionSummary = useMemo(() => {
-    const activeRules =
-      commissionData?.commissions.filter((item) => Boolean(item.status)).length ?? 0;
-
     return {
       accountCount: groupedCommissions.length,
-      ruleCount: commissionData?.commissions.length ?? 0,
-      activeRules,
     };
-  }, [commissionData, groupedCommissions.length]);
+  }, [groupedCommissions.length]);
 
   const renderCommissionInput = (
     commissionId: number,
@@ -811,7 +804,7 @@ export default function SetIbCommissionPage() {
               Commission Matrix
             </DialogTitle>
             <DialogDescription>
-              Open a user, review commission blocks by MT5 account, then edit only
+              Open a user, review commission blocks by account type, then edit only
               the rows you want to change.
             </DialogDescription>
           </DialogHeader>
@@ -845,34 +838,18 @@ export default function SetIbCommissionPage() {
                       </Badge>
                     </div>
                     <div className="mt-4 rounded-2xl border border-dashed border-border/70 bg-muted/20 px-4 py-3 text-sm text-muted-foreground">
-                      Rates are grouped by MT5 account and account type. Expand a
+                      Rates are grouped by account type. Expand a
                       section, edit a level, and save only that row.
                     </div>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                  <div className="grid gap-3 sm:grid-cols-1 lg:grid-cols-1">
                     <div className="rounded-3xl border border-border/60 bg-card px-4 py-4 shadow-sm">
                       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                        MT5 Accounts
+                        Account Types
                       </p>
                       <p className="mt-2 text-3xl font-semibold text-foreground">
                         {commissionSummary.accountCount}
-                      </p>
-                    </div>
-                    <div className="rounded-3xl border border-border/60 bg-card px-4 py-4 shadow-sm">
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                        Total Rules
-                      </p>
-                      <p className="mt-2 text-3xl font-semibold text-foreground">
-                        {commissionSummary.ruleCount}
-                      </p>
-                    </div>
-                    <div className="rounded-3xl border border-border/60 bg-card px-4 py-4 shadow-sm">
-                      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                        Active Rules
-                      </p>
-                      <p className="mt-2 text-3xl font-semibold text-foreground">
-                        {commissionSummary.activeRules}
                       </p>
                     </div>
                   </div>
@@ -899,14 +876,14 @@ export default function SetIbCommissionPage() {
                             <div className="flex flex-1 flex-wrap items-center gap-3">
                               <div>
                                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                                  MT5 Account
+                                  Account Type
                                 </p>
                                 <p className="mt-1 text-lg font-semibold text-foreground">
-                                  {group.mt5AccountId}
+                                  {group.accountTypeName}
                                 </p>
                               </div>
                               <Badge variant="outline" className="rounded-full">
-                                Account Type {group.accountTypeId}
+                                ID: {group.accountTypeId}
                               </Badge>
                               <Badge variant="outline" className="rounded-full">
                                 {group.commissions.length} levels
@@ -924,15 +901,15 @@ export default function SetIbCommissionPage() {
                                 <div className="flex flex-wrap items-center justify-between gap-4">
                                   <div>
                                     <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                                      MT5 User
+                                      Commission Levels
                                     </p>
                                     <p className="mt-1 text-base font-semibold text-foreground">
-                                      {group.mt5UserName}
+                                      {group.commissions.length} levels configured
                                     </p>
                                   </div>
                                   <div className="flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/10 px-3 py-1.5 text-sm font-medium text-emerald-700 dark:text-emerald-300">
                                     <ShieldCheck className="h-4 w-4" />
-                                    Account group ready for review
+                                    Ready for review
                                   </div>
                                 </div>
                               </div>

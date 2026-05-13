@@ -165,16 +165,12 @@ const ChainBadge = ({ chainId }: { chainId: string }) => {
 
 // Define columns
 const columns: ColumnDef<WithdrawalItem>[] = [
-  {
-    id: 'id',
-    accessorKey: 'id',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="ID" />
-    ),
-    cell: ({ row }) => (
-      <div className="font-medium">{row.original.id}</div>
-    ),
-  },
+      {
+        id: "sr_no",
+        header: "Sr. No.",
+        cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+        enableSorting: false,
+      },
   {
     id: 'amount',
     accessorKey: 'amount',

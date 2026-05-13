@@ -842,11 +842,11 @@ export function DownlineTreePageContent({
                 <div className="rounded-lg border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
                   All commission values in this table are shown in USD.
                 </div>
-                {/* Group commissions by MT5 Account */}
+                {/* Group commissions by Account Type */}
                 {(() => {
                   const groupedByAccount = commissionData.commissions.reduce(
                   (acc, commission) => {
-                    const key = `${commission.mt5_account_id}_${commission.account_type_id}`;
+                    const key = `${commission.account_type_id}`;
                     if (!acc[key]) {
                       acc[key] = [];
                     }
@@ -862,10 +862,10 @@ export function DownlineTreePageContent({
                     <div key={key} className="space-y-2">
                       <div className="flex items-center gap-2 pb-2 border-b">
                         <h3 className="font-semibold text-lg">
-                          MT5 Account: {firstCommission.mt5_account_id}
+                          {firstCommission.account_type_name}
                         </h3>
                         <Badge variant="outline">
-                          Account Type ID: {firstCommission.account_type_id}
+                          ID: {firstCommission.account_type_id}
                         </Badge>
                       </div>
                       <div className="rounded-md border">

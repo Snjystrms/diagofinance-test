@@ -22,6 +22,12 @@ const getProfitClasses = (profit: number | null) => {
 
 export const livePositionsColumns: ColumnDef<PositionRow>[] = [
   {
+    id: "sr_no",
+    header: "Sr. No.",
+    cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+    enableSorting: false,
+  },
+  {
     id: 'side',
     header: 'Side',
     cell: ({ row }) => (

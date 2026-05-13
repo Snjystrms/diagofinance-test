@@ -351,23 +351,11 @@ export default function RaiseTicketPage() {
 
   const columns: ColumnDef<TicketItem>[] = useMemo(
     () => [
-      {
-        id: "ticket",
-        header: "Ticket",
-        accessorFn: (row) => row.id,
-        cell: ({ row }) => {
-          const ticket = row.original;
-          return (
-            <div className="space-y-1">
-              <div className="font-medium">
-                #{ticket.id}
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {ticket.uuid.slice(0, 8)}...
-              </div>
-            </div>
-          );
-        },
+        {
+        id: "sr_no",
+        header: "Sr. No.",
+        cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+        enableSorting: false,
       },
       {
         id: "title",

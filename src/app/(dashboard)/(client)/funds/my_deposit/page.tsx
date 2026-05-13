@@ -401,15 +401,11 @@ const DepositStatusCell = ({ deposit, token }: { deposit: DepositListItem; token
 
 // Define columns for local deposits
 const localColumns: ColumnDef<DepositRequestItem>[] = [
-  {
-    id: 'id',
-    accessorKey: 'id',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="ID" />
-    ),
-    cell: ({ row }) => (
-      <div className="font-medium">{row.original.id}</div>
-    ),
+ {
+    id: "sr_no",
+    header: "Sr. No.",
+    cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+    enableSorting: false,
   },
   {
     id: 'amount',
