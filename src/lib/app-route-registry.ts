@@ -202,33 +202,6 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     managerCategories: ["Transaction"],
   },
   {
-    id: "bonus-management",
-    title: "Bonus Management",
-    url: "/bonus-management",
-    icon: Gift,
-    audience: "backoffice",
-    roles: BACKOFFICE_ROLES,
-    managerCategories: ["Bonus"],
-  },
-  {
-    id: "manager-management",
-    title: "Manager Management",
-    url: "/all-managers",
-    icon: UserPlus,
-    audience: "backoffice",
-    roles: BACKOFFICE_ROLES,
-    managerCategories: ["Sub Admin"],
-  },
-  {
-    id: "email-management",
-    title: "E-Mail Management",
-    url: "/email-management",
-    icon: Mail,
-    audience: "backoffice",
-    roles: BACKOFFICE_ROLES,
-    managerCategories: ["E-Mail Management", "Email Management"],
-  },
-  {
     id: "ib-management",
     title: "IB Management",
     url: "/all-ib",
@@ -246,7 +219,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     roles: BACKOFFICE_ROLES,
     managerCategories: ["Group Management"],
   },
-  {
+ {
     id: "group-management",
     title: "Group Management",
     url: "/all-groups",
@@ -254,6 +227,24 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     managerCategories: ["Group Management"],
+  },
+    {
+    id: "manager-management",
+    title: "Manager Management",
+    url: "/all-managers",
+    icon: UserPlus,
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    managerCategories: ["Sub Admin"],
+  },
+  {
+    id: "bonus-management",
+    title: "Bonus Management",
+    url: "/bonus-management",
+    icon: Gift,
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    managerCategories: ["Bonus"],
   },
   {
     id: "support",
@@ -282,6 +273,17 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     roles: BACKOFFICE_ROLES,
     managerCategories: ["Report Management"],
   },
+  {
+    id: "email-management",
+    title: "E-Mail Management",
+    url: "/email-management",
+    icon: Mail,
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    managerCategories: ["E-Mail Management", "Email Management"],
+  },
+
+
   // {
   //   id: "marketing-management",
   //   title: "Marketing Management",
