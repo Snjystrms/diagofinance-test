@@ -65,6 +65,7 @@ import {
   Grid3x3,
   DollarSign,
   Key,
+  RefreshCw,
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { ProfileCompletionDialog } from "@/components/profile-completion-dialog"
@@ -84,6 +85,7 @@ import {
   type ManagerDashboardData,
   type UserMT5DemoDepositData,
 } from "@/lib/api"
+import { mt5SdkApi } from "@/lib/api-trading-ib"
 import { NewsPromotionCarousel } from "@/components/news-promotion-carousel"
 import type { NewsItem } from "@/lib/api-auth-admin"
 const AdminDashboardView = dynamic(() => import("../admin-dashboard-view").then((m) => ({ default: m.AdminDashboardView })), {
@@ -104,6 +106,8 @@ import { getFriendlyErrorMessage } from "@/lib/friendly-errors"
 import { useActiveAccountTypes } from "@/hooks/use-active-account-types"
 import { normalizeIbWalletData } from "@/lib/ib"
 import { CLIENT_WALLET_REFRESH_EVENT } from "@/lib/client-events"
+import { mapPositionRows } from "@/app/(dashboard)/(client)/trade-history/all-trades/_lib/trade-history"
+import { LivePositionsTable } from "@/app/(dashboard)/(client)/trade-history/all-trades/_components/live-positions-table"
 
 const formatAmount = (amount?: number) => {
   const numAmount = typeof amount === 'number' ? amount : 0
@@ -231,6 +235,7 @@ export function DashboardPageContent() {
   const [activeTab, setActiveTab] = useState<'mt5-live' | 'mt5-demo'>('mt5-live');
   const [resetPasswordAccount, setResetPasswordAccount] = useState<DashboardTradingAccount | null>(null);
   const [depositAccount, setDepositAccount] = useState<DashboardTradingAccount | null>(null);
+  const [selectedLivePositionsLogin, setSelectedLivePositionsLogin] = useState("");
   const [selectedDepositAmount, setSelectedDepositAmount] = useState("");
   const [isSubmittingDeposit, setIsSubmittingDeposit] = useState(false);
   const [dateRange] = useState<{ start_date?: string; end_date?: string }>({});
@@ -569,8 +574,7 @@ export function DashboardPageContent() {
     }
   };
 
-  // Helper function to get current accounts based on active tab
-  const getCurrentAccounts = () => {
+  const currentAccounts = useMemo(() => {
     const allAccounts: DashboardTradingAccount[] = [];
 
     // Collect accounts from mtAccountSummary
@@ -604,9 +608,9 @@ export function DashboardPageContent() {
 
       return false;
     });
-  };
-
-  const currentAccounts = getCurrentAccounts();
+  }, [activeTab, mtAccountSummary]);
+  const selectedLivePositionsAccount =
+    currentAccounts.find((account) => account.mt5_id === selectedLivePositionsLogin) ?? null;
   const createAccountMode = activeTab === "mt5-demo" ? "demo" : "live";
   const createAccountHref = `/my_accounts/open-trading-account?mode=${createAccountMode}`;
   const createAccountTitle =
@@ -625,6 +629,41 @@ export function DashboardPageContent() {
     navigator.clipboard.writeText(value);
     toast.success(`${label} copied to clipboard!`);
   };
+
+  useEffect(() => {
+    const firstAvailableLogin = currentAccounts.find((account) => account.mt5_id)?.mt5_id ?? "";
+
+    setSelectedLivePositionsLogin((current) => {
+      if (currentAccounts.some((account) => account.mt5_id === current)) {
+        return current;
+      }
+
+      return firstAvailableLogin;
+    });
+  }, [currentAccounts]);
+
+  const {
+    data: livePositions = [],
+    error: livePositionsError,
+    isFetching: isRefreshingLivePositions,
+    isLoading: isLoadingLivePositions,
+    refetch: refetchLivePositions,
+  } = useQuery({
+    queryKey: ["dashboardLivePositions", token, selectedLivePositionsLogin],
+    queryFn: async () => {
+      const response = await mt5SdkApi.getPositions(selectedLivePositionsLogin, token);
+      return mapPositionRows(response.items ?? []);
+    },
+    enabled: isUser && Boolean(token) && Boolean(selectedLivePositionsLogin),
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+  const livePositionsErrorMessage =
+    livePositionsError instanceof Error
+      ? livePositionsError.message
+      : livePositionsError
+        ? "Failed to load live positions"
+        : null;
 
   const handleResetPasswordDialogChange = (open: boolean) => {
     if (!open) {
@@ -1683,7 +1722,57 @@ export function DashboardPageContent() {
               />
             )
           )}
-
+          
+                         {currentAccounts.length > 0 ? (
+                  <LivePositionsTable
+                    title="Live Positions"
+                    description={
+                      selectedLivePositionsAccount
+                        ? `Currently open MT5 positions for ${selectedLivePositionsAccount.account_id} (${selectedLivePositionsAccount.mt5_id ?? "N/A"})`
+                        : "Currently open MT5 positions for the selected account"
+                    }
+                    error={livePositionsErrorMessage}
+                    isLoading={isLoadingLivePositions}
+                    rows={livePositions}
+                    emptyDescription={
+                      selectedLivePositionsAccount
+                        ? `${selectedLivePositionsAccount.account_id} does not have any live positions right now.`
+                        : "This MT5 account does not have any live positions right now."
+                    }
+                    headerActions={
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                        <Select
+                          value={selectedLivePositionsLogin}
+                          onValueChange={setSelectedLivePositionsLogin}
+                        >
+                          <SelectTrigger className="w-full min-w-0 sm:w-[320px]">
+                            <SelectValue placeholder="Select MT5 account" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {currentAccounts
+                              .filter((account) => Boolean(account.mt5_id))
+                              .map((account) => (
+                                <SelectItem key={account.id} value={account.mt5_id ?? ""}>
+                                  {`${account.account_id} - ${account.mt5_id}`}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            void refetchLivePositions();
+                          }}
+                          disabled={!selectedLivePositionsLogin || isRefreshingLivePositions}
+                        >
+                          <RefreshCw className={`mr-2 h-4 w-4${isRefreshingLivePositions ? " animate-spin" : ""}`} />
+                          Refresh
+                        </Button>
+                      </div>
+                    }
+                  />
+                ) : null}
           {/* Trading Accounts Grid */}
           <div className="space-y-6">
             {hasAnyMt5Accounts ? (
@@ -1797,6 +1886,8 @@ export function DashboardPageContent() {
                     </CardContent>
                   </Card>
                 </div>
+
+ 
               </>
             ) : (
               <>

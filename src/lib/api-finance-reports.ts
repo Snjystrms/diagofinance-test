@@ -1,4 +1,4 @@
-import { PaginationMeta, apiCall } from "./api-core";
+import { API_BASE_URL, ApiRequestError, PaginationMeta, apiCall } from "./api-core";
 
 export interface Mt5ToMt5TransferRequest {
   from_mt5_account_id: string;
@@ -960,6 +960,138 @@ export const adminLoginActivityReportApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
+  },
+};
+
+export interface TradingHistoryReportItem {
+  id: number | string;
+  login: number | string;
+  name?: string | null;
+  email?: string | null;
+  account_id?: string | null;
+  record_type?: string | null;
+  ticket?: number | string | null;
+  symbol?: string | null;
+  volume?: number | string | null;
+  price?: number | string | null;
+  profit?: number | string | null;
+  trade_time_ist?: string | null;
+  created_at?: string | null;
+}
+
+export interface TradingHistoryReportListParams {
+  token: string;
+  page?: number;
+  per_page?: number;
+}
+
+export interface TradingHistoryReportListPayload {
+  success: boolean;
+  message: string;
+  data: TradingHistoryReportItem[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+    from: number;
+    to: number;
+  };
+  filters?: Record<string, string | null | undefined>;
+}
+
+export interface TradingHistoryReportExportParams {
+  token: string;
+  format?: "xlsx" | "csv";
+}
+
+const parseContentDispositionFilename = (contentDisposition: string | null, fallback: string) => {
+  if (!contentDisposition) {
+    return fallback;
+  }
+
+  const utf8Match = contentDisposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1]);
+    } catch {
+      return utf8Match[1];
+    }
+  }
+
+  const filenameMatch = contentDisposition.match(/filename\s*=\s*"([^"]+)"|filename\s*=\s*([^;]+)/i);
+  const filename = filenameMatch?.[1] ?? filenameMatch?.[2];
+
+  if (!filename) {
+    return fallback;
+  }
+
+  return filename.trim();
+};
+
+export const adminTradingHistoryReportApi = {
+  list: (params: TradingHistoryReportListParams) => {
+    const { token, ...queryParams } = params;
+    if (!token) {
+      throw new Error("Token is required to fetch trading history report");
+    }
+
+    const qs = new URLSearchParams();
+    if (queryParams.page) qs.set("page", String(queryParams.page));
+    if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
+
+    const endpoint = `/admin/reports/trading-history-report${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<TradingHistoryReportListPayload>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  export: async ({ token, format = "xlsx" }: TradingHistoryReportExportParams) => {
+    if (!token) {
+      throw new Error("Token is required to export trading history report");
+    }
+
+    if (!API_BASE_URL) {
+      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("format", format);
+
+    const endpoint = `/admin/reports/trading-history-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message:
+          (payload &&
+          typeof payload === "object" &&
+          "message" in payload &&
+          typeof payload.message === "string"
+            ? payload.message
+            : null) ||
+          `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+
+    const blob = await response.blob();
+    return {
+      blob,
+      filename: parseContentDispositionFilename(
+        response.headers.get("content-disposition"),
+        `trading-history-report.${format === "csv" ? "csv" : "xlsx"}`
+      ),
+    };
   },
 };
 

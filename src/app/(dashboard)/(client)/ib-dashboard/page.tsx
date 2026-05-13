@@ -456,17 +456,27 @@ export default function IbDashboardPage() {
             </div>
 
             <div className="min-w-0 rounded-3xl border border-border/60 bg-muted/20 p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Referral Link
-                  </p>
-                  <p className="mt-2 break-all text-sm leading-6 text-foreground">{publicReferralLink}</p>
-                </div>
-                <Button variant="outline" size="icon" className="shrink-0" onClick={copyReferralLink}>
-                  <Copy className="h-4 w-4" />
-                </Button>
-              </div>
+      <div className="flex items-start justify-between gap-3">
+  <div className="min-w-0 flex-1">
+    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+      Referral Link
+    </p>
+    <p className="mt-2 break-all text-sm leading-6">
+      <a 
+        href={publicReferralLink} 
+        target="_blank" 
+        rel="noopener noreferrer" 
+        className="text-foreground underline hover:text-primary transition-colors"
+      >
+        {publicReferralLink}
+      </a>
+    </p>
+  </div>
+  <Button variant="outline" size="icon" className="shrink-0" onClick={copyReferralLink}>
+    <Copy className="h-4 w-4" />
+  </Button>
+</div>
+
               <div className="mt-4 flex flex-wrap gap-3">
                 <Button variant="outline" onClick={copyReferralLink}>
                   <Link2 className="mr-2 h-4 w-4" />

@@ -710,6 +710,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     navLabel: "Login Activity Report",
     managerCategories: ["Report Management"],
   },
+  {
+    path: "/report-management/trading-history-report",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "reports",
+    navLabel: "Trading History Report",
+    managerCategories: ["Report Management"],
+  },
   // {
   //   path: "/marketing-management",
   //   audience: "backoffice",

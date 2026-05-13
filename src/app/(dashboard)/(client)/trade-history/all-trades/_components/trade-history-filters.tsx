@@ -97,20 +97,6 @@ export function TradeHistoryFilters({
               disabled={isLoadingTrades}
             />
           </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="per-page">Per Page</Label>
-            <Select value={String(perPage)} onValueChange={(value) => onPerPageChange(Number(value))}>
-              <SelectTrigger id="per-page">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="10">10</SelectItem>
-                <SelectItem value="20">20</SelectItem>
-                <SelectItem value="50">50</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </div>
       </CardContent>
     </Card>
