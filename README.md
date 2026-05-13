@@ -42,7 +42,7 @@ The application integrates with the following backend APIs:
    - Verifies OTP for account activation
    - Redirects to login page on success
 
-3. **POST /user/login**
+3. **POST /user/login***
    - Authenticates user with email/password
    - Returns JWT token and user data
    - Redirects to dashboard on success
