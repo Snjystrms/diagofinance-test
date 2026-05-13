@@ -435,17 +435,17 @@ export default function NewUsersPage() {
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Payment Verified</CardTitle>
+                  <CardTitle className="text-sm font-medium">Active Users</CardTitle>
                   <CheckCircle className="h-4 w-4 text-green-600" />
                 </CardHeader>
-                <CardContent><div className="text-2xl font-bold">{users.filter((user) => user.payment_verified === 1).length}</div></CardContent>
+                <CardContent><div className="text-2xl font-bold">{users.filter((user) => user.status === "1").length}</div></CardContent>
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Email Verified</CardTitle>
+                  <CardTitle className="text-sm font-medium">Inactive Users</CardTitle>
                   <Mail className="h-4 w-4 text-blue-600" />
                 </CardHeader>
-                <CardContent><div className="text-2xl font-bold">{users.filter((user) => user.email_verified === 1).length}</div></CardContent>
+                <CardContent><div className="text-2xl font-bold">{users.filter((user) => user.status !== "1").length}</div></CardContent>
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">

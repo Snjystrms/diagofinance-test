@@ -73,6 +73,12 @@ export const managerPermissionConfig: Record<string, ModuleFeatureMap> = {
     addRewards: ["Add Rewards"],
     rewardsList: ["Rewards List"],
   },
+  "account-types": {
+    accountTypesList: ["Account Types List"],
+    createAccountType: ["Create Account Type"],
+    editAccountType: ["Edit Account Type"],
+    deleteAccountType: ["Delete Account Type"],
+  },
   settingsManagement: {
     brokerDepositAccountList: ["Broker Deposit Account List"],
     createBrokerDepositAccount: ["Create Broker Deposit Account"],
@@ -84,7 +90,7 @@ export const managerPermissionConfig: Record<string, ModuleFeatureMap> = {
     enabledDisabledUser2fa: ["Enabled/Disabled User 2FA"],
     manager2faList: ["Manager 2FA List"],
     promotionList: ["Promotion List"],
-    pspSetting: ["PSP Setting"],
+    pspSetting: ["Payment Method List", "Edit Payment Methods", "Delete Payment Methods"],
     user2faList: ["User 2FA List"],
   },
   subAdmin: {

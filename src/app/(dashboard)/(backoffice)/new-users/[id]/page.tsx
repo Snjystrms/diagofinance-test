@@ -938,42 +938,6 @@ export default function NewUserDetailPage() {
                 </div>
               )}
 
-              <div className="grid gap-4 lg:grid-cols-2">
-                <Card className="border-border/70 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-lg">User Details</CardTitle>
-                    <CardDescription>Identity and address information from CRM.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid gap-3 sm:grid-cols-2">
-                    <DetailItem label="User ID" value={crudUser?.id ?? "-"} />
-                    {/* <DetailItem label="UUID" value={crudUser?.uuid || "-"} /> */}
-                    <DetailItem label="Country" value={crudUser?.country || "-"} />
-                    <DetailItem label="State" value={crudUser?.state || "-"} />
-                    <DetailItem label="City" value={crudUser?.city || "-"} />
-                    <DetailItem label="Address" value={crudUser?.address || "-"} />
-                    <DetailItem label="Created At" value={formatDateTime(crudUser?.created_at)} />
-                    <DetailItem label="Updated At" value={formatDateTime(crudUser?.updated_at)} />
-                  </CardContent>
-                </Card>
-
-                <Card className="border-border/70 shadow-sm">
-                  <CardHeader>
-                    <CardTitle className="text-lg">Account &amp; Sponsor</CardTitle>
-                    <CardDescription>Sponsorship chain and approval details.</CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid gap-3 sm:grid-cols-2">
-                    <DetailItem label="Sponsor ID" value={crudUser?.sponsor_id || "-"} />
-                    <DetailItem label="Sponsor By" value={crudUser?.sponsor_by || "-"} />
-                    <DetailItem label="Referral Code" value={crudUser?.referral_code || "-"} />
-                    <DetailItem label="Mobile" value={crudUser?.mobile || "-"} />
-                    <DetailItem label="Is Approved" value={normalizeBooleanLabel(crudUser?.is_approved)} />
-                    <DetailItem label="Approved By" value={crudUser?.approved_by || "-"} />
-                    <DetailItem label="Approved At" value={formatDateTime(crudUser?.approved_at)} />
-                    <DetailItem label="Rejection Reason" value={crudUser?.rejection_reason || "-"} />
-                  </CardContent>
-                </Card>
-              </div>
-
               <Card className="border-border/70 shadow-sm">
                 <CardHeader className="space-y-4">
                   <div className="space-y-1">

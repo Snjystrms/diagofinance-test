@@ -1990,6 +1990,20 @@ export const adminKycApi = {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
+  uploadForUser: (userId: number | string, formData: FormData, token: string) => {
+    ensureAdminUserToken(token, "upload KYC documents");
+    ensureAdminUserIdentifier(userId, "upload KYC documents");
+
+    return apiCall<KycStatusResponse["data"]>(
+      `/admin/user-management/crud/users/${userId}/documents`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      }
+    );
+  },
+
   review: async (
     body: {
       user_uuid: string;

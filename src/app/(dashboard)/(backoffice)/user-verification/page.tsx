@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, type ChangeEvent } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import toast from "react-hot-toast";
 
@@ -8,9 +8,12 @@ import { AppDataTable } from "@/components/app-data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { BackofficeDetailDialogSkeleton } from "@/components/loading/backoffice-page-skeletons";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
+import { SearchSelectField } from "@/components/search-select-field";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { Spinner } from "@/components/ui/spinner";
@@ -22,9 +25,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { Eye, CheckCircle2, XCircle, Calendar, FileText, User, Mail, Hash, Clock, AlertCircle, Shield, Image as ImageIcon } from "lucide-react";
+import { Eye, CheckCircle2, XCircle, Calendar, FileText, User, Mail, Hash, Clock, AlertCircle, Shield, Image as ImageIcon, Plus, Upload } from "lucide-react";
 
-import { adminKycApi, kycFileUrl } from "@/lib/api";
+import { adminKycApi, adminUsersApi, kycFileUrl, type AdminUsersListApiData, type PendingUser } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 // If you already have auth context, import it. Fallback to localStorage token.
@@ -78,6 +81,21 @@ type UserKycDetail = {
   document_urls?: Partial<Record<DocFileKey, string>>;
   rejection_comments?: Partial<Record<DocKey, string>>;
   kyc_status?: string; // <-- NEW: top-level kyc_status from API
+};
+
+type AdminUserOption = {
+  id: number;
+  uuid: string;
+  name: string;
+  email: string;
+  mobile: string;
+};
+
+type KycUploadFormState = {
+  poi_front_file: File | null;
+  poa_front_file: File | null;
+  poa_back_file: File | null;
+  other_file: File | null;
 };
 
 type KycStatusOption = {
@@ -200,6 +218,205 @@ const normalizeDocStatus = (value: unknown): DocStatusNum => {
   return 0;
 };
 
+const createEmptyKycUploadForm = (): KycUploadFormState => ({
+  poi_front_file: null,
+  poa_front_file: null,
+  poa_back_file: null,
+  other_file: null,
+});
+
+const transformUser = (raw: Record<string, unknown>): PendingUser => {
+  const email = String(raw.email ?? "");
+  const username =
+    String(raw.username ?? "").trim() ||
+    (email.includes("@") ? email.split("@")[0] : "");
+
+  return {
+    id: typeof raw.id === "number" ? raw.id : Number(raw.id ?? 0) || 0,
+    uuid: String(raw.uuid ?? ""),
+    first_name: String(raw.first_name ?? ""),
+    last_name: String(raw.last_name ?? ""),
+    name:
+      `${String(raw.first_name ?? "")} ${String(raw.last_name ?? "")}`.trim() ||
+      String(raw.name ?? "-"),
+    email,
+    username,
+    mobile: String(raw.mobile ?? ""),
+    country: String(raw.country ?? ""),
+    country_code: String(raw.country_code ?? ""),
+    sponsor_id: String(raw.sponsor_id ?? ""),
+    referral_code: String(raw.referral_code ?? ""),
+    status: String(raw.status ?? ""),
+    two_fa_enabled: raw.two_fa_enabled as boolean | number | string | undefined,
+    email_verified:
+      typeof raw.email_verified === "number"
+        ? raw.email_verified
+        : Number(raw.email_verified ?? 0) || 0,
+    payment_verified:
+      typeof raw.payment_verified === "number"
+        ? raw.payment_verified
+        : Number(raw.payment_verified ?? 0) || 0,
+    created_at: String(raw.created_at ?? ""),
+  };
+};
+
+const extractAdminUserOptions = (payload?: AdminUsersListApiData | null): AdminUserOption[] => {
+  if (!payload) return [];
+
+  const pick = (value: unknown) =>
+    Array.isArray(value) ? (value as Array<Record<string, unknown>>) : [];
+
+  const directUsers = pick(payload.users);
+  if (directUsers.length) {
+    return directUsers.map((item) => {
+      const user = transformUser(item);
+      return {
+        id: user.id,
+        uuid: user.uuid ?? "",
+        name: user.name,
+        email: user.email,
+        mobile: user.mobile,
+      };
+    });
+  }
+
+  const directItems = pick(payload.items);
+  if (directItems.length) {
+    return directItems.map((item) => {
+      const user = transformUser(item);
+      return {
+        id: user.id,
+        uuid: user.uuid ?? "",
+        name: user.name,
+        email: user.email,
+        mobile: user.mobile,
+      };
+    });
+  }
+
+  if (Array.isArray(payload.data)) {
+    return payload.data
+      .map((item) => transformUser(item as unknown as Record<string, unknown>))
+      .map((user) => ({
+        id: user.id,
+        uuid: user.uuid ?? "",
+        name: user.name,
+        email: user.email,
+        mobile: user.mobile,
+      }));
+  }
+
+  if (payload.data && typeof payload.data === "object") {
+    const nested = payload.data as Record<string, unknown>;
+    const nestedUsers = pick(nested.users);
+    if (nestedUsers.length) {
+      return nestedUsers.map((item) => {
+        const user = transformUser(item);
+        return {
+          id: user.id,
+          uuid: user.uuid ?? "",
+          name: user.name,
+          email: user.email,
+          mobile: user.mobile,
+        };
+      });
+    }
+
+    const nestedItems = pick(nested.items);
+    if (nestedItems.length) {
+      return nestedItems.map((item) => {
+        const user = transformUser(item);
+        return {
+          id: user.id,
+          uuid: user.uuid ?? "",
+          name: user.name,
+          email: user.email,
+          mobile: user.mobile,
+        };
+      });
+    }
+
+    const nestedData = pick(nested.data);
+    if (nestedData.length) {
+      return nestedData.map((item) => {
+        const user = transformUser(item);
+        return {
+          id: user.id,
+          uuid: user.uuid ?? "",
+          name: user.name,
+          email: user.email,
+          mobile: user.mobile,
+        };
+      });
+    }
+  }
+
+  return [];
+};
+
+const validateKycUploadFile = (file: File | null) => {
+  if (!file) return true;
+
+  const normalizedName = file.name.toLowerCase();
+  const okType =
+    file.type === "image/jpeg" ||
+    file.type === "image/jpg" ||
+    file.type === "image/png" ||
+    file.type === "application/pdf" ||
+    normalizedName.endsWith(".jpg") ||
+    normalizedName.endsWith(".jpeg") ||
+    normalizedName.endsWith(".png") ||
+    normalizedName.endsWith(".pdf");
+
+  if (!okType) {
+    toast.error("Only JPG, PNG, and PDF files are accepted.");
+    return false;
+  }
+
+  const maxBytes = 15 * 1024 * 1024;
+  if (file.size > maxBytes) {
+    toast.error("Each file must be 15MB or less.");
+    return false;
+  }
+
+  return true;
+};
+
+function KycUploadField({
+  id,
+  label,
+  required = false,
+  disabled = false,
+  file,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  required?: boolean;
+  disabled?: boolean;
+  file: File | null;
+  onChange: (event: ChangeEvent<HTMLInputElement>) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>
+        {label}
+        {required ? <span className="ml-1 text-red-600">*</span> : null}
+      </Label>
+      <Input
+        id={id}
+        type="file"
+        accept=".jpg,.jpeg,.png,.pdf"
+        disabled={disabled}
+        onChange={onChange}
+      />
+      <p className="text-xs text-muted-foreground">
+        {file ? `Selected: ${file.name}` : "JPG, PNG, or PDF up to 15MB."}
+      </p>
+    </div>
+  );
+}
+
 const normalizeKycDetail = (raw: UserKycDetail): UserKycDetail => {
   const normalizedDocuments = {} as UserKycDetail["documents"];
 
@@ -267,6 +484,13 @@ export default function UserVerificationPage() {
   });
   const [docComments, setDocComments] = useState<Partial<Record<DocKey, string>>>({});
   const [previewImage, setPreviewImage] = useState<{ url: string; label: string } | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [uploadForm, setUploadForm] = useState<KycUploadFormState>(createEmptyKycUploadForm);
+  const [uploadTarget, setUploadTarget] = useState<AdminUserOption | null>(null);
+  const [uploadUserSearch, setUploadUserSearch] = useState("");
+  const [uploadUserOptions, setUploadUserOptions] = useState<AdminUserOption[]>([]);
+  const [uploadUsersLoading, setUploadUsersLoading] = useState(false);
+  const [uploadingKyc, setUploadingKyc] = useState(false);
 
   const statusFeatureOptions = useMemo(
     () =>
@@ -293,6 +517,11 @@ export default function UserVerificationPage() {
   const canReview = useMemo(
     () => hasFeature("userManagement", "approveRejectKyc"),
     [hasFeature]
+  );
+
+  const canAddKyc = useMemo(
+    () => isAdmin || canReview,
+    [isAdmin, canReview]
   );
 
   const canViewKycStatus = useCallback(
@@ -345,6 +574,43 @@ export default function UserVerificationPage() {
     }
   }, [isManager, statusFeatureOptions, allowedStatusValues, statusFilter]);
 
+  useEffect(() => {
+    if (!uploadOpen || !token || !canAddKyc) return;
+
+    let isActive = true;
+    const timer = window.setTimeout(async () => {
+      try {
+        setUploadUsersLoading(true);
+        const response = await adminUsersApi.list({
+          token,
+          page: 1,
+          limit: 20,
+          search: uploadUserSearch.trim() || undefined,
+        });
+
+        if (!isActive) return;
+        setUploadUserOptions(
+          extractAdminUserOptions((response.data ?? null) as AdminUsersListApiData | null)
+        );
+      } catch (error: unknown) {
+        if (!isActive) return;
+        setUploadUserOptions([]);
+        toast.error(
+          getAdminFriendlyErrorMessage(error, { resource: "users", action: "load" })
+        );
+      } finally {
+        if (isActive) {
+          setUploadUsersLoading(false);
+        }
+      }
+    }, 300);
+
+    return () => {
+      isActive = false;
+      window.clearTimeout(timer);
+    };
+  }, [uploadOpen, token, canAddKyc, uploadUserSearch]);
+
   const filteredRows = useMemo(() => {
     if (!isManager) return rows;
     if (!statusFeatureOptions.length || statusFilter === "none") {
@@ -360,6 +626,16 @@ export default function UserVerificationPage() {
 
   const statusSelectDisabled = isManager && !statusFeatureOptions.length;
   const statusSelectValue = statusFilter === "none" ? undefined : statusFilter;
+
+  const closeUploadDialog = useCallback(() => {
+    setUploadOpen(false);
+    setUploadForm(createEmptyKycUploadForm());
+    setUploadTarget(null);
+    setUploadUserSearch("");
+    setUploadUserOptions([]);
+    setUploadUsersLoading(false);
+    setUploadingKyc(false);
+  }, []);
 
   const openDetail = useCallback(
     async (user_uuid: string) => {
@@ -478,6 +754,22 @@ export default function UserVerificationPage() {
     );
   };
 
+  const handleUploadFileChange = useCallback(
+    (field: keyof KycUploadFormState) => (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0] ?? null;
+      if (!validateKycUploadFile(file)) {
+        event.target.value = "";
+        return;
+      }
+
+      setUploadForm((current) => ({
+        ...current,
+        [field]: file,
+      }));
+    },
+    []
+  );
+
 const buildReviewPayload = () => {
   if (!detail?.user?.uuid) {
     toast.error("User UUID missing for this review");
@@ -541,6 +833,47 @@ const buildReviewPayload = () => {
     setStatusFilter(newStatus);
   };
 
+  const submitKycUpload = async () => {
+    if (!token) return;
+    if (!canAddKyc) {
+      toast.error("You do not have permission to add KYC documents.");
+      return;
+    }
+    if (!uploadTarget?.id) {
+      toast.error("Please select a user.");
+      return;
+    }
+    if (!uploadForm.poi_front_file || !uploadForm.poa_front_file || !uploadForm.poa_back_file) {
+      toast.error("POI front, POA front, and POA back files are required.");
+      return;
+    }
+
+    try {
+      setUploadingKyc(true);
+
+      const formData = new FormData();
+      formData.append("poi_front_file", uploadForm.poi_front_file);
+      formData.append("poa_front_file", uploadForm.poa_front_file);
+      formData.append("poa_back_file", uploadForm.poa_back_file);
+
+      if (uploadForm.other_file) {
+        formData.append("other_file", uploadForm.other_file);
+      }
+
+      const response = await adminKycApi.uploadForUser(uploadTarget.id, formData, token);
+      toast.success(response.message || "KYC documents uploaded successfully.");
+      closeUploadDialog();
+      await loadList();
+    } catch (error: unknown) {
+      console.error(error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "KYC documents", action: "submit" })
+      );
+    } finally {
+      setUploadingKyc(false);
+    }
+  };
+
   if (!isAdmin && isManager && !statusFeatureOptions.length) {
     return (
       <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
@@ -595,6 +928,12 @@ const buildReviewPayload = () => {
           </h1>
         </div>
         <div className="flex gap-2">
+          {canAddKyc ? (
+            <Button onClick={() => setUploadOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add KYC
+            </Button>
+          ) : null}
           <Button variant="outline" onClick={loadList}>Refresh</Button>
         </div>
       </div>
@@ -899,6 +1238,112 @@ const buildReviewPayload = () => {
                 </Button>
               )}
             </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={uploadOpen}
+        onOpenChange={(nextOpen) => {
+          if (!nextOpen) {
+            closeUploadDialog();
+            return;
+          }
+          setUploadOpen(true);
+        }}
+      >
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Upload className="h-5 w-5" />
+              Add KYC for User
+            </DialogTitle>
+            <DialogDescription>
+              Upload KYC documents on the user&apos;s behalf. POI front, POA front, and POA back are required.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-2 md:grid-cols-2">
+            <SearchSelectField
+              id="kyc-user-search"
+              label="User"
+              className="md:col-span-2"
+              options={uploadUserOptions}
+              searchValue={uploadUserSearch}
+              selectedValue={uploadTarget ? String(uploadTarget.id) : undefined}
+              placeholder="Search by name, email, or mobile"
+              disabled={uploadingKyc}
+              loading={uploadUsersLoading}
+              loadingMessage="Searching users..."
+              idleMessage="Start typing to search users."
+              emptyMessage="No users found."
+              helperText={
+                uploadTarget
+                  ? `Selected user: ${uploadTarget.name} (${uploadTarget.email})`
+                  : "Search and select the user you want to upload KYC for."
+              }
+              onSearchValueChange={(value) => {
+                setUploadUserSearch(value);
+                setUploadTarget(null);
+              }}
+              onOptionSelect={(user) => {
+                setUploadTarget(user);
+                setUploadUserSearch(user.email || user.name);
+              }}
+              getOptionValue={(user) => String(user.id)}
+              getOptionLabel={(user) => user.name}
+              getOptionDescription={(user) =>
+                [user.email, user.mobile ? `Mobile: ${user.mobile}` : null]
+                  .filter(Boolean)
+                  .join(" | ")
+              }
+            />
+
+            <KycUploadField
+              id="poi-front-file"
+              label="POI Front File"
+              required
+              disabled={uploadingKyc}
+              file={uploadForm.poi_front_file}
+              onChange={handleUploadFileChange("poi_front_file")}
+            />
+            <KycUploadField
+              id="poa-front-file"
+              label="POA Front File"
+              required
+              disabled={uploadingKyc}
+              file={uploadForm.poa_front_file}
+              onChange={handleUploadFileChange("poa_front_file")}
+            />
+            <KycUploadField
+              id="poa-back-file"
+              label="POA Back File"
+              required
+              disabled={uploadingKyc}
+              file={uploadForm.poa_back_file}
+              onChange={handleUploadFileChange("poa_back_file")}
+            />
+            <KycUploadField
+              id="other-file"
+              label="Other File"
+              disabled={uploadingKyc}
+              file={uploadForm.other_file}
+              onChange={handleUploadFileChange("other_file")}
+            />
+          </div>
+
+          <DialogFooter className="pt-2">
+            <Button
+              variant="outline"
+              onClick={closeUploadDialog}
+              disabled={uploadingKyc}
+            >
+              Cancel
+            </Button>
+            <Button onClick={submitKycUpload} disabled={uploadingKyc}>
+              {uploadingKyc ? <Spinner className="mr-2 h-4 w-4" size="sm" /> : <Upload className="mr-2 h-4 w-4" />}
+              Submit KYC
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
