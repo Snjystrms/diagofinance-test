@@ -47,7 +47,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       )}
       {...props}
     >
-      <SidebarHeader className="border-b border-sidebar-border px-4 py-4 group-data-[collapsible=icon]:px-2 group-data-[collapsible=icon]:py-3">
+      <SidebarHeader className="border-b border-sidebar-border px-4 py-4 group-data-[collapsible=icon]:px-3 group-data-[collapsible=icon]:py-3">
         <TeamSwitcher
           teams={crmData.teams}
           variant="enterprise"
@@ -88,7 +88,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </>
         )}
       </SidebarContent>
-      <SidebarFooter className="p-3">
+      <SidebarFooter className="p-3 group-data-[collapsible=icon]:pl-2 group-data-[collapsible=icon]:pr-4 group-data-[collapsible=icon]:py-2">
         <SidebarLogoutButton />
       </SidebarFooter>
       <SidebarRail />

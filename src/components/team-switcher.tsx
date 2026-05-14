@@ -43,20 +43,25 @@ export function TeamSwitcher({
   }
 
   return (
-    <SidebarMenu>
-      <SidebarMenuItem>
+    <SidebarMenu className="group-data-[collapsible=icon]:items-center">
+      <SidebarMenuItem className="group-data-[collapsible=icon]:flex group-data-[collapsible=icon]:justify-center">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="default"
               className={cn(
                 isEnterprise
-                  ? "h-auto min-h-0 rounded-2xl border border-sidebar-border bg-sidebar-accent/45 px-3 py-2 text-sidebar-foreground transition-all duration-200 hover:bg-sidebar-accent data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-foreground group-data-[collapsible=icon]:size-12! group-data-[collapsible=icon]:rounded-2xl group-data-[collapsible=icon]:p-0!"
+                  ? "h-auto min-h-0 rounded-2xl border border-sidebar-border bg-sidebar-accent/45 px-3 py-2 text-sidebar-foreground transition-all duration-200 hover:bg-sidebar-accent data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-foreground group-data-[collapsible=icon]:size-12! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:rounded-2xl group-data-[collapsible=icon]:px-0! group-data-[collapsible=icon]:py-0!"
                   : "data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
               )}
             >
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-sidebar-border bg-sidebar-primary/10 text-sidebar-primary">
+              <div
+                className={cn(
+                  "flex w-full items-center gap-3",
+                  isCollapsed && "justify-center gap-0"
+                )}
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-sidebar-border bg-sidebar-primary/10 text-sidebar-primary">
                   <activeTeam.logo className="size-5" />
                 </div>
                 {!isCollapsed && (

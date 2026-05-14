@@ -463,9 +463,6 @@ export default function OpenTradingAccountPage() {
             <CardContent className="pt-6">
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                  <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm text-muted-foreground">
-                    Select an account type first. Available leverage and demo funding options will then stay within the supported MT5 setup.
-                  </div>
 
                   <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr),minmax(0,0.8fr)]">
                     <div className="space-y-6">
@@ -560,9 +557,6 @@ export default function OpenTradingAccountPage() {
                                   ))}
                                 </SelectContent>
                               </Select>
-                              <p className="text-xs text-muted-foreground">
-                                Available leverage choices are based on the account type you select.
-                              </p>
                               <FormMessage />
                             </FormItem>
                           )}
@@ -591,9 +585,6 @@ export default function OpenTradingAccountPage() {
                                     ))}
                                   </SelectContent>
                                 </Select>
-                                <p className="text-xs text-muted-foreground">
-                                  This starting balance is sent only for demo MT5 account creation.
-                                </p>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -613,7 +604,7 @@ export default function OpenTradingAccountPage() {
                             <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Selected type</div>
                             <div className="mt-2 text-lg font-semibold text-foreground">{selectedAccountType.name}</div>
                           </div>
-                          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                          <div className="grid gap-3 grid-cols-3">
                             <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
                               <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Spread</div>
                               <div className="mt-2 text-sm font-semibold text-foreground">{selectedAccountType.spread_from}</div>
@@ -626,6 +617,8 @@ export default function OpenTradingAccountPage() {
                               <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Base currency</div>
                               <div className="mt-2 text-sm font-semibold text-foreground">{selectedAccountType.base_currency}</div>
                             </div>
+                          </div>
+                          <div className="grid gap-3 grid-cols-2">
                             <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
                               <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Account mode</div>
                               <div className="mt-2 text-sm font-semibold text-foreground">

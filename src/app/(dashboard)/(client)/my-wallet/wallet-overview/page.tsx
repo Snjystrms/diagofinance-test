@@ -422,14 +422,14 @@ export default function WalletOverviewPage() {
                             >
                               {transaction.wallet_type}
                             </Badge>
-                            {transaction.mt5_user_id ? (
+                            {/* {transaction.mt5_user_id ? (
                               <Badge
                                 variant="outline"
                                 className="text-xs border-border/60 bg-background"
                               >
                                 MT5 ID: {transaction.mt5_user_id}
                               </Badge>
-                            ) : null}
+                            ) : null} */}
                           </div>
                           <p className="text-sm text-muted-foreground truncate mb-1">
                             {transaction.description}
