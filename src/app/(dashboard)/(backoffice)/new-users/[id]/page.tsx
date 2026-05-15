@@ -15,7 +15,7 @@ import {
   ShieldCheck,
   UserRound,
 } from "lucide-react";
-
+import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ProtectedRoute } from "@/components/protected-route";
@@ -226,6 +226,12 @@ const withFallbackPagination = (pagination: PaginationMeta | null, page: number,
     total_pages: pagination?.total_pages ?? lastPage,
     last_page: lastPage,
   };
+};
+
+const getPaginatedSerialNumber = (index: number, pagination: PaginationMeta | null): number => {
+  const currentPage = pagination?.current_page ?? pagination?.page ?? 1;
+  const pageSize = pagination?.per_page ?? pagination?.limit ?? DEFAULT_PAGE_SIZE;
+  return (Math.max(1, currentPage) - 1) * Math.max(1, pageSize) + index + 1;
 };
 
 const extractCrudUserFromDetailPayload = (payload: unknown): CrudUserDetails | null => {
@@ -862,9 +868,9 @@ export default function NewUserDetailPage() {
                       </div>
 
                       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        <DetailItem label="Sponsor ID" value={crudUser?.sponsor_id || "-"} />
-                        <DetailItem label="Sponsor By" value={crudUser?.sponsor_by || "-"} />
-                        <DetailItem label="Referral Code" value={crudUser?.referral_code || "-"} />
+                        <DetailItem label="IB ID" value={crudUser?.sponsor_id || "-"} />
+                        {/* <DetailItem label="Sponsor By" value={crudUser?.sponsor_by || "-"} /> */}
+                        {/* <DetailItem label="Referral Code" value={crudUser?.referral_code || "-"} /> */}
                         <DetailItem label="Registered" value={formatDateTime(crudUser?.created_at)} />
                       </div>
                     </div>
@@ -872,7 +878,7 @@ export default function NewUserDetailPage() {
                     <Card className="border-border/70 bg-background/80 shadow-none">
                       <CardHeader className="pb-3">
                         <CardTitle className="text-base">Account Status</CardTitle>
-                        <CardDescription>Approval state recorded in CRM</CardDescription>
+                        {/* <CardDescription>Approval state recorded in CRM</CardDescription> */}
                       </CardHeader>
                       <CardContent className="grid gap-3 text-sm">
                         <div className="flex items-center justify-between gap-3">
@@ -981,7 +987,9 @@ export default function NewUserDetailPage() {
                             <TableBody>
                               {depositsState.rows.map((item, index) => (
                                 <TableRow key={item.id}>
-                                  <TableCell className="font-medium">{index + 1}</TableCell>
+                                  <TableCell className="font-medium">
+                                    <SerialNumberCell serialNumber={getPaginatedSerialNumber(index, walletHistoryState.pagination)} />
+                                  </TableCell>
                                   <TableCell>{formatNumericValue(item.amount)}</TableCell>
                                   <TableCell className="max-w-[200px] truncate">{item.transaction_hash || "-"}</TableCell>
                                   <TableCell className="max-w-[220px] truncate">{item.user_comment || "-"}</TableCell>
@@ -1026,7 +1034,9 @@ export default function NewUserDetailPage() {
                             <TableBody>
                               {withdrawalsState.rows.map((item, index) => (
                                 <TableRow key={item.id}>
-                                  <TableCell className="font-medium">{index + 1}</TableCell>
+                                  <TableCell className="font-medium">
+                                    <SerialNumberCell serialNumber={index + 1} />
+                                  </TableCell>
                                   <TableCell>{formatNumericValue(item.amount)}</TableCell>
                                   <TableCell className="max-w-[200px] truncate">{item.transaction_hash || "-"}</TableCell>
                                   <TableCell className="max-w-[220px] truncate">{item.user_comment || "-"}</TableCell>
@@ -1065,6 +1075,7 @@ export default function NewUserDetailPage() {
                           <Table>
                             <TableHeader>
                               <TableRow>
+                                <TableHead>Sr. No.</TableHead>
                                 <TableHead>Account ID</TableHead>
                                 <TableHead>MT5 Login</TableHead>
                                 <TableHead>Group</TableHead>
@@ -1074,8 +1085,11 @@ export default function NewUserDetailPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {mt5AccountsState.rows.map((item) => (
+                              {mt5AccountsState.rows.map((item, index) => (
                                 <TableRow key={item.id}>
+                                  <TableCell className="font-medium">
+                                    <SerialNumberCell serialNumber={index + 1} />
+                                  </TableCell>
                                   <TableCell className="font-medium">{item.account_id}</TableCell>
                                   <TableCell>{item.mt5_id || "-"}</TableCell>
                                   <TableCell className="max-w-[220px] truncate">{item.group_name || "-"}</TableCell>
@@ -1151,6 +1165,7 @@ export default function NewUserDetailPage() {
                           <Table>
                             <TableHeader>
                               <TableRow>
+                                <TableHead>Sr. No.</TableHead>
                                 <TableHead>Timestamp</TableHead>
                                 <TableHead>IP Address</TableHead>
                                 <TableHead>Browser</TableHead>
@@ -1162,6 +1177,9 @@ export default function NewUserDetailPage() {
                             <TableBody>
                               {activityState.rows.map((item, index) => (
                                 <TableRow key={`${item.ip_address ?? "activity"}-${item.created_at ?? index}`}>
+                                  <TableCell>
+                                    <SerialNumberCell serialNumber={index + 1} className="" />
+                                  </TableCell>
                                   <TableCell>{formatDateTime(item.created_at)}</TableCell>
                                   <TableCell>{item.ip_address || "-"}</TableCell>
                                   <TableCell>{[item.browser_name, item.browser_version].filter(Boolean).join(" ") || "-"}</TableCell>
@@ -1239,6 +1257,7 @@ export default function NewUserDetailPage() {
                           <Table>
                             <TableHeader>
                               <TableRow>
+                                <TableHead>Sr. No.</TableHead>
                                 <TableHead>Payment Type</TableHead>
                                 <TableHead>Amount</TableHead>
                                 <TableHead>Wallet</TableHead>
@@ -1250,8 +1269,11 @@ export default function NewUserDetailPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {walletHistoryState.rows.map((item) => (
+                              {walletHistoryState.rows.map((item, index) => (
                                 <TableRow key={item.id}>
+                                  <TableCell className="font-medium">
+                                   <SerialNumberCell serialNumber={getPaginatedSerialNumber(index, walletHistoryState.pagination)} />
+                                  </TableCell>
                                   <TableCell className="font-medium">{item.payment_type || "-"}</TableCell>
                                   <TableCell className={Number(item.amount ?? 0) < 0 ? "text-rose-600" : "text-emerald-700 dark:text-emerald-300"}>
                                     {formatSignedValue(item.amount)}

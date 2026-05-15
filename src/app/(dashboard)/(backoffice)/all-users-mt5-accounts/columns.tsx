@@ -91,11 +91,11 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
 
       return (
         <div className="flex items-center gap-2">
-          <CreditCard className="h-4 w-4 text-blue-600" />
+          <CreditCard className="h-4 w-4 text-muted-foreground" />
           <div className="min-w-0">
-            <div className="truncate font-medium">{accountId}</div>
+            {/* <div className="truncate font-medium">{accountId}</div> */}
             {mt5Login && mt5Login !== String(accountId) ? (
-              <div className="text-xs text-muted-foreground">MT5: {mt5Login}</div>
+              <div className="text-xs text-muted-foreground">{mt5Login}</div>
             ) : null}
           </div>
         </div>

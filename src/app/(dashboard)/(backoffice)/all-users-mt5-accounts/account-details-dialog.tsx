@@ -118,15 +118,15 @@ export function AccountDetailsDialog({
                 <DetailItem label="Name" value={getName(account)} />
                 <DetailItem label="Email" value={user?.email ?? account.email} />
                 <DetailItem label="Mobile" value={user?.mobile ?? account.mobile} />
-                <DetailItem label="User ID" value={account.user_id ?? user?.id} />
-                <DetailItem label="Sponsor ID" value={account.sponsor_id ?? user?.sponsor_id} />
+                {/* <DetailItem label="User ID" value={account.user_id ?? user?.id} /> */}
+                <DetailItem label="IB ID" value={account.sponsor_id ?? user?.sponsor_id} />
               </dl>
             </section>
 
             <section className="space-y-3">
               <h3 className="text-sm font-semibold">Group and Trading Settings</h3>
               <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                <DetailItem label="Group ID" value={account.group_id ?? group?.id} />
+                {/* <DetailItem label="Group ID" value={account.group_id ?? group?.id} /> */}
                 <DetailItem label="Group Name" value={group?.name} />
                 <DetailItem label="MT5 Group" value={account.mt5_group_name ?? group?.mt5_group_name} />
                 <DetailItem label="Minimum Deposit" value={account.minimum_deposit ?? group?.minimum_deposit} />
@@ -134,8 +134,8 @@ export function AccountDetailsDialog({
                 <DetailItem label="Maximum Leverage" value={account.maximum_leverage ?? accountType?.maximum_leverage} />
                 <DetailItem label="Leverage Type" value={account.leverage_type ?? accountType?.leverage_type} />
                 <DetailItem label="Stop Out Level" value={account.stop_out_level ?? accountType?.stop_out_level} />
-                <DetailItem label="Hedge Margin" value={account.hedge_margin ?? accountType?.hedge_margin} />
-                <DetailItem label="Swap Free" value={account.swap_free_option ?? accountType?.swap_free_option} />
+                {/* <DetailItem label="Hedge Margin" value={account.hedge_margin ?? accountType?.hedge_margin} /> */}
+                {/* <DetailItem label="Swap Free" value={account.swap_free_option ?? accountType?.swap_free_option} /> */}
                 <DetailItem label="Base Currencies" value={account.base_currency ?? accountType?.base_currency} />
                 <DetailItem label="Updated" value={formatDate(account.updated_at)} />
               </dl>
