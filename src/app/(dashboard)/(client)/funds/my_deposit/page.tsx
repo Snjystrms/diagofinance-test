@@ -495,14 +495,10 @@ const localColumns: ColumnDef<DepositRequestItem>[] = [
 // Define columns for Binance deposits
 const binanceColumns: ColumnDef<DepositListItem>[] = [
   {
-    id: 'id',
-    accessorKey: 'id',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="ID" />
-    ),
-    cell: ({ row }) => (
-      <div className="font-medium">{row.original.id}</div>
-    ),
+    id: "sr_no",
+    header: "Sr. No.",
+    cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+    enableSorting: false,
   },
   {
     id: 'amount',
@@ -580,7 +576,7 @@ const binanceColumns: ColumnDef<DepositListItem>[] = [
 
 export default function MyDepositPage() {
   const { token } = useAuth()
-  const [activeTab, setActiveTab] = useState<"local" | "crypto">("local")
+  const [activeTab, setActiveTab] = useState<"On-Chain" | "crypto">("On-Chain")
   const [error] = useState<unknown | null>(null)
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
   const [perPage, setPerPage] = useQueryState('perPage', parseAsInteger.withDefault(10))
@@ -588,7 +584,7 @@ export default function MyDepositPage() {
   const { data: localDepositsData, isLoading: localLoading, refetch: refetchLocalDeposits, error: localDepositsError } = useQuery({
     queryKey: ['myDeposits', 'local', token, page, perPage],
     queryFn: () => getUserDepositRequests(page, perPage, token!),
-    enabled: Boolean(token) && activeTab === 'local',
+    enabled: Boolean(token) && activeTab === 'On-Chain',
     staleTime: 30 * 1000,
     placeholderData: (prev) => prev,
   })
@@ -601,7 +597,7 @@ export default function MyDepositPage() {
     placeholderData: (prev) => prev,
   })
 
-  const loading = activeTab === 'local' ? localLoading : cryptoLoading
+  const loading = activeTab === 'On-Chain' ? localLoading : cryptoLoading
 
   const depositRequests: DepositRequestItem[] = localDepositsData?.data?.requests ?? []
   const localTotalPages = localDepositsData?.data?.pagination?.totalPages ?? 1
@@ -623,9 +619,9 @@ export default function MyDepositPage() {
       }
     }
   }
-  const totalPages = activeTab === 'local' ? localTotalPages : cryptoTotalPages
-  const total = activeTab === 'local' ? localTotal : cryptoTotal
-  const activeError = error ?? (activeTab === 'local' ? localDepositsError : cryptoDepositsError)
+  const totalPages = activeTab === 'On-Chain' ? localTotalPages : cryptoTotalPages
+  const total = activeTab === 'On-Chain' ? localTotal : cryptoTotal
+  const activeError = error ?? (activeTab === 'On-Chain' ? localDepositsError : cryptoDepositsError)
 
 
 
@@ -665,7 +661,7 @@ export default function MyDepositPage() {
             action="load"
             variant="panel"
             onRetry={() => {
-              if (activeTab === "local") {
+              if (activeTab === "On-Chain") {
                 void refetchLocalDeposits()
                 return
               }
@@ -694,13 +690,13 @@ export default function MyDepositPage() {
             </div>
           </div>
 
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "local" | "crypto")} className="space-y-6">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "On-Chain" | "crypto")} className="space-y-6">
             <TabsList>
-              <TabsTrigger value="local">Local</TabsTrigger>
+              <TabsTrigger value="On-Chain">On-Chain</TabsTrigger>
               <TabsTrigger value="crypto">Crypto currency</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="local" className="space-y-6">
+            <TabsContent value="On-Chain" className="space-y-6">
               {depositRequests.length === 0 && !loading ? (
                 <Card>
                   <CardContent className="py-10">

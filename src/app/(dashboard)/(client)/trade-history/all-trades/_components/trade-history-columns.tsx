@@ -75,7 +75,7 @@ export const tradeHistoryColumns: ColumnDef<TradeRow>[] = [
   },
   {
     id: 'volume',
-    header: 'Volume',
+    header: 'Volume/Lots',
     cell: ({ row }) => formatTradeNumber(row.original.volume, 2),
   },
   {

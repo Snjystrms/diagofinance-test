@@ -70,6 +70,7 @@ export interface UserMT5AccountDetail {
   self_wallet: number;
   status: number | string;
   account_mode: string;
+  server?: string | null;
   created_at: string;
   updated_at: string;
   mt5_group_name: string;
@@ -112,6 +113,11 @@ export interface UserMT5AccountDetail {
     swap_free_option: number;
     base_currency: string;
   };
+}
+
+export interface UserMT5AccountDetailResponseData {
+  server?: string | null;
+  mt5_account: UserMT5AccountDetail;
 }
 
 export interface UserMT5DemoDepositRequest {
@@ -236,7 +242,7 @@ export const userMT5AccountsApi = {
     }),
 
   getById: (id: string | number, token: string) =>
-    apiCall<{ mt5_account: UserMT5AccountDetail }>(`/user/mt5-account/${id}`, {
+    apiCall<UserMT5AccountDetailResponseData>(`/user/mt5-account/${id}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),

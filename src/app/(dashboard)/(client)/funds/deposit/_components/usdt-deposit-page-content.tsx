@@ -37,7 +37,8 @@ import {
   Building2,
   FileText,
   CheckCircle2,
-  Loader2
+  Loader2,
+  WalletMinimal
 } from "lucide-react";
 
 const isBrokerBankDetailActive = (detail: BrokerBankDetailItem) =>
@@ -568,6 +569,19 @@ function USDTDepositContent() {
   return (
     <div className="min-h-screen w-full bg-background px-4 py-6 lg:px-6 xl:px-8">
       <div className="mx-auto max-w-7xl space-y-8">
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 shadow-sm">
+            <Wallet className="h-5 w-5 text-primary" />
+          </div>
+          <div className="space-y-1.5">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+              Fund Deposit
+            </h1>
+            <p className="max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
+              Choose a payment method below, follow the transfer instructions, then submit your payment details for review.
+            </p>
+          </div>
+        </div>
         <div className="overflow-hidden rounded-[32px] border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 shadow-sm">
           <div className="grid gap-6 p-6 md:p-8 xl:grid-cols-[1.2fr_0.8fr]">
   {/* ── Left: stats + heading ── */}
@@ -577,12 +591,12 @@ function USDTDepositContent() {
       Deposit Center
     </div>
 
-    <div className="space-y-1.5">
-      <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-        Fund Deposit
-      </h1>
-      <p className="max-w-xl text-sm leading-6 text-muted-foreground md:text-[15px]">
-        Choose a payment method below, follow the transfer instructions, then submit your payment details for review.
+    <div className="rounded-2xl border border-border/50 bg-background/70 p-4 shadow-sm">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+        Wallet Overview
+      </p>
+      <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground md:text-[15px]">
+        Review your available balance, recent deposit activity, and deposit readiness before choosing the transfer method that fits your workflow.
       </p>
     </div>
 
@@ -1072,15 +1086,8 @@ function USDTDepositContent() {
                 <Card className="border border-border/60 bg-card shadow-sm">
                   <CardHeader className="text-center pb-6 relative z-10">
                     <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-yellow-500/10 to-orange-600/10 border border-yellow-500/20">
-                        <img 
-                          src="https://binance.com/favicon.ico" 
-                          alt="Binance" 
-                          className="h-5 w-5"
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = 'none';
-                          }}
-                        />
+                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500/10 to-indigo-600/10 border border-blue-500/20">
+                        <WalletMinimal className="h-5 w-5 text-primary" />
                       </div>
                       Binance Pay
                     </CardTitle>

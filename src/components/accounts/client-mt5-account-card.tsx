@@ -33,6 +33,7 @@ export type ClientMt5AccountCardProps = {
   balanceCurrency?: string;
   leverage?: number | string | null;
   spread?: number | string | null;
+  server?: string | null;
   depositHref?: string;
   onDeposit?: () => void;
   menuActions?: ClientMt5AccountMenuAction[];
@@ -165,6 +166,7 @@ export function ClientMt5AccountCard({
   balanceCurrency,
   leverage,
   spread,
+  server,
   depositHref,
   onDeposit,
   menuActions = [],
@@ -231,6 +233,7 @@ export function ClientMt5AccountCard({
         <div className="mb-5 space-y-3">
           <AccountValue icon={Wallet} label="Account ID" value={accountId} copyLabel="Account ID" />
           {mt5Login ? <AccountValue icon={Zap} label="MT5 Login" value={mt5Login} copyLabel="MT5 login" /> : null}
+          {server ? <AccountValue icon={Zap} label="Server" value={server} copyLabel="Server" /> : null}
         </div>
 
         <div className="space-y-3">

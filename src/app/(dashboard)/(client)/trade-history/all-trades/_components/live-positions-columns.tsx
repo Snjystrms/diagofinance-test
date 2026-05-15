@@ -63,7 +63,7 @@ export const livePositionsColumns: ColumnDef<PositionRow>[] = [
   },
   {
     id: 'volume',
-    header: 'Volume',
+    header: 'Volume/Lots',
     cell: ({ row }) => formatTradeNumber(row.original.volume, 2),
   },
   {

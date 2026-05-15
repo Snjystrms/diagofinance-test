@@ -139,6 +139,7 @@ type DashboardTradingAccount = {
   mt5_id?: string | null;
   name?: string | null;
   email?: string | null;
+  server?: string | null;
 };
 
 export function DashboardPageContent() {
@@ -609,6 +610,22 @@ export function DashboardPageContent() {
       return false;
     });
   }, [activeTab, mtAccountSummary]);
+  const { data: accountServersById = {} } = useQuery<Record<number, string | null>>({
+    queryKey: ["dashboardAccountServers", token, currentAccounts.map((account) => account.id).join(",")],
+    queryFn: async () => {
+      const serverEntries = await Promise.all(
+        currentAccounts.map(async (account) => {
+          const response = await userMT5AccountsApi.getById(account.id, token!);
+          return [account.id, response.data?.server ?? response.data?.mt5_account?.server ?? null] as const;
+        })
+      );
+
+      return Object.fromEntries(serverEntries);
+    },
+    enabled: isUser && Boolean(token) && currentAccounts.length > 0,
+    staleTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
   const selectedLivePositionsAccount =
     currentAccounts.find((account) => account.mt5_id === selectedLivePositionsLogin) ?? null;
   const createAccountMode = activeTab === "mt5-demo" ? "demo" : "live";
@@ -1850,6 +1867,7 @@ export function DashboardPageContent() {
                         balanceCurrency={account.accountType?.currency || 'USD'}
                         leverage={account.leverage}
                         spread={account.accountType?.spread_from ?? 'N/A'}
+                        server={accountServersById[account.id] ?? account.server ?? null}
                         depositHref={
                           isDemo
                             ? undefined

@@ -84,7 +84,17 @@ const loadAccountDetail = (account: UserMT5AccountListItem, token: string) => {
 
   const request = userMT5AccountsApi
     .getById(account.id, token)
-    .then((detailResponse) => detailResponse.data?.mt5_account ?? null)
+    .then((detailResponse) => {
+      const detail = detailResponse.data?.mt5_account;
+      if (!detail) {
+        return null;
+      }
+
+      return {
+        ...detail,
+        server: detailResponse.data?.server ?? detail.server ?? null,
+      };
+    })
     .catch((detailError) => {
       console.error(`Error fetching MT5 account detail for ${account.id}:`, detailError);
       return null;
@@ -292,6 +302,7 @@ export default function ManageAccountsPage() {
         balanceCurrency={detail?.base_currency ?? 'USD'}
         leverage={detail?.leverage}
         spread={detail?.spread_from ?? detail?.accountType?.spread_from ?? 'N/A'}
+        server={detail?.server}
         depositHref={
           isDemoAccount
             ? undefined

@@ -1,13 +1,13 @@
 'use client'
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { ApiErrorState } from "@/components/errors/api-error-state";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/auth-context";
-import { withdrawalApi, walletApi, type WithdrawalResponse, type WalletSummaryData, type WithdrawalItem } from "@/lib/api";
+import { withdrawalApi, walletApi, type WalletSummaryData, type WithdrawalItem } from "@/lib/api";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { CLIENT_WALLET_REFRESH_EVENT, notifyWalletRefresh } from "@/lib/client-events";
 import {
@@ -22,7 +22,7 @@ import {
   ShieldCheck,
   ExternalLink,
   RefreshCw,
-  TrendingDown
+  TrendingDown,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -34,7 +34,6 @@ import {
 } from "@/components/ui/select";
 import { formatDateTimeInIST } from "@/lib/formatters";
 
-// Supported chain options
 const CHAIN_OPTIONS = [
   { value: "TRC20", label: "TRC20 (Tron)", network: "Tron Network" },
   { value: "ERC20", label: "ERC20 (Ethereum)", network: "Ethereum Network" },
@@ -44,7 +43,7 @@ const CHAIN_OPTIONS = [
 ];
 
 function WithdrawalRequestContent() {
-  const { user, token } = useAuth();
+  const { token } = useAuth();
   const [amount, setAmount] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [chainId, setChainId] = useState("TRC20");
@@ -56,10 +55,9 @@ function WithdrawalRequestContent() {
   const [walletData, setWalletData] = useState<WalletSummaryData | null>(null);
   const [walletLoading, setWalletLoading] = useState(true);
 
-  const selectedChain = CHAIN_OPTIONS.find(chain => chain.value === chainId);
-  const minimumAmount = 10.00;
+  const selectedChain = CHAIN_OPTIONS.find((chain) => chain.value === chainId);
+  const minimumAmount = 10.0;
 
-  // Fetch wallet balance
   const fetchWalletSummary = async () => {
     if (!token) {
       setWalletLoading(false);
@@ -69,19 +67,19 @@ function WithdrawalRequestContent() {
     try {
       setWalletLoading(true);
       const response = await walletApi.getSummary(token);
-      
+
       if (response.success && response.data) {
         setWalletData(response.data);
       }
     } catch (err) {
-      console.error('Error fetching wallet summary:', err);
+      console.error("Error fetching wallet summary:", err);
     } finally {
       setWalletLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchWalletSummary();
+    void fetchWalletSummary();
   }, [token]);
 
   useEffect(() => {
@@ -95,32 +93,33 @@ function WithdrawalRequestContent() {
     };
   }, [token]);
 
-  // Calculate remaining balance
   const totalBalance = walletData?.total_balance || 0;
   const withdrawalAmount = parseFloat(amount) || 0;
   const remainingBalance = totalBalance - withdrawalAmount;
   const wallets = walletData ? Object.values(walletData.wallets) : [];
-  const mainWallet = wallets.find(w => w.is_primary) || wallets[0];
-  const currency = mainWallet?.currency || 'USDT';
+  const mainWallet = wallets.find((wallet) => wallet.is_primary) || wallets[0];
+  const currency = mainWallet?.currency || "USDT";
+  const withdrawalExposure =
+    totalBalance > 0 ? Math.min(100, Math.round((withdrawalAmount / totalBalance) * 100)) : 0;
 
-  const formatAmount = (amount: string | number) => {
-    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-    if (isNaN(numAmount)) return '0.00';
-    return numAmount.toLocaleString('en-US', {
+  const formatAmount = (value: string | number) => {
+    const numericValue = typeof value === "string" ? parseFloat(value) : value;
+    if (isNaN(numericValue)) return "0.00";
+    return numericValue.toLocaleString("en-US", {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 8
+      maximumFractionDigits: 8,
     });
   };
 
   const handleCopyAddress = async () => {
-    if (walletAddress) {
-      try {
-        await navigator.clipboard.writeText(walletAddress);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-      } catch (error) {
-        console.error("Failed to copy address:", error);
-      }
+    if (!walletAddress) return;
+
+    try {
+      await navigator.clipboard.writeText(walletAddress);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (copyError) {
+      console.error("Failed to copy address:", copyError);
     }
   };
 
@@ -133,7 +132,6 @@ function WithdrawalRequestContent() {
     setError(null);
     setSuccess(false);
 
-    // Validate amount
     if (!amount.trim()) {
       setError("Amount is required");
       return;
@@ -146,23 +144,20 @@ function WithdrawalRequestContent() {
     }
 
     if (amountNum < minimumAmount) {
-      setError(`Minimum withdrawal amount is ${minimumAmount} USDT`);
+      setError(`Minimum withdrawal amount is ${minimumAmount} ${currency}`);
       return;
     }
 
-    // Validate sufficient balance
     if (amountNum > totalBalance) {
       setError(`Insufficient balance. Available: ${formatAmount(totalBalance)} ${currency}`);
       return;
     }
 
-    // Validate wallet address
     if (!walletAddress.trim()) {
       setError("Wallet address is required");
       return;
     }
 
-    // Validate chain ID
     if (!chainId) {
       setError("Please select a network");
       return;
@@ -173,7 +168,7 @@ function WithdrawalRequestContent() {
     try {
       const response = await withdrawalApi.create(
         {
-          amount: amount,
+          amount,
           wallet_address: walletAddress.trim(),
           chain_id: chainId,
         },
@@ -187,198 +182,224 @@ function WithdrawalRequestContent() {
       setWithdrawalData(response.data || null);
       setSuccess(true);
       setIsSubmitting(false);
-      
-      // Refresh wallet balance after successful withdrawal
-      fetchWalletSummary();
+      void fetchWalletSummary();
       notifyWalletRefresh();
-      
-      // Reset form after successful submission
+
       setTimeout(() => {
         setAmount("");
         setWalletAddress("");
       }, 3000);
-
     } catch (err) {
       console.error("Error creating withdrawal request:", err);
-      setError(getFriendlyErrorMessage(err, {
-        audience: "client",
-        resource: "withdrawal request",
-        action: "create",
-      }));
+      setError(
+        getFriendlyErrorMessage(err, {
+          audience: "client",
+          resource: "withdrawal request",
+          action: "create",
+        })
+      );
       setIsSubmitting(false);
     }
   };
 
-  // Button validation - allow button to be enabled with basic checks
-  // Strict validation happens in handleSubmit
   const amountNum = parseFloat(amount);
-  const isValidAmount = amount.trim() !== "" && !isNaN(amountNum) && amountNum >= minimumAmount && amountNum > 0;
+  const isValidAmount =
+    amount.trim() !== "" && !isNaN(amountNum) && amountNum >= minimumAmount && amountNum > 0;
   const hasWalletAddress = walletAddress.trim().length > 0;
   const hasChainId = chainId !== "";
   const hasToken = !!token;
   const canSubmit = isValidAmount && hasWalletAddress && hasChainId && !isSubmitting && hasToken;
-  
-  // Debug: Uncomment to see validation state
-  // console.log('Validation:', { isValidAmount, hasWalletAddress, hasChainId, hasToken, isSubmitting, canSubmit, amount, walletAddress, chainId });
 
   return (
-    <div className="min-h-screen">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="space-y-2">
-            <h1 className="mb-1 flex items-center gap-2 text-3xl font-semibold text-foreground">
-              <ArrowUpRight className="h-6 w-6 text-primary" />
-              Withdraw USDT
+    <div className="min-h-screen w-full bg-background px-4 py-6 lg:px-6 xl:px-8">
+      <div className="mx-auto max-w-7xl space-y-8">
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-primary/20 bg-primary/10 shadow-sm">
+            <TrendingDown className="h-5 w-5 text-primary" />
+          </div>
+          <div className="space-y-1.5">
+            <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
+              Crypto Withdrawal
             </h1>
-            <p className="text-base text-muted-foreground">
-              Request a withdrawal to your external wallet address
+            <p className="max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
+              Move funds from your wallet to an external crypto address by choosing the correct
+              network, confirming the destination, and submitting the request for review.
             </p>
           </div>
         </div>
 
-        <div className="max-w-4xl mx-auto space-y-6">
-          {/* Wallet Balance Card */}
-          <Card className="border-0 shadow-xl bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/20 dark:to-indigo-950/20">
-            <CardContent className="p-6">
-              {walletLoading ? (
-                <div className="grid gap-4 md:grid-cols-3">
-                  <div className="space-y-3">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-10 w-40" />
-                    <Skeleton className="h-3 w-full" />
-                  </div>
-                  <div className="space-y-3">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-10 w-32" />
-                    <Skeleton className="h-3 w-3/4" />
-                  </div>
-                  <div className="space-y-3">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-10 w-32" />
-                    <Skeleton className="h-3 w-1/2" />
-                  </div>
+        <div className="overflow-hidden rounded-[32px] border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 shadow-sm">
+          <div className="grid gap-6 p-6 md:p-8 xl:grid-cols-[1.2fr_0.8fr]">
+            <div className="flex flex-col space-y-5">
+              <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/40 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                <ArrowUpRight className="h-3.5 w-3.5" />
+                Withdrawal Desk
+              </div>
+
+              <div className="rounded-2xl border border-border/50 bg-background/70 p-4 shadow-sm">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  Network-Aware Transfers
+                </p>
+                <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground md:text-[15px]">
+                  This request flow supports multiple blockchain networks. Match the selected
+                  network to the receiving wallet exactly to avoid rejected or delayed transfers.
+                </p>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-1">
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Available Balance
+                  </p>
+                  <p className="mt-2 text-2xl font-semibold text-foreground">
+                    {walletLoading ? "--" : formatAmount(totalBalance)}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">{currency}</p>
                 </div>
-              ) : (
-                <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                      <Wallet className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                      Available Balance
-                    </div>
-                    <div className="flex items-end gap-2">
-                      <span className="text-4xl font-bold text-foreground tracking-tight">
-                        {formatAmount(totalBalance)}
-                      </span>
-                      <span className="text-lg font-semibold text-muted-foreground">{currency}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      Keeping at least {formatAmount(minimumAmount)} {currency} ensures future withdrawals.
-                    </p>
-                  </div>
 
-                  <div className="flex-1 w-full max-w-md">
-                    <div className="flex items-center justify-between text-xs font-medium text-muted-foreground mb-2">
-                      <span>Impact of this withdrawal</span>
-                      <span>
-                        {amountNum > 0
-                          ? `${((amountNum / (totalBalance || 1)) * 100).toFixed(0)}%`
-                          : "0%"}
-                      </span>
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Selected Network
+                  </p>
+                  <p className="mt-2 text-base font-semibold text-foreground">
+                    {selectedChain?.label ?? "Choose a network"}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {selectedChain?.network ?? "No network selected"}
+                  </p>
+                </div>
+
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-5">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                    Last Request
+                  </p>
+                  <p className="mt-2 text-base font-semibold text-foreground">
+                    {withdrawalData?.amount
+                      ? `${formatAmount(withdrawalData.amount)} ${currency}`
+                      : "No recent withdrawals"}
+                  </p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">
+                    {withdrawalData?.created_at
+                      ? formatDateTimeInIST(withdrawalData.created_at)
+                      : "Your latest submitted request will appear here"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <Card className="border border-border/60 bg-card/90 shadow-none">
+              <CardContent className="space-y-5 p-6">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 text-[15px] font-semibold text-foreground">
+                    <div className="rounded-lg border border-border/60 bg-muted/40 p-1.5">
+                      <Wallet className="h-4 w-4 text-muted-foreground" />
                     </div>
-                    <div className="h-2 rounded-full bg-muted overflow-hidden">
-                      <div
-                        className={`h-full transition-all duration-300 ${
-                          remainingBalance < 0
-                            ? "bg-destructive"
-                            : remainingBalance < minimumAmount
-                              ? "bg-yellow-500"
-                              : "bg-gradient-to-r from-blue-500 to-indigo-500"
-                        }`}
-                        style={{
-                          width: `${Math.min(100, (amountNum / (totalBalance || 1)) * 100)}%`,
-                        }}
-                      />
-                    </div>
-                    {amount && !isNaN(amountNum) && amountNum > 0 && (
-                      <div className="mt-3 text-xs text-muted-foreground space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span>Remaining balance</span>
-                          <span
-                            className={`font-semibold ${
-                              remainingBalance < 0
-                                ? "text-destructive"
-                                : remainingBalance < minimumAmount
-                                  ? "text-yellow-600"
-                                  : "text-emerald-600 dark:text-emerald-400"
-                            }`}
-                          >
-                            {formatAmount(remainingBalance)} {currency}
-                          </span>
-                        </div>
-                        {remainingBalance < 0 && (
-                          <p className="text-destructive flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" />
-                            Insufficient balance for this withdrawal
-                          </p>
-                        )}
-                        {remainingBalance >= 0 && remainingBalance < minimumAmount && (
-                          <p className="text-yellow-600 flex items-center gap-1">
-                            <AlertCircle className="h-3 w-3" />
-                            Remaining balance will be below the minimum withdrawal amount
-                          </p>
-                        )}
+                    Withdrawal Readiness
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Validate balance coverage, network choice, and destination details before
+                    sending the request.
+                  </p>
+                </div>
+
+                {walletLoading ? (
+                  <div className="space-y-4">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-2 w-full rounded-full" />
+                    <Skeleton className="h-20 w-full rounded-2xl" />
+                    <Skeleton className="h-10 w-32" />
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+                        <span>Amount entered</span>
+                        <span>{withdrawalExposure}% of available balance</span>
                       </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col gap-2 min-w-[220px]">
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground">Last Request</p>
-                      {withdrawalData?.created_at ? (
-                        <>
-                          <p className="text-sm font-semibold text-foreground">
-                            {formatAmount(withdrawalData.amount || amount)} {currency}
-                          </p>
-                          <p className="text-[11px] text-muted-foreground">
-                            {formatDateTimeInIST(withdrawalData.created_at)}
-                          </p>
-                        </>
-                      ) : (
-                        <p className="text-sm text-muted-foreground">No recent withdrawals</p>
-                      )}
+                      <div className="h-2 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className={`h-full transition-all duration-300 ${
+                            remainingBalance < 0
+                              ? "bg-destructive"
+                              : remainingBalance < minimumAmount
+                                ? "bg-amber-500"
+                                : "bg-gradient-to-r from-primary to-primary/70"
+                          }`}
+                          style={{ width: `${withdrawalExposure}%` }}
+                        />
+                      </div>
                     </div>
+
+                    <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                      <p className="text-xs font-medium text-muted-foreground">
+                        Projected remaining balance
+                      </p>
+                      <p
+                        className={`mt-2 text-2xl font-semibold ${
+                          remainingBalance < 0
+                            ? "text-destructive"
+                            : remainingBalance < minimumAmount
+                              ? "text-amber-600 dark:text-amber-400"
+                              : "text-foreground"
+                        }`}
+                      >
+                        {formatAmount(Math.max(remainingBalance, 0))} {currency}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Minimum request threshold: {formatAmount(minimumAmount)} {currency}
+                      </p>
+                    </div>
+
+                    <div className="space-y-3 text-sm">
+                      <div className="flex items-center justify-between rounded-xl border border-border/50 bg-background/80 px-4 py-3">
+                        <span className="text-muted-foreground">Destination network</span>
+                        <span className="font-medium text-foreground">
+                          {selectedChain?.value ?? "Pending"}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between rounded-xl border border-border/50 bg-background/80 px-4 py-3">
+                        <span className="text-muted-foreground">Wallet address</span>
+                        <span className="max-w-[160px] truncate font-mono text-xs text-foreground">
+                          {walletAddress || "Not provided yet"}
+                        </span>
+                      </div>
+                    </div>
+
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={fetchWalletSummary}
-                      className="self-start gap-2"
+                      onClick={() => void fetchWalletSummary()}
+                      className="gap-2"
                       disabled={walletLoading}
                     >
                       <RefreshCw className={`h-4 w-4 ${walletLoading ? "animate-spin" : ""}`} />
                       Refresh balance
                     </Button>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
 
-          <Card className="border-0 shadow-xl bg-card/70 backdrop-blur-sm">
-            {/* <CardHeader className="text-center pb-6">
-              <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
-                <Wallet className="h-6 w-6 text-red-600" />
-                Withdrawal Request
-              </CardTitle>
-              <CardDescription>
-                Enter your withdrawal details below
-              </CardDescription>
-            </CardHeader> */}
-
-            <CardContent className="space-y-6">
+        <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+          <Card className="border border-border/60 bg-card/80 shadow-sm backdrop-blur-sm">
+            <CardContent className="space-y-6 p-6 md:p-8">
               {!success ? (
                 <>
-                  {/* Error Message */}
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Transfer Request
+                    </p>
+                    <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                      Submit Withdrawal Details
+                    </h2>
+                    <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
+                      Enter the amount, select the destination blockchain, and provide the exact
+                      receiving wallet address for your withdrawal request.
+                    </p>
+                  </div>
+
                   {error && (
                     <ApiErrorState
                       message={error}
@@ -389,38 +410,36 @@ function WithdrawalRequestContent() {
                     />
                   )}
 
-                  {/* Amount Input */}
                   <div className="space-y-3">
-                    <Label htmlFor="amount" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Amount (USDT) <span className="text-destructive">*</span>
+                    <Label htmlFor="amount" className="text-sm font-semibold text-foreground">
+                      Amount <span className="text-destructive">*</span>
                     </Label>
                     <div className="relative">
-                      <DollarSign className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                      <DollarSign className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                       <Input
                         id="amount"
                         type="number"
                         step="0.01"
                         min={minimumAmount}
                         value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        className="pl-10 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-red-500 dark:focus:border-red-400 rounded-lg"
+                        onChange={(event) => setAmount(event.target.value)}
+                        className="h-12 rounded-xl border-2 border-border bg-background pl-10 focus:border-primary"
                         placeholder="10.00"
                       />
                     </div>
-                    <p className="text-xs text-gray-500">
-                      Minimum withdrawal amount: {minimumAmount} USDT
+                    <p className="text-xs text-muted-foreground">
+                      Minimum withdrawal amount: {formatAmount(minimumAmount)} {currency}
                     </p>
                   </div>
 
-                  {/* Network Selection */}
                   <div className="space-y-3">
-                    <Label htmlFor="chain_id" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Network <span className="text-destructive">*</span>
+                    <Label htmlFor="chain_id" className="text-sm font-semibold text-foreground">
+                      Blockchain Network <span className="text-destructive">*</span>
                     </Label>
                     <Select value={chainId} onValueChange={setChainId}>
-                      <SelectTrigger className="w-full h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-red-500 dark:focus:border-red-400 rounded-lg">
+                      <SelectTrigger className="h-12 w-full rounded-xl border-2 border-border bg-background focus:border-primary">
                         <div className="flex items-center gap-2">
-                          <Network className="h-4 w-4 text-gray-400" />
+                          <Network className="h-4 w-4 text-muted-foreground" />
                           <SelectValue placeholder="Select network" />
                         </div>
                       </SelectTrigger>
@@ -436,24 +455,23 @@ function WithdrawalRequestContent() {
                       </SelectContent>
                     </Select>
                     {selectedChain && (
-                      <p className="text-xs text-gray-500">
-                        Selected: {selectedChain.network}
+                      <p className="text-xs text-muted-foreground">
+                        Selected network: {selectedChain.network}
                       </p>
                     )}
                   </div>
 
-                  {/* Wallet Address Input */}
                   <div className="space-y-3">
-                    <Label htmlFor="wallet_address" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                      Wallet Address <span className="text-destructive">*</span>
+                    <Label htmlFor="wallet_address" className="text-sm font-semibold text-foreground">
+                      Destination Wallet Address <span className="text-destructive">*</span>
                     </Label>
                     <div className="relative">
-                      <Wallet className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                      <Wallet className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                       <Input
                         id="wallet_address"
                         value={walletAddress}
-                        onChange={(e) => setWalletAddress(e.target.value)}
-                        className="pl-10 pr-20 h-12 border-2 border-gray-200 dark:border-gray-600 focus:border-red-500 dark:focus:border-red-400 rounded-lg font-mono text-sm"
+                        onChange={(event) => setWalletAddress(event.target.value)}
+                        className="h-12 rounded-xl border-2 border-border bg-background pl-10 pr-20 font-mono text-sm focus:border-primary"
                         placeholder="Paste your wallet address"
                       />
                       {walletAddress && (
@@ -461,109 +479,109 @@ function WithdrawalRequestContent() {
                           variant="ghost"
                           size="sm"
                           onClick={handleCopyAddress}
-                          className="absolute right-2 top-2 h-8 px-2"
+                          className="absolute right-2 top-2 h-8 px-2 text-xs"
                         >
                           <Copy className="h-4 w-4" />
                           {copied ? "Copied!" : "Copy"}
                         </Button>
                       )}
                     </div>
-                    <div className="flex items-start gap-2">
-                      <AlertCircle className="h-4 w-4 text-warning mt-0.5 flex-shrink-0" />
-                      <p className="text-xs text-gray-500">
-                        Paste the destination wallet address exactly as provided by your receiving wallet for the selected network.
+                    <div className="flex items-start gap-2 rounded-xl border border-amber-300/50 bg-amber-50/80 px-3 py-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
+                      <p>
+                        Paste the destination address exactly as shown by the receiving wallet, and
+                        make sure it supports the selected network.
                       </p>
                     </div>
                   </div>
 
-                  {/* Important Notes */}
-                  <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+                  <div className="rounded-2xl border border-amber-300/60 bg-amber-50/80 p-4 dark:border-amber-800 dark:bg-amber-950/30">
                     <div className="flex items-start gap-3">
-                      <AlertCircle className="h-5 w-5 text-warning mt-0.5 flex-shrink-0" />
-                      <div className="text-sm text-warning-foreground">
-                        <p className="font-medium mb-1">Important Notes:</p>
-                        <ul className="space-y-1 text-xs">
-                          <li>• Double-check your wallet address before submitting</li>
-                          <li>• Ensure the network matches your wallet type</li>
-                          <li>• Withdrawal requests may take 24-48 hours to process</li>
-                          <li>• Minimum withdrawal: {minimumAmount} USDT</li>
-                          <li>• Network fees may apply depending on the selected chain</li>
+                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
+                      <div className="space-y-1 text-xs text-amber-900 dark:text-amber-100">
+                        <p className="font-semibold">Before you submit:</p>
+                        <ul className="space-y-1">
+                          <li>Double-check the wallet address and network combination.</li>
+                          <li>Processing can take 24-48 hours depending on review and network conditions.</li>
+                          <li>Network fees can differ by chain and destination wallet.</li>
                         </ul>
                       </div>
                     </div>
                   </div>
 
-                  {/* Submit Button */}
                   <Button
                     onClick={handleSubmit}
                     disabled={!canSubmit}
-                    className="w-full h-12 text-lg font-semibold bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="h-12 w-full rounded-xl text-base font-semibold"
                   >
                     {isSubmitting ? (
                       <>
-                        <Clock className="h-5 w-5 mr-2 animate-spin" />
+                        <Clock className="mr-2 h-5 w-5 animate-spin" />
                         Processing...
                       </>
                     ) : (
                       <>
-                        <ShieldCheck className="h-5 w-5 mr-2" />
+                        <ShieldCheck className="mr-2 h-5 w-5" />
                         Submit Withdrawal Request
                       </>
                     )}
                   </Button>
                 </>
               ) : (
-                /* Success State */
-                <div className="text-center py-8">
-                  <div className="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                <div className="py-4">
+                  <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-900/20">
                     <CheckCircle className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-emerald-900 dark:text-emerald-100 mb-2">
+                  <h3 className="mb-2 text-xl font-semibold text-emerald-900 dark:text-emerald-100">
                     Withdrawal Request Submitted!
                   </h3>
-                  <p className="text-gray-600 dark:text-gray-400 mb-6">
+                  <p className="mb-6 text-sm leading-6 text-muted-foreground">
                     Your withdrawal request has been successfully submitted and is pending review.
                   </p>
-                  
+
                   {withdrawalData && (
-                    <div className="space-y-4 mb-6">
-                      <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-4 border border-emerald-200 dark:border-emerald-800 space-y-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Amount:</span>
+                    <div className="mb-6 space-y-4">
+                      <div className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/20">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Amount:</span>
                           <span className="font-semibold text-emerald-800 dark:text-emerald-200">
-                            {typeof withdrawalData.amount === 'number' 
-                              ? withdrawalData.amount.toLocaleString('en-US', {
+                            {typeof withdrawalData.amount === "number"
+                              ? withdrawalData.amount.toLocaleString("en-US", {
                                   minimumFractionDigits: 2,
-                                  maximumFractionDigits: 8
+                                  maximumFractionDigits: 8,
                                 })
-                              : parseFloat(withdrawalData.amount || amount).toLocaleString('en-US', {
+                              : parseFloat(withdrawalData.amount || amount).toLocaleString("en-US", {
                                   minimumFractionDigits: 2,
-                                  maximumFractionDigits: 8
-                                })} USDT
+                                  maximumFractionDigits: 8,
+                                })}{" "}
+                            {currency}
                           </span>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Network:</span>
-                          <Badge variant="outline" className="bg-emerald-100 text-emerald-800 dark:bg-emerald-800 dark:text-emerald-100">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Network:</span>
+                          <Badge
+                            variant="outline"
+                            className="bg-emerald-100 text-emerald-800 dark:bg-emerald-800 dark:text-emerald-100"
+                          >
                             {withdrawalData.chain_id || chainId}
                           </Badge>
                         </div>
-                        <div className="flex justify-between items-start">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Wallet:</span>
-                          <code className="text-xs font-mono bg-emerald-100 dark:bg-emerald-900 px-2 py-1 rounded break-all text-right max-w-[70%]">
+                        <div className="flex items-start justify-between">
+                          <span className="text-sm text-muted-foreground">Wallet:</span>
+                          <code className="max-w-[70%] break-all rounded bg-emerald-100 px-2 py-1 text-right text-xs font-mono dark:bg-emerald-900">
                             {withdrawalData.wallet_address || walletAddress}
                           </code>
                         </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm text-gray-600 dark:text-gray-400">Status:</span>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Status:</span>
                           <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {withdrawalData.status || 'Pending'}
+                            <Clock className="mr-1 h-3 w-3" />
+                            {withdrawalData.status || "Pending"}
                           </Badge>
                         </div>
                         {withdrawalData.id && (
-                          <div className="flex justify-between items-center">
-                            <span className="text-sm text-gray-600 dark:text-gray-400">Request ID:</span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Request ID:</span>
                             <span className="font-mono text-sm text-emerald-800 dark:text-emerald-200">
                               #{withdrawalData.id}
                             </span>
@@ -573,13 +591,15 @@ function WithdrawalRequestContent() {
                     </div>
                   )}
 
-                  <div className="flex gap-4 justify-center">
+                  <div className="flex flex-col gap-3 sm:flex-row">
                     <Button
                       variant="outline"
-                      onClick={() => window.location.href = '/funds/withdraw'}
-                      className="border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                      onClick={() => {
+                        window.location.href = "/funds/withdraw";
+                      }}
+                      className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-900/20"
                     >
-                      <ExternalLink className="h-4 w-4 mr-2" />
+                      <ExternalLink className="mr-2 h-4 w-4" />
                       View Withdrawal Status
                     </Button>
                     <Button
@@ -589,50 +609,86 @@ function WithdrawalRequestContent() {
                         setAmount("");
                         setWalletAddress("");
                       }}
-                      className="bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white"
                     >
                       New Withdrawal
                     </Button>
                   </div>
                 </div>
               )}
-
-              {/* How it Works */}
-              {!success && (
-                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 text-sm">
-                    How it works:
-                  </h4>
-                  <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
-                    <div className="flex items-start gap-2">
-                      <div className="w-5 h-5 bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center mt-0.5">
-                        <span className="text-red-600 dark:text-red-400 font-bold text-xs">1</span>
-                      </div>
-                      <span>Enter the withdrawal amount (minimum {minimumAmount} USDT)</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <div className="w-5 h-5 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center mt-0.5">
-                        <span className="text-orange-600 dark:text-orange-400 font-bold text-xs">2</span>
-                      </div>
-                      <span>Select your network (TRC20, ERC20, BEP20, etc.)</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <div className="w-5 h-5 bg-emerald-100 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mt-0.5">
-                        <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs">3</span>
-                      </div>
-                      <span>Enter your external wallet address</span>
-                    </div>
-                    <div className="flex items-start gap-2">
-                      <div className="w-5 h-5 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mt-0.5">
-                        <span className="text-blue-600 dark:text-blue-400 font-bold text-xs">4</span>
-                      </div>
-                      <span>Submit and wait for approval (24-48 hours)</span>
-                    </div>
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
+
+          <div className="space-y-6">
+            <Card className="border border-border/60 bg-card shadow-sm">
+              <CardContent className="space-y-5 p-6">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Transfer Flow
+                  </p>
+                  <h3 className="text-lg font-semibold text-foreground">How it works</h3>
+                </div>
+
+                <div className="space-y-3">
+                  {[
+                    `Enter the withdrawal amount with a minimum of ${formatAmount(minimumAmount)} USD.`,
+                    "Select the blockchain network that matches the receiving wallet.",
+                    "Paste the destination wallet address exactly as provided by the receiving platform.",
+                    "Submit the request and wait for internal review plus network-side processing.",
+                  ].map((step, index) => (
+                    <div
+                      key={step}
+                      className="flex items-start gap-3 rounded-xl border border-border/50 bg-muted/20 px-4 py-3"
+                    >
+                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-xs font-semibold text-primary">
+                        {index + 1}
+                      </div>
+                      <p className="text-sm leading-6 text-muted-foreground">{step}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border border-border/60 bg-card shadow-sm">
+              <CardContent className="space-y-4 p-6">
+                <div className="space-y-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Request Signals
+                  </p>
+                  <h3 className="text-lg font-semibold text-foreground">What to verify</h3>
+                </div>
+
+                <div className="space-y-3 text-sm">
+                  <div className="rounded-xl border border-border/50 bg-background/80 px-4 py-3">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Address format
+                    </p>
+                    <p className="mt-1 leading-6 text-muted-foreground">
+                      Make sure the destination address belongs to the same chain you selected in
+                      the network dropdown.
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-border/50 bg-background/80 px-4 py-3">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Processing window
+                    </p>
+                    <p className="mt-1 leading-6 text-muted-foreground">
+                      Requests can remain pending while the team verifies the destination and
+                      network before release.
+                    </p>
+                  </div>
+                  <div className="rounded-xl border border-border/50 bg-background/80 px-4 py-3">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      Fee awareness
+                    </p>
+                    <p className="mt-1 leading-6 text-muted-foreground">
+                      Different chains can have different final delivery costs and settlement times.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
@@ -640,9 +696,5 @@ function WithdrawalRequestContent() {
 }
 
 export default function WithdrawalRequestPage() {
-  return (
-    
-      <WithdrawalRequestContent />
-    
-  );
+  return <WithdrawalRequestContent />;
 }

@@ -142,24 +142,6 @@ export default function ProfileHeader() {
             </div>
             
             <div className="flex flex-wrap gap-3">
-              {/* Account ID */}
-              <div className="flex items-center gap-2 rounded-lg border border-primary/25 bg-primary/10 px-3 py-2 shadow-sm">
-                <span className="text-sm font-medium text-primary">
-                  Account ID: {user.account_id}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-5 w-5 text-primary hover:bg-primary/12 hover:text-primary"
-                  onClick={handleCopyAccountId}
-                >
-                  {copiedAccountId ? (
-                    <Check className="h-3 w-3" />
-                  ) : (
-                    <Copy className="h-3 w-3" />
-                  )}
-                </Button>
-              </div>
 
               {/* Contact Number */}
               {user.mobile && (

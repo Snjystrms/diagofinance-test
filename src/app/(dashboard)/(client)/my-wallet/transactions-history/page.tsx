@@ -346,21 +346,25 @@ export default function TransactionsHistoryPage() {
         
        {/* Filters */}
 <Card className="border-border/50">
-  <CardHeader className="pb-3">
-    <CardTitle className="flex items-center gap-2 text-lg">
+  {/* Combined Header and Content into a single container for perfect horizontal alignment */}
+  <CardContent className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    
+    {/* Left Side: Icon and Title */}
+    <div className="flex items-center gap-2">
       <div className="p-1.5 bg-primary/10 rounded-lg">
         <Filter className="h-4 w-4 text-primary" />
       </div>
-      Filters
-    </CardTitle>
-  </CardHeader>
-  <CardContent className="pt-0">
-    {/* md:justify-end pushes the filter dropdowns to the right on desktop */}
-    <div className="flex flex-col md:flex-row md:justify-end md:space-x-4 space-y-4 md:space-y-0 w-full">
+      <span className="text-base font-semibold text-card-foreground">
+        Filters
+      </span>
+    </div>
+
+    {/* Right Side: Filters Group in a single row */}
+    <div className="flex flex-col min-[450px]:flex-row gap-4 items-end sm:items-center">
       
-      {/* Replaced md:w-1/3 with md:w-48 for a cleaner, non-stretched dropdown width */}
-      <div className="space-y-2 md:w-48">
-        <Label htmlFor="transaction-type" className="text-sm font-medium">
+      {/* Transaction Type Filter */}
+      <div className="flex items-center gap-2 w-full min-[450px]:w-auto">
+        <Label htmlFor="transaction-type" className="text-sm font-medium whitespace-nowrap">
           Transaction Type
         </Label>
         <Select
@@ -370,7 +374,7 @@ export default function TransactionsHistoryPage() {
             handleFilterChange()
           }}
         >
-          <SelectTrigger id="transaction-type" className="h-9">
+          <SelectTrigger id="transaction-type" className="h-9 w-full min-[450px]:w-40">
             <SelectValue placeholder="All types" />
           </SelectTrigger>
           <SelectContent>
@@ -384,8 +388,9 @@ export default function TransactionsHistoryPage() {
         </Select>
       </div>
 
-      <div className="space-y-2 md:w-48">
-        <Label htmlFor="wallet-type" className="text-sm font-medium">
+      {/* Wallet Type Filter */}
+      <div className="flex items-center gap-2 w-full min-[450px]:w-auto">
+        <Label htmlFor="wallet-type" className="text-sm font-medium whitespace-nowrap">
           Wallet Type
         </Label>
         <Select
@@ -395,7 +400,7 @@ export default function TransactionsHistoryPage() {
             handleFilterChange()
           }}
         >
-          <SelectTrigger id="wallet-type" className="h-9">
+          <SelectTrigger id="wallet-type" className="h-9 w-full min-[450px]:w-40">
             <SelectValue placeholder="All wallets" />
           </SelectTrigger>
           <SelectContent>
@@ -406,9 +411,11 @@ export default function TransactionsHistoryPage() {
           </SelectContent>
         </Select>
       </div>
+
     </div>
   </CardContent>
 </Card>
+
 
           {/* Transactions Table */}
           <Card>
