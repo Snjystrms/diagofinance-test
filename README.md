@@ -55,7 +55,7 @@ The application integrates with the following backend APIs:
    - Sends password reset instructions
    - Redirects to reset password page
 
-6. **POST /user/reset-password**
+6. **POST /user/reset-password***
    - Resets password with token
    - Redirects to login page on success
 
