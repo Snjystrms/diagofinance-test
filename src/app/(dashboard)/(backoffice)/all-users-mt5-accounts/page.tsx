@@ -72,9 +72,18 @@ const extractAccountDetail = (data: unknown): AdminMT5Account | null => {
   if (!data || Array.isArray(data)) return null;
 
   const dataObj = data as Record<string, unknown>;
+  const topLevelServer =
+    typeof dataObj.server === "string"
+      ? dataObj.server
+      : dataObj.data && !Array.isArray(dataObj.data) && typeof (dataObj.data as Record<string, unknown>).server === "string"
+        ? ((dataObj.data as Record<string, unknown>).server as string)
+        : undefined;
 
   if (dataObj.mt5_account && !Array.isArray(dataObj.mt5_account)) {
-    return dataObj.mt5_account as AdminMT5Account;
+    return {
+      ...(dataObj.mt5_account as AdminMT5Account),
+      ...(topLevelServer ? { server: topLevelServer } : {}),
+    };
   }
 
   if (dataObj.account && !Array.isArray(dataObj.account)) {
@@ -85,7 +94,10 @@ const extractAccountDetail = (data: unknown): AdminMT5Account | null => {
     const nestedData = dataObj.data as Record<string, unknown>;
 
     if (nestedData.mt5_account && !Array.isArray(nestedData.mt5_account)) {
-      return nestedData.mt5_account as AdminMT5Account;
+      return {
+        ...(nestedData.mt5_account as AdminMT5Account),
+        ...(topLevelServer ? { server: topLevelServer } : {}),
+      };
     }
 
     if (nestedData.account && !Array.isArray(nestedData.account)) {

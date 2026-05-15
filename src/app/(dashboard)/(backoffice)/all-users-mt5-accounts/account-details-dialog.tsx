@@ -86,25 +86,29 @@ export function AccountDetailsDialog({
           </div>
         ) : (
           <div className="space-y-5">
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge variant="outline">{mode}</Badge>
-              <Badge
-                className={
-                  status === "Active"
-                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-                    : "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300"
-                }
-              >
-                {status}
-              </Badge>
-              <span className="text-sm font-medium">{getName(account)}</span>
-            </div>
+           <div className="flex flex-wrap items-center gap-2">
+    <Badge variant="outline">{mode}</Badge>
+    <span className="text-sm font-medium">{getName(account)}</span>
+    
+    {/* Added ml-auto to push this badge to the far right */}
+    <Badge
+      className={`ml-auto ${
+        status === "Active"
+          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+          : "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300"
+      }`}
+    >
+      {status}
+    </Badge>
+  </div>
+
 
             <section className="space-y-3">
               <h3 className="text-sm font-semibold">Account</h3>
               <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <DetailItem label="Account ID" value={account.account_id} />
                 <DetailItem label="MT5 Login" value={account.mt5_id} />
+                <DetailItem label="Server" value={account.server} />
                 <DetailItem label="Account Type" value={getAccountTypeName(account)} />
                 <DetailItem label="Leverage" value={account.leverage ? `1:${account.leverage}` : emptyValue} />
                 <DetailItem label="Wallet Balance" value={account.self_wallet} />

@@ -1135,6 +1135,7 @@ export interface AdminMT5Account {
   leverage?: string | number;
   self_wallet?: string | number;
   currency?: string;
+  server?: string | null;
   mt5_group_name?: string;
   minimum_deposit?: string | number;
   spread_from?: string;
