@@ -254,6 +254,25 @@ export type AdminUserCreateBody = {
 };
 
 export type AdminUserUpdateBody = Partial<AdminUserCreateBody>;
+export type PromoteToIbBody = {
+  client_id: number;
+  ib_name: string;
+};
+
+export type PromoteToIbResponseData = {
+  client_id: number;
+  client_name: string;
+  email: string;
+  ib_name: string;
+  account_id: string;
+  referral_link: string;
+};
+
+export type PromoteToIbResponse = {
+  success: boolean;
+  message: string;
+  data: PromoteToIbResponseData;
+};
 
 export type AdminUserDetailApiData =
   | PendingUser
@@ -1147,6 +1166,28 @@ export const adminUsersApi = {
     });
   },
 
+  promoteToIb: (body: PromoteToIbBody, token: string) => {
+    ensureAdminUserToken(token, "promote user to IB");
+    ensureAdminUserIdentifier(body.client_id, "promote user to IB");
+
+    const ibName = body.ib_name?.trim();
+    if (!ibName) {
+      throw new Error("IB name is required to promote user to IB");
+    }
+
+    return apiCall<PromoteToIbResponse>(`/admin/ib-management/promote-to-ib`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        client_id: body.client_id,
+        ib_name: ibName,
+      }),
+    });
+  },
+
   detailByUuid: (uuid: string, token: string) => {
     ensureAdminUserToken(token, "fetch admin user profile");
     ensureAdminUserUuid(uuid, "fetch admin user profile");
@@ -1395,6 +1436,83 @@ export const adminNewsApi = {
       method: "PATCH",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
+    }),
+};
+
+export interface CurrencyRateItem {
+  id: number | string;
+  from_currency: string;
+  to_currency: string;
+  rate: number;
+  status: boolean | number | string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface CurrencyRatePagination {
+  current_page: number;
+  total_pages: number;
+  total_currency_rates: number;
+  per_page: number;
+}
+
+export interface CurrencyRateListData {
+  currencyRates: CurrencyRateItem[];
+  pagination: CurrencyRatePagination;
+}
+
+export interface CurrencyRateCreateBody {
+  from_currency: string;
+  to_currency: string;
+  rate: number;
+  status?: boolean;
+}
+
+export interface CurrencyRateUpdateBody {
+  rate: number;
+  status: boolean;
+}
+
+export const adminCurrencyRatesApi = {
+  list: (params: { token: string; page?: number; per_page?: number }) => {
+    const { token, page = 1, per_page = 10 } = params;
+    const query = new URLSearchParams({ page: String(page), per_page: String(per_page) });
+    return apiCall<CurrencyRateListData>(`/admin/currency-rates/list?${query.toString()}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  get: (id: string | number, token: string) =>
+    apiCall<CurrencyRateItem>(`/admin/currency-rates/${id}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  create: (body: CurrencyRateCreateBody, token: string) =>
+    apiCall<CurrencyRateItem>(`/admin/currency-rates/create`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+
+  update: (id: string | number, body: CurrencyRateUpdateBody, token: string) =>
+    apiCall<CurrencyRateItem>(`/admin/currency-rates/${id}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }),
+
+  delete: (id: string | number, token: string) =>
+    apiCall<{ success: boolean; message: string }>(`/admin/currency-rates/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  toggleStatus: (id: string | number, token: string) =>
+    apiCall<CurrencyRateItem>(`/admin/currency-rates/${id}/toggle-status`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
     }),
 };
 

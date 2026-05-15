@@ -236,6 +236,7 @@ export default function NewUsersPage() {
   const [creatingUser, setCreatingUser] = useState(false);
   const [updatingUser, setUpdatingUser] = useState(false);
   const [loadingUserDetails, setLoadingUserDetails] = useState(false);
+  const [promotingUserIds, setPromotingUserIds] = useState<Set<number>>(new Set());
   const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null);
   const [userToDelete, setUserToDelete] = useState<PendingUser | null>(null);
 
@@ -412,6 +413,59 @@ export default function NewUsersPage() {
     }
   }, [token, loadUsers]);
 
+  const handlePromoteToIb = useCallback(async (user: PendingUser) => {
+    if (!token) return;
+
+    const hasSponsorId = Boolean(String(user.sponsor_id ?? "").trim());
+    if (hasSponsorId) {
+      toast.success("User is already an IB");
+      return;
+    }
+
+    const defaultIbName = user.name?.trim() || `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || "IB User";
+    const ibNameInput = window.prompt("Enter IB name", defaultIbName);
+
+    if (ibNameInput === null) {
+      return;
+    }
+
+    const ibName = ibNameInput.trim();
+    if (!ibName) {
+      toast.error("IB name is required");
+      return;
+    }
+
+    try {
+      setPromotingUserIds((prev) => {
+        const next = new Set(prev);
+        next.add(user.id);
+        return next;
+      });
+
+      const response = await adminUsersApi.promoteToIb(
+        {
+          client_id: user.id,
+          ib_name: ibName,
+        },
+        token,
+      );
+
+      toast.success((response as { message?: string })?.message || "Client has been successfully promoted to IB");
+      await loadUsers();
+    } catch (err) {
+      console.error("Failed to promote user to IB:", err);
+      toast.error(
+        getAdminFriendlyErrorMessage(err, { resource: "IB promotion", action: "create" })
+      );
+    } finally {
+      setPromotingUserIds((prev) => {
+        const next = new Set(prev);
+        next.delete(user.id);
+        return next;
+      });
+    }
+  }, [token, loadUsers]);
+
   const totalUsers = paginationMeta?.total ?? users.length;
   const activeUsersCount = userSummaryCounts.activeCount ?? users.filter((user) => user.status === "1").length;
   const inactiveUsersCount = userSummaryCounts.inactiveCount ?? users.filter((user) => user.status !== "1").length;
@@ -423,7 +477,10 @@ export default function NewUsersPage() {
     paginationMeta?.last_page ??
     (totalUsers && perPage ? Math.ceil(totalUsers / perPage) : 1);
 
-  const columns = useMemo(() => getColumnsWithActions(handleEdit, handleDelete, handleToggleStatus), [handleEdit, handleDelete, handleToggleStatus]);
+  const columns = useMemo(
+    () => getColumnsWithActions(handleEdit, handleDelete, handleToggleStatus, handlePromoteToIb, promotingUserIds),
+    [handleEdit, handleDelete, handleToggleStatus, handlePromoteToIb, promotingUserIds],
+  );
 
   if (loadError && users.length === 0) {
     return (

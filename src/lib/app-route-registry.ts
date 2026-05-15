@@ -324,6 +324,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
       "Deposit Bank Details",
       "Setting Management",
       "PSP Setting",
+      "Currency Management",
     ],
   },
 ];
@@ -765,6 +766,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "settings",
     navLabel: "PSP Setting",
     managerCategories: ["Settings", "PSP Setting", "Setting Management"],
+  },
+    {
+    path: "/currency-management",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "settings",
+    navLabel: "Currency Management",
+    managerCategories: ["Settings", "Currency Management", "Setting Management"],
   },
   {
     path: "/bank-details",

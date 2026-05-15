@@ -120,6 +120,8 @@ export const getColumnsWithActions = (
   onEdit: (user: PendingUser) => void,
   onDelete: (user: PendingUser) => void,
   onToggleStatus: (user: PendingUser, newStatus: number) => Promise<void>,
+  onPromoteToIb: (user: PendingUser) => Promise<void>,
+  promotingUserIds: Set<number>,
 ): ColumnDef<PendingUser>[] => [
   {
     id: "sr_no",
@@ -208,6 +210,56 @@ export const getColumnsWithActions = (
             ) : null}
           </div>
         </div>
+      );
+    },
+  },
+  {
+    id: "ib_status",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="IB Status" />,
+    cell: ({ row }) => {
+      const user = row.original;
+      const isIb = Boolean(String(user.sponsor_id ?? "").trim());
+      const isPromoting = promotingUserIds.has(user.id);
+
+      return (
+        <div className="flex flex-col items-start gap-3">
+  {isIb && (
+    <Badge 
+      variant="default" 
+      className="bg-primary/10 text-primary hover:bg-primary/10 border-primary/20 px-2.5 py-0.5 text-xs font-medium transition-colors"
+    >
+      IB User
+    </Badge>
+  )}
+  
+  {!isIb && (
+    <div className="w-full sm:w-auto">
+      <Button
+        type="button"
+        size="sm"
+        onClick={() => void onPromoteToIb(user)}
+        disabled={isPromoting}
+        className="relative font-medium shadow-sm transition-all duration-200 hover:shadow-md active:scale-[0.98] disabled:pointer-events-none disabled:opacity-70 px-4 py-2 text-xs"
+      >
+        {isPromoting ? (
+          <div className="flex items-center gap-2">
+            <svg 
+              className="h-3 w-3 animate-spin text-current" 
+              fill="none" 
+              viewBox="0 0 24 24"
+            >
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+            </svg>
+            <span>Promoting...</span>
+          </div>
+        ) : (
+          "Promote to IB"
+        )}
+      </Button>
+    </div>
+  )}
+</div>
       );
     },
   },
