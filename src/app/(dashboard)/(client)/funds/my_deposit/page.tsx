@@ -17,6 +17,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header'
+import { SerialNumberCell } from '@/components/data-table/serial-number-cell'
 import { 
   Clock, 
   CheckCircle, 
@@ -404,7 +405,7 @@ const localColumns: ColumnDef<DepositRequestItem>[] = [
  {
     id: "sr_no",
     header: "Sr. No.",
-    cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+    cell: ({ row, table }) => <SerialNumberCell row={row} table={table} />,
     enableSorting: false,
   },
   {
@@ -497,7 +498,7 @@ const binanceColumns: ColumnDef<DepositListItem>[] = [
   {
     id: "sr_no",
     header: "Sr. No.",
-    cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+    cell: ({ row, table }) => <SerialNumberCell row={row} table={table} />,
     enableSorting: false,
   },
   {
@@ -789,4 +790,6 @@ export default function MyDepositPage() {
     
   )
 }
+
+
 

@@ -4,6 +4,7 @@
 import type { Column, ColumnDef } from "@tanstack/react-table";
 import type { ManagerRow } from "./page";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
+import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { CalendarDays, Mail, Phone, User2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { formatDateTimeInIST } from "@/lib/formatters";
@@ -17,7 +18,7 @@ export const getColumns = (opts: {
   {
     id: "sr_no",
     header: "Sr. No.",
-    cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+    cell: ({ row, table }) => <SerialNumberCell row={row} table={table} />,
     enableSorting: false,
   },
   {
@@ -95,3 +96,6 @@ export const getColumns = (opts: {
     ),
   },
 ];
+
+
+

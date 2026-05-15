@@ -3,6 +3,7 @@
 import type { ColumnDef } from '@tanstack/react-table';
 
 import { Badge } from '@/components/ui/badge';
+import { SerialNumberCell } from '@/components/data-table/serial-number-cell';
 import { cn } from '@/lib/utils';
 
 import { formatTradeNumber, type PositionRow } from '../_lib/trade-history';
@@ -24,7 +25,7 @@ export const livePositionsColumns: ColumnDef<PositionRow>[] = [
   {
     id: "sr_no",
     header: "Sr. No.",
-    cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+    cell: ({ row, table }) => <SerialNumberCell row={row} table={table} />,
     enableSorting: false,
   },
   {
@@ -92,3 +93,5 @@ export const livePositionsColumns: ColumnDef<PositionRow>[] = [
     cell: ({ row }) => row.original.comment || '-',
   },
 ];
+
+

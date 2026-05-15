@@ -15,6 +15,7 @@ import { DeleteDialog } from "@/components/dialogs/delete-dialog";
 import { Newspaper, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
+import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { Switch } from "@/components/ui/switch";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { adminNewsApi, type NewsItem } from "@/lib/api-auth-admin";
@@ -209,7 +210,7 @@ export default function NewsManagementPage() {
       {
         id: "sr_no",
         header: "Sr. No.",
-        cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+        cell: ({ row, table }) => <SerialNumberCell row={row} table={table} />,
         enableSorting: false,
       },
       {
@@ -442,3 +443,6 @@ export default function NewsManagementPage() {
     </ProtectedRoute>
   );
 }
+
+
+

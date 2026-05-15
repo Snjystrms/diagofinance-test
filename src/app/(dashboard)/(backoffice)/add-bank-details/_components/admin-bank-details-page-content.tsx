@@ -3,6 +3,7 @@
 import { useCallback, useDeferredValue, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
+import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
 import { Building2, Eye, Landmark, Pencil, Plus, RefreshCw, Search, Trash2, Users } from "lucide-react";
 
@@ -225,7 +226,7 @@ export function AdminBankDetailsPageContent() {
         {
     id: "sr_no",
     header: "Sr. No.",
-    cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+    cell: ({ row, table }) => <SerialNumberCell row={row} table={table} />,
     enableSorting: false,
   },
       {
@@ -513,3 +514,6 @@ export function AdminBankDetailsPageContent() {
     </ProtectedRoute>
   );
 }
+
+
+

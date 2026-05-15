@@ -39,6 +39,7 @@ import { ticketApi, type TicketItem, type CreateTicketRequest } from "@/lib/api"
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
+import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 
 const statusFilters = [
   { label: "All statuses", value: "all" },
@@ -354,7 +355,7 @@ export default function RaiseTicketPage() {
         {
         id: "sr_no",
         header: "Sr. No.",
-        cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+        cell: ({ row, table }) => <SerialNumberCell row={row} table={table} />,
         enableSorting: false,
       },
       {

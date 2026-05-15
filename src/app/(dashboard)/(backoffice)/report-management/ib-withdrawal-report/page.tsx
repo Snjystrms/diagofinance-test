@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
 import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
 import { format } from "date-fns";
@@ -303,8 +304,8 @@ export default function IbWithdrawalReportPage() {
         id: "id",
         header: "Sr. No.",
         accessorKey: "id",
-        cell: ({ row }) => (
-          <span className="font-mono text-sm">{row.index + 1}</span>
+        cell: ({ row, table }) => (
+          <SerialNumberCell row={row} table={table} className="font-mono text-sm" />
         ),
       },
       // {
@@ -524,6 +525,8 @@ export default function IbWithdrawalReportPage() {
     </ReportPageWrapper>
   );
 }
+
+
 
 
 

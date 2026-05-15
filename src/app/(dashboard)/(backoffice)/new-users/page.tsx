@@ -161,6 +161,39 @@ const extractPagination = (
   return payload.meta?.pagination ?? response?.pagination ?? response?.data?.pagination;
 };
 
+type UserSummaryCounts = {
+  newToday: number | null;
+  activeCount: number | null;
+  inactiveCount: number | null;
+};
+
+const toNullableNumber = (value: unknown): number | null => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+};
+
+const extractUserSummaryCounts = (payload?: AdminUsersListApiData | null): UserSummaryCounts => {
+  if (!payload) {
+    return { newToday: null, activeCount: null, inactiveCount: null };
+  }
+
+  const root = payload as unknown as Record<string, unknown>;
+  const nested =
+    root.data && typeof root.data === "object" && !Array.isArray(root.data)
+      ? (root.data as Record<string, unknown>)
+      : null;
+
+  return {
+    newToday: toNullableNumber(root.new_today ?? nested?.new_today),
+    activeCount: toNullableNumber(root.active_count ?? nested?.active_count),
+    inactiveCount: toNullableNumber(root.inactive_count ?? nested?.inactive_count),
+  };
+};
+
 const extractSingleUser = (payload?: AdminUserDetailApiData | null): PendingUser | null => {
   if (!payload) return null;
   if ("id" in payload) return transformUser(payload as unknown as Record<string, unknown>);
@@ -186,6 +219,11 @@ export default function NewUsersPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
   const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null);
+  const [userSummaryCounts, setUserSummaryCounts] = useState<UserSummaryCounts>({
+    newToday: null,
+    activeCount: null,
+    inactiveCount: null,
+  });
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
@@ -231,6 +269,7 @@ export default function NewUsersPage() {
     if (!token) {
       setUsers([]);
       setPaginationMeta(null);
+      setUserSummaryCounts({ newToday: null, activeCount: null, inactiveCount: null });
       setLoading(false);
       return;
     }
@@ -248,6 +287,7 @@ export default function NewUsersPage() {
 
       const payload = response?.data ?? null;
       setUsers(extractUsers(payload));
+      setUserSummaryCounts(extractUserSummaryCounts(payload));
       setPaginationMeta(extractPagination(payload, response as { pagination?: PaginationMeta; data?: { pagination?: PaginationMeta } }) ?? null);
     } catch (err) {
       console.error("Failed to load users:", err);
@@ -257,6 +297,7 @@ export default function NewUsersPage() {
       );
       setUsers([]);
       setPaginationMeta(null);
+      setUserSummaryCounts({ newToday: null, activeCount: null, inactiveCount: null });
     } finally {
       setLoading(false);
     }
@@ -372,6 +413,11 @@ export default function NewUsersPage() {
   }, [token, loadUsers]);
 
   const totalUsers = paginationMeta?.total ?? users.length;
+  const activeUsersCount = userSummaryCounts.activeCount ?? users.filter((user) => user.status === "1").length;
+  const inactiveUsersCount = userSummaryCounts.inactiveCount ?? users.filter((user) => user.status !== "1").length;
+  const newTodayCount =
+    userSummaryCounts.newToday ??
+    users.filter((user) => user.created_at && new Date(user.created_at).toDateString() === new Date().toDateString()).length;
   const totalPages =
     paginationMeta?.total_pages ??
     paginationMeta?.last_page ??
@@ -438,14 +484,14 @@ export default function NewUsersPage() {
                   <CardTitle className="text-sm font-medium">Active Users</CardTitle>
                   <CheckCircle className="h-4 w-4 text-green-600" />
                 </CardHeader>
-                <CardContent><div className="text-2xl font-bold">{users.filter((user) => user.status === "1").length}</div></CardContent>
+                <CardContent><div className="text-2xl font-bold">{activeUsersCount}</div></CardContent>
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Inactive Users</CardTitle>
                   <Mail className="h-4 w-4 text-blue-600" />
                 </CardHeader>
-                <CardContent><div className="text-2xl font-bold">{users.filter((user) => user.status !== "1").length}</div></CardContent>
+                <CardContent><div className="text-2xl font-bold">{inactiveUsersCount}</div></CardContent>
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -453,9 +499,7 @@ export default function NewUsersPage() {
                   <Calendar className="h-4 w-4 text-orange-600" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">
-                    {users.filter((user) => user.created_at && new Date(user.created_at).toDateString() === new Date().toDateString()).length}
-                  </div>
+                  <div className="text-2xl font-bold">{newTodayCount}</div>
                 </CardContent>
               </Card>
             </div>

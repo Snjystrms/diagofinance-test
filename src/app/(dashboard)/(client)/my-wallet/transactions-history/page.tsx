@@ -24,6 +24,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AppDataTable } from '@/components/app-data-table'
+import { SerialNumberCell } from '@/components/data-table/serial-number-cell'
 import { type ColumnDef } from '@tanstack/react-table'
 import { parseAsInteger } from 'nuqs'
 import { useQueryState } from 'nuqs'
@@ -146,7 +147,7 @@ export default function TransactionsHistoryPage() {
       {
         id: "sr_no",
         header: "Sr. No.",
-        cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+        cell: ({ row, table }) => <SerialNumberCell row={row} table={table} />,
         enableSorting: false,
       },
       {
@@ -488,6 +489,8 @@ export default function TransactionsHistoryPage() {
     
   )
 }
+
+
 
 
 

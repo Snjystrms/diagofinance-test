@@ -3,6 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
+import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
 import {
   Building2,
@@ -256,8 +257,8 @@ export function AdminBrokerBankDetailsPageContent() {
         id: "id",
         header: "Sr. No.",
         accessorKey: "id",
-        cell: ({ row }) => (
-          <span className="font-medium">{row.index + 1}</span>
+        cell: ({ row, table }) => (
+          <SerialNumberCell row={row} table={table} />
         ),
       },
       {
@@ -558,3 +559,5 @@ export function AdminBrokerBankDetailsPageContent() {
     </ProtectedRoute>
   );
 }
+
+

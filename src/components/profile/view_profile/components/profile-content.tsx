@@ -1,6 +1,6 @@
 "use client";
 
-import { Scale, Settings, FileText, Loader2, ChevronLeft, ChevronRight, CalendarIcon } from "lucide-react";
+import { Scale, Settings, FileText, Loader2, ChevronLeft, ChevronRight, CalendarIcon, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { GetCity, GetCountries, GetState } from "react-country-state-city";
@@ -129,6 +129,7 @@ export default function ProfileContent() {
   const [is2FAEnabled, setIs2FAEnabled] = useState(false);
   const [isLoading2FAStatus, setIsLoading2FAStatus] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
+  const [isPersonalEditing, setIsPersonalEditing] = useState(false);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [dobDate, setDobDate] = useState<Date | undefined>(undefined);
   const [dobMonth, setDobMonth] = useState<Date | undefined>(undefined);
@@ -943,6 +944,9 @@ export default function ProfileContent() {
         setValidationErrors({});
         setProfileData(normalizedProfile);
         setIs2FAEnabled(Boolean(normalizedProfile.user.google_2FA_status));
+        if (section === "personal") {
+          setIsPersonalEditing(false);
+        }
         toast.success(
           response.message ||
             (section === "legal"
@@ -1255,185 +1259,189 @@ export default function ProfileContent() {
 
         {/* Personal Information */}
         <TabsContent value="personal" className="space-y-6">
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            {/* Basic Personal Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Basic Personal Information</CardTitle>
-                <CardDescription>Update your name, contact details, and identification information.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="first_name">First Name</Label>
-                      <Input
-                        id="first_name"
-                        value={profileData.user.first_name || ""}
-                        onChange={(e) => handleUserInfoChange("first_name", sanitizePersonText(e.target.value))}
-                        className={getFieldError("first_name") ? "w-full border-destructive" : "w-full"}
-                        placeholder="Enter first name"
-                      />
-                      {getFieldError("first_name") ? (
-                        <p className="text-sm text-destructive">{getFieldError("first_name")}</p>
-                      ) : null}
+          <fieldset
+            disabled={!isPersonalEditing || saving}
+            className={`space-y-6 ${!isPersonalEditing ? "opacity-80" : ""}`}
+          >
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+              {/* Basic Personal Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Basic Personal Information</CardTitle>
+                  <CardDescription>Update your name, contact details, and identification information.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-4">
+                    <div className="grid gap-4 md:grid-cols-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="first_name">First Name</Label>
+                        <Input
+                          id="first_name"
+                          value={profileData.user.first_name || ""}
+                          onChange={(e) => handleUserInfoChange("first_name", sanitizePersonText(e.target.value))}
+                          className={getFieldError("first_name") ? "w-full border-destructive" : "w-full"}
+                          placeholder="Enter first name"
+                        />
+                        {getFieldError("first_name") ? (
+                          <p className="text-sm text-destructive">{getFieldError("first_name")}</p>
+                        ) : null}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="last_name">Last Name</Label>
+                        <Input
+                          id="last_name"
+                          value={profileData.user.last_name || ""}
+                          onChange={(e) => handleUserInfoChange("last_name", sanitizePersonText(e.target.value))}
+                          className={getFieldError("last_name") ? "w-full border-destructive" : "w-full"}
+                          placeholder="Enter last name"
+                        />
+                        {getFieldError("last_name") ? (
+                          <p className="text-sm text-destructive">{getFieldError("last_name")}</p>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-[140px_minmax(0,1fr)]">
+                      <div className="space-y-2">
+                        <Label htmlFor="country_code">Country Code</Label>
+                        <Input
+                          id="country_code"
+                          value={normalizeCountryCodeForInput(profileData.user.country_code)}
+                          onChange={(e) => handleUserInfoChange("country_code", sanitizeCountryCodeInput(e.target.value))}
+                          className={getFieldError("country_code") ? "w-full border-destructive" : "w-full"}
+                          placeholder="+91"
+                          inputMode="numeric"
+                        />
+                        {getFieldError("country_code") ? (
+                          <p className="text-sm text-destructive">{getFieldError("country_code")}</p>
+                        ) : null}
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="mobile">Mobile Number</Label>
+                        <Input
+                          id="mobile"
+                          value={profileData.user.mobile || ""}
+                          onChange={(e) => handleUserInfoChange("mobile", sanitizeDigits(e.target.value, 15))}
+                          className={getFieldError("mobile") ? "w-full border-destructive" : "w-full"}
+                          placeholder="Enter mobile number"
+                          inputMode="numeric"
+                          maxLength={15}
+                        />
+                        {getFieldError("mobile") ? (
+                          <p className="text-sm text-destructive">{getFieldError("mobile")}</p>
+                        ) : null}
+                      </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="last_name">Last Name</Label>
-                      <Input
-                        id="last_name"
-                        value={profileData.user.last_name || ""}
-                        onChange={(e) => handleUserInfoChange("last_name", sanitizePersonText(e.target.value))}
-                        className={getFieldError("last_name") ? "w-full border-destructive" : "w-full"}
-                        placeholder="Enter last name"
-                      />
-                      {getFieldError("last_name") ? (
-                        <p className="text-sm text-destructive">{getFieldError("last_name")}</p>
-                      ) : null}
-                    </div>
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-[140px_minmax(0,1fr)]">
-                    <div className="space-y-2">
-                      <Label htmlFor="country_code">Country Code</Label>
-                      <Input
-                        id="country_code"
-                        value={normalizeCountryCodeForInput(profileData.user.country_code)}
-                        onChange={(e) => handleUserInfoChange("country_code", sanitizeCountryCodeInput(e.target.value))}
-                        className={getFieldError("country_code") ? "w-full border-destructive" : "w-full"}
-                        placeholder="+91"
-                        inputMode="numeric"
-                      />
-                      {getFieldError("country_code") ? (
-                        <p className="text-sm text-destructive">{getFieldError("country_code")}</p>
-                      ) : null}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="mobile">Mobile Number</Label>
-                      <Input
-                        id="mobile"
-                        value={profileData.user.mobile || ""}
-                        onChange={(e) => handleUserInfoChange("mobile", sanitizeDigits(e.target.value, 15))}
-                        className={getFieldError("mobile") ? "w-full border-destructive" : "w-full"}
-                        placeholder="Enter mobile number"
-                        inputMode="numeric"
-                        maxLength={15}
-                      />
-                      {getFieldError("mobile") ? (
-                        <p className="text-sm text-destructive">{getFieldError("mobile")}</p>
-                      ) : null}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="dob" className="px-1">Date of Birth</Label>
-                    <div className="relative flex gap-2">
-                      <Input
-                        id="dob"
-                        value={dobValue}
-                        placeholder="June 01, 2025"
-                        className={getFieldError("dob") ? "bg-background pr-10 border-destructive" : "bg-background pr-10"}
-                        onChange={(e) => {
-                          const inputValue = e.target.value;
-                          setDobValue(inputValue);
-                          const date = new Date(inputValue);
-                          if (isValidDate(date)) {
-                            setDobDate(date);
-                            setDobMonth(date);
-                            handlePersonalInfoChange("dob", date.toISOString().split("T")[0]);
-                          }
-                        }}
-                        onKeyDown={(e) => {
-                          if (e.key === "ArrowDown") {
-                            e.preventDefault();
-                            setCalendarOpen(true);
-                          }
-                        }}
-                      />
-                      <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
-                        <PopoverTrigger asChild>
-                          <Button
-                            id="date-picker"
-                            variant="ghost"
-                            className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
-                        >
-                          <CalendarIcon className="size-3.5" />
-                          <span className="sr-only">Select date</span>
-                        </Button>
-                        </PopoverTrigger>
-                        <PopoverContent
-                          className="w-auto overflow-hidden p-0"
-                          align="end"
-                          alignOffset={-8}
-                          sideOffset={10}
-                        >
-                          <Calendar
-                            mode="single"
-                            selected={dobDate}
-                            captionLayout="dropdown"
-                            month={dobMonth}
-                            onMonthChange={setDobMonth}
-                            onSelect={(date) => {
+                      <Label htmlFor="dob" className="px-1">Date of Birth</Label>
+                      <div className="relative flex gap-2">
+                        <Input
+                          id="dob"
+                          value={dobValue}
+                          placeholder="June 01, 2025"
+                          className={getFieldError("dob") ? "bg-background pr-10 border-destructive" : "bg-background pr-10"}
+                          onChange={(e) => {
+                            const inputValue = e.target.value;
+                            setDobValue(inputValue);
+                            const date = new Date(inputValue);
+                            if (isValidDate(date)) {
                               setDobDate(date);
-                              if (date) {
-                                setDobValue(formatDateDisplay(date));
-                                handlePersonalInfoChange("dob", date.toISOString().split("T")[0]);
-                              } else {
-                                setDobValue("");
-                                handlePersonalInfoChange("dob", null);
-                              }
-                              setCalendarOpen(false);
-                            }}
-                            disabled={(date) =>
-                              date > new Date() || date < new Date("1900-01-01")
+                              setDobMonth(date);
+                              handlePersonalInfoChange("dob", date.toISOString().split("T")[0]);
                             }
-                          />
-                        </PopoverContent>
-                      </Popover>
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowDown") {
+                              e.preventDefault();
+                              setCalendarOpen(true);
+                            }
+                          }}
+                        />
+                        <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                          <PopoverTrigger asChild>
+                            <Button
+                              id="date-picker"
+                              variant="ghost"
+                              className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
+                            >
+                              <CalendarIcon className="size-3.5" />
+                              <span className="sr-only">Select date</span>
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            className="w-auto overflow-hidden p-0"
+                            align="end"
+                            alignOffset={-8}
+                            sideOffset={10}
+                          >
+                            <Calendar
+                              mode="single"
+                              selected={dobDate}
+                              captionLayout="dropdown"
+                              month={dobMonth}
+                              onMonthChange={setDobMonth}
+                              onSelect={(date) => {
+                                setDobDate(date);
+                                if (date) {
+                                  setDobValue(formatDateDisplay(date));
+                                  handlePersonalInfoChange("dob", date.toISOString().split("T")[0]);
+                                } else {
+                                  setDobValue("");
+                                  handlePersonalInfoChange("dob", null);
+                                }
+                                setCalendarOpen(false);
+                              }}
+                              disabled={(date) =>
+                                date > new Date() || date < new Date("1900-01-01")
+                              }
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      {getFieldError("dob") ? (
+                        <p className="text-sm text-destructive">{getFieldError("dob")}</p>
+                      ) : null}
                     </div>
-                    {getFieldError("dob") ? (
-                      <p className="text-sm text-destructive">{getFieldError("dob")}</p>
-                    ) : null}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="nationality">Nationality</Label>
-                    <Input
-                      id="nationality"
-                      value={profileData.personal_information.nationality || ""}
-                      onChange={(e) => handlePersonalInfoChange("nationality", sanitizeUppercase(e.target.value, 3) || null)}
-                      className={getFieldError("nationality") ? "w-full border-destructive" : "w-full"}
-                      placeholder="e.g. IN"
-                    />
-                    {getFieldError("nationality") ? (
-                      <p className="text-sm text-destructive">{getFieldError("nationality")}</p>
-                    ) : null}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="passport_id_number">Passport ID Number</Label>
-                    <Input
-                      id="passport_id_number"
-                      value={profileData.personal_information.passport_id_number || ""}
-                      onChange={(e) => handlePersonalInfoChange("passport_id_number", sanitizeIdentifierInput(e.target.value, 20) || null)}
-                      className={getFieldError("passport_id_number") ? "w-full border-destructive" : "w-full"}
-                      placeholder="Enter passport ID number"
-                    />
-                    {getFieldError("passport_id_number") ? (
-                      <p className="text-sm text-destructive">{getFieldError("passport_id_number")}</p>
-                    ) : null}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="tax_number">Tax Number</Label>
-                    <Input
-                      id="tax_number"
-                      value={profileData.personal_information.tax_number || ""}
-                      onChange={(e) => handlePersonalInfoChange("tax_number", sanitizeIdentifierInput(e.target.value, 20) || null)}
-                      className={getFieldError("tax_number") ? "w-full border-destructive" : "w-full"}
-                      placeholder="Enter tax number"
-                    />
-                    {getFieldError("tax_number") ? (
-                      <p className="text-sm text-destructive">{getFieldError("tax_number")}</p>
-                    ) : null}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="other_id_number">Other ID Number</Label>
+                    <div className="space-y-2">
+                      <Label htmlFor="nationality">Nationality</Label>
+                      <Input
+                        id="nationality"
+                        value={profileData.personal_information.nationality || ""}
+                        onChange={(e) => handlePersonalInfoChange("nationality", sanitizeUppercase(e.target.value, 3) || null)}
+                        className={getFieldError("nationality") ? "w-full border-destructive" : "w-full"}
+                        placeholder="e.g. IN"
+                      />
+                      {getFieldError("nationality") ? (
+                        <p className="text-sm text-destructive">{getFieldError("nationality")}</p>
+                      ) : null}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="passport_id_number">Passport ID Number</Label>
+                      <Input
+                        id="passport_id_number"
+                        value={profileData.personal_information.passport_id_number || ""}
+                        onChange={(e) => handlePersonalInfoChange("passport_id_number", sanitizeIdentifierInput(e.target.value, 20) || null)}
+                        className={getFieldError("passport_id_number") ? "w-full border-destructive" : "w-full"}
+                        placeholder="Enter passport ID number"
+                      />
+                      {getFieldError("passport_id_number") ? (
+                        <p className="text-sm text-destructive">{getFieldError("passport_id_number")}</p>
+                      ) : null}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="tax_number">Tax Number</Label>
+                      <Input
+                        id="tax_number"
+                        value={profileData.personal_information.tax_number || ""}
+                        onChange={(e) => handlePersonalInfoChange("tax_number", sanitizeIdentifierInput(e.target.value, 20) || null)}
+                        className={getFieldError("tax_number") ? "w-full border-destructive" : "w-full"}
+                        placeholder="Enter tax number"
+                      />
+                      {getFieldError("tax_number") ? (
+                        <p className="text-sm text-destructive">{getFieldError("tax_number")}</p>
+                      ) : null}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="other_id_number">Other ID Number</Label>
                       <Input
                         id="other_id_number"
                         value={profileData.personal_information.other_id_number || ""}
@@ -1441,224 +1449,237 @@ export default function ProfileContent() {
                         className="w-full"
                         placeholder="Enter other ID number"
                       />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="pin_code">PIN Code</Label>
+                      <Input
+                        id="pin_code"
+                        value={profileData.personal_information.pin_code || ""}
+                        onChange={(e) => handlePersonalInfoChange("pin_code", sanitizeIdentifierInput(e.target.value, 12) || null)}
+                        className={getFieldError("pin_code") ? "w-full border-destructive" : "w-full"}
+                        placeholder="Enter PIN code"
+                      />
+                      {getFieldError("pin_code") ? (
+                        <p className="text-sm text-destructive">{getFieldError("pin_code")}</p>
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="pin_code">PIN Code</Label>
-                    <Input
-                      id="pin_code"
-                      value={profileData.personal_information.pin_code || ""}
-                      onChange={(e) => handlePersonalInfoChange("pin_code", sanitizeIdentifierInput(e.target.value, 12) || null)}
-                      className={getFieldError("pin_code") ? "w-full border-destructive" : "w-full"}
-                      placeholder="Enter PIN code"
-                    />
-                    {getFieldError("pin_code") ? (
-                      <p className="text-sm text-destructive">{getFieldError("pin_code")}</p>
-                    ) : null}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
 
-            {/* Location and Status Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Location and Status Information</CardTitle>
-                <CardDescription>Update your employment status, client type, and location details.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="employment_status">Employment Status</Label>
-                    <Select
-                      value={profileData.personal_information.employment_status || ""}
-                      onValueChange={(value) => handlePersonalInfoChange("employment_status", value || null)}
-                    >
-                      <SelectTrigger id="employment_status" className={getFieldError("employment_status") ? "w-full border-destructive" : "w-full"}>
-                        <SelectValue placeholder="Select employment status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="employed">Employed</SelectItem>
-                        <SelectItem value="unemployed">Unemployed</SelectItem>
-                        <SelectItem value="self-employed">Self-Employed</SelectItem>
-                        <SelectItem value="retired">Retired</SelectItem>
-                        <SelectItem value="student">Student</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {getFieldError("employment_status") ? (
-                      <p className="text-sm text-destructive">{getFieldError("employment_status")}</p>
-                    ) : null}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="client_type">Client Type</Label>
-                    <Select
-                      value={profileData.personal_information.client_type || ""}
-                      onValueChange={(value) => handlePersonalInfoChange("client_type", value || null)}
-                    >
-                      <SelectTrigger id="client_type" className={getFieldError("client_type") ? "w-full border-destructive" : "w-full"}>
-                        <SelectValue placeholder="Select client type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="individual">Individual</SelectItem>
-                        <SelectItem value="business">Business</SelectItem>
-                        <SelectItem value="corporate">Corporate</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {getFieldError("client_type") ? (
-                      <p className="text-sm text-destructive">{getFieldError("client_type")}</p>
-                    ) : null}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="country">Country</Label>
-                    <Select
-                      value={
-                        countryMode === "other"
-                          ? LOCATION_OTHER_VALUE
-                          : selectedCountryId
-                            ? String(selectedCountryId)
-                            : ""
-                      }
-                      onValueChange={(value) => {
-                        void handleCountrySelection(value);
-                      }}
-                    >
-                      <SelectTrigger id="country" className={getFieldError("country") ? "w-full border-destructive" : "w-full"}>
-                        <SelectValue placeholder="Select country" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {countryOptions.map((country) => (
-                          <SelectItem key={country.id} value={String(country.id)}>
-                            {country.name}
-                          </SelectItem>
-                        ))}
-                        <SelectItem value={LOCATION_OTHER_VALUE}>Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {countryMode === "other" ? (
-                      <Input
-                        value={profileData.personal_information.country || ""}
-                        onChange={(e) =>
-                          handlePersonalInfoChange("country", sanitizePersonText(e.target.value) || null)
-                        }
-                        className={getFieldError("country") ? "w-full border-destructive" : "w-full"}
-                        placeholder="Enter country manually"
-                      />
-                    ) : null}
-                    {getFieldError("country") ? (
-                      <p className="text-sm text-destructive">{getFieldError("country")}</p>
-                    ) : countryMode === "other" ? (
-                      <p className="text-sm text-muted-foreground">Use a custom country when it is not listed.</p>
-                    ) : null}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="state">State</Label>
-                    {countryMode === "other" || stateMode === "other" ? (
-                      <Input
-                        id="state"
-                        value={profileData.personal_information.state || ""}
-                        onChange={(e) =>
-                          handlePersonalInfoChange("state", sanitizePersonText(e.target.value) || null)
-                        }
-                        className={getFieldError("state") ? "w-full border-destructive" : "w-full"}
-                        placeholder="Enter state manually"
-                      />
-                    ) : (
+              {/* Location and Status Information */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Location and Status Information</CardTitle>
+                  <CardDescription>Update your employment status, client type, and location details.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="employment_status">Employment Status</Label>
                       <Select
-                        value={selectedStateId ? String(selectedStateId) : ""}
+                        value={profileData.personal_information.employment_status || ""}
+                        onValueChange={(value) => handlePersonalInfoChange("employment_status", value || null)}
+                      >
+                        <SelectTrigger id="employment_status" className={getFieldError("employment_status") ? "w-full border-destructive" : "w-full"}>
+                          <SelectValue placeholder="Select employment status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="employed">Employed</SelectItem>
+                          <SelectItem value="unemployed">Unemployed</SelectItem>
+                          <SelectItem value="self-employed">Self-Employed</SelectItem>
+                          <SelectItem value="retired">Retired</SelectItem>
+                          <SelectItem value="student">Student</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {getFieldError("employment_status") ? (
+                        <p className="text-sm text-destructive">{getFieldError("employment_status")}</p>
+                      ) : null}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="client_type">Client Type</Label>
+                      <Select
+                        value={profileData.personal_information.client_type || ""}
+                        onValueChange={(value) => handlePersonalInfoChange("client_type", value || null)}
+                      >
+                        <SelectTrigger id="client_type" className={getFieldError("client_type") ? "w-full border-destructive" : "w-full"}>
+                          <SelectValue placeholder="Select client type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="individual">Individual</SelectItem>
+                          <SelectItem value="business">Business</SelectItem>
+                          <SelectItem value="corporate">Corporate</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {getFieldError("client_type") ? (
+                        <p className="text-sm text-destructive">{getFieldError("client_type")}</p>
+                      ) : null}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="country">Country</Label>
+                      <Select
+                        value={
+                          countryMode === "other"
+                            ? LOCATION_OTHER_VALUE
+                            : selectedCountryId
+                              ? String(selectedCountryId)
+                              : ""
+                        }
                         onValueChange={(value) => {
-                          void handleStateSelection(value);
+                          void handleCountrySelection(value);
                         }}
-                        disabled={!selectedCountryId}
                       >
-                        <SelectTrigger id="state" className={getFieldError("state") ? "w-full border-destructive" : "w-full"}>
-                          <SelectValue placeholder={selectedCountryId ? "Select state" : "Select country first"} />
+                        <SelectTrigger id="country" className={getFieldError("country") ? "w-full border-destructive" : "w-full"}>
+                          <SelectValue placeholder="Select country" />
                         </SelectTrigger>
                         <SelectContent>
-                          {stateOptions.map((state) => (
-                            <SelectItem key={state.id} value={String(state.id)}>
-                              {state.name}
+                          {countryOptions.map((country) => (
+                            <SelectItem key={country.id} value={String(country.id)}>
+                              {country.name}
                             </SelectItem>
                           ))}
                           <SelectItem value={LOCATION_OTHER_VALUE}>Other</SelectItem>
                         </SelectContent>
                       </Select>
-                    )}
-                    {getFieldError("state") ? (
-                      <p className="text-sm text-destructive">{getFieldError("state")}</p>
-                    ) : countryMode === "other" || stateMode === "other" ? (
-                      <p className="text-sm text-muted-foreground">Use a custom state when it is not listed.</p>
-                    ) : null}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="city">City</Label>
-                    {countryMode === "other" || stateMode === "other" || cityMode === "other" ? (
-                      <Input
-                        id="city"
-                        value={profileData.personal_information.city || ""}
-                        onChange={(e) =>
-                          handlePersonalInfoChange("city", sanitizePersonText(e.target.value) || null)
-                        }
-                        className={getFieldError("city") ? "w-full border-destructive" : "w-full"}
-                        placeholder="Enter city manually"
+                      {countryMode === "other" ? (
+                        <Input
+                          value={profileData.personal_information.country || ""}
+                          onChange={(e) =>
+                            handlePersonalInfoChange("country", sanitizePersonText(e.target.value) || null)
+                          }
+                          className={getFieldError("country") ? "w-full border-destructive" : "w-full"}
+                          placeholder="Enter country manually"
+                        />
+                      ) : null}
+                      {getFieldError("country") ? (
+                        <p className="text-sm text-destructive">{getFieldError("country")}</p>
+                      ) : countryMode === "other" ? (
+                        <p className="text-sm text-muted-foreground">Use a custom country when it is not listed.</p>
+                      ) : null}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="state">State</Label>
+                      {countryMode === "other" || stateMode === "other" ? (
+                        <Input
+                          id="state"
+                          value={profileData.personal_information.state || ""}
+                          onChange={(e) =>
+                            handlePersonalInfoChange("state", sanitizePersonText(e.target.value) || null)
+                          }
+                          className={getFieldError("state") ? "w-full border-destructive" : "w-full"}
+                          placeholder="Enter state manually"
+                        />
+                      ) : (
+                        <Select
+                          value={selectedStateId ? String(selectedStateId) : ""}
+                          onValueChange={(value) => {
+                            void handleStateSelection(value);
+                          }}
+                          disabled={!selectedCountryId}
+                        >
+                          <SelectTrigger id="state" className={getFieldError("state") ? "w-full border-destructive" : "w-full"}>
+                            <SelectValue placeholder={selectedCountryId ? "Select state" : "Select country first"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {stateOptions.map((state) => (
+                              <SelectItem key={state.id} value={String(state.id)}>
+                                {state.name}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value={LOCATION_OTHER_VALUE}>Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                      {getFieldError("state") ? (
+                        <p className="text-sm text-destructive">{getFieldError("state")}</p>
+                      ) : countryMode === "other" || stateMode === "other" ? (
+                        <p className="text-sm text-muted-foreground">Use a custom state when it is not listed.</p>
+                      ) : null}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="city">City</Label>
+                      {countryMode === "other" || stateMode === "other" || cityMode === "other" ? (
+                        <Input
+                          id="city"
+                          value={profileData.personal_information.city || ""}
+                          onChange={(e) =>
+                            handlePersonalInfoChange("city", sanitizePersonText(e.target.value) || null)
+                          }
+                          className={getFieldError("city") ? "w-full border-destructive" : "w-full"}
+                          placeholder="Enter city manually"
+                        />
+                      ) : (
+                        <Select
+                          value={selectedCityId ? String(selectedCityId) : ""}
+                          onValueChange={handleCitySelection}
+                          disabled={!selectedCountryId || !selectedStateId}
+                        >
+                          <SelectTrigger id="city" className={getFieldError("city") ? "w-full border-destructive" : "w-full"}>
+                            <SelectValue placeholder={selectedStateId ? "Select city" : "Select state first"} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {cityOptions.map((city) => (
+                              <SelectItem key={city.id} value={String(city.id)}>
+                                {city.name}
+                              </SelectItem>
+                            ))}
+                            <SelectItem value={LOCATION_OTHER_VALUE}>Other</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                      {getFieldError("city") ? (
+                        <p className="text-sm text-destructive">{getFieldError("city")}</p>
+                      ) : countryMode === "other" || stateMode === "other" || cityMode === "other" ? (
+                        <p className="text-sm text-muted-foreground">Use a custom city when it is not listed.</p>
+                      ) : null}
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="address">Address</Label>
+                      <Textarea
+                        id="address"
+                        placeholder="Enter your full address..."
+                        value={profileData.personal_information.address || ""}
+                        onChange={(e) => handlePersonalInfoChange("address", e.target.value || null)}
+                        rows={3}
+                        className={getFieldError("address") ? "w-full border-destructive" : "w-full"}
                       />
-                    ) : (
-                      <Select
-                        value={selectedCityId ? String(selectedCityId) : ""}
-                        onValueChange={handleCitySelection}
-                        disabled={!selectedCountryId || !selectedStateId}
-                      >
-                        <SelectTrigger id="city" className={getFieldError("city") ? "w-full border-destructive" : "w-full"}>
-                          <SelectValue placeholder={selectedStateId ? "Select city" : "Select state first"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {cityOptions.map((city) => (
-                            <SelectItem key={city.id} value={String(city.id)}>
-                              {city.name}
-                            </SelectItem>
-                          ))}
-                          <SelectItem value={LOCATION_OTHER_VALUE}>Other</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                    {getFieldError("city") ? (
-                      <p className="text-sm text-destructive">{getFieldError("city")}</p>
-                    ) : countryMode === "other" || stateMode === "other" || cityMode === "other" ? (
-                      <p className="text-sm text-muted-foreground">Use a custom city when it is not listed.</p>
-                    ) : null}
+                      {getFieldError("address") ? (
+                        <p className="text-sm text-destructive">{getFieldError("address")}</p>
+                      ) : null}
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="address">Address</Label>
-                    <Textarea
-                      id="address"
-                      placeholder="Enter your full address..."
-                      value={profileData.personal_information.address || ""}
-                      onChange={(e) => handlePersonalInfoChange("address", e.target.value || null)}
-                      rows={3}
-                      className={getFieldError("address") ? "w-full border-destructive" : "w-full"}
-                    />
-                    {getFieldError("address") ? (
-                      <p className="text-sm text-destructive">{getFieldError("address")}</p>
-                    ) : null}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-          </div>
+                  
+                </CardContent>
+              </Card>
+            </div>
+          </fieldset>
           <div className="flex justify-end">
-                  <Button 
-                onClick={() => handleSubmit("personal")} 
+            <Button
+              type="button"
+              onClick={() => {
+                if (!isPersonalEditing) {
+                  setIsPersonalEditing(true);
+                  return;
+                }
+                void handleSubmit("personal");
+              }}
                 disabled={saving}
                 size="lg"
               >
               {saving ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Save Changes"
-              )}
-            </Button>
+                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        Saving...
+      </>
+    ) : isPersonalEditing ? (
+      "Save Changes"
+    ) : (
+      <>
+        <Pencil className="mr-2 h-4 w-4" />
+        Edit
+      </>
+    )}
+  </Button>
           </div>
         </TabsContent>
 

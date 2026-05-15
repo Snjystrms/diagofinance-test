@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import toast from "react-hot-toast";
 import {
@@ -582,7 +583,7 @@ export default function SetIbCommissionPage() {
       {
         id: "sr_no",
         header: "Sr. No.",
-        cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+        cell: ({ row, table }) => <SerialNumberCell row={row} table={table} />,
         enableSorting: false,
       },
       {
@@ -1151,3 +1152,6 @@ export default function SetIbCommissionPage() {
     </>
   );
 }
+
+
+

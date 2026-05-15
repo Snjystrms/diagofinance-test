@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
 
 import { AppDataTable } from "@/components/app-data-table";
@@ -254,8 +255,8 @@ export default function AllNotificationsPage() {
         id: "id",
         header: "Sr. No.",
         accessorKey: "id",
-        cell: ({ row }) => (
-          <span className="font-medium">{row.index + 1}</span>
+        cell: ({ row, table }) => (
+          <SerialNumberCell row={row} table={table} />
         ),
       },
       {
@@ -473,3 +474,5 @@ export default function AllNotificationsPage() {
     
   );
 }
+
+

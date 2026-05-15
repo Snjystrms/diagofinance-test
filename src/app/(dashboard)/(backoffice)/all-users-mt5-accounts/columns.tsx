@@ -4,6 +4,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Calendar, CreditCard, Eye, Pencil, Server, Trash2, User } from "lucide-react";
 
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
+import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { AdminMT5Account } from "@/lib/api";
@@ -76,7 +77,7 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
   {
     id: "sr_no",
     header: "Sr. No.",
-    cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+    cell: ({ row, table }) => <SerialNumberCell row={row} table={table} />,
     enableSorting: false,
   },
   {
@@ -241,3 +242,6 @@ export const getColumnsWithActions = (
     enableSorting: false,
   },
 ];
+
+
+

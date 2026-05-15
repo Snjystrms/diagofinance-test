@@ -17,6 +17,7 @@ import {
 
 import { AppDataTable } from "@/components/app-data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
+import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ProtectedRoute } from "@/components/protected-route";
@@ -225,7 +226,7 @@ export default function BonusManagementPage() {
       {
         id: "sr_no",
         header: "Sr. No.",
-        cell: ({ row }) => <span className="font-medium">{row.index + 1}</span>,
+        cell: ({ row, table }) => <SerialNumberCell row={row} table={table} />,
         enableSorting: false,
       },
       {
@@ -613,3 +614,6 @@ export default function BonusManagementPage() {
     </ProtectedRoute>
   );
 }
+
+
+
