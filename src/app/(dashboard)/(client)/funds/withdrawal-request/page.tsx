@@ -1,5 +1,5 @@
-'use client'
-import React, { useEffect, useState } from "react";
+﻿'use client'
+import React, { useEffect, useMemo, useState } from "react";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,12 +8,19 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/auth-context";
 import { withdrawalApi, walletApi, type WalletSummaryData, type WithdrawalItem } from "@/lib/api";
+import {
+  authApi,
+  userCurrencyRatesApi,
+  userPaymentMethodsApi,
+  type CurrencyRateItem,
+  type UserBankDetailsData,
+  type UserPaymentMethod,
+} from "@/lib/api-auth-admin";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { CLIENT_WALLET_REFRESH_EVENT, notifyWalletRefresh } from "@/lib/client-events";
 import {
   Wallet,
   DollarSign,
-  ArrowUpRight,
   CheckCircle,
   Clock,
   AlertCircle,
@@ -21,10 +28,8 @@ import {
   Copy,
   ShieldCheck,
   ExternalLink,
-  RefreshCw,
   TrendingDown,
 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -32,6 +37,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatDateTimeInIST } from "@/lib/formatters";
 
 const CHAIN_OPTIONS = [
@@ -42,8 +48,40 @@ const CHAIN_OPTIONS = [
   { value: "ETH", label: "ETH (Ethereum)", network: "Ethereum Network" },
 ];
 
+const COUNTRY_CURRENCY_MAP: Record<string, string> = {
+  india: "INR",
+  "united states": "USD",
+  usa: "USD",
+  "united kingdom": "GBP",
+  uk: "GBP",
+  "great britain": "GBP",
+  canada: "CAD",
+  australia: "AUD",
+  singapore: "SGD",
+  uae: "AED",
+  "united arab emirates": "AED",
+  germany: "EUR",
+  france: "EUR",
+  italy: "EUR",
+  spain: "EUR",
+  netherlands: "EUR",
+  ireland: "EUR",
+  "new zealand": "NZD",
+  japan: "JPY",
+  china: "CNY",
+  "south africa": "ZAR",
+};
+
+const getCurrencyFromCountry = (country?: string | null): string | null => {
+  if (!country) return null;
+  const normalizedCountry = country.trim().toLowerCase();
+  if (!normalizedCountry) return null;
+  return COUNTRY_CURRENCY_MAP[normalizedCountry] ?? null;
+};
+
 function WithdrawalRequestContent() {
   const { token } = useAuth();
+  const [withdrawalType, setWithdrawalType] = useState<"crypto" | "bank">("crypto");
   const [amount, setAmount] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [chainId, setChainId] = useState("TRC20");
@@ -54,6 +92,10 @@ function WithdrawalRequestContent() {
   const [copied, setCopied] = useState(false);
   const [walletData, setWalletData] = useState<WalletSummaryData | null>(null);
   const [walletLoading, setWalletLoading] = useState(true);
+  const [bankDetails, setBankDetails] = useState<UserBankDetailsData | null>(null);
+  const [bankDetailsLoading, setBankDetailsLoading] = useState(true);
+  const [bankTransferMethodId, setBankTransferMethodId] = useState<number | null>(null);
+  const [currencyRates, setCurrencyRates] = useState<CurrencyRateItem[]>([]);
 
   const selectedChain = CHAIN_OPTIONS.find((chain) => chain.value === chainId);
   const minimumAmount = 10.0;
@@ -83,6 +125,77 @@ function WithdrawalRequestContent() {
   }, [token]);
 
   useEffect(() => {
+    const fetchCurrencyRates = async () => {
+      if (!token || withdrawalType !== "bank") {
+        return;
+      }
+      try {
+        const response = await userCurrencyRatesApi.list({ token, page: 1, per_page: 500 });
+        const rates = Array.isArray(response.data?.currencyRates) ? response.data.currencyRates : [];
+        setCurrencyRates(rates);
+      } catch (fetchError) {
+        console.error("Failed to load currency rates:", fetchError);
+        setCurrencyRates([]);
+      }
+    };
+    void fetchCurrencyRates();
+  }, [token, withdrawalType]);
+
+  useEffect(() => {
+    const fetchWithdrawalMeta = async () => {
+      if (!token) {
+        setBankDetails(null);
+        setBankTransferMethodId(null);
+        setBankDetailsLoading(false);
+        return;
+      }
+      try {
+        setBankDetailsLoading(true);
+        const [bankDetailsResponse, paymentMethodsResponse] = await Promise.all([
+          authApi.getBankDetails(token),
+          userPaymentMethodsApi.list(token),
+        ]);
+
+        const bankPayload = bankDetailsResponse.data as
+          | UserBankDetailsData
+          | { data?: UserBankDetailsData }
+          | null
+          | undefined;
+        const resolvedBankDetails =
+          bankPayload && "id" in bankPayload
+            ? bankPayload
+            : bankPayload && "data" in bankPayload
+              ? bankPayload.data ?? null
+              : null;
+        setBankDetails(resolvedBankDetails ?? null);
+
+        const paymentPayload = paymentMethodsResponse.data as
+          | { data?: UserPaymentMethod[] }
+          | UserPaymentMethod[]
+          | null
+          | undefined;
+        const methods: UserPaymentMethod[] = Array.isArray(paymentPayload)
+          ? paymentPayload
+          : Array.isArray(paymentPayload?.data)
+            ? paymentPayload.data
+            : [];
+        const bankTransferMethod = methods.find((method) => method.type === "bank_transfer");
+        setBankTransferMethodId(
+          typeof bankTransferMethod?.id === "number" ? bankTransferMethod.id : null
+        );
+      } catch (fetchError) {
+        console.error("Failed to load withdrawal metadata:", fetchError);
+        setBankDetails(null);
+        setBankTransferMethodId(null);
+      } finally {
+        setBankDetailsLoading(false);
+      }
+    };
+
+    void fetchWithdrawalMeta();
+  }, [token]);
+
+  useEffect(() => {
     const handleWalletRefresh = () => {
       void fetchWalletSummary();
     };
@@ -98,9 +211,53 @@ function WithdrawalRequestContent() {
   const remainingBalance = totalBalance - withdrawalAmount;
   const wallets = walletData ? Object.values(walletData.wallets) : [];
   const mainWallet = wallets.find((wallet) => wallet.is_primary) || wallets[0];
+  const mainWalletBalance = walletData?.wallets?.main?.balance ?? mainWallet?.balance ?? 0;
   const currency = mainWallet?.currency || "USDT";
   const withdrawalExposure =
     totalBalance > 0 ? Math.min(100, Math.round((withdrawalAmount / totalBalance) * 100)) : 0;
+  const supportsBankWithdrawal = !!bankTransferMethodId && !!bankDetails?.id;
+  const isCryptoWithdrawal = withdrawalType === "crypto";
+  const isBankWithdrawal = withdrawalType === "bank";
+
+  const normalizedCurrency = currency.toUpperCase();
+  const destinationBankCurrency = useMemo(
+    () => getCurrencyFromCountry(bankDetails?.country),
+    [bankDetails?.country]
+  );
+  const activeRatesToUsd = useMemo(
+    () =>
+      currencyRates.filter((rate) => {
+        const rawStatus = String(rate.status).toLowerCase();
+        return (
+          rate.to_currency?.toUpperCase() === "USD" &&
+          (rawStatus === "true" || rawStatus === "1" || rawStatus === "active")
+        );
+      }),
+    [currencyRates]
+  );
+  const sourceCurrencyToUsdRate = activeRatesToUsd.find(
+    (rate) => rate.from_currency?.toUpperCase() === normalizedCurrency
+  );
+  const destinationCurrencyToUsdRate = activeRatesToUsd.find(
+    (rate) => rate.from_currency?.toUpperCase() === destinationBankCurrency?.toUpperCase()
+  );
+  const amountNumeric = parseFloat(amount);
+  const sourceAmountInUsd =
+    !isNaN(amountNumeric) && amountNumeric > 0
+      ? normalizedCurrency === "USD" || normalizedCurrency === "USDT"
+        ? amountNumeric
+        : sourceCurrencyToUsdRate?.rate
+          ? amountNumeric * Number(sourceCurrencyToUsdRate.rate)
+          : null
+      : null;
+  const convertedBankAmount =
+    sourceAmountInUsd !== null && destinationBankCurrency
+      ? destinationBankCurrency.toUpperCase() === "USD"
+        ? sourceAmountInUsd
+        : destinationCurrencyToUsdRate?.rate
+          ? sourceAmountInUsd / Number(destinationCurrencyToUsdRate.rate)
+          : null
+      : null;
 
   const formatAmount = (value: string | number) => {
     const numericValue = typeof value === "string" ? parseFloat(value) : value;
@@ -153,13 +310,17 @@ function WithdrawalRequestContent() {
       return;
     }
 
-    if (!walletAddress.trim()) {
-      setError("Wallet address is required");
-      return;
-    }
-
-    if (!chainId) {
-      setError("Please select a network");
+    if (isCryptoWithdrawal) {
+      if (!walletAddress.trim()) {
+        setError("Wallet address is required");
+        return;
+      }
+      if (!chainId) {
+        setError("Please select a network");
+        return;
+      }
+    } else if (!supportsBankWithdrawal) {
+      setError("Bank withdrawal is unavailable. Please add bank details first.");
       return;
     }
 
@@ -167,11 +328,17 @@ function WithdrawalRequestContent() {
 
     try {
       const response = await withdrawalApi.create(
-        {
-          amount,
-          wallet_address: walletAddress.trim(),
-          chain_id: chainId,
-        },
+        isCryptoWithdrawal
+          ? {
+              amount,
+              wallet_address: walletAddress.trim(),
+              chain_id: chainId,
+            }
+          : {
+              amount,
+              payment_method_id: bankTransferMethodId ?? undefined,
+              bank_detail_id: bankDetails?.id ?? undefined,
+            },
         token
       );
 
@@ -205,10 +372,11 @@ function WithdrawalRequestContent() {
   const amountNum = parseFloat(amount);
   const isValidAmount =
     amount.trim() !== "" && !isNaN(amountNum) && amountNum >= minimumAmount && amountNum > 0;
-  const hasWalletAddress = walletAddress.trim().length > 0;
-  const hasChainId = chainId !== "";
+  const hasWalletAddress = isCryptoWithdrawal ? walletAddress.trim().length > 0 : true;
+  const hasChainId = isCryptoWithdrawal ? chainId !== "" : true;
+  const hasBankSetup = isCryptoWithdrawal ? true : supportsBankWithdrawal;
   const hasToken = !!token;
-  const canSubmit = isValidAmount && hasWalletAddress && hasChainId && !isSubmitting && hasToken;
+  const canSubmit = isValidAmount && hasWalletAddress && hasChainId && hasBankSetup && !isSubmitting && hasToken;
 
   return (
     <div className="min-h-screen w-full bg-background px-4 py-6 lg:px-6 xl:px-8">
@@ -219,166 +387,32 @@ function WithdrawalRequestContent() {
           </div>
           <div className="space-y-1.5">
             <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-              Crypto Withdrawal
+              Withdrawal Request
             </h1>
             <p className="max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
-              Move funds from your wallet to an external crypto address by choosing the correct
-              network, confirming the destination, and submitting the request for review.
+              Choose Crypto or Bank withdrawal, fill required details, and submit your request for review.
             </p>
           </div>
         </div>
 
-        <div className="overflow-hidden rounded-[32px] border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 shadow-sm">
-          <div className="grid gap-6 p-6 md:p-8 xl:grid-cols-[1.2fr_0.8fr]">
-            <div className="flex flex-col space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/40 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                <ArrowUpRight className="h-3.5 w-3.5" />
-                Withdrawal Desk
-              </div>
-
-              <div className="rounded-2xl border border-border/50 bg-background/70 p-4 shadow-sm">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                  Network-Aware Transfers
-                </p>
-                <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground md:text-[15px]">
-                  This request flow supports multiple blockchain networks. Match the selected
-                  network to the receiving wallet exactly to avoid rejected or delayed transfers.
-                </p>
-              </div>
-
-              <div className="grid gap-3 md:grid-cols-3 xl:grid-cols-1">
-                <div className="rounded-xl border border-border/60 bg-muted/30 p-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Available Balance
-                  </p>
-                  <p className="mt-2 text-2xl font-semibold text-foreground">
-                    {walletLoading ? "--" : formatAmount(totalBalance)}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">{currency}</p>
-                </div>
-
-                <div className="rounded-xl border border-border/60 bg-muted/30 p-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Selected Network
-                  </p>
-                  <p className="mt-2 text-base font-semibold text-foreground">
-                    {selectedChain?.label ?? "Choose a network"}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {selectedChain?.network ?? "No network selected"}
-                  </p>
-                </div>
-
-                <div className="rounded-xl border border-border/60 bg-muted/30 p-5">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-                    Last Request
-                  </p>
-                  <p className="mt-2 text-base font-semibold text-foreground">
-                    {withdrawalData?.amount
-                      ? `${formatAmount(withdrawalData.amount)} ${currency}`
-                      : "No recent withdrawals"}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    {withdrawalData?.created_at
-                      ? formatDateTimeInIST(withdrawalData.created_at)
-                      : "Your latest submitted request will appear here"}
-                  </p>
-                </div>
-              </div>
+        <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Total Balance</p>
+              <p className="text-sm font-semibold text-foreground">{walletLoading ? "--" : `${formatAmount(totalBalance)} ${currency}`}</p>
             </div>
-
-            <Card className="border border-border/60 bg-card/90 shadow-none">
-              <CardContent className="space-y-5 p-6">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 text-[15px] font-semibold text-foreground">
-                    <div className="rounded-lg border border-border/60 bg-muted/40 p-1.5">
-                      <Wallet className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    Withdrawal Readiness
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Validate balance coverage, network choice, and destination details before
-                    sending the request.
-                  </p>
-                </div>
-
-                {walletLoading ? (
-                  <div className="space-y-4">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-2 w-full rounded-full" />
-                    <Skeleton className="h-20 w-full rounded-2xl" />
-                    <Skeleton className="h-10 w-32" />
-                  </div>
-                ) : (
-                  <>
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-                        <span>Amount entered</span>
-                        <span>{withdrawalExposure}% of available balance</span>
-                      </div>
-                      <div className="h-2 overflow-hidden rounded-full bg-muted">
-                        <div
-                          className={`h-full transition-all duration-300 ${
-                            remainingBalance < 0
-                              ? "bg-destructive"
-                              : remainingBalance < minimumAmount
-                                ? "bg-amber-500"
-                                : "bg-gradient-to-r from-primary to-primary/70"
-                          }`}
-                          style={{ width: `${withdrawalExposure}%` }}
-                        />
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                      <p className="text-xs font-medium text-muted-foreground">
-                        Projected remaining balance
-                      </p>
-                      <p
-                        className={`mt-2 text-2xl font-semibold ${
-                          remainingBalance < 0
-                            ? "text-destructive"
-                            : remainingBalance < minimumAmount
-                              ? "text-amber-600 dark:text-amber-400"
-                              : "text-foreground"
-                        }`}
-                      >
-                        {formatAmount(Math.max(remainingBalance, 0))} {currency}
-                      </p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Minimum request threshold: {formatAmount(minimumAmount)} {currency}
-                      </p>
-                    </div>
-
-                    <div className="space-y-3 text-sm">
-                      <div className="flex items-center justify-between rounded-xl border border-border/50 bg-background/80 px-4 py-3">
-                        <span className="text-muted-foreground">Destination network</span>
-                        <span className="font-medium text-foreground">
-                          {selectedChain?.value ?? "Pending"}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between rounded-xl border border-border/50 bg-background/80 px-4 py-3">
-                        <span className="text-muted-foreground">Wallet address</span>
-                        <span className="max-w-[160px] truncate font-mono text-xs text-foreground">
-                          {walletAddress || "Not provided yet"}
-                        </span>
-                      </div>
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => void fetchWalletSummary()}
-                      className="gap-2"
-                      disabled={walletLoading}
-                    >
-                      <RefreshCw className={`h-4 w-4 ${walletLoading ? "animate-spin" : ""}`} />
-                      Refresh balance
-                    </Button>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+            <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Main Wallet</p>
+              <p className="text-sm font-semibold text-foreground">{walletLoading ? "--" : `${formatAmount(mainWalletBalance)} ${currency}`}</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Type</p>
+              <p className="text-sm font-semibold text-foreground">{isCryptoWithdrawal ? "Crypto" : "Bank"}</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Destination</p>
+              <p className="truncate text-sm font-semibold text-foreground">{isCryptoWithdrawal ? (selectedChain?.value || "--") : (bankDetails?.bank_name || "Not configured")}</p>
+            </div>
           </div>
         </div>
 
@@ -395,10 +429,16 @@ function WithdrawalRequestContent() {
                       Submit Withdrawal Details
                     </h2>
                     <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                      Enter the amount, select the destination blockchain, and provide the exact
-                      receiving wallet address for your withdrawal request.
+                      Select withdrawal type, enter amount, and submit with the required details.
                     </p>
                   </div>
+
+                  <Tabs value={withdrawalType} onValueChange={(value) => setWithdrawalType(value as "crypto" | "bank")} className="space-y-4">
+                    <TabsList className="grid h-auto w-full grid-cols-2 rounded-xl p-1">
+                      <TabsTrigger value="crypto" className="rounded-lg">Crypto Withdrawal</TabsTrigger>
+                      <TabsTrigger value="bank" className="rounded-lg">Bank Withdrawal</TabsTrigger>
+                    </TabsList>
+                  </Tabs>
 
                   {error && (
                     <ApiErrorState
@@ -430,70 +470,122 @@ function WithdrawalRequestContent() {
                     <p className="text-xs text-muted-foreground">
                       Minimum withdrawal amount: {formatAmount(minimumAmount)} {currency}
                     </p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <Label htmlFor="chain_id" className="text-sm font-semibold text-foreground">
-                      Blockchain Network <span className="text-destructive">*</span>
-                    </Label>
-                    <Select value={chainId} onValueChange={setChainId}>
-                      <SelectTrigger className="h-12 w-full rounded-xl border-2 border-border bg-background focus:border-primary">
-                        <div className="flex items-center gap-2">
-                          <Network className="h-4 w-4 text-muted-foreground" />
-                          <SelectValue placeholder="Select network" />
-                        </div>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CHAIN_OPTIONS.map((chain) => (
-                          <SelectItem key={chain.value} value={chain.value}>
-                            <div className="flex flex-col">
-                              <span className="font-medium">{chain.label}</span>
-                              <span className="text-xs text-muted-foreground">{chain.network}</span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {selectedChain && (
+                    {isBankWithdrawal && amount.trim() !== "" && !isNaN(amountNumeric) && amountNumeric > 0 && (
                       <p className="text-xs text-muted-foreground">
-                        Selected network: {selectedChain.network}
+                        {destinationBankCurrency && convertedBankAmount !== null
+                          ? `Estimated bank credit: ${formatAmount(convertedBankAmount)} ${destinationBankCurrency}`
+                          : destinationBankCurrency
+                            ? `Estimated bank credit is unavailable right now for ${destinationBankCurrency}.`
+                            : "Estimated bank credit is unavailable because bank country is not mapped to a currency."}
                       </p>
                     )}
                   </div>
 
-                  <div className="space-y-3">
-                    <Label htmlFor="wallet_address" className="text-sm font-semibold text-foreground">
-                      Destination Wallet Address <span className="text-destructive">*</span>
-                    </Label>
-                    <div className="relative">
-                      <Wallet className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                      <Input
-                        id="wallet_address"
-                        value={walletAddress}
-                        onChange={(event) => setWalletAddress(event.target.value)}
-                        className="h-12 rounded-xl border-2 border-border bg-background pl-10 pr-20 font-mono text-sm focus:border-primary"
-                        placeholder="Paste your wallet address"
-                      />
-                      {walletAddress && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleCopyAddress}
-                          className="absolute right-2 top-2 h-8 px-2 text-xs"
-                        >
-                          <Copy className="h-4 w-4" />
-                          {copied ? "Copied!" : "Copy"}
-                        </Button>
+                  {!isCryptoWithdrawal ? (
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold text-foreground">
+                        Your Bank Account (Withdrawal Destination)
+                      </Label>
+                      <div className="rounded-xl border border-border/60 bg-muted/20 p-4 text-sm">
+                        <div className="grid gap-3 md:grid-cols-2">
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Account Holder</p>
+                            <p className="font-medium text-foreground">{bankDetails?.account_holder_name || "-"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Bank Name</p>
+                            <p className="font-medium text-foreground">{bankDetails?.bank_name || "-"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Account Number</p>
+                            <p className="font-mono text-foreground">{bankDetails?.account_number || "-"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">IBAN</p>
+                            <p className="font-mono text-foreground">{bankDetails?.iban_number || "-"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">IFSC / SWIFT</p>
+                            <p className="font-mono text-foreground">{bankDetails?.swift_ifsc_code || "-"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Country</p>
+                            <p className="font-medium text-foreground">{bankDetails?.country || "-"}</p>
+                          </div>
+                        </div>
+                      </div>
+                      {!supportsBankWithdrawal && !bankDetailsLoading && (
+                        <p className="text-xs text-destructive">
+                          Bank withdrawal requires active `bank_transfer` payment method and saved bank details.
+                        </p>
                       )}
                     </div>
-                    <div className="flex items-start gap-2 rounded-xl border border-amber-300/50 bg-amber-50/80 px-3 py-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
-                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
-                      <p>
-                        Paste the destination address exactly as shown by the receiving wallet, and
-                        make sure it supports the selected network.
-                      </p>
-                    </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="space-y-3">
+                        <Label htmlFor="chain_id" className="text-sm font-semibold text-foreground">
+                          Blockchain Network <span className="text-destructive">*</span>
+                        </Label>
+                        <Select value={chainId} onValueChange={setChainId}>
+                          <SelectTrigger className="h-12 w-full rounded-xl border-2 border-border bg-background focus:border-primary">
+                            <div className="flex items-center gap-2">
+                              <Network className="h-4 w-4 text-muted-foreground" />
+                              <SelectValue placeholder="Select network" />
+                            </div>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {CHAIN_OPTIONS.map((chain) => (
+                              <SelectItem key={chain.value} value={chain.value}>
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{chain.label}</span>
+                                  <span className="text-xs text-muted-foreground">{chain.network}</span>
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {selectedChain && (
+                          <p className="text-xs text-muted-foreground">
+                            Selected network: {selectedChain.network}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="space-y-3">
+                        <Label htmlFor="wallet_address" className="text-sm font-semibold text-foreground">
+                          Destination Wallet Address <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="relative">
+                          <Wallet className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                          <Input
+                            id="wallet_address"
+                            value={walletAddress}
+                            onChange={(event) => setWalletAddress(event.target.value)}
+                            className="h-12 rounded-xl border-2 border-border bg-background pl-10 pr-20 font-mono text-sm focus:border-primary"
+                            placeholder="Paste your wallet address"
+                          />
+                          {walletAddress && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={handleCopyAddress}
+                              className="absolute right-2 top-2 h-8 px-2 text-xs"
+                            >
+                              <Copy className="h-4 w-4" />
+                              {copied ? "Copied!" : "Copy"}
+                            </Button>
+                          )}
+                        </div>
+                        <div className="flex items-start gap-2 rounded-xl border border-amber-300/50 bg-amber-50/80 px-3 py-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
+                          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
+                          <p>
+                            Paste the destination address exactly as shown by the receiving wallet, and
+                            make sure it supports the selected network.
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   <div className="rounded-2xl border border-amber-300/60 bg-amber-50/80 p-4 dark:border-amber-800 dark:bg-amber-950/30">
                     <div className="flex items-start gap-3">
@@ -501,9 +593,9 @@ function WithdrawalRequestContent() {
                       <div className="space-y-1 text-xs text-amber-900 dark:text-amber-100">
                         <p className="font-semibold">Before you submit:</p>
                         <ul className="space-y-1">
-                          <li>Double-check the wallet address and network combination.</li>
+                          <li>{isCryptoWithdrawal ? "Double-check wallet address and selected network." : "Confirm your saved bank account details are correct."}</li>
                           <li>Processing can take 24-48 hours depending on review and network conditions.</li>
-                          <li>Network fees can differ by chain and destination wallet.</li>
+                          <li>{isCryptoWithdrawal ? "Network fees can differ by chain and destination wallet." : "Bank processing times may vary by country and bank."}</li>
                         </ul>
                       </div>
                     </div>

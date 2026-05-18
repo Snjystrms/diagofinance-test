@@ -166,8 +166,10 @@ export const internalTransferApi = {
 
 export interface WithdrawalRequest {
   amount: string;
-  wallet_address: string;
-  chain_id: string;
+  wallet_address?: string;
+  chain_id?: string;
+  payment_method_id?: number;
+  bank_detail_id?: number;
 }
 
 export interface WithdrawalItem {
@@ -175,8 +177,10 @@ export interface WithdrawalItem {
   user_id: number;
   amount: number;
   status: "pending" | "approved" | "rejected" | "processing" | "completed";
-  wallet_address: string;
-  chain_id: string;
+  wallet_address?: string | null;
+  chain_id?: string | null;
+  payment_method_id?: number | null;
+  bank_detail_id?: number | null;
   transaction_hash: string | null;
   created_at: string;
   updated_at?: string;

@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAuth } from "@/contexts/auth-context";
 import { submitUSDTDeposit } from "@/utils/operations";
 import { walletApi, binanceDepositApi, coinsbuyDepositApi, bankDepositApi, userBrokerBankDetailsApi, type WalletSummaryData, type BinanceDepositCreateResponse, type CoinsBuyDepositCreateResponse, type BankDepositRecord, type BrokerBankDetailItem } from "@/lib/api";
-import { userPaymentMethodsApi, type UserPaymentMethod } from "@/lib/api-auth-admin";
+import { userPaymentMethodsApi, userCurrencyRatesApi, type UserPaymentMethod, type CurrencyRateItem } from "@/lib/api-auth-admin";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { CLIENT_WALLET_REFRESH_EVENT, notifyWalletRefresh } from "@/lib/client-events";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -33,7 +33,6 @@ import {
   Upload,
   X,
   RefreshCw,
-  TrendingUp,
   Building2,
   FileText,
   CheckCircle2,
@@ -93,6 +92,9 @@ function USDTDepositContent() {
   const [brokerBankDetails, setBrokerBankDetails] = useState<BrokerBankDetailItem[]>([]);
   const [brokerBankDetailsLoading, setBrokerBankDetailsLoading] = useState(false);
   const [brokerBankDetailsError, setBrokerBankDetailsError] = useState<string | null>(null);
+  const [bankCurrency, setBankCurrency] = useState("INR");
+  const [currencyRates, setCurrencyRates] = useState<CurrencyRateItem[]>([]);
+  const [currencyRatesLoading, setCurrencyRatesLoading] = useState(false);
   const wallets = walletData ? Object.values(walletData.wallets || {}) : [];
   const primaryWallet = wallets.find((wallet) => wallet.is_primary) || wallets[0];
   const currency = primaryWallet?.currency || "USD";
@@ -126,6 +128,29 @@ function USDTDepositContent() {
     const activeDetails = brokerBankDetails.filter((detail) => isBrokerBankDetailActive(detail));
     return activeDetails.length > 0 ? activeDetails : brokerBankDetails;
   }, [brokerBankDetails]);
+  const availableBankCurrencies = useMemo(() => {
+    const activeRates = currencyRates.filter((rate) => {
+      const rawStatus = String(rate.status).toLowerCase();
+      return rate.to_currency?.toUpperCase() === "USD" && (rawStatus === "true" || rawStatus === "1" || rawStatus === "active");
+    });
+    const unique = Array.from(new Set(activeRates.map((rate) => rate.from_currency?.toUpperCase()).filter(Boolean)));
+    return unique.sort((a, b) => a.localeCompare(b));
+  }, [currencyRates]);
+  const selectedRateToUsd = useMemo(() => {
+    return currencyRates.find((rate) => {
+      const rawStatus = String(rate.status).toLowerCase();
+      return (
+        rate.from_currency?.toUpperCase() === bankCurrency.toUpperCase() &&
+        rate.to_currency?.toUpperCase() === "USD" &&
+        (rawStatus === "true" || rawStatus === "1" || rawStatus === "active")
+      );
+    });
+  }, [bankCurrency, currencyRates]);
+  const bankAmountNum = parseFloat(bankAmount);
+  const convertedUsdAmount =
+    !isNaN(bankAmountNum) && bankAmountNum > 0 && selectedRateToUsd?.rate
+      ? bankAmountNum * Number(selectedRateToUsd.rate)
+      : null;
 
   // Derive which tabs to show from API response
   const hasLocal    = paymentMethods.some(p => p.type === "local");
@@ -404,12 +429,38 @@ function USDTDepositContent() {
     }
   }, [token]);
 
+  const fetchCurrencyRates = useCallback(async () => {
+    if (!token) {
+      setCurrencyRates([]);
+      return;
+    }
+    try {
+      setCurrencyRatesLoading(true);
+      const response = await userCurrencyRatesApi.list({ token, page: 1, per_page: 500 });
+      const rates = Array.isArray(response.data?.currencyRates) ? response.data.currencyRates : [];
+      setCurrencyRates(rates);
+    } catch (fetchError) {
+      console.error("Failed to fetch currency rates:", fetchError);
+      setCurrencyRates([]);
+    } finally {
+      setCurrencyRatesLoading(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     if (activeTab === "bank") {
       void fetchBankRequests();
       void fetchBrokerBankDetails();
+      void fetchCurrencyRates();
     }
-  }, [activeTab, fetchBankRequests, fetchBrokerBankDetails]);
+  }, [activeTab, fetchBankRequests, fetchBrokerBankDetails, fetchCurrencyRates]);
+
+  useEffect(() => {
+    if (availableBankCurrencies.length === 0) return;
+    if (!availableBankCurrencies.includes(bankCurrency.toUpperCase())) {
+      setBankCurrency(availableBankCurrencies[0]);
+    }
+  }, [availableBankCurrencies, bankCurrency]);
 
   const handleBankSubmit = async () => {
     setBankError(null);
@@ -582,128 +633,29 @@ function USDTDepositContent() {
             </p>
           </div>
         </div>
-        <div className="overflow-hidden rounded-[32px] border border-border/60 bg-gradient-to-br from-card via-card to-muted/20 shadow-sm">
-          <div className="grid gap-6 p-6 md:p-8 xl:grid-cols-[1.2fr_0.8fr]">
-  {/* ── Left: stats + heading ── */}
-  <div className="flex flex-col space-y-5">
-    <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/40 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-      <Wallet className="h-3.5 w-3.5" />
-      Deposit Center
-    </div>
-
-    <div className="rounded-2xl border border-border/50 bg-background/70 p-4 shadow-sm">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-        Wallet Overview
-      </p>
-      <p className="mt-2 max-w-xl text-sm leading-6 text-muted-foreground md:text-[15px]">
-        Review your available balance, recent deposit activity, and deposit readiness before choosing the transfer method that fits your workflow.
-      </p>
-    </div>
-
-    {/* 3-card stat column — grows to fill remaining height */}
-    <div className="flex flex-1 flex-col gap-3">
-      <div className="flex flex-1 flex-col justify-center rounded-xl border border-border/60 bg-muted/30 p-5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          Available Balance
-        </p>
-        <p className="mt-2 text-2xl font-semibold text-foreground">
-          {walletLoading ? "--" : formatAmount(availableBalance)}
-        </p>
-        <p className="mt-0.5 text-xs text-muted-foreground">{currency}</p>
-      </div>
-
-      <div className="flex flex-1 flex-col justify-center rounded-xl border border-border/60 bg-muted/30 p-5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          Total Wallet Value
-        </p>
-        <p className="mt-2 text-2xl font-semibold text-foreground">
-          {walletLoading ? "--" : formatAmount(totalBalance)}
-        </p>
-        <p className="mt-0.5 text-xs text-muted-foreground">{currency}</p>
-      </div>
-
-      <div className="flex flex-1 flex-col justify-center rounded-xl border border-border/60 bg-muted/30 p-5">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-          Last Deposit
-        </p>
-        <p className="mt-2 text-base font-semibold text-foreground">
-          {walletLoading ? "--" : recentDepositLabel}
-        </p>
-        <p className="mt-0.5 text-xs text-muted-foreground">{recentDepositDate}</p>
-      </div>
-    </div>
-  </div>
-
- {/* ── Right: readiness panel ── */}
-  <Card className="border border-border/60 bg-card/90 shadow-none">
-    <CardHeader className="pb-3">
-      <CardTitle className="flex items-center gap-2 text-[15px]">
-        <div className="rounded-lg border border-border/60 bg-muted/40 p-1.5">
-          <TrendingUp className="h-4 w-4 text-muted-foreground" />
-        </div>
-        Deposit Readiness
-      </CardTitle>
-      <CardDescription>Your wallet context at a glance.</CardDescription>
-    </CardHeader>
-
-    <CardContent className="space-y-4">
-      {/* Progress bar */}
-      <div>
-        <div className="mb-2 flex items-center justify-between text-xs font-medium text-muted-foreground">
-          <span>Amount entered</span>
-          <span>{depositReadiness}% of available balance</span>
-        </div>
-        <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-          <div
-            className="h-full bg-primary transition-all duration-300"
-            style={{ width: `${depositReadiness}%` }}
-          />
-        </div>
-      </div>
-
-      {/* Primary wallet chip */}
-      <div className="rounded-xl border border-border/60 bg-muted/20 p-3">
-        <p className="text-xs font-medium text-muted-foreground">Primary wallet</p>
-        <p className="mt-0.5 text-base font-semibold text-foreground">
-          {primaryWallet?.currency || currency}
-        </p>
-        <p className="text-xs text-muted-foreground">{primaryWallet?.status || "Unavailable"}</p>
-      </div>
-
-      {/* How-to steps */}
-      <div className="rounded-xl border border-border/60 bg-muted/20 p-3 space-y-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-          How to deposit
-        </p>
-        {[
-          { n: 1, title: "Pick a payment method", body: "Select bank transfer, card, or any enabled option below." },
-          { n: 2, title: "Follow the instructions", body: "Each method shows you exactly where to send funds." },
-          { n: 3, title: "Submit your receipt", body: "Upload proof of payment so your deposit is reviewed promptly." },
-        ].map(({ n, title, body }) => (
-          <div key={n} className="flex items-start gap-2.5">
-            <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-semibold text-primary">
-              {n}
-            </span>
-            <p className="text-xs leading-5 text-muted-foreground">
-              <span className="font-semibold text-foreground">{title} — </span>
-              {body}
-            </p>
+        <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Total Balance</p>
+              <p className="text-sm font-semibold text-foreground">{walletLoading ? "--" : `${formatAmount(totalBalance)} ${currency}`}</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Main Wallet</p>
+              <p className="text-sm font-semibold text-foreground">{walletLoading ? "--" : `${formatAmount(availableBalance)} ${currency}`}</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Last Deposit</p>
+              <p className="text-sm font-semibold text-foreground">{walletLoading ? "--" : recentDepositLabel}</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Method</p>
+              <p className="text-sm font-semibold text-foreground">{activeTab === "bank" ? "Bank" : activeTab === "binance_pay" ? "Binance" : activeTab === "coinsbuy" ? "CoinsBuy" : "On-Chain"}</p>
+            </div>
+            <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Readiness</p>
+              <p className="text-sm font-semibold text-foreground">{depositReadiness}%</p>
+            </div>
           </div>
-        ))}
-      </div>
-
-      {/* Note */}
-      <p className="rounded-xl border border-dashed border-border/60 bg-background/70 p-3 text-xs leading-5 text-muted-foreground">
-        Some providers may settle in different currencies or networks depending on how your account is configured.
-      </p>
-
-      <Button variant="outline" size="sm" onClick={fetchWalletSummary} className="gap-2">
-        <RefreshCw className="h-3.5 w-3.5" />
-        Refresh wallet summary
-      </Button>
-    </CardContent>
-  </Card>
-</div>
         </div>
 
         {/* Deposit type toggle */}
@@ -1077,7 +1029,7 @@ function USDTDepositContent() {
           </div>
             </TabsContent>}
 
-            {/* ── Binance Pay tab ── */}
+            {/* â”€â”€ Binance Pay tab â”€â”€ */}
             {hasBinance && <TabsContent value="binance_pay" className="space-y-8">
               {/* Binance Pay Content */}
               {(
@@ -1223,7 +1175,7 @@ function USDTDepositContent() {
               )}
             </TabsContent>}
 
-            {/* ── CoinsBuy tab ── */}
+            {/* â”€â”€ CoinsBuy tab â”€â”€ */}
             {hasCoinsbuy && <TabsContent value="coinsbuy" className="space-y-8">
               {/* CoinsBuy Content */}
               {(
@@ -1351,11 +1303,11 @@ function USDTDepositContent() {
               )}
             </TabsContent>}
 
-            {/* ── Bank Transfer tab ── */}
+            {/* â”€â”€ Bank Transfer tab â”€â”€ */}
             {hasBank && <TabsContent value="bank" className="space-y-8">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-                {/* Left — Bank account details (dummy) */}
+                {/* Left â€” Bank account details (dummy) */}
                 <div className="space-y-6">
                   <Card className="border border-border/60 bg-card shadow-sm">
                     <CardHeader className="flex flex-row items-start justify-between gap-4">
@@ -1471,9 +1423,9 @@ function USDTDepositContent() {
                           <div className="text-xs text-amber-800 dark:text-amber-200 space-y-1">
                             <p className="font-semibold">Before transferring:</p>
                             <ul className="space-y-0.5 list-none">
-                              <li>• Keep a record of the Transaction / Reference ID</li>
-                              <li>• Transfers typically reflect within 1–2 business days</li>
-                              <li>• Minimum deposit: <strong>$10 USD</strong> equivalent</li>
+                              <li>â€¢ Keep a record of the Transaction / Reference ID</li>
+                              <li>â€¢ Transfers typically reflect within 1â€“2 business days</li>
+                              <li>â€¢ Minimum deposit: <strong>$10 USD</strong> equivalent</li>
                             </ul>
                           </div>
                         </div>
@@ -1482,7 +1434,7 @@ function USDTDepositContent() {
                   </Card>
                 </div>
 
-                {/* Right — Submit form + history */}
+                {/* Right â€” Submit form + history */}
                 <div className="space-y-6">
 
                   {/* Submit form */}
@@ -1495,7 +1447,7 @@ function USDTDepositContent() {
                         Submit Transfer
                       </CardTitle>
                       <CardDescription>
-                        Enter the amount and transaction ID from your bank transfer.
+                        Select your transfer currency, enter amount, and transaction ID from your bank transfer.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-5">
@@ -1509,9 +1461,7 @@ function USDTDepositContent() {
                               Request submitted successfully
                             </p>
                           </div>
-                          <p className="text-xs text-emerald-700/70 dark:text-emerald-400/70">
-                            Request ID: <span className="font-mono font-semibold">#{bankSubmitResult.id}</span>
-                            &nbsp;·&nbsp;Status: <Badge variant="outline" className="text-xs border-emerald-500/40 text-emerald-700 dark:text-emerald-300">{bankSubmitResult.status}</Badge>
+                          <p className="text-xs text-emerald-700/70 dark:text-emerald-400/70"><Badge variant="outline" className="text-xs border-emerald-500/40 text-emerald-700 dark:text-emerald-300">{bankSubmitResult.status}</Badge>
                           </p>
                           <Button
                             variant="ghost"
@@ -1530,10 +1480,33 @@ function USDTDepositContent() {
                         </div>
                       )}
 
+                      <div className="space-y-2">
+                        <Label htmlFor="bank-currency" className="text-sm font-semibold">
+                          Deposit Currency <span className="text-destructive">*</span>
+                        </Label>
+                        <select
+                          id="bank-currency"
+                          value={bankCurrency}
+                          onChange={(e) => setBankCurrency(e.target.value)}
+                          disabled={isSubmittingBank || currencyRatesLoading || availableBankCurrencies.length === 0}
+                          className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {availableBankCurrencies.length === 0 ? (
+                            <option value="INR">No currencies available</option>
+                          ) : (
+                            availableBankCurrencies.map((code) => (
+                              <option key={code} value={code}>
+                                {code}
+                              </option>
+                            ))
+                          )}
+                        </select>
+                      </div>
+
                       {/* Amount */}
                       <div className="space-y-2">
                         <Label htmlFor="bank-amount" className="text-sm font-semibold">
-                          Amount (USD) <span className="text-destructive">*</span>
+                          Amount ({bankCurrency.toUpperCase()}) <span className="text-destructive">*</span>
                         </Label>
                         <div className="relative">
                           <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -1549,6 +1522,16 @@ function USDTDepositContent() {
                             disabled={isSubmittingBank}
                           />
                         </div>
+                        <p className="text-xs text-muted-foreground">
+                          {selectedRateToUsd?.rate
+                            ? `Rate: 1 ${bankCurrency.toUpperCase()} = ${Number(selectedRateToUsd.rate).toFixed(6)} USD`
+                            : "USD conversion rate is currently unavailable for this currency."}
+                        </p>
+                        {convertedUsdAmount !== null && (
+                          <p className="text-xs font-medium text-foreground">
+                            USD equivalent: ${convertedUsdAmount.toFixed(2)}
+                          </p>
+                        )}
                       </div>
 
                       {/* Transaction ID */}
@@ -1664,7 +1647,7 @@ function USDTDepositContent() {
               </div>
             </TabsContent>}
 
-            {/* ── Coming-soon tabs for unrecognised payment method types ── */}
+            {/* â”€â”€ Coming-soon tabs for unrecognised payment method types â”€â”€ */}
             {comingSoonMethods.map(p => (
               <TabsContent key={p.type} value={p.type} className="space-y-8">
                 <ComingSoonTab name={p.name} description={p.description} />

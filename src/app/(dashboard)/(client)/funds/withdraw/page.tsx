@@ -117,7 +117,10 @@ const TransactionHashCell = ({ hash, chainId }: { hash: string | null, chainId: 
 }
 
 // Wallet address cell
-const WalletAddressCell = ({ address }: { address: string }) => {
+const WalletAddressCell = ({ address }: { address?: string | null }) => {
+  if (!address) {
+    return <span className="text-muted-foreground text-sm">N/A</span>
+  }
   const truncatedAddress = `${address.slice(0, 8)}...${address.slice(-8)}`
   
   return (
@@ -142,7 +145,14 @@ const WalletAddressCell = ({ address }: { address: string }) => {
 }
 
 // Chain ID badge
-const ChainBadge = ({ chainId }: { chainId: string }) => {
+const ChainBadge = ({ chainId }: { chainId?: string | null }) => {
+  if (!chainId) {
+    return (
+      <Badge variant="outline" className="w-fit bg-muted text-muted-foreground">
+        N/A
+      </Badge>
+    )
+  }
   const chainColors: Record<string, string> = {
     TRC20: 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 border-orange-300 dark:border-orange-800',
     ERC20: 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 border-blue-300 dark:border-blue-800',

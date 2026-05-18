@@ -1516,6 +1516,17 @@ export const adminCurrencyRatesApi = {
     }),
 };
 
+export const userCurrencyRatesApi = {
+  list: (params: { token: string; page?: number; per_page?: number }) => {
+    const { token, page = 1, per_page = 100 } = params;
+    const query = new URLSearchParams({ page: String(page), per_page: String(per_page) });
+    return apiCall<CurrencyRateListData>(`/admin/currency-rates/list?${query.toString()}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
+
 export interface UserNewsListResponse {
   data: NewsItem[];
   pagination: {
