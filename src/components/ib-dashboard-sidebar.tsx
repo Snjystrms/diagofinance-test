@@ -148,9 +148,9 @@ export function IbDashboardSidebar() {
             )
           })}
         </div>
-        <button
+       <button
           onClick={() => router.push("/dashboard")}
-          className="mt-auto rounded-2xl border border-sidebar-border bg-sidebar-accent/45 p-2.5 text-sidebar-foreground transition-all duration-200 hover:bg-sidebar-accent"
+          className="mt-auto rounded-2xl border border-sidebar-border bg-sidebar-accent/45 p-2.5 text-sidebar-foreground transition-all duration-200 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
           title="Client Portal"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -247,10 +247,10 @@ export function IbDashboardSidebar() {
         </div>
       </div>
 
-      <div className="p-4 pt-0 space-y-2">
+     <div className="p-4 pt-0 space-y-2">
         <button
           onClick={() => router.push("/dashboard")}
-          className="flex w-full items-center justify-center gap-2 rounded-[24px] border border-sidebar-border bg-sidebar-accent/55 px-4 py-3 text-sm font-semibold text-sidebar-foreground transition-all duration-200 hover:bg-sidebar-accent"
+          className="flex w-full items-center justify-center gap-2 rounded-[24px] border border-sidebar-border/60 bg-transparent px-4 py-3 text-sm font-medium text-sidebar-foreground/70 transition-all duration-200 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
         >
           <ArrowLeft className="h-4 w-4" />
           Client Portal

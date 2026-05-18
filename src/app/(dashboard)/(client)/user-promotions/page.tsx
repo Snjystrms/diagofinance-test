@@ -289,7 +289,7 @@ export default function UserPromotionsPage() {
         {/* Header */}
         <div className="mb-6 space-y-1">
           <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-            <Megaphone className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+            <Megaphone className="h-5 w-5 text-primary" />
             Promotions
           </h1>
           <p className="text-sm text-muted-foreground">

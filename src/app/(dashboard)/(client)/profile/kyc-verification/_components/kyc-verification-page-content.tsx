@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import {
   authApi,
@@ -79,6 +79,75 @@ export function KycVerificationPageContent() {
   const [reuploadFiles, setReuploadFiles] = useState<Record<string, File | null>>({});
   const [reuploadingKey, setReuploadingKey] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<{ url: string; label: string } | null>(null);
+  const [authorizedFileUrls, setAuthorizedFileUrls] = useState<Record<string, string>>({});
+  const createdObjectUrlsRef = useRef<string[]>([]);
+
+  const collectUploadUrls = (value: unknown, bucket: Set<string>) => {
+    if (!value) return;
+    if (typeof value === 'string') {
+      if (value.includes('/uploads/')) {
+        bucket.add(value);
+      }
+      return;
+    }
+    if (Array.isArray(value)) {
+      value.forEach((item) => collectUploadUrls(item, bucket));
+      return;
+    }
+    if (typeof value === 'object') {
+      Object.values(value as Record<string, unknown>).forEach((item) => collectUploadUrls(item, bucket));
+    }
+  };
+
+  const uploadUrls = useMemo(() => {
+    const bucket = new Set<string>();
+    collectUploadUrls(kycStatusData, bucket);
+    return Array.from(bucket);
+  }, [kycStatusData]);
+
+  useEffect(() => {
+    if (!token || uploadUrls.length === 0) return;
+    let cancelled = false;
+
+    const loadAuthorizedUrls = async () => {
+      await Promise.all(
+        uploadUrls.map(async (url) => {
+          if (authorizedFileUrls[url]) return;
+          try {
+            const response = await fetch(url, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+            if (!response.ok) return;
+            const blob = await response.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            if (cancelled) {
+              URL.revokeObjectURL(objectUrl);
+              return;
+            }
+            createdObjectUrlsRef.current.push(objectUrl);
+            setAuthorizedFileUrls((prev) => ({ ...prev, [url]: objectUrl }));
+          } catch (error) {
+            console.error('Failed to fetch protected file:', error);
+          }
+        })
+      );
+    };
+
+    void loadAuthorizedUrls();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, uploadUrls, authorizedFileUrls]);
+
+  useEffect(() => {
+    return () => {
+      createdObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      createdObjectUrlsRef.current = [];
+    };
+  }, []);
 
   const requiredSelectedCount = [poiFrontFile, poaFrontFile, poaBackFile].filter(Boolean).length;
   const hasOptionalOtherSelection = Boolean(otherFile || otherType);
@@ -253,6 +322,7 @@ export function KycVerificationPageContent() {
     // Use URL directly if available, otherwise fallback to constructing from filename
     const url = fileUrl || (fileName ? kycFileUrl(fileName) : null);
     if (!url) return null;
+    const resolvedUrl = token ? authorizedFileUrls[url] : url;
 
     // Determine file type from URL or filename
     const displayFileName = fileName || url;
@@ -262,12 +332,16 @@ export function KycVerificationPageContent() {
     if (isImage) {
       return (
         <div className="mt-2">
-          <img
-            src={url}
-            alt={`${label} preview`}
-            className="max-h-40 rounded-md border border-border cursor-pointer hover:opacity-80 transition-opacity"
-            onClick={() => setPreviewImage({ url, label })}
-          />
+          {resolvedUrl ? (
+            <img
+              src={resolvedUrl}
+              alt={`${label} preview`}
+              className="max-h-40 rounded-md border border-border cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => setPreviewImage({ url: resolvedUrl, label })}
+            />
+          ) : (
+            <div className="text-xs text-muted-foreground">Loading preview...</div>
+          )}
         </div>
       );
     }
@@ -276,9 +350,14 @@ export function KycVerificationPageContent() {
       return (
         <div className="mt-2 text-sm">
           <a
-            href={url}
+            href={resolvedUrl || '#'}
             target="_blank"
             rel="noreferrer"
+            onClick={(event) => {
+              if (!resolvedUrl) {
+                event.preventDefault();
+              }
+            }}
             className="inline-flex items-center gap-1 text-primary underline hover:text-primary/80"
           >
             <LinkIcon className="w-4 h-4" />
@@ -292,9 +371,14 @@ export function KycVerificationPageContent() {
     return (
       <div className="mt-2 text-sm">
         <a
-          href={url}
+          href={resolvedUrl || '#'}
           target="_blank"
           rel="noreferrer"
+          onClick={(event) => {
+            if (!resolvedUrl) {
+              event.preventDefault();
+            }
+          }}
           className="inline-flex items-center gap-1 text-primary underline hover:text-primary/80"
         >
           <FileText className="w-4 h-4" />

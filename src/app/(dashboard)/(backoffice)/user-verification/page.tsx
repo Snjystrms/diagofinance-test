@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef, type ChangeEvent } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
@@ -485,6 +485,8 @@ export default function UserVerificationPage() {
   });
   const [docComments, setDocComments] = useState<Partial<Record<DocKey, string>>>({});
   const [previewImage, setPreviewImage] = useState<{ url: string; label: string } | null>(null);
+  const [authorizedFileUrls, setAuthorizedFileUrls] = useState<Record<string, string>>({});
+  const createdObjectUrlsRef = useRef<string[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadForm, setUploadForm] = useState<KycUploadFormState>(createEmptyKycUploadForm);
   const [uploadTarget, setUploadTarget] = useState<AdminUserOption | null>(null);
@@ -532,6 +534,63 @@ export default function UserVerificationPage() {
     },
     [isAdmin, isManager, allowedKycStatusesSet]
   );
+
+  const detailDocumentUrls = useMemo(() => {
+    const bucket = new Set<string>();
+    const docs = detail?.documents;
+    if (!docs) return [];
+    Object.values(docs as UserKycDetail["documents"]).forEach((doc) => {
+      const directUrl = typeof doc?.url === "string" ? doc.url : "";
+      const fileUrl = typeof doc?.file === "string" ? kycFileUrl(doc.file) : "";
+      if (directUrl && directUrl.includes("/uploads/")) bucket.add(directUrl);
+      if (fileUrl && fileUrl.includes("/uploads/")) bucket.add(fileUrl);
+    });
+    return Array.from(bucket);
+  }, [detail]);
+
+  useEffect(() => {
+    if (!token || detailDocumentUrls.length === 0) return;
+    let cancelled = false;
+
+    const loadAuthorizedUrls = async () => {
+      await Promise.all(
+        detailDocumentUrls.map(async (url) => {
+          if (authorizedFileUrls[url]) return;
+          try {
+            const response = await fetch(url, {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            });
+            if (!response.ok) return;
+            const blob = await response.blob();
+            const objectUrl = URL.createObjectURL(blob);
+            if (cancelled) {
+              URL.revokeObjectURL(objectUrl);
+              return;
+            }
+            createdObjectUrlsRef.current.push(objectUrl);
+            setAuthorizedFileUrls((prev) => ({ ...prev, [url]: objectUrl }));
+          } catch (error) {
+            console.error("Failed to fetch protected file:", error);
+          }
+        })
+      );
+    };
+
+    void loadAuthorizedUrls();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, detailDocumentUrls, authorizedFileUrls]);
+
+  useEffect(() => {
+    return () => {
+      createdObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      createdObjectUrlsRef.current = [];
+    };
+  }, []);
 
   const loadList = useCallback(async () => {
     if (!token) return;
@@ -1121,12 +1180,16 @@ const buildReviewPayload = () => {
                         <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 p-4 flex items-center justify-center min-h-[200px]">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           {url || doc?.url ? (
+                            (() => {
+                              const sourceUrl = doc?.url || url || "";
+                              const resolvedUrl = token ? authorizedFileUrls[sourceUrl] : sourceUrl;
+                              return resolvedUrl ? (
                             <img 
-                              src={doc?.url || url || ''} 
+                              src={resolvedUrl} 
                               alt={doc?.file || ''} 
                               className="max-h-64 w-auto object-contain rounded-md shadow-sm cursor-pointer hover:opacity-80 transition-opacity" 
                               onClick={() => {
-                                const imageUrl = doc?.url || url;
+                                const imageUrl = resolvedUrl;
                                 if (imageUrl) {
                                   setPreviewImage({
                                     url: imageUrl,
@@ -1135,6 +1198,10 @@ const buildReviewPayload = () => {
                                 }
                               }}
                             />
+                              ) : (
+                                <div className="text-xs text-muted-foreground">Loading preview...</div>
+                              );
+                            })()
                           ) : (
                             <div className="flex flex-col items-center gap-2 text-muted-foreground">
                               <ImageIcon className="h-12 w-12 opacity-50" />

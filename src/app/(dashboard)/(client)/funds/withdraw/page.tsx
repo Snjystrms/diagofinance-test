@@ -634,7 +634,7 @@ export default function WithdrawPage() {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Minimum withdrawal amount: 10.00 USDT
+                    Minimum withdrawal amount: 10.00 USD
                   </p>
                 </div>
 

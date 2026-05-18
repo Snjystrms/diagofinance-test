@@ -289,7 +289,7 @@ export default function UserNewsPage() {
         {/* Header */}
         <div className="mb-6 space-y-1">
           <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-            <Newspaper className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+            <Newspaper className="h-5 w-5 text-primary" />
             News
           </h1>
           <p className="text-sm text-muted-foreground">

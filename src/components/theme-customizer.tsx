@@ -445,6 +445,578 @@ const themeSwatches: ThemeSwatch[] = [
     }
   },
   {
+    id: "cyberpunk",
+    name: "Cyberpunk",
+    leftColor: "#0f172a",
+    rightColor: "#ec4899",
+    cssVariables: {
+      primary: "#06b6d4", // Neon Cyan
+      secondary: "#ec4899", // Neon Pink
+      accent: "#eab308", // Yellow
+      background: "#030712", // Deep Space Black
+      foreground: "#f3f4f6",
+      border: "#1f2937",
+      muted: "#111827",
+      mutedForeground: "#9ca3af",
+      sidebar: {
+        background: "#0b0f19",
+        foreground: "#f3f4f6",
+        primary: "#ec4899",
+        primaryForeground: "#030712",
+        accent: "#1f2937",
+        accentForeground: "#06b6d4",
+        border: "#1f2937",
+        ring: "#ec4899"
+      }
+    }
+  },
+  {
+    id: "dracula",
+    name: "Dracula Vamp",
+    leftColor: "#282a36",
+    rightColor: "#ff79c6",
+    cssVariables: {
+      primary: "#bd93f9", // Purple
+      secondary: "#ff79c6", // Pink
+      accent: "#50fa7b", // Green
+      background: "#282a36", // Dracula BG
+      foreground: "#f8f8f2",
+      border: "#44475a",
+      muted: "#1d1f27",
+      mutedForeground: "#6272a4",
+      sidebar: {
+        background: "#21222c",
+        foreground: "#f8f8f2",
+        primary: "#ff79c6",
+        primaryForeground: "#282a36",
+        accent: "#44475a",
+        accentForeground: "#8be9fd",
+        border: "#44475a",
+        ring: "#bd93f9"
+      }
+    }
+  },
+  {
+    id: "tokyo-night",
+    name: "Tokyo Night",
+    leftColor: "#1a1b26",
+    rightColor: "#7aa2f7",
+    cssVariables: {
+      primary: "#7aa2f7", // Tokyo Blue
+      secondary: "#bb9af7", // Tokyo Purple
+      accent: "#f7768e", // Tokyo Red/Pink
+      background: "#1a1b26", // Stormy Dark Blue
+      foreground: "#a9b1d6",
+      border: "#24283b",
+      muted: "#16161e",
+      mutedForeground: "#565f89",
+      sidebar: {
+        background: "#12131a",
+        foreground: "#a9b1d6",
+        primary: "#bb9af7",
+        primaryForeground: "#1a1b26",
+        accent: "#24283b",
+        accentForeground: "#7aa2f7",
+        border: "#24283b",
+        ring: "#bb9af7"
+      }
+    }
+  },
+  {
+    id: "matrix-glitch",
+    name: "Matrix Glitch",
+    leftColor: "#052e16",
+    rightColor: "#22c55e",
+    cssVariables: {
+      primary: "#22c55e", // Bright Green
+      secondary: "#4ade80", // Light Green
+      accent: "#15803d", // Deep Green
+      background: "#020617", // True Deep Black
+      foreground: "#dcfce7",
+      border: "#14532d",
+      muted: "#052e16",
+      mutedForeground: "#22c55e",
+      sidebar: {
+        background: "#022c22", // Terminal Sidebar
+        foreground: "#4ade80",
+        primary: "#22c55e",
+        primaryForeground: "#020617",
+        accent: "#042f1a",
+        accentForeground: "#86efac",
+        border: "#115e59",
+        ring: "#22c55e"
+      }
+    }
+  },
+  {
+    id: "nordic-frost",
+    name: "Nordic Frost",
+    leftColor: "#2e3440",
+    rightColor: "#88c0d0",
+    cssVariables: {
+      primary: "#88c0d0", // Frost Cyan
+      secondary: "#81a1c1", // Ice Blue
+      accent: "#b48ead", // Aurora Pink
+      background: "#2e3440", // Polar Night Dark
+      foreground: "#eceff4",
+      border: "#3b4252",
+      muted: "#242933",
+      mutedForeground: "#d8dee9",
+      sidebar: {
+        background: "#242933",
+        foreground: "#eceff4",
+        primary: "#8fbcbb",
+        primaryForeground: "#2e3440",
+        accent: "#3b4252",
+        accentForeground: "#88c0d0",
+        border: "#3b4252",
+        ring: "#88c0d0"
+      }
+    }
+  },
+  {
+    id: "solar-flare",
+    name: "Solar Flare",
+    leftColor: "#1e1b4b",
+    rightColor: "#f97316",
+    cssVariables: {
+      primary: "#f97316", // Intense Orange
+      secondary: "#facc15", // Electric Yellow
+      accent: "#ef4444", // Deep Red
+      background: "#0f051d", // Dark Cosmos Purple
+      foreground: "#faf5ff",
+      border: "#2e1065",
+      muted: "#1e1b4b",
+      mutedForeground: "#c084fc",
+      sidebar: {
+        background: "#1e102f",
+        foreground: "#faf5ff",
+        primary: "#facc15",
+        primaryForeground: "#0f051d",
+        accent: "#2e1065",
+        accentForeground: "#f97316",
+        border: "#3b0764",
+        ring: "#f97316"
+      }
+    }
+  },
+  {
+    id: "oceanic-abyss",
+    name: "Oceanic Abyss",
+    leftColor: "#042f1a",
+    rightColor: "#0ea5e9",
+    cssVariables: {
+      primary: "#0ea5e9", // Electric Blue
+      secondary: "#2dd4bf", // Teal Splash
+      accent: "#38bdf8", // Sky
+      background: "#030712",
+      foreground: "#f0f9ff",
+      border: "#0f172a",
+      muted: "#0c4a6e",
+      mutedForeground: "#38bdf8",
+      sidebar: {
+        background: "#021c24", // Deep Deep Blue/Green
+        foreground: "#e0f2fe",
+        primary: "#2dd4bf",
+        primaryForeground: "#030712",
+        accent: "#075985",
+        accentForeground: "#f0f9ff",
+        border: "#0c4a6e",
+        ring: "#0ea5e9"
+      }
+    }
+  },
+  {
+    id: "crimson-tide",
+    name: "Crimson Tide",
+    leftColor: "#4c0519",
+    rightColor: "#f43f5e",
+    cssVariables: {
+      primary: "#f43f5e", // Rose Pink
+      secondary: "#fda4af", // Light Rose
+      accent: "#9f1239", // Deep Wine Red
+      background: "#0f0507", // Near-black burgundy
+      foreground: "#fff1f2",
+      border: "#310c14",
+      muted: "#4c0519",
+      mutedForeground: "#fb7185",
+      sidebar: {
+        background: "#1f070c",
+        foreground: "#fff1f2",
+        primary: "#f43f5e",
+        primaryForeground: "#0f0507",
+        accent: "#4c0519",
+        accentForeground: "#fda4af",
+        border: "#4c0519",
+        ring: "#f43f5e"
+      }
+    }
+  },
+  {
+    id: "synthwave-84",
+    name: "Synthwave '84",
+    leftColor: "#2b213a",
+    rightColor: "#f43f5e",
+    cssVariables: {
+      primary: "#ff79c6", // Neon Pink
+      secondary: "#8be9fd", // Neon Cyan
+      accent: "#f1fa8c", // Laser Yellow
+      background: "#241b2f", // Deep Retro Purple
+      foreground: "#f8f8f2",
+      border: "#3d2f4d",
+      muted: "#1d1626",
+      mutedForeground: "#9d8ba9",
+      sidebar: {
+        background: "#191222",
+        foreground: "#f8f8f2",
+        primary: "#ff79c6",
+        primaryForeground: "#241b2f",
+        accent: "#2b213a",
+        accentForeground: "#8be9fd",
+        border: "#3d2f4d",
+        ring: "#ff79c6"
+      }
+    }
+  },
+  {
+    id: "monokai-pro",
+    name: "Monokai Pro",
+    leftColor: "#2d2a2e",
+    rightColor: "#ffd866",
+    cssVariables: {
+      primary: "#ffd866", // Mustard Yellow
+      secondary: "#fc9867", // Sunset Orange
+      accent: "#ab9df2", // Muted Lavender
+      background: "#2d2a2e", // Sophisticated Dark Charcoal
+      foreground: "#fcfcfa",
+      border: "#403e41",
+      muted: "#221f22",
+      mutedForeground: "#727072",
+      sidebar: {
+        background: "#221f22",
+        foreground: "#fcfcfa",
+        primary: "#a9dc76", // Matcha Green
+        primaryForeground: "#2d2a2e",
+        accent: "#403e41",
+        accentForeground: "#ff6188",
+        border: "#403e41",
+        ring: "#ffd866"
+      }
+    }
+  },
+  {
+    id: "nord-aurora",
+    name: "Nord Aurora",
+    leftColor: "#2e3440",
+    rightColor: "#a3be8c",
+    cssVariables: {
+      primary: "#8fbcbb", // Frost Teal
+      secondary: "#b48ead", // Muted Plum
+      accent: "#ebcb8b", // Soft Gold
+      background: "#2e3440", // Classic Nord Slate
+      foreground: "#eceff4",
+      border: "#3b4252",
+      muted: "#242933",
+      mutedForeground: "#d8dee9",
+      sidebar: {
+        background: "#242933",
+        foreground: "#eceff4",
+        primary: "#a3be8c", // Aurora Green
+        primaryForeground: "#2e3440",
+        accent: "#3b4252",
+        accentForeground: "#88c0d0",
+        border: "#3b4252",
+        ring: "#8fbcbb"
+      }
+    }
+  },
+  {
+    id: "midnight-moss",
+    name: "Midnight Moss",
+    leftColor: "#022c22",
+    rightColor: "#fbbf24",
+    cssVariables: {
+      primary: "#34d399", // Emerald Splash
+      secondary: "#fbbf24", // Amber Pop
+      accent: "#a7f3d0", // Mint
+      background: "#061512", // Deep Velvet Forest
+      foreground: "#e6f4ea",
+      border: "#112e27",
+      muted: "#02110e",
+      mutedForeground: "#689f92",
+      sidebar: {
+        background: "#0a1f1b",
+        foreground: "#e6f4ea",
+        primary: "#fbbf24",
+        primaryForeground: "#061512",
+        accent: "#112e27",
+        accentForeground: "#34d399",
+        border: "#163a31",
+        ring: "#34d399"
+      }
+    }
+  },
+  {
+    id: "deep-ocean-inc",
+    name: "Deep Ocean Ink",
+    leftColor: "#0f172a",
+    rightColor: "#38bdf8",
+    cssVariables: {
+      primary: "#38bdf8", // Sky Blue
+      secondary: "#818cf8", // Indigo Spark
+      accent: "#f472b6", // Bubblegum highlight
+      background: "#0b0f19", // Near-black oceanic navy
+      foreground: "#f1f5f9",
+      border: "#1e293b",
+      muted: "#0f172a",
+      mutedForeground: "#64748b",
+      sidebar: {
+        background: "#0f1423",
+        foreground: "#f1f5f9",
+        primary: "#818cf8",
+        primaryForeground: "#0b0f19",
+        accent: "#1e293b",
+        accentForeground: "#38bdf8",
+        border: "#1e293b",
+        ring: "#38bdf8"
+      }
+    }
+  },
+  {
+    id: "blood-moon",
+    name: "Blood Moon",
+    leftColor: "#1a0505",
+    rightColor: "#ef4444",
+    cssVariables: {
+      primary: "#ef4444", // Crimson Red
+      secondary: "#f97316", // Ember Orange
+      accent: "#f87171", // Soft Red
+      background: "#0f0202", // Absolute Void Crimson
+      foreground: "#fef2f2",
+      border: "#2a0808",
+      muted: "#1a0505",
+      mutedForeground: "#b91c1c",
+      sidebar: {
+        background: "#160404",
+        foreground: "#fef2f2",
+        primary: "#ef4444",
+        primaryForeground: "#0f0202",
+        accent: "#2a0808",
+        accentForeground: "#f97316",
+        border: "#3a0c0c",
+        ring: "#ef4444"
+      }
+    }
+  },
+  {
+    id: "rose-gold-dark",
+    name: "Rose Quartz",
+    leftColor: "#1e1b1c",
+    rightColor: "#fda4af",
+    cssVariables: {
+      primary: "#fda4af", // Dusty Rose Gold
+      secondary: "#f472b6", // Muted Pink
+      accent: "#e2e8f0",
+      background: "#181415", // Warm Luxury Obsidian
+      foreground: "#fbcfe8",
+      border: "#2e2528",
+      muted: "#120e0f",
+      mutedForeground: "#9d8286",
+      sidebar: {
+        background: "#1f191b",
+        foreground: "#fbcfe8",
+        primary: "#f472b6",
+        primaryForeground: "#181415",
+        accent: "#2e2528",
+        accentForeground: "#fda4af",
+        border: "#3a2f33",
+        ring: "#fda4af"
+      }
+    }
+  },
+  {
+    id: "cyber-lime",
+    name: "Cyber Lime",
+    leftColor: "#171717",
+    rightColor: "#a3e635",
+    cssVariables: {
+      primary: "#a3e635", // High-Vis Lime
+      secondary: "#22d3ee", // Cyan Flash
+      accent: "#facc15", // Electric Yellow
+      background: "#0a0a0a", // Pure Amoled Black
+      foreground: "#f4f4f5",
+      border: "#27272a",
+      muted: "#18181b",
+      mutedForeground: "#71717a",
+      sidebar: {
+        background: "#121212",
+        foreground: "#f4f4f5",
+        primary: "#a3e635",
+        primaryForeground: "#0a0a0a",
+        accent: "#27272a",
+        accentForeground: "#22d3ee",
+        border: "#27272a",
+        ring: "#a3e635"
+      }
+    }
+  },
+  {
+    id: "neon-vamp",
+    name: "Neon Vamp",
+    leftColor: "#090514",
+    rightColor: "#f43f5e",
+    cssVariables: {
+      primary: "#e11d48", // Crimson Velvet
+      secondary: "#c084fc", // Electric Violet
+      accent: "#22d3ee", // Cyan Highlight
+      background: "#05020a", // Pitch Purple-Black
+      foreground: "#f5f3ff",
+      border: "#1e1135",
+      muted: "#0d061a",
+      mutedForeground: "#9333ea",
+      sidebar: {
+        background: "#090414",
+        foreground: "#ede9fe",
+        primary: "#c084fc",
+        primaryForeground: "#05020a",
+        accent: "#1e1135",
+        accentForeground: "#22d3ee",
+        border: "#291749",
+        ring: "#c084fc"
+      }
+    }
+  },
+  {
+    id: "stealth-amber",
+    name: "Stealth Amber",
+    leftColor: "#171717",
+    rightColor: "#f59e0b",
+    cssVariables: {
+      primary: "#f59e0b", // Molten Amber
+      secondary: "#78350f", // Burnt Sienna
+      accent: "#ffffff",
+      background: "#0a0a0a", // True Matte Black
+      foreground: "#f4f4f5",
+      border: "#27272a",
+      muted: "#18181b",
+      mutedForeground: "#a1a1aa",
+      sidebar: {
+        background: "#121212",
+        foreground: "#fafafa",
+        primary: "#f59e0b",
+        primaryForeground: "#0a0a0a",
+        accent: "#27272a",
+        accentForeground: "#fbbf24",
+        border: "#27272a",
+        ring: "#f59e0b"
+      }
+    }
+  },
+  {
+    id: "abyssal-emerald",
+    name: "Abyssal Emerald",
+    leftColor: "#022c22",
+    rightColor: "#10b981",
+    cssVariables: {
+      primary: "#10b981", // High-energy Emerald
+      secondary: "#047857", // Deep Forest
+      accent: "#a7f3d0", // Jade Ice
+      background: "#020806", // Dark Jade Void
+      foreground: "#ecfdf5",
+      border: "#062e21",
+      muted: "#021610",
+      mutedForeground: "#059669",
+      sidebar: {
+        background: "#041c15",
+        foreground: "#ecfdf5",
+        primary: "#10b981",
+        primaryForeground: "#020806",
+        accent: "#062e21",
+        accentForeground: "#a7f3d0",
+        border: "#0c4f3a",
+        ring: "#10b981"
+      }
+    }
+  },
+  {
+    id: "sub-zero",
+    name: "Sub Zero",
+    leftColor: "#0f172a",
+    rightColor: "#38bdf8",
+    cssVariables: {
+      primary: "#38bdf8", // Glacial Blue
+      secondary: "#1d4ed8", // Deep Cobalt
+      accent: "#93c5fd", // Frost Spark
+      background: "#030712", // Arctic Midnight
+      foreground: "#f0f9ff",
+      border: "#111827",
+      muted: "#0b0f19",
+      mutedForeground: "#60a5fa",
+      sidebar: {
+        background: "#090d16",
+        foreground: "#f0f9ff",
+        primary: "#38bdf8",
+        primaryForeground: "#030712",
+        accent: "#1e293b",
+        accentForeground: "#93c5fd",
+        border: "#1e293b",
+        ring: "#38bdf8"
+      }
+    }
+  },
+  {
+    id: "toxic-waste",
+    name: "Toxic Waste",
+    leftColor: "#000000",
+    rightColor: "#a3e635",
+    cssVariables: {
+      primary: "#a3e635", // Hazardous Radioactive Lime
+      secondary: "#4b5563", // Dark Steel
+      accent: "#facc15", // Warning Yellow
+      background: "#000000", // Pure AMOLED Ink
+      foreground: "#f4f4f5",
+      border: "#262626",
+      muted: "#171717",
+      mutedForeground: "#737373",
+      sidebar: {
+        background: "#0a0a0a",
+        foreground: "#fafafa",
+        primary: "#a3e635",
+        primaryForeground: "#000000",
+        accent: "#171717",
+        accentForeground: "#e4e4e7",
+        border: "#262626",
+        ring: "#a3e635"
+      }
+    }
+  },
+  {
+    id: "phantom-rose",
+    name: "Phantom Rose",
+    leftColor: "#1c0d12",
+    rightColor: "#fb7185",
+    cssVariables: {
+      primary: "#fb7185", // Neon Rose petals
+      secondary: "#9f1239", // Deep Crimson
+      accent: "#f472b6", // Hot Pink highlights
+      background: "#090305", // Near-black Burgundy
+      foreground: "#fff1f2",
+      border: "#2a0f17",
+      muted: "#14060b",
+      mutedForeground: "#e11d48",
+      sidebar: {
+        background: "#120509",
+        foreground: "#fff1f2",
+        primary: "#fb7185",
+        primaryForeground: "#090305",
+        accent: "#2a0f17",
+        accentForeground: "#f472b6",
+        border: "#431422",
+        ring: "#fb7185"
+      }
+    }
+  },
+  {
     id: "graphite",
     name: "Graphite",
     leftColor: "#111827",
@@ -467,6 +1039,32 @@ const themeSwatches: ThemeSwatch[] = [
         accentForeground: "#fde68a",
         border: "#1f2937",
         ring: "#fb923c"
+      }
+    }
+  },
+  {
+    id: "purple-noir",
+    name: "Purple Noir",
+    leftColor: "#2e1065",
+    rightColor: "#000000",
+    cssVariables: {
+      primary: "#a855f7",
+      secondary: "#c084fc",
+      accent: "#7c3aed",
+      background: "#000000",
+      foreground: "#f5f3ff",
+      border: "#27272a",
+      muted: "#09090b",
+      mutedForeground: "#a1a1aa",
+      sidebar: {
+        background: "#0a0a0f",
+        foreground: "#ede9fe",
+        primary: "#a855f7",
+        primaryForeground: "#0a0a0f",
+        accent: "#1a1129",
+        accentForeground: "#ddd6fe",
+        border: "#27272a",
+        ring: "#7c3aed"
       }
     }
   }
