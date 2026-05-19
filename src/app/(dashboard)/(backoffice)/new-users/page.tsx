@@ -422,14 +422,7 @@ export default function NewUsersPage() {
       return;
     }
 
-    const defaultIbName = user.name?.trim() || `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || "IB User";
-    const ibNameInput = window.prompt("Enter IB name", defaultIbName);
-
-    if (ibNameInput === null) {
-      return;
-    }
-
-    const ibName = ibNameInput.trim();
+    const ibName = user.name?.trim() || `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || "IB User";
     if (!ibName) {
       toast.error("IB name is required");
       return;

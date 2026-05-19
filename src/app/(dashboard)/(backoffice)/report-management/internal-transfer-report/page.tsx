@@ -165,7 +165,7 @@ export default function InternalTransferReportPage() {
         "User Email": item.email || "—",
         "From Account": item.from_account || "—",
         "To Account": item.to_account || "—",
-        "Amount (USDT)": formatAmount(item.amount),
+        "Amount (USD)": formatAmount(item.amount),
         "Comment": item.comment || "—",
         "Marketing Name": item.marketing_name || "—",
         "Type": item.type ?? "—",
@@ -260,7 +260,7 @@ export default function InternalTransferReportPage() {
       },
       {
         id: "amount",
-        header: "Amount (USDT)",
+        header: "Amount (USD)",
         accessorKey: "amount",
         cell: ({ row }) => (
           <span className="font-medium">{formatAmount(row.original.amount)}</span>

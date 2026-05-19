@@ -234,7 +234,7 @@ export default function IbWithdrawalReportPage() {
         "Partner ID": item.partner_id || "—",
         "User Name": item.name || "—",
         "User Email": item.email || "—",
-        "Amount (USDT)": formatAmount(item.amount),
+        "Amount (USD)": formatAmount(item.amount),
         "Payment Method": item.payment_method || "—",
         "Wallet Address": item.withdraw_to || "—",
         "Chain ID": item.chain_id || "—",
@@ -342,7 +342,7 @@ export default function IbWithdrawalReportPage() {
       },
       {
         id: "amount",
-        header: "Amount (USDT)",
+        header: "Amount (USD)",
         accessorKey: "amount",
         cell: ({ row }) => (
           <span className="font-medium">{formatAmount(row.original.amount)}</span>

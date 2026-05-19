@@ -311,7 +311,7 @@ export default function ReportManagementPage() {
         ID: item.id,
         "User Name": item.name || "-",
         "User Email": item.email || "-",
-        "Amount (USDT)": formatAmount(item.amount),
+        "Amount (USD)": formatAmount(item.amount),
         "Payment Method": item.payment_method || "-",
         "Transaction Hash": item.transaction_hash || "-",
         Status:
@@ -392,7 +392,7 @@ export default function ReportManagementPage() {
       },
       {
         id: "amount",
-        header: "Amount (USDT)",
+        header: "Amount (USD)",
         accessorKey: "amount",
         cell: ({ row }) => (
           <span className="font-medium">{formatAmount(row.original.amount)}</span>

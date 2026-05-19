@@ -293,7 +293,7 @@ export default function WithdrawalReportPage() {
         ID: item.id,
         "User Name": item.name || "—",
         "User Email": item.email || "—",
-        "Amount (USDT)": formatAmount(item.amount),
+        "Amount (USD)": formatAmount(item.amount),
         "Payment Method": item.payment_method || "—",
         "Wallet Address": item.wallet_address || "—",
         "Chain ID": item.chain_id || "—",
@@ -394,7 +394,7 @@ export default function WithdrawalReportPage() {
       },
       {
         id: "amount",
-        header: "Amount (USDT)",
+        header: "Amount (USD)",
         accessorKey: "amount",
         cell: ({ row }) => (
           <span className="font-medium">{formatAmount(row.original.amount)}</span>

@@ -460,7 +460,7 @@ export function USDTTransactionsPageContent() {
       },
       {
         id: "amount",
-        header: "Amount (USDT)",
+        header: "Amount (USD)",
         accessorKey: "amount",
         cell: ({ row }) => (
           <span className="font-medium">{formatAmount(row.original.amount)}</span>
@@ -575,7 +575,7 @@ export function USDTTransactionsPageContent() {
       },
       {
         id: "amount",
-        header: "Amount (USDT)",
+        header: "Amount (USD)",
         accessorKey: "amount",
         cell: ({ row }) => (
           <span className="font-medium">{formatAmount(row.original.amount)}</span>
@@ -923,12 +923,12 @@ export function USDTTransactionsPageContent() {
                   <div className="rounded-lg border p-4">
                     <p className="text-xs text-muted-foreground mb-2">Request Information</p>
                     <div className="space-y-2 text-sm">
-                      <div>
+                      {/* <div>
                         <span className="text-muted-foreground">ID: </span>
                         <span className="font-medium">
                           {activeTab === "deposits" ? viewingDepositRequest?.id : viewingWithdrawalRequest?.id}
                         </span>
-                      </div>
+                      </div> */}
                       <div>
                         <span className="text-muted-foreground">Status: </span>
                         {statusBadge(
@@ -984,14 +984,14 @@ export function USDTTransactionsPageContent() {
                                 : viewingWithdrawalRequest?.user?.email}
                             </span>
                           </div>
-                          <div>
+                          {/* <div>
                             <span className="text-muted-foreground">User ID: </span>
                             <span className="font-medium">
                               {activeTab === "deposits"
                                 ? viewingDepositRequest?.user?.id
                                 : viewingWithdrawalRequest?.user?.id}
                             </span>
-                          </div>
+                          </div> */}
                         </>
                       ) : (
                         <span className="text-muted-foreground">No user information available</span>
@@ -1043,7 +1043,7 @@ export function USDTTransactionsPageContent() {
                           </div>
                         </div>
                       )}
-                      {((activeTab === "deposits" && viewingDepositRequest?.approved_by) ||
+                      {/* {((activeTab === "deposits" && viewingDepositRequest?.approved_by) ||
                         (activeTab === "withdrawals" && viewingWithdrawalRequest?.approved_by)) && (
                         <div>
                           <span className="text-muted-foreground">Approved By: </span>
@@ -1053,7 +1053,7 @@ export function USDTTransactionsPageContent() {
                               : viewingWithdrawalRequest?.approved_by}
                           </span>
                         </div>
-                      )}
+                      )} */}
                       {((activeTab === "deposits" && viewingDepositRequest?.approved_at) ||
                         (activeTab === "withdrawals" && viewingWithdrawalRequest?.approved_at)) && (
                         <div className="flex items-center gap-1">

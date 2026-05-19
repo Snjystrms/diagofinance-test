@@ -228,7 +228,6 @@ export default function IbManagementPage() {
   const [actionType, setActionType] = useState<"approve" | "reject" | "review">("approve");
   const [selectedDecision, setSelectedDecision] = useState<"approve" | "reject">("approve");
   const [actionRequest, setActionRequest] = useState<AdminIbRequest | null>(null);
-  const [actionIbName, setActionIbName] = useState("");
   const [actionComment, setActionComment] = useState("");
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
@@ -359,8 +358,6 @@ export default function IbManagementPage() {
         type === "review" ? (statusCode === 2 ? "reject" : "approve") : type
       );
 
-      const defaultIbName = request.ib_name ?? deriveFullName(request);
-      setActionIbName(defaultIbName === "—" ? "" : defaultIbName);
       if (type === "reject") {
         setActionComment("");
         return;
@@ -375,7 +372,6 @@ export default function IbManagementPage() {
     setActionRequest(null);
     setSelectedDecision("approve");
     setActionComment("");
-    setActionIbName("");
     setProcessingId(null);
   }, []);
 
@@ -392,13 +388,8 @@ export default function IbManagementPage() {
     }
 
     const comment = actionComment.trim();
-    const ibName = actionIbName.trim();
-    const requiresIbName = nextAction === "approve";
-
-    if (requiresIbName && !ibName) {
-      toast.error("IB name is required to approve the request.");
-      return;
-    }
+    const resolvedIbNameRaw = actionRequest.ib_name ?? deriveFullName(actionRequest);
+    const ibName = resolvedIbNameRaw === "—" ? "" : String(resolvedIbNameRaw).trim();
 
     try {
       setProcessingId(identifier);
@@ -441,7 +432,6 @@ export default function IbManagementPage() {
     token,
     actionRequest,
     actionComment,
-    actionIbName,
     closeActionDialog,
     loadRequests,
   ]);
@@ -556,57 +546,22 @@ export default function IbManagementPage() {
         enableSorting: false,
         cell: ({ row }) => {
           const request = row.original;
-          const statusCode = asStatusCode(request);
           const identifier = deriveRequestId(request);
           const isProcessing = processingId !== null && identifier === processingId;
-
-          if (statusCode !== 0) {
-            return (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => openActionDialog(request, "review")}
-                disabled={isProcessing}
-              >
-                {isProcessing ? (
-                  <Spinner className="mr-2 h-4 w-4" />
-                ) : (
-                  <Eye className="mr-2 h-4 w-4" />
-                )}
-                Review
-              </Button>
-            );
-          }
-
           return (
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                className="bg-emerald-600 hover:bg-emerald-700"
-                onClick={() => openActionDialog(request, "approve")}
-                disabled={isProcessing}
-              >
-                {isProcessing ? (
-                  <Spinner className="mr-2 h-4 w-4" />
-                ) : (
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                )}
-                Approve
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={() => openActionDialog(request, "reject")}
-                disabled={isProcessing}
-              >
-                {isProcessing ? (
-                  <Spinner className="mr-2 h-4 w-4" />
-                ) : (
-                  <XCircle className="mr-2 h-4 w-4" />
-                )}
-                Reject
-              </Button>
-            </div>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => openActionDialog(request, "review")}
+              disabled={isProcessing}
+            >
+              {isProcessing ? (
+                <Spinner className="mr-2 h-4 w-4" />
+              ) : (
+                <Eye className="mr-2 h-4 w-4" />
+              )}
+              Review
+            </Button>
           );
         },
       },
@@ -781,9 +736,9 @@ export default function IbManagementPage() {
                 <div className="text-muted-foreground">
                   {deriveEmail(actionRequest)} • {derivePhone(actionRequest)}
                 </div>
-                <div className="text-xs text-muted-foreground">
+                {/* <div className="text-xs text-muted-foreground">
                   Request ID: {deriveRequestId(actionRequest) ?? "—"}
-                </div>
+                </div> */}
               </div>
 
               {isReviewMode ? (
@@ -815,30 +770,6 @@ export default function IbManagementPage() {
                     </TabsTrigger>
                   </TabsList>
                 </Tabs>
-                <p className="text-xs text-muted-foreground">
-                  Switching the decision here updates what will be sent in the PATCH request.
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="ib-name" className="text-sm font-medium">
-                  {isApproveDecision ? "IB Name *" : "IB Name (not used for reject)"}
-                </label>
-                <Input
-                  id="ib-name"
-                  value={actionIbName}
-                  onChange={(event) => setActionIbName(event.target.value)}
-                  placeholder="Enter the display name for this IB"
-                />
-                {isApproveDecision ? (
-                  <p className="text-xs text-muted-foreground">
-                    This name will be stored on the partner profile after approval.
-                  </p>
-                ) : (
-                  <p className="text-xs text-muted-foreground">
-                    Rejection ignores the IB name field. Keep it only if you may switch back to approve.
-                  </p>
-                )}
               </div>
 
               <div className="space-y-2">
@@ -873,10 +804,7 @@ export default function IbManagementPage() {
               variant={isApproveDecision ? "default" : "destructive"}
               onClick={handleActionSubmit}
               className="px-5"
-              disabled={
-                processingId !== null ||
-                (isApproveDecision && !actionIbName.trim())
-              }
+              disabled={processingId !== null}
             >
               {processingId !== null ? (
                 <>
