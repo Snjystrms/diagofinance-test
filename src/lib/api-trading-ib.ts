@@ -1178,14 +1178,15 @@ export interface UpdateMT5AccountRequest {
 }
 
 export interface CreateMT5AccountRequest {
-  account_type_id: number;
-  account_mode: "demo" | "live";
-  leverage_temp: number;
-  currency: string;
-  swap_free: boolean;
-  password: string;
-  confirm_password: string;
   user_id: number;
+  account_type_id: number;
+  group_id: number;
+  leverage: number;
+  account_mode: "demo" | "live";
+  main_password: string;
+  investor_password: string;
+  balance: number;
+  extra_fields: Record<string, unknown>;
 }
 
 export interface AdminMT5AccountsListResponse {
@@ -1299,7 +1300,7 @@ export const adminMT5AccountsApi = {
       throw new Error("Token is required to create MT5 account");
     }
 
-    return apiCall<{ data?: AdminMT5Account; account?: AdminMT5Account }>(`/admin/mt5-accounts`, {
+    return apiCall<{ success?: boolean; message?: string; data?: AdminMT5Account; account?: AdminMT5Account }>(`/admin/mt5-accounts`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: JSON.stringify(data),

@@ -6,7 +6,6 @@ import toast from "react-hot-toast";
 
 import { SearchSelectField } from "@/components/search-select-field";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,8 +14,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/contexts/auth-context";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
-import { accountTypesApi, adminUsersApi } from "@/lib/api";
-import type { AccountType, CreateMT5AccountRequest, PendingUser } from "@/lib/api";
+import { accountTypesApi, adminGroupsApi, adminUsersApi } from "@/lib/api";
+import type { AccountType, AdminGroupItem, CreateMT5AccountRequest, PendingUser } from "@/lib/api";
 
 interface CreateAccountDialogProps {
   open: boolean;
@@ -24,21 +23,27 @@ interface CreateAccountDialogProps {
   onSubmit: (data: CreateMT5AccountRequest) => Promise<void>;
 }
 
+type CreateAccountFormState = CreateMT5AccountRequest & {
+  confirm_main_password: string;
+};
+
 export function CreateAccountDialog({
   open,
   onOpenChange,
   onSubmit,
 }: CreateAccountDialogProps) {
   const { token } = useAuth();
-  const [formData, setFormData] = useState<CreateMT5AccountRequest>({
-    account_type_id: 0,
-    account_mode: "demo",
-    leverage_temp: 50,
-    currency: "USD",
-    swap_free: false,
-    password: "",
-    confirm_password: "",
+  const [formData, setFormData] = useState<CreateAccountFormState>({
     user_id: 0,
+    account_type_id: 0,
+    group_id: 1,
+    leverage: 100,
+    account_mode: "demo",
+    main_password: "",
+    investor_password: "",
+    balance: 10000,
+    extra_fields: {},
+    confirm_main_password: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState("");
@@ -47,13 +52,17 @@ export function CreateAccountDialog({
   const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null);
   const [accountTypes, setAccountTypes] = useState<AccountType[]>([]);
   const [loadingAccountTypes, setLoadingAccountTypes] = useState(false);
+  const [groups, setGroups] = useState<AdminGroupItem[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
   const [selectedAccountType, setSelectedAccountType] = useState<AccountType | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showInvestorPassword, setShowInvestorPassword] = useState(false);
 
   useEffect(() => {
     if (open && token) {
       void loadAccountTypes();
+      void loadGroups();
     }
   }, [open, token]);
 
@@ -79,6 +88,27 @@ export function CreateAccountDialog({
       );
     } finally {
       setLoadingAccountTypes(false);
+    }
+  };
+
+  const loadGroups = async () => {
+    if (!token) return;
+
+    try {
+      setLoadingGroups(true);
+      const response = await adminGroupsApi.list(token);
+      const groupsList = Array.isArray(response?.data) ? response.data : [];
+      setGroups(groupsList);
+    } catch (error) {
+      console.error("Failed to load groups:", error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, {
+          resource: "groups",
+          action: "load",
+        })
+      );
+    } finally {
+      setLoadingGroups(false);
     }
   };
 
@@ -136,19 +166,22 @@ export function CreateAccountDialog({
     if (!open) return;
 
     setFormData({
-      account_type_id: 0,
-      account_mode: "demo",
-      leverage_temp: 50,
-      currency: "USD",
-      swap_free: false,
-      password: "",
-      confirm_password: "",
       user_id: 0,
+      account_type_id: 0,
+      group_id: 1,
+      leverage: 100,
+      account_mode: "demo",
+      main_password: "",
+      investor_password: "",
+      balance: 10000,
+      extra_fields: {},
+      confirm_main_password: "",
     });
     setSelectedUser(null);
     setSelectedAccountType(null);
     setUserSearchQuery("");
     setUsers([]);
+    setGroups([]);
   }, [open]);
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -164,24 +197,39 @@ export function CreateAccountDialog({
       return;
     }
 
-    if (!formData.password || formData.password.length < 6) {
+    if (!formData.group_id || formData.group_id === 0) {
+      toast.error("Please select a group");
+      return;
+    }
+
+    if (!formData.main_password || formData.main_password.length < 6) {
       toast.error("Password must be at least 6 characters");
       return;
     }
 
-    if (formData.password !== formData.confirm_password) {
+    if (formData.main_password !== formData.confirm_main_password) {
       toast.error("Passwords do not match");
       return;
     }
 
-    if (!formData.leverage_temp || formData.leverage_temp <= 0) {
+    if (!formData.leverage || formData.leverage <= 0) {
       toast.error("Please enter a valid leverage");
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await onSubmit(formData);
+      await onSubmit({
+        user_id: formData.user_id,
+        account_type_id: formData.account_type_id,
+        group_id: formData.group_id,
+        leverage: formData.leverage,
+        account_mode: formData.account_mode,
+        main_password: formData.main_password,
+        investor_password: formData.investor_password,
+        balance: formData.balance,
+        extra_fields: formData.extra_fields,
+      });
       onOpenChange(false);
     } catch (error) {
       console.error("Error creating account:", error);
@@ -296,21 +344,27 @@ export function CreateAccountDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="currency">Currency *</Label>
+                <Label htmlFor="group_id">Group ID *</Label>
                 <Select
-                  value={formData.currency}
-                  onValueChange={(value) => setFormData((prev) => ({ ...prev, currency: value }))}
+                  value={formData.group_id ? String(formData.group_id) : ""}
+                  onValueChange={(value) =>
+                    setFormData((prev) => ({ ...prev, group_id: value ? Number(value) : 0 }))
+                  }
+                  disabled={loadingGroups || groups.length === 0}
                 >
-                  <SelectTrigger id="currency">
-                    <SelectValue placeholder="Select currency" />
+                  <SelectTrigger id="group_id" className="w-full">
+                    <SelectValue
+                      placeholder={
+                        loadingGroups ? "Loading groups..." : "Select group..."
+                      }
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="USD">USD</SelectItem>
-                    <SelectItem value="EUR">EUR</SelectItem>
-                    <SelectItem value="GBP">GBP</SelectItem>
-                    <SelectItem value="JPY">JPY</SelectItem>
-                    <SelectItem value="AUD">AUD</SelectItem>
-                    <SelectItem value="CAD">CAD</SelectItem>
+                    {groups.map((group) => (
+                      <SelectItem key={group.id} value={String(group.id)}>
+                        {group.name || `Group ${group.id}`} (ID: {group.id})
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -318,15 +372,15 @@ export function CreateAccountDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="leverage_temp">Leverage *</Label>
+                <Label htmlFor="leverage">Leverage *</Label>
                 <Input
-                  id="leverage_temp"
+                  id="leverage"
                   type="number"
-                  value={formData.leverage_temp || ""}
+                  value={formData.leverage || ""}
                   onChange={(event) =>
                     setFormData((prev) => ({
                       ...prev,
-                      leverage_temp: event.target.value ? Number(event.target.value) : 0,
+                      leverage: event.target.value ? Number(event.target.value) : 0,
                     }))
                   }
                   placeholder="Enter leverage"
@@ -334,32 +388,34 @@ export function CreateAccountDialog({
                 />
               </div>
 
-              <div className="flex items-end space-y-2">
-                <div className="flex items-center space-x-2">
-                  <Checkbox
-                    id="swap_free"
-                    checked={formData.swap_free}
-                    onCheckedChange={(checked) =>
-                      setFormData((prev) => ({ ...prev, swap_free: checked === true }))
-                    }
-                  />
-                  <Label htmlFor="swap_free" className="cursor-pointer">
-                    Swap Free
-                  </Label>
-                </div>
+              <div className="space-y-2">
+                <Label htmlFor="balance">Balance *</Label>
+                <Input
+                  id="balance"
+                  type="number"
+                  value={formData.balance || ""}
+                  onChange={(event) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      balance: event.target.value ? Number(event.target.value) : 0,
+                    }))
+                  }
+                  placeholder="Enter balance"
+                  required
+                />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="password">Password *</Label>
+                <Label htmlFor="main_password">Main Password *</Label>
                 <div className="relative">
                   <Input
-                    id="password"
+                    id="main_password"
                     type={showPassword ? "text" : "password"}
-                    value={formData.password}
+                    value={formData.main_password}
                     onChange={(event) =>
-                      setFormData((prev) => ({ ...prev, password: event.target.value }))
+                      setFormData((prev) => ({ ...prev, main_password: event.target.value }))
                     }
                     placeholder="Enter password"
                     required
@@ -378,14 +434,14 @@ export function CreateAccountDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirm_password">Confirm Password *</Label>
+                <Label htmlFor="confirm_main_password">Confirm Main Password *</Label>
                 <div className="relative">
                   <Input
-                    id="confirm_password"
+                    id="confirm_main_password"
                     type={showConfirmPassword ? "text" : "password"}
-                    value={formData.confirm_password}
+                    value={formData.confirm_main_password}
                     onChange={(event) =>
-                      setFormData((prev) => ({ ...prev, confirm_password: event.target.value }))
+                      setFormData((prev) => ({ ...prev, confirm_main_password: event.target.value }))
                     }
                     placeholder="Confirm password"
                     required
@@ -399,6 +455,34 @@ export function CreateAccountDialog({
                     onClick={() => setShowConfirmPassword((prev) => !prev)}
                   >
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="investor_password">Investor Password *</Label>
+                <div className="relative">
+                  <Input
+                    id="investor_password"
+                    type={showInvestorPassword ? "text" : "password"}
+                    value={formData.investor_password}
+                    onChange={(event) =>
+                      setFormData((prev) => ({ ...prev, investor_password: event.target.value }))
+                    }
+                    placeholder="Enter investor password"
+                    required
+                    minLength={6}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowInvestorPassword((prev) => !prev)}
+                  >
+                    {showInvestorPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>

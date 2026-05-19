@@ -47,7 +47,7 @@ export function Header() {
   const [profileStatus, setProfileStatus] = useState<string | null>(null);
   const [dashboardName, setDashboardName] = useState<string | null>(null);
   const canManageCustomizer =
-    user?.type === "admin" || user?.type === "subadmin" || user?.type === "manager";
+    user?.type === "admin" || user?.type === "subadmin" || user?.type === "manager"  || user?.type === "user";  
   const canExportPreset =
     customizationEnabled && (canCustomizeTheme || canCustomizeSidebar || canCustomizeDashboard);
   const isDashboardRoute = pathname === "/dashboard";

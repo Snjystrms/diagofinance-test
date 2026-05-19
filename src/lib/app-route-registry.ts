@@ -564,7 +564,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "user-management",
-    navLabel: "All Users MT5 Accounts",
+    navLabel: "MT5 Accounts",
     managerCategories: ["User Management"],
   },
   {

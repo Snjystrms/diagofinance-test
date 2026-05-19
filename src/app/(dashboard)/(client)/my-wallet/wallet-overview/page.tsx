@@ -339,7 +339,7 @@ export default function WalletOverviewPage() {
                             MT5 User ID
                           </p>
                           <p className="text-2xl font-bold text-foreground">
-                            {wallet.mt5_user_id}
+                            {wallet.mt5_id}
                           </p>
                         </div>
                         <Badge variant="outline" className="capitalize">

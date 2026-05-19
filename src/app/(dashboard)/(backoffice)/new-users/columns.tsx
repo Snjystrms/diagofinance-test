@@ -141,7 +141,7 @@ export const getColumnsWithActions = (
             <span className="font-medium">{user.name || "-"}</span>
           </div>
           <div className="text-xs text-muted-foreground">@{user.username || "-"}</div>
-          <div className="text-xs text-muted-foreground">Sponsor: {user.sponsor_id || "-"}</div>
+          <div className="text-xs text-muted-foreground">IB: {user.sponsor_id || "-"}</div>
         </div>
       );
     },

@@ -41,6 +41,7 @@ export interface WalletSummaryWallet {
 export interface WalletSummaryMt5Wallet extends WalletSummaryWallet {
   mt5_user_id: number;
   wallet_type: string;
+  mt5_id: string | number;
 }
 
 export interface WalletSummaryTransaction {

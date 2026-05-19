@@ -64,47 +64,47 @@ export const getColumns = (opts: {
     ),
     enableColumnFilter: false,
   },
-  {
-    id: "stop_out_level",
-    accessorKey: "stop_out_level",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Stop-out %" />,
-    cell: ({ row }) => (
-      <div className="inline-flex items-center gap-1">
-        <Layers className="h-4 w-4 text-amber-600" />
-        <span>{row.original.stop_out_level}</span>
-      </div>
-    ),
-    enableColumnFilter: true,
-  },
-  {
-    id: "hedge_margin",
-    accessorKey: "hedge_margin",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Hedge Margin" />,
-    cell: ({ row }) => (
-      <div className="inline-flex items-center gap-1">
-        <Coins className="h-4 w-4 text-emerald-600" />
-        <span>{row.original.hedge_margin}</span>
-      </div>
-    ),
-    enableColumnFilter: true,
-  },
-  {
-    id: "swap_free_option",
-    accessorKey: "swap_free_option",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Swap Free" />,
-    cell: ({ row }) => (
-      <Badge
-        className={
-          row.original.swap_free_option
-            ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 border-green-200 dark:border-green-800"
-            : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700"
-        }
-      >
-        {row.original.swap_free_option ? "Yes" : "No"}
-      </Badge>
-    ),
-    enableColumnFilter: true,
-  },
+  // {
+  //   id: "stop_out_level",
+  //   accessorKey: "stop_out_level",
+  //   header: ({ column }) => <DataTableColumnHeader column={column} title="Stop-out %" />,
+  //   cell: ({ row }) => (
+  //     <div className="inline-flex items-center gap-1">
+  //       <Layers className="h-4 w-4 text-amber-600" />
+  //       <span>{row.original.stop_out_level}</span>
+  //     </div>
+  //   ),
+  //   enableColumnFilter: true,
+  // },
+  // {
+  //   id: "hedge_margin",
+  //   accessorKey: "hedge_margin",
+  //   header: ({ column }) => <DataTableColumnHeader column={column} title="Hedge Margin" />,
+  //   cell: ({ row }) => (
+  //     <div className="inline-flex items-center gap-1">
+  //       <Coins className="h-4 w-4 text-emerald-600" />
+  //       <span>{row.original.hedge_margin}</span>
+  //     </div>
+  //   ),
+  //   enableColumnFilter: true,
+  // },
+  // {
+  //   id: "swap_free_option",
+  //   accessorKey: "swap_free_option",
+  //   header: ({ column }) => <DataTableColumnHeader column={column} title="Swap Free" />,
+  //   cell: ({ row }) => (
+  //     <Badge
+  //       className={
+  //         row.original.swap_free_option
+  //           ? "bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 border-green-200 dark:border-green-800"
+  //           : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700"
+  //       }
+  //     >
+  //       {row.original.swap_free_option ? "Yes" : "No"}
+  //     </Badge>
+  //   ),
+  //   enableColumnFilter: true,
+  // },
   {
     id: "status",
     accessorKey: "status",
