@@ -460,7 +460,7 @@ export default function AllUsersMT5AccountsPage() {
             <div>
               <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
                 <Database className="h-6 w-6 text-primary" />
-                All Users MT5 Accounts
+                MT5 Accounts
               </h1>
               <p className="text-sm text-muted-foreground">
                 View and manage all MT5 trading accounts for users.

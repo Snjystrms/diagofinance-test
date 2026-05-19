@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
-import { Calendar, CheckCircle, Mail, Plus, RefreshCw, Search, Users } from "lucide-react";
+import { Calendar, CheckCircle, Mail, Plus, RefreshCw, Search, Users, ShieldPlus, ShieldMinus } from "lucide-react";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { DeleteDialog } from "@/components/dialogs/delete-dialog";
@@ -513,7 +513,7 @@ export default function NewUsersPage() {
                   New Users
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Listed are all the crm clients
+                  Listed are all the crm users
                 </p>
               </div>
               <div className="flex gap-2">
@@ -539,14 +539,14 @@ export default function NewUsersPage() {
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-                  <CheckCircle className="h-4 w-4 text-green-600" />
+                  <ShieldPlus className="h-4 w-4 text-green-600" />
                 </CardHeader>
                 <CardContent><div className="text-2xl font-bold">{activeUsersCount}</div></CardContent>
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">Inactive Users</CardTitle>
-                  <Mail className="h-4 w-4 text-blue-600" />
+                  <ShieldMinus className="h-4 w-4 text-blue-600" />
                 </CardHeader>
                 <CardContent><div className="text-2xl font-bold">{inactiveUsersCount}</div></CardContent>
               </Card>
@@ -639,7 +639,7 @@ export default function NewUsersPage() {
             }
           }}
           title="Create User"
-          description="Add a new user through the CRUD create endpoint."
+          description="Add a new user."
           submitLabel="Create User"
           submittingLabel="Creating..."
           submitting={creatingUser}

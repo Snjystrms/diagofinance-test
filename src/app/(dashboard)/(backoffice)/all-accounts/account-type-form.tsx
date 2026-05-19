@@ -314,7 +314,7 @@ export function AccountTypeForm({
               />
             </div>
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="stop_out_level">Stop-out Level (%)</Label>
               <Input
                 id="stop_out_level"
@@ -362,7 +362,7 @@ export function AccountTypeForm({
                   {form.swap_free_option ? "Enabled" : "Disabled"}
                 </span>
               </div>
-            </div>
+            </div> */}
 
             <div className="space-y-2">
               <Label>Status</Label>

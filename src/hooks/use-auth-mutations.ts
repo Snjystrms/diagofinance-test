@@ -117,7 +117,7 @@ export const useAuthMutations = () => {
           
           // Show appropriate message based on response status
           if (response.status === 'no_usdt_transaction') {
-            toast.success('Login successful but USDT transaction required');
+            toast.success('Login successful but USD transaction required');
             // You might want to redirect to a USDT transaction page here
           } else {
             toast.success(response.message || 'Login successful!');

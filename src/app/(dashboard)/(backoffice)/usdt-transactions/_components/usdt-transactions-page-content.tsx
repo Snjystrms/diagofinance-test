@@ -701,10 +701,10 @@ export function USDTTransactionsPageContent() {
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
               <CircleDollarSign className="h-6 w-6 text-primary" />
-              USDT Transactions
+              All Transactions
             </h1>
             <p className="text-sm text-muted-foreground">
-              Manage and review USDT deposit and withdrawal requests
+              Manage and review all deposit and withdrawal requests
             </p>
           </div>
           <div className="flex gap-2">

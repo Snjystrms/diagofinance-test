@@ -75,7 +75,7 @@ const getSubItemIcon = (title: string) => {
     "User Status": Activity,
     
     // Transaction Management sub-items
-    "USDT Transactions": DollarSign,
+    "All Transactions": DollarSign,
     "Transaction Verification": FileText,
     "Payment History": Wallet,
     

@@ -134,6 +134,8 @@ export const getColumnsWithActions = (
     header: ({ column }) => <DataTableColumnHeader column={column} title="User" />,
     cell: ({ row }) => {
       const user = row.original;
+      const sponsorId = String(user.sponsor_id ?? "").trim();
+      const isIb = sponsorId.length > 0;
       return (
         <div className="space-y-1">
           <div className="flex items-center gap-1">
@@ -141,7 +143,9 @@ export const getColumnsWithActions = (
             <span className="font-medium">{user.name || "-"}</span>
           </div>
           <div className="text-xs text-muted-foreground">@{user.username || "-"}</div>
-          <div className="text-xs text-muted-foreground">IB: {user.sponsor_id || "-"}</div>
+          <div className="text-xs text-muted-foreground">
+            {isIb ? `IB: ${sponsorId}` : "Client"}
+          </div>
         </div>
       );
     },

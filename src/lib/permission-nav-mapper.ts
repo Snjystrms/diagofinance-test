@@ -32,12 +32,12 @@ const PERMISSION_NAV_MAPPING: Record<string, NavItem> = {
     ],
   },
   usdt_transaction: {
-    title: "USDT Transactions",
+    title: "All Transactions",
     url: "/usdt-transactions",
     icon: CreditCard,
     items: [
       {
-        title: "USDT Transactions",
+        title: "All Transactions",
         url: "/usdt-transactions",
       }
     ],

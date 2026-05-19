@@ -4,7 +4,7 @@ import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { USDTTransactionsPageContent } from "./_components/usdt-transactions-page-content";
 
 export const metadata: Metadata = {
-  title: "USDT Transactions | CRM Dashboard",
+  title: "All Transactions | CRM Dashboard",
   description: "Review and process USDT deposit and withdrawal requests.",
 };
 

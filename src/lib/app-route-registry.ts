@@ -588,7 +588,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "transaction-management",
-    navLabel: "USDT Transactions",
+    navLabel: "All Transactions",
     managerCategories: ["Transaction"],
   },
   {

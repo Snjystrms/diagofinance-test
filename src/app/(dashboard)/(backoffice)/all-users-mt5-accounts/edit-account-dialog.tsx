@@ -5,7 +5,13 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import type { AdminMT5Account, UpdateMT5AccountRequest } from "@/lib/api";
+import { Eye, EyeOff } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useAuth } from "@/contexts/auth-context";
+import { adminGroupsApi } from "@/lib/api";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
+import toast from "react-hot-toast";
+import type { AdminGroupItem, AdminMT5Account, UpdateMT5AccountRequest } from "@/lib/api";
 
 interface EditAccountDialogProps {
   open: boolean;
@@ -33,6 +39,7 @@ export function EditAccountDialog({
   account,
   onSubmit,
 }: EditAccountDialogProps) {
+  const { token } = useAuth();
   const [formData, setFormData] = useState<EditAccountFormState>({
     name: "",
     group_id: "",
@@ -41,6 +48,35 @@ export function EditAccountDialog({
     investor_password: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [groups, setGroups] = useState<AdminGroupItem[]>([]);
+  const [loadingGroups, setLoadingGroups] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showInvestorPassword, setShowInvestorPassword] = useState(false);
+
+  useEffect(() => {
+    if (!open || !token) return;
+
+    const loadGroups = async () => {
+      try {
+        setLoadingGroups(true);
+        const response = await adminGroupsApi.list(token);
+        const groupsList = Array.isArray(response?.data) ? response.data : [];
+        setGroups(groupsList);
+      } catch (error) {
+        console.error("Failed to load groups:", error);
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "groups",
+            action: "load",
+          })
+        );
+      } finally {
+        setLoadingGroups(false);
+      }
+    };
+
+    void loadGroups();
+  }, [open, token]);
 
   useEffect(() => {
     if (!account) return;
@@ -119,15 +155,24 @@ export function EditAccountDialog({
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="group_id">Group ID</Label>
-                <Input
-                  id="group_id"
-                  type="number"
-                  min="1"
+                <Select
                   value={formData.group_id}
-                  onChange={(event) => setFormData({ ...formData, group_id: event.target.value })}
-                  placeholder="Enter group ID"
-                  required
-                />
+                  onValueChange={(value) => setFormData({ ...formData, group_id: value })}
+                  disabled={loadingGroups || groups.length === 0}
+                >
+                  <SelectTrigger id="group_id" className="w-full">
+                    <SelectValue
+                      placeholder={loadingGroups ? "Loading groups..." : "Select group..."}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {groups.map((group) => (
+                      <SelectItem key={group.id} value={String(group.id)}>
+                        {group.name || `Group ${group.id}`} (ID: {group.id})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="leverage">Leverage</Label>
@@ -146,25 +191,49 @@ export function EditAccountDialog({
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="password">Main password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(event) => setFormData({ ...formData, password: event.target.value })}
-                  placeholder="Leave blank to keep current"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={formData.password}
+                    onChange={(event) => setFormData({ ...formData, password: event.target.value })}
+                    placeholder="Leave blank to keep current"
+                    minLength={6}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="investor_password">Investor password</Label>
-                <Input
-                  id="investor_password"
-                  type="password"
-                  value={formData.investor_password}
-                  onChange={(event) =>
-                    setFormData({ ...formData, investor_password: event.target.value })
-                  }
-                  placeholder="Leave blank to keep current"
-                />
+                <div className="relative">
+                  <Input
+                    id="investor_password"
+                    type={showInvestorPassword ? "text" : "password"}
+                    value={formData.investor_password}
+                    onChange={(event) =>
+                      setFormData({ ...formData, investor_password: event.target.value })
+                    }
+                    placeholder="Leave blank to keep current"
+                    minLength={6}
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                    onClick={() => setShowInvestorPassword((prev) => !prev)}
+                  >
+                    {showInvestorPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

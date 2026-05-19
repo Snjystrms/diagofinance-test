@@ -208,6 +208,11 @@ const docFileKeyByStatusKey: Record<DocKey, DocFileKey> = {
   poa_back_file_status: "poa_back_file",
   other_file_status: "other_file",
 };
+const primaryDocKeys: DocKey[] = [
+  "poi_front_file_status",
+  "poa_front_file_status",
+  "poa_back_file_status",
+];
 
 const numToWord = (n: DocStatusNum) => (n === 1 ? "approved" : n === 2 ? "rejected" : "pending");
 
@@ -836,9 +841,18 @@ const buildReviewPayload = () => {
     return null;
   }
 
+  const arePrimaryDocsSubmitted = primaryDocKeys.every((key) => {
+    const doc = detail.documents?.[key];
+    return Boolean(doc?.url || doc?.file);
+  });
+
   const docs: Record<string, "pending" | "approved" | "rejected" | { status: "pending" | "approved" | "rejected"; comment?: string }> = {};
 
   (Object.keys(docStatuses) as DocKey[]).forEach((k) => {
+    if (arePrimaryDocsSubmitted && k === "other_file_status") {
+      return;
+    }
+
     const nowNum = docStatuses[k];
     const nowWord = numToWord(nowNum);
     const comment = (docComments[k] || "").trim();
@@ -1080,13 +1094,6 @@ const buildReviewPayload = () => {
                         <p className="text-sm font-medium break-all">{detail.user.email}</p>
                       </div>
                     </div>
-                    <div className="flex items-start gap-2">
-                      <Hash className="h-4 w-4 text-muted-foreground mt-0.5" />
-                      <div className="flex-1">
-                        <p className="text-xs text-muted-foreground">UUID</p>
-                        <p className="text-sm font-mono font-medium">{detail.user.uuid}</p>
-                      </div>
-                    </div>
                   </div>
                 </div>
                 <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-card p-4 shadow-sm">
@@ -1131,7 +1138,17 @@ const buildReviewPayload = () => {
                   </p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {(Object.keys(docLabel) as DocKey[]).map((k) => {
+                  {(() => {
+                    const arePrimaryDocsSubmitted = primaryDocKeys.every((key) => {
+                      const doc = detail.documents?.[key];
+                      return Boolean(doc?.url || doc?.file);
+                    });
+
+                    const visibleDocKeys = (Object.keys(docLabel) as DocKey[]).filter(
+                      (key) => !(arePrimaryDocsSubmitted && key === "other_file_status")
+                    );
+
+                    return visibleDocKeys.map((k) => {
                     const doc = detail.documents?.[k];
                     const url = doc?.url || (doc?.file ? kycFileUrl(doc.file) : null);
                     const current = docStatuses[k];
@@ -1284,7 +1301,8 @@ const buildReviewPayload = () => {
                         </div>
                       </div>
                     );
-                  })}
+                    });
+                  })()}
                 </div>
               </div>
             </div>
