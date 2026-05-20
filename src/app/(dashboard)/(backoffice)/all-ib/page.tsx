@@ -520,26 +520,29 @@ export default function IbManagementPage() {
           return getStatusBadge(statusCode);
         },
       },
-      {
+            {
         id: "created_at",
         header: "Created",
         cell: ({ row }) => {
-          const request = row.original;
-          const req = request as AdminIbRequest & Record<string, unknown>;
+          // Cast to Record<string, any> to bypass strict property checks
+          const request = row.original as Record<string, any>;
+          
           const createdAt =
+            request.created_at_ist ??
             request.created_at ??
-            (req.createdAt as string | undefined) ??
-            (req.submitted_at as string | undefined) ??
-            (req.requested_at as string | undefined) ??
+            request.createdAt ??
+            request.submitted_at ??
+            request.requested_at ??
             null;
 
           return (
             <div className="text-sm text-muted-foreground">
-              {formatDateTime(createdAt)}
+              {formatDateTime(createdAt as string | null)}
             </div>
           );
         },
       },
+
       {
         id: "actions",
         header: "Actions",

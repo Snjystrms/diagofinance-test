@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { User, LogOut, Palette, Shield, Layout, Copy, Ticket, Wallet, UserCheck, Sun, Moon } from "lucide-react"
+import { User, LogOut, Palette, Shield, Layout, Copy, Ticket, Wallet, UserCheck } from "lucide-react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
@@ -194,28 +194,54 @@ export function Header() {
               <button
                 onClick={toggleThemeMode}
                 title={`Switch to ${themeMode === "bright" ? "dark" : "bright"} mode`}
-                className="flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background text-foreground active:scale-95"
+                className="flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center rounded-full border border-border/60 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md active:scale-95 text-foreground overflow-hidden"
+                style={{
+                  backgroundColor: themeMode === "dark" ? "#000000" : "#ffffff",
+                  color: themeMode === "dark" ? "#ffffff" : "#000000",
+                }}
               >
-                <svg viewBox="0 0 240 240" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-4 w-4">
-                  <motion.g
-                    animate={{ rotate: themeMode === "dark" ? -180 : 0 }}
-                    transition={{ ease: "easeInOut", duration: 0.35 }}
-                  >
-                    <path
-                      d="M120 67.5C149.25 67.5 172.5 90.75 172.5 120C172.5 149.25 149.25 172.5 120 172.5"
-                      fill="currentColor"
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                  fill="currentColor"
+                  strokeLinecap="round"
+                  viewBox="0 0 32 32"
+                  className="h-4 w-4"
+                >
+                  <clipPath id="header-theme-toggle-clip">
+                    <motion.path
+                      animate={{ y: themeMode === "dark" ? 10 : 0, x: themeMode === "dark" ? -12 : 0 }}
+                      transition={{ ease: "easeInOut", duration: 0.35 }}
+                      d="M0-5h30a1 1 0 0 0 9 13v24H0Z"
                     />
-                    <path
-                      d="M120 67.5C90.75 67.5 67.5 90.75 67.5 120C67.5 149.25 90.75 172.5 120 172.5"
-                      fill="transparent"
+                  </clipPath>
+                  <g clipPath="url(#header-theme-toggle-clip)">
+                    <motion.circle
+                      animate={{ r: themeMode === "dark" ? 10 : 8 }}
+                      transition={{ ease: "easeInOut", duration: 0.35 }}
+                      cx="16"
+                      cy="16"
                     />
-                  </motion.g>
-                  <motion.path
-                    animate={{ rotate: themeMode === "dark" ? 180 : 0 }}
-                    transition={{ ease: "easeInOut", duration: 0.35 }}
-                    d="M120 3.75C55.5 3.75 3.75 55.5 3.75 120C3.75 184.5 55.5 236.25 120 236.25C184.5 236.25 236.25 184.5 236.25 120C236.25 55.5 184.5 3.75 120 3.75ZM120 214.5V172.5C90.75 172.5 67.5 149.25 67.5 120C67.5 90.75 90.75 67.5 120 67.5V25.5C172.5 25.5 214.5 67.5 214.5 120C214.5 172.5 172.5 214.5 120 214.5Z"
-                    fill="currentColor"
-                  />
+                    <motion.g
+                      animate={{
+                        rotate: themeMode === "dark" ? -100 : 0,
+                        scale: themeMode === "dark" ? 0.5 : 1,
+                        opacity: themeMode === "dark" ? 0 : 1,
+                      }}
+                      transition={{ ease: "easeInOut", duration: 0.35 }}
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                    >
+                      <path d="M16 5.5v-4" />
+                      <path d="M16 30.5v-4" />
+                      <path d="M1.5 16h4" />
+                      <path d="M26.5 16h4" />
+                      <path d="m23.4 8.6 2.8-2.8" />
+                      <path d="m5.7 26.3 2.9-2.9" />
+                      <path d="m5.8 5.8 2.8 2.8" />
+                      <path d="m23.4 23.4 2.9 2.9" />
+                    </motion.g>
+                  </g>
                 </svg>
               </button>
               <button
