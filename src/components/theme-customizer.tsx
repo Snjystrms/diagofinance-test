@@ -1216,6 +1216,10 @@ function clearVariables(target: HTMLElement) {
 }
 
 export function resolveThemePairMode(themeId: string): { pairId: string; mode: ThemeMode } {
+  const pairById = themePairs.find((pair) => pair.id === themeId)
+  if (pairById) {
+    return { pairId: pairById.id, mode: "bright" }
+  }
   return legacyThemeToPairMode.get(themeId) ?? { pairId: defaultThemePair.id, mode: "bright" }
 }
 

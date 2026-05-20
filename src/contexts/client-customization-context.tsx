@@ -65,7 +65,16 @@ export function ClientCustomizationProvider({ children }: { children: ReactNode 
   const allowThemeCustomization = customizationEnabled || !activePreset.locks.theme;
   const allowSidebarCustomization = customizationEnabled || !activePreset.locks.sidebar;
   const allowDashboardCustomization = customizationEnabled || !activePreset.locks.dashboardLayout;
-  const defaultTheme = resolveThemePairMode(activePreset.themeId);
+  const resolvedFromThemeId = resolveThemePairMode(activePreset.themeId);
+  const presetPairIsValid =
+    typeof activePreset.themePairId === "string" &&
+    themePairs.some((entry) => entry.id === activePreset.themePairId);
+  const defaultTheme = {
+    pairId: presetPairIsValid ? activePreset.themePairId! : resolvedFromThemeId.pairId,
+    mode: activePreset.themeMode === "dark" || activePreset.themeMode === "bright"
+      ? activePreset.themeMode
+      : resolvedFromThemeId.mode,
+  };
 
   const [themePairId, setThemePairIdState] = useState<string>(() => {
     if (typeof window !== "undefined" && allowThemeCustomization) {
