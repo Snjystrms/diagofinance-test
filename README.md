@@ -193,7 +193,7 @@ interface LoginResponse {
 2. Create mutation in `src/hooks/use-auth-mutations.ts`
 3. Add validation schema in `src/lib/validations.ts`
 
-## Deployment #
+## Deployment 
 
 The application can be deployed to any platform that supports Next.js:
 
