@@ -213,8 +213,8 @@ export default function TransferPage() {
     <IbPageShell>
       <IbPageHeader
         eyebrow="IB Transfer"
-        title="Move funds into the client wallet"
-        description="Use internal transfer to shift balance from the partner wallet into the client wallet instantly."
+        title="Move funds into the main wallet"
+        description="Use internal transfer to shift balance from the ib wallet into the main wallet instantly."
         actions={
           <>
             <Button variant="outline" onClick={fetchDashboard}>
@@ -227,14 +227,14 @@ export default function TransferPage() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <IbMetricCard
-          title="Partner Wallet"
+          title="IB Wallet"
           value={formatCurrency(partner_wallet.balance, partner_wallet.currency)}
           description="Source wallet for this transfer."
           icon={<Wallet className="h-5 w-5" />}
           accent="primary"
         />
         <IbMetricCard
-          title="Client Wallet"
+          title="Main Wallet"
           value={formatCurrency(client_wallet.balance, client_wallet.currency)}
           description="Destination wallet that receives the transferred amount."
           icon={<Wallet className="h-5 w-5" />}
@@ -245,7 +245,7 @@ export default function TransferPage() {
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.25fr)_360px]">
         <IbSectionCard
           title="Transfer request"
-          description="Submit an internal transfer from partner to client wallet."
+          description="Submit an internal transfer from ib to main wallet."
         >
           <div className="space-y-5">
             <div className="space-y-2">
@@ -385,7 +385,7 @@ export default function TransferPage() {
             <div className="space-y-4">
               <div className="rounded-3xl border border-border/60 bg-muted/20 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Partner Wallet After Transfer
+                  IB Wallet After Transfer
                 </p>
                 <p className="mt-2 text-xl font-semibold text-foreground">
                   {formatCurrency(projectedPartnerBalance, partner_wallet.currency)}
@@ -393,7 +393,7 @@ export default function TransferPage() {
               </div>
               <div className="rounded-3xl border border-border/60 bg-muted/20 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Client Wallet After Transfer
+                  Main Wallet After Transfer
                 </p>
                 <p className="mt-2 text-xl font-semibold text-foreground">
                   {formatCurrency(projectedClientBalance, client_wallet.currency)}

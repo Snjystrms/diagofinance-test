@@ -18,6 +18,8 @@ import {
   getDashboardModeStorageKey,
   isCustomizationModeEnabled,
   readStoredJson,
+  THEME_MODE_STORAGE_KEY,
+  THEME_PAIR_STORAGE_KEY,
   SIDEBAR_STORAGE_KEY,
   THEME_STORAGE_KEY,
   type ClientPreset,
@@ -26,7 +28,13 @@ import {
   type DashboardPresetConfig,
   type SidebarId,
 } from "@/lib/client-presets";
-import { applyThemeById } from "@/components/theme-customizer";
+import {
+  applyThemePairMode,
+  getThemeIdForPairMode,
+  resolveThemePairMode,
+  type ThemeMode,
+  themePairs,
+} from "@/components/theme-customizer";
 
 interface ClientCustomizationContextValue {
   activePreset: ClientPreset;
@@ -34,9 +42,12 @@ interface ClientCustomizationContextValue {
   canCustomizeTheme: boolean;
   canCustomizeSidebar: boolean;
   canCustomizeDashboard: boolean;
-  themeId: string;
+  themePairId: string;
+  themeMode: ThemeMode;
   sidebarId: SidebarId;
-  setThemeId: (themeId: string) => void;
+  setThemePairId: (pairId: string) => void;
+  setThemeMode: (mode: ThemeMode) => void;
+  toggleThemeMode: () => void;
   setSidebarId: (sidebarId: SidebarId) => void;
   getDashboardMode: (area: DashboardArea) => DashboardMode;
   setDashboardMode: (area: DashboardArea, mode: DashboardMode) => void;
@@ -54,12 +65,24 @@ export function ClientCustomizationProvider({ children }: { children: ReactNode 
   const allowThemeCustomization = customizationEnabled || !activePreset.locks.theme;
   const allowSidebarCustomization = customizationEnabled || !activePreset.locks.sidebar;
   const allowDashboardCustomization = customizationEnabled || !activePreset.locks.dashboardLayout;
-  const [themeId, setThemeIdState] = useState<string>(() => {
+  const defaultTheme = resolveThemePairMode(activePreset.themeId);
+
+  const [themePairId, setThemePairIdState] = useState<string>(() => {
     if (typeof window !== "undefined" && allowThemeCustomization) {
-      return window.localStorage.getItem(THEME_STORAGE_KEY) || activePreset.themeId;
+      return window.localStorage.getItem(THEME_PAIR_STORAGE_KEY) || defaultTheme.pairId;
     }
 
-    return activePreset.themeId;
+    return defaultTheme.pairId;
+  });
+  const [themeMode, setThemeModeState] = useState<ThemeMode>(() => {
+    if (typeof window !== "undefined" && allowThemeCustomization) {
+      const storedMode = window.localStorage.getItem(THEME_MODE_STORAGE_KEY);
+      if (storedMode === "bright" || storedMode === "dark") {
+        return storedMode;
+      }
+    }
+
+    return defaultTheme.mode;
   });
   const [sidebarId, setSidebarIdState] = useState<SidebarId>(() => {
     if (typeof window !== "undefined" && allowSidebarCustomization) {
@@ -87,7 +110,9 @@ export function ClientCustomizationProvider({ children }: { children: ReactNode 
   });
 
   useEffect(() => {
-    let nextThemeId = activePreset.themeId;
+    const resolvedPresetTheme = resolveThemePairMode(activePreset.themeId);
+    let nextThemePairId = resolvedPresetTheme.pairId;
+    let nextThemeMode: ThemeMode = resolvedPresetTheme.mode;
     let nextSidebarId = activePreset.sidebarId;
     const nextModes: Record<DashboardArea, DashboardMode> = {
       admin: activePreset.dashboards.admin?.mode ?? "normal",
@@ -96,7 +121,23 @@ export function ClientCustomizationProvider({ children }: { children: ReactNode 
 
     if (typeof window !== "undefined") {
       if (allowThemeCustomization) {
-        nextThemeId = window.localStorage.getItem(THEME_STORAGE_KEY) || nextThemeId;
+        const storedPairId = window.localStorage.getItem(THEME_PAIR_STORAGE_KEY);
+        const storedMode = window.localStorage.getItem(THEME_MODE_STORAGE_KEY);
+        if (storedPairId && themePairs.some((entry) => entry.id === storedPairId)) {
+          nextThemePairId = storedPairId;
+        } else {
+          const legacyThemeId = window.localStorage.getItem(THEME_STORAGE_KEY);
+          if (legacyThemeId) {
+            const resolvedLegacy = resolveThemePairMode(legacyThemeId);
+            nextThemePairId = resolvedLegacy.pairId;
+            nextThemeMode = resolvedLegacy.mode;
+            window.localStorage.setItem(THEME_PAIR_STORAGE_KEY, nextThemePairId);
+            window.localStorage.setItem(THEME_MODE_STORAGE_KEY, nextThemeMode);
+          }
+        }
+        if (storedMode === "bright" || storedMode === "dark") {
+          nextThemeMode = storedMode;
+        }
       }
 
       if (allowSidebarCustomization) {
@@ -114,23 +155,42 @@ export function ClientCustomizationProvider({ children }: { children: ReactNode 
       }
     }
 
-    setThemeIdState(nextThemeId);
+    setThemePairIdState(nextThemePairId);
+    setThemeModeState(nextThemeMode);
     setSidebarIdState(nextSidebarId);
     setDashboardModes(nextModes);
   }, [activePreset, allowDashboardCustomization, allowSidebarCustomization, allowThemeCustomization]);
 
   useLayoutEffect(() => {
-    applyThemeById(themeId);
-  }, [themeId]);
+    applyThemePairMode(themePairId, themeMode);
+  }, [themeMode, themePairId]);
 
-  const setThemeId = useCallback(
-    (nextThemeId: string) => {
+  const setThemePairId = useCallback(
+    (nextPairId: string) => {
       if (!allowThemeCustomization) return;
-      setThemeIdState(nextThemeId);
-      window.localStorage.setItem(THEME_STORAGE_KEY, nextThemeId);
+      if (!themePairs.some((entry) => entry.id === nextPairId)) return;
+      setThemePairIdState(nextPairId);
+      window.localStorage.setItem(THEME_PAIR_STORAGE_KEY, nextPairId);
+      const activeThemeId = getThemeIdForPairMode(nextPairId, themeMode);
+      window.localStorage.setItem(THEME_STORAGE_KEY, activeThemeId);
     },
-    [allowThemeCustomization]
+    [allowThemeCustomization, themeMode]
   );
+
+  const setThemeMode = useCallback(
+    (nextMode: ThemeMode) => {
+      if (!allowThemeCustomization) return;
+      setThemeModeState(nextMode);
+      window.localStorage.setItem(THEME_MODE_STORAGE_KEY, nextMode);
+      const activeThemeId = getThemeIdForPairMode(themePairId, nextMode);
+      window.localStorage.setItem(THEME_STORAGE_KEY, activeThemeId);
+    },
+    [allowThemeCustomization, themePairId]
+  );
+
+  const toggleThemeMode = useCallback(() => {
+    setThemeMode(themeMode === "bright" ? "dark" : "bright");
+  }, [setThemeMode, themeMode]);
 
   const setSidebarId = useCallback(
     (nextSidebarId: SidebarId) => {
@@ -179,11 +239,13 @@ export function ClientCustomizationProvider({ children }: { children: ReactNode 
     }, {});
 
     return buildPresetSnapshot(activePreset, {
-      themeId,
+      themeId: getThemeIdForPairMode(themePairId, themeMode),
+      themePairId,
+      themeMode,
       sidebarId,
       dashboards,
     });
-  }, [dashboardModes, sidebarId, themeId]);
+  }, [dashboardModes, sidebarId, themeMode, themePairId]);
 
   const value = useMemo<ClientCustomizationContextValue>(
     () => ({
@@ -192,9 +254,12 @@ export function ClientCustomizationProvider({ children }: { children: ReactNode 
       canCustomizeTheme: allowThemeCustomization,
       canCustomizeSidebar: allowSidebarCustomization,
       canCustomizeDashboard: allowDashboardCustomization,
-      themeId,
+      themePairId,
+      themeMode,
       sidebarId,
-      setThemeId,
+      setThemePairId,
+      setThemeMode,
+      toggleThemeMode,
       setSidebarId,
       getDashboardMode,
       setDashboardMode,
@@ -212,9 +277,12 @@ export function ClientCustomizationProvider({ children }: { children: ReactNode 
       getDashboardPreset,
       setDashboardMode,
       setSidebarId,
-      setThemeId,
+      setThemeMode,
+      setThemePairId,
       sidebarId,
-      themeId,
+      themeMode,
+      themePairId,
+      toggleThemeMode,
     ]
   );
 

@@ -143,11 +143,11 @@ export default function IbCommissionsPage() {
                         {commissions.length}{" "}
                         {commissions.length === 1 ? "level" : "levels"}
                       </Badge>
-                      {at.base_currency && (
+                      {/* {at.base_currency && (
                         <Badge variant="secondary" className="rounded-full text-xs">
                           {at.base_currency}
                         </Badge>
-                      )}
+                      )} */}
                     </div>
                   </AccordionTrigger>
 

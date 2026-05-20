@@ -153,7 +153,7 @@ export default function IbWalletPage() {
     <IbPageShell>
       <IbPageHeader
         eyebrow="IB Wallet"
-        title="Partner and client wallet ledger"
+        title="IB and client wallet ledger"
         description="Review current balances and the latest transfer activity linked to your IB account."
         actions={
           <>
@@ -173,16 +173,16 @@ export default function IbWalletPage() {
 
       <div className="grid gap-4 md:grid-cols-3">
         <IbMetricCard
-          title="Partner Wallet"
+          title="IB Wallet"
           value={formatCurrency(snapshot.partnerWallet.amount, snapshot.partnerWallet.currency)}
-          description="Current partner-side balance."
+          description="Current IB-side balance."
           icon={<Wallet className="h-5 w-5" />}
           accent="primary"
         />
         <IbMetricCard
-          title="Client Wallet"
+          title="Main Wallet"
           value={formatCurrency(snapshot.clientWallet.amount, snapshot.clientWallet.currency)}
-          description="Funds currently available inside the client wallet."
+          description="Funds currently available inside the main wallet."
           icon={<Wallet className="h-5 w-5" />}
           accent="emerald"
         />

@@ -314,8 +314,8 @@ export default function IbDashboardPage() {
     <IbPageShell>
       <IbPageHeader
         eyebrow="IB Workspace"
-        title={`Partner dashboard for ${user.name}`}
-        description="Track rebates, move funds into the client wallet, and monitor referral performance from one place."
+        title={`IB dashboard for ${user.name}`}
+        description="Track rebates, move funds into the main wallet, and monitor referral performance from one place."
         actions={
           <>
             <Button variant="outline" onClick={fetchDashboard}>
@@ -335,14 +335,14 @@ export default function IbDashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <IbMetricCard
-          title="Partner Wallet"
+          title="IB Wallet"
           value={formatCurrency(partner_wallet.balance, partner_wallet.currency)}
           description="Funds available for partner-level withdrawals and transfers."
           icon={<Wallet className="h-5 w-5" />}
           accent="primary"
         />
         <IbMetricCard
-          title="Client Wallet"
+          title="Main Wallet"
           value={formatCurrency(client_wallet.balance, client_wallet.currency)}
           description="Client-side funds ready for trading activity."
           icon={<Wallet className="h-5 w-5" />}
@@ -424,7 +424,7 @@ export default function IbDashboardPage() {
           )}
         </IbSectionCard>
 
-        <IbSectionCard title="Partner profile" description="Core IB program details and referral assets.">
+        <IbSectionCard title="IB profile" description="Core IB program details and referral assets.">
           <div className="space-y-4">
             <div className="ib-portal-note rounded-3xl border p-5">
               <div className="flex items-start justify-between gap-3">
@@ -440,7 +440,7 @@ export default function IbDashboardPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="min-w-0 rounded-3xl border border-border/60 bg-muted/20 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Partner ID</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">IB ID</p>
                 <p className="mt-2 break-all text-lg font-semibold leading-snug text-foreground sm:text-xl">
                   {partner_info.partner_id}
                 </p>

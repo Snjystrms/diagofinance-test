@@ -39,6 +39,15 @@ interface ThemeSwatch {
   }
 }
 
+export type ThemeMode = "bright" | "dark"
+
+export interface ThemePair {
+  id: string
+  name: string
+  brightThemeId: string
+  darkThemeId: string
+}
+
 const themeSwatches: ThemeSwatch[] = [
   {
     id: "default",
@@ -1070,6 +1079,43 @@ const themeSwatches: ThemeSwatch[] = [
   }
 ]
 
+const swatchById = new Map(themeSwatches.map((swatch) => [swatch.id, swatch]))
+
+export const themePairs: ThemePair[] = [
+  { id: "clean-slate", name: "Clean Slate", brightThemeId: "default", darkThemeId: "charcoal" },
+  { id: "amber-glow", name: "Amber Glow", brightThemeId: "warm", darkThemeId: "stealth-amber" },
+  { id: "arctic-cyan", name: "Arctic Cyan", brightThemeId: "cool", darkThemeId: "sub-zero" },
+  { id: "evergreen", name: "Evergreen", brightThemeId: "nature", darkThemeId: "abyssal-emerald" },
+  { id: "red-horizon", name: "Red Horizon", brightThemeId: "sunset", darkThemeId: "crimson-tide" },
+  { id: "ocean-drive", name: "Ocean Drive", brightThemeId: "ocean", darkThemeId: "deep-ocean-inc" },
+  { id: "forest-night", name: "Forest Night", brightThemeId: "forest", darkThemeId: "midnight-moss" },
+  { id: "berry-neon", name: "Berry Neon", brightThemeId: "berry", darkThemeId: "phantom-rose" },
+  { id: "citrus-toxic", name: "Citrus Toxic", brightThemeId: "citrus", darkThemeId: "toxic-waste" },
+  { id: "lavender-noir", name: "Lavender Noir", brightThemeId: "lavender", darkThemeId: "purple-noir" },
+  { id: "sage-matrix", name: "Sage Matrix", brightThemeId: "sage", darkThemeId: "matrix-glitch" },
+  { id: "coral-blood", name: "Coral Blood", brightThemeId: "coral", darkThemeId: "blood-moon" },
+  { id: "midnight-ivory", name: "Midnight Ivory", brightThemeId: "custom", darkThemeId: "midnight" },
+  { id: "blue-shift", name: "Blue Shift", brightThemeId: "dark-blue", darkThemeId: "navy" },
+  { id: "rose-vamp", name: "Rose Vamp", brightThemeId: "rose", darkThemeId: "neon-vamp" },
+  { id: "mono-contrast", name: "Mono Contrast", brightThemeId: "amethyst", darkThemeId: "classic-bw" },
+  { id: "noir-radiant", name: "Noir Radiant", brightThemeId: "sapphire", darkThemeId: "noir" },
+  { id: "cyber-wave", name: "Cyber Wave", brightThemeId: "ruby", darkThemeId: "cyberpunk" },
+  { id: "dracula-dusk", name: "Dracula Dusk", brightThemeId: "sunset", darkThemeId: "dracula" },
+  { id: "tokyo-frost", name: "Tokyo Frost", brightThemeId: "cool", darkThemeId: "tokyo-night" },
+  { id: "nord-tundra", name: "Nord Tundra", brightThemeId: "nord-aurora", darkThemeId: "nordic-frost" },
+  { id: "solar-abyss", name: "Solar Abyss", brightThemeId: "solar-flare", darkThemeId: "oceanic-abyss" },
+  { id: "synth-graphite", name: "Synth Graphite", brightThemeId: "synthwave-84", darkThemeId: "graphite" },
+  { id: "gold-obsidian", name: "Gold Obsidian", brightThemeId: "rose-gold-dark", darkThemeId: "monokai-pro" }
+]
+
+const defaultThemePair = themePairs[0]
+
+const legacyThemeToPairMode = new Map<string, { pairId: string; mode: ThemeMode }>()
+themePairs.forEach((pair) => {
+  legacyThemeToPairMode.set(pair.brightThemeId, { pairId: pair.id, mode: "bright" })
+  legacyThemeToPairMode.set(pair.darkThemeId, { pairId: pair.id, mode: "dark" })
+})
+
 interface ThemeCustomizerProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -1169,10 +1215,20 @@ function clearVariables(target: HTMLElement) {
   keys.forEach(k => target.style.removeProperty(k))
 }
 
-export function applyThemeById(themeId: string) {
+export function resolveThemePairMode(themeId: string): { pairId: string; mode: ThemeMode } {
+  return legacyThemeToPairMode.get(themeId) ?? { pairId: defaultThemePair.id, mode: "bright" }
+}
+
+export function getThemeIdForPairMode(pairId: string, mode: ThemeMode): string {
+  const pair = themePairs.find((entry) => entry.id === pairId) ?? defaultThemePair
+  return mode === "dark" ? pair.darkThemeId : pair.brightThemeId
+}
+
+export function applyThemePairMode(pairId: string, mode: ThemeMode) {
   if (typeof document === "undefined") return
 
-  const theme = themeSwatches.find((t) => t.id === themeId) ?? themeSwatches[0]
+  const themeId = getThemeIdForPairMode(pairId, mode)
+  const theme = swatchById.get(themeId) ?? themeSwatches[0]
   if (!theme) return
 
   const root = document.documentElement
@@ -1192,25 +1248,29 @@ export function applyThemeById(themeId: string) {
   writeVariables(target, theme.cssVariables)
 }
 
+export function applyThemeById(themeId: string) {
+  const resolved = resolveThemePairMode(themeId)
+  applyThemePairMode(resolved.pairId, resolved.mode)
+}
+
 /** ---------- Component ---------- **/
 
 export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
-  const { canCustomizeTheme, themeId, setThemeId } = useClientCustomization()
+  const { canCustomizeTheme, themePairId, setThemePairId } = useClientCustomization()
   const [activeTab, setActiveTab] = useState<"background" | "shortcuts" | "color-theme">("color-theme")
-  const [selectedTheme, setSelectedTheme] = useState<string>(themeId)
-  const [initialTheme, setInitialTheme] = useState<string>(themeId)
+  const [selectedThemePairId, setSelectedThemePairId] = useState<string>(themePairId)
+  const [initialThemePairId, setInitialThemePairId] = useState<string>(themePairId)
 
   useEffect(() => {
     if (!open) return
-    setSelectedTheme(themeId)
-    setInitialTheme(themeId)
-    applyThemeById(themeId)
-  }, [open, themeId])
+    setSelectedThemePairId(themePairId)
+    setInitialThemePairId(themePairId)
+  }, [open, themePairId])
 
-  const handleThemeSelect = (themeId: string) => {
+  const handleThemeSelect = (pairId: string) => {
     if (!canCustomizeTheme) return
-    setSelectedTheme(themeId)
-    setThemeId(themeId)
+    setSelectedThemePairId(pairId)
+    setThemePairId(pairId)
   }
 
   const handleDone = () => {
@@ -1218,8 +1278,8 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
   }
 
   const handleCancel = () => {
-    setSelectedTheme(initialTheme)
-    setThemeId(initialTheme)
+    setSelectedThemePairId(initialThemePairId)
+    setThemePairId(initialThemePairId)
     onOpenChange(false)
   }
 
@@ -1229,35 +1289,41 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
         return (
           <div className="space-y-4">
             <div className="grid grid-cols-6 gap-3">
-              {themeSwatches.map((swatch) => (
+              {themePairs.map((pair) => {
+                const brightTheme = swatchById.get(pair.brightThemeId)
+                const darkTheme = swatchById.get(pair.darkThemeId)
+                const leftColor = brightTheme?.leftColor ?? "#f8fafc"
+                const rightColor = darkTheme?.rightColor ?? "#0f172a"
+                return (
                 <button
-                  key={swatch.id}
-                  onClick={() => handleThemeSelect(swatch.id)}
+                  key={pair.id}
+                  onClick={() => handleThemeSelect(pair.id)}
                   disabled={!canCustomizeTheme}
                   className={cn(
                     "relative w-12 h-12 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
                     canCustomizeTheme && "hover:scale-105",
-                    selectedTheme === swatch.id && "ring-2 ring-blue-500 ring-offset-2"
+                    selectedThemePairId === pair.id && "ring-2 ring-blue-500 ring-offset-2"
                   )}
-                  title={swatch.name}
+                  title={pair.name}
                 >
                   <div className="w-full h-full rounded-full overflow-hidden">
                     <div
                       className="w-1/2 h-full float-left"
-                      style={{ backgroundColor: swatch.leftColor }}
+                      style={{ backgroundColor: leftColor }}
                     />
                     <div
                       className="w-1/2 h-full float-right"
-                      style={{ backgroundColor: swatch.rightColor }}
+                      style={{ backgroundColor: rightColor }}
                     />
                   </div>
-                  {selectedTheme === swatch.id && (
+                  {selectedThemePairId === pair.id && (
                     <div className="absolute inset-0 flex items-center justify-center">
                       <Check className="w-5 h-5 text-blue-600 bg-white rounded-full p-0.5" />
                     </div>
                   )}
                 </button>
-              ))}
+                )
+              })}
             </div>
           </div>
         )
@@ -1287,8 +1353,7 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
   return (
     <Dialog open={open} onOpenChange={(o) => {
       if (!o) {
-        // closing: persist current selection as initial
-        setInitialTheme(selectedTheme)
+        setInitialThemePairId(selectedThemePairId)
       }
       onOpenChange(o)
     }}>

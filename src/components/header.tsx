@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, useMemo } from "react"
-import { User, LogOut, Palette, Shield, Layout, Copy, Ticket, Wallet, UserCheck } from "lucide-react"
+import { User, LogOut, Palette, Shield, Layout, Copy, Ticket, Wallet, UserCheck, Sun, Moon } from "lucide-react"
 import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -36,6 +36,8 @@ export function Header() {
     canCustomizeDashboard,
     customizationEnabled,
     exportPresetSnapshot,
+    themeMode,
+    toggleThemeMode,
   } = useClientCustomization();
   const router = useRouter();
   const pathname = usePathname();
@@ -187,13 +189,22 @@ export function Header() {
 
           {/* Theme customizer */}
           {canCustomizeTheme && (
-            <button
-              onClick={() => setThemeCustomizerOpen(true)}
-              title="Customize Theme"
-              className="flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background text-foreground"
-            >
-              <Palette className="h-4 w-4" />
-            </button>
+            <>
+              <button
+                onClick={toggleThemeMode}
+                title={`Switch to ${themeMode === "bright" ? "dark" : "bright"} mode`}
+                className="flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background text-foreground"
+              >
+                {themeMode === "bright" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+              </button>
+              <button
+                onClick={() => setThemeCustomizerOpen(true)}
+                title="Customize Theme"
+                className="flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background text-foreground"
+              >
+                <Palette className="h-4 w-4" />
+              </button>
+            </>
           )}
 
           {/* Export preset */}

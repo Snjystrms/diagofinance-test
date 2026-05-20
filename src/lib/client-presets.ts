@@ -14,6 +14,8 @@ export interface ClientPreset {
   id: string;
   name: string;
   themeId: string;
+  themePairId?: string;
+  themeMode?: "bright" | "dark";
   sidebarId: SidebarId;
   dashboards: Partial<Record<DashboardArea, DashboardPresetConfig>>;
   locks: {
@@ -24,6 +26,8 @@ export interface ClientPreset {
 }
 
 export const THEME_STORAGE_KEY = "selected-theme";
+export const THEME_PAIR_STORAGE_KEY = "selected-theme-pair";
+export const THEME_MODE_STORAGE_KEY = "selected-theme-mode";
 export const SIDEBAR_STORAGE_KEY = "selected-sidebar";
 
 export const getDashboardStorageKey = (area: DashboardArea) => `${area}_dashboard`;
@@ -36,7 +40,7 @@ export const getDashboardHiddenStorageKey = (area: DashboardArea) =>
 export const defaultClientPreset: ClientPreset = {
   id: "default",
   name: "Default CRM Preset",
-  themeId: "amethyst",
+  themeId: "lavender-noir",
   sidebarId: "default",
   dashboards: {
     admin: {
@@ -62,7 +66,7 @@ const clientPresets: Record<string, ClientPreset> = {
   "client-a": {
     id: "client-a",
     name: "Client A Preset",
-    themeId: "amethyst",
+    themeId: "lavender-noir",
     sidebarId: "two-panel",
     dashboards: {
       admin: {
