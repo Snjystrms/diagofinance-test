@@ -867,7 +867,7 @@ export function DashboardPageContent() {
                   {formatAmount(dashboardData?.wallet?.balance)}
                 </span>
                 <span className="text-lg font-bold text-muted-foreground">
-                  {walletCurrency}
+                  USD
                 </span>
               </div>
               <div className="mt-auto pt-4">
@@ -1401,7 +1401,7 @@ export function DashboardPageContent() {
                         {formatAmount(dashboardData?.wallet?.balance)}
                       </span>
                       <span className="text-lg font-bold text-primary-foreground/80">
-                        {walletCurrency}
+                        USD
                       </span>
                     </div>
                   </CardHeader>
@@ -1447,7 +1447,7 @@ export function DashboardPageContent() {
                       <div className="flex items-center justify-between mb-2">
                         <p className="uppercase tracking-wider text-xs font-semibold text-muted-foreground flex items-center gap-2">
                           <Wallet className="h-3.5 w-3.5" />
-                          Partner Wallet
+                          IB Wallet
                         </p>
                         <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm">
                           <Wallet className="h-4 w-4 text-foreground" />
@@ -1466,9 +1466,9 @@ export function DashboardPageContent() {
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 space-y-3">
                           <div>
-                            <p className="text-foreground text-sm font-semibold mb-1">IB Partner Wallet</p>
+                            <p className="text-foreground text-sm font-semibold mb-1">IB Wallet</p>
                             <p className="text-muted-foreground text-xs leading-relaxed">
-                              Your partner earnings and balance.
+                              Your IB earnings and balance.
                             </p>
                           </div>
                           <div className="space-y-2 pt-2 border-t border-border/50">

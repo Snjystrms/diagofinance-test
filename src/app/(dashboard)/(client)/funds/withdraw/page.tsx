@@ -515,12 +515,12 @@ export default function WithdrawPage() {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Button
+              {/* <Button
                 onClick={() => setIsDialogOpen(true)}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Request a Withdrawal
-              </Button>
+              </Button> */}
               <Button
                 variant="outline"
                 onClick={() => {
@@ -545,7 +545,7 @@ export default function WithdrawPage() {
                   <p className="text-muted-foreground mb-4">
                     You haven&apos;t submitted any withdrawal requests yet.
                   </p>
-                  <Button onClick={() => window.location.href = '/withdrawal-request'}>
+                  <Button onClick={() => window.location.href = '/funds/withdrawal-request'}>
                     Request a Withdrawal
                   </Button>
                 </div>

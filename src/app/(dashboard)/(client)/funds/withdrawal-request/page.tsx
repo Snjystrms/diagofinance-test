@@ -1,4 +1,4 @@
-﻿'use client'
+﻿"use client";
 import React, { useEffect, useMemo, useState } from "react";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,7 +7,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/auth-context";
-import { withdrawalApi, walletApi, type WalletSummaryData, type WithdrawalItem } from "@/lib/api";
+import {
+  withdrawalApi,
+  walletApi,
+  type WalletSummaryData,
+  type WithdrawalItem,
+} from "@/lib/api";
 import {
   authApi,
   userCurrencyRatesApi,
@@ -17,7 +22,10 @@ import {
   type UserPaymentMethod,
 } from "@/lib/api-auth-admin";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
-import { CLIENT_WALLET_REFRESH_EVENT, notifyWalletRefresh } from "@/lib/client-events";
+import {
+  CLIENT_WALLET_REFRESH_EVENT,
+  notifyWalletRefresh,
+} from "@/lib/client-events";
 import {
   Wallet,
   DollarSign,
@@ -43,7 +51,11 @@ import { formatDateTimeInIST } from "@/lib/formatters";
 const CHAIN_OPTIONS = [
   { value: "TRC20", label: "TRC20 (Tron)", network: "Tron Network" },
   { value: "ERC20", label: "ERC20 (Ethereum)", network: "Ethereum Network" },
-  { value: "BEP20", label: "BEP20 (BNB Smart Chain)", network: "BNB Smart Chain" },
+  {
+    value: "BEP20",
+    label: "BEP20 (BNB Smart Chain)",
+    network: "BNB Smart Chain",
+  },
   { value: "BSC", label: "BSC (BNB Smart Chain)", network: "BNB Smart Chain" },
   { value: "ETH", label: "ETH (Ethereum)", network: "Ethereum Network" },
 ];
@@ -81,20 +93,28 @@ const getCurrencyFromCountry = (country?: string | null): string | null => {
 
 function WithdrawalRequestContent() {
   const { token } = useAuth();
-  const [withdrawalType, setWithdrawalType] = useState<"crypto" | "bank">("crypto");
+  const [withdrawalType, setWithdrawalType] = useState<"crypto" | "bank">(
+    "crypto",
+  );
   const [amount, setAmount] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [chainId, setChainId] = useState("TRC20");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [withdrawalData, setWithdrawalData] = useState<WithdrawalItem | null>(null);
+  const [withdrawalData, setWithdrawalData] = useState<WithdrawalItem | null>(
+    null,
+  );
   const [copied, setCopied] = useState(false);
   const [walletData, setWalletData] = useState<WalletSummaryData | null>(null);
   const [walletLoading, setWalletLoading] = useState(true);
-  const [bankDetails, setBankDetails] = useState<UserBankDetailsData | null>(null);
+  const [bankDetails, setBankDetails] = useState<UserBankDetailsData | null>(
+    null,
+  );
   const [bankDetailsLoading, setBankDetailsLoading] = useState(true);
-  const [bankTransferMethodId, setBankTransferMethodId] = useState<number | null>(null);
+  const [bankTransferMethodId, setBankTransferMethodId] = useState<
+    number | null
+  >(null);
   const [currencyRates, setCurrencyRates] = useState<CurrencyRateItem[]>([]);
 
   const selectedChain = CHAIN_OPTIONS.find((chain) => chain.value === chainId);
@@ -130,8 +150,14 @@ function WithdrawalRequestContent() {
         return;
       }
       try {
-        const response = await userCurrencyRatesApi.list({ token, page: 1, per_page: 500 });
-        const rates = Array.isArray(response.data?.currencyRates) ? response.data.currencyRates : [];
+        const response = await userCurrencyRatesApi.list({
+          token,
+          page: 1,
+          per_page: 500,
+        });
+        const rates = Array.isArray(response.data?.currencyRates)
+          ? response.data.currencyRates
+          : [];
         setCurrencyRates(rates);
       } catch (fetchError) {
         console.error("Failed to load currency rates:", fetchError);
@@ -151,10 +177,9 @@ function WithdrawalRequestContent() {
       }
       try {
         setBankDetailsLoading(true);
-        const [bankDetailsResponse, paymentMethodsResponse] = await Promise.all([
-          authApi.getBankDetails(token),
-          userPaymentMethodsApi.list(token),
-        ]);
+        const [bankDetailsResponse, paymentMethodsResponse] = await Promise.all(
+          [authApi.getBankDetails(token), userPaymentMethodsApi.list(token)],
+        );
 
         const bankPayload = bankDetailsResponse.data as
           | UserBankDetailsData
@@ -165,7 +190,7 @@ function WithdrawalRequestContent() {
           bankPayload && "id" in bankPayload
             ? bankPayload
             : bankPayload && "data" in bankPayload
-              ? bankPayload.data ?? null
+              ? (bankPayload.data ?? null)
               : null;
         setBankDetails(resolvedBankDetails ?? null);
 
@@ -179,9 +204,13 @@ function WithdrawalRequestContent() {
           : Array.isArray(paymentPayload?.data)
             ? paymentPayload.data
             : [];
-        const bankTransferMethod = methods.find((method) => method.type === "bank_transfer");
+        const bankTransferMethod = methods.find(
+          (method) => method.type === "bank_transfer",
+        );
         setBankTransferMethodId(
-          typeof bankTransferMethod?.id === "number" ? bankTransferMethod.id : null
+          typeof bankTransferMethod?.id === "number"
+            ? bankTransferMethod.id
+            : null,
         );
       } catch (fetchError) {
         console.error("Failed to load withdrawal metadata:", fetchError);
@@ -202,7 +231,10 @@ function WithdrawalRequestContent() {
 
     window.addEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh);
     return () => {
-      window.removeEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh);
+      window.removeEventListener(
+        CLIENT_WALLET_REFRESH_EVENT,
+        handleWalletRefresh,
+      );
     };
   }, [token]);
 
@@ -211,10 +243,13 @@ function WithdrawalRequestContent() {
   const remainingBalance = totalBalance - withdrawalAmount;
   const wallets = walletData ? Object.values(walletData.wallets) : [];
   const mainWallet = wallets.find((wallet) => wallet.is_primary) || wallets[0];
-  const mainWalletBalance = walletData?.wallets?.main?.balance ?? mainWallet?.balance ?? 0;
+  const mainWalletBalance =
+    walletData?.wallets?.main?.balance ?? mainWallet?.balance ?? 0;
   const currency = mainWallet?.currency || "USDT";
   const withdrawalExposure =
-    totalBalance > 0 ? Math.min(100, Math.round((withdrawalAmount / totalBalance) * 100)) : 0;
+    totalBalance > 0
+      ? Math.min(100, Math.round((withdrawalAmount / totalBalance) * 100))
+      : 0;
   const supportsBankWithdrawal = !!bankTransferMethodId && !!bankDetails?.id;
   const isCryptoWithdrawal = withdrawalType === "crypto";
   const isBankWithdrawal = withdrawalType === "bank";
@@ -222,7 +257,7 @@ function WithdrawalRequestContent() {
   const normalizedCurrency = currency.toUpperCase();
   const destinationBankCurrency = useMemo(
     () => getCurrencyFromCountry(bankDetails?.country),
-    [bankDetails?.country]
+    [bankDetails?.country],
   );
   const activeRatesToUsd = useMemo(
     () =>
@@ -233,13 +268,15 @@ function WithdrawalRequestContent() {
           (rawStatus === "true" || rawStatus === "1" || rawStatus === "active")
         );
       }),
-    [currencyRates]
+    [currencyRates],
   );
   const sourceCurrencyToUsdRate = activeRatesToUsd.find(
-    (rate) => rate.from_currency?.toUpperCase() === normalizedCurrency
+    (rate) => rate.from_currency?.toUpperCase() === normalizedCurrency,
   );
   const destinationCurrencyToUsdRate = activeRatesToUsd.find(
-    (rate) => rate.from_currency?.toUpperCase() === destinationBankCurrency?.toUpperCase()
+    (rate) =>
+      rate.from_currency?.toUpperCase() ===
+      destinationBankCurrency?.toUpperCase(),
   );
   const amountNumeric = parseFloat(amount);
   const sourceAmountInUsd =
@@ -306,7 +343,9 @@ function WithdrawalRequestContent() {
     }
 
     if (amountNum > totalBalance) {
-      setError(`Insufficient balance. Available: ${formatAmount(totalBalance)} ${currency}`);
+      setError(
+        `Insufficient balance. Available: ${formatAmount(totalBalance)} ${currency}`,
+      );
       return;
     }
 
@@ -320,7 +359,9 @@ function WithdrawalRequestContent() {
         return;
       }
     } else if (!supportsBankWithdrawal) {
-      setError("Bank withdrawal is unavailable. Please add bank details first.");
+      setError(
+        "Bank withdrawal is unavailable. Please add bank details first.",
+      );
       return;
     }
 
@@ -339,11 +380,13 @@ function WithdrawalRequestContent() {
               payment_method_id: bankTransferMethodId ?? undefined,
               bank_detail_id: bankDetails?.id ?? undefined,
             },
-        token
+        token,
       );
 
       if (!response.success) {
-        throw new Error(response.message || "Failed to create withdrawal request");
+        throw new Error(
+          response.message || "Failed to create withdrawal request",
+        );
       }
 
       setWithdrawalData(response.data || null);
@@ -363,7 +406,7 @@ function WithdrawalRequestContent() {
           audience: "client",
           resource: "withdrawal request",
           action: "create",
-        })
+        }),
       );
       setIsSubmitting(false);
     }
@@ -371,12 +414,23 @@ function WithdrawalRequestContent() {
 
   const amountNum = parseFloat(amount);
   const isValidAmount =
-    amount.trim() !== "" && !isNaN(amountNum) && amountNum >= minimumAmount && amountNum > 0;
-  const hasWalletAddress = isCryptoWithdrawal ? walletAddress.trim().length > 0 : true;
+    amount.trim() !== "" &&
+    !isNaN(amountNum) &&
+    amountNum >= minimumAmount &&
+    amountNum > 0;
+  const hasWalletAddress = isCryptoWithdrawal
+    ? walletAddress.trim().length > 0
+    : true;
   const hasChainId = isCryptoWithdrawal ? chainId !== "" : true;
   const hasBankSetup = isCryptoWithdrawal ? true : supportsBankWithdrawal;
   const hasToken = !!token;
-  const canSubmit = isValidAmount && hasWalletAddress && hasChainId && hasBankSetup && !isSubmitting && hasToken;
+  const canSubmit =
+    isValidAmount &&
+    hasWalletAddress &&
+    hasChainId &&
+    hasBankSetup &&
+    !isSubmitting &&
+    hasToken;
 
   return (
     <div className="min-h-screen w-full bg-background px-4 py-6 lg:px-6 xl:px-8">
@@ -390,7 +444,8 @@ function WithdrawalRequestContent() {
               Withdrawal Request
             </h1>
             <p className="max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
-              Choose Crypto or Bank withdrawal, fill required details, and submit your request for review.
+              Choose Crypto or Bank withdrawal, fill required details, and
+              submit your request for review.
             </p>
           </div>
         </div>
@@ -398,20 +453,40 @@ function WithdrawalRequestContent() {
         <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Total Balance</p>
-              <p className="text-sm font-semibold text-foreground">{walletLoading ? "--" : `${formatAmount(totalBalance)} ${currency}`}</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Total Balance
+              </p>
+              <p className="text-sm font-semibold text-foreground">
+                {walletLoading ? "--" : `${formatAmount(totalBalance)} USD`}
+              </p>
             </div>
             <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Main Wallet</p>
-              <p className="text-sm font-semibold text-foreground">{walletLoading ? "--" : `${formatAmount(mainWalletBalance)} ${currency}`}</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Main Wallet
+              </p>
+              <p className="text-sm font-semibold text-foreground">
+                {walletLoading
+                  ? "--"
+                  : `${formatAmount(mainWalletBalance)} USD`}
+              </p>
             </div>
             <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Type</p>
-              <p className="text-sm font-semibold text-foreground">{isCryptoWithdrawal ? "Crypto" : "Bank"}</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Type
+              </p>
+              <p className="text-sm font-semibold text-foreground">
+                {isCryptoWithdrawal ? "Crypto" : "Bank"}
+              </p>
             </div>
             <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Destination</p>
-              <p className="truncate text-sm font-semibold text-foreground">{isCryptoWithdrawal ? (selectedChain?.value || "--") : (bankDetails?.bank_name || "Not configured")}</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Destination
+              </p>
+              <p className="truncate text-sm font-semibold text-foreground">
+                {isCryptoWithdrawal
+                  ? selectedChain?.value || "--"
+                  : bankDetails?.bank_name || "Not configured"}
+              </p>
             </div>
           </div>
         </div>
@@ -429,14 +504,25 @@ function WithdrawalRequestContent() {
                       Submit Withdrawal Details
                     </h2>
                     <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                      Select withdrawal type, enter amount, and submit with the required details.
+                      Select withdrawal type, enter amount, and submit with the
+                      required details.
                     </p>
                   </div>
 
-                  <Tabs value={withdrawalType} onValueChange={(value) => setWithdrawalType(value as "crypto" | "bank")} className="space-y-4">
+                  <Tabs
+                    value={withdrawalType}
+                    onValueChange={(value) =>
+                      setWithdrawalType(value as "crypto" | "bank")
+                    }
+                    className="space-y-4"
+                  >
                     <TabsList className="grid h-auto w-full grid-cols-2 rounded-xl p-1">
-                      <TabsTrigger value="crypto" className="rounded-lg">Crypto Withdrawal</TabsTrigger>
-                      <TabsTrigger value="bank" className="rounded-lg">Bank Withdrawal</TabsTrigger>
+                      <TabsTrigger value="crypto" className="rounded-lg">
+                        Crypto Withdrawal
+                      </TabsTrigger>
+                      <TabsTrigger value="bank" className="rounded-lg">
+                        Bank Withdrawal
+                      </TabsTrigger>
                     </TabsList>
                   </Tabs>
 
@@ -451,7 +537,10 @@ function WithdrawalRequestContent() {
                   )}
 
                   <div className="space-y-3">
-                    <Label htmlFor="amount" className="text-sm font-semibold text-foreground">
+                    <Label
+                      htmlFor="amount"
+                      className="text-sm font-semibold text-foreground"
+                    >
                       Amount <span className="text-destructive">*</span>
                     </Label>
                     <div className="relative">
@@ -468,17 +557,22 @@ function WithdrawalRequestContent() {
                       />
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Minimum withdrawal amount: {formatAmount(minimumAmount)} {currency}
+                      Minimum withdrawal amount: {formatAmount(minimumAmount)}{" "}
+                      {currency}
                     </p>
-                    {isBankWithdrawal && amount.trim() !== "" && !isNaN(amountNumeric) && amountNumeric > 0 && (
-                      <p className="text-xs text-muted-foreground">
-                        {destinationBankCurrency && convertedBankAmount !== null
-                          ? `Estimated bank credit: ${formatAmount(convertedBankAmount)} ${destinationBankCurrency}`
-                          : destinationBankCurrency
-                            ? `Estimated bank credit is unavailable right now for ${destinationBankCurrency}.`
-                            : "Estimated bank credit is unavailable because bank country is not mapped to a currency."}
-                      </p>
-                    )}
+                    {isBankWithdrawal &&
+                      amount.trim() !== "" &&
+                      !isNaN(amountNumeric) &&
+                      amountNumeric > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          {destinationBankCurrency &&
+                          convertedBankAmount !== null
+                            ? `Estimated bank credit: ${formatAmount(convertedBankAmount)} ${destinationBankCurrency}`
+                            : destinationBankCurrency
+                              ? `Estimated bank credit is unavailable right now for ${destinationBankCurrency}.`
+                              : "Estimated bank credit is unavailable because bank country is not mapped to a currency."}
+                        </p>
+                      )}
                   </div>
 
                   {!isCryptoWithdrawal ? (
@@ -489,56 +583,92 @@ function WithdrawalRequestContent() {
                       <div className="rounded-xl border border-border/60 bg-muted/20 p-4 text-sm">
                         <div className="grid gap-3 md:grid-cols-2">
                           <div>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Account Holder</p>
-                            <p className="font-medium text-foreground">{bankDetails?.account_holder_name || "-"}</p>
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                              Account Holder
+                            </p>
+                            <p className="font-medium text-foreground">
+                              {bankDetails?.account_holder_name || "-"}
+                            </p>
                           </div>
                           <div>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Bank Name</p>
-                            <p className="font-medium text-foreground">{bankDetails?.bank_name || "-"}</p>
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                              Bank Name
+                            </p>
+                            <p className="font-medium text-foreground">
+                              {bankDetails?.bank_name || "-"}
+                            </p>
                           </div>
                           <div>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Account Number</p>
-                            <p className="font-mono text-foreground">{bankDetails?.account_number || "-"}</p>
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                              Account Number
+                            </p>
+                            <p className="font-mono text-foreground">
+                              {bankDetails?.account_number || "-"}
+                            </p>
                           </div>
                           <div>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground">IBAN</p>
-                            <p className="font-mono text-foreground">{bankDetails?.iban_number || "-"}</p>
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                              IBAN
+                            </p>
+                            <p className="font-mono text-foreground">
+                              {bankDetails?.iban_number || "-"}
+                            </p>
                           </div>
                           <div>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground">IFSC / SWIFT</p>
-                            <p className="font-mono text-foreground">{bankDetails?.swift_ifsc_code || "-"}</p>
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                              IFSC / SWIFT
+                            </p>
+                            <p className="font-mono text-foreground">
+                              {bankDetails?.swift_ifsc_code || "-"}
+                            </p>
                           </div>
                           <div>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Country</p>
-                            <p className="font-medium text-foreground">{bankDetails?.country || "-"}</p>
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                              Country
+                            </p>
+                            <p className="font-medium text-foreground">
+                              {bankDetails?.country || "-"}
+                            </p>
                           </div>
                         </div>
                       </div>
                       {!supportsBankWithdrawal && !bankDetailsLoading && (
                         <p className="text-xs text-destructive">
-                          Bank withdrawal requires active `bank_transfer` payment method and saved bank details.
+                          Bank withdrawal requires active `bank_transfer`
+                          payment method and saved bank details.
                         </p>
                       )}
                     </div>
                   ) : (
                     <>
                       <div className="space-y-3">
-                        <Label htmlFor="chain_id" className="text-sm font-semibold text-foreground">
-                          Blockchain Network <span className="text-destructive">*</span>
+                        <Label
+                          htmlFor="chain_id"
+                          className="text-sm font-semibold text-foreground"
+                        >
+                          Blockchain Network{" "}
+                          <span className="text-destructive">*</span>
                         </Label>
                         <Select value={chainId} onValueChange={setChainId}>
-                          <SelectTrigger className="h-12 w-full rounded-xl border-2 border-border bg-background focus:border-primary">
-                            <div className="flex items-center gap-2">
-                              <Network className="h-4 w-4 text-muted-foreground" />
-                              <SelectValue placeholder="Select network" />
+                          <SelectTrigger className="h-10 w-full rounded-xl border-2 border-border bg-background focus:border-primary px-3">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Network className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <SelectValue
+                                placeholder="Select network"
+                                className="truncate"
+                              />
                             </div>
                           </SelectTrigger>
                           <SelectContent>
                             {CHAIN_OPTIONS.map((chain) => (
                               <SelectItem key={chain.value} value={chain.value}>
-                                <div className="flex flex-col">
-                                  <span className="font-medium">{chain.label}</span>
-                                  <span className="text-xs text-muted-foreground">{chain.network}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium">
+                                    {chain.label}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">
+                                    · {chain.network}
+                                  </span>
                                 </div>
                               </SelectItem>
                             ))}
@@ -546,21 +676,27 @@ function WithdrawalRequestContent() {
                         </Select>
                         {selectedChain && (
                           <p className="text-xs text-muted-foreground">
-                            Selected network: {selectedChain.network}
+                            Selected: {selectedChain.network}
                           </p>
                         )}
                       </div>
 
                       <div className="space-y-3">
-                        <Label htmlFor="wallet_address" className="text-sm font-semibold text-foreground">
-                          Destination Wallet Address <span className="text-destructive">*</span>
+                        <Label
+                          htmlFor="wallet_address"
+                          className="text-sm font-semibold text-foreground"
+                        >
+                          Destination Wallet Address{" "}
+                          <span className="text-destructive">*</span>
                         </Label>
                         <div className="relative">
                           <Wallet className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                           <Input
                             id="wallet_address"
                             value={walletAddress}
-                            onChange={(event) => setWalletAddress(event.target.value)}
+                            onChange={(event) =>
+                              setWalletAddress(event.target.value)
+                            }
                             className="h-12 rounded-xl border-2 border-border bg-background pl-10 pr-20 font-mono text-sm focus:border-primary"
                             placeholder="Paste your wallet address"
                           />
@@ -579,8 +715,9 @@ function WithdrawalRequestContent() {
                         <div className="flex items-start gap-2 rounded-xl border border-amber-300/50 bg-amber-50/80 px-3 py-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
                           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
                           <p>
-                            Paste the destination address exactly as shown by the receiving wallet, and
-                            make sure it supports the selected network.
+                            Paste the destination address exactly as shown by
+                            the receiving wallet, and make sure it supports the
+                            selected network.
                           </p>
                         </div>
                       </div>
@@ -593,9 +730,20 @@ function WithdrawalRequestContent() {
                       <div className="space-y-1 text-xs text-amber-900 dark:text-amber-100">
                         <p className="font-semibold">Before you submit:</p>
                         <ul className="space-y-1">
-                          <li>{isCryptoWithdrawal ? "Double-check wallet address and selected network." : "Confirm your saved bank account details are correct."}</li>
-                          <li>Processing can take 24-48 hours depending on review and network conditions.</li>
-                          <li>{isCryptoWithdrawal ? "Network fees can differ by chain and destination wallet." : "Bank processing times may vary by country and bank."}</li>
+                          <li>
+                            {isCryptoWithdrawal
+                              ? "Double-check wallet address and selected network."
+                              : "Confirm your saved bank account details are correct."}
+                          </li>
+                          <li>
+                            Processing can take 24-48 hours depending on review
+                            and network conditions.
+                          </li>
+                          <li>
+                            {isCryptoWithdrawal
+                              ? "Network fees can differ by chain and destination wallet."
+                              : "Bank processing times may vary by country and bank."}
+                          </li>
                         </ul>
                       </div>
                     </div>
@@ -628,21 +776,26 @@ function WithdrawalRequestContent() {
                     Withdrawal Request Submitted!
                   </h3>
                   <p className="mb-6 text-sm leading-6 text-muted-foreground">
-                    Your withdrawal request has been successfully submitted and is pending review.
+                    Your withdrawal request has been successfully submitted and
+                    is pending review.
                   </p>
 
                   {withdrawalData && (
                     <div className="mb-6 space-y-4">
                       <div className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/20">
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Amount:</span>
+                          <span className="text-sm text-muted-foreground">
+                            Amount:
+                          </span>
                           <span className="font-semibold text-emerald-800 dark:text-emerald-200">
                             {typeof withdrawalData.amount === "number"
                               ? withdrawalData.amount.toLocaleString("en-US", {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 8,
                                 })
-                              : parseFloat(withdrawalData.amount || amount).toLocaleString("en-US", {
+                              : parseFloat(
+                                  withdrawalData.amount || amount,
+                                ).toLocaleString("en-US", {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 8,
                                 })}{" "}
@@ -650,7 +803,9 @@ function WithdrawalRequestContent() {
                           </span>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Network:</span>
+                          <span className="text-sm text-muted-foreground">
+                            Network:
+                          </span>
                           <Badge
                             variant="outline"
                             className="bg-emerald-100 text-emerald-800 dark:bg-emerald-800 dark:text-emerald-100"
@@ -659,13 +814,17 @@ function WithdrawalRequestContent() {
                           </Badge>
                         </div>
                         <div className="flex items-start justify-between">
-                          <span className="text-sm text-muted-foreground">Wallet:</span>
+                          <span className="text-sm text-muted-foreground">
+                            Wallet:
+                          </span>
                           <code className="max-w-[70%] break-all rounded bg-emerald-100 px-2 py-1 text-right text-xs font-mono dark:bg-emerald-900">
                             {withdrawalData.wallet_address || walletAddress}
                           </code>
                         </div>
                         <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Status:</span>
+                          <span className="text-sm text-muted-foreground">
+                            Status:
+                          </span>
                           <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
                             <Clock className="mr-1 h-3 w-3" />
                             {withdrawalData.status || "Pending"}
@@ -673,7 +832,9 @@ function WithdrawalRequestContent() {
                         </div>
                         {withdrawalData.id && (
                           <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">Request ID:</span>
+                            <span className="text-sm text-muted-foreground">
+                              Request ID:
+                            </span>
                             <span className="font-mono text-sm text-emerald-800 dark:text-emerald-200">
                               #{withdrawalData.id}
                             </span>
@@ -717,7 +878,9 @@ function WithdrawalRequestContent() {
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     Transfer Flow
                   </p>
-                  <h3 className="text-lg font-semibold text-foreground">How it works</h3>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    How it works
+                  </h3>
                 </div>
 
                 <div className="space-y-3">
@@ -734,7 +897,9 @@ function WithdrawalRequestContent() {
                       <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-xs font-semibold text-primary">
                         {index + 1}
                       </div>
-                      <p className="text-sm leading-6 text-muted-foreground">{step}</p>
+                      <p className="text-sm leading-6 text-muted-foreground">
+                        {step}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -747,7 +912,9 @@ function WithdrawalRequestContent() {
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     Request Signals
                   </p>
-                  <h3 className="text-lg font-semibold text-foreground">What to verify</h3>
+                  <h3 className="text-lg font-semibold text-foreground">
+                    What to verify
+                  </h3>
                 </div>
 
                 <div className="space-y-3 text-sm">
@@ -756,8 +923,8 @@ function WithdrawalRequestContent() {
                       Address format
                     </p>
                     <p className="mt-1 leading-6 text-muted-foreground">
-                      Make sure the destination address belongs to the same chain you selected in
-                      the network dropdown.
+                      Make sure the destination address belongs to the same
+                      chain you selected in the network dropdown.
                     </p>
                   </div>
                   <div className="rounded-xl border border-border/50 bg-background/80 px-4 py-3">
@@ -765,8 +932,8 @@ function WithdrawalRequestContent() {
                       Processing window
                     </p>
                     <p className="mt-1 leading-6 text-muted-foreground">
-                      Requests can remain pending while the team verifies the destination and
-                      network before release.
+                      Requests can remain pending while the team verifies the
+                      destination and network before release.
                     </p>
                   </div>
                   <div className="rounded-xl border border-border/50 bg-background/80 px-4 py-3">
@@ -774,7 +941,8 @@ function WithdrawalRequestContent() {
                       Fee awareness
                     </p>
                     <p className="mt-1 leading-6 text-muted-foreground">
-                      Different chains can have different final delivery costs and settlement times.
+                      Different chains can have different final delivery costs
+                      and settlement times.
                     </p>
                   </div>
                 </div>

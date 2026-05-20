@@ -112,7 +112,7 @@ function USDTDepositContent() {
 
   const recentDepositAmount = recentDeposit ? parseFloat(String(recentDeposit.amount ?? 0)) : null;
   const recentDepositLabel = recentDepositAmount
-    ? `${formatAmount(recentDepositAmount)} ${currency}`
+    ? `${formatAmount(recentDepositAmount)} USD`
     : "No recent deposits";
   const recentDepositDate = recentDeposit ? formatDateTimeInIST(recentDeposit.created_at) : "-";
   const enabledMethodCount = paymentMethods.length;
@@ -637,11 +637,11 @@ function USDTDepositContent() {
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
             <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Total Balance</p>
-              <p className="text-sm font-semibold text-foreground">{walletLoading ? "--" : `${formatAmount(totalBalance)} ${currency}`}</p>
+              <p className="text-sm font-semibold text-foreground">{walletLoading ? "--" : `${formatAmount(totalBalance)} USD`}</p>
             </div>
             <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Main Wallet</p>
-              <p className="text-sm font-semibold text-foreground">{walletLoading ? "--" : `${formatAmount(availableBalance)} ${currency}`}</p>
+              <p className="text-sm font-semibold text-foreground">{walletLoading ? "--" : `${formatAmount(availableBalance)} USD`}</p>
             </div>
             <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Last Deposit</p>

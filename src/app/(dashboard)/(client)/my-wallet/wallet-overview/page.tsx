@@ -210,7 +210,7 @@ export default function WalletOverviewPage() {
                     {walletData ? formatAmount(walletData.total_balance) : '0.00'}
                   </span>
                   <span className="text-base font-semibold text-primary-foreground/80">
-                    {mainWallet?.currency || 'USD'}
+                    USD
                   </span>
                 </div>
               </CardHeader>
@@ -353,7 +353,7 @@ export default function WalletOverviewPage() {
                             Balance
                           </p>
                           <p className="mt-1 text-lg font-semibold text-foreground">
-                            ${formatAmount(wallet.balance)} {wallet.currency}
+                            ${formatAmount(wallet.balance)} USD
                           </p>
                         </div>
 
@@ -454,7 +454,7 @@ export default function WalletOverviewPage() {
                           ${formatAmount(transaction.amount)}
                         </p>
                         <Badge variant="secondary" className="text-xs">
-                          {mainWallet?.currency || 'USDT'}
+                          {mainWallet?.currency || 'USD'}
                         </Badge>
                       </div>
                     </div>

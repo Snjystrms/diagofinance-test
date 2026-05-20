@@ -883,9 +883,9 @@ export default function SetIbCommissionPage() {
                                   {group.accountTypeName}
                                 </p>
                               </div>
-                              <Badge variant="outline" className="rounded-full">
+                              {/* <Badge variant="outline" className="rounded-full">
                                 ID: {group.accountTypeId}
-                              </Badge>
+                              </Badge> */}
                               <Badge variant="outline" className="rounded-full">
                                 {group.commissions.length} levels
                               </Badge>
