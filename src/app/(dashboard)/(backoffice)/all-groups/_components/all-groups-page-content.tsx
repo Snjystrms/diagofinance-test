@@ -2,7 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit, Plus, RefreshCw, Search, Trash2, Users } from "lucide-react";
+import { Edit, Plus, RefreshCw, Search, Trash2, Users, Pencil } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { ApiErrorState } from "@/components/errors/api-error-state";
@@ -302,9 +302,6 @@ export function AllGroupsPageContent() {
               <CardTitle>Group List</CardTitle>
               <CardDescription>Search by group name, MT5 group name, or ID.</CardDescription>
             </div>
-            <Badge variant="secondary" className="w-fit">
-              {filteredGroups.length} of {groups.length} groups
-            </Badge>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="relative max-w-md">
@@ -353,10 +350,10 @@ export function AllGroupsPageContent() {
                                 disabled={mutationInProgress}
                                 title="Edit group"
                               >
-                                <Edit className="h-4 w-4" />
+                                <Pencil className="h-4 w-4" />
                               </Button>
                               <Button
-                                type="button"
+                                type="button" 
                                 variant="outline"
                                 size="icon"
                                 onClick={() => handleDelete(group)}

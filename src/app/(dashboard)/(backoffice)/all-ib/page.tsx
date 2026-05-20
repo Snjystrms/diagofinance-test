@@ -524,8 +524,7 @@ export default function IbManagementPage() {
         id: "created_at",
         header: "Created",
         cell: ({ row }) => {
-          // Cast to Record<string, any> to bypass strict property checks
-          const request = row.original as Record<string, any>;
+          const request = row.original as Record<string, unknown>;
           
           const createdAt =
             request.created_at_ist ??
