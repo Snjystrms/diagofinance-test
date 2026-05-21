@@ -15,11 +15,22 @@ import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton
 import { ProtectedRoute } from "@/components/protected-route";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/auth-context";
 import {
   adminUsersApi,
+  adminIbPlansApi,
+  type AdminIbPlanItem,
   type AdminUserDetailApiData,
   type AdminUserUpdateBody,
   type AdminUsersListApiData,
@@ -61,6 +72,12 @@ const updateUserSchema = z
   });
 
 type UpdateUserFormData = z.infer<typeof updateUserSchema>;
+
+type IbPlanOption = {
+  id: string;
+  name: string;
+  status: string;
+};
 
 const statusFilters = [
   { label: "All statuses", value: "all" },
@@ -212,6 +229,12 @@ const extractSingleUser = (payload?: AdminUserDetailApiData | null): PendingUser
   return null;
 };
 
+const normalizeIbPlanOption = (plan: AdminIbPlanItem): IbPlanOption => ({
+  id: String(plan.id),
+  name: plan.name ?? `IB Plan ${plan.id}`,
+  status: String(plan.status ?? ""),
+});
+
 export default function NewUsersPage() {
   const { token } = useAuth();
 
@@ -239,6 +262,12 @@ export default function NewUsersPage() {
   const [promotingUserIds, setPromotingUserIds] = useState<Set<number>>(new Set());
   const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null);
   const [userToDelete, setUserToDelete] = useState<PendingUser | null>(null);
+  const [ibPlans, setIbPlans] = useState<IbPlanOption[]>([]);
+  const [loadingIbPlans, setLoadingIbPlans] = useState(false);
+  const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
+  const [promoteTargetUser, setPromoteTargetUser] = useState<PendingUser | null>(null);
+  const [selectedIbPlanId, setSelectedIbPlanId] = useState("");
+  const [promoteSubmitting, setPromoteSubmitting] = useState(false);
 
   const createUserForm = useForm<AdminUserCreateFormData>({
     resolver: zodResolver(adminUserCreateSchema),
@@ -265,6 +294,28 @@ export default function NewUsersPage() {
     form.setValue("country", countryName, { shouldValidate: true });
     form.setValue("country_code", countryData.code, { shouldValidate: true });
   }, [createUserForm, editUserForm]);
+
+  const loadIbPlans = useCallback(async () => {
+    if (!token) {
+      setIbPlans([]);
+      return;
+    }
+
+    try {
+      setLoadingIbPlans(true);
+      const response = await adminIbPlansApi.list({ token });
+      const plans = Array.isArray(response?.data) ? response.data : [];
+      setIbPlans(plans.map(normalizeIbPlanOption));
+    } catch (err) {
+      console.error("Failed to load IB plans:", err);
+      toast.error(
+        getAdminFriendlyErrorMessage(err, { resource: "IB plans", action: "load" })
+      );
+      setIbPlans([]);
+    } finally {
+      setLoadingIbPlans(false);
+    }
+  }, [token]);
 
   const loadUsers = useCallback(async () => {
     if (!token) {
@@ -307,6 +358,10 @@ export default function NewUsersPage() {
   useEffect(() => {
     void loadUsers();
   }, [loadUsers]);
+
+  useEffect(() => {
+    void loadIbPlans();
+  }, [loadIbPlans]);
 
   const handleCreate = async (values: AdminUserCreateFormData) => {
     if (!token) return;
@@ -413,37 +468,57 @@ export default function NewUsersPage() {
     }
   }, [token, loadUsers]);
 
-  const handlePromoteToIb = useCallback(async (user: PendingUser) => {
-    if (!token) return;
-
+  const handlePromoteDialogOpen = useCallback((user: PendingUser) => {
     const hasSponsorId = Boolean(String(user.sponsor_id ?? "").trim());
     if (hasSponsorId) {
       toast.success("User is already an IB");
       return;
     }
 
-    const ibName = user.name?.trim() || `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || "IB User";
+    setPromoteTargetUser(user);
+    setSelectedIbPlanId((current) => current || ibPlans[0]?.id || "");
+    setPromoteDialogOpen(true);
+  }, [ibPlans]);
+
+  const handlePromoteToIb = useCallback(async () => {
+    if (!token || !promoteTargetUser) return;
+
+    const ibName =
+      promoteTargetUser.name?.trim() ||
+      `${promoteTargetUser.first_name ?? ""} ${promoteTargetUser.last_name ?? ""}`.trim() ||
+      "IB User";
+
     if (!ibName) {
       toast.error("IB name is required");
       return;
     }
 
+    if (!selectedIbPlanId) {
+      toast.error("Please select an IB plan");
+      return;
+    }
+
     try {
+      setPromoteSubmitting(true);
       setPromotingUserIds((prev) => {
         const next = new Set(prev);
-        next.add(user.id);
+        next.add(promoteTargetUser.id);
         return next;
       });
 
       const response = await adminUsersApi.promoteToIb(
         {
-          client_id: user.id,
+          client_id: promoteTargetUser.id,
           ib_name: ibName,
+          ib_plan_id: Number(selectedIbPlanId),
         },
         token,
       );
 
       toast.success((response as { message?: string })?.message || "Client has been successfully promoted to IB");
+      setPromoteDialogOpen(false);
+      setPromoteTargetUser(null);
+      setSelectedIbPlanId("");
       await loadUsers();
     } catch (err) {
       console.error("Failed to promote user to IB:", err);
@@ -451,13 +526,16 @@ export default function NewUsersPage() {
         getAdminFriendlyErrorMessage(err, { resource: "IB promotion", action: "create" })
       );
     } finally {
+      setPromoteSubmitting(false);
       setPromotingUserIds((prev) => {
         const next = new Set(prev);
-        next.delete(user.id);
+        if (promoteTargetUser) {
+          next.delete(promoteTargetUser.id);
+        }
         return next;
       });
     }
-  }, [token, loadUsers]);
+  }, [token, promoteTargetUser, selectedIbPlanId, loadUsers]);
 
   const totalUsers = paginationMeta?.total ?? users.length;
   const activeUsersCount = userSummaryCounts.activeCount ?? users.filter((user) => user.status === "1").length;
@@ -471,8 +549,8 @@ export default function NewUsersPage() {
     (totalUsers && perPage ? Math.ceil(totalUsers / perPage) : 1);
 
   const columns = useMemo(
-    () => getColumnsWithActions(handleEdit, handleDelete, handleToggleStatus, handlePromoteToIb, promotingUserIds),
-    [handleEdit, handleDelete, handleToggleStatus, handlePromoteToIb, promotingUserIds],
+    () => getColumnsWithActions(handleEdit, handleDelete, handleToggleStatus, handlePromoteDialogOpen, promotingUserIds),
+    [handleEdit, handleDelete, handleToggleStatus, handlePromoteDialogOpen, promotingUserIds],
   );
 
   if (loadError && users.length === 0) {
@@ -675,6 +753,83 @@ export default function NewUsersPage() {
           cancelText="Cancel"
           variant="destructive"
         />
+
+        <Dialog
+          open={promoteDialogOpen}
+          onOpenChange={(open) => {
+            setPromoteDialogOpen(open);
+            if (!open) {
+              setPromoteTargetUser(null);
+              setSelectedIbPlanId("");
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Promote to IB</DialogTitle>
+              <DialogDescription>
+                Select an IB plan for {promoteTargetUser?.name || "this user"} before creating the IB profile.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label>IB Name</Label>
+                <Input
+                  value={
+                    promoteTargetUser
+                      ? promoteTargetUser.name?.trim() ||
+                        `${promoteTargetUser.first_name ?? ""} ${promoteTargetUser.last_name ?? ""}`.trim() ||
+                        "IB User"
+                      : ""
+                  }
+                  disabled
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="ib-plan-id">IB Plan</Label>
+                <Select value={selectedIbPlanId} onValueChange={setSelectedIbPlanId} disabled={loadingIbPlans || ibPlans.length === 0}>
+                  <SelectTrigger id="ib-plan-id">
+                    <SelectValue placeholder={loadingIbPlans ? "Loading plans..." : "Select IB plan"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ibPlans.map((plan) => (
+                      <SelectItem key={plan.id} value={plan.id}>
+                        {plan.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {!loadingIbPlans && ibPlans.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No IB plans available.</p>
+                ) : null}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setPromoteDialogOpen(false);
+                  setPromoteTargetUser(null);
+                  setSelectedIbPlanId("");
+                }}
+                disabled={promoteSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void handlePromoteToIb()}
+                disabled={promoteSubmitting || !selectedIbPlanId}
+              >
+                {promoteSubmitting ? "Promoting..." : "Promote"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </>
     </ProtectedRoute>
   );

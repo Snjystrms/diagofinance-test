@@ -52,7 +52,8 @@ type SidebarSectionId =
   // | "marketing-management"
   | "news-management"
   | "promotion-management"
-  | "settings";
+  | "settings"
+  | "ib-plans-management";
 
 export interface AppRouteDefinition {
   path: string;
@@ -209,6 +210,15 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     managerCategories: ["IB Management"],
+  }, 
+  {
+    id: "ib-plans-management",
+    title: "IB Plans Management",
+    url: "/ib-plans-management",
+    icon: UserCheck,
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    managerCategories: ["IB Plans Management"],
   },
   {
     id: "account-management",
@@ -639,6 +649,15 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     navLabel: "Set IB Commission",
     managerCategories: ["IB Management"],
     activeMatch: ["/set-ib-commission"],
+  },
+  {
+    path: "/ib-plans-management",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "ib-plans-management",
+    navLabel: "IB Plans",
+    managerCategories: ["IB Plans Management"],
+    activeMatch: ["/ib-plans-management"],
   },
   {
     path: "/all-accounts",

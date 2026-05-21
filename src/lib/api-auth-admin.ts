@@ -257,6 +257,7 @@ export type AdminUserUpdateBody = Partial<AdminUserCreateBody>;
 export type PromoteToIbBody = {
   client_id: number;
   ib_name: string;
+  ib_plan_id: number;
 };
 
 export type PromoteToIbResponseData = {
@@ -1184,6 +1185,7 @@ export const adminUsersApi = {
       body: JSON.stringify({
         client_id: body.client_id,
         ib_name: ibName,
+        ib_plan_id: body.ib_plan_id,
       }),
     });
   },
@@ -2355,6 +2357,175 @@ export const adminCommissionPlansApi = {
     }
 
     return apiCall(`/admin/commission/plans/${planId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
+
+export interface AdminIbPlanCommissionItem {
+  id?: number | string;
+  account_type_id?: number | string;
+  level: string;
+  rate_ib: number | string;
+  rate_sub_ib_1?: number | string;
+  rate_sub_ib_2?: number | string;
+  rate_sub_ib_3?: number | string;
+  rate_sub_ib_4?: number | string;
+  rate_sub_ib_5?: number | string;
+  is_default?: boolean | number | string;
+  status?: boolean | number | string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AdminIbPlanAccountTypeItem {
+  account_type_id: number | string;
+  account_type_name?: string;
+  commissions?: AdminIbPlanCommissionItem[];
+}
+
+export interface AdminIbPlanItem {
+  id: number | string;
+  name: string;
+  description?: string | null;
+  status?: boolean | number | string;
+  ib_user_count?: number | string;
+  created_at?: string;
+  updated_at?: string;
+  account_types?: AdminIbPlanAccountTypeItem[];
+}
+
+export interface AdminIbPlanPagination {
+  total?: number;
+  per_page?: number;
+  current_page?: number;
+  last_page?: number;
+}
+
+export interface AdminIbPlanListResponseData {
+  data?: AdminIbPlanItem[];
+  pagination?: AdminIbPlanPagination;
+}
+
+export type AdminIbPlanUpsertBody = {
+  name: string;
+  description?: string;
+  status?: 0 | 1;
+  account_types: Array<{
+    account_type_id: number;
+    commissions: Array<{
+      level: string;
+      rate_ib: number;
+      rate_sub_ib_1: number;
+      rate_sub_ib_2: number;
+      rate_sub_ib_3: number;
+      rate_sub_ib_4: number;
+      rate_sub_ib_5: number;
+    }>;
+  }>;
+};
+
+export type AdminIbPlanListParams = {
+  token: string;
+  page?: number;
+  perPage?: number;
+  search?: string;
+  status?: string | number;
+};
+
+export const adminIbPlansApi = {
+  list: ({ token, page = 1, perPage = 20, search, status }: AdminIbPlanListParams) => {
+    if (!token) {
+      throw new Error("Token is required to fetch IB plans");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("page", String(page));
+    qs.set("per_page", String(perPage));
+    if (search && search.trim()) qs.set("search", search.trim());
+    if (status !== undefined && status !== null && `${status}`.trim() !== "") {
+      qs.set("status", String(status).trim());
+    }
+
+    return apiCall<AdminIbPlanListResponseData>(
+      `/admin/ib-plans${qs.toString() ? `?${qs.toString()}` : ""}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+  },
+
+  getById: (planId: number | string, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to fetch an IB plan");
+    }
+
+    if (planId === undefined || planId === null || `${planId}` === "") {
+      throw new Error("A valid plan identifier is required to fetch an IB plan");
+    }
+
+    return apiCall<AdminIbPlanItem>(`/admin/ib-plans/${planId}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  create: (body: AdminIbPlanUpsertBody, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to create an IB plan");
+    }
+
+    return apiCall<AdminIbPlanItem>(`/admin/ib-plans`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
+    });
+  },
+
+  update: (planId: number | string, body: AdminIbPlanUpsertBody, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to update an IB plan");
+    }
+
+    if (planId === undefined || planId === null || `${planId}` === "") {
+      throw new Error("A valid plan identifier is required to update an IB plan");
+    }
+
+    return apiCall<AdminIbPlanItem>(`/admin/ib-plans/${planId}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
+    });
+  },
+
+  patch: (planId: number | string, body: Partial<AdminIbPlanUpsertBody>, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to patch an IB plan");
+    }
+
+    if (planId === undefined || planId === null || `${planId}` === "") {
+      throw new Error("A valid plan identifier is required to patch an IB plan");
+    }
+
+    return apiCall<AdminIbPlanItem>(`/admin/ib-plans/${planId}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
+      body: JSON.stringify(body),
+    });
+  },
+
+  delete: (planId: number | string, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to delete an IB plan");
+    }
+
+    if (planId === undefined || planId === null || `${planId}` === "") {
+      throw new Error("A valid plan identifier is required to delete an IB plan");
+    }
+
+    return apiCall(`/admin/ib-plans/${planId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });

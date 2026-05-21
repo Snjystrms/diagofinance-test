@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Calendar, Eye, Globe, Mail, Pencil, Phone, Trash2, User } from "lucide-react";
+import { Calendar, Eye, Globe, Mail, Pencil, Phone, Trash2, User, Plus } from "lucide-react";
 import toast from "react-hot-toast";
 
 import type { PendingUser } from "@/lib/api";
@@ -120,7 +120,7 @@ export const getColumnsWithActions = (
   onEdit: (user: PendingUser) => void,
   onDelete: (user: PendingUser) => void,
   onToggleStatus: (user: PendingUser, newStatus: number) => Promise<void>,
-  onPromoteToIb: (user: PendingUser) => Promise<void>,
+  onPromoteToIb: (user: PendingUser) => void | Promise<void>,
   promotingUserIds: Set<number>,
 ): ColumnDef<PendingUser>[] => [
   {
@@ -258,7 +258,10 @@ export const getColumnsWithActions = (
             <span>Promoting...</span>
           </div>
         ) : (
-          "Promote to IB"
+           <div className="flex items-center gap-1.5">
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Promote to IB</span>
+                </div>
         )}
       </Button>
     </div>

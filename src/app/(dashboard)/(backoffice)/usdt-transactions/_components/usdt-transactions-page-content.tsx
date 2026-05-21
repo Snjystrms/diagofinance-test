@@ -146,6 +146,16 @@ export function USDTTransactionsPageContent() {
     [hasFeature]
   );
 
+  const canViewDepositsTab = useMemo(
+    () => isAdmin || !isManager || hasFeature("transaction", "depositList"),
+    [isAdmin, isManager, hasFeature]
+  );
+
+  const canViewWithdrawalsTab = useMemo(
+    () => isAdmin || !isManager || hasFeature("transaction", "withdrawalList"),
+    [isAdmin, isManager, hasFeature]
+  );
+
   const canTakeAction = useMemo(
     () =>
       activeTab === "deposits" ? canTakeDepositAction : canTakeWithdrawalAction,
@@ -277,6 +287,16 @@ export function USDTTransactionsPageContent() {
   useEffect(() => {
     loadList();
   }, [loadList]);
+
+  useEffect(() => {
+    if (activeTab === "deposits" && !canViewDepositsTab && canViewWithdrawalsTab) {
+      setActiveTab("withdrawals");
+      return;
+    }
+    if (activeTab === "withdrawals" && !canViewWithdrawalsTab && canViewDepositsTab) {
+      setActiveTab("deposits");
+    }
+  }, [activeTab, canViewDepositsTab, canViewWithdrawalsTab]);
 
   useEffect(() => {
     if (!isManager) return;
@@ -652,7 +672,7 @@ export function USDTTransactionsPageContent() {
     [activeTab, depositColumns, withdrawalColumns]
   );
 
-  if (!isAdmin && isManager && !statusFeatureOptions.length) {
+  if (!canViewDepositsTab && !canViewWithdrawalsTab) {
     return (
       
         <div className="flex items-center justify-center min-h-[60vh]">
@@ -717,10 +737,11 @@ export function USDTTransactionsPageContent() {
 
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "deposits" | "withdrawals")} className="space-y-6">
           <TabsList>
-            <TabsTrigger value="deposits">Deposits</TabsTrigger>
-            <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
+            {canViewDepositsTab && <TabsTrigger value="deposits">Deposits</TabsTrigger>}
+            {canViewWithdrawalsTab && <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>}
           </TabsList>
 
+          {canViewDepositsTab && (
           <TabsContent value="deposits" className="space-y-6">
             <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
               {/* Status Filter */}
@@ -758,7 +779,9 @@ export function USDTTransactionsPageContent() {
               />
             </div>
           </TabsContent>
+          )}
 
+          {canViewWithdrawalsTab && (
           <TabsContent value="withdrawals" className="space-y-6">
             <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
               {/* Status Filter */}
@@ -796,6 +819,7 @@ export function USDTTransactionsPageContent() {
               />
             </div>
           </TabsContent>
+          )}
         </Tabs>
 
         {/* Action Dialog (Approve/Reject) */}
