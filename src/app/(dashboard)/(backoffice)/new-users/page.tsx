@@ -730,7 +730,7 @@ export default function NewUsersPage() {
             }
           }}
           title="Edit User"
-          description="Update an existing user through the CRUD detail and update endpoints."
+          description="Update an existing user's detail and update their information."
           submitLabel="Save Changes"
           submittingLabel="Saving..."
           submitting={updatingUser}
