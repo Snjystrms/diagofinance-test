@@ -858,6 +858,7 @@ export interface AdminIbUser {
   phone?: string;
   sponsor_id?: string;
   ib_name?: string;
+  ib_plan_name?: string;
   partner_id?: string;
   referral_link?: string;
   status?: number | string;
@@ -894,6 +895,21 @@ export type AdminIbUsersListParams = {
   search?: string;
 };
 
+export type AdminIbUserPlanUpdateBody = {
+  ib_plan_id: number;
+};
+
+export interface AdminIbUserPlanUpdateResponse {
+  success: boolean;
+  message?: string;
+  data?: {
+    user_id: number;
+    ib_plan_id: number;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+}
+
 export const adminIbUsersApi = {
   list: ({ token, page = 1, per_page = 10, search }: AdminIbUsersListParams) => {
     if (!token) {
@@ -914,6 +930,28 @@ export const adminIbUsersApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
+  },
+  updatePlan: (
+    userId: number | string,
+    body: AdminIbUserPlanUpdateBody,
+    token: string,
+  ) => {
+    if (!token) {
+      throw new Error("Token is required to update IB user plan");
+    }
+
+    if (userId === null || userId === undefined || `${userId}`.trim() === "") {
+      throw new Error("User ID is required to update IB user plan");
+    }
+
+    return apiCall<AdminIbUserPlanUpdateResponse>(
+      `/admin/ib-management/ib-users/${userId}/plan`,
+      {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+    );
   },
 };
 

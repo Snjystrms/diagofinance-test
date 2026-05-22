@@ -104,6 +104,15 @@ type BankDetailsFormState = {
   bookBankFileName: string;
 };
 
+type BankDetailsField =
+  | "accountName"
+  | "accountNumber"
+  | "ifscSwiftCode"
+  | "ibanNumber"
+  | "bankName"
+  | "bankAddress"
+  | "country";
+
 const LOCATION_OTHER_VALUE = "__other__";
 
 const normalizeLocationLabel = (value?: string | null) =>
@@ -149,6 +158,7 @@ export default function ProfileContent() {
   const [selectedBankCountryId, setSelectedBankCountryId] = useState<number | null>(null);
   const [bankDetailsRecordId, setBankDetailsRecordId] = useState<number | null>(null);
   const [bankDetailsSaving, setBankDetailsSaving] = useState(false);
+  const [bankValidationErrors, setBankValidationErrors] = useState<Partial<Record<BankDetailsField, string>>>({});
   const [locationHydrated, setLocationHydrated] = useState(false);
   const [bankDetails, setBankDetails] = useState<BankDetailsFormState>({
     client: "primary-client",
@@ -181,6 +191,23 @@ export default function ProfileContent() {
       ...current,
       [field]: value,
     }));
+
+    if (
+      field === "accountName" ||
+      field === "accountNumber" ||
+      field === "ifscSwiftCode" ||
+      field === "ibanNumber" ||
+      field === "bankName" ||
+      field === "bankAddress" ||
+      field === "country"
+    ) {
+      setBankValidationErrors((current) => {
+        if (!current[field]) return current;
+        const next = { ...current };
+        delete next[field];
+        return next;
+      });
+    }
   };
 
   const applyBankDetailsToForm = (details: UserBankDetailsData) => {
@@ -516,6 +543,13 @@ export default function ProfileContent() {
   };
 
   const handleBankCountrySelection = (value: string) => {
+    setBankValidationErrors((current) => {
+      if (!current.country) return current;
+      const next = { ...current };
+      delete next.country;
+      return next;
+    });
+
     if (value === LOCATION_OTHER_VALUE) {
       setBankCountryMode("other");
       setSelectedBankCountryId(null);
@@ -532,9 +566,67 @@ export default function ProfileContent() {
     updateBankDetails("country", country.name);
   };
 
+  const validateBankDetails = () => {
+    const errors: Partial<Record<BankDetailsField, string>> = {};
+    const accountName = bankDetails.accountName.trim();
+    const accountNumber = bankDetails.accountNumber.trim();
+    const ifscSwiftCode = bankDetails.ifscSwiftCode.trim();
+    const ibanNumber = bankDetails.ibanNumber.trim();
+    const bankName = bankDetails.bankName.trim();
+    const bankAddress = bankDetails.bankAddress.trim();
+    const country = bankDetails.country.trim();
+
+    if (!accountName) {
+      errors.accountName = "Account holder name is required.";
+    } else if (accountName.length < 2) {
+      errors.accountName = "Account holder name must be at least 2 characters.";
+    }
+
+    if (!accountNumber) {
+      errors.accountNumber = "Account number is required.";
+    } else if (!/^[A-Z0-9-]{6,34}$/.test(accountNumber)) {
+      errors.accountNumber = "Account number must be 6 to 34 uppercase letters, digits, or hyphen.";
+    }
+
+    if (!ifscSwiftCode) {
+      errors.ifscSwiftCode = "IFSC / Swift code is required.";
+    } else if (!/^[A-Z0-9-]{4,20}$/.test(ifscSwiftCode)) {
+      errors.ifscSwiftCode = "IFSC / Swift code must be 4 to 20 uppercase letters, digits, or hyphen.";
+    }
+
+    if (ibanNumber && !/^[A-Z0-9-]{10,34}$/.test(ibanNumber)) {
+      errors.ibanNumber = "IBAN must be 10 to 34 uppercase letters, digits, or hyphen.";
+    }
+
+    if (!bankName) {
+      errors.bankName = "Bank name is required.";
+    } else if (bankName.length < 2) {
+      errors.bankName = "Bank name must be at least 2 characters.";
+    }
+
+    if (!bankAddress) {
+      errors.bankAddress = "Address is required.";
+    } else if (bankAddress.length < 5) {
+      errors.bankAddress = "Address must be at least 5 characters.";
+    }
+
+    if (!country) {
+      errors.country = "Country is required.";
+    }
+
+    return errors;
+  };
+
   const handleBankDetailsSubmit = async () => {
     if (!token) {
       toast.error("Authentication required");
+      return;
+    }
+
+    const errors = validateBankDetails();
+    if (Object.keys(errors).length > 0) {
+      setBankValidationErrors(errors);
+      toast.error("Please fix the highlighted bank details fields.");
       return;
     }
 
@@ -547,18 +639,6 @@ export default function ProfileContent() {
       address: bankDetails.bankAddress.trim(),
       country: bankDetails.country.trim(),
     };
-
-    if (
-      !payload.account_holder_name ||
-      !payload.account_number ||
-      !payload.swift_ifsc_code ||
-      !payload.bank_name ||
-      !payload.address ||
-      !payload.country
-    ) {
-      toast.error("Please fill all required bank details fields.");
-      return;
-    }
 
     try {
       setBankDetailsSaving(true);
@@ -2008,33 +2088,19 @@ export default function ProfileContent() {
             <CardContent className="space-y-6">
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                 <div className="space-y-2">
-                  <Label htmlFor="bank_client">Select Client</Label>
-                  <Select
-                    value={bankDetails.client}
-                    onValueChange={(value) => updateBankDetails("client", value)}
-                  >
-                    <SelectTrigger id="bank_client" className="w-full">
-                      <SelectValue placeholder="Please choose..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {BANK_CLIENT_OPTIONS.map((option) => (
-                        <SelectItem key={option.value} value={option.value}>
-                          {option.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="account_name">Account Name</Label>
+                  <Label htmlFor="account_name">Account Holder Name</Label>
                   <Input
                     id="account_name"
                     value={bankDetails.accountName}
                     onChange={(e) =>
                       updateBankDetails("accountName", sanitizePersonText(e.target.value).slice(0, 80))
                     }
+                    className={bankValidationErrors.accountName ? "border-destructive" : ""}
                     placeholder="Enter account holder name"
                   />
+                  {bankValidationErrors.accountName ? (
+                    <p className="text-sm text-destructive">{bankValidationErrors.accountName}</p>
+                  ) : null}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="account_number">Account No.</Label>
@@ -2044,8 +2110,12 @@ export default function ProfileContent() {
                     onChange={(e) =>
                       updateBankDetails("accountNumber", sanitizeIdentifierInput(e.target.value, 34))
                     }
+                    className={bankValidationErrors.accountNumber ? "border-destructive" : ""}
                     placeholder="Enter account number"
                   />
+                  {bankValidationErrors.accountNumber ? (
+                    <p className="text-sm text-destructive">{bankValidationErrors.accountNumber}</p>
+                  ) : null}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="ifsc_swift_code">IFSC / Swift Code</Label>
@@ -2055,8 +2125,12 @@ export default function ProfileContent() {
                     onChange={(e) =>
                       updateBankDetails("ifscSwiftCode", sanitizeIdentifierInput(e.target.value, 20))
                     }
+                    className={bankValidationErrors.ifscSwiftCode ? "border-destructive" : ""}
                     placeholder="Enter IFSC / Swift code"
                   />
+                  {bankValidationErrors.ifscSwiftCode ? (
+                    <p className="text-sm text-destructive">{bankValidationErrors.ifscSwiftCode}</p>
+                  ) : null}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="iban_number">IBAN No.</Label>
@@ -2066,8 +2140,12 @@ export default function ProfileContent() {
                     onChange={(e) =>
                       updateBankDetails("ibanNumber", sanitizeIdentifierInput(e.target.value, 34))
                     }
+                    className={bankValidationErrors.ibanNumber ? "border-destructive" : ""}
                     placeholder="Enter IBAN number"
                   />
+                  {bankValidationErrors.ibanNumber ? (
+                    <p className="text-sm text-destructive">{bankValidationErrors.ibanNumber}</p>
+                  ) : null}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="bank_name">Bank Name</Label>
@@ -2077,17 +2155,25 @@ export default function ProfileContent() {
                     onChange={(e) =>
                       updateBankDetails("bankName", sanitizePersonText(e.target.value).slice(0, 80))
                     }
+                    className={bankValidationErrors.bankName ? "border-destructive" : ""}
                     placeholder="Enter bank name"
                   />
+                  {bankValidationErrors.bankName ? (
+                    <p className="text-sm text-destructive">{bankValidationErrors.bankName}</p>
+                  ) : null}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="bank_address">Bank Address</Label>
+                  <Label htmlFor="bank_address">Address</Label>
                   <Input
                     id="bank_address"
                     value={bankDetails.bankAddress}
                     onChange={(e) => updateBankDetails("bankAddress", e.target.value)}
+                    className={bankValidationErrors.bankAddress ? "border-destructive" : ""}
                     placeholder="Enter bank address"
                   />
+                  {bankValidationErrors.bankAddress ? (
+                    <p className="text-sm text-destructive">{bankValidationErrors.bankAddress}</p>
+                  ) : null}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="bank_country">Country</Label>
@@ -2101,7 +2187,10 @@ export default function ProfileContent() {
                     }
                     onValueChange={handleBankCountrySelection}
                   >
-                    <SelectTrigger id="bank_country" className="w-full">
+                    <SelectTrigger
+                      id="bank_country"
+                      className={bankValidationErrors.country ? "w-full border-destructive" : "w-full"}
+                    >
                       <SelectValue placeholder="Please choose..." />
                     </SelectTrigger>
                     <SelectContent>
@@ -2119,22 +2208,12 @@ export default function ProfileContent() {
                       onChange={(e) =>
                         updateBankDetails("country", sanitizePersonText(e.target.value).slice(0, 80))
                       }
+                      className={bankValidationErrors.country ? "border-destructive" : ""}
                       placeholder="Enter country manually"
                     />
                   ) : null}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="book_bank">Book Bank</Label>
-                  <Input
-                    id="book_bank"
-                    type="file"
-                    accept=".pdf,.png,.jpg,.jpeg"
-                    onChange={(e) =>
-                      updateBankDetails("bookBankFileName", e.target.files?.[0]?.name ?? "")
-                    }
-                  />
-                  {bankDetails.bookBankFileName ? (
-                    <p className="text-sm text-muted-foreground">{bankDetails.bookBankFileName}</p>
+                  {bankValidationErrors.country ? (
+                    <p className="text-sm text-destructive">{bankValidationErrors.country}</p>
                   ) : null}
                 </div>
               </div>

@@ -12,12 +12,34 @@ import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/contexts/auth-context";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
-import { API_BASE_URL, adminIbUsersApi, type AdminIbUser } from "@/lib/api";
+import {
+  API_BASE_URL,
+  adminIbPlansApi,
+  adminIbUsersApi,
+  type AdminIbPlanItem,
+  type AdminIbUser,
+} from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
 
 import { DownlineTreePageContent } from "../set-ib-commission/[userId]/_components/downline-tree-page-content";
@@ -79,7 +101,13 @@ const resolveNumericUserId = (user: AdminIbUser) => {
   return null;
 };
 
-type RowActionType = "tree";
+type RowActionType = "tree" | "plan";
+
+type IbPlanOption = {
+  id: string;
+  name: string;
+  status: string;
+};
 
 type UsersByLevelPreviewResponse = {
   success?: boolean;
@@ -99,6 +127,33 @@ const deriveReferralLink = (user: AdminIbUser): string => {
 
   if (user.sponsor_id) {
     return `${baseUrl}/register?ref=${user.sponsor_id}`;
+  }
+
+  return "";
+};
+
+const normalizeIbPlanOption = (plan: AdminIbPlanItem): IbPlanOption => ({
+  id: String(plan.id),
+  name: plan.name ?? `IB Plan ${plan.id}`,
+  status: String(plan.status ?? ""),
+});
+
+const deriveIbPlanId = (user: AdminIbUser): string => {
+  const candidateUser = user as AdminIbUser & Record<string, unknown>;
+  const candidates = [
+    candidateUser.ib_plan_id,
+    candidateUser.ibPlanId,
+    candidateUser.plan_id,
+    candidateUser.planId,
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate === "number" && Number.isFinite(candidate)) {
+      return String(candidate);
+    }
+    if (typeof candidate === "string" && candidate.trim().length > 0) {
+      return candidate.trim();
+    }
   }
 
   return "";
@@ -146,6 +201,11 @@ export default function IbUsersPage() {
     action: null,
     userKey: null,
   });
+  const [ibPlans, setIbPlans] = useState<IbPlanOption[]>([]);
+  const [loadingIbPlans, setLoadingIbPlans] = useState(false);
+  const [updatePlanDialogOpen, setUpdatePlanDialogOpen] = useState(false);
+  const [planTargetUser, setPlanTargetUser] = useState<AdminIbUser | null>(null);
+  const [selectedIbPlanId, setSelectedIbPlanId] = useState("");
   const [selectedTreeUserId, setSelectedTreeUserId] = useState<number | null>(
     null,
   );
@@ -277,6 +337,35 @@ export default function IbUsersPage() {
     void loadUsers();
   }, [loadUsers]);
 
+  const loadIbPlans = useCallback(async () => {
+    if (!token) {
+      setIbPlans([]);
+      return;
+    }
+
+    try {
+      setLoadingIbPlans(true);
+      const response = await adminIbPlansApi.list({ token });
+      const plans = Array.isArray(response?.data) ? response.data : [];
+      setIbPlans(plans.map(normalizeIbPlanOption));
+    } catch (error: unknown) {
+      console.error("Failed to load IB plans:", error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, {
+          resource: "IB plans",
+          action: "load",
+        }),
+      );
+      setIbPlans([]);
+    } finally {
+      setLoadingIbPlans(false);
+    }
+  }, [token]);
+
+  useEffect(() => {
+    void loadIbPlans();
+  }, [loadIbPlans]);
+
   const handleOpenTreeChart = useCallback(
     async (user: AdminIbUser) => {
       if (!token) {
@@ -341,6 +430,63 @@ export default function IbUsersPage() {
     [rowActionState],
   );
 
+  const handleOpenUpdatePlanDialog = useCallback((user: AdminIbUser) => {
+    setPlanTargetUser(user);
+    setSelectedIbPlanId(deriveIbPlanId(user));
+    setUpdatePlanDialogOpen(true);
+  }, []);
+
+  const handleSubmitPlanUpdate = useCallback(async () => {
+    if (!token || !planTargetUser) {
+      return;
+    }
+
+    const userId = resolveNumericUserId(planTargetUser);
+    if (!userId) {
+      toast.error("User ID not available");
+      return;
+    }
+
+    if (!selectedIbPlanId) {
+      toast.error("Please select an IB plan");
+      return;
+    }
+
+    setRowActionState({
+      action: "plan",
+      userKey: getUserActionKey(planTargetUser),
+    });
+
+    try {
+      const response = await adminIbUsersApi.updatePlan(
+        userId,
+        { ib_plan_id: Number(selectedIbPlanId) },
+        token,
+      );
+
+      toast.success(
+        response?.message?.trim() || "IB plan updated successfully",
+      );
+      setUpdatePlanDialogOpen(false);
+      setPlanTargetUser(null);
+      setSelectedIbPlanId("");
+      await loadUsers();
+    } catch (error: unknown) {
+      console.error("Failed to update IB plan:", error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, {
+          resource: "IB plan",
+          action: "update",
+        }),
+      );
+    } finally {
+      setRowActionState({
+        action: null,
+        userKey: null,
+      });
+    }
+  }, [token, planTargetUser, selectedIbPlanId, loadUsers]);
+
   const columns: ColumnDef<AdminIbUser>[] = useMemo(
     () => [
       {
@@ -384,7 +530,7 @@ export default function IbUsersPage() {
                   {totalCommission}
                 </div>
               ) : null}
-              
+
               {partnerId !== "-" ? (
                 <div>
                   <span className="font-medium">Partner ID:</span> {partnerId}
@@ -397,6 +543,25 @@ export default function IbUsersPage() {
               ) : null}
             </div>
           );
+        },
+      },
+      {
+        id: "ib_plan_name",
+        header: "IB Plan Name",
+        accessorFn: (row) => row.ib_plan_name ?? "-",
+        cell: ({ row }) => {
+        const planName = row.original.ib_plan_name;
+  
+  // Return early for empty states so the hyphen looks clean and centered
+  if (!planName) {
+    return <div className="text-sm text-muted-foreground pl-4">-</div>;
+  }
+
+  return (
+    <div className="inline-flex h-9 items-center justify-center rounded-full border border-slate-200 bg-background px-3.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-200 dark:hover:bg-slate-900/70 whitespace-nowrap">
+      {planName}
+    </div>
+        );
         },
       },
       {
@@ -478,29 +643,46 @@ export default function IbUsersPage() {
         cell: ({ row }) => {
           const user = row.original;
           const loadingTree = isRowActionPending(user, "tree");
+          const loadingPlan = isRowActionPending(user, "plan");
 
           return (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                void handleOpenTreeChart(user);
-              }}
-              disabled={loadingTree}
-              className="h-9 rounded-full border-amber-200 bg-amber-50 px-3.5 text-amber-700 shadow-sm transition-colors hover:bg-amber-100 hover:text-amber-800 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-200"
-            >
-              {loadingTree ? (
-                <Spinner className="mr-2 h-4 w-4" />
-              ) : (
-                <Network className="mr-2 h-4 w-4" />
-              )}
-              Tree Chart
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  handleOpenUpdatePlanDialog(user);
+                }}
+                disabled={loadingPlan}
+                className="h-9 rounded-full border-blue-200 bg-blue-50 px-3.5 text-blue-700 shadow-sm transition-colors hover:bg-blue-100 hover:text-blue-800 dark:border-blue-900/70 dark:bg-blue-950/30 dark:text-blue-200"
+              >
+                {loadingPlan ? (
+                  <Spinner className="mr-2 h-4 w-4" />
+                ) : null}
+                Update IB Plan
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  void handleOpenTreeChart(user);
+                }}
+                disabled={loadingTree}
+                className="h-9 rounded-full border-amber-200 bg-amber-50 px-3.5 text-amber-700 shadow-sm transition-colors hover:bg-amber-100 hover:text-amber-800 dark:border-amber-900/70 dark:bg-amber-950/30 dark:text-amber-200"
+              >
+                {loadingTree ? (
+                  <Spinner className="mr-2 h-4 w-4" />
+                ) : (
+                  <Network className="mr-2 h-4 w-4" />
+                )}
+                Teams
+              </Button>
+            </div>
           );
         },
       },
     ],
-    [handleOpenTreeChart, isRowActionPending],
+    [handleOpenTreeChart, handleOpenUpdatePlanDialog, isRowActionPending],
   );
 
   if (selectedTreeUserId !== null) {
@@ -574,8 +756,8 @@ export default function IbUsersPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto space-y-6 p-6">
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto space-y-6 p-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
@@ -631,11 +813,81 @@ export default function IbUsersPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
-          {renderTableSection()}
+          <div className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
+            {renderTableSection()}
+          </div>
         </div>
+        <Dialog
+          open={updatePlanDialogOpen}
+          onOpenChange={(open) => {
+            setUpdatePlanDialogOpen(open);
+            if (!open) {
+              setPlanTargetUser(null);
+              setSelectedIbPlanId("");
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Update IB Plan</DialogTitle>
+              <DialogDescription>
+                Select an IB plan for {planTargetUser ? deriveFullName(planTargetUser) : "this user"}.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label htmlFor="ib-plan-id">IB Plan</Label>
+                <Select
+                  value={selectedIbPlanId}
+                  onValueChange={setSelectedIbPlanId}
+                  disabled={loadingIbPlans || ibPlans.length === 0}
+                >
+                  <SelectTrigger id="ib-plan-id">
+                    <SelectValue
+                      placeholder={loadingIbPlans ? "Loading plans..." : "Select IB plan"}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {ibPlans.map((plan) => (
+                      <SelectItem key={plan.id} value={plan.id}>
+                        {plan.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {!loadingIbPlans && ibPlans.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No IB plans available.</p>
+                ) : null}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setUpdatePlanDialogOpen(false);
+                  setPlanTargetUser(null);
+                  setSelectedIbPlanId("");
+                }}
+                disabled={Boolean(planTargetUser && isRowActionPending(planTargetUser, "plan"))}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  void handleSubmitPlanUpdate();
+                }}
+                disabled={!selectedIbPlanId || Boolean(planTargetUser && isRowActionPending(planTargetUser, "plan"))}
+              >
+                {Boolean(planTargetUser && isRowActionPending(planTargetUser, "plan")) ? "Updating..." : "Update Plan"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-    </div>
   );
 }
 
