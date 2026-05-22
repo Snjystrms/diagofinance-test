@@ -1,15 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { ProfileHeaderSkeleton } from "@/components/loading/client-page-skeletons";
-import { Phone, MapPin, Shield, Copy, Check } from "lucide-react";
+import { Phone, MapPin, Shield, CheckCircle2, Copy, Check, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { authApi, type ProfileViewResponse } from "@/lib/api";
 import toast from "react-hot-toast";
+import { cn } from "@/lib/utils";
 
 export default function ProfileHeader() {
   const { token } = useAuth();
@@ -36,11 +36,9 @@ export default function ProfileHeader() {
   useEffect(() => {
     const loadProfile = async () => {
       if (!token) return;
-      
       try {
         setLoading(true);
         const response = await authApi.getProfileView(token);
-        
         if (response.success && response.data) {
           const normalizedProfile = normalizeProfileResponse(response.data);
           setProfileData(normalizedProfile);
@@ -53,15 +51,12 @@ export default function ProfileHeader() {
         setLoading(false);
       }
     };
-
     loadProfile();
   }, [token]);
 
-  // Listen for profile changes from profile-content
   useEffect(() => {
     const handleProfileRefresh = async () => {
       if (!token) return;
-      
       try {
         const response = await authApi.getProfileView(token);
         if (response.success && response.data) {
@@ -73,13 +68,11 @@ export default function ProfileHeader() {
         console.error("Error refreshing profile:", error);
       }
     };
-
-    window.addEventListener('2fa-status-changed', handleProfileRefresh);
-    window.addEventListener('profile-updated', handleProfileRefresh);
-    
+    window.addEventListener("2fa-status-changed", handleProfileRefresh);
+    window.addEventListener("profile-updated", handleProfileRefresh);
     return () => {
-      window.removeEventListener('2fa-status-changed', handleProfileRefresh);
-      window.removeEventListener('profile-updated', handleProfileRefresh);
+      window.removeEventListener("2fa-status-changed", handleProfileRefresh);
+      window.removeEventListener("profile-updated", handleProfileRefresh);
     };
   }, [token]);
 
@@ -92,14 +85,11 @@ export default function ProfileHeader() {
     }
   };
 
-
-  if (loading) {
-    return <ProfileHeaderSkeleton />;
-  }
+  if (loading) return <ProfileHeaderSkeleton />;
 
   if (!profileData?.user) {
     return (
-      <Card>
+      <Card className="rounded-[28px]">
         <CardContent className="p-6">
           <p className="text-muted-foreground text-center">No profile data available</p>
         </CardContent>
@@ -108,84 +98,134 @@ export default function ProfileHeader() {
   }
 
   const user = profileData.user;
-  const initials = user.name
-    ?.split(" ")
-    .map((n: string) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2) || "U";
+  const initials =
+    user.name
+      ?.split(" ")
+      .map((n: string) => n[0])
+      .join("")
+      .toUpperCase()
+      .slice(0, 2) || "U";
+
+  const isVerified = user.verification_status === "verified";
+  const isPending = user.verification_status === "pending";
 
   return (
-    <Card className="border-border bg-card/95 shadow-[0_18px_45px_-32px_rgba(15,23,42,0.7)]">
-      <CardContent className="p-6">
-        <div className="flex flex-col gap-6 md:flex-row md:items-center">
-          <div className="relative">
-            <Avatar className="h-24 w-24 border-2 border-border/80">
-              <AvatarImage src={`https://bundui-images.netlify.app/avatars/08.png`} alt={user.name} />
-              <AvatarFallback className="bg-primary/12 text-2xl text-primary">
-                {initials}
-              </AvatarFallback>
-            </Avatar>
-            {user.verification_status === "pending" && (
-              <div className="absolute -bottom-1 -right-1 rounded-full bg-orange-500 p-1">
-                <div className="h-3 w-3 rounded-full bg-white"></div>
-              </div>
+    <div className="ib-portal-hero rounded-[28px] border px-6 py-6 sm:px-8 sm:py-7 relative overflow-hidden">
+      {/* Decorative blobs */}
+      <div className="pointer-events-none absolute -right-12 -top-14 h-52 w-52 rounded-full bg-primary/10 blur-3xl" />
+      <div className="pointer-events-none absolute left-1/3 -bottom-10 h-40 w-40 rounded-full bg-primary/6 blur-2xl" />
+
+      <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+        {/* Left: Avatar + Info */}
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
+          {/* Avatar with ring */}
+          <div className="relative shrink-0">
+            <div className="rounded-full p-[2px] bg-gradient-to-br from-primary/40 via-primary/20 to-transparent shadow-sm">
+              <Avatar className="h-20 w-20 border-2 border-background">
+                <AvatarImage
+                  src="https://bundui-images.netlify.app/avatars/08.png"
+                  alt={user.name}
+                />
+                <AvatarFallback className="bg-primary/12 text-xl font-semibold text-primary">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+            </div>
+            {/* Verification dot */}
+            {isPending && (
+              <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 ring-2 ring-background">
+                <span className="h-2 w-2 rounded-full bg-white" />
+              </span>
+            )}
+            {isVerified && (
+              <span className="absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500 ring-2 ring-background">
+                <CheckCircle2 className="h-3 w-3 text-white" />
+              </span>
             )}
           </div>
-          
-          <div className="flex-1 space-y-3">
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">
-                {user.name || user.email}
-              </h1>
-              <p className="text-sm text-muted-foreground mt-1">{user.email}</p>
+
+          {/* Name + email + kicker */}
+          <div className="space-y-1.5">
+            <div className="ib-portal-kicker inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
+              <Sparkles className="h-3 w-3" />
+              Client Account
             </div>
-            
-            <div className="flex flex-wrap gap-3">
+            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-[1.8rem] leading-tight">
+              {user.name || user.email}
+            </h1>
+            <p className="text-sm text-muted-foreground">{user.email}</p>
+          </div>
+        </div>
 
-              {/* Contact Number */}
-              {user.mobile && (
-                <div className="flex items-center gap-2 rounded-lg border border-border/80 bg-background/75 px-3 py-2 backdrop-blur-sm">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-foreground/88">
-                    {user.country_code} {user.mobile}
-                  </span>
-                </div>
-              )}
+        {/* Right: Meta chips */}
+        <div className="flex flex-wrap gap-2.5">
 
-              {/* Location */}
-              {user.location && (
-                <div className="flex items-center gap-2 rounded-lg border border-border/80 bg-background/75 px-3 py-2 backdrop-blur-sm">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm capitalize text-foreground/88">
-                    {user.location}
-                  </span>
-                </div>
-              )}
-
-              {/* 2FA Status */}
-              <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 shadow-sm ${
-                is2FAEnabled 
-                  ? "border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30" 
-                  : "border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30"
-              }`}>
-                <Shield className={`h-4 w-4 ${
-                  is2FAEnabled 
-                    ? "text-green-600 dark:text-green-400" 
-                    : "text-red-600 dark:text-red-400"
-                }`} />
-                <span className={`text-sm font-medium ${
-                  is2FAEnabled 
-                    ? "text-green-700 dark:text-green-300" 
-                    : "text-red-700 dark:text-red-300"
-                }`}>
-                  {is2FAEnabled ? "Secured with 2FA" : "2FA Not Enabled"}
-                </span>
+          {/* Phone */}
+          {user.mobile && (
+            <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/70 px-3 py-2 shadow-sm backdrop-blur-sm">
+              <div className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/10">
+                <Phone className="h-3 w-3 text-primary" />
               </div>
+              <span className="text-sm text-foreground/80">
+                {user.country_code} {user.mobile}
+              </span>
+            </div>
+          )}
+
+          {/* Location */}
+          {user.location && (
+            <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/70 px-3 py-2 shadow-sm backdrop-blur-sm">
+              <div className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/10">
+                <MapPin className="h-3 w-3 text-primary" />
+              </div>
+              <span className="text-sm capitalize text-foreground/80">{user.location}</span>
+            </div>
+          )}
+
+          {/* 2FA chip */}
+          <div
+            className={cn(
+              "flex items-center gap-2 rounded-xl border px-3 py-2 shadow-sm",
+              is2FAEnabled
+                ? "border-emerald-200/80 bg-emerald-50/70 dark:border-emerald-800/60 dark:bg-emerald-950/30"
+                : "border-red-200/80 bg-red-50/70 dark:border-red-800/60 dark:bg-red-950/30"
+            )}
+          >
+            <div
+              className={cn(
+                "flex h-5 w-5 items-center justify-center rounded-md",
+                is2FAEnabled
+                  ? "bg-emerald-100 dark:bg-emerald-900/50"
+                  : "bg-red-100 dark:bg-red-900/50"
+              )}
+            >
+              <Shield
+                className={cn(
+                  "h-3 w-3",
+                  is2FAEnabled
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-red-500 dark:text-red-400"
+                )}
+              />
+            </div>
+            <div className="flex items-center gap-1.5">
+              {is2FAEnabled && (
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              )}
+              <span
+                className={cn(
+                  "text-xs font-semibold",
+                  is2FAEnabled
+                    ? "text-emerald-700 dark:text-emerald-300"
+                    : "text-red-600 dark:text-red-400"
+                )}
+              >
+                {is2FAEnabled ? "2FA Active" : "2FA Off"}
+              </span>
             </div>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

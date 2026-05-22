@@ -1,6 +1,6 @@
 "use client";
 
-import { Scale, Settings, FileText, Loader2, ChevronLeft, ChevronRight, CalendarIcon, Pencil } from "lucide-react";
+import { Scale, Settings, FileText, Loader2, CalendarIcon, Pencil } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { GetCity, GetCountries, GetState } from "react-country-state-city";
@@ -23,14 +23,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import {
   authApi,
@@ -46,6 +38,11 @@ import {
   sanitizeUppercase,
 } from "@/components/forms/validated-fields";
 import { TwoFactorModal } from "@/components/two-factor-modal";
+import {
+  ProfileActivityTab,
+  ProfileBankDetailsTab,
+  ProfileSecurityTab,
+} from "@/components/profile/view_profile/components/profile-content-tabs";
 
 type ProfileFormSection = "personal" | "legal";
 
@@ -1216,31 +1213,32 @@ export default function ProfileContent() {
   return (
     <div className="space-y-6">
       {/* Profile Status Section */}
-      <Card className="border-gray-200 dark:border-gray-700">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-lg flex items-center gap-2">
-                Your Profile Status:
-                {getVerificationBadge()}
-              </CardTitle>
-            </div>
+      <div className="ib-portal-hero relative overflow-hidden rounded-[28px] border px-6 py-6 sm:px-8 sm:py-7">
+        <div className="pointer-events-none absolute -right-12 -top-14 h-52 w-52 rounded-full bg-primary/10 blur-3xl" />
+        <div className="pointer-events-none absolute left-1/3 -bottom-10 h-40 w-40 rounded-full bg-primary/6 blur-2xl" />
+        <div className="relative flex items-center justify-between border-b border-border/50 pb-5">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-lg tracking-tight">
+              Your Profile Status:
+              {getVerificationBadge()}
+            </CardTitle>
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        </div>
+        <div className="relative pt-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             {/* Personal Information Status */}
-            <Card className={`border-2 ${
+            <Card className={`relative overflow-hidden rounded-2xl border shadow-sm ${
               verificationStatus.personal_information.status === "completed"
-                ? "border-green-200 dark:border-green-800"
-                : "border-orange-200 dark:border-orange-800"
+                ? "border-green-200/80 bg-gradient-to-br from-green-50/60 to-background dark:border-green-800"
+                : "border-orange-200/80 bg-gradient-to-br from-orange-50/60 to-background dark:border-orange-800"
             }`}>
+              <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/40 blur-2xl" />
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg ${
+                  <div className={`rounded-xl border p-2.5 shadow-sm ${
                     verificationStatus.personal_information.status === "completed"
-                      ? "bg-green-100 dark:bg-green-950/40"
-                      : "bg-orange-100 dark:bg-orange-950/40"
+                      ? "border-green-200 bg-green-100 dark:border-green-800 dark:bg-green-950/40"
+                      : "border-orange-200 bg-orange-100 dark:border-orange-800 dark:bg-orange-950/40"
                   }`}>
                     <Scale className={`h-5 w-5 ${
                       verificationStatus.personal_information.status === "completed"
@@ -1249,7 +1247,7 @@ export default function ProfileContent() {
                     }`} />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-sm mb-1">Personal Information</h4>
+                    <h4 className="mb-1 text-sm font-semibold">Personal Information</h4>
                     <p className="text-xs text-muted-foreground">
                       {verificationStatus.personal_information.message}
                     </p>
@@ -1262,17 +1260,18 @@ export default function ProfileContent() {
             </Card>
 
             {/* Legal Information Status */}
-            <Card className={`border-2 ${
+            <Card className={`relative overflow-hidden rounded-2xl border shadow-sm ${
               verificationStatus.legal_information.status === "completed"
-                ? "border-green-200 dark:border-green-800"
-                : "border-orange-200 dark:border-orange-800"
+                ? "border-green-200/80 bg-gradient-to-br from-green-50/60 to-background dark:border-green-800"
+                : "border-orange-200/80 bg-gradient-to-br from-orange-50/60 to-background dark:border-orange-800"
             }`}>
+              <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/40 blur-2xl" />
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg ${
+                  <div className={`rounded-xl border p-2.5 shadow-sm ${
                     verificationStatus.legal_information.status === "completed"
-                      ? "bg-green-100 dark:bg-green-950/40"
-                      : "bg-orange-100 dark:bg-orange-950/40"
+                      ? "border-green-200 bg-green-100 dark:border-green-800 dark:bg-green-950/40"
+                      : "border-orange-200 bg-orange-100 dark:border-orange-800 dark:bg-orange-950/40"
                   }`}>
                     <Settings className={`h-5 w-5 ${
                       verificationStatus.legal_information.status === "completed"
@@ -1281,7 +1280,7 @@ export default function ProfileContent() {
                     }`} />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-sm mb-1">Legal Information</h4>
+                    <h4 className="mb-1 text-sm font-semibold">Legal Information</h4>
                     <p className="text-xs text-muted-foreground">
                       {verificationStatus.legal_information.message}
                     </p>
@@ -1294,17 +1293,18 @@ export default function ProfileContent() {
             </Card>
 
             {/* Documents Verification Status */}
-            <Card className={`border-2 ${
+            <Card className={`relative overflow-hidden rounded-2xl border shadow-sm ${
               verificationStatus.documents_verification.status === "completed"
-                ? "border-green-200 dark:border-green-800"
-                : "border-orange-200 dark:border-orange-800"
+                ? "border-green-200/80 bg-gradient-to-br from-green-50/60 to-background dark:border-green-800"
+                : "border-orange-200/80 bg-gradient-to-br from-orange-50/60 to-background dark:border-orange-800"
             }`}>
+              <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/40 blur-2xl" />
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
-                  <div className={`p-2 rounded-lg ${
+                  <div className={`rounded-xl border p-2.5 shadow-sm ${
                     verificationStatus.documents_verification.status === "completed"
-                      ? "bg-green-100 dark:bg-green-950/40"
-                      : "bg-orange-100 dark:bg-orange-950/40"
+                      ? "border-green-200 bg-green-100 dark:border-green-800 dark:bg-green-950/40"
+                      : "border-orange-200 bg-orange-100 dark:border-orange-800 dark:bg-orange-950/40"
                   }`}>
                     <FileText className={`h-5 w-5 ${
                       verificationStatus.documents_verification.status === "completed"
@@ -1313,7 +1313,7 @@ export default function ProfileContent() {
                     }`} />
                   </div>
                   <div className="flex-1">
-                    <h4 className="font-semibold text-sm mb-1">Documents Verification</h4>
+                    <h4 className="mb-1 text-sm font-semibold">Documents Verification</h4>
                     <p className="text-xs text-muted-foreground">
                       {verificationStatus.documents_verification.message}
                     </p>
@@ -1325,16 +1325,16 @@ export default function ProfileContent() {
               </CardContent>
             </Card>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="personal">Personal</TabsTrigger>
-          <TabsTrigger value="account">Legal Information</TabsTrigger>
-          <TabsTrigger value="activity">Account Activity</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="bank">Bank Details</TabsTrigger>
+        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-xl bg-muted/40 p-1 md:grid-cols-5">
+          <TabsTrigger value="personal" className="rounded-lg px-3 py-2 data-[state=active]:shadow-sm">Personal</TabsTrigger>
+          <TabsTrigger value="account" className="rounded-lg px-3 py-2 data-[state=active]:shadow-sm">Legal Information</TabsTrigger>
+          <TabsTrigger value="activity" className="rounded-lg px-3 py-2 data-[state=active]:shadow-sm">Account Activity</TabsTrigger>
+          <TabsTrigger value="security" className="rounded-lg px-3 py-2 data-[state=active]:shadow-sm">Security</TabsTrigger>
+          <TabsTrigger value="bank" className="rounded-lg px-3 py-2 data-[state=active]:shadow-sm">Bank Details</TabsTrigger>
         </TabsList>
 
         {/* Personal Information */}
@@ -1946,292 +1946,35 @@ export default function ProfileContent() {
           </Card>
         </TabsContent>
 
-        {/* Account Activity Logs */}
-        <TabsContent value="activity" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Account Activity Logs</CardTitle>
-              <CardDescription>Login History</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {profileData.login_history && profileData.login_history.length > 0 ? (
-                <>
-                  <div className="rounded-md border">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Time</TableHead>
-                          <TableHead>IP Address</TableHead>
-                          <TableHead>Browser</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {paginatedHistory.map((log, index) => (
-                          <TableRow key={index}>
-                            <TableCell className="font-medium">{log.date}</TableCell>
-                            <TableCell>{log.time}</TableCell>
-                            <TableCell className="font-mono text-sm">{log.ip_address}</TableCell>
-                            <TableCell>{log.browser}</TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </div>
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-between mt-4">
-                      <div className="text-sm text-muted-foreground">
-                        Showing {(currentPage - 1) * itemsPerPage + 1} to {Math.min(currentPage * itemsPerPage, profileData.login_history.length)} of {profileData.login_history.length} entries
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-                          disabled={currentPage === 1}
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        <div className="flex items-center gap-1">
-                          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                            <Button
-                              key={page}
-                              variant={currentPage === page ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => setCurrentPage(page)}
-                              className="w-8 h-8 p-0"
-                            >
-                              {page}
-                            </Button>
-                          ))}
-                        </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
-                          disabled={currentPage === totalPages}
-                        >
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  No login history available
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Security Settings */}
-        <TabsContent value="security" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Security Settings</CardTitle>
-              <CardDescription>Manage your account security and authentication.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-1">
-                    <Label className="text-base">Two-Factor Authentication</Label>
-                    <p className="text-muted-foreground text-sm">
-                      Add an extra layer of security to your account
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {isLoading2FAStatus ? (
-                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
-                    ) : is2FAEnabled || profileData?.user?.google_2FA_status ? (
-                      <>
-                        <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700 dark:bg-green-950/40 dark:text-green-300 dark:border-green-800">
-                          Enabled
-                        </Badge>
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => setTwoFactorModalOpen(true)}
-                        >
-                          Configure
-                        </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Badge variant="outline">Disabled</Badge>
-                        <Button 
-                          variant="default" 
-                          size="sm"
-                          onClick={() => setTwoFactorModalOpen(true)}
-                        >
-                          Enable 2FA
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="bank" className="space-y-6">
-          <Card className="mx-auto w-full max-w-5xl border-border/70 shadow-sm">
-            <CardHeader>
-              <CardTitle>Add Bank Details</CardTitle>
-              <CardDescription>
-                Add or update your bank details. Existing values are loaded automatically when available.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                <div className="space-y-2">
-                  <Label htmlFor="account_name">Account Holder Name</Label>
-                  <Input
-                    id="account_name"
-                    value={bankDetails.accountName}
-                    onChange={(e) =>
-                      updateBankDetails("accountName", sanitizePersonText(e.target.value).slice(0, 80))
-                    }
-                    className={bankValidationErrors.accountName ? "border-destructive" : ""}
-                    placeholder="Enter account holder name"
-                  />
-                  {bankValidationErrors.accountName ? (
-                    <p className="text-sm text-destructive">{bankValidationErrors.accountName}</p>
-                  ) : null}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="account_number">Account No.</Label>
-                  <Input
-                    id="account_number"
-                    value={bankDetails.accountNumber}
-                    onChange={(e) =>
-                      updateBankDetails("accountNumber", sanitizeIdentifierInput(e.target.value, 34))
-                    }
-                    className={bankValidationErrors.accountNumber ? "border-destructive" : ""}
-                    placeholder="Enter account number"
-                  />
-                  {bankValidationErrors.accountNumber ? (
-                    <p className="text-sm text-destructive">{bankValidationErrors.accountNumber}</p>
-                  ) : null}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="ifsc_swift_code">IFSC / Swift Code</Label>
-                  <Input
-                    id="ifsc_swift_code"
-                    value={bankDetails.ifscSwiftCode}
-                    onChange={(e) =>
-                      updateBankDetails("ifscSwiftCode", sanitizeIdentifierInput(e.target.value, 20))
-                    }
-                    className={bankValidationErrors.ifscSwiftCode ? "border-destructive" : ""}
-                    placeholder="Enter IFSC / Swift code"
-                  />
-                  {bankValidationErrors.ifscSwiftCode ? (
-                    <p className="text-sm text-destructive">{bankValidationErrors.ifscSwiftCode}</p>
-                  ) : null}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="iban_number">IBAN No.</Label>
-                  <Input
-                    id="iban_number"
-                    value={bankDetails.ibanNumber}
-                    onChange={(e) =>
-                      updateBankDetails("ibanNumber", sanitizeIdentifierInput(e.target.value, 34))
-                    }
-                    className={bankValidationErrors.ibanNumber ? "border-destructive" : ""}
-                    placeholder="Enter IBAN number"
-                  />
-                  {bankValidationErrors.ibanNumber ? (
-                    <p className="text-sm text-destructive">{bankValidationErrors.ibanNumber}</p>
-                  ) : null}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bank_name">Bank Name</Label>
-                  <Input
-                    id="bank_name"
-                    value={bankDetails.bankName}
-                    onChange={(e) =>
-                      updateBankDetails("bankName", sanitizePersonText(e.target.value).slice(0, 80))
-                    }
-                    className={bankValidationErrors.bankName ? "border-destructive" : ""}
-                    placeholder="Enter bank name"
-                  />
-                  {bankValidationErrors.bankName ? (
-                    <p className="text-sm text-destructive">{bankValidationErrors.bankName}</p>
-                  ) : null}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bank_address">Address</Label>
-                  <Input
-                    id="bank_address"
-                    value={bankDetails.bankAddress}
-                    onChange={(e) => updateBankDetails("bankAddress", e.target.value)}
-                    className={bankValidationErrors.bankAddress ? "border-destructive" : ""}
-                    placeholder="Enter bank address"
-                  />
-                  {bankValidationErrors.bankAddress ? (
-                    <p className="text-sm text-destructive">{bankValidationErrors.bankAddress}</p>
-                  ) : null}
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="bank_country">Country</Label>
-                  <Select
-                    value={
-                      bankCountryMode === "other"
-                        ? LOCATION_OTHER_VALUE
-                        : selectedBankCountryId
-                          ? String(selectedBankCountryId)
-                          : ""
-                    }
-                    onValueChange={handleBankCountrySelection}
-                  >
-                    <SelectTrigger
-                      id="bank_country"
-                      className={bankValidationErrors.country ? "w-full border-destructive" : "w-full"}
-                    >
-                      <SelectValue placeholder="Please choose..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {countryOptions.map((country) => (
-                        <SelectItem key={country.id} value={String(country.id)}>
-                          {country.name}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value={LOCATION_OTHER_VALUE}>Other</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  {bankCountryMode === "other" ? (
-                    <Input
-                      value={bankDetails.country}
-                      onChange={(e) =>
-                        updateBankDetails("country", sanitizePersonText(e.target.value).slice(0, 80))
-                      }
-                      className={bankValidationErrors.country ? "border-destructive" : ""}
-                      placeholder="Enter country manually"
-                    />
-                  ) : null}
-                  {bankValidationErrors.country ? (
-                    <p className="text-sm text-destructive">{bankValidationErrors.country}</p>
-                  ) : null}
-                </div>
-              </div>
-              <div className="flex justify-start">
-                <Button type="button" onClick={handleBankDetailsSubmit} disabled={bankDetailsSaving}>
-                  {bankDetailsSaving ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    bankDetailsRecordId ? "Update Bank Details" : "Submit"
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+        <ProfileActivityTab
+          loginHistory={profileData.login_history ?? []}
+          paginatedHistory={paginatedHistory}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          itemsPerPage={itemsPerPage}
+          onSetCurrentPage={setCurrentPage}
+        />
+        <ProfileSecurityTab
+          isLoading2FAStatus={isLoading2FAStatus}
+          is2FAEnabled={Boolean(is2FAEnabled || profileData?.user?.google_2FA_status)}
+          onOpenTwoFactorModal={() => setTwoFactorModalOpen(true)}
+        />
+        <ProfileBankDetailsTab
+          bankDetails={bankDetails}
+          bankValidationErrors={bankValidationErrors}
+          bankCountryMode={bankCountryMode}
+          selectedBankCountryId={selectedBankCountryId}
+          countryOptions={countryOptions}
+          bankDetailsSaving={bankDetailsSaving}
+          bankDetailsRecordId={bankDetailsRecordId}
+          onBankCountrySelection={handleBankCountrySelection}
+          onUpdateBankDetails={updateBankDetails}
+          onSubmitBankDetails={() => {
+            void handleBankDetailsSubmit();
+          }}
+          sanitizePersonText={sanitizePersonText}
+          sanitizeIdentifierInput={sanitizeIdentifierInput}
+        />
       </Tabs>
 
       <TwoFactorModal 
