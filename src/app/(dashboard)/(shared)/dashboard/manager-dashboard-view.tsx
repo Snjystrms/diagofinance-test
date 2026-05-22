@@ -195,17 +195,17 @@ export function ManagerDashboardView({ managerDashboardData, userName }: Manager
           </div>
           {manager && (
             <div className="flex flex-wrap items-center gap-3 pt-2">
-              <span className="text-sm text-muted-foreground">{manager.email}</span>
-              <span className="text-muted-foreground/40">•</span>
+              {/* <span className="text-sm text-muted-foreground">{manager.email}</span>
+              <span className="text-muted-foreground/40">•</span> */}
               {/* <span className="text-sm text-muted-foreground">
                 {manager.total_client} client{manager.total_client !== 1 ? "s" : ""}
               </span> */}
-              <Badge
+              {/* <Badge
                 variant={manager.status === 1 ? "default" : "outline"}
                 className="text-xs"
               >
                 {manager.status === 1 ? "Active" : "Inactive"}
-              </Badge>
+              </Badge> */}
             </div>
           )}
         </div>

@@ -226,7 +226,8 @@ export function USDTTransactionsPageContent() {
     if (!token) return;
     try {
       setLoadError(null);
-      const status = statusFilter !== "all" ? statusFilter : undefined;
+      const status =
+        statusFilter !== "all" && statusFilter !== "none" ? statusFilter : undefined;
       const res = await adminWithdrawalApi.listAll(page, perPage, token, status) as {
         data?: unknown[] | { withdrawals?: unknown[]; data?: unknown[]; requests?: unknown[]; pagination?: { totalPages?: number; total_pages?: number } };
         meta?: { total?: number; limit?: number };
@@ -272,6 +273,18 @@ export function USDTTransactionsPageContent() {
 
   const loadList = useCallback(async () => {
     if (!token) return;
+    if (activeTab === "deposits" && !canViewDepositsTab) {
+      if (canViewWithdrawalsTab) {
+        setActiveTab("withdrawals");
+      }
+      return;
+    }
+    if (activeTab === "withdrawals" && !canViewWithdrawalsTab) {
+      if (canViewDepositsTab) {
+        setActiveTab("deposits");
+      }
+      return;
+    }
     setLoading(true);
     try {
       if (activeTab === "deposits") {
@@ -282,7 +295,14 @@ export function USDTTransactionsPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [token, activeTab, loadDeposits, loadWithdrawals]);
+  }, [
+    token,
+    activeTab,
+    canViewDepositsTab,
+    canViewWithdrawalsTab,
+    loadDeposits,
+    loadWithdrawals,
+  ]);
 
   useEffect(() => {
     loadList();
