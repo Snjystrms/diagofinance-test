@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Calendar, Eye, Globe, Mail, Pencil, Phone, Trash2, User, Plus } from "lucide-react";
+import { Calendar, Eye, Globe, Mail, Pencil, Phone, Trash2, User, Plus, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 
 import type { PendingUser } from "@/lib/api";
@@ -51,13 +51,16 @@ function RowActions({
   row,
   onEdit,
   onDelete,
+  onManageSponsor,
 }: {
   row: { original: PendingUser };
   onEdit: (user: PendingUser) => void;
   onDelete: (user: PendingUser) => void;
+  onManageSponsor: (user: PendingUser) => void;
 }) {
   const hasDetailRoute = Boolean(row.original.id);
   const detailHref = hasDetailRoute ? `/new-users/${row.original.id}` : null;
+  const isIb = Boolean(String(row.original.sponsor_id ?? "").trim());
 
   return (
     <div className="flex flex-col items-end gap-1">
@@ -106,6 +109,18 @@ function RowActions({
         >
           <Trash2 className="h-4 w-4" />
         </Button>
+        {!isIb ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => onManageSponsor(row.original)}
+            title={`Manage sponsor for ${row.original.name || "user"}`}
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        ) : null}
       </div>
       {!hasDetailRoute ? (
         <span className="text-[11px] font-medium text-amber-700 dark:text-amber-400">
@@ -121,6 +136,7 @@ export const getColumnsWithActions = (
   onDelete: (user: PendingUser) => void,
   onToggleStatus: (user: PendingUser, newStatus: number) => Promise<void>,
   onPromoteToIb: (user: PendingUser) => void | Promise<void>,
+  onManageSponsor: (user: PendingUser) => void,
   promotingUserIds: Set<number>,
 ): ColumnDef<PendingUser>[] => [
   {
@@ -284,7 +300,14 @@ export const getColumnsWithActions = (
   {
     id: "actions",
     header: "Actions",
-    cell: ({ row }) => <RowActions row={row} onEdit={onEdit} onDelete={onDelete} />,
+    cell: ({ row }) => (
+      <RowActions
+        row={row}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onManageSponsor={onManageSponsor}
+      />
+    ),
     enableSorting: false,
   },
 ];

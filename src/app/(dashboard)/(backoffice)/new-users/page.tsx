@@ -26,6 +26,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/auth-context";
 import {
   adminUsersApi,
@@ -77,6 +78,11 @@ type IbPlanOption = {
   id: string;
   name: string;
   status: string;
+};
+
+type SponsorOption = {
+  id: number;
+  name: string;
 };
 
 const statusFilters = [
@@ -268,6 +274,13 @@ export default function NewUsersPage() {
   const [promoteTargetUser, setPromoteTargetUser] = useState<PendingUser | null>(null);
   const [selectedIbPlanId, setSelectedIbPlanId] = useState("");
   const [promoteSubmitting, setPromoteSubmitting] = useState(false);
+  const [manageSponsorDialogOpen, setManageSponsorDialogOpen] = useState(false);
+  const [manageSponsorTargetUser, setManageSponsorTargetUser] = useState<PendingUser | null>(null);
+  const [manageSponsorTab, setManageSponsorTab] = useState<"transfer" | "remove">("transfer");
+  const [selectedNewSponsorId, setSelectedNewSponsorId] = useState("");
+  const [manageSponsorSubmitting, setManageSponsorSubmitting] = useState(false);
+  const [sponsorOptions, setSponsorOptions] = useState<SponsorOption[]>([]);
+  const [loadingSponsorOptions, setLoadingSponsorOptions] = useState(false);
 
   const createUserForm = useForm<AdminUserCreateFormData>({
     resolver: zodResolver(adminUserCreateSchema),
@@ -537,6 +550,93 @@ export default function NewUsersPage() {
     }
   }, [token, promoteTargetUser, selectedIbPlanId, loadUsers]);
 
+  const loadSponsorOptions = useCallback(async (targetUserId: number) => {
+    if (!token) {
+      setSponsorOptions([]);
+      return;
+    }
+
+    try {
+      setLoadingSponsorOptions(true);
+      const response = await adminUsersApi.list({
+        token,
+        page: 1,
+        limit: 500,
+      });
+      const available = extractUsers(response?.data ?? null)
+        .filter((user) => user.id !== targetUserId && Boolean(String(user.sponsor_id ?? "").trim()))
+        .map((user) => ({
+          id: user.id,
+          name:
+            user.name?.trim() ||
+            `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() ||
+            user.username ||
+            user.email ||
+            `User ${user.id}`,
+        }));
+
+      setSponsorOptions(available);
+    } catch (err) {
+      console.error("Failed to load sponsor options:", err);
+      toast.error(
+        getAdminFriendlyErrorMessage(err, { resource: "sponsor users", action: "load" })
+      );
+      setSponsorOptions([]);
+    } finally {
+      setLoadingSponsorOptions(false);
+    }
+  }, [token]);
+
+  const handleManageSponsorOpen = useCallback((user: PendingUser) => {
+    setManageSponsorTargetUser(user);
+    setManageSponsorTab("transfer");
+    setSelectedNewSponsorId("");
+    setManageSponsorDialogOpen(true);
+    void loadSponsorOptions(user.id);
+  }, [loadSponsorOptions]);
+
+  const handleManageSponsorSubmit = useCallback(async () => {
+    if (!token || !manageSponsorTargetUser) return;
+
+    try {
+      setManageSponsorSubmitting(true);
+      if (manageSponsorTab === "transfer") {
+        if (!selectedNewSponsorId) {
+          toast.error("Please select a sponsor");
+          return;
+        }
+
+        const response = await adminUsersApi.transferSponsor(
+          {
+            user_id: manageSponsorTargetUser.id,
+            new_sponsor_user_id: Number(selectedNewSponsorId),
+          },
+          token,
+        );
+        toast.success(response?.message || "Sponsor transferred successfully");
+      } else {
+        const response = await adminUsersApi.transferSponsor(
+          { user_id: manageSponsorTargetUser.id },
+          token,
+        );
+        toast.success(response?.message || "Sponsor removed successfully");
+      }
+
+      setManageSponsorDialogOpen(false);
+      setManageSponsorTargetUser(null);
+      setSelectedNewSponsorId("");
+      setSponsorOptions([]);
+      await loadUsers();
+    } catch (err) {
+      console.error("Failed to update sponsor:", err);
+      toast.error(
+        getAdminFriendlyErrorMessage(err, { resource: "sponsor", action: "update" })
+      );
+    } finally {
+      setManageSponsorSubmitting(false);
+    }
+  }, [token, manageSponsorTargetUser, manageSponsorTab, selectedNewSponsorId, loadUsers]);
+
   const totalUsers = paginationMeta?.total ?? users.length;
   const activeUsersCount = userSummaryCounts.activeCount ?? users.filter((user) => user.status === "1").length;
   const inactiveUsersCount = userSummaryCounts.inactiveCount ?? users.filter((user) => user.status !== "1").length;
@@ -549,8 +649,16 @@ export default function NewUsersPage() {
     (totalUsers && perPage ? Math.ceil(totalUsers / perPage) : 1);
 
   const columns = useMemo(
-    () => getColumnsWithActions(handleEdit, handleDelete, handleToggleStatus, handlePromoteDialogOpen, promotingUserIds),
-    [handleEdit, handleDelete, handleToggleStatus, handlePromoteDialogOpen, promotingUserIds],
+    () =>
+      getColumnsWithActions(
+        handleEdit,
+        handleDelete,
+        handleToggleStatus,
+        handlePromoteDialogOpen,
+        handleManageSponsorOpen,
+        promotingUserIds,
+      ),
+    [handleEdit, handleDelete, handleToggleStatus, handlePromoteDialogOpen, handleManageSponsorOpen, promotingUserIds],
   );
 
   if (loadError && users.length === 0) {
@@ -736,6 +844,7 @@ export default function NewUsersPage() {
           submitting={updatingUser}
           loadingDetails={loadingUserDetails}
           passwordOptional
+          showReferralCode={false}
           form={editUserForm}
           onSubmit={handleUpdate}
           onCountryChange={(value) => setCountryValues(value, "edit")}
@@ -753,6 +862,100 @@ export default function NewUsersPage() {
           cancelText="Cancel"
           variant="destructive"
         />
+
+        <Dialog
+          open={manageSponsorDialogOpen}
+          onOpenChange={(open) => {
+            setManageSponsorDialogOpen(open);
+            if (!open) {
+              setManageSponsorTargetUser(null);
+              setManageSponsorTab("transfer");
+              setSelectedNewSponsorId("");
+              setSponsorOptions([]);
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Manage Sponsor</DialogTitle>
+              <DialogDescription>
+                Update or remove sponsor for {manageSponsorTargetUser?.name || "this client"}.
+              </DialogDescription>
+            </DialogHeader>
+
+            <Tabs
+              value={manageSponsorTab}
+              onValueChange={(value) => setManageSponsorTab(value as "transfer" | "remove")}
+              className="space-y-4"
+            >
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="transfer">Update Sponsor</TabsTrigger>
+                <TabsTrigger value="remove">Remove Sponsor</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="transfer" className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="new-sponsor-user-id">New Sponsor</Label>
+                  <Select
+                    value={selectedNewSponsorId}
+                    onValueChange={setSelectedNewSponsorId}
+                    disabled={loadingSponsorOptions}
+                  >
+                    <SelectTrigger id="new-sponsor-user-id">
+                      <SelectValue placeholder={loadingSponsorOptions ? "Loading sponsors..." : "Select sponsor"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {sponsorOptions.map((option) => (
+                        <SelectItem key={option.id} value={String(option.id)}>
+                          {option.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {!loadingSponsorOptions && sponsorOptions.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No sponsor users available.</p>
+                  ) : null}
+                </div>
+              </TabsContent>
+
+              <TabsContent value="remove" className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  This will remove the current sponsor and keep this client out of sponsor tree structure.
+                </p>
+              </TabsContent>
+            </Tabs>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setManageSponsorDialogOpen(false);
+                  setManageSponsorTargetUser(null);
+                  setManageSponsorTab("transfer");
+                  setSelectedNewSponsorId("");
+                  setSponsorOptions([]);
+                }}
+                disabled={manageSponsorSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void handleManageSponsorSubmit()}
+                disabled={manageSponsorSubmitting || (manageSponsorTab === "transfer" && !selectedNewSponsorId)}
+              >
+                {manageSponsorSubmitting
+                  ? manageSponsorTab === "transfer"
+                    ? "Updating..."
+                    : "Removing..."
+                  : manageSponsorTab === "transfer"
+                    ? "Update Sponsor"
+                    : "Remove Sponsor"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <Dialog
           open={promoteDialogOpen}

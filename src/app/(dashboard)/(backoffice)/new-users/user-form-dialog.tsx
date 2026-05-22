@@ -53,6 +53,7 @@ interface UserFormDialogProps<TFormValues extends UserFormDialogValues> {
   submitting: boolean;
   loadingDetails?: boolean;
   passwordOptional?: boolean;
+  showReferralCode?: boolean;
   form: UseFormReturn<TFormValues>;
   onSubmit: (values: TFormValues) => void;
   onCountryChange: (country: string) => void;
@@ -71,6 +72,7 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
   submitting,
   loadingDetails = false,
   passwordOptional = false,
+  showReferralCode = true,
   form,
   onSubmit,
   onCountryChange,
@@ -201,13 +203,15 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
                     placeholder: passwordOptional ? "Confirm new password" : "Confirm password",
                   }}
                 />
-                <ValidatedTextField
-                  control={form.control}
-                  name={fieldPath<TFormValues>("referral_code")}
-                  label="Referral code"
-                  className="sm:col-span-2"
-                  inputProps={{ autoComplete: "off", placeholder: "Enter referral code if available" }}
-                />
+                {showReferralCode ? (
+                  <ValidatedTextField
+                    control={form.control}
+                    name={fieldPath<TFormValues>("referral_code")}
+                    label="Referral code"
+                    className="sm:col-span-2"
+                    inputProps={{ autoComplete: "off", placeholder: "Enter referral code if available" }}
+                  />
+                ) : null}
               </div>
             )}
 

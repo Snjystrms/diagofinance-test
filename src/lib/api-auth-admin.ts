@@ -275,6 +275,26 @@ export type PromoteToIbResponse = {
   data: PromoteToIbResponseData;
 };
 
+export type TransferSponsorBody = {
+  user_id: number;
+  new_sponsor_user_id?: number;
+};
+
+export type TransferSponsorResponseData = {
+  user_id: number;
+  user_name: string;
+  old_sponsor_by: string | null;
+  new_sponsor_by: string | null;
+  new_sponsor_ib_name: string | null;
+  descendants_rebuilt: number;
+};
+
+export type TransferSponsorResponse = {
+  success: boolean;
+  message: string;
+  data: TransferSponsorResponseData;
+};
+
 export type AdminUserDetailApiData =
   | PendingUser
   | {
@@ -1187,6 +1207,26 @@ export const adminUsersApi = {
         ib_name: ibName,
         ib_plan_id: body.ib_plan_id,
       }),
+    });
+  },
+
+  transferSponsor: (body: TransferSponsorBody, token: string) => {
+    ensureAdminUserToken(token, "transfer or remove sponsor");
+    ensureAdminUserIdentifier(body.user_id, "transfer or remove sponsor");
+
+    const payload: Record<string, number> = { user_id: body.user_id };
+    if (body.new_sponsor_user_id !== undefined) {
+      ensureAdminUserIdentifier(body.new_sponsor_user_id, "transfer sponsor");
+      payload.new_sponsor_user_id = body.new_sponsor_user_id;
+    }
+
+    return apiCall<TransferSponsorResponse>(`/admin/ib-management/transfer-sponsor`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
     });
   },
 
