@@ -6,6 +6,7 @@ import { Edit, Plus, RefreshCw, Search, Trash2, Users, Pencil } from "lucide-rea
 import toast from "react-hot-toast";
 
 import { ApiErrorState } from "@/components/errors/api-error-state";
+import { CapabilityGate, CapabilityProtectedView } from "@/components/capability-gate";
 import { ProtectedRoute } from "@/components/protected-route";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +35,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { adminGroupsApi, type AdminGroupItem } from "@/lib/api";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
+import { useCrudCapabilities } from "@/hooks/use-permission-capabilities";
 
 type GroupRow = {
   id: number;
@@ -122,6 +124,18 @@ function GroupFormFields({
 
 export function AllGroupsPageContent() {
   const { token } = useAuth();
+  const {
+    canViewList: canViewGroupList,
+    canAdd: canAddGroup,
+    canEdit: canEditGroup,
+    canDelete: canDeleteGroup,
+    showActionsColumn,
+  } = useCrudCapabilities("groupManagement", {
+    list: "list",
+    add: "add",
+    edit: "edit",
+    delete: "delete",
+  });
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
@@ -232,6 +246,10 @@ export function AllGroupsPageContent() {
   };
 
   const openEditDialog = (group: GroupRow) => {
+    if (!canEditGroup) {
+      toast.error("You do not have permission to edit groups");
+      return;
+    }
     setSelectedGroup(group);
     setEditForm({
       name: group.name,
@@ -242,6 +260,10 @@ export function AllGroupsPageContent() {
   };
 
   const handleDelete = (group: GroupRow) => {
+    if (!canDeleteGroup) {
+      toast.error("You do not have permission to delete groups");
+      return;
+    }
     deleteMutation.mutate(group.id);
   };
 
@@ -268,6 +290,10 @@ export function AllGroupsPageContent() {
 
   return (
     <ProtectedRoute>
+      <CapabilityProtectedView
+        allowed={canViewGroupList}
+        message="You do not have permission to view group list."
+      >
       <div className="container mx-auto space-y-6 px-4 py-10 md:px-6 lg:px-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div className="space-y-2">
@@ -289,10 +315,12 @@ export function AllGroupsPageContent() {
               <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
               Refresh
             </Button>
-            <Button onClick={() => setCreateOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Group
-            </Button>
+            <CapabilityGate allowed={canAddGroup}>
+              <Button onClick={() => setCreateOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add Group
+              </Button>
+            </CapabilityGate>
           </div>
         </div>
 
@@ -325,7 +353,7 @@ export function AllGroupsPageContent() {
                       <TableHead>Group Name</TableHead>
                       <TableHead>MT5 Group Name</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="w-[130px] text-right">Actions</TableHead>
+                      {showActionsColumn && <TableHead className="w-[130px] text-right">Actions</TableHead>}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -340,36 +368,42 @@ export function AllGroupsPageContent() {
                               {group.status === 1 ? "Active" : "Inactive"}
                             </Badge>
                           </TableCell>
-                          <TableCell>
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                onClick={() => openEditDialog(group)}
-                                disabled={mutationInProgress}
-                                title="Edit group"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                type="button" 
-                                variant="outline"
-                                size="icon"
-                                onClick={() => handleDelete(group)}
-                                disabled={mutationInProgress}
-                                title="Delete group"
-                                className="text-destructive hover:text-destructive/80"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
+                          {showActionsColumn && (
+                            <TableCell>
+                              <div className="flex justify-end gap-2">
+                                {canEditGroup && (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => openEditDialog(group)}
+                                    disabled={mutationInProgress}
+                                    title="Edit group"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                )}
+                                {canDeleteGroup && (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => handleDelete(group)}
+                                    disabled={mutationInProgress}
+                                    title="Delete group"
+                                    className="text-destructive hover:text-destructive/80"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
-                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                        <TableCell colSpan={showActionsColumn ? 5 : 4} className="h-24 text-center text-muted-foreground">
                           No groups found.
                         </TableCell>
                       </TableRow>
@@ -421,6 +455,7 @@ export function AllGroupsPageContent() {
           </DialogContent>
         </Dialog>
       </div>
+      </CapabilityProtectedView>
     </ProtectedRoute>
   );
 }

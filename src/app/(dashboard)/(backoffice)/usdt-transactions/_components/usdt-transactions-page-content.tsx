@@ -44,6 +44,12 @@ import { formatDateTimeInIST } from "@/lib/formatters";
 import { useAuth } from "@/contexts/auth-context";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import {
+  assertCan,
+  sanitizeFilterValue,
+  useModuleCapabilities,
+  useTabCapabilities,
+} from "@/hooks/use-permission-capabilities";
+import {
   DEPOSIT_STATUS_OPTIONS,
   WITHDRAWAL_STATUS_OPTIONS,
 } from "../_lib/transaction-format";
@@ -104,9 +110,21 @@ export function USDTTransactionsPageContent() {
     ctxToken ||
     (typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : "");
 
-  const { isAdmin, isManager, hasFeature, filterFeatureOptions } = useManagerPermissions();
-
-  const [activeTab, setActiveTab] = useState<"deposits" | "withdrawals">("deposits");
+  const { filterFeatureOptions } = useManagerPermissions();
+  const { isAdmin, isManager, can } = useModuleCapabilities("transaction");
+  const {
+    activeTab,
+    setActiveTab,
+    canViewTab,
+    getSafeTab,
+  } = useTabCapabilities<"transaction", "deposits" | "withdrawals">(
+    "transaction",
+    {
+      deposits: "viewDeposits",
+      withdrawals: "viewWithdrawals",
+    },
+    "deposits"
+  );
 
   const depositStatusFeatureOptions = useMemo(
     () => filterFeatureOptions("transaction", DEPOSIT_STATUS_OPTIONS),
@@ -136,25 +154,10 @@ export function USDTTransactionsPageContent() {
     return set;
   }, [statusFeatureOptions]);
 
-  const canTakeDepositAction = useMemo(
-    () => hasFeature("transaction", "approveRejectDeposit"),
-    [hasFeature]
-  );
-
-  const canTakeWithdrawalAction = useMemo(
-    () => hasFeature("transaction", "approveRejectWithdrawal"),
-    [hasFeature]
-  );
-
-  const canViewDepositsTab = useMemo(
-    () => isAdmin || !isManager || hasFeature("transaction", "depositList"),
-    [isAdmin, isManager, hasFeature]
-  );
-
-  const canViewWithdrawalsTab = useMemo(
-    () => isAdmin || !isManager || hasFeature("transaction", "withdrawalList"),
-    [isAdmin, isManager, hasFeature]
-  );
+  const canTakeDepositAction = can("approveDeposit");
+  const canTakeWithdrawalAction = can("approveWithdrawal");
+  const canViewDepositsTab = canViewTab("deposits");
+  const canViewWithdrawalsTab = canViewTab("withdrawals");
 
   const canTakeAction = useMemo(
     () =>
@@ -309,14 +312,11 @@ export function USDTTransactionsPageContent() {
   }, [loadList]);
 
   useEffect(() => {
-    if (activeTab === "deposits" && !canViewDepositsTab && canViewWithdrawalsTab) {
-      setActiveTab("withdrawals");
-      return;
+    const safeTab = getSafeTab(activeTab);
+    if (safeTab !== activeTab) {
+      setActiveTab(safeTab);
     }
-    if (activeTab === "withdrawals" && !canViewWithdrawalsTab && canViewDepositsTab) {
-      setActiveTab("deposits");
-    }
-  }, [activeTab, canViewDepositsTab, canViewWithdrawalsTab]);
+  }, [activeTab, getSafeTab, setActiveTab]);
 
   useEffect(() => {
     if (!isManager) return;
@@ -336,8 +336,13 @@ export function USDTTransactionsPageContent() {
       }
       return;
     }
-    if (!allowedStatusValues.includes(statusFilter)) {
-      setStatusFilter(statusFeatureOptions[0].value);
+    const nextFilter = sanitizeFilterValue(
+      statusFilter,
+      allowedStatusValues,
+      statusFeatureOptions[0].value
+    );
+    if (nextFilter !== statusFilter) {
+      setStatusFilter(nextFilter);
     }
   }, [isManager, statusFeatureOptions, allowedStatusValues, statusFilter]);
 
@@ -367,8 +372,7 @@ export function USDTTransactionsPageContent() {
 
   const handleApprove = useCallback(
     (request: AdminUSDTDepositRequest | AdminWithdrawalRequest) => {
-      if (!canTakeAction) {
-        toast.error(`You do not have permission to approve ${activeTab}`);
+      if (!assertCan(canTakeAction, `You do not have permission to approve ${activeTab}`, toast.error)) {
         return;
       }
       if (activeTab === "deposits") {
@@ -385,8 +389,7 @@ export function USDTTransactionsPageContent() {
 
   const handleReject = useCallback(
     (request: AdminUSDTDepositRequest | AdminWithdrawalRequest) => {
-      if (!canTakeAction) {
-        toast.error(`You do not have permission to reject ${activeTab}`);
+      if (!assertCan(canTakeAction, `You do not have permission to reject ${activeTab}`, toast.error)) {
         return;
       }
       if (activeTab === "deposits") {
@@ -403,8 +406,7 @@ export function USDTTransactionsPageContent() {
 
   const handleViewDetails = useCallback(
     (request: AdminUSDTDepositRequest | AdminWithdrawalRequest) => {
-      if (!canViewStatus(request.status)) {
-        toast.error("You do not have permission to view this request");
+      if (!assertCan(canViewStatus(request.status), "You do not have permission to view this request", toast.error)) {
         return;
       }
       if (activeTab === "deposits") {

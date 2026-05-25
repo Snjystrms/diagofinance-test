@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronDown, RefreshCw } from "lucide-react";
+import { ChevronDown, Circle, Diamond, Layers, Plus, RefreshCw, SquareStack } from "lucide-react";
 
 import { IbPageHeader, IbPageShell, IbSectionCard } from "@/components/ib/ib-page-primitives";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { adminAccountTypesApi, type AccountTypeItem } from "@/lib/api-auth-admin";
+import { ibRequestsApi, type IbPlanCommission, type IbPlanInfo } from "@/lib/api-trading-ib";
 import { useAuth } from "@/contexts/auth-context";
 
 const commissionNotes = [
@@ -19,27 +19,38 @@ const commissionNotes = [
 ];
 
 function formatRate(value: number | string | null | undefined): string {
-  if (value === null || value === undefined || value === "") return "—";
+  if (value === null || value === undefined || value === "") return "-";
   const num = Number(value);
-  if (isNaN(num) || num === 0) return "—";
+  if (isNaN(num) || num === 0) return "-";
   return `$${num}`;
+}
+
+function getAccountTypeIcon(accountName: string) {
+  const name = accountName.toLowerCase();
+  if (name.includes("exclusive")) return Diamond;
+  if (name.includes("cent")) return Circle;
+  if (name.includes("shares")) return Layers;
+  if (name.includes("plus")) return Plus;
+  return SquareStack;
 }
 
 export default function IbCommissionsPage() {
   const { token } = useAuth();
-  const [accountTypes, setAccountTypes] = useState<AccountTypeItem[]>([]);
+  const [ibPlan, setIbPlan] = useState<IbPlanInfo | null>(null);
+  const [commissions, setCommissions] = useState<IbPlanCommission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [accountTypeFilter, setAccountTypeFilter] = useState("all");
 
-  const fetchAccountTypes = useCallback(async () => {
+  const fetchIbPlan = useCallback(async () => {
     if (!token) return;
     setIsLoading(true);
     setError(null);
     try {
-      const response = await adminAccountTypesApi.list({ token, status: "true" });
-      if (response.success && response.data?.accountTypes) {
-        setAccountTypes(response.data.accountTypes);
+      const response = await ibRequestsApi.getPlan(token);
+      if (response.success && response.data?.ib_plan && Array.isArray(response.data.commissions)) {
+        setIbPlan(response.data.ib_plan);
+        setCommissions(response.data.commissions);
       } else {
         setError("Unable to load commission plans.");
       }
@@ -51,12 +62,24 @@ export default function IbCommissionsPage() {
   }, [token]);
 
   useEffect(() => {
-    void fetchAccountTypes();
-  }, [fetchAccountTypes]);
+    void fetchIbPlan();
+  }, [fetchIbPlan]);
+
+  const accountTypes = useMemo(() => {
+    const names = Array.from(
+      new Set(
+        commissions
+          .map((commission) => commission.account_type_name)
+          .filter((name): name is string => Boolean(name))
+      )
+    );
+
+    return names.map((name) => ({ id: name, name }));
+  }, [commissions]);
 
   const filteredAccountTypes = useMemo(() => {
     if (accountTypeFilter === "all") return accountTypes;
-    return accountTypes.filter((at) => String(at.id) === accountTypeFilter);
+    return accountTypes.filter((at) => at.id === accountTypeFilter);
   }, [accountTypes, accountTypeFilter]);
 
   return (
@@ -70,7 +93,7 @@ export default function IbCommissionsPage() {
             variant="outline"
             onClick={() => {
               setAccountTypeFilter("all");
-              void fetchAccountTypes();
+              void fetchIbPlan();
             }}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
@@ -80,7 +103,7 @@ export default function IbCommissionsPage() {
       />
 
       <IbSectionCard
-        title="Commission schedule"
+        title="Commission Rates"
         description="Live commission rates by account type. Each level shows the payout for the IB and up to 5 sub-IB tiers."
         actions={
           <div className="min-w-[190px] space-y-1.5">
@@ -94,7 +117,7 @@ export default function IbCommissionsPage() {
               <SelectContent>
                 <SelectItem value="all">Show all</SelectItem>
                 {accountTypes.map((at) => (
-                  <SelectItem key={String(at.id)} value={String(at.id)}>
+                  <SelectItem key={at.id} value={at.id}>
                     {at.name}
                   </SelectItem>
                 ))}
@@ -116,7 +139,7 @@ export default function IbCommissionsPage() {
               variant="outline"
               size="sm"
               className="mt-4"
-              onClick={() => void fetchAccountTypes()}
+              onClick={() => void fetchIbPlan()}
             >
               <RefreshCw className="mr-2 h-4 w-4" />
               Retry
@@ -129,49 +152,44 @@ export default function IbCommissionsPage() {
             className="rounded-[24px] border border-border/60 bg-muted/10"
           >
             {filteredAccountTypes.map((at) => {
-              const commissions = at.ib_commissions ?? [];
+              const accountTypeCommissions = commissions.filter(
+                (commission) => commission.account_type_name === at.name
+              );
+              const AccountTypeIcon = getAccountTypeIcon(at.name);
+
               return (
                 <AccordionItem
-                  key={String(at.id)}
-                  value={String(at.id)}
+                  key={at.id}
+                  value={at.id}
                   className="border-border/60 px-5"
                 >
                   <AccordionTrigger className="py-5 text-left text-lg font-semibold hover:no-underline">
                     <div className="flex flex-1 flex-wrap items-center gap-3">
                       <span>{at.name}</span>
                       <Badge variant="outline" className="rounded-full">
-                        {commissions.length}{" "}
-                        {commissions.length === 1 ? "level" : "levels"}
+                        {accountTypeCommissions.length}{" "}
+                        {accountTypeCommissions.length === 1 ? "level" : "levels"}
                       </Badge>
-                      {/* {at.base_currency && (
-                        <Badge variant="secondary" className="rounded-full text-xs">
-                          {at.base_currency}
-                        </Badge>
-                      )} */}
                     </div>
                   </AccordionTrigger>
 
                   <AccordionContent className="pb-5">
-                    {commissions.length > 0 ? (
+                    {accountTypeCommissions.length > 0 ? (
                       <div className="overflow-hidden rounded-[24px] border border-border/60 bg-card shadow-sm">
                         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 bg-muted/25 px-5 py-4">
                           <div>
-                            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                            {/* <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                               Commission Rates
+                            </p> */}
+                            <p className="flex items-center gap-2 text-lg font-semibold text-foreground">
+                              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary">
+                                <AccountTypeIcon className="h-4 w-4" />
+                              </span>
+                              {at.name}
                             </p>
-                            <p className="text-lg font-semibold text-foreground">{at.name}</p>
-                          </div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            {at.spread_from !== null && at.spread_from !== undefined && (
-                              <Badge variant="outline" className="rounded-full text-xs">
-                                Spread from {at.spread_from}
-                              </Badge>
-                            )}
-                            {at.leverage_type && (
-                              <Badge className="rounded-full border border-border/60 bg-background/70 text-foreground hover:bg-background/70">
-                                {at.leverage_type}
-                              </Badge>
-                            )}
+                            {/* {ibPlan?.name ? (
+                              <p className="mt-1 text-xs text-muted-foreground">{ibPlan.name}</p>
+                            ) : null} */}
                           </div>
                         </div>
 
@@ -189,8 +207,8 @@ export default function IbCommissionsPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {commissions.map((c) => (
-                                <TableRow key={`${at.id}-${c.id ?? c.level}`}>
+                              {accountTypeCommissions.map((c, index) => (
+                                <TableRow key={`${at.id}-${c.level}-${index}`}>
                                   <TableCell className="font-medium">{c.level}</TableCell>
                                   <TableCell>{formatRate(c.rate_ib)}</TableCell>
                                   <TableCell>{formatRate(c.rate_sub_ib_1)}</TableCell>
@@ -219,7 +237,7 @@ export default function IbCommissionsPage() {
             <ChevronDown className="mb-4 h-10 w-10 text-muted-foreground" />
             <h3 className="text-lg font-semibold text-foreground">No commission plans found</h3>
             <p className="mt-2 max-w-lg text-sm text-muted-foreground">
-              No active account types with commission data are currently available.
+              No commission data is currently available for your IB plan.
             </p>
           </div>
         )}

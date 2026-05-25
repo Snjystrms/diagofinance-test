@@ -660,6 +660,31 @@ export interface IbRebatesResponse {
   data: IbRebatesData;
 }
 
+export interface IbPlanInfo {
+  id: number;
+  name: string;
+  description: string;
+  status: boolean;
+}
+
+export interface IbPlanCommission {
+  id?: number;
+  account_type_id?: number;
+  account_type_name: string;
+  level: string;
+  rate_ib: number;
+  rate_sub_ib_1: number;
+  rate_sub_ib_2: number;
+  rate_sub_ib_3: number;
+  rate_sub_ib_4: number;
+  rate_sub_ib_5: number;
+}
+
+export interface IbPlanResponseData {
+  ib_plan: IbPlanInfo;
+  commissions: IbPlanCommission[];
+}
+
 export const ibRequestsApi = {
   overview: (token: string) =>
     apiCall<IbRequestStatusResponse>(`/user/ib-requests/status`, {
@@ -743,6 +768,12 @@ export const ibRequestsApi = {
       headers: { Authorization: `Bearer ${token}` },
     });
   },
+
+  getPlan: (token: string) =>
+    apiCall<IbPlanResponseData>(`/user/ib-plan`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
 };
 
 export interface AdminIbRequest {
