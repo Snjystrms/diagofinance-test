@@ -36,6 +36,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { useQueryState, parseAsInteger } from 'nuqs'
+import { useRouter } from 'next/navigation'
 
 // Status badge component
 const StatusBadge = ({ status }: { status: string }) => {
@@ -265,6 +266,7 @@ const CHAIN_OPTIONS = [
 ]
 
 export default function WithdrawPage() {
+  const router = useRouter()
   const { token } = useAuth()
   const [withdrawals, setWithdrawals] = useState<WithdrawalItem[]>([])
   const [loading, setLoading] = useState(true)
@@ -545,7 +547,7 @@ export default function WithdrawPage() {
                   <p className="text-muted-foreground mb-4">
                     You haven&apos;t submitted any withdrawal requests yet.
                   </p>
-                  <Button onClick={() => window.location.href = '/funds/withdrawal-request'}>
+                  <Button onClick={() => router.push('/funds/withdrawal-request')}>
                     Request a Withdrawal
                   </Button>
                 </div>
@@ -625,9 +627,10 @@ export default function WithdrawPage() {
                     <Input
                       id="amount"
                       type="number"
-                      step="0.01"
-                      min="10"
+                      step="1"
+                      min="1"
                       value={withdrawalAmount}
+                      onWheel={(e) => (e.target as HTMLInputElement).blur()}
                       onChange={(e) => setWithdrawalAmount(e.target.value)}
                       className="pl-10"
                       placeholder="10.00"

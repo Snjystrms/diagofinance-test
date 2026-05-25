@@ -548,9 +548,10 @@ function WithdrawalRequestContent() {
                       <Input
                         id="amount"
                         type="number"
-                        step="0.01"
+                        step="1"
                         min={minimumAmount}
                         value={amount}
+                        onWheel={(e) => (e.target as HTMLInputElement).blur()}
                         onChange={(event) => setAmount(event.target.value)}
                         className="h-12 rounded-xl border-2 border-border bg-background pl-10 focus:border-primary"
                         placeholder="10.00"

@@ -158,9 +158,10 @@ function CommissionLevelRow({
               <Input
                 id={`${accountTypeId}-${commission.level}-${field}`}
                 type="number"
-                step="0.01"
-                min="0"
+                step="1"
+                min="1"
                 value={String(commission[field] ?? 0)}
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 onChange={(event) => {
                   onUpdate(accountTypeId, commission.level, (current) => ({
                     ...current,

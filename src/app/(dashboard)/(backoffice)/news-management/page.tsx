@@ -23,6 +23,8 @@ import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { NewsForm, type NewsFormValue } from "./news-form";
 import Image from "next/image";
 import { ImageIcon } from "lucide-react";
+import { useCrudCapabilities } from "@/hooks/use-permission-capabilities";
+import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 
 export type NewsRow = {
   id: string;
@@ -55,6 +57,14 @@ const fmtDate = (s?: string) => (s ? formatDateTimeInIST(s) : "-");
 export default function NewsManagementPage() {
   const { token } = useAuth();
   const queryClient = useQueryClient();
+  const { isManager } = useManagerPermissions();
+  const { canViewList, canAdd, canEdit, canDelete, showActionsColumn } =
+    useCrudCapabilities("newsManagement", {
+      list: "list",
+      add: "add",
+      edit: "edit",
+      delete: "delete",
+    });
 
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -105,6 +115,10 @@ export default function NewsManagementPage() {
 
   // CREATE
   const handleCreate = async (form: NewsFormValue) => {
+    if (!canAdd) {
+      toast.error("You do not have permission to add news");
+      return;
+    }
     if (!token) return;
     try {
       const image =
@@ -136,6 +150,10 @@ export default function NewsManagementPage() {
 
   // UPDATE
   const handleUpdate = async (form: NewsFormValue) => {
+    if (!canEdit) {
+      toast.error("You do not have permission to edit news");
+      return;
+    }
     if (!token || !form.id) return;
     try {
       const image =
@@ -167,6 +185,10 @@ export default function NewsManagementPage() {
 
   // TOGGLE STATUS
   const handleToggleStatus = async (id: string, current: boolean) => {
+    if (!canEdit) {
+      toast.error("You do not have permission to update news");
+      return;
+    }
     if (!token) return;
     try {
       setActionLoadingId(id);
@@ -182,6 +204,10 @@ export default function NewsManagementPage() {
 
   // DELETE
   const handleDelete = async () => {
+    if (!canDelete) {
+      toast.error("You do not have permission to delete news");
+      return;
+    }
     if (!token || !deletingId) return;
     try {
       setActionLoadingId(deletingId);
@@ -205,8 +231,8 @@ export default function NewsManagementPage() {
     }
   };
 
-  const columns = useMemo<ColumnDef<NewsRow>[]>(
-    () => [
+  const columns = useMemo<ColumnDef<NewsRow>[]>(() => {
+    const baseColumns: ColumnDef<NewsRow>[] = [
       {
         id: "sr_no",
         header: "Sr. No.",
@@ -269,7 +295,7 @@ export default function NewsManagementPage() {
               onCheckedChange={() =>
                 handleToggleStatus(row.original.id, row.original.status)
               }
-              disabled={actionLoadingId === row.original.id}
+              disabled={actionLoadingId === row.original.id || !canEdit}
               aria-label="Toggle status"
             />
             {/* <Badge
@@ -305,51 +331,65 @@ export default function NewsManagementPage() {
           </span>
         ),
       },
-      {
+    ];
+
+    if (showActionsColumn) {
+      baseColumns.push({
         id: "actions",
         header: "",
         cell: ({ row }) => (
           <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              onClick={() => {
-                setEditingItem(row.original);
-                setIsFormOpen(true);
-              }}
-              title="Edit"
-            >
-              {actionLoadingId === row.original.id ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Pencil className="h-4 w-4" />
-              )}
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 text-destructive hover:text-destructive/80"
-              onClick={() => {
-                setDeletingId(row.original.id);
-                setIsDeleteOpen(true);
-              }}
-              title="Delete"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {canEdit ? (
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  setEditingItem(row.original);
+                  setIsFormOpen(true);
+                }}
+                title="Edit"
+              >
+                {actionLoadingId === row.original.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Pencil className="h-4 w-4" />
+                )}
+              </Button>
+            ) : null}
+            {canDelete ? (
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 text-destructive hover:text-destructive/80"
+                onClick={() => {
+                  setDeletingId(row.original.id);
+                  setIsDeleteOpen(true);
+                }}
+                title="Delete"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            ) : null}
           </div>
         ),
         enableSorting: false,
-      },
-    ],
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [actionLoadingId]
-  );
+      });
+    }
+
+    return baseColumns;
+  }, [actionLoadingId, canDelete, canEdit, showActionsColumn]);
 
   return (
     <ProtectedRoute>
       <div className="container mx-auto px-4 md:px-6 lg:px-8 py-10">
+        {isManager && !canViewList ? (
+          <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+            You do not have permission to view news.
+          </div>
+        ) : null}
+        {!isManager || canViewList ? (
+          <>
         {/* Header */}
         <div className="mb-6 flex items-start justify-between">
           <div className="space-y-1">
@@ -361,16 +401,18 @@ export default function NewsManagementPage() {
               Create, edit, and manage news articles
             </p>
           </div>
-          <Button
-            onClick={() => {
-              setEditingItem(null);
-              setIsFormOpen(true);
-            }}
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add News
-          </Button>
+          {canAdd ? (
+            <Button
+              onClick={() => {
+                setEditingItem(null);
+                setIsFormOpen(true);
+              }}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add News
+            </Button>
+          ) : null}
         </div>
 
         {/* Filters */}
@@ -439,6 +481,8 @@ export default function NewsManagementPage() {
           title="Delete News"
           description="Are you sure you want to delete this news article? This action cannot be undone."
         />
+          </>
+        ) : null}
       </div>
     </ProtectedRoute>
   );

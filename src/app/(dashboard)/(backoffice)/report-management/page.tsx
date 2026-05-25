@@ -45,6 +45,7 @@ import {
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { useAuth } from "@/contexts/auth-context";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
+import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 
 /* ---------------- Helpers ---------------- */
 const fmtDateTime = (s?: string | null) => {
@@ -99,6 +100,8 @@ const statusBadge = (status: string | number) => {
 /* ---------------- Page ---------------- */
 export default function ReportManagementPage() {
   const authCtx = useAuth?.();
+  const { isManager, hasFeature } = useManagerPermissions();
+  const canViewReport = !isManager || hasFeature("reportManagement", "depositReport");
   const ctxToken = authCtx?.token;
   const token =
     ctxToken ||
@@ -278,6 +281,10 @@ export default function ReportManagementPage() {
   ]);
 
   const handleExport = useCallback(async (formatType: "xlsx" | "csv") => {
+    if (!canViewReport) {
+      toast.error("You do not have permission to export deposit report");
+      return;
+    }
     if (!token) {
       toast.error("Authentication required to export data");
       return;
@@ -350,7 +357,7 @@ export default function ReportManagementPage() {
         { id: exportToastId }
       );
     }
-  }, [token, statusFilter, paymentMethodFilter, fromDate, toDate, sortColumn, sortOrder]);
+  }, [canViewReport, token, statusFilter, paymentMethodFilter, fromDate, toDate, sortColumn, sortOrder]);
 
   // Count active filters
   const activeFilterCount = useMemo(() => {
@@ -475,6 +482,15 @@ export default function ReportManagementPage() {
             void loadReport();
           }}
         />
+      </div>
+    );
+  }
+  if (!canViewReport) {
+    return (
+      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+          You do not have permission to view deposit report.
+        </div>
       </div>
     );
   }

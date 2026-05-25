@@ -23,6 +23,10 @@ import {
 import type { LucideIcon } from "lucide-react";
 
 import type { GroupedPermissions } from "@/lib/api";
+import {
+  getManagerPermissionNames,
+  normalizeManagerPermissionName,
+} from "@/lib/manager-permissions";
 import type { NavItem, Permission, UserType } from "@/types/permissions";
 
 export type AppAudience = "shared" | "client" | "backoffice" | "admin" | "manager";
@@ -851,6 +855,64 @@ function getManagerCategorySet(groupedPermissions?: GroupedPermissions[]) {
   );
 }
 
+function getManagerPermissionNameSet(groupedPermissions?: GroupedPermissions[]) {
+  const set = new Set<string>();
+  (groupedPermissions ?? []).forEach((group) => {
+    (group.permissions ?? []).forEach((permission) => {
+      if (permission?.name) {
+        set.add(normalizeManagerPermissionName(permission.name));
+      }
+    });
+  });
+  return set;
+}
+
+function hasManagerFeature(
+  permissionNames: Set<string>,
+  moduleKey: "account-types" | "reportManagement",
+  featureKey: string
+) {
+  const requiredNames = getManagerPermissionNames(moduleKey, featureKey);
+  if (requiredNames.length === 0) return false;
+  return requiredNames.some((name) => permissionNames.has(name));
+}
+
+function hasAnyReportFeature(permissionNames: Set<string>) {
+  return (
+    hasManagerFeature(permissionNames, "reportManagement", "depositReport") ||
+    hasManagerFeature(permissionNames, "reportManagement", "withdrawReport") ||
+    hasManagerFeature(permissionNames, "reportManagement", "ibWithdrawReport") ||
+    hasManagerFeature(permissionNames, "reportManagement", "internalTransferReport") ||
+    hasManagerFeature(permissionNames, "reportManagement", "loginActivity") ||
+    hasManagerFeature(permissionNames, "reportManagement", "historyReport")
+  );
+}
+
+function isManagerRouteFeatureAllowed(path: string, permissionNames: Set<string>) {
+  if (path === "/all-accounts") {
+    return hasManagerFeature(permissionNames, "account-types", "accountTypesList");
+  }
+  if (path === "/report-management") {
+    return hasManagerFeature(permissionNames, "reportManagement", "depositReport");
+  }
+  if (path === "/report-management/withdrawal-report") {
+    return hasManagerFeature(permissionNames, "reportManagement", "withdrawReport");
+  }
+  if (path === "/report-management/ib-withdrawal-report") {
+    return hasManagerFeature(permissionNames, "reportManagement", "ibWithdrawReport");
+  }
+  if (path === "/report-management/internal-transfer-report") {
+    return hasManagerFeature(permissionNames, "reportManagement", "internalTransferReport");
+  }
+  if (path === "/report-management/login-activity-report") {
+    return hasManagerFeature(permissionNames, "reportManagement", "loginActivity");
+  }
+  if (path === "/report-management/trading-history-report") {
+    return hasManagerFeature(permissionNames, "reportManagement", "historyReport");
+  }
+  return true;
+}
+
 function getSectionById(sectionId: SidebarSectionId) {
   return SIDEBAR_SECTIONS.find((section) => section.id === sectionId);
 }
@@ -984,21 +1046,58 @@ export function getUserNavigation(isIbUser = false): NavItem[] {
 
 export function getManagerNavigation(groupedPermissions?: GroupedPermissions[]): NavItem[] {
   const categories = getManagerCategorySet(groupedPermissions);
+  const permissionNames = getManagerPermissionNameSet(groupedPermissions);
+  const reportRouteFeatureMap: Array<{
+    path: string;
+    featureKey:
+      | "depositReport"
+      | "withdrawReport"
+      | "ibWithdrawReport"
+      | "internalTransferReport"
+      | "loginActivity"
+      | "historyReport";
+  }> = [
+    { path: "/report-management", featureKey: "depositReport" },
+    { path: "/report-management/withdrawal-report", featureKey: "withdrawReport" },
+    { path: "/report-management/ib-withdrawal-report", featureKey: "ibWithdrawReport" },
+    { path: "/report-management/internal-transfer-report", featureKey: "internalTransferReport" },
+    { path: "/report-management/login-activity-report", featureKey: "loginActivity" },
+    { path: "/report-management/trading-history-report", featureKey: "historyReport" },
+  ];
 
   return SIDEBAR_SECTIONS.filter((section) => {
     if (!section.roles.includes("manager")) {
       return false;
     }
 
+    if (section.id === "account-management") {
+      return hasManagerFeature(permissionNames, "account-types", "accountTypesList");
+    }
+    if (section.id === "reports") {
+      return hasAnyReportFeature(permissionNames);
+    }
+
     return isManagerCategoryAllowed(categories, section.managerCategories);
   }).flatMap((section) => {
-    const sectionRoutes = ROUTE_DEFINITIONS.filter((route) => {
+    let sectionRoutes = ROUTE_DEFINITIONS.filter((route) => {
       if (route.sidebarSection !== section.id || !route.roles.includes("manager")) {
+        return false;
+      }
+
+      if (!isManagerRouteFeatureAllowed(route.path, permissionNames)) {
         return false;
       }
 
       return isManagerCategoryAllowed(categories, route.managerCategories);
     });
+
+    if (section.id === "reports") {
+      sectionRoutes = sectionRoutes.filter((route) => {
+        const match = reportRouteFeatureMap.find((entry) => entry.path === route.path);
+        if (!match) return false;
+        return hasManagerFeature(permissionNames, "reportManagement", match.featureKey);
+      });
+    }
 
     if (sectionRoutes.length === 0 && section.id !== "dashboard") {
       return [];
@@ -1099,6 +1198,11 @@ export function isRouteAllowedForRole(
 
   if (role !== "manager") {
     return true;
+  }
+
+  const permissionNames = getManagerPermissionNameSet(options?.managerPermissions);
+  if (!isManagerRouteFeatureAllowed(matchingRoute.path, permissionNames)) {
+    return false;
   }
 
   const categories = getManagerCategorySet(options?.managerPermissions);

@@ -19,6 +19,7 @@ import {
 } from "@/lib/api";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { fmtDateTime } from "@/lib/formatters";
+import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 
 const formatNumericValue = (value?: number | string | null, maxFractionDigits = 2) => {
   if (value === null || value === undefined || value === "") {
@@ -51,6 +52,8 @@ const getRecordTypeBadge = (recordType?: string | null) => {
 
 export default function TradingHistoryReportPage() {
   const authCtx = useAuth?.();
+  const { isManager, hasFeature } = useManagerPermissions();
+  const canViewReport = !isManager || hasFeature("reportManagement", "historyReport");
   const ctxToken = authCtx?.token;
   const token =
     ctxToken ||
@@ -108,6 +111,10 @@ export default function TradingHistoryReportPage() {
 
   const handleExport = useCallback(
     async (formatType: ReportExportFormat) => {
+      if (!canViewReport) {
+        toast.error("You do not have permission to export trading history report");
+        return;
+      }
       if (!token) {
         toast.error("Authentication required to export data");
         return;
@@ -149,7 +156,7 @@ export default function TradingHistoryReportPage() {
         );
       }
     },
-    [token]
+    [canViewReport, token]
   );
 
   const columns: ColumnDef<TradingHistoryReportItem>[] = useMemo(
@@ -254,6 +261,15 @@ export default function TradingHistoryReportPage() {
     ],
     []
   );
+  if (!canViewReport) {
+    return (
+      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+          You do not have permission to view trading history report.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ReportPageWrapper

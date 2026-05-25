@@ -830,10 +830,11 @@ function USDTDepositContent() {
                         <Input
                           id="amount"
                           type="number"
-                          step="0.01"
-                          min="0.01"
+                          step="1"
+                          min="1"
                           value={amount}
                           onChange={(e) => setAmount(e.target.value)}
+                          onWheel={(e) => (e.target as HTMLInputElement).blur()}
                           className="pl-10 h-12 border-2 border-border focus:border-primary rounded-xl"
                           placeholder="100.00"
                         />
@@ -1124,10 +1125,11 @@ function USDTDepositContent() {
                         <Input
                           id="binance-amount"
                           type="number"
-                          step="0.01"
-                          min="0.01"
+                          step="1"
+                          min="1"
                           value={binanceAmount}
                           onChange={(e) => setBinanceAmount(e.target.value)}
+                          onWheel={(e) => (e.target as HTMLInputElement).blur()}
                           className="pl-10 h-12 border-2 border-border focus:border-primary rounded-xl"
                           placeholder="100.00"
                         />
@@ -1266,10 +1268,11 @@ function USDTDepositContent() {
                         <Input
                           id="coinsbuy-amount"
                           type="number"
-                          step="0.01"
-                          min="0.01"
+                          step="1"
+                          min="1"
                           value={coinsbuyAmount}
                           onChange={(e) => setCoinsbuyAmount(e.target.value)}
+                          onWheel={(e) => (e.target as HTMLInputElement).blur()}
                           className="pl-10 h-12 border-2 border-border focus:border-primary rounded-xl"
                           placeholder="100.00"
                         />
@@ -1513,9 +1516,10 @@ function USDTDepositContent() {
                           <Input
                             id="bank-amount"
                             type="number"
-                            step="0.01"
-                            min="0.01"
+                            step="1"
+                            min="1"
                             value={bankAmount}
+                            onWheel={(e) => (e.target as HTMLInputElement).blur()}
                             onChange={(e) => setBankAmount(e.target.value)}
                             className="pl-9 h-11 rounded-xl"
                             placeholder="100.00"

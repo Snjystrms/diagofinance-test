@@ -515,9 +515,10 @@ export function DownlineTreePageContent({
         </span>
         <Input
           type="number"
-          step="0.01"
-          min="0"
+          step="1"
+          min="1"
           value={normalizedValue.toFixed(2)}
+          onWheel={(e) => (e.target as HTMLInputElement).blur()}
           onChange={(event) => {
             const nextValue = Number(event.target.value);
             handleUpdateCommissionField(

@@ -23,10 +23,13 @@ import { ReportPageWrapper } from "@/components/report-page-wrapper";
 import type { ReportExportFormat } from "@/components/report-page-wrapper";
 import { fmtDateTime } from "@/lib/formatters";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
+import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 
 /* ---------------- Page ---------------- */
 export default function LoginActivityReportPage() {
   const authCtx = useAuth?.();
+  const { isManager, hasFeature } = useManagerPermissions();
+  const canViewReport = !isManager || hasFeature("reportManagement", "loginActivity");
   const ctxToken = authCtx?.token;
   const token =
     ctxToken ||
@@ -129,6 +132,10 @@ export default function LoginActivityReportPage() {
   ]);
 
   const handleExport = useCallback(async (formatType: ReportExportFormat) => {
+    if (!canViewReport) {
+      toast.error("You do not have permission to export login activity report");
+      return;
+    }
     if (!token) {
       toast.error("Authentication required to export data");
       return;
@@ -205,6 +212,7 @@ export default function LoginActivityReportPage() {
       );
     }
   }, [
+    canViewReport,
     token,
     searchQuery,
   ]);
@@ -337,6 +345,15 @@ export default function LoginActivityReportPage() {
     ],
     []
   );
+  if (!canViewReport) {
+    return (
+      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+          You do not have permission to view login activity report.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ReportPageWrapper

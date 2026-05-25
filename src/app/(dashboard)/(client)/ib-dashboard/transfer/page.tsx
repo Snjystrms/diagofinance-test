@@ -253,11 +253,12 @@ export default function TransferPage() {
               <Input
                 id="ib-amount"
                 type="number"
-                step="0.01"
-                min="0.01"
+                step="1"
+                min="1"
                 max={partner_wallet.balance}
                 placeholder="Enter amount"
                 value={transferAmount}
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}  
                 onChange={(event) => setTransferAmount(event.target.value)}
                 disabled={isTransferring}
               />

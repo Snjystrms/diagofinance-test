@@ -747,9 +747,10 @@ function InternalTransferContent() {
                               <div className="relative">
                                 <Input
                                   type="number"
-                                  min="0"
-                                  step="0.01"
+                                  min="1"
+                                  step="1"
                                   placeholder="0.00"
+                                  onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                   className="pr-14"
                                   {...field}
                                 />
@@ -940,9 +941,10 @@ function InternalTransferContent() {
                               <div className="relative">
                                 <Input
                                   type="number"
-                                  min="0"
-                                  step="0.01"
+                                  min="1"
+                                  step="1"
                                   placeholder="0.00"
+                                  onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                   className="pr-14"
                                   {...field}
                                 />
@@ -1108,9 +1110,10 @@ function InternalTransferContent() {
                               <div className="relative">
                                 <Input
                                   type="number"
-                                  min="0"
-                                  step="0.01"
+                                  min="1"
+                                  step="1"
                                   placeholder="0.00"
+                                  onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                   className="pr-14"
                                   {...field}
                                 />

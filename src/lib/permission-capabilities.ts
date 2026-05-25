@@ -3,6 +3,12 @@ import type { ManagerPermissionModule } from "@/lib/manager-permissions";
 export type CapabilityDefinition = Record<string, string | string[]>;
 
 export const permissionCapabilities = {
+  newsManagement: {
+    list: "newsList",
+    add: "addNews",
+    edit: "editNews",
+    delete: "deleteNews",
+  },
   groupManagement: {
     list: "groupList",
     add: "addGroup",
@@ -30,4 +36,3 @@ export const permissionCapabilities = {
 
 export type CapabilityModuleKey = keyof typeof permissionCapabilities;
 export type CapabilityKey<M extends CapabilityModuleKey> = keyof (typeof permissionCapabilities)[M];
-

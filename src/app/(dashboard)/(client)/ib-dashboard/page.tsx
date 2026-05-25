@@ -523,10 +523,11 @@ export default function IbDashboardPage() {
               <Input
                 id="ib-transfer-amount"
                 type="number"
-                step="0.01"
-                min="0.01"
+                step="1"
+                min="1"
                 max={partner_wallet.balance}
                 value={transferAmount}
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 onChange={(event) => setTransferAmount(event.target.value)}
                 placeholder="Enter amount"
                 disabled={isTransferring}

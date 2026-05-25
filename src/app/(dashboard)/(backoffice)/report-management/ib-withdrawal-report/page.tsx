@@ -31,6 +31,7 @@ import { ReportPageWrapper } from "@/components/report-page-wrapper";
 import type { ReportExportFormat } from "@/components/report-page-wrapper";
 import { fmtDateTime, formatAmount } from "@/lib/formatters";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
+import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 
 const statusBadge = (status: string | number) => {
   const statusStr = String(status);
@@ -63,6 +64,8 @@ const statusBadge = (status: string | number) => {
 /* ---------------- Page ---------------- */
 export default function IbWithdrawalReportPage() {
   const authCtx = useAuth?.();
+  const { isManager, hasFeature } = useManagerPermissions();
+  const canViewReport = !isManager || hasFeature("reportManagement", "ibWithdrawReport");
   const ctxToken = authCtx?.token;
   const token =
     ctxToken ||
@@ -202,6 +205,10 @@ export default function IbWithdrawalReportPage() {
   ]);
 
   const handleExport = useCallback(async (formatType: ReportExportFormat) => {
+    if (!canViewReport) {
+      toast.error("You do not have permission to export IB withdrawal report");
+      return;
+    }
     if (!token) {
       toast.error("Authentication required to export data");
       return;
@@ -285,6 +292,7 @@ export default function IbWithdrawalReportPage() {
       );
     }
   }, [
+    canViewReport,
     token,
     fromDate,
     toDate,
@@ -415,6 +423,15 @@ export default function IbWithdrawalReportPage() {
     ],
     []
   );
+  if (!canViewReport) {
+    return (
+      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+        <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+          You do not have permission to view IB withdrawal report.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ReportPageWrapper

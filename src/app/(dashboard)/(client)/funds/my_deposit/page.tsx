@@ -741,9 +741,9 @@ export default function MyDepositPage() {
                   <CardContent className="py-10">
                     <div className="text-center">
                       <DollarSign className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                      <h3 className="text-lg font-semibold mb-2">No Binance Deposits</h3>
+                      <h3 className="text-lg font-semibold mb-2">No Crypto Currency Deposits</h3>
                       <p className="text-muted-foreground mb-4">
-                        You haven&apos;t made any Binance Pay deposits yet.
+                        You haven&apos;t made any Crypto Currency deposits yet.
                       </p>
                     </div>
                   </CardContent>

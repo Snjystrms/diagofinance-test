@@ -562,11 +562,12 @@ export default function BonusManagementPage() {
                   id="bonus-amount"
                   type="number"
                   inputMode="decimal"
-                  min="0"
-                  step="0.01"
+                  min="1"
+                  step="1"
                   placeholder={actionMode === "give" ? "Enter bonus amount" : "Enter amount to remove"}
                   value={form.amount}
                   onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
+                  onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 />
               </div>
 

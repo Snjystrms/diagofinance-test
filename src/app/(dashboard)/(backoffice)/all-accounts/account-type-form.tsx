@@ -247,12 +247,13 @@ export function AccountTypeForm({
               <Input
                 id="spread_from"
                 type="number"
-                step="0.01"
-                min="0"
+                step="1"
+                min="1"
                 value={form.spread_from}
                 onChange={(e) =>
                   setForm({ ...form, spread_from: e.target.value })
                 }
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 placeholder="0.5"
                 disabled={disabled}
                 required
@@ -270,6 +271,7 @@ export function AccountTypeForm({
                 onChange={(e) =>
                   setForm({ ...form, maximum_leverage: e.target.value })
                 }
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 placeholder="500"
                 disabled={disabled}
                 required
@@ -300,8 +302,10 @@ export function AccountTypeForm({
               <Input
                 id="leverage_value"
                 type="number"
+                step="1"
                 min={1}
                 value={numberStr(form.leverage_value)}
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 onChange={(e) =>
                   setForm({
                     ...form,
@@ -451,8 +455,8 @@ export function AccountTypeForm({
                           <Input
                             id={`${commission.level}-${field}`}
                             type="number"
-                            step="0.01"
-                            min="0"
+                            step="1"
+                            min="1"
                             value={numberStr(commission[field])}
                             onChange={(e) => {
                               updateCommission(commission.level, (current) => ({
@@ -461,6 +465,7 @@ export function AccountTypeForm({
                               }));
                             }}
                             disabled={disabled}
+                            onWheel={(e) => (e.target as HTMLInputElement).blur()}
                           />
                         </div>
                       ))}
