@@ -7,6 +7,7 @@ import type {
   FieldPath,
   FieldValues,
   ControllerFieldState,
+  RegisterOptions,
 } from "react-hook-form"
 
 import { PasswordInput } from "@/components/password-input"
@@ -50,6 +51,7 @@ type ValidatedFormFieldProps<
   label: React.ReactNode
   className?: string
   messageClassName?: string
+  rules?: RegisterOptions<TFieldValues, TName>
   renderControl: (args: RenderFieldArgs<TFieldValues, TName>) => React.ReactNode
 }
 
@@ -62,12 +64,14 @@ export function ValidatedFormField<
   label,
   className,
   messageClassName,
+  rules,
   renderControl,
 }: ValidatedFormFieldProps<TFieldValues, TName>) {
   return (
     <FormField
       control={control}
       name={name}
+      rules={rules}
       render={({ field, fieldState }) => (
         <FormItem className={className}>
           <FormLabel>{label}</FormLabel>

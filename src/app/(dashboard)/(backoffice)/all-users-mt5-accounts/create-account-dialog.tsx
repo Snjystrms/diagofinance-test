@@ -362,7 +362,7 @@ export function CreateAccountDialog({
                   <SelectContent>
                     {groups.map((group) => (
                       <SelectItem key={group.id} value={String(group.id)}>
-                        {group.name || `Group ${group.id}`} (ID: {group.id})
+                        {group.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

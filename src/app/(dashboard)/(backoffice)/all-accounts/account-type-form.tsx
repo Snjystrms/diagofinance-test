@@ -2,10 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import type {
-  AccountTypeCommissionRow,
-  AccountTypeRow,
-} from "./page";
+import type { AccountTypeCommissionRow, AccountTypeRow } from "./page";
 import {
   Dialog,
   DialogContent,
@@ -102,17 +99,20 @@ const mergeCommissions = (
     });
   }
 
-  return COMMISSION_LEVELS.map((level) => byLevel.get(level) ?? {
-    is_default: level === "IB",
-    level,
-    rate_ib: 0,
-    rate_sub_ib_1: 0,
-    rate_sub_ib_2: 0,
-    rate_sub_ib_3: 0,
-    rate_sub_ib_4: 0,
-    rate_sub_ib_5: 0,
-    status: true,
-  });
+  return COMMISSION_LEVELS.map(
+    (level) =>
+      byLevel.get(level) ?? {
+        is_default: level === "IB",
+        level,
+        rate_ib: 0,
+        rate_sub_ib_1: 0,
+        rate_sub_ib_2: 0,
+        rate_sub_ib_3: 0,
+        rate_sub_ib_4: 0,
+        rate_sub_ib_5: 0,
+        status: true,
+      },
+  );
 };
 
 const createEmptyForm = (): FormValue => ({
@@ -390,88 +390,113 @@ export function AccountTypeForm({
                 </p>
               </div>
 
-              <div className="space-y-3">
-                {form.ib_commissions.map((commission) => (
-                  <div
-                    key={commission.level}
-                    className="rounded-lg border p-4"
-                  >
-                    <div className="mb-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <div className="font-medium">{commission.level}</div>
-                        <div className="text-xs text-muted-foreground">
-                          Commission rule for {commission.level}
-                        </div>
-                      </div>
+              <div className="rounded-lg border overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-muted/50 border-b">
+                        <th className="text-left px-3 py-2 font-medium text-muted-foreground">
+                          Level
+                        </th>
+                        {(
+                          [
+                            "Rate IB",
+                            "Sub IB 1",
+                            "Sub IB 2",
+                            "Sub IB 3",
+                            "Sub IB 4",
+                            "Sub IB 5",
+                          ] as const
+                        ).map((h) => (
+                          <th
+                            key={h}
+                            className="text-left px-3 py-2 font-medium text-muted-foreground whitespace-nowrap"
+                          >
+                            {h}
+                          </th>
+                        ))}
+                        <th className="text-center px-3 py-2 font-medium text-muted-foreground">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {form.ib_commissions.map((commission, i) => (
+                        <tr
+                          key={commission.level}
+                          className={
+                            i !== form.ib_commissions.length - 1
+                              ? "border-b"
+                              : ""
+                          }
+                        >
+                          <td className="px-3 py-2">
+                            <span className="inline-block text-xs font-medium px-2 py-0.5 rounded bg-muted text-muted-foreground border">
+                              {commission.level}
+                            </span>
+                          </td>
 
-                      <div className="flex flex-wrap items-center gap-4">
-                        {/* <div className="flex items-center gap-2">
-                          <Switch
-                            checked={commission.is_default}
-                            onCheckedChange={(value) => {
-                              updateCommission(commission.level, (current) => ({
-                                ...current,
-                                is_default: value,
-                              }));
-                            }}
-                            disabled={disabled}
-                          />
-                          <span className="text-sm">Default</span>
-                        </div> */}
+                          {(
+                            [
+                              "rate_ib",
+                              "rate_sub_ib_1",
+                              "rate_sub_ib_2",
+                              "rate_sub_ib_3",
+                              "rate_sub_ib_4",
+                              "rate_sub_ib_5",
+                            ] as const
+                          ).map((field) => (
+                            <td key={field} className="px-3 py-2">
+                              <div className="relative flex items-center">
+                                <Input
+                                  className="w-20 h-8 text-sm pr-6"
+                                  type="number"
+                                  step="1"
+                                  min="0"
+                                  value={numberStr(commission[field])}
+                                  onChange={(e) =>
+                                    updateCommission(
+                                      commission.level,
+                                      (cur) => ({
+                                        ...cur,
+                                        [field]: Number(e.target.value || 0),
+                                      }),
+                                    )
+                                  }
+                                  disabled={disabled}
+                                  onWheel={(e) =>
+                                    (e.target as HTMLInputElement).blur()
+                                  }
+                                />
+                                <span className="absolute right-2 text-xs text-muted-foreground pointer-events-none select-none">
+                                  $
+                                </span>
+                              </div>
+                            </td>
+                          ))}
 
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={commission.status}
-                            onCheckedChange={(value) => {
-                              updateCommission(commission.level, (current) => ({
-                                ...current,
-                                status: value,
-                              }));
-                            }}
-                            disabled={disabled}
-                          />
-                          <span className="text-sm">
-                            {commission.status ? "Active" : "Inactive"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 gap-3 md:grid-cols-3 xl:grid-cols-6">
-                      {(
-                        [
-                          ["rate_ib", "Rate IB"],
-                          ["rate_sub_ib_1", "Sub IB 1"],
-                          ["rate_sub_ib_2", "Sub IB 2"],
-                          ["rate_sub_ib_3", "Sub IB 3"],
-                          ["rate_sub_ib_4", "Sub IB 4"],
-                          ["rate_sub_ib_5", "Sub IB 5"],
-                        ] as const
-                      ).map(([field, label]) => (
-                        <div key={field} className="space-y-2">
-                          <Label htmlFor={`${commission.level}-${field}`}>
-                            {label}
-                          </Label>
-                          <Input
-                            id={`${commission.level}-${field}`}
-                            type="number"
-                            step="1"
-                            min="1"
-                            value={numberStr(commission[field])}
-                            onChange={(e) => {
-                              updateCommission(commission.level, (current) => ({
-                                ...current,
-                                [field]: Number(e.target.value || 0),
-                              }));
-                            }}
-                            disabled={disabled}
-                            onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                          />
-                        </div>
+                          <td className="px-3 py-2 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <Switch
+                                checked={commission.status}
+                                onCheckedChange={(value) =>
+                                  updateCommission(commission.level, (cur) => ({
+                                    ...cur,
+                                    status: value,
+                                  }))
+                                }
+                                disabled={disabled}
+                              />
+                              <span className="text-xs text-muted-foreground w-12 text-left">
+                                {commission.status ? "Active" : "Inactive"}
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
                       ))}
-                    </div>
-                  </div>
-                ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>

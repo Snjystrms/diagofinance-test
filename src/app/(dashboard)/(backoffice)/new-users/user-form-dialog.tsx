@@ -59,8 +59,9 @@ interface UserFormDialogProps<TFormValues extends UserFormDialogValues> {
   onCountryChange: (country: string) => void;
 }
 
-const fieldPath = <TFormValues extends FieldValues>(name: keyof UserFormDialogValues) =>
-  name as FieldPath<TFormValues>;
+const fieldPath = <TFormValues extends FieldValues>(
+  name: keyof UserFormDialogValues,
+) => name as FieldPath<TFormValues>;
 
 export function UserFormDialog<TFormValues extends UserFormDialogValues>({
   open,
@@ -91,31 +92,64 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
               <BackofficeDetailDialogSkeleton fieldCount={8} sectionCount={2} />
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
+                {/* ── First name ── */}
                 <ValidatedTextField
                   control={form.control}
                   name={fieldPath<TFormValues>("first_name")}
                   label="First name"
                   transformValue={sanitizePersonText}
-                  inputProps={{ autoComplete: "given-name", placeholder: "Enter first name" }}
+                  inputProps={{
+                    autoComplete: "given-name",
+                    placeholder: "Enter first name",
+                  }}
+                  rules={{ required: "First name is required" }}
                 />
+
+                {/* ── Last name ── */}
                 <ValidatedTextField
                   control={form.control}
                   name={fieldPath<TFormValues>("last_name")}
                   label="Last name"
                   transformValue={sanitizePersonText}
-                  inputProps={{ autoComplete: "family-name", placeholder: "Enter last name" }}
+                  inputProps={{
+                    autoComplete: "family-name",
+                    placeholder: "Enter last name",
+                  }}
+                  rules={{ required: "Last name is required" }}
                 />
+
+                {/* ── Email ── */}
                 <ValidatedTextField
                   control={form.control}
                   name={fieldPath<TFormValues>("email")}
                   label="Email"
                   className="sm:col-span-2"
-                  inputProps={{ type: "email", autoComplete: "email", placeholder: "name@example.com" }}
+                  inputProps={{
+                    type: "email",
+                    autoComplete: "email",
+                    placeholder: "name@example.com",
+                  }}
+                  rules={{
+                    required: "Email is required",
+                    pattern: {
+                      value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                      message: "Enter a valid email address",
+                    },
+                  }}
                 />
+
+                {/* ── Mobile ── */}
                 <ValidatedFormField
                   control={form.control}
                   name={fieldPath<TFormValues>("mobile")}
                   label="Mobile"
+                  rules={{
+                    required: "Mobile number is required",
+                    minLength: {
+                      value: 10,
+                      message: "Mobile number must be 10 digits",
+                    },
+                  }}
                   renderControl={({ field }) => (
                     <Input
                       {...field}
@@ -127,17 +161,25 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
                       pattern="\d{10}"
                       value={sanitizeDigits(String(field.value ?? ""), 10)}
                       onInput={(event) => {
-                        const nextValue = sanitizeDigits(event.currentTarget.value, 10);
+                        const nextValue = sanitizeDigits(
+                          event.currentTarget.value,
+                          10,
+                        );
                         event.currentTarget.value = nextValue;
                       }}
-                      onChange={(event) => field.onChange(sanitizeDigits(event.target.value, 10))}
+                      onChange={(event) =>
+                        field.onChange(sanitizeDigits(event.target.value, 10))
+                      }
                     />
                   )}
                 />
+
+                {/* ── Country ── */}
                 <ValidatedFormField
                   control={form.control}
                   name={fieldPath<TFormValues>("country")}
                   label="Country"
+                  rules={{ required: "Country is required" }}
                   renderControl={({ field }) => (
                     <Select
                       value={field.value}
@@ -159,18 +201,27 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
                     </Select>
                   )}
                 />
+
+                {/* ── Country code ── */}
                 <ValidatedFormField
                   control={form.control}
                   name={fieldPath<TFormValues>("country_code")}
                   label="Country code"
+                  rules={{ required: "Country code is required" }}
                   renderControl={({ field }) => (
                     <Select
                       value={field.value}
                       onValueChange={(value) => {
                         field.onChange(value);
-                        const matchedCountry = COUNTRIES.find((country) => country.code === value);
+                        const matchedCountry = COUNTRIES.find(
+                          (country) => country.code === value,
+                        );
                         if (matchedCountry) {
-                          form.setValue(fieldPath<TFormValues>("country"), matchedCountry.name as TFormValues[FieldPath<TFormValues>], { shouldValidate: true });
+                          form.setValue(
+                            fieldPath<TFormValues>("country"),
+                            matchedCountry.name as TFormValues[FieldPath<TFormValues>],
+                            { shouldValidate: true },
+                          );
                         }
                       }}
                     >
@@ -179,7 +230,10 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
                       </SelectTrigger>
                       <SelectContent side="bottom" avoidCollisions={false}>
                         {COUNTRIES.map((country) => (
-                          <SelectItem key={`${country.name}-${country.code}`} value={country.code}>
+                          <SelectItem
+                            key={`${country.name}-${country.code}`}
+                            value={country.code}
+                          >
                             {country.code} ({country.name})
                           </SelectItem>
                         ))}
@@ -187,29 +241,82 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
                     </Select>
                   )}
                 />
+
+                {/* ── Password ── */}
                 <ValidatedPasswordField
                   control={form.control}
                   name={fieldPath<TFormValues>("password")}
                   label="Password"
                   inputProps={{
-                    placeholder: passwordOptional ? "Leave blank to keep current password" : "Create a strong password",
+                    placeholder: passwordOptional
+                      ? "Leave blank to keep current password"
+                      : "Create a strong password",
                   }}
+                  rules={
+                    passwordOptional
+                      ? {
+                          minLength: {
+                            value: 8,
+                            message: "Password must be at least 8 characters",
+                          },
+                        }
+                      : {
+                          required: "Password is required",
+                          minLength: {
+                            value: 8,
+                            message: "Password must be at least 8 characters",
+                          },
+                        }
+                  }
                 />
+
+                {/* ── Confirm password ── */}
                 <ValidatedPasswordField
                   control={form.control}
                   name={fieldPath<TFormValues>("confirm_password")}
                   label="Confirm password"
                   inputProps={{
-                    placeholder: passwordOptional ? "Confirm new password" : "Confirm password",
+                    placeholder: passwordOptional
+                      ? "Confirm new password"
+                      : "Confirm password",
                   }}
+                  rules={
+                    passwordOptional
+                      ? {
+                          validate: (value: string) => {
+                            const pwd = form.getValues(
+                              fieldPath<TFormValues>("password"),
+                            );
+                            if (pwd && !value)
+                              return "Please confirm your password";
+                            if (pwd && value !== pwd)
+                              return "Passwords do not match";
+                            return true;
+                          },
+                        }
+                      : {
+                          required: "Please confirm your password",
+                          validate: (value: string) =>
+                            value ===
+                              form.getValues(
+                                fieldPath<TFormValues>("password"),
+                              ) || "Passwords do not match",
+                        }
+                  }
                 />
+
+                {/* ── Referral code (optional) ── */}
                 {showReferralCode ? (
                   <ValidatedTextField
                     control={form.control}
                     name={fieldPath<TFormValues>("referral_code")}
                     label="Referral code"
                     className="sm:col-span-2"
-                    inputProps={{ autoComplete: "off", placeholder: "Enter referral code if available" }}
+                    inputProps={{
+                      autoComplete: "off",
+                      placeholder: "Enter referral code if available",
+                    }}
+                    // intentionally no `rules` — this field is optional
                   />
                 ) : null}
               </div>
