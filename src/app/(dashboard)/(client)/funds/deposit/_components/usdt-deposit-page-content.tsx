@@ -56,7 +56,7 @@ function ComingSoonTab({ name, description }: { name: string; description?: stri
 
 function USDTDepositContent() {
   const { user, token } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>("local");
+  const [activeTab, setActiveTab] = useState<string>("");
 
   // Payment methods from API
   const [paymentMethods, setPaymentMethods] = useState<UserPaymentMethod[]>([]);
@@ -160,20 +160,14 @@ function USDTDepositContent() {
   const KNOWN_TYPES = ["local", "binance_pay", "coinsbuy", "bank_transfer"];
   const comingSoonMethods = paymentMethods.filter(p => !KNOWN_TYPES.includes(p.type));
 
-  // Fetch active payment methods and set default tab
+  // Fetch active payment methods
   useEffect(() => {
     if (!token) { setPmLoading(false); return; }
     userPaymentMethodsApi.list(token)
       .then(res => {
         const methods = (res as unknown as { data?: UserPaymentMethod[] })?.data ?? [];
         setPaymentMethods(methods);
-        // Set initial tab to the first available known type
-        const hasL  = methods.some(p => p.type === "local");
-        const hasBi = methods.some(p => p.type === "binance_pay");
-        const hasCo = methods.some(p => p.type === "coinsbuy");
-        const hasB  = methods.some(p => p.type === "bank_transfer");
-        const fallback = methods.find(p => !KNOWN_TYPES.includes(p.type))?.type;
-        setActiveTab(hasL ? "local" : hasBi ? "binance_pay" : hasCo ? "coinsbuy" : hasB ? "bank" : fallback ?? "local");
+        setActiveTab("");
       })
       .catch(() => {})
       .finally(() => setPmLoading(false));
@@ -649,7 +643,7 @@ function USDTDepositContent() {
             </div>
             <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Method</p>
-              <p className="text-sm font-semibold text-foreground">{activeTab === "bank" ? "Bank" : activeTab === "binance_pay" ? "Binance" : activeTab === "coinsbuy" ? "CoinsBuy" : "On-Chain"}</p>
+              <p className="text-sm font-semibold text-foreground">{activeTab === "bank" ? "Bank" : activeTab === "binance_pay" ? "Binance" : activeTab === "coinsbuy" ? "CoinsBuy" : activeTab === "local" ? "On-Chain" : "Not selected"}</p>
             </div>
             <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Readiness</p>
@@ -676,6 +670,37 @@ function USDTDepositContent() {
                 <TabsTrigger className="min-w-[132px] rounded-xl px-4 py-2.5" key={p.type} value={p.type}>{p.name}</TabsTrigger>
               ))}
             </TabsList>
+          )}
+
+          {!pmLoading && !activeTab && (
+            <div className="relative overflow-hidden rounded-3xl border border-primary/30 bg-gradient-to-br from-primary/10 via-accent/30 to-muted/40 p-6 shadow-[0_20px_80px_-30px_hsl(var(--primary)/0.45)]">
+              <div className="pointer-events-none absolute -right-10 -top-10 h-44 w-44 rounded-full bg-primary/20 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-12 -left-8 h-44 w-44 rounded-full bg-accent/35 blur-3xl" />
+              <div className="relative grid gap-5 lg:grid-cols-[1.3fr_1fr] lg:items-center">
+                <div>
+                  <div className="inline-flex items-center gap-2 rounded-full border border-primary/30 bg-background/75 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-primary shadow-sm">
+                    <Wallet className="h-3.5 w-3.5" />
+                    Start Deposit
+                  </div>
+                  <p className="mt-3 text-2xl font-bold tracking-tight text-foreground">
+                    Pick your transfer rail
+                  </p>
+                  <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
+                    Choose a method from the tabs above to unlock tailored instructions, fields, and settlement details.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-border/70 bg-background/70 p-4 backdrop-blur-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Available methods</p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {hasLocal && <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">On-Chain</Badge>}
+                    {hasBinance && <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">Binance Pay</Badge>}
+                    {hasCoinsbuy && <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">CoinsBuy</Badge>}
+                    {hasBank && <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">Bank Deposit</Badge>}
+                    {comingSoonMethods.length > 0 && <Badge variant="outline" className="rounded-full">More options</Badge>}
+                  </div>
+                </div>
+              </div>
+            </div>
           )}
 
             {hasLocal && <TabsContent value="local" className="space-y-6">

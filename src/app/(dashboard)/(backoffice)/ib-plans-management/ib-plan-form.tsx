@@ -1,7 +1,7 @@
-"use client";
+﻿"use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +21,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { cn } from "@/lib/utils";
 import type { IbPlanAccountTypeRow, IbPlanCommissionRow, IbPlanRow } from "./page";
 
 type AccountTypeOption = {
@@ -92,95 +91,6 @@ const createEmptyForm = (): FormValue => ({
   account_types: [],
 });
 
-// ─── Commission Level Row ────────────────────────────────────────────────────
-
-function CommissionLevelRow({
-  commission,
-  accountTypeId,
-  disabled,
-  onUpdate,
-}: {
-  commission: IbPlanCommissionRow;
-  accountTypeId: string;
-  disabled: boolean;
-  onUpdate: (
-    accountTypeId: string,
-    level: string,
-    updater: (current: IbPlanCommissionRow) => IbPlanCommissionRow,
-  ) => void;
-}) {
-  const [open, setOpen] = useState(commission.level === "IB");
-
-  return (
-    <div className="rounded-md border bg-muted/20">
-      {/* Level header — always visible, click to collapse */}
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between px-4 py-2.5 text-left"
-      >
-        <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              "inline-flex h-5 min-w-[2.5rem] items-center justify-center rounded-full px-2 text-xs font-semibold",
-              commission.level === "IB"
-                ? "bg-primary text-primary-foreground"
-                : "bg-muted text-muted-foreground",
-            )}
-          >
-            {commission.level}
-          </span>
-          {!open && (
-            <span className="text-xs text-muted-foreground">
-              IB: {commission.rate_ib} &nbsp;·&nbsp; Sub IB 1: {commission.rate_sub_ib_1} &nbsp;·&nbsp; Sub IB 2:{" "}
-              {commission.rate_sub_ib_2} &nbsp;···
-            </span>
-          )}
-        </div>
-        {open ? (
-          <ChevronUp className="h-4 w-4 text-muted-foreground" />
-        ) : (
-          <ChevronDown className="h-4 w-4 text-muted-foreground" />
-        )}
-      </button>
-
-      {/* Rate inputs */}
-      {open && (
-        <div className="grid grid-cols-2 gap-3 border-t px-4 pb-4 pt-3 sm:grid-cols-3 xl:grid-cols-6">
-          {COMMISSION_FIELDS.map(([field, label]) => (
-            <div key={field} className="space-y-1.5">
-              <Label
-                htmlFor={`${accountTypeId}-${commission.level}-${field}`}
-                className="text-xs text-muted-foreground"
-              >
-                {label}
-              </Label>
-              <Input
-                id={`${accountTypeId}-${commission.level}-${field}`}
-                type="number"
-                step="1"
-                min="1"
-                value={String(commission[field] ?? 0)}
-                onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                onChange={(event) => {
-                  onUpdate(accountTypeId, commission.level, (current) => ({
-                    ...current,
-                    [field]: Number(event.target.value || 0),
-                  }));
-                }}
-                disabled={disabled}
-                className="h-8 text-sm"
-              />
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Account Type Card ────────────────────────────────────────────────────────
-
 function AccountTypeCard({
   accountType,
   disabled,
@@ -196,32 +106,27 @@ function AccountTypeCard({
     updater: (current: IbPlanCommissionRow) => IbPlanCommissionRow,
   ) => void;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const getEditableFieldCount = (level: string) => {
+    const levelIndex = COMMISSION_LEVELS.indexOf(level as (typeof COMMISSION_LEVELS)[number]);
+    return levelIndex >= 0 ? levelIndex + 1 : COMMISSION_FIELDS.length;
+  };
+
+  const numberStr = (value: unknown) => {
+    const n = typeof value === "string" ? Number(value) : value;
+    return typeof n === "number" && Number.isFinite(n) ? String(n) : "0";
+  };
 
   return (
     <div className="overflow-hidden rounded-lg border shadow-sm">
-      {/* Card header */}
       <div className="flex items-center justify-between bg-muted/40 px-4 py-3">
-        <button
-          type="button"
-          onClick={() => setCollapsed((prev) => !prev)}
-          className="flex flex-1 items-center gap-3 text-left"
-        >
-          {collapsed ? (
-            <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-          ) : (
-            <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" />
-          )}
-          <div>
-            <div className="font-semibold leading-tight">
-              {accountType.account_type_name || "Account Type"}
-            </div>
-            <div className="text-xs text-muted-foreground">
-              {/* ID: {accountType.account_type_id} &nbsp;·&nbsp;{" "} */}
-              {accountType.commissions.length} commission levels
-            </div>
+        <div>
+          <div className="font-semibold leading-tight">
+            {accountType.account_type_name || "Account Type"}
           </div>
-        </button>
+          <div className="text-xs text-muted-foreground">
+            {accountType.commissions.length} commission levels
+          </div>
+        </div>
 
         {!disabled && (
           <Button
@@ -236,39 +141,93 @@ function AccountTypeCard({
         )}
       </div>
 
-      {/* Commission levels */}
-      {!collapsed && (
-        <div className="space-y-2 p-4">
-          {accountType.commissions.map((commission) => (
-            <CommissionLevelRow
-              key={`${accountType.account_type_id}-${commission.level}`}
-              commission={commission}
-              accountTypeId={accountType.account_type_id}
-              disabled={disabled}
-              onUpdate={onUpdate}
-            />
-          ))}
+      <div className="p-4">
+        <div className="rounded-lg border overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-muted/50 border-b">
+                  <th className="text-left px-3 py-2 font-medium text-muted-foreground">
+                    Level
+                  </th>
+                  {COMMISSION_FIELDS.map(([, label]) => (
+                    <th
+                      key={label}
+                      className="text-left px-3 py-2 font-medium text-muted-foreground whitespace-nowrap"
+                    >
+                      {label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {accountType.commissions.map((commission, levelIndex) => {
+                  const editableFieldCount = getEditableFieldCount(commission.level);
+                  return (
+                    <tr
+                      key={`${accountType.account_type_id}-${commission.level}`}
+                      className={levelIndex !== accountType.commissions.length - 1 ? "border-b" : ""}
+                    >
+                      <td className="px-3 py-2">
+                        <span className="inline-block text-xs font-medium px-2 py-0.5 rounded bg-muted text-muted-foreground border">
+                          {commission.level}
+                        </span>
+                      </td>
+                      {COMMISSION_FIELDS.map(([field], fieldIndex) => (
+                        <td key={field} className="px-3 py-2">
+                          <div className="relative flex items-center">
+                            <Input
+                              className="w-20 h-8 text-sm pr-6"
+                              type="number"
+                              step="1"
+                              min="0"
+                              value={numberStr(commission[field])}
+                              onChange={(event) =>
+                                onUpdate(accountType.account_type_id, commission.level, (current) => ({
+                                  ...current,
+                                  [field]: Number(event.target.value || 0),
+                                }))
+                              }
+                              disabled={disabled || fieldIndex >= editableFieldCount}
+                              onWheel={(event) => (event.target as HTMLInputElement).blur()}
+                            />
+                            <span className="absolute right-2 text-xs text-muted-foreground pointer-events-none select-none">
+                              $
+                            </span>
+                          </div>
+                        </td>
+                      ))}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
 }
-
-// ─── Add Account Type Inline Row ─────────────────────────────────────────────
 
 function AddAccountTypeRow({
   availableAccountTypes,
   onAdd,
 }: {
   availableAccountTypes: AccountTypeOption[];
-  onAdd: (id: string) => void;
+  onAdd: (id: string) => Promise<void>;
 }) {
   const [selected, setSelected] = useState("");
+  const [adding, setAdding] = useState(false);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!selected) return;
-    onAdd(selected);
-    setSelected("");
+    try {
+      setAdding(true);
+      await onAdd(selected);
+      setSelected("");
+    } finally {
+      setAdding(false);
+    }
   };
 
   if (availableAccountTypes.length === 0) return null;
@@ -277,7 +236,7 @@ function AddAccountTypeRow({
     <div className="flex items-center gap-2 rounded-lg border border-dashed bg-muted/20 px-4 py-3">
       <Select value={selected} onValueChange={setSelected}>
         <SelectTrigger className="h-8 flex-1 text-sm">
-          <SelectValue placeholder="Select account type to add…" />
+          <SelectValue placeholder="Select account type to add..." />
         </SelectTrigger>
         <SelectContent>
           {availableAccountTypes.map((option) => (
@@ -292,17 +251,19 @@ function AddAccountTypeRow({
         size="sm"
         variant="outline"
         onClick={handleAdd}
-        disabled={!selected}
+        disabled={!selected || adding}
         className="h-8 shrink-0"
       >
-        <Plus className="mr-1.5 h-3.5 w-3.5" />
+        {adding ? (
+          <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+        ) : (
+          <Plus className="mr-1.5 h-3.5 w-3.5" />
+        )}
         Add
       </Button>
     </div>
   );
 }
-
-// ─── Main Form ────────────────────────────────────────────────────────────────
 
 export function IbPlanForm({
   open,
@@ -311,6 +272,7 @@ export function IbPlanForm({
   initialData,
   readOnly = false,
   accountTypeOptions,
+  loadAccountTypeById,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -318,6 +280,7 @@ export function IbPlanForm({
   initialData?: IbPlanRow | null;
   readOnly?: boolean;
   accountTypeOptions: AccountTypeOption[];
+  loadAccountTypeById: (id: string) => Promise<IbPlanAccountTypeRow | null>;
 }) {
   const [form, setForm] = useState<FormValue>(createEmptyForm);
 
@@ -351,9 +314,12 @@ export function IbPlanForm({
     [accountTypeOptions, form.account_types],
   );
 
-  const addAccountType = (id: string) => {
+  const addAccountType = async (id: string) => {
     const option = accountTypeOptions.find((item) => item.id === id);
     if (!option) return;
+
+    const detail = await loadAccountTypeById(id);
+
     setForm((current) => ({
       ...current,
       account_types: [
@@ -361,7 +327,7 @@ export function IbPlanForm({
         {
           account_type_id: option.id,
           account_type_name: option.name,
-          commissions: buildDefaultCommissions(),
+          commissions: mergeCommissions(detail?.commissions ?? buildDefaultCommissions()),
         },
       ],
     }));
@@ -417,7 +383,6 @@ export function IbPlanForm({
           </DialogHeader>
 
           <div className="space-y-6 py-4">
-            {/* ── Plan details ── */}
             <section className="space-y-4">
               <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 Plan Details
@@ -462,7 +427,7 @@ export function IbPlanForm({
                         description: event.target.value,
                       }))
                     }
-                    placeholder="Describe this IB plan…"
+                    placeholder="Describe this IB plan..."
                     disabled={disabled}
                     rows={2}
                   />
@@ -470,7 +435,6 @@ export function IbPlanForm({
               </div>
             </section>
 
-            {/* ── Account Types ── */}
             <section className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
@@ -501,7 +465,6 @@ export function IbPlanForm({
                 </div>
               )}
 
-              {/* Add account type — always at the bottom of the list */}
               {!disabled && (
                 <AddAccountTypeRow
                   availableAccountTypes={availableAccountTypes}

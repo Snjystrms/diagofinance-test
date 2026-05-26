@@ -12,6 +12,7 @@ import { useAuth } from "@/contexts/auth-context";
 import {
   adminAccountTypesApi,
   adminIbPlansApi,
+  type AccountTypeCommissionItem,
   type AccountTypeItem,
   type AdminIbPlanAccountTypeItem,
   type AdminIbPlanCommissionItem,
@@ -118,6 +119,21 @@ const normalizeCommissions = (commissions?: AdminIbPlanCommissionItem[]): IbPlan
   );
 };
 
+const normalizeAccountTypeCommissionRows = (
+  commissions?: AccountTypeCommissionItem[],
+): IbPlanCommissionRow[] =>
+  normalizeCommissions(
+    (commissions ?? []).map((row) => ({
+      level: row.level,
+      rate_ib: toNumericValue(row.rate_ib),
+      rate_sub_ib_1: toNumericValue(row.rate_sub_ib_1),
+      rate_sub_ib_2: toNumericValue(row.rate_sub_ib_2),
+      rate_sub_ib_3: toNumericValue(row.rate_sub_ib_3),
+      rate_sub_ib_4: toNumericValue(row.rate_sub_ib_4),
+      rate_sub_ib_5: toNumericValue(row.rate_sub_ib_5),
+    })),
+  );
+
 const normalizeAccountTypes = (accountTypes?: AdminIbPlanAccountTypeItem[]): IbPlanAccountTypeRow[] =>
   (accountTypes ?? []).map((accountType) => ({
     account_type_id: String(accountType.account_type_id),
@@ -221,6 +237,40 @@ export default function IbPlansManagementPage() {
     [token],
   );
 
+  const fetchAccountTypeDetail = useCallback(
+    async (id: string): Promise<IbPlanAccountTypeRow | null> => {
+      if (!token) {
+        throw new Error("Missing auth token");
+      }
+
+      await adminAccountTypesApi.list({ token });
+      const response = await adminAccountTypesApi.getById(id, token);
+      const payload = response?.data as
+        | { accountType?: AccountTypeItem; data?: AccountTypeItem }
+        | AccountTypeItem
+        | undefined;
+      let accountType: AccountTypeItem | null = null;
+      if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+        if ("accountType" in payload || "data" in payload) {
+          accountType = payload.accountType ?? payload.data ?? null;
+        } else {
+          accountType = payload as AccountTypeItem;
+        }
+      }
+
+      if (!accountType) {
+        return null;
+      }
+
+      return {
+        account_type_id: String(accountType.id),
+        account_type_name: accountType.name ?? `Account Type ${accountType.id}`,
+        commissions: normalizeAccountTypeCommissionRows(accountType.ib_commissions),
+      };
+    },
+    [token],
+  );
+
   const invalidatePlans = useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ["ibPlans", token] });
   }, [queryClient, token]);
@@ -301,9 +351,10 @@ export default function IbPlansManagementPage() {
         }
         readOnly={props.readOnly}
         accountTypeOptions={accountTypesResult}
+        loadAccountTypeById={fetchAccountTypeDetail}
       />
     ),
-    [accountTypesResult],
+    [accountTypesResult, fetchAccountTypeDetail],
   );
 
   if (loading && data.length === 0) {
@@ -379,6 +430,7 @@ export default function IbPlansManagementPage() {
           readOnly={true}
           onSubmit={() => {}}
           accountTypeOptions={accountTypesResult}
+          loadAccountTypeById={fetchAccountTypeDetail}
         />
       </div>
     </ProtectedRoute>
