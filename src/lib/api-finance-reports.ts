@@ -921,6 +921,124 @@ export interface LoginActivityReportItem {
   };
 }
 
+export interface TransactionReportItem {
+  id: number | string;
+  transaction_type?: string | null;
+  transaction_type_label?: string | null;
+  name?: string | null;
+  email?: string | null;
+  name_email?: string | null;
+  amount: number | string;
+  payment_method?: string | null;
+  reference?: string | null;
+  status?: string | null;
+  status_text?: string | null;
+  date?: string | null;
+  created_at: string;
+}
+
+export interface TransactionReportListParams {
+  token: string;
+  search?: string;
+  page?: number;
+  per_page?: number;
+}
+
+export interface TransactionReportListPayload {
+  success: boolean;
+  message: string;
+  data: TransactionReportItem[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+    from: number;
+    to: number;
+  };
+  filters?: {
+    search?: string | null;
+  };
+}
+
+export interface TransactionReportExportParams {
+  token: string;
+  format?: "xlsx" | "csv";
+  search?: string;
+}
+
+export const adminTransactionReportApi = {
+  list: (params: TransactionReportListParams) => {
+    const { token, ...queryParams } = params;
+    if (!token) {
+      throw new Error("Token is required to fetch transaction report");
+    }
+
+    const qs = new URLSearchParams();
+    if (queryParams.page) qs.set("page", String(queryParams.page));
+    if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
+    if (queryParams.search && queryParams.search.trim()) {
+      qs.set("search", queryParams.search.trim());
+    }
+
+    const endpoint = `/admin/reports/transaction-report${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<TransactionReportListPayload>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  export: async ({ token, format = "xlsx", search }: TransactionReportExportParams) => {
+    if (!token) {
+      throw new Error("Token is required to export transaction report");
+    }
+
+    if (!API_BASE_URL) {
+      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("format", format);
+    if (search && search.trim()) {
+      qs.set("search", search.trim());
+    }
+
+    const endpoint = `/admin/reports/transaction-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message:
+          (payload &&
+          typeof payload === "object" &&
+          "message" in payload &&
+          typeof payload.message === "string"
+            ? payload.message
+            : null) ||
+          `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+
+    const blob = await response.blob();
+    return {
+      blob,
+      filename: parseContentDispositionFilename(
+        response.headers.get("content-disposition"),
+        `transaction-report.${format === "csv" ? "csv" : "xlsx"}`
+      ),
+    };
+  },
+};
+
 export interface LoginActivityReportListParams {
   token: string;
   search?: string;

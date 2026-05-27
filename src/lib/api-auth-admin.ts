@@ -212,6 +212,7 @@ export interface PendingUser {
   email_verified: number;
   payment_verified: number;
   created_at: string;
+  sponsor_by: string | number | null;
 }
 
 export type AdminUsersListApiData = {

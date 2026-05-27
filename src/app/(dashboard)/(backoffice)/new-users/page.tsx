@@ -134,6 +134,7 @@ const transformUser = (raw: Record<string, unknown>): PendingUser => {
     country: String(raw.country ?? ""),
     country_code: String(raw.country_code ?? ""),
     sponsor_id: String(raw.sponsor_id ?? ""),
+    sponsor_by: raw.sponsor_by == null ? null : String(raw.sponsor_by),
     referral_code: String(raw.referral_code ?? ""),
     status: String(raw.status ?? ""),
     email_verified: typeof raw.email_verified === "number" ? raw.email_verified : Number(raw.email_verified ?? 0) || 0,

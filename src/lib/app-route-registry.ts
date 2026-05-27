@@ -694,6 +694,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "notification",
     navLabel: "All Notifications",
   },
+ {
+    path: "/report-management/all-transaction-report",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "reports",
+    navLabel: "All Transaction Report",
+    managerCategories: ["Report Management"],
+  },
   {
     path: "/report-management",
     audience: "backoffice",
@@ -903,6 +911,9 @@ function isManagerRouteFeatureAllowed(path: string, permissionNames: Set<string>
   if (path === "/report-management") {
     return hasManagerFeature(permissionNames, "reportManagement", "depositReport");
   }
+   if (path === "/report-management/all-transaction-report") {
+    return hasManagerFeature(permissionNames, "reportManagement", "allTransactionReport");
+  }
   if (path === "/report-management/withdrawal-report") {
     return hasManagerFeature(permissionNames, "reportManagement", "withdrawReport");
   }
@@ -1059,6 +1070,7 @@ export function getManagerNavigation(groupedPermissions?: GroupedPermissions[]):
     path: string;
     featureKey:
       | "depositReport"
+      | "allTransactionReport"
       | "withdrawReport"
       | "ibWithdrawReport"
       | "internalTransferReport"
@@ -1066,6 +1078,7 @@ export function getManagerNavigation(groupedPermissions?: GroupedPermissions[]):
       | "historyReport";
   }> = [
     { path: "/report-management", featureKey: "depositReport" },
+    { path: "/report-management/all-transaction-report", featureKey: "allTransactionReport" },
     { path: "/report-management/withdrawal-report", featureKey: "withdrawReport" },
     { path: "/report-management/ib-withdrawal-report", featureKey: "ibWithdrawReport" },
     { path: "/report-management/internal-transfer-report", featureKey: "internalTransferReport" },

@@ -297,6 +297,17 @@ export const getColumnsWithActions = (
       </div>
     ),
   },
+    {
+    id: "referred_by",
+    accessorKey: "sponsor_by",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Referred By" />,
+    cell: ({ row }) => (
+      <div className="flex items-center gap-1 text-sm">
+        <User className="h-4 w-4 text-muted-foreground" />
+        <span>{row.original.sponsor_by || "Not referred"}</span>
+      </div>
+    ),
+  },
   {
     id: "actions",
     header: "Actions",

@@ -91,6 +91,19 @@ const getCurrencyFromCountry = (country?: string | null): string | null => {
   return COUNTRY_CURRENCY_MAP[normalizedCountry] ?? null;
 };
 
+const getExplorerUrl = (chainId: string, transactionHash: string): string => {
+  if (chainId === "TRC20") {
+    return `https://tronscan.org/#/transaction/${transactionHash}`;
+  }
+  if (chainId === "ERC20" || chainId === "ETH") {
+    return `https://etherscan.io/tx/${transactionHash}`;
+  }
+  if (chainId === "BEP20" || chainId === "BSC") {
+    return `https://bscscan.com/tx/${transactionHash}`;
+  }
+  return `https://bscscan.com/tx/${transactionHash}`;
+};
+
 function WithdrawalRequestContent() {
   const { token } = useAuth();
   const [withdrawalType, setWithdrawalType] = useState<"crypto" | "bank">(
@@ -113,6 +126,9 @@ function WithdrawalRequestContent() {
   );
   const [bankDetailsLoading, setBankDetailsLoading] = useState(true);
   const [bankTransferMethodId, setBankTransferMethodId] = useState<
+    number | null
+  >(null);
+  const [localPaymentMethodId, setLocalPaymentMethodId] = useState<
     number | null
   >(null);
   const [currencyRates, setCurrencyRates] = useState<CurrencyRateItem[]>([]);
@@ -172,6 +188,7 @@ function WithdrawalRequestContent() {
       if (!token) {
         setBankDetails(null);
         setBankTransferMethodId(null);
+        setLocalPaymentMethodId(null);
         setBankDetailsLoading(false);
         return;
       }
@@ -207,15 +224,24 @@ function WithdrawalRequestContent() {
         const bankTransferMethod = methods.find(
           (method) => method.type === "bank_transfer",
         );
+        const localPaymentMethod = methods.find(
+          (method) => method.type === "local",
+        );
         setBankTransferMethodId(
           typeof bankTransferMethod?.id === "number"
             ? bankTransferMethod.id
+            : null,
+        );
+        setLocalPaymentMethodId(
+          typeof localPaymentMethod?.id === "number"
+            ? localPaymentMethod.id
             : null,
         );
       } catch (fetchError) {
         console.error("Failed to load withdrawal metadata:", fetchError);
         setBankDetails(null);
         setBankTransferMethodId(null);
+        setLocalPaymentMethodId(null);
       } finally {
         setBankDetailsLoading(false);
       }
@@ -358,6 +384,10 @@ function WithdrawalRequestContent() {
         setError("Please select a network");
         return;
       }
+      if (!localPaymentMethodId) {
+        setError("Crypto withdrawal is unavailable right now.");
+        return;
+      }
     } else if (!supportsBankWithdrawal) {
       setError(
         "Bank withdrawal is unavailable. Please add bank details first.",
@@ -372,6 +402,7 @@ function WithdrawalRequestContent() {
         isCryptoWithdrawal
           ? {
               amount,
+              payment_method_id: localPaymentMethodId ?? undefined,
               wallet_address: walletAddress.trim(),
               chain_id: chainId,
             }
@@ -831,16 +862,6 @@ function WithdrawalRequestContent() {
                             {withdrawalData.status || "Pending"}
                           </Badge>
                         </div>
-                        {withdrawalData.id && (
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm text-muted-foreground">
-                              Request ID:
-                            </span>
-                            <span className="font-mono text-sm text-emerald-800 dark:text-emerald-200">
-                              #{withdrawalData.id}
-                            </span>
-                          </div>
-                        )}
                       </div>
                     </div>
                   )}
@@ -849,7 +870,18 @@ function WithdrawalRequestContent() {
                     <Button
                       variant="outline"
                       onClick={() => {
-                        window.location.href = "/funds/withdraw";
+                        const transactionHash = withdrawalData?.transaction_hash;
+                        if (!transactionHash) {
+                          setError(
+                            "Transaction hash is not available yet. Please check again later.",
+                          );
+                          return;
+                        }
+                        const explorerUrl = getExplorerUrl(
+                          withdrawalData?.chain_id || chainId,
+                          transactionHash,
+                        );
+                        window.open(explorerUrl, "_blank", "noopener,noreferrer");
                       }}
                       className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-900/20"
                     >
