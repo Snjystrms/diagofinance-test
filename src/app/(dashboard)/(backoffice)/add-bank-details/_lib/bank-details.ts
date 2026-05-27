@@ -129,31 +129,61 @@ export const validateBankDetailForm = (
   values: BankDetailFormValues,
   options: { requireUserUuid: boolean }
 ) => {
+  const accountHolder = values.account_holder_name.trim();
+  const accountNumber = values.account_number.trim();
+  const iban = values.iban_number.trim().toUpperCase();
+  const swiftIfsc = values.swift_ifsc_code.trim().toUpperCase();
+  const bankName = values.bank_name.trim();
+  const address = values.address.trim();
+  const country = values.country.trim();
+
   if (options.requireUserUuid && !values.user_uuid.trim()) {
     return "Please select a user.";
   }
 
-  if (!values.account_holder_name.trim()) {
+  if (!accountHolder) {
     return "Account holder name is required.";
   }
+  if (!/^[a-zA-Z\s.'-]{2,100}$/.test(accountHolder)) {
+    return "Enter a valid account holder name.";
+  }
 
-  if (!values.account_number.trim()) {
+  if (!accountNumber) {
     return "Account number is required.";
   }
+  if (!/^\d{6,18}$/.test(accountNumber)) {
+    return "Account number must be 6-18 digits only.";
+  }
 
-  if (!values.swift_ifsc_code.trim()) {
+  if (!iban) {
+    return "IBAN number is required.";
+  }
+  if (!/^[A-Z]{2}[A-Z0-9]{13,32}$/.test(iban)) {
+    return "Enter a valid IBAN number.";
+  }
+
+  if (!swiftIfsc) {
     return "Swift/IFSC code is required.";
   }
+  if (!/^[A-Z0-9]{8,15}$/.test(swiftIfsc)) {
+    return "Enter a valid Swift/IFSC code.";
+  }
 
-  if (!values.bank_name.trim()) {
+  if (!bankName) {
     return "Bank name is required.";
   }
-
-  if (!values.address.trim()) {
-    return "Bank address is required.";
+  if (bankName.length < 2) {
+    return "Bank name must be at least 2 characters.";
   }
 
-  if (!values.country.trim()) {
+  if (!address) {
+    return "Bank address is required.";
+  }
+  if (address.length < 5) {
+    return "Bank address must be at least 5 characters.";
+  }
+
+  if (!country) {
     return "Country is required.";
   }
 

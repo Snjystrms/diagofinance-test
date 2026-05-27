@@ -17,6 +17,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { ThemeCustomizer } from "@/components/theme-customizer"
 import { SidebarSelector } from "@/components/sidebar-selector"
+import { showDevThemeTools } from "@/components/theme-provider"
 import { useAuth } from "@/contexts/auth-context"
 import { useSessionLogout } from "@/hooks/use-session-logout"
 import { usePathname, useRouter } from "next/navigation"
@@ -244,13 +245,15 @@ export function Header() {
                   </g>
                 </svg>
               </button>
-              <button
-                onClick={() => setThemeCustomizerOpen(true)}
-                title="Customize Theme"
-                className="flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background text-foreground"
-              >
-                <Palette className="h-4 w-4" />
-              </button>
+              {showDevThemeTools ? (
+                <button
+                  onClick={() => setThemeCustomizerOpen(true)}
+                  title="Customize Theme"
+                  className="flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background text-foreground"
+                >
+                  <Palette className="h-4 w-4" />
+                </button>
+              ) : null}
             </>
           )}
 
@@ -393,7 +396,9 @@ export function Header() {
 
       </header>
 
-      <ThemeCustomizer open={themeCustomizerOpen} onOpenChange={setThemeCustomizerOpen} />
+      {showDevThemeTools ? (
+        <ThemeCustomizer open={themeCustomizerOpen} onOpenChange={setThemeCustomizerOpen} />
+      ) : null}
       <SidebarSelector open={sidebarSelectorOpen} onOpenChange={setSidebarSelectorOpen} />
       <TwoFactorModal 
         open={twoFactorModalOpen}

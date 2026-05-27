@@ -109,7 +109,11 @@ export function AdminBankDetailsPageContent() {
 
       return extractAdminUserOptions((response.data ?? null) as AdminUsersListApiData | null);
     },
-    enabled: Boolean(token) && canMutate && dialogMode === "create",
+    enabled:
+      Boolean(token) &&
+      canMutate &&
+      dialogMode === "create" &&
+      deferredUserSearch.length >= 3,
     staleTime: 30 * 1000,
   });
 

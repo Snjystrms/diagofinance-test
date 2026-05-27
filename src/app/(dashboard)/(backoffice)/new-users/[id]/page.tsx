@@ -839,12 +839,12 @@ export default function NewUserDetailPage() {
                             <h2 className="text-3xl font-semibold tracking-tight text-foreground">
                               {[crudUser?.first_name, crudUser?.last_name].filter(Boolean).join(" ") || "Unknown User"}
                             </h2>
-                            {statusBadge(crudUser?.status, "profile")}
-                            {normalizeBooleanLabel(crudUser?.is_approved) === "Yes" ? (
+                            {/* {statusBadge(crudUser?.status, "profile")} */}
+                            {/* {normalizeBooleanLabel(crudUser?.is_approved) === "Yes" ? (
                               <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Approved</Badge>
                             ) : (
                               <Badge variant="secondary">Pending Approval</Badge>
-                            )}
+                            )} */}
                           </div>
                           <div className="mt-3 flex flex-wrap gap-3 text-sm text-muted-foreground">
                             <span className="inline-flex items-center gap-2">

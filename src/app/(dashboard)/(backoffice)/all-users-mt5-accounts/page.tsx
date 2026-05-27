@@ -546,7 +546,7 @@ export default function AllUsersMT5AccountsPage() {
             </div>
 
             {/* Additional Filters Row */}
-            <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            {/* <div className="flex flex-col gap-3 md:flex-row md:items-center">
               <div className="flex w-full max-w-xs items-center gap-2">
                 <Input
                   value={userIdFilter ?? ""}
@@ -585,7 +585,7 @@ export default function AllUsersMT5AccountsPage() {
                   className="h-9 text-sm"
                 />
               </div>
-            </div>
+            </div> */}
 
             <div className="text-sm text-muted-foreground">
               Showing page {pagination.current_page} of {pagination.total_pages} -{" "}

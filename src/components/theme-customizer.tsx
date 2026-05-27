@@ -9,6 +9,7 @@ import { Separator } from "@/components/ui/separator"
 import { Check, Palette, Image, Link } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useClientCustomization } from "@/contexts/client-customization-context"
+import { showDevThemeTools } from "@/components/theme-provider"
 
 interface SidebarThemeOverrides {
   background?: string
@@ -1260,6 +1261,10 @@ export function applyThemeById(themeId: string) {
 /** ---------- Component ---------- **/
 
 export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
+  if (!showDevThemeTools) {
+    return null
+  }
+
   const { canCustomizeTheme, themePairId, setThemePairId } = useClientCustomization()
   const [activeTab, setActiveTab] = useState<"background" | "shortcuts" | "color-theme">("color-theme")
   const [selectedThemePairId, setSelectedThemePairId] = useState<string>(themePairId)
