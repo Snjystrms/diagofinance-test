@@ -34,7 +34,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 
 import {
@@ -57,14 +56,11 @@ const amountFieldSchema = z
     return !Number.isNaN(num) && num > 0;
   }, "Amount must be a positive number");
 
-const remarksSchema = z.string().optional();
-
 const mt5ToMt5Schema = z
   .object({
     fromAccountId: z.string().min(1, "Select an MT5 account"),
     toAccountId: z.string().min(1, "Select an MT5 account"),
     amount: amountFieldSchema,
-    remarks: remarksSchema,
   })
   .refine((values) => values.fromAccountId !== values.toAccountId, {
     message: "From and To accounts must be different",
@@ -76,7 +72,7 @@ const walletToWalletSchema = z
     fromWalletType: z.string().min(1, "Select a source wallet"),
     toWalletType: z.string().min(1, "Select a destination wallet"),
     amount: amountFieldSchema,
-    remarks: remarksSchema,
+    remarks: z.string().optional(),
   })
   .refine((values) => values.fromWalletType !== values.toWalletType, {
     message: "From and To wallets must be different",
@@ -87,14 +83,12 @@ const walletToMt5Schema = z.object({
   fromWalletType: z.string().min(1, "Select a wallet"),
   toAccountId: z.string().min(1, "Select an MT5 account"),
   amount: amountFieldSchema,
-  remarks: remarksSchema,
 });
 
 const mt5ToWalletSchema = z.object({
   fromAccountId: z.string().min(1, "Select an MT5 account"),
   toWalletType: z.string().min(1, "Select a wallet"),
   amount: amountFieldSchema,
-  remarks: remarksSchema,
 });
 
 type Mt5ToMt5FormValues = z.infer<typeof mt5ToMt5Schema>;
@@ -147,7 +141,6 @@ function InternalTransferContent() {
       fromAccountId: "",
       toAccountId: "",
       amount: "",
-      remarks: "",
     },
   });
 
@@ -167,7 +160,6 @@ function InternalTransferContent() {
       fromWalletType: "main",
       toAccountId: "",
       amount: "",
-      remarks: "",
     },
   });
 
@@ -177,7 +169,6 @@ function InternalTransferContent() {
       fromAccountId: "",
       toWalletType: "main",
       amount: "",
-      remarks: "",
     },
   });
 
@@ -346,11 +337,19 @@ function InternalTransferContent() {
     }
 
     try {
+      const fromAccount = mt5Accounts.find(
+        (account) => account.account_id === values.fromAccountId,
+      );
+      const toAccount = mt5Accounts.find(
+        (account) => account.account_id === values.toAccountId,
+      );
+      const mt5ToMt5Comment = `from MT5-${fromAccount?.mt5_id ?? values.fromAccountId} to MT5-${toAccount?.mt5_id ?? values.toAccountId}`;
+
       const payload = {
         from_mt5_account_id: values.fromAccountId,
         to_mt5_account_id: values.toAccountId,
         amount: Number(values.amount),
-        comment: sanitizeComment(values.remarks),
+        comment: mt5ToMt5Comment,
         from_mt5_user_id: String(user.id),
         to_mt5_user_id: String(user.id),
       };
@@ -364,7 +363,6 @@ function InternalTransferContent() {
           fromAccountId: values.fromAccountId,
           toAccountId: values.toAccountId,
           amount: "",
-          remarks: "",
         });
       }
     } catch (error) {
@@ -429,10 +427,15 @@ function InternalTransferContent() {
     }
 
     try {
+      const toAccount = mt5Accounts.find(
+        (account) => account.account_id === values.toAccountId,
+      );
+      const walletToMt5Comment = `from wallet to MT5 - ${toAccount?.mt5_id ?? values.toAccountId}`;
+
       const payload = {
         account_ref: values.toAccountId,
         amount: Number(values.amount),
-        comment: sanitizeComment(values.remarks),
+        comment: walletToMt5Comment,
       };
 
       const response = await internalTransferApi.userWalletToMt5(
@@ -447,7 +450,6 @@ function InternalTransferContent() {
           fromWalletType: values.fromWalletType,
           toAccountId: values.toAccountId,
           amount: "",
-          remarks: "",
         });
       }
     } catch (error) {
@@ -469,11 +471,16 @@ function InternalTransferContent() {
     }
 
     try {
+      const fromAccount = mt5Accounts.find(
+        (account) => account.account_id === values.fromAccountId,
+      );
+      const mt5ToWalletComment = `from MT5 - ${fromAccount?.mt5_id ?? values.fromAccountId} to Wallet`;
+
       const payload = {
         from_mt5_account_id: values.fromAccountId,
         to_wallet_type: values.toWalletType,
         amount: Number(values.amount),
-        remarks: sanitizeComment(values.remarks),
+        remarks: mt5ToWalletComment,
       };
 
       const response = await internalTransferApi.mt5ToUserWallet(
@@ -488,7 +495,6 @@ function InternalTransferContent() {
           fromAccountId: values.fromAccountId,
           toWalletType: values.toWalletType,
           amount: "",
-          remarks: "",
         });
       }
     } catch (error) {
@@ -781,32 +787,6 @@ function InternalTransferContent() {
                       )}
                     </div>
                   </div>
-
-                  <Separator />
-
-                  <FormField
-                    control={walletToMt5Form.control}
-                    name="remarks"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          Remarks{" "}
-                          <span className="font-normal text-muted-foreground">
-                            (optional)
-                          </span>
-                        </FormLabel>
-                        <FormControl>
-                          <Textarea
-                            rows={3}
-                            placeholder="Add a note for this transfer…"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
                   <div className="flex items-center justify-between pt-2 border-t">
                     <p className="text-xs text-muted-foreground">
                       Funds arrive instantly
@@ -959,32 +939,6 @@ function InternalTransferContent() {
                       />
                     </div>
                   </div>
-
-                  <Separator />
-
-                  <FormField
-                    control={mt5ToWalletForm.control}
-                    name="remarks"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          Remarks{" "}
-                          <span className="font-normal text-muted-foreground">
-                            (optional)
-                          </span>
-                        </FormLabel>
-                        <FormControl>
-                          <Textarea
-                            rows={3}
-                            placeholder="Add a note for this transfer…"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
                   <div className="flex items-center justify-between pt-2 border-t">
                     <p className="text-xs text-muted-foreground">
                       Funds arrive instantly
@@ -1128,32 +1082,6 @@ function InternalTransferContent() {
                       />
                     </div>
                   </div>
-
-                  <Separator />
-
-                  <FormField
-                    control={mt5ToMt5Form.control}
-                    name="remarks"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>
-                          Remarks{" "}
-                          <span className="font-normal text-muted-foreground">
-                            (optional)
-                          </span>
-                        </FormLabel>
-                        <FormControl>
-                          <Textarea
-                            rows={3}
-                            placeholder="Add a note for this transfer…"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
                   <div className="flex items-center justify-between pt-2 border-t">
                     <p className="text-xs text-muted-foreground">
                       Funds arrive instantly
@@ -1184,3 +1112,4 @@ export default function InternalTransferPage() {
     </div>
   );
 }
+

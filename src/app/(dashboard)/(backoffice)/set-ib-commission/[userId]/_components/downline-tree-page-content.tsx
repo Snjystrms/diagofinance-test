@@ -570,7 +570,7 @@ export function DownlineTreePageContent({
           username: n.username,
           packageSum: n.packageSum,
           totalBV: n.totalBV ?? 0,
-          level: n.depth === 0 ? 'IB' : `Level-${n.depth}`,
+          level: n.depth === 0 ? 'Level-IB' : `Level-${n.depth}`,
           status: n.status ?? 1,
           isRoot: n.isRoot,
           highlighted: highlightId === n.sponsorId,
@@ -1062,6 +1062,3 @@ export function DownlineTreePageContent({
     </>
   );
 }
-
-
-

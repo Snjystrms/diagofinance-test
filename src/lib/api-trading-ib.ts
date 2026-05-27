@@ -986,6 +986,95 @@ export const adminIbUsersApi = {
   },
 };
 
+export interface IbCommissionReportUser {
+  user_id: number;
+  name: string;
+  email: string;
+  sponsor_id: string;
+  volume: number;
+  commission: number;
+  trade_count: number;
+  trade_days: number;
+}
+
+export interface IbCommissionReportLevel {
+  level: number;
+  level_label: string;
+  total_commission: number;
+  user_count: number;
+  trade_count: number;
+  trade_days: number;
+  volume: number;
+  users: IbCommissionReportUser[];
+}
+
+export interface IbCommissionReportSummaryLevel {
+  commission: number;
+  user_count: number;
+  trade_count: number;
+  trade_days?: number;
+  volume?: number;
+}
+
+export interface IbCommissionReportPayload {
+  ib_user: {
+    id: number;
+    name: string;
+    email: string;
+    ib_name: string;
+    sponsor_id: string;
+    status: number | string;
+  };
+  filters: {
+    date_from: string | null;
+    date_to: string | null;
+  };
+  summary: {
+    total_commission: number;
+    total_downline_users: number;
+    total_trade_count: number;
+    level_1?: IbCommissionReportSummaryLevel;
+    by_level?: Record<string, IbCommissionReportSummaryLevel>;
+  };
+  levels: IbCommissionReportLevel[];
+}
+
+export type AdminIbCommissionLevelReportParams = {
+  token: string;
+  user_id: number | string;
+  date_from?: string | null;
+  date_to?: string | null;
+};
+
+export const adminIbCommissionReportApi = {
+  getCommissionLevelReport: ({
+    token,
+    user_id,
+    date_from,
+    date_to,
+  }: AdminIbCommissionLevelReportParams) => {
+    if (!token) {
+      throw new Error("Token is required to fetch IB commission level report");
+    }
+    if (user_id === null || user_id === undefined || `${user_id}`.trim() === "") {
+      throw new Error("User ID is required to fetch IB commission level report");
+    }
+
+    const qs = new URLSearchParams();
+    if (date_from) qs.set("date_from", date_from);
+    if (date_to) qs.set("date_to", date_to);
+
+    const endpoint = `/admin/ib-management/commission-level-report/${encodeURIComponent(
+      String(user_id)
+    )}${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<IbCommissionReportPayload>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
+
 export interface UserCommission {
   id: number;
   account_type_id: number;

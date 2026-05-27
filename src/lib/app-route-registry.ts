@@ -718,6 +718,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     navLabel: "IB Withdrawal Report",
     managerCategories: ["Report Management"],
   },
+    {
+    path: "/report-management/ib-commission-report",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "reports",
+    navLabel: "IB Commission Report",
+    managerCategories: ["Report Management"],
+  },
   {
     path: "/report-management/internal-transfer-report",
     audience: "backoffice",
