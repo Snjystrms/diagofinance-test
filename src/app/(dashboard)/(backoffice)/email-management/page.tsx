@@ -76,7 +76,7 @@ export default function EmailManagementPage() {
   });
 
   const filteredUsers = useMemo(() => {
-    if (!deferredSearch) return allUsers.slice(0, 50);
+    if (deferredSearch.length < 3) return [];
     return allUsers
       .filter((u) =>
         `${u.name} ${u.email} ${u.username ?? ""}`.toLowerCase().includes(deferredSearch)
@@ -162,7 +162,8 @@ export default function EmailManagementPage() {
     setIsBroadcastAll(true);
   };
 
-  const showDropdown = !isBroadcastAll && userSearch.trim().length > 0 && filteredUsers.length > 0;
+  const canSearchUsers = userSearch.trim().length >= 3;
+  const showDropdown = !isBroadcastAll && canSearchUsers && filteredUsers.length > 0;
 
   return (
     <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8 space-y-6">
@@ -220,7 +221,7 @@ export default function EmailManagementPage() {
                     <div className="relative">
                       <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                       <Input
-                        placeholder="Search by name or email"
+                        placeholder="Type at least 3 letters to search by name or email"
                         className="pl-9"
                         value={userSearch}
                         onChange={(e) => setUserSearch(e.target.value)}
@@ -262,6 +263,14 @@ export default function EmailManagementPage() {
                           })}
                         </div>
                       </div>
+                    )}
+                    {!showDropdown && canSearchUsers && !loadingUsers && (
+                      <p className="text-xs text-muted-foreground">No users found.</p>
+                    )}
+                    {!canSearchUsers && (
+                      <p className="text-xs text-muted-foreground">
+                        Type at least 3 letters to search users.
+                      </p>
                     )}
                   </div>
 

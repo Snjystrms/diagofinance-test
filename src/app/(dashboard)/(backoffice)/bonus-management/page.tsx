@@ -167,7 +167,7 @@ export default function BonusManagementPage() {
   });
 
   const filteredMt5Users = useMemo(() => {
-    if (!deferredUserSearch) return mt5Users.slice(0, 50);
+    if (deferredUserSearch.length < 3) return [];
 
     return mt5Users.filter((item) => {
       const haystack = `${item.account_id} ${item.name} ${item.email}`.toLowerCase();
@@ -497,10 +497,10 @@ export default function BonusManagementPage() {
                   options={filteredMt5Users}
                   searchValue={userSearch}
                   selectedValue={form.mt5_id}
-                  placeholder="Search by account, name, or email"
-                  loading={isLoadingMt5Users}
+                  placeholder="Type at least 3 letters to search MT5 accounts"
+                  loading={userSearch.trim().length >= 3 ? isLoadingMt5Users : false}
                   loadingMessage="Loading MT5 accounts..."
-                  idleMessage="Start typing to search MT5 accounts."
+                  idleMessage="Type at least 3 letters to search MT5 accounts."
                   emptyMessage="No MT5 accounts found."
                   onSearchValueChange={(value) => {
                     setUserSearch(value);

@@ -113,7 +113,8 @@ export function CreateAccountDialog({
   };
 
   const debouncedUserSearch = useDebouncedCallback(async (search: string) => {
-    if (!token || !search.trim()) {
+    const trimmed = search.trim();
+    if (!token || trimmed.length < 3) {
       setUsers([]);
       return;
     }
@@ -124,7 +125,7 @@ export function CreateAccountDialog({
         token,
         page: 1,
         limit: 50,
-        search: search.trim(),
+        search: trimmed,
       });
 
       const data = response?.data;
@@ -155,7 +156,7 @@ export function CreateAccountDialog({
   }, 300);
 
   useEffect(() => {
-    if (userSearchQuery.trim()) {
+    if (userSearchQuery.trim().length >= 3) {
       debouncedUserSearch(userSearchQuery);
     } else {
       setUsers([]);
@@ -269,10 +270,10 @@ export function CreateAccountDialog({
                 options={users}
                 searchValue={userSearchQuery}
                 selectedValue={selectedUser ? String(selectedUser.id) : ""}
-                placeholder="Search users by name, email, or mobile"
-                loading={loadingUsers}
+                placeholder="Type at least 3 letters to search users"
+                loading={userSearchQuery.trim().length >= 3 ? loadingUsers : false}
                 loadingMessage="Searching users..."
-                idleMessage="Start typing to search users."
+                idleMessage="Type at least 3 letters to search users."
                 emptyMessage="No users found."
                 onSearchValueChange={handleUserSearchChange}
                 onOptionSelect={handleUserSelect}
