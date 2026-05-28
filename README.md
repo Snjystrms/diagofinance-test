@@ -85,7 +85,7 @@ The application integrates with the following backend APIs:
    NEXT_PUBLIC_API_URL=http://192.168.1.45:3000
    ```
 
-4. **Run the development server****
+4. **Run the development server**
    ```bash
    npm run dev
    ```
