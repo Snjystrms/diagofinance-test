@@ -97,6 +97,7 @@ const transformUser = (raw: Record<string, unknown>): PendingUser => {
     country: String(raw.country ?? ""),
     country_code: String(raw.country_code ?? ""),
     sponsor_id: String(raw.sponsor_id ?? ""),
+    sponsor_by: (raw.sponsor_by as string | number | null) ?? null,
     referral_code: String(raw.referral_code ?? ""),
     status: String(raw.status ?? ""),
     two_fa_enabled: raw.two_fa_enabled as boolean | number | string | undefined,

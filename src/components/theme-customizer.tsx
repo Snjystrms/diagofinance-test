@@ -1261,10 +1261,6 @@ export function applyThemeById(themeId: string) {
 /** ---------- Component ---------- **/
 
 export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
-  if (!showDevThemeTools) {
-    return null
-  }
-
   const { canCustomizeTheme, themePairId, setThemePairId } = useClientCustomization()
   const [activeTab, setActiveTab] = useState<"background" | "shortcuts" | "color-theme">("color-theme")
   const [selectedThemePairId, setSelectedThemePairId] = useState<string>(themePairId)
@@ -1290,6 +1286,10 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
     setSelectedThemePairId(initialThemePairId)
     setThemePairId(initialThemePairId)
     onOpenChange(false)
+  }
+
+  if (!showDevThemeTools) {
+    return null
   }
 
   const renderTabContent = () => {
