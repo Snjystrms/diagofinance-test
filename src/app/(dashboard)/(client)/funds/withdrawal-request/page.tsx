@@ -309,16 +309,16 @@ function WithdrawalRequestContent() {
     !isNaN(amountNumeric) && amountNumeric > 0
       ? normalizedCurrency === "USD" || normalizedCurrency === "USDT"
         ? amountNumeric
-        : sourceCurrencyToUsdRate?.rate
-          ? amountNumeric * Number(sourceCurrencyToUsdRate.rate)
+        : sourceCurrencyToUsdRate?.withdrawal_rate
+          ? amountNumeric * Number(sourceCurrencyToUsdRate.withdrawal_rate)
           : null
       : null;
   const convertedBankAmount =
     sourceAmountInUsd !== null && destinationBankCurrency
       ? destinationBankCurrency.toUpperCase() === "USD"
         ? sourceAmountInUsd
-        : destinationCurrencyToUsdRate?.rate
-          ? sourceAmountInUsd / Number(destinationCurrencyToUsdRate.rate)
+        : destinationCurrencyToUsdRate?.withdrawal_rate
+          ? sourceAmountInUsd / Number(destinationCurrencyToUsdRate.withdrawal_rate)
           : null
       : null;
 

@@ -36,7 +36,8 @@ type CurrencyRateRow = {
   id: string;
   from_currency: string;
   to_currency: string;
-  rate: number;
+  deposit_rate: number;
+  withdrawal_rate: number;
   status: boolean;
   created_at?: string;
   updated_at?: string;
@@ -46,7 +47,8 @@ type CurrencyRateFormValue = {
   id?: string;
   from_currency: string;
   to_currency: string;
-  rate: string;
+  deposit_rate: string;
+  withdrawal_rate: string;
   status: boolean;
 };
 
@@ -54,7 +56,8 @@ const normalize = (item: CurrencyRateItem): CurrencyRateRow => ({
   id: String(item.id),
   from_currency: item.from_currency ?? "",
   to_currency: item.to_currency ?? "",
-  rate: Number(item.rate ?? 0),
+  deposit_rate: Number(item.deposit_rate ?? 0),
+  withdrawal_rate: Number(item.withdrawal_rate ?? 0),
   status: item.status === true || item.status === 1 || item.status === "1",
   created_at: item.created_at,
   updated_at: item.updated_at,
@@ -65,7 +68,8 @@ const fmtDate = (s?: string) => (s ? formatDateTimeInIST(s) : "-");
 const defaultFormValue: CurrencyRateFormValue = {
   from_currency: "USD",
   to_currency: "EUR",
-  rate: "",
+  deposit_rate: "",
+  withdrawal_rate: "",
   status: true,
 };
 
@@ -121,7 +125,8 @@ function CurrencyRateFormDialog({
       id: data.id,
       from_currency: data.from_currency,
       to_currency: data.to_currency,
-      rate: String(data.rate),
+      deposit_rate: String(data.deposit_rate),
+      withdrawal_rate: String(data.withdrawal_rate),
       status: data.status,
     });
     setFromCurrencyCustom(
@@ -147,7 +152,7 @@ function CurrencyRateFormDialog({
           <DialogTitle>{isEdit ? "Edit Currency Rate" : "Add Currency Rate"}</DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Update currency rate value and status."
+              ? "Update deposit and withdrawal rates and status."
               : "Create a new currency conversion rate."}
           </DialogDescription>
         </DialogHeader>
@@ -208,12 +213,21 @@ function CurrencyRateFormDialog({
             />
           </div>
           <div className="grid gap-1.5">
-            <Label htmlFor="rate">Rate</Label>
+            <Label htmlFor="deposit_rate">Deposit Rate</Label>
             <Input
-              id="rate"
-              value={form.rate}
-              onChange={(e) => setForm((prev) => ({ ...prev, rate: e.target.value }))}
+              id="deposit_rate"
+              value={form.deposit_rate}
+              onChange={(e) => setForm((prev) => ({ ...prev, deposit_rate: e.target.value }))}
               placeholder="0.9215"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="withdrawal_rate">Withdrawal Rate</Label>
+            <Input
+              id="withdrawal_rate"
+              value={form.withdrawal_rate}
+              onChange={(e) => setForm((prev) => ({ ...prev, withdrawal_rate: e.target.value }))}
+              placeholder="0.915"
             />
           </div>
           <div className="inline-flex items-center gap-3">
@@ -244,8 +258,15 @@ function CurrencyRateFormDialog({
                 toast.error("From and To currency are required");
                 return;
               }
-              if (form.rate.trim() === "" || Number.isNaN(Number(form.rate))) {
-                toast.error("Valid rate is required");
+              if (form.deposit_rate.trim() === "" || Number.isNaN(Number(form.deposit_rate))) {
+                toast.error("Valid deposit rate is required");
+                return;
+              }
+              if (
+                form.withdrawal_rate.trim() === "" ||
+                Number.isNaN(Number(form.withdrawal_rate))
+              ) {
+                toast.error("Valid withdrawal rate is required");
                 return;
               }
               await onSubmit({
@@ -311,7 +332,8 @@ export default function CurrencyManagementPage() {
     const body: CurrencyRateCreateBody = {
       from_currency: form.from_currency.trim().toUpperCase(),
       to_currency: form.to_currency.trim().toUpperCase(),
-      rate: Number(form.rate),
+      deposit_rate: Number(form.deposit_rate),
+      withdrawal_rate: Number(form.withdrawal_rate),
       status: form.status,
     };
     const res = await adminCurrencyRatesApi.create(body, token);
@@ -324,7 +346,11 @@ export default function CurrencyManagementPage() {
     if (!token || !form.id) return;
     const res = await adminCurrencyRatesApi.update(
       form.id,
-      { rate: Number(form.rate), status: form.status },
+      {
+        deposit_rate: Number(form.deposit_rate),
+        withdrawal_rate: Number(form.withdrawal_rate),
+        status: form.status,
+      },
       token
     );
     if (!res?.success) throw new Error(res?.message || "Failed to update currency rate");
@@ -395,9 +421,14 @@ export default function CurrencyManagementPage() {
         header: ({ column }) => <DataTableColumnHeader column={column} title="To" />,
       },
       {
-        id: "rate",
-        accessorKey: "rate",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Rate" />,
+        id: "deposit_rate",
+        accessorKey: "deposit_rate",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Deposit Rate" />,
+      },
+      {
+        id: "withdrawal_rate",
+        accessorKey: "withdrawal_rate",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Withdrawal Rate" />,
       },
       {
         id: "status",

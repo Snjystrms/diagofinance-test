@@ -940,7 +940,7 @@ export interface IbCommissionReportExportParams {
   format?: "xlsx" | "csv";
 }
 
-export const adminIbCommissionReportApi = {
+export const adminIbCommissionListReportApi = {
   list: (params: IbCommissionReportListParams) => {
     const { token, ...queryParams } = params;
     if (!token) {

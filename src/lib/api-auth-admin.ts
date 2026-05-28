@@ -924,6 +924,10 @@ export interface AdminGroupDeleteBody {
   id: number;
 }
 
+export interface AdminGroupDeleteBody {
+  id: number;
+}
+
 export const adminAccountTypesApi = {
   list: ({
     token,
@@ -1483,15 +1487,14 @@ export const adminNewsApi = {
 };
 
 export interface CurrencyRateItem {
-  deposit_rate: number | string;
-  id: number | string;
+  id: number;
   from_currency: string;
   to_currency: string;
-  rate: number;
-  withdrawal_rate: number | string;
+  deposit_rate: number;
+  withdrawal_rate: number;
   status: boolean | number | string;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface CurrencyRatePagination {
@@ -1509,12 +1512,14 @@ export interface CurrencyRateListData {
 export interface CurrencyRateCreateBody {
   from_currency: string;
   to_currency: string;
-  rate: number;
+  deposit_rate: number;
+  withdrawal_rate: number;
   status?: boolean;
 }
 
 export interface CurrencyRateUpdateBody {
-  rate: number;
+  deposit_rate: number;
+  withdrawal_rate: number;
   status: boolean;
 }
 

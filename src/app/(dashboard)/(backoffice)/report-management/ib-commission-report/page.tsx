@@ -15,7 +15,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import {
-  adminIbCommissionReportApi,
+  adminIbCommissionListReportApi,
   type IbCommissionReportItem,
   type IbCommissionReportListPayload,
 } from "@/lib/api-finance-reports";
@@ -58,7 +58,7 @@ export default function IbCommissionReportPage() {
       setLoading(true);
       setLoadError(null);
 
-      const response = await adminIbCommissionReportApi.list({
+      const response = await adminIbCommissionListReportApi.list({
         token,
         page,
         per_page: perPage,
@@ -111,7 +111,7 @@ export default function IbCommissionReportPage() {
       try {
         toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
 
-        const { blob, filename } = await adminIbCommissionReportApi.export({
+        const { blob, filename } = await adminIbCommissionListReportApi.export({
           token,
           format: formatType,
         });
@@ -169,9 +169,6 @@ export default function IbCommissionReportPage() {
             <div className="space-y-0.5">
               <div className="font-medium">{name || "-"}</div>
               <div className="text-xs text-muted-foreground">{email || "-"}</div>
-              {userId !== undefined && userId !== null ? (
-                <div className="text-[11px] text-muted-foreground">ID: {String(userId)}</div>
-              ) : null}
             </div>
           );
         },
@@ -191,9 +188,6 @@ export default function IbCommissionReportPage() {
             <div className="space-y-0.5">
               <div className="font-medium">{name || "-"}</div>
               <div className="text-xs text-muted-foreground">{email || "-"}</div>
-              {userId !== undefined && userId !== null ? (
-                <div className="text-[11px] text-muted-foreground">ID: {String(userId)}</div>
-              ) : null}
             </div>
           );
         },

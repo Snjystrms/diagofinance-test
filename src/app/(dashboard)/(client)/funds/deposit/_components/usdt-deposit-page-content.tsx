@@ -148,8 +148,8 @@ function USDTDepositContent() {
   }, [bankCurrency, currencyRates]);
   const bankAmountNum = parseFloat(bankAmount);
   const convertedUsdAmount =
-    !isNaN(bankAmountNum) && bankAmountNum > 0 && selectedRateToUsd?.rate
-      ? bankAmountNum * Number(selectedRateToUsd.rate)
+    !isNaN(bankAmountNum) && bankAmountNum > 0 && selectedRateToUsd?.deposit_rate
+      ? bankAmountNum * Number(selectedRateToUsd.deposit_rate)
       : null;
 
   // Derive which tabs to show from API response
@@ -1552,8 +1552,8 @@ function USDTDepositContent() {
                           />
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          {selectedRateToUsd?.rate
-                            ? `Rate: 1 ${bankCurrency.toUpperCase()} = ${Number(selectedRateToUsd.rate).toFixed(6)} USD`
+                          {selectedRateToUsd?.deposit_rate
+                            ? `Rate: 1 ${bankCurrency.toUpperCase()} = ${Number(selectedRateToUsd.deposit_rate).toFixed(6)} USD`
                             : "USD conversion rate is currently unavailable for this currency."}
                         </p>
                         {convertedUsdAmount !== null && (
