@@ -897,6 +897,115 @@ export const adminInternalTransferReportApi = {
   },
 };
 
+export interface IbCommissionReportItem {
+  id: number | string;
+  ib_user_id?: number | string;
+  ib_user_name?: string | null;
+  ib_user_email?: string | null;
+  trader_user_id?: number | string;
+  trader_name?: string | null;
+  trader_email?: string | null;
+  mt5_account?: string | null;
+  trade_date?: string | null;
+  volume: number | string;
+  level: number | string;
+  commission_rate: number | string;
+  commission_amount: number | string;
+  pending_commission: number | string;
+}
+
+export interface IbCommissionReportListParams {
+  token: string;
+  page?: number;
+  per_page?: number;
+}
+
+export interface IbCommissionReportListPayload {
+  success: boolean;
+  message: string;
+  data: IbCommissionReportItem[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+    from: number;
+    to: number;
+  };
+  filters?: Record<string, string | null | undefined>;
+}
+
+export interface IbCommissionReportExportParams {
+  token: string;
+  format?: "xlsx" | "csv";
+}
+
+export const adminIbCommissionReportApi = {
+  list: (params: IbCommissionReportListParams) => {
+    const { token, ...queryParams } = params;
+    if (!token) {
+      throw new Error("Token is required to fetch IB commission report");
+    }
+
+    const qs = new URLSearchParams();
+    if (queryParams.page) qs.set("page", String(queryParams.page));
+    if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
+
+    const endpoint = `/admin/reports/commission-report${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<IbCommissionReportListPayload>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  export: async ({ token, format = "xlsx" }: IbCommissionReportExportParams) => {
+    if (!token) {
+      throw new Error("Token is required to export IB commission report");
+    }
+
+    if (!API_BASE_URL) {
+      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("format", format);
+
+    const endpoint = `/admin/reports/commission-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message:
+          (payload &&
+          typeof payload === "object" &&
+          "message" in payload &&
+          typeof payload.message === "string"
+            ? payload.message
+            : null) ||
+          `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+
+    const blob = await response.blob();
+    return {
+      blob,
+      filename: parseContentDispositionFilename(
+        response.headers.get("content-disposition"),
+        `ib-commission-report.${format === "csv" ? "csv" : "xlsx"}`
+      ),
+    };
+  },
+};
+
 export interface LoginActivityReportItem {
   id: number | string;
   user_id?: number | string;

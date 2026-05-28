@@ -1483,10 +1483,12 @@ export const adminNewsApi = {
 };
 
 export interface CurrencyRateItem {
+  deposit_rate: number | string;
   id: number | string;
   from_currency: string;
   to_currency: string;
   rate: number;
+  withdrawal_rate: number | string;
   status: boolean | number | string;
   created_at?: string;
   updated_at?: string;
