@@ -52,11 +52,19 @@ function RowActions({
   onEdit,
   onDelete,
   onManageSponsor,
+  canEdit,
+  canDelete,
+  canManageSponsor,
+  canViewDetail,
 }: {
   row: { original: PendingUser };
   onEdit: (user: PendingUser) => void;
   onDelete: (user: PendingUser) => void;
   onManageSponsor: (user: PendingUser) => void;
+  canEdit: boolean;
+  canDelete: boolean;
+  canManageSponsor: boolean;
+  canViewDetail: boolean;
 }) {
   const hasDetailRoute = Boolean(row.original.id);
   const detailHref = hasDetailRoute ? `/new-users/${row.original.id}` : null;
@@ -65,7 +73,7 @@ function RowActions({
   return (
     <div className="flex flex-col items-end gap-1">
       <div className="flex items-center justify-end gap-2">
-        {detailHref ? (
+        {canViewDetail && detailHref ? (
           <Button
             asChild
             variant="outline"
@@ -76,7 +84,7 @@ function RowActions({
               <Eye className="h-4 w-4" />
             </Link>
           </Button>
-        ) : (
+        ) : canViewDetail ? (
           <Button
             type="button"
             variant="outline"
@@ -88,28 +96,32 @@ function RowActions({
           >
             <Eye className="h-4 w-4" />
           </Button>
-        )}
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="h-8 w-8"
-          onClick={() => onEdit(row.original)}
-          title={`Edit ${row.original.name || "user"}`}
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
-        <Button
-          type="button"
-          variant="outline"
-          size="icon"
-          className="h-8 w-8 text-destructive hover:text-destructive/80"
-          onClick={() => onDelete(row.original)}
-          title={`Delete ${row.original.name || "user"}`}
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-        {!isIb ? (
+        ) : null}
+        {canEdit ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            onClick={() => onEdit(row.original)}
+            title={`Edit ${row.original.name || "user"}`}
+          >
+            <Pencil className="h-4 w-4" />
+          </Button>
+        ) : null}
+        {canDelete ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 text-destructive hover:text-destructive/80"
+            onClick={() => onDelete(row.original)}
+            title={`Delete ${row.original.name || "user"}`}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        ) : null}
+        {!isIb && canManageSponsor ? (
           <Button
             type="button"
             variant="outline"
@@ -138,6 +150,15 @@ export const getColumnsWithActions = (
   onPromoteToIb: (user: PendingUser) => void | Promise<void>,
   onManageSponsor: (user: PendingUser) => void,
   promotingUserIds: Set<number>,
+  permissions?: {
+    canEditUser: boolean;
+    canDeleteUser: boolean;
+    canToggleStatus: boolean;
+    canPromoteToIb: boolean;
+    canManageSponsor: boolean;
+    canViewUser: boolean;
+    showActionsColumn: boolean;
+  },
 ): ColumnDef<PendingUser>[] => [
   {
     id: "sr_no",
@@ -211,6 +232,7 @@ export const getColumnsWithActions = (
                   toast.error("Failed to update status");
                 }
               }}
+              disabled={!permissions?.canToggleStatus}
               aria-label={`Toggle status for ${user.name || "user"}`}
             />
             <span className="text-sm font-medium">
@@ -252,7 +274,7 @@ export const getColumnsWithActions = (
     </Badge>
   )}
   
-  {!isIb && (
+  {!isIb && permissions?.canPromoteToIb && (
     <div className="w-full sm:w-auto">
       <Button
         type="button"
@@ -308,19 +330,25 @@ export const getColumnsWithActions = (
       </div>
     ),
   },
-  {
+  ...(permissions?.showActionsColumn
+    ? [{
     id: "actions",
     header: "Actions",
-    cell: ({ row }) => (
+    cell: ({ row }: { row: { original: PendingUser } }) => (
       <RowActions
         row={row}
         onEdit={onEdit}
         onDelete={onDelete}
         onManageSponsor={onManageSponsor}
+        canEdit={Boolean(permissions?.canEditUser)}
+        canDelete={Boolean(permissions?.canDeleteUser)}
+        canManageSponsor={Boolean(permissions?.canManageSponsor)}
+        canViewDetail={Boolean(permissions?.canViewUser)}
       />
     ),
     enableSorting: false,
-  },
+  }]
+    : []),
 ];
 
 

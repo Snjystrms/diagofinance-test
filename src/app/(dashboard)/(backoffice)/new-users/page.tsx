@@ -42,6 +42,7 @@ import { COUNTRIES } from "@/lib/countries";
 import { adminUserCreateSchema, type AdminUserCreateFormData } from "@/lib/validations";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
+import { useCrudCapabilities, useModuleCapabilities } from "@/hooks/use-permission-capabilities";
 
 import { getColumnsWithActions } from "./columns";
 import { UserFormDialog } from "./user-form-dialog";
@@ -244,6 +245,22 @@ const normalizeIbPlanOption = (plan: AdminIbPlanItem): IbPlanOption => ({
 
 export default function NewUsersPage() {
   const { token } = useAuth();
+  const {
+    canViewList: canViewUserList,
+    canAdd: canAddUser,
+    canEdit: canEditUser,
+    canDelete: canDeleteUser,
+    showActionsColumn,
+  } = useCrudCapabilities("userManagement", {
+    list: "list",
+    add: "add",
+    edit: "edit",
+    delete: "delete",
+  });
+  const { can: canUserCapability } = useModuleCapabilities("userManagement");
+  const canViewUser = canUserCapability("view");
+  const { can: canIbCapability } = useModuleCapabilities("ibManagement");
+  const canPromoteToIb = canIbCapability("promoteClientToIb");
 
   const [users, setUsers] = useState<PendingUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -332,6 +349,14 @@ export default function NewUsersPage() {
   }, [token]);
 
   const loadUsers = useCallback(async () => {
+    if (!canViewUserList) {
+      setUsers([]);
+      setPaginationMeta(null);
+      setUserSummaryCounts({ newToday: null, activeCount: null, inactiveCount: null });
+      setLoadError(null);
+      setLoading(false);
+      return;
+    }
     if (!token) {
       setUsers([]);
       setPaginationMeta(null);
@@ -367,7 +392,7 @@ export default function NewUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, page, perPage, search, statusFilter]);
+  }, [token, page, perPage, search, statusFilter, canViewUserList]);
 
   useEffect(() => {
     void loadUsers();
@@ -658,11 +683,35 @@ export default function NewUsersPage() {
         handlePromoteDialogOpen,
         handleManageSponsorOpen,
         promotingUserIds,
+        {
+          canEditUser,
+          canDeleteUser,
+          canToggleStatus: canEditUser,
+          canPromoteToIb,
+          canManageSponsor: canEditUser,
+          canViewUser,
+          showActionsColumn: showActionsColumn || canViewUser,
+        },
       ),
-    [handleEdit, handleDelete, handleToggleStatus, handlePromoteDialogOpen, handleManageSponsorOpen, promotingUserIds],
+    [handleEdit, handleDelete, handleToggleStatus, handlePromoteDialogOpen, handleManageSponsorOpen, promotingUserIds, canEditUser, canDeleteUser, canPromoteToIb, canViewUser, showActionsColumn],
   );
 
-  if (loadError && users.length === 0) {
+  if (!canViewUserList && !canAddUser) {
+    return (
+      <ProtectedRoute>
+        <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+          <ApiErrorState
+            audience="admin"
+            variant="panel"
+            title="Access restricted"
+            message="Your account does not have permission to manage users."
+          />
+        </div>
+      </ProtectedRoute>
+    );
+  }
+
+  if (canViewUserList && loadError && users.length === 0) {
     return (
       <ProtectedRoute>
         <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
@@ -697,10 +746,12 @@ export default function NewUsersPage() {
                 </p>
               </div>
               <div className="flex gap-2">
-                <Button onClick={() => setCreateDialogOpen(true)}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  Create User
-                </Button>
+                {canAddUser ? (
+                  <Button onClick={() => setCreateDialogOpen(true)}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    Create User
+                  </Button>
+                ) : null}
                 <Button variant="outline" onClick={() => void loadUsers()} disabled={loading}>
                   <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                   Refresh
@@ -795,38 +846,46 @@ export default function NewUsersPage() {
             </div>
 
             <div className="rounded-lg border bg-card p-4 shadow-sm">
-              {loading && users.length === 0 ? (
-                <TableSectionSkeleton columnCount={4} rowCount={8} />
+              {canViewUserList ? (
+                loading && users.length === 0 ? (
+                  <TableSectionSkeleton columnCount={4} rowCount={8} />
+                ) : (
+                  <AppDataTable<PendingUser>
+                    data={users}
+                    columns={columns}
+                    pageCount={Math.max(1, totalPages)}
+                    getRowId={(row) => String(row.id)}
+                  />
+                )
               ) : (
-                <AppDataTable<PendingUser>
-                  data={users}
-                  columns={columns}
-                  pageCount={Math.max(1, totalPages)}
-                  getRowId={(row) => String(row.id)}
-                />
+                <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+                  You can add users, but your account is not allowed to view the user list.
+                </div>
               )}
             </div>
           </div>
         </div>
 
-        <UserFormDialog
-          open={createDialogOpen}
-          onOpenChange={(open) => {
-            setCreateDialogOpen(open);
-            if (!open) {
-              setCreatingUser(false);
-              createUserForm.reset(createInitialCreateFormState());
-            }
-          }}
-          title="Create User"
-          description="Add a new user."
-          submitLabel="Create User"
-          submittingLabel="Creating..."
-          submitting={creatingUser}
-          form={createUserForm}
-          onSubmit={handleCreate}
-          onCountryChange={(value) => setCountryValues(value, "create")}
-        />
+        {canAddUser ? (
+          <UserFormDialog
+            open={createDialogOpen}
+            onOpenChange={(open) => {
+              setCreateDialogOpen(open);
+              if (!open) {
+                setCreatingUser(false);
+                createUserForm.reset(createInitialCreateFormState());
+              }
+            }}
+            title="Create User"
+            description="Add a new user."
+            submitLabel="Create User"
+            submittingLabel="Creating..."
+            submitting={creatingUser}
+            form={createUserForm}
+            onSubmit={handleCreate}
+            onCountryChange={(value) => setCountryValues(value, "create")}
+          />
+        ) : null}
 
         <UserFormDialog
           open={editDialogOpen}

@@ -20,6 +20,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/auth-context";
 import { adminMT5AccountsApi, type AdminMT5Account, type UpdateMT5AccountRequest, type CreateMT5AccountRequest } from "@/lib/api";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
+import { useModuleCapabilities } from "@/hooks/use-permission-capabilities";
 import { getColumnsWithActions } from "./columns";
 import { EditAccountDialog } from "./edit-account-dialog";
 import { CreateAccountDialog } from "./create-account-dialog";
@@ -118,6 +119,12 @@ const extractAccountDetail = (data: unknown): AdminMT5Account | null => {
 
 export default function AllUsersMT5AccountsPage() {
   const { token } = useAuth();
+  const { can } = useModuleCapabilities("userManagement");
+  const canViewMt5List = can("mt5List");
+  const canCreateMt5 = can("mt5Add");
+  const canEditMt5 = can("mt5Edit");
+  const canDeleteMt5 = can("mt5Delete");
+  const showActionsColumn = canViewMt5List || canEditMt5 || canDeleteMt5;
 
   const [accounts, setAccounts] = useState<AdminMT5Account[]>([]);
   const [loading, setLoading] = useState(true);
@@ -178,6 +185,12 @@ export default function AllUsersMT5AccountsPage() {
   }, 500);
 
   const loadAccounts = useCallback(async () => {
+    if (!canViewMt5List) {
+      setAccounts([]);
+      setLoadError(null);
+      setLoading(false);
+      return;
+    }
     if (!token) {
       setAccounts([]);
       setLoading(false);
@@ -264,7 +277,7 @@ export default function AllUsersMT5AccountsPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, page, perPage, statusFilter, accountModeFilter, search, userIdFilter, groupIdFilter, managerIdFilter]);
+  }, [token, page, perPage, statusFilter, accountModeFilter, search, userIdFilter, groupIdFilter, managerIdFilter, canViewMt5List]);
 
   useEffect(() => {
     void loadAccounts();
@@ -383,8 +396,14 @@ export default function AllUsersMT5AccountsPage() {
   }, [token, accountToDelete, loadAccounts]);
 
   const columns: ColumnDef<AdminMT5Account>[] = useMemo(
-    () => getColumnsWithActions(handleViewDetails, handleEdit, handleDeleteClick),
-    [handleViewDetails, handleEdit, handleDeleteClick]
+    () =>
+      getColumnsWithActions(handleViewDetails, handleEdit, handleDeleteClick, {
+        canView: canViewMt5List,
+        canEdit: canEditMt5,
+        canDelete: canDeleteMt5,
+        showActionsColumn,
+      }),
+    [handleViewDetails, handleEdit, handleDeleteClick, canViewMt5List, canEditMt5, canDeleteMt5, showActionsColumn]
   );
 
   const visibleAccounts = useMemo(() => {
@@ -395,7 +414,7 @@ export default function AllUsersMT5AccountsPage() {
     });
   }, [accounts, accountModeFilter]);
 
-  if (loadError && visibleAccounts.length === 0) {
+  if (canViewMt5List && loadError && visibleAccounts.length === 0) {
     return (
       <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
         <ApiErrorState
@@ -407,6 +426,19 @@ export default function AllUsersMT5AccountsPage() {
           onRetry={() => {
             void loadAccounts();
           }}
+        />
+      </div>
+    );
+  }
+
+  if (!canViewMt5List && !canCreateMt5) {
+    return (
+      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+        <ApiErrorState
+          audience="admin"
+          variant="panel"
+          title="Access restricted"
+          message="Your account does not have permission to manage MT5 accounts."
         />
       </div>
     );
@@ -467,10 +499,12 @@ export default function AllUsersMT5AccountsPage() {
               </p>
             </div>
             <div className="flex gap-2">
-              <Button onClick={() => setIsCreateDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Account
-              </Button>
+              {canCreateMt5 ? (
+                <Button onClick={() => setIsCreateDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Account
+                </Button>
+              ) : null}
               <Button variant="outline" onClick={loadAccounts} disabled={loading}>
                 <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                 Refresh
@@ -594,25 +628,35 @@ export default function AllUsersMT5AccountsPage() {
           </div>
 
           <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-4">
-            {renderTableSection()}
+            {canViewMt5List ? (
+              renderTableSection()
+            ) : (
+              <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+                You can create MT5 accounts, but your account is not allowed to view the MT5 account list.
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Create Dialog */}
-      <CreateAccountDialog
-        open={isCreateDialogOpen}
-        onOpenChange={setIsCreateDialogOpen}
-        onSubmit={handleCreate}
-      />
+      {canCreateMt5 ? (
+        <CreateAccountDialog
+          open={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
+          onSubmit={handleCreate}
+        />
+      ) : null}
 
       {/* Edit Dialog */}
-      <EditAccountDialog
-        open={isEditDialogOpen}
-        onOpenChange={setIsEditDialogOpen}
-        account={editingAccount}
-        onSubmit={handleUpdate}
-      />
+      {canEditMt5 ? (
+        <EditAccountDialog
+          open={isEditDialogOpen}
+          onOpenChange={setIsEditDialogOpen}
+          account={editingAccount}
+          onSubmit={handleUpdate}
+        />
+      ) : null}
 
       <AccountDetailsDialog
         open={isDetailsDialogOpen}
@@ -627,16 +671,18 @@ export default function AllUsersMT5AccountsPage() {
       />
 
       {/* Delete Dialog */}
-      <DeleteDialog
-        isOpen={isDeleteDialogOpen}
-        onOpenChange={setIsDeleteDialogOpen}
-        onConfirm={handleConfirmDelete}
-        title="Delete MT5 Account"
-        description="Are you sure you want to delete this MT5 account? This action cannot be undone."
-        confirmText="Delete"
-        cancelText="Cancel"
-        variant="destructive"
-      />
+      {canDeleteMt5 ? (
+        <DeleteDialog
+          isOpen={isDeleteDialogOpen}
+          onOpenChange={setIsDeleteDialogOpen}
+          onConfirm={handleConfirmDelete}
+          title="Delete MT5 Account"
+          description="Are you sure you want to delete this MT5 account? This action cannot be undone."
+          confirmText="Delete"
+          cancelText="Cancel"
+          variant="destructive"
+        />
+      ) : null}
     </>
   );
 }

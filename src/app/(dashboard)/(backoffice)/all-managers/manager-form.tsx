@@ -574,10 +574,6 @@ export function ManagerForm({
                   );
                 })}
               </div>
-
-              <p className="text-xs text-muted-foreground">
-                Selected permission IDs are sent when creating or updating a manager.
-              </p>
             </div>
           </div>
 

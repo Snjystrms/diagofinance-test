@@ -34,6 +34,7 @@ import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 // If you already have auth context, import it. Fallback to localStorage token.
 import { useAuth } from "@/contexts/auth-context";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
+import { useModuleCapabilities } from "@/hooks/use-permission-capabilities";
 
 /* ---------------- Types (based on your response) ---------------- */
 type DocStatusNum = 0 | 1 | 2; // 0 pending, 1 approved, 2 rejected
@@ -251,6 +252,7 @@ const transformUser = (raw: Record<string, unknown>): PendingUser => {
     country: String(raw.country ?? ""),
     country_code: String(raw.country_code ?? ""),
     sponsor_id: String(raw.sponsor_id ?? ""),
+    sponsor_by: raw.sponsor_by == null ? null : String(raw.sponsor_by),
     referral_code: String(raw.referral_code ?? ""),
     status: String(raw.status ?? ""),
     two_fa_enabled: raw.two_fa_enabled as boolean | number | string | undefined,
@@ -469,7 +471,8 @@ export default function UserVerificationPage() {
   const { token: ctxToken } = useAuth?.() ?? { token: undefined };
   const token = ctxToken || (typeof window !== "undefined" ? localStorage.getItem("token") || "" : "");
 
-  const { isAdmin, isManager, hasFeature, filterFeatureOptions } = useManagerPermissions();
+  const { isAdmin, isManager, filterFeatureOptions } = useManagerPermissions();
+  const { can: canUserCapability } = useModuleCapabilities("userManagement");
 
   const [rows, setRows] = useState<ListRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -522,15 +525,9 @@ export default function UserVerificationPage() {
     return set;
   }, [statusFeatureOptions]);
 
-  const canReview = useMemo(
-    () => hasFeature("userManagement", "approveRejectKyc"),
-    [hasFeature]
-  );
+  const canReview = useMemo(() => canUserCapability("kycReview"), [canUserCapability]);
 
-  const canAddKyc = useMemo(
-    () => isAdmin || canReview,
-    [isAdmin, canReview]
-  );
+  const canAddKyc = useMemo(() => isAdmin || canUserCapability("kycUpload"), [isAdmin, canUserCapability]);
 
   const canViewKycStatus = useCallback(
     (status: string) => {
@@ -793,7 +790,8 @@ export default function UserVerificationPage() {
         header: "Actions",
         enableSorting: false,
         cell: ({ row }) => {
-          const canView = canViewKycStatus(row.original.kyc_status);
+          const canView = canReview && canViewKycStatus(row.original.kyc_status);
+          if (!canReview) return null;
           return (
             <Button
               variant="ghost"
@@ -1227,50 +1225,49 @@ const buildReviewPayload = () => {
                           )}
                         </div>
 
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Button
-                            size="sm"
-                            className={`${
-                              isApproved 
-                                ? "bg-green-600 hover:bg-green-700 text-white" 
-                                : "hover:bg-green-50 dark:hover:bg-green-950/20"
-                            }`}
-                            variant={isApproved ? "default" : "outline"}
-                            onClick={() => setDocStatuses((s) => ({ ...s, [k]: 1 }))}
-                            disabled={!canReview}
-                          >
-                            <CheckCircle2 className="h-4 w-4 mr-1.5" />
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            className={`${
-                              isRejected 
-                                ? "bg-red-600 hover:bg-red-700 text-white" 
-                                : "hover:bg-red-50 dark:hover:bg-red-950/20"
-                            }`}
-                            variant={isRejected ? "destructive" : "outline"}
-                            onClick={() => setDocStatuses((s) => ({ ...s, [k]: 2 }))}
-                            disabled={!canReview}
-                          >
-                            <XCircle className="h-4 w-4 mr-1.5" />
-                            Reject
-                          </Button>
-                          <Button
-                            size="sm"
-                            className={`${
-                              isPending 
-                                ? "bg-orange-600 hover:bg-orange-700 text-white" 
-                                : "hover:bg-orange-50 dark:hover:bg-orange-950/20"
-                            }`}
-                            variant={isPending ? "default" : "outline"}
-                            onClick={() => setDocStatuses((s) => ({ ...s, [k]: 0 }))}
-                            disabled={!canReview}
-                          >
-                            <Clock className="h-4 w-4 mr-1.5" />
-                            Pending
-                          </Button>
-                        </div>
+                        {canReview ? (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Button
+                              size="sm"
+                              className={`${
+                                isApproved
+                                  ? "bg-green-600 hover:bg-green-700 text-white"
+                                  : "hover:bg-green-50 dark:hover:bg-green-950/20"
+                              }`}
+                              variant={isApproved ? "default" : "outline"}
+                              onClick={() => setDocStatuses((s) => ({ ...s, [k]: 1 }))}
+                            >
+                              <CheckCircle2 className="h-4 w-4 mr-1.5" />
+                              Approve
+                            </Button>
+                            <Button
+                              size="sm"
+                              className={`${
+                                isRejected
+                                  ? "bg-red-600 hover:bg-red-700 text-white"
+                                  : "hover:bg-red-50 dark:hover:bg-red-950/20"
+                              }`}
+                              variant={isRejected ? "destructive" : "outline"}
+                              onClick={() => setDocStatuses((s) => ({ ...s, [k]: 2 }))}
+                            >
+                              <XCircle className="h-4 w-4 mr-1.5" />
+                              Reject
+                            </Button>
+                            <Button
+                              size="sm"
+                              className={`${
+                                isPending
+                                  ? "bg-orange-600 hover:bg-orange-700 text-white"
+                                  : "hover:bg-orange-50 dark:hover:bg-orange-950/20"
+                              }`}
+                              variant={isPending ? "default" : "outline"}
+                              onClick={() => setDocStatuses((s) => ({ ...s, [k]: 0 }))}
+                            >
+                              <Clock className="h-4 w-4 mr-1.5" />
+                              Pending
+                            </Button>
+                          </div>
+                        ) : null}
 
                         {/* Comment section - Enhanced */}
                         <div className="space-y-2">

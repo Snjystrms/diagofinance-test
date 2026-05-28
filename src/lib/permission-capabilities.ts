@@ -32,6 +32,22 @@ export const permissionCapabilities = {
     add: "giveBonus",
     delete: "removeBonus",
   },
+  userManagement: {
+    list: "userList",
+    view: "viewUser",
+    add: "addUser",
+    edit: "editUser",
+    delete: "deleteUser",
+    mt5List: "mt5UserList",
+    mt5Add: "createMt5Account",
+    mt5Edit: "updateMt5Leverage",
+    mt5Delete: "deleteMt5Account",
+    kycReview: "approveRejectKyc",
+    kycUpload: "uploadUserDocuments",
+  },
+  ibManagement: {
+    promoteClientToIb: "moveClientToIb",
+  },
 } satisfies Partial<Record<ManagerPermissionModule, CapabilityDefinition>>;
 
 export type CapabilityModuleKey = keyof typeof permissionCapabilities;

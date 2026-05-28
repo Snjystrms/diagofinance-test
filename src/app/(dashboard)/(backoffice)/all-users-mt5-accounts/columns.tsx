@@ -182,46 +182,55 @@ interface RowActionsProps {
   onView: (account: AdminMT5Account) => void;
   onEdit: (account: AdminMT5Account) => void;
   onDelete: (id: string | number) => void;
+  canView: boolean;
+  canEdit: boolean;
+  canDelete: boolean;
 }
 
-const RowActions = ({ row, onView, onEdit, onDelete }: RowActionsProps) => {
+const RowActions = ({ row, onView, onEdit, onDelete, canView, canEdit, canDelete }: RowActionsProps) => {
   const accountId = row.original.id ?? row.original.account_id ?? row.original.mt5_id;
 
   return (
     <div className="flex items-center justify-end gap-2">
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        className="h-8 w-8"
-        onClick={() => onView(row.original)}
-        disabled={!accountId}
-        title="View account details"
-      >
-        <Eye className="h-4 w-4" />
-        <span className="sr-only">View account details</span>
-      </Button>
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        className="h-8 w-8"
-        onClick={() => onEdit(row.original)}
-        title="Edit account"
-      >
-        <Pencil className="h-4 w-4" />
-      </Button>
-      <Button
-        type="button"
-        variant="outline"
-        size="icon"
-        className="h-8 w-8 text-destructive hover:text-destructive/80"
-        onClick={() => accountId && onDelete(accountId)}
-        disabled={!accountId}
-        title="Delete account"
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
+      {canView ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => onView(row.original)}
+          disabled={!accountId}
+          title="View account details"
+        >
+          <Eye className="h-4 w-4" />
+          <span className="sr-only">View account details</span>
+        </Button>
+      ) : null}
+      {canEdit ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={() => onEdit(row.original)}
+          title="Edit account"
+        >
+          <Pencil className="h-4 w-4" />
+        </Button>
+      ) : null}
+      {canDelete ? (
+        <Button
+          type="button"
+          variant="outline"
+          size="icon"
+          className="h-8 w-8 text-destructive hover:text-destructive/80"
+          onClick={() => accountId && onDelete(accountId)}
+          disabled={!accountId}
+          title="Delete account"
+        >
+          <Trash2 className="h-4 w-4" />
+        </Button>
+      ) : null}
     </div>
   );
 };
@@ -230,17 +239,33 @@ export const getColumnsWithActions = (
   onView: (account: AdminMT5Account) => void,
   onEdit: (account: AdminMT5Account) => void,
   onDelete: (id: string | number) => void,
+  permissions?: {
+    canView: boolean;
+    canEdit: boolean;
+    canDelete: boolean;
+    showActionsColumn: boolean;
+  },
 ): ColumnDef<AdminMT5Account>[] => [
   ...getColumns(),
-  {
+  ...(permissions?.showActionsColumn
+    ? [{
     id: "actions",
     header: "Actions",
-    cell: ({ row }) => (
-      <RowActions row={row} onView={onView} onEdit={onEdit} onDelete={onDelete} />
+    cell: ({ row }: { row: { original: AdminMT5Account } }) => (
+      <RowActions
+        row={row}
+        onView={onView}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        canView={Boolean(permissions?.canView)}
+        canEdit={Boolean(permissions?.canEdit)}
+        canDelete={Boolean(permissions?.canDelete)}
+      />
     ),
     enableColumnFilter: false,
     enableSorting: false,
-  },
+  }]
+    : []),
 ];
 
 

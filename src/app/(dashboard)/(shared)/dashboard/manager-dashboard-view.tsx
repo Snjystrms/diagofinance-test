@@ -1,7 +1,6 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Users,
   Clock,
@@ -168,6 +167,7 @@ export function ManagerDashboardView({ managerDashboardData, userName }: Manager
   const clients = managerDashboardData?.stats?.clients;
   const deposits = managerDashboardData?.stats?.transactions?.deposits;
   const withdrawals = managerDashboardData?.stats?.transactions?.withdrawals;
+  const canViewTransactions = permissions?.some((permission) => permission?.toLowerCase() === "transaction");
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -237,7 +237,7 @@ export function ManagerDashboardView({ managerDashboardData, userName }: Manager
       {clients && <ClientStatsSection clients={clients} />}
 
       {/* Transaction Stats — only rendered when present in API response */}
-      {/* {(deposits ?? withdrawals) && (
+      {canViewTransactions && (deposits ?? withdrawals) && (
         <div>
           <h2 className="text-base font-semibold text-foreground mb-3">Transaction Overview</h2>
           <div className="grid gap-6 lg:grid-cols-2">
@@ -245,7 +245,7 @@ export function ManagerDashboardView({ managerDashboardData, userName }: Manager
             {withdrawals && <WithdrawalsSection withdrawals={withdrawals} />}
           </div>
         </div>
-      )} */}
+      )}
     </div>
   );
 }
