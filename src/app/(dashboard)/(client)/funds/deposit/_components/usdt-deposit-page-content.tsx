@@ -37,7 +37,8 @@ import {
   FileText,
   CheckCircle2,
   Loader2,
-  WalletMinimal
+  WalletMinimal,
+  Banknote
 } from "lucide-react";
 
 const isBrokerBankDetailActive = (detail: BrokerBankDetailItem) =>
@@ -131,25 +132,26 @@ function USDTDepositContent() {
   const availableBankCurrencies = useMemo(() => {
     const activeRates = currencyRates.filter((rate) => {
       const rawStatus = String(rate.status).toLowerCase();
-      return rate.to_currency?.toUpperCase() === "USD" && (rawStatus === "true" || rawStatus === "1" || rawStatus === "active");
+      return rate.from_currency?.toUpperCase() === "USD" && (rawStatus === "true" || rawStatus === "1" || rawStatus === "active");
     });
-    const unique = Array.from(new Set(activeRates.map((rate) => rate.from_currency?.toUpperCase()).filter(Boolean)));
+    const unique = Array.from(new Set(activeRates.map((rate) => rate.to_currency?.toUpperCase()).filter(Boolean)));
     return unique.sort((a, b) => a.localeCompare(b));
   }, [currencyRates]);
-  const selectedRateToUsd = useMemo(() => {
+  const selectedUsdToBankRate = useMemo(() => {
     return currencyRates.find((rate) => {
       const rawStatus = String(rate.status).toLowerCase();
       return (
-        rate.from_currency?.toUpperCase() === bankCurrency.toUpperCase() &&
-        rate.to_currency?.toUpperCase() === "USD" &&
+        rate.from_currency?.toUpperCase() === "USD" &&
+        rate.to_currency?.toUpperCase() === bankCurrency.toUpperCase() &&
         (rawStatus === "true" || rawStatus === "1" || rawStatus === "active")
       );
     });
   }, [bankCurrency, currencyRates]);
   const bankAmountNum = parseFloat(bankAmount);
+  const selectedDepositRate = Number(selectedUsdToBankRate?.deposit_rate ?? 0);
   const convertedUsdAmount =
-    !isNaN(bankAmountNum) && bankAmountNum > 0 && selectedRateToUsd?.deposit_rate
-      ? bankAmountNum * Number(selectedRateToUsd.deposit_rate)
+    !isNaN(bankAmountNum) && bankAmountNum > 0 && selectedDepositRate > 0
+      ? bankAmountNum / selectedDepositRate
       : null;
 
   // Derive which tabs to show from API response
@@ -471,9 +473,13 @@ function USDTDepositContent() {
       setBankError("Authentication required");
       return;
     }
+    if (!convertedUsdAmount || convertedUsdAmount <= 0) {
+      setBankError("Deposit conversion rate is currently unavailable for this currency");
+      return;
+    }
     try {
       setIsSubmittingBank(true);
-      const res = await bankDepositApi.submit({ amount: amountNum, transaction_id: bankTxId.trim() }, token);
+      const res = await bankDepositApi.submit({ amount: convertedUsdAmount, transaction_id: bankTxId.trim() }, token);
       const raw = res as unknown as { success: boolean; message?: string; data?: { id: number; status: string; created_at: string } };
       if (raw.success && raw.data) {
         setBankSubmitResult(raw.data);
@@ -1533,7 +1539,8 @@ function USDTDepositContent() {
                           Amount ({bankCurrency.toUpperCase()}) <span className="text-destructive">*</span>
                         </Label>
                         <div className="relative">
-                          <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                          {/* <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /> */}
+                          <Banknote className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
                           <Input
                             id="bank-amount"
                             type="number"
@@ -1548,8 +1555,8 @@ function USDTDepositContent() {
                           />
                         </div>
                         <p className="text-xs text-muted-foreground">
-                          {selectedRateToUsd?.deposit_rate
-                            ? `Rate: 1 ${bankCurrency.toUpperCase()} = ${Number(selectedRateToUsd.deposit_rate).toFixed(6)} USD`
+                          {selectedDepositRate > 0
+                            ? `Rate: 1 USD = ${selectedDepositRate.toFixed(2)} ${bankCurrency.toUpperCase()}`
                             : "USD conversion rate is currently unavailable for this currency."}
                         </p>
                         {convertedUsdAmount !== null && (

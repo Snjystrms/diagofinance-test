@@ -853,7 +853,7 @@ const buildReviewPayload = () => {
 
     const nowNum = docStatuses[k];
     const nowWord = numToWord(nowNum);
-    const comment = (docComments[k] || "").trim();
+    const comment = nowWord === "approved" ? "" : (docComments[k] || "").trim();
 
     if (nowWord === "rejected" && !comment) {
       toast.error(`Please add a comment for ${docLabel[k]} (rejected)`);
@@ -1235,7 +1235,10 @@ const buildReviewPayload = () => {
                                   : "hover:bg-green-50 dark:hover:bg-green-950/20"
                               }`}
                               variant={isApproved ? "default" : "outline"}
-                              onClick={() => setDocStatuses((s) => ({ ...s, [k]: 1 }))}
+                              onClick={() => {
+                                setDocStatuses((s) => ({ ...s, [k]: 1 }));
+                                setDocComments((c) => ({ ...c, [k]: "" }));
+                              }}
                             >
                               <CheckCircle2 className="h-4 w-4 mr-1.5" />
                               Approve
@@ -1269,33 +1272,34 @@ const buildReviewPayload = () => {
                           </div>
                         ) : null}
 
-                        {/* Comment section - Enhanced */}
-                        <div className="space-y-2">
-                          <label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
-                            <FileText className="h-3.5 w-3.5" />
-                            Review Comment {isRejected && <span className="text-red-600 dark:text-red-400">*</span>}
-                          </label>
-                          <Textarea
-                            rows={3}
-                            placeholder={isRejected ? "Required: Add rejection reason (e.g., Blurry document, Invalid ID)" : "Add any comments or notes about this document..."}
-                            value={docComments[k] || ""}
-                            onChange={(e) =>
-                              setDocComments((c) => ({ ...c, [k]: e.target.value }))
-                            }
-                            disabled={!canReview}
-                            className={`${
-                              isRejected && !docComments[k] 
-                                ? "border-red-300 dark:border-red-700 focus:border-red-500" 
-                                : ""
-                            }`}
-                          />
-                          {isRejected && !docComments[k] && (
-                            <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
-                              <AlertCircle className="h-3 w-3" />
-                              Comment is required when rejecting a document
-                            </p>
-                          )}
-                        </div>
+                        {!isApproved ? (
+                          <div className="space-y-2">
+                            <label className="text-xs font-medium text-gray-700 dark:text-gray-300 flex items-center gap-1.5">
+                              <FileText className="h-3.5 w-3.5" />
+                              Review Comment {isRejected && <span className="text-red-600 dark:text-red-400">*</span>}
+                            </label>
+                            <Textarea
+                              rows={3}
+                              placeholder={isRejected ? "Required: Add rejection reason (e.g., Blurry document, Invalid ID)" : "Add any comments or notes about this document..."}
+                              value={docComments[k] || ""}
+                              onChange={(e) =>
+                                setDocComments((c) => ({ ...c, [k]: e.target.value }))
+                              }
+                              disabled={!canReview}
+                              className={`${
+                                isRejected && !docComments[k]
+                                  ? "border-red-300 dark:border-red-700 focus:border-red-500"
+                                  : ""
+                              }`}
+                            />
+                            {isRejected && !docComments[k] && (
+                              <p className="text-xs text-red-600 dark:text-red-400 flex items-center gap-1">
+                                <AlertCircle className="h-3 w-3" />
+                                Comment is required when rejecting a document
+                              </p>
+                            )}
+                          </div>
+                        ) : null}
                       </div>
                     );
                     });

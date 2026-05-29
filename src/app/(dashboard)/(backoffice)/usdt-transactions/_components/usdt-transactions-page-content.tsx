@@ -65,9 +65,9 @@ const fmtDateTime = (s?: string | null) => {
   }
 };
 
-const formatAmount = (amount: string) => {
+const formatAmount = (amount: string | number) => {
   try {
-    const num = parseFloat(amount);
+    const num = typeof amount === "number" ? amount : parseFloat(amount);
     return num.toLocaleString("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 8,
@@ -181,6 +181,7 @@ export function USDTTransactionsPageContent() {
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
   const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [depositTypeFilter, setDepositTypeFilter] = useState<"all" | "bank" | "usdt">("all");
 
   const rows = useMemo(
     () => activeTab === "deposits" ? depositRows : withdrawalRows,
@@ -205,12 +206,12 @@ export function USDTTransactionsPageContent() {
     try {
       setLoadError(null);
       const res = await adminUSDTDepositApi.listAll(page, perPage, token);
-      const requests = res?.data?.requests ?? [];
+      const requests = res?.data?.deposits ?? [];
       setDepositRows(requests);
       
       // Update pagination if available
       if (res?.data?.pagination) {
-        setTotalPages(res.data.pagination.totalPages || 1);
+        setTotalPages(res.data.pagination.totalPages || res.data.pagination.total_pages || 1);
       }
     } catch (e: unknown) {
       console.error(e);
@@ -347,25 +348,43 @@ export function USDTTransactionsPageContent() {
   }, [isManager, statusFeatureOptions, allowedStatusValues, statusFilter]);
 
   const filteredRows = useMemo(() => {
+    let nextRows: Array<AdminUSDTDepositRequest | AdminWithdrawalRequest> = rows;
+
     if (isAdmin || !isManager) {
-      if (statusFilter === "all") return rows;
       if (["pending", "approved", "rejected"].includes(statusFilter)) {
-        return rows.filter((row) => row.status === statusFilter);
+        nextRows = rows.filter((row) => row.status === statusFilter);
       }
-      return rows;
+    } else if (!statusFeatureOptions.length || statusFilter === "none") {
+      nextRows = [];
+    } else if (statusFilter === "all") {
+      nextRows = rows.filter((row) => allowedStatusesSet.has((row.status || "").toLowerCase()));
+    } else {
+      const selectedOption = statusFeatureOptions.find((opt) => opt.value === statusFilter);
+      const allowedForFilter = new Set(
+        (selectedOption?.statuses || []).map((status) => status.toLowerCase())
+      );
+      nextRows = rows.filter((row) => allowedForFilter.has((row.status || "").toLowerCase()));
     }
-    if (!statusFeatureOptions.length || statusFilter === "none") {
-      return [];
+
+    if (activeTab !== "deposits" || depositTypeFilter === "all") {
+      return nextRows;
     }
-    if (statusFilter === "all") {
-      return rows.filter((row) => allowedStatusesSet.has((row.status || "").toLowerCase()));
-    }
-    const selectedOption = statusFeatureOptions.find((opt) => opt.value === statusFilter);
-    const allowedForFilter = new Set(
-      (selectedOption?.statuses || []).map((status) => status.toLowerCase())
+
+    return nextRows.filter(
+      (row) =>
+        ((row as AdminUSDTDepositRequest).deposit_type || "").toLowerCase() ===
+        depositTypeFilter
     );
-    return rows.filter((row) => allowedForFilter.has((row.status || "").toLowerCase()));
-  }, [rows, statusFilter, isAdmin, isManager, statusFeatureOptions, allowedStatusesSet]);
+  }, [
+    rows,
+    statusFilter,
+    activeTab,
+    depositTypeFilter,
+    isAdmin,
+    isManager,
+    statusFeatureOptions,
+    allowedStatusesSet,
+  ]);
 
   const showAllStatusOption = isAdmin || !isManager || statusFeatureOptions.length > 1;
   const statusSelectDisabled = isManager && !statusFeatureOptions.length;
@@ -509,18 +528,26 @@ export function USDTTransactionsPageContent() {
         ),
       },
       {
-        id: "transaction_hash",
-        header: "Transaction Hash",
-        accessorKey: "transaction_hash",
+        id: "transaction_reference",
+        header: "Reference",
+        accessorKey: "transaction_reference",
         cell: ({ row }) => {
-          const hash = row.original.transaction_hash;
-          if (!hash) return <span className="text-muted-foreground">—</span>;
+          const reference = row.original.transaction_reference || row.original.transaction_hash;
+          if (!reference) return <span className="text-muted-foreground">—</span>;
           return (
-            <span className="font-mono text-xs max-w-[200px] truncate block" title={hash}>
-              {hash}
+            <span className="font-mono text-xs max-w-[200px] truncate block" title={reference}>
+              {reference}
             </span>
           );
         },
+      },
+      {
+        id: "deposit_type",
+        header: "Type",
+        accessorKey: "deposit_type",
+        cell: ({ row }) => (
+          <span className="capitalize">{row.original.deposit_type || "—"}</span>
+        ),
       },
       {
         id: "status",
@@ -766,33 +793,56 @@ export function USDTTransactionsPageContent() {
           {canViewDepositsTab && (
           <TabsContent value="deposits" className="space-y-6">
             <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-              {/* Status Filter */}
-              {(!isManager || depositStatusFeatureOptions.length > 0) && (
-                <div className="mb-4 flex items-center gap-2">
-                  <label htmlFor="status-filter" className="text-sm font-medium">
-                    Filter by Status:
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                {/* Status Filter */}
+                {(!isManager || depositStatusFeatureOptions.length > 0) && (
+                  <div className="flex items-center gap-2">
+                    <label htmlFor="deposit-status-filter" className="text-sm font-medium">
+                      Filter by Status:
+                    </label>
+                    <Select
+                      value={statusFilter === "none" ? undefined : statusFilter}
+                      onValueChange={setStatusFilter}
+                      disabled={isManager && !depositStatusFeatureOptions.length}
+                    >
+                      <SelectTrigger id="deposit-status-filter" className="w-[200px]">
+                        <SelectValue placeholder="Select status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(isAdmin || !isManager || depositStatusFeatureOptions.length > 1) && (
+                          <SelectItem value="all">All</SelectItem>
+                        )}
+                        {depositStatusFeatureOptions.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-2">
+                  <label htmlFor="deposit-type-filter" className="text-sm font-medium">
+                    Filter by Type:
                   </label>
                   <Select
-                    value={statusFilter === "none" ? undefined : statusFilter}
-                    onValueChange={setStatusFilter}
-                    disabled={isManager && !depositStatusFeatureOptions.length}
+                    value={depositTypeFilter}
+                    onValueChange={(value) =>
+                      setDepositTypeFilter(value as "all" | "bank" | "usdt")
+                    }
                   >
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Select status" />
+                    <SelectTrigger id="deposit-type-filter" className="w-[180px]">
+                      <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                      {(isAdmin || !isManager || depositStatusFeatureOptions.length > 1) && (
-                        <SelectItem value="all">All</SelectItem>
-                      )}
-                      {depositStatusFeatureOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="all">All</SelectItem>
+                      <SelectItem value="bank">Bank</SelectItem>
+                      <SelectItem value="usdt">USDT</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              )}
+              </div>
 
               <AppDataTable<AdminUSDTDepositRequest>
                 data={activeTab === "deposits" ? (filteredRows as AdminUSDTDepositRequest[]) : []}
@@ -894,9 +944,11 @@ export function USDTTransactionsPageContent() {
                     </div>
                     {activeTab === "deposits" && selectedDepositRequest && (
                       <div>
-                        <span className="text-muted-foreground">Transaction Hash:</span>
+                        <span className="text-muted-foreground">Reference:</span>
                         <div className="font-mono text-xs truncate">
-                          {selectedDepositRequest.transaction_hash || "—"}
+                          {selectedDepositRequest.transaction_reference ||
+                            selectedDepositRequest.transaction_hash ||
+                            "—"}
                         </div>
                       </div>
                     )}
@@ -994,12 +1046,22 @@ export function USDTTransactionsPageContent() {
                         </span>
                       </div>
                       {activeTab === "deposits" && viewingDepositRequest && (
-                        <div>
-                          <span className="text-muted-foreground">Transaction Hash: </span>
-                          <div className="font-mono text-xs break-all">
-                            {viewingDepositRequest.transaction_hash || "—"}
+                        <>
+                          <div>
+                            <span className="text-muted-foreground">Deposit Type: </span>
+                            <span className="font-medium capitalize">
+                              {viewingDepositRequest.deposit_type || "—"}
+                            </span>
                           </div>
-                        </div>
+                          <div>
+                            <span className="text-muted-foreground">Reference: </span>
+                            <div className="font-mono text-xs break-all">
+                              {viewingDepositRequest.transaction_reference ||
+                                viewingDepositRequest.transaction_hash ||
+                                "—"}
+                            </div>
+                          </div>
+                        </>
                       )}
                     </div>
                   </div>

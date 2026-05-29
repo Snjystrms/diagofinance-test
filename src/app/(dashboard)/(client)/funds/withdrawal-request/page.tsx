@@ -118,6 +118,13 @@ function WithdrawalRequestContent() {
   const [withdrawalData, setWithdrawalData] = useState<WithdrawalItem | null>(
     null,
   );
+  const [submittedWithdrawalType, setSubmittedWithdrawalType] = useState<
+    "crypto" | "bank" | null
+  >(null);
+  const [submittedBankCredit, setSubmittedBankCredit] = useState<number | null>(
+    null,
+  );
+  const [submittedBankCurrency, setSubmittedBankCurrency] = useState("");
   const [copied, setCopied] = useState(false);
   const [walletData, setWalletData] = useState<WalletSummaryData | null>(null);
   const [walletLoading, setWalletLoading] = useState(true);
@@ -281,13 +288,12 @@ function WithdrawalRequestContent() {
   const isCryptoWithdrawal = withdrawalType === "crypto";
   const isBankWithdrawal = withdrawalType === "bank";
 
-  const normalizedCurrency = currency.toUpperCase();
-  const activeRatesToUsd = useMemo(
+  const activeRatesFromUsd = useMemo(
     () =>
       currencyRates.filter((rate) => {
         const rawStatus = String(rate.status).toLowerCase();
         return (
-          rate.to_currency?.toUpperCase() === "USD" &&
+          rate.from_currency?.toUpperCase() === "USD" &&
           (rawStatus === "true" || rawStatus === "1" || rawStatus === "active")
         );
       }),
@@ -296,13 +302,13 @@ function WithdrawalRequestContent() {
   const availableWithdrawalCurrencies = useMemo(() => {
     const unique = Array.from(
       new Set(
-        activeRatesToUsd
-          .map((rate) => rate.from_currency?.toUpperCase())
+        activeRatesFromUsd
+          .map((rate) => rate.to_currency?.toUpperCase())
           .filter(Boolean),
       ),
     );
     return unique.sort((a, b) => a.localeCompare(b));
-  }, [activeRatesToUsd]);
+  }, [activeRatesFromUsd]);
   const destinationBankCurrency = withdrawalCurrency;
   
   // Set default withdrawal currency when available currencies are loaded
@@ -313,29 +319,19 @@ function WithdrawalRequestContent() {
     }
   }, [availableWithdrawalCurrencies, withdrawalCurrency]);
 
-  const sourceCurrencyToUsdRate = activeRatesToUsd.find(
-    (rate) => rate.from_currency?.toUpperCase() === normalizedCurrency,
-  );
-  const destinationCurrencyToUsdRate = activeRatesToUsd.find(
+  const destinationCurrencyFromUsdRate = activeRatesFromUsd.find(
     (rate) =>
-      rate.from_currency?.toUpperCase() ===
+      rate.to_currency?.toUpperCase() ===
       destinationBankCurrency?.toUpperCase(),
   );
   const amountNumeric = parseFloat(amount);
-  const sourceAmountInUsd =
-    !isNaN(amountNumeric) && amountNumeric > 0
-      ? normalizedCurrency === "USD" || normalizedCurrency === "USDT"
-        ? amountNumeric
-        : sourceCurrencyToUsdRate?.withdrawal_rate
-          ? amountNumeric * Number(sourceCurrencyToUsdRate.withdrawal_rate)
-          : null
-      : null;
+  const selectedWithdrawalRate = Number(destinationCurrencyFromUsdRate?.withdrawal_rate ?? 0);
   const convertedBankAmount =
-    sourceAmountInUsd !== null && destinationBankCurrency
+    !isNaN(amountNumeric) && amountNumeric > 0 && destinationBankCurrency
       ? destinationBankCurrency.toUpperCase() === "USD"
-        ? sourceAmountInUsd
-        : destinationCurrencyToUsdRate?.withdrawal_rate
-          ? sourceAmountInUsd / Number(destinationCurrencyToUsdRate.withdrawal_rate)
+        ? amountNumeric
+        : selectedWithdrawalRate > 0
+          ? amountNumeric * selectedWithdrawalRate
           : null
       : null;
 
@@ -368,6 +364,9 @@ function WithdrawalRequestContent() {
 
     setError(null);
     setSuccess(false);
+    setSubmittedWithdrawalType(null);
+    setSubmittedBankCredit(null);
+    setSubmittedBankCurrency("");
 
     if (!amount.trim()) {
       setError("Amount is required");
@@ -410,6 +409,9 @@ function WithdrawalRequestContent() {
         "Bank withdrawal is unavailable. Please add bank details first.",
       );
       return;
+    } else if (convertedBankAmount === null) {
+      setError("Bank withdrawal conversion rate is currently unavailable.");
+      return;
     }
 
     setIsSubmitting(true);
@@ -438,6 +440,9 @@ function WithdrawalRequestContent() {
       }
 
       setWithdrawalData(response.data || null);
+      setSubmittedWithdrawalType(withdrawalType);
+      setSubmittedBankCredit(isBankWithdrawal ? convertedBankAmount : null);
+      setSubmittedBankCurrency(isBankWithdrawal ? withdrawalCurrency.toUpperCase() : "");
       setSuccess(true);
       setIsSubmitting(false);
       void fetchWalletSummary();
@@ -634,8 +639,8 @@ function WithdrawalRequestContent() {
                           )}
                         </select>
                         <p className="text-xs text-muted-foreground">
-                          {destinationCurrencyToUsdRate?.withdrawal_rate
-                            ? `Rate: 1 USD = ${Number(destinationCurrencyToUsdRate.withdrawal_rate).toFixed(2)} ${withdrawalCurrency.toUpperCase()}`
+                          {selectedWithdrawalRate > 0
+                            ? `Rate: 1 USD = ${selectedWithdrawalRate.toFixed(2)} ${withdrawalCurrency.toUpperCase()}`
                             : "Withdrawal conversion rate is currently unavailable for this currency."}
                         </p>
                         {amount.trim() !== "" &&
@@ -860,7 +865,9 @@ function WithdrawalRequestContent() {
                       <div className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/20">
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">
-                            Amount:
+                            {submittedWithdrawalType === "bank"
+                              ? "Requested Amount:"
+                              : "Amount:"}
                           </span>
                           <span className="font-semibold text-emerald-800 dark:text-emerald-200">
                             {typeof withdrawalData.amount === "number"
@@ -874,28 +881,61 @@ function WithdrawalRequestContent() {
                                   minimumFractionDigits: 2,
                                   maximumFractionDigits: 8,
                                 })}{" "}
-                            {currency}
+                            USD
                           </span>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">
-                            Network:
-                          </span>
-                          <Badge
-                            variant="outline"
-                            className="bg-emerald-100 text-emerald-800 dark:bg-emerald-800 dark:text-emerald-100"
-                          >
-                            {withdrawalData.chain_id || chainId}
-                          </Badge>
-                        </div>
-                        <div className="flex items-start justify-between">
-                          <span className="text-sm text-muted-foreground">
-                            Wallet:
-                          </span>
-                          <code className="max-w-[70%] break-all rounded bg-emerald-100 px-2 py-1 text-right text-xs font-mono dark:bg-emerald-900">
-                            {withdrawalData.wallet_address || walletAddress}
-                          </code>
-                        </div>
+                        {submittedWithdrawalType === "bank" ? (
+                          <>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">
+                                Bank Credit:
+                              </span>
+                              <span className="font-semibold text-emerald-800 dark:text-emerald-200">
+                                {submittedBankCredit !== null
+                                  ? `${formatAmount(submittedBankCredit.toFixed(2))} ${submittedBankCurrency}`
+                                  : "--"}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">
+                                Bank:
+                              </span>
+                              <span className="max-w-[70%] truncate text-right text-sm font-medium text-emerald-800 dark:text-emerald-200">
+                                {bankDetails?.bank_name || "-"}
+                              </span>
+                            </div>
+                            <div className="flex items-start justify-between">
+                              <span className="text-sm text-muted-foreground">
+                                Account:
+                              </span>
+                              <code className="max-w-[70%] break-all rounded bg-emerald-100 px-2 py-1 text-right text-xs font-mono dark:bg-emerald-900">
+                                {bankDetails?.account_number || "-"}
+                              </code>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">
+                                Network:
+                              </span>
+                              <Badge
+                                variant="outline"
+                                className="bg-emerald-100 text-emerald-800 dark:bg-emerald-800 dark:text-emerald-100"
+                              >
+                                {withdrawalData.chain_id || chainId}
+                              </Badge>
+                            </div>
+                            <div className="flex items-start justify-between">
+                              <span className="text-sm text-muted-foreground">
+                                Wallet:
+                              </span>
+                              <code className="max-w-[70%] break-all rounded bg-emerald-100 px-2 py-1 text-right text-xs font-mono dark:bg-emerald-900">
+                                {withdrawalData.wallet_address || walletAddress}
+                              </code>
+                            </div>
+                          </>
+                        )}
                         <div className="flex items-center justify-between">
                           <span className="text-sm text-muted-foreground">
                             Status:
@@ -910,31 +950,45 @@ function WithdrawalRequestContent() {
                   )}
 
                   <div className="flex flex-col gap-3 sm:flex-row">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        const transactionHash = withdrawalData?.transaction_hash;
-                        if (!transactionHash) {
-                          setError(
-                            "Transaction hash is not available yet. Please check again later.",
+                    {submittedWithdrawalType === "bank" ? (
+                      <Button
+                        variant="outline"
+                        disabled
+                        className="border-emerald-200 text-emerald-700 disabled:opacity-80 dark:border-emerald-800 dark:text-emerald-300"
+                      >
+                        <Clock className="mr-2 h-4 w-4" />
+                        Pending Admin Review
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          const transactionHash = withdrawalData?.transaction_hash;
+                          if (!transactionHash) {
+                            setError(
+                              "Transaction hash is not available yet. Please check again later.",
+                            );
+                            return;
+                          }
+                          const explorerUrl = getExplorerUrl(
+                            withdrawalData?.chain_id || chainId,
+                            transactionHash,
                           );
-                          return;
-                        }
-                        const explorerUrl = getExplorerUrl(
-                          withdrawalData?.chain_id || chainId,
-                          transactionHash,
-                        );
-                        window.open(explorerUrl, "_blank", "noopener,noreferrer");
-                      }}
-                      className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-900/20"
-                    >
-                      <ExternalLink className="mr-2 h-4 w-4" />
-                      View Withdrawal Status
-                    </Button>
+                          window.open(explorerUrl, "_blank", "noopener,noreferrer");
+                        }}
+                        className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-900/20"
+                      >
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        View Withdrawal Status
+                      </Button>
+                    )}
                     <Button
                       onClick={() => {
                         setSuccess(false);
                         setWithdrawalData(null);
+                        setSubmittedWithdrawalType(null);
+                        setSubmittedBankCredit(null);
+                        setSubmittedBankCurrency("");
                         setAmount("");
                         setWalletAddress("");
                       }}

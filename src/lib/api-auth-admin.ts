@@ -2592,14 +2592,17 @@ export const kycFileUrl = (fileName?: string | null) =>
   fileName ? `${API_BASE_URL}/uploads/${encodeURIComponent(fileName)}` : "";
 
 export interface AdminUSDTDepositRequest {
+  deposit_type?: "bank" | "usdt" | string;
   id: number;
   user_id: number;
   transaction_hash: string | null;
+  transaction_reference?: string | null;
   payment_proof_url: string | null;
-  amount: string;
+  amount: string | number;
   status: "pending" | "approved" | "rejected";
   admin_notes: string | null;
   approved_by: string | null;
+  approved_by_manager_id?: string | number | null;
   approved_at: string | null;
   created_at: string;
   updated_at: string;
@@ -2609,15 +2612,19 @@ export interface AdminUSDTDepositRequest {
     first_name: string | null;
     last_name: string | null;
   };
+  managerApprover?: unknown | null;
 }
 
 export interface AdminUSDTDepositListResponse {
-  requests: AdminUSDTDepositRequest[];
+  deposits: AdminUSDTDepositRequest[];
   pagination?: {
-    page: number;
+    page?: number;
+    current_page?: number;
     limit: number;
-    total: number;
-    totalPages: number;
+    total?: number;
+    total_records?: number;
+    totalPages?: number;
+    total_pages?: number;
   };
 }
 
@@ -2637,7 +2644,7 @@ export interface AdminUSDTDepositVerifyResponse {
 
 export const adminUSDTDepositApi = {
   listAll: (page: number = 1, limit: number = 10, token: string) =>
-    apiCall<AdminUSDTDepositListResponse>(`/admin/usdt-deposit/all?page=${page}&limit=${limit}`, {
+    apiCall<AdminUSDTDepositListResponse>(`/admin/deposits/all?page=${page}&limit=${limit}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),
