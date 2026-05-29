@@ -132,6 +132,7 @@ function WithdrawalRequestContent() {
     number | null
   >(null);
   const [currencyRates, setCurrencyRates] = useState<CurrencyRateItem[]>([]);
+  const [withdrawalCurrency, setWithdrawalCurrency] = useState("INR");
 
   const selectedChain = CHAIN_OPTIONS.find((chain) => chain.value === chainId);
   const minimumAmount = 10.0;
@@ -281,10 +282,6 @@ function WithdrawalRequestContent() {
   const isBankWithdrawal = withdrawalType === "bank";
 
   const normalizedCurrency = currency.toUpperCase();
-  const destinationBankCurrency = useMemo(
-    () => getCurrencyFromCountry(bankDetails?.country),
-    [bankDetails?.country],
-  );
   const activeRatesToUsd = useMemo(
     () =>
       currencyRates.filter((rate) => {
@@ -296,6 +293,26 @@ function WithdrawalRequestContent() {
       }),
     [currencyRates],
   );
+  const availableWithdrawalCurrencies = useMemo(() => {
+    const unique = Array.from(
+      new Set(
+        activeRatesToUsd
+          .map((rate) => rate.from_currency?.toUpperCase())
+          .filter(Boolean),
+      ),
+    );
+    return unique.sort((a, b) => a.localeCompare(b));
+  }, [activeRatesToUsd]);
+  const destinationBankCurrency = withdrawalCurrency;
+  
+  // Set default withdrawal currency when available currencies are loaded
+  useEffect(() => {
+    if (availableWithdrawalCurrencies.length === 0) return;
+    if (!availableWithdrawalCurrencies.includes(withdrawalCurrency.toUpperCase())) {
+      setWithdrawalCurrency(availableWithdrawalCurrencies[0]);
+    }
+  }, [availableWithdrawalCurrencies, withdrawalCurrency]);
+
   const sourceCurrencyToUsdRate = activeRatesToUsd.find(
     (rate) => rate.from_currency?.toUpperCase() === normalizedCurrency,
   );
@@ -592,19 +609,45 @@ function WithdrawalRequestContent() {
                       Minimum withdrawal amount: {formatAmount(minimumAmount)}{" "}
                       {currency}
                     </p>
-                    {isBankWithdrawal &&
-                      amount.trim() !== "" &&
-                      !isNaN(amountNumeric) &&
-                      amountNumeric > 0 && (
+                    {isBankWithdrawal && (
+                      <div className="space-y-3">
+                        <Label
+                          htmlFor="withdrawal-currency"
+                          className="text-sm font-semibold text-foreground"
+                        >
+                          Withdrawal Currency
+                        </Label>
+                        <select
+                          id="withdrawal-currency"
+                          value={withdrawalCurrency}
+                          onChange={(e) => setWithdrawalCurrency(e.target.value)}
+                          className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        >
+                          {availableWithdrawalCurrencies.length === 0 ? (
+                            <option value="INR">No currencies available</option>
+                          ) : (
+                            availableWithdrawalCurrencies.map((code) => (
+                              <option key={code} value={code}>
+                                {code}
+                              </option>
+                            ))
+                          )}
+                        </select>
                         <p className="text-xs text-muted-foreground">
-                          {destinationBankCurrency &&
-                          convertedBankAmount !== null
-                            ? `Estimated bank credit: ${formatAmount(convertedBankAmount)} ${destinationBankCurrency}`
-                            : destinationBankCurrency
-                              ? `Estimated bank credit is unavailable right now for ${destinationBankCurrency}.`
-                              : "Estimated bank credit is unavailable because bank country is not mapped to a currency."}
+                          {destinationCurrencyToUsdRate?.withdrawal_rate
+                            ? `Rate: 1 USD = ${Number(destinationCurrencyToUsdRate.withdrawal_rate).toFixed(2)} ${withdrawalCurrency.toUpperCase()}`
+                            : "Withdrawal conversion rate is currently unavailable for this currency."}
                         </p>
-                      )}
+                        {amount.trim() !== "" &&
+                          !isNaN(amountNumeric) &&
+                          amountNumeric > 0 &&
+                          convertedBankAmount !== null && (
+                            <p className="text-xs font-medium text-foreground">
+                              Estimated bank credit: {formatAmount(convertedBankAmount.toFixed(2))} {withdrawalCurrency.toUpperCase()}
+                            </p>
+                          )}
+                      </div>
+                    )}
                   </div>
 
                   {!isCryptoWithdrawal ? (

@@ -628,7 +628,7 @@ function USDTDepositContent() {
           </div>
         </div>
         <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Total Balance</p>
               <p className="text-sm font-semibold text-foreground">{walletLoading ? "--" : `${formatAmount(totalBalance)} USD`}</p>
@@ -644,10 +644,6 @@ function USDTDepositContent() {
             <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Method</p>
               <p className="text-sm font-semibold text-foreground">{activeTab === "bank" ? "Bank" : activeTab === "binance_pay" ? "Binance" : activeTab === "coinsbuy" ? "CoinsBuy" : activeTab === "local" ? "On-Chain" : "Not selected"}</p>
-            </div>
-            <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Readiness</p>
-              <p className="text-sm font-semibold text-foreground">{depositReadiness}%</p>
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Scale, Settings, FileText, Loader2, CalendarIcon, Pencil } from "lucide-react";
+import { Scale, Settings, FileText, Loader2, CalendarIcon, Pencil, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { GetCity, GetCountries, GetState } from "react-country-state-city";
@@ -110,6 +110,11 @@ type BankDetailsField =
   | "bankAddress"
   | "country";
 
+type PersonalEditSnapshot = {
+  user: Pick<ProfileViewResponse["user"], "first_name" | "last_name" | "mobile" | "country_code">;
+  personal_information: ProfileViewResponse["personal_information"];
+};
+
 const LOCATION_OTHER_VALUE = "__other__";
 
 const normalizeLocationLabel = (value?: string | null) =>
@@ -136,6 +141,7 @@ export default function ProfileContent() {
   const [isLoading2FAStatus, setIsLoading2FAStatus] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
   const [isPersonalEditing, setIsPersonalEditing] = useState(false);
+  const [personalEditSnapshot, setPersonalEditSnapshot] = useState<PersonalEditSnapshot | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [dobDate, setDobDate] = useState<Date | undefined>(undefined);
   const [dobMonth, setDobMonth] = useState<Date | undefined>(undefined);
@@ -1023,6 +1029,7 @@ export default function ProfileContent() {
         setIs2FAEnabled(Boolean(normalizedProfile.user.google_2FA_status));
         if (section === "personal") {
           setIsPersonalEditing(false);
+          setPersonalEditSnapshot(null);
         }
         toast.success(
           response.message ||
@@ -1127,18 +1134,80 @@ export default function ProfileContent() {
     return !isNaN(date.getTime());
   };
 
+  const setDobStateFromValue = (dob: string | null | undefined) => {
+    if (dob) {
+      try {
+        const nextDobDate = new Date(dob);
+        if (isValidDate(nextDobDate)) {
+          setDobDate(nextDobDate);
+          setDobMonth(nextDobDate);
+          setDobValue(formatDateDisplay(nextDobDate));
+          return;
+        }
+      } catch (error) {
+        console.error("Error parsing DOB:", error);
+      }
+    }
+
+    setDobDate(undefined);
+    setDobMonth(undefined);
+    setDobValue("");
+  };
+
+  const handleStartPersonalEditing = () => {
+    if (!profileData) return;
+
+    setPersonalEditSnapshot({
+      user: {
+        first_name: profileData.user.first_name,
+        last_name: profileData.user.last_name,
+        mobile: profileData.user.mobile,
+        country_code: profileData.user.country_code,
+      },
+      personal_information: { ...profileData.personal_information },
+    });
+    setValidationErrors({});
+    setIsPersonalEditing(true);
+  };
+
+  const handleCancelPersonalEditing = () => {
+    if (personalEditSnapshot) {
+      setProfileData((current) =>
+        current
+          ? {
+              ...current,
+              user: {
+                ...current.user,
+                ...personalEditSnapshot.user,
+              },
+              personal_information: {
+                ...personalEditSnapshot.personal_information,
+              },
+            }
+          : current
+      );
+      setDobStateFromValue(personalEditSnapshot.personal_information.dob);
+      setLocationHydrated(false);
+    }
+
+    setValidationErrors({});
+    setCalendarOpen(false);
+    setIsPersonalEditing(false);
+    setPersonalEditSnapshot(null);
+  };
+
   // Get verification status badge
   const getStatusBadge = (status: string) => {
     switch (status.toLowerCase()) {
       case "completed":
         return (
-          <Badge className="bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300 border-green-200 dark:border-green-800">
+          <Badge className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
             Completed
           </Badge>
         );
       case "pending":
         return (
-          <Badge className="bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-300 border-orange-200 dark:border-orange-800">
+          <Badge className="border-amber-500/35 bg-amber-500/10 text-amber-700 dark:text-amber-300">
             Pending
           </Badge>
         );
@@ -1229,21 +1298,21 @@ export default function ProfileContent() {
             {/* Personal Information Status */}
             <Card className={`relative overflow-hidden rounded-2xl border shadow-sm ${
               verificationStatus.personal_information.status === "completed"
-                ? "border-green-200/80 bg-gradient-to-br from-green-50/60 to-background dark:border-green-800"
-                : "border-orange-200/80 bg-gradient-to-br from-orange-50/60 to-background dark:border-orange-800"
+                ? "border-emerald-500/35 bg-card/80 shadow-emerald-950/5 dark:border-emerald-500/35 dark:bg-black/20"
+                : "border-amber-500/40 bg-card/80 shadow-amber-950/5 dark:border-amber-500/35 dark:bg-black/20"
             }`}>
-              <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/40 blur-2xl" />
+              <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-foreground/5 blur-2xl" />
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   <div className={`rounded-xl border p-2.5 shadow-sm ${
                     verificationStatus.personal_information.status === "completed"
-                      ? "border-green-200 bg-green-100 dark:border-green-800 dark:bg-green-950/40"
-                      : "border-orange-200 bg-orange-100 dark:border-orange-800 dark:bg-orange-950/40"
+                      ? "border-emerald-500/30 bg-emerald-500/10"
+                      : "border-amber-500/35 bg-amber-500/10"
                   }`}>
                     <Scale className={`h-5 w-5 ${
                       verificationStatus.personal_information.status === "completed"
-                        ? "text-green-600 dark:text-green-400"
-                        : "text-orange-600 dark:text-orange-400"
+                        ? "text-emerald-600 dark:text-emerald-300"
+                        : "text-amber-600 dark:text-amber-300"
                     }`} />
                   </div>
                   <div className="flex-1">
@@ -1262,21 +1331,21 @@ export default function ProfileContent() {
             {/* Legal Information Status */}
             <Card className={`relative overflow-hidden rounded-2xl border shadow-sm ${
               verificationStatus.legal_information.status === "completed"
-                ? "border-green-200/80 bg-gradient-to-br from-green-50/60 to-background dark:border-green-800"
-                : "border-orange-200/80 bg-gradient-to-br from-orange-50/60 to-background dark:border-orange-800"
+                ? "border-emerald-500/35 bg-card/80 shadow-emerald-950/5 dark:border-emerald-500/35 dark:bg-black/20"
+                : "border-amber-500/40 bg-card/80 shadow-amber-950/5 dark:border-amber-500/35 dark:bg-black/20"
             }`}>
-              <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/40 blur-2xl" />
+              <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-foreground/5 blur-2xl" />
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   <div className={`rounded-xl border p-2.5 shadow-sm ${
                     verificationStatus.legal_information.status === "completed"
-                      ? "border-green-200 bg-green-100 dark:border-green-800 dark:bg-green-950/40"
-                      : "border-orange-200 bg-orange-100 dark:border-orange-800 dark:bg-orange-950/40"
+                      ? "border-emerald-500/30 bg-emerald-500/10"
+                      : "border-amber-500/35 bg-amber-500/10"
                   }`}>
                     <Settings className={`h-5 w-5 ${
                       verificationStatus.legal_information.status === "completed"
-                        ? "text-green-600 dark:text-green-400"
-                        : "text-orange-600 dark:text-orange-400"
+                        ? "text-emerald-600 dark:text-emerald-300"
+                        : "text-amber-600 dark:text-amber-300"
                     }`} />
                   </div>
                   <div className="flex-1">
@@ -1295,21 +1364,21 @@ export default function ProfileContent() {
             {/* Documents Verification Status */}
             <Card className={`relative overflow-hidden rounded-2xl border shadow-sm ${
               verificationStatus.documents_verification.status === "completed"
-                ? "border-green-200/80 bg-gradient-to-br from-green-50/60 to-background dark:border-green-800"
-                : "border-orange-200/80 bg-gradient-to-br from-orange-50/60 to-background dark:border-orange-800"
+                ? "border-emerald-500/35 bg-card/80 shadow-emerald-950/5 dark:border-emerald-500/35 dark:bg-black/20"
+                : "border-amber-500/40 bg-card/80 shadow-amber-950/5 dark:border-amber-500/35 dark:bg-black/20"
             }`}>
-              <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/40 blur-2xl" />
+              <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-foreground/5 blur-2xl" />
               <CardContent className="p-4">
                 <div className="flex items-start gap-3">
                   <div className={`rounded-xl border p-2.5 shadow-sm ${
                     verificationStatus.documents_verification.status === "completed"
-                      ? "border-green-200 bg-green-100 dark:border-green-800 dark:bg-green-950/40"
-                      : "border-orange-200 bg-orange-100 dark:border-orange-800 dark:bg-orange-950/40"
+                      ? "border-emerald-500/30 bg-emerald-500/10"
+                      : "border-amber-500/35 bg-amber-500/10"
                   }`}>
                     <FileText className={`h-5 w-5 ${
                       verificationStatus.documents_verification.status === "completed"
-                        ? "text-green-600 dark:text-green-400"
-                        : "text-orange-600 dark:text-orange-400"
+                        ? "text-emerald-600 dark:text-emerald-300"
+                        : "text-amber-600 dark:text-amber-300"
                     }`} />
                   </div>
                   <div className="flex-1">
@@ -1733,33 +1802,45 @@ export default function ProfileContent() {
               </Card>
             </div>
           </fieldset>
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-3">
+            {isPersonalEditing ? (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleCancelPersonalEditing}
+                disabled={saving}
+                size="lg"
+              >
+                <X className="mr-2 h-4 w-4" />
+                Cancel
+              </Button>
+            ) : null}
             <Button
               type="button"
               onClick={() => {
                 if (!isPersonalEditing) {
-                  setIsPersonalEditing(true);
+                  handleStartPersonalEditing();
                   return;
                 }
                 void handleSubmit("personal");
               }}
-                disabled={saving}
-                size="lg"
-              >
+              disabled={saving}
+              size="lg"
+            >
               {saving ? (
                 <>
-                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        Saving...
-      </>
-    ) : isPersonalEditing ? (
-      "Save Changes"
-    ) : (
-      <>
-        <Pencil className="mr-2 h-4 w-4" />
-        Edit
-      </>
-    )}
-  </Button>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </>
+              ) : isPersonalEditing ? (
+                "Save Changes"
+              ) : (
+                <>
+                  <Pencil className="mr-2 h-4 w-4" />
+                  Edit
+                </>
+              )}
+            </Button>
           </div>
         </TabsContent>
 
