@@ -402,8 +402,8 @@ export default function IbPlansManagementPage() {
           initialData={data}
           columns={columns}
           formComponent={PlanFormComponent}
-          title="IB Plans"
-          description="Manage Introducing Broker plans and nested commission structures."
+          title=""
+          description=""
           requiredModule="ibPlan"
           onAdd={async (partial) => {
             const { id: _ignored, ...rest } = partial as Partial<IbPlanRow>;

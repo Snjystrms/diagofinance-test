@@ -498,6 +498,7 @@ export interface AdminTicketItem {
   admin_notes: string | null;
   created_at: string;
   updated_at: string;
+  priority_label?: string | number | null;
   enquiry_type_label?: string;
   user?: AdminTicketUser;
   resolver?: AdminTicketResolver | null;

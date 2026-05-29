@@ -110,21 +110,29 @@ const statusBadge = (status: number) => {
   }
 };
 
-const priorityBadge = (priority: number) => {
-  switch (priority) {
+const priorityBadge = (priority: string | number | null | undefined) => {
+  const normalizedPriority =
+    typeof priority === "string" && Number.isNaN(Number(priority))
+      ? priority.toLowerCase()
+      : Number(priority);
+
+  switch (normalizedPriority) {
     case 1:
+    case "low":
       return (
         <Badge variant="outline" className="border-green-200 text-green-700 dark:border-green-800 dark:text-green-300">
           Low
         </Badge>
       );
     case 2:
+    case "medium":
       return (
         <Badge variant="outline" className="border-yellow-200 text-yellow-700 dark:border-yellow-800 dark:text-yellow-300">
           Medium
         </Badge>
       );
     case 3:
+    case "high":
       return (
         <Badge variant="outline" className="border-red-200 text-red-700 dark:border-red-800 dark:text-red-300">
           High
@@ -448,7 +456,7 @@ export default function AdminTicketsPage() {
         id: "priority",
         header: "Priority",
         accessorFn: (row) => row.priority,
-        cell: ({ row }) => priorityBadge(row.original.priority),
+        cell: ({ row }) => priorityBadge(row.original.priority_label ?? row.original.priority),
       },
       {
         id: "status",

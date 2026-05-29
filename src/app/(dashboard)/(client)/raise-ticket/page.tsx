@@ -114,8 +114,8 @@ const getStatusBadge = (status: number) => {
   }
 };
 
-const getPriorityBadge = (priority: number) => {
-  switch (priority) {
+const getPriorityBadge = (priority: number | string) => {
+  switch (Number(priority)) {
     case 1:
       return (
         <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200 dark:bg-green-950/20 dark:text-green-400 dark:border-green-800">
