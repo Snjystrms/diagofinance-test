@@ -450,6 +450,7 @@ export function USDTTransactionsPageContent() {
       if (activeTab === "deposits" && selectedDepositRequest) {
         res = await adminUSDTDepositApi.verify(
           {
+            deposit_type: selectedDepositRequest.deposit_type || "bank",
             request_id: selectedDepositRequest.id,
             action: actionType,
             admin_notes: adminNotes.trim() || undefined,

@@ -2629,6 +2629,7 @@ export interface AdminUSDTDepositListResponse {
 }
 
 export interface AdminUSDTDepositVerifyRequest {
+  deposit_type: "bank" | "usdt" | string;
   request_id: number;
   action: "approve" | "reject";
   admin_notes?: string;
@@ -2639,6 +2640,8 @@ export interface AdminUSDTDepositVerifyResponse {
   status: "approved" | "rejected";
   admin_notes: string | null;
   approved_by: string;
+  approved_by_manager_id?: string | number | null;
+  approved_by_type?: "admin" | "manager" | string;
   approved_at: string;
 }
 
@@ -2650,7 +2653,7 @@ export const adminUSDTDepositApi = {
     }),
 
   verify: (data: AdminUSDTDepositVerifyRequest, token: string) =>
-    apiCall<AdminUSDTDepositVerifyResponse>(`/admin/usdt-deposit/verify`, {
+    apiCall<AdminUSDTDepositVerifyResponse>(`/admin/deposits/verify`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(data),
