@@ -37,10 +37,9 @@ const TeamNode = ({ data }: NodeProps<GraphNode>) => {
   return (
     <div
       className={clsx(
-        "relative rounded-xl border shadow-sm px-3 py-2 w-[220px] h-[90px] flex items-center gap-3 backdrop-blur-sm cursor-pointer",
+        "relative rounded-xl border shadow-sm px-3 py-2 w-[220px] h-[90px] flex items-center gap-3 backdrop-blur-sm",
         "bg-card text-foreground",
         getBorderColor(),
-        "hover:ring-2 hover:ring-sky-500/30",
         highlightCls
       )}
       style={{ backgroundImage: ring }}

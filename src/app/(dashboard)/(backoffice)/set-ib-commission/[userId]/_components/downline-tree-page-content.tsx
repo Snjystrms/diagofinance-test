@@ -40,11 +40,11 @@ import {
 } from '@/components/ui/table';
 import { ArrowLeft, Edit, Save, X } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
-import { API_BASE_URL, adminIbUserCommissionsApi, type UserCommission, type UserCommissionResponse } from '@/lib/api';
+import { adminIbUserCommissionsApi, type UserCommission, type UserCommissionResponse } from '@/lib/api';
 import { getAdminFriendlyErrorMessage } from '@/lib/admin-friendly-errors';
 import { nodeTypes } from './team-node';
 import { formatDateTimeInIST } from '@/lib/formatters';
-import { fetchUsersByLevel, NODE_H, NODE_W, levelColor, levelToDepth, toastNoDownline, type UserByLevel, type UsersByLevelResponse } from '@/lib/downline-tree';
+import { fetchUsersByLevel, NODE_H, NODE_W, levelColor, levelToDepth, toastNoDownline, type UserByLevel } from '@/lib/downline-tree';
 import type { GraphEdge, GraphNode, NodeRecord, TeamNodeData } from '../_types';
 import { useIsDark } from '../_hooks/use-is-dark';
 
@@ -94,16 +94,14 @@ export function DownlineTreePageContent({
   const [edges, setEdges] = useState<Array<{ source: string; target: string }>>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
-  const [highlightId, setHighlightId] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const [userName, setUserName] = useState<string>('');
   const [reloadKey, setReloadKey] = useState(0);
 
   // Commission dialog state
   const [commissionDialogOpen, setCommissionDialogOpen] = useState(false);
-  const [selectedUserId, setSelectedUserId] = useState<string | number | null>(null);
+  const [selectedUserId] = useState<string | number | null>(null);
   const [commissionData, setCommissionData] = useState<UserCommissionResponse["data"] | null>(null);
-  const [loadingCommissions, setLoadingCommissions] = useState(false);
+  const [loadingCommissions] = useState(false);
   const [editingCommission, setEditingCommission] = useState<UserCommission | null>(null);
   const [editedCommissions, setEditedCommissions] = useState<Record<number, Partial<UserCommission>>>({});
   const [savingCommission, setSavingCommission] = useState<number | null>(null);
@@ -136,8 +134,6 @@ export function DownlineTreePageContent({
       setLoadError(null);
       setNodesById({});
       setEdges([]);
-      setExpanded({});
-      setHighlightId(null);
 
       const data = await fetchDownlineUsers(userId);
       if (!mounted || !data) {
@@ -189,7 +185,6 @@ export function DownlineTreePageContent({
       if (allUsers.length === 0) {
         setNodesById(nextNodes);
         setEdges(nextEdges);
-        setExpanded((e) => ({ ...e, [rootId]: true }));
         setLoading(false);
         toastNoDownline(ibUser.name);
         return;
@@ -274,7 +269,6 @@ export function DownlineTreePageContent({
 
       setNodesById(nextNodes);
       setEdges(nextEdges);
-      setExpanded((e) => ({ ...e, [rootId]: true }));
       setLoading(false);
     };
 
@@ -283,140 +277,6 @@ export function DownlineTreePageContent({
       mounted = false;
     };
   }, [fetchDownlineUsers, reloadKey, token, userId]);
-
-  // expand a node IN PLACE - fetch deeper levels
-  const expandSponsor = useCallback(
-    async (sponsorId: string) => {
-      if (expanded[sponsorId]) return;
-
-      const parent = nodesById[sponsorId];
-      if (!parent) return;
-
-      const userIdMatch = sponsorId.match(/user_(\d+)/);
-      const targetUserId = userIdMatch ? parseInt(userIdMatch[1], 10) : null;
-      
-      if (!targetUserId) {
-        const node = Object.values(nodesById).find((n) => n.sponsorId === sponsorId);
-        if (!node) {
-          toast.error('Cannot expand: user ID not found');
-          return;
-        }
-        setExpanded((e) => ({ ...e, [sponsorId]: true }));
-        return;
-      }
-
-      setHighlightId(sponsorId);
-      const data = await fetchDownlineUsers(targetUserId);
-      if (!data) {
-        setHighlightId(null);
-        return;
-      }
-
-      const usersByLevel = data.users_by_level || {};
-      const allUsers: UserByLevel[] = [];
-      Object.values(usersByLevel).forEach((users) => {
-        if (Array.isArray(users)) {
-          allUsers.push(...users);
-        }
-      });
-
-      if (allUsers.length === 0) {
-        toastNoDownline(parent.username || sponsorId);
-        setExpanded((e) => ({ ...e, [sponsorId]: true }));
-        setTimeout(() => setHighlightId((id) => (id === sponsorId ? null : id)), 500);
-        return;
-      }
-
-      const userMap = new Map<string, UserByLevel>();
-      allUsers.forEach((user) => {
-        const userId = user.sponsor_id || `user_${user.id}`;
-        userMap.set(userId, user);
-      });
-
-      setNodesById((prev) => {
-        const copy = { ...prev };
-        for (const user of allUsers) {
-          const id = user.sponsor_id || `user_${user.id}`;
-          if (!copy[id]) {
-            const depth = levelToDepth(user.level);
-            copy[id] = {
-              sponsorId: id,
-              username: user.name,
-              packageSum: 0,
-              totalBV: 0,
-              status: 1,
-              depth: (parent.depth ?? 0) + depth,
-              userId: user.id,
-              isIb: !!user.ib_name,
-            };
-          }
-        }
-        return copy;
-      });
-
-      setEdges((prev) => {
-        const asSet = new Set(prev.map((e) => `${e.source}->${e.target}`));
-        const appended: Array<{ source: string; target: string }> = [];
-        
-        for (const user of allUsers) {
-          const id = user.sponsor_id || `user_${user.id}`;
-          if (user.sponsor_by === sponsorId || user.sponsor_by === parent.sponsorId) {
-            const key = `${sponsorId}->${id}`;
-            if (!asSet.has(key)) {
-              appended.push({ source: sponsorId, target: id });
-              asSet.add(key);
-            }
-          }
-        }
-        return [...prev, ...appended];
-      });
-
-      setExpanded((e) => ({ ...e, [sponsorId]: true }));
-      setTimeout(() => setHighlightId((id) => (id === sponsorId ? null : id)), 1500);
-    },
-    [expanded, nodesById, fetchDownlineUsers]
-  );
-
-  // Load user commissions
-  const loadUserCommissions = useCallback(async (targetUserId: string | number) => {
-    if (!token || !targetUserId) {
-      return false;
-    }
-
-    try {
-      setLoadingCommissions(true);
-      setSelectedUserId(targetUserId);
-      setCommissionData(null);
-      setCommissionDialogOpen(true);
-      setEditedCommissions({});
-      setEditingCommission(null);
-      const response = await adminIbUserCommissionsApi.getUserCommissions(targetUserId, token);
-      
-      if (response.success && response.data) {
-        const data = (response as unknown as { data: UserCommissionResponse["data"] }).data;
-        setCommissionData(data);
-        return true;
-      } else {
-        setCommissionDialogOpen(false);
-        toast.error(
-          getAdminFriendlyErrorMessage("Failed to load commission data", {
-            resource: "commission data",
-            action: "load",
-          })
-        );
-        return false;
-      }
-    } catch (error: unknown) {
-      setCommissionDialogOpen(false);
-      console.error("Failed to load user commissions:", error);
-      toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "commissions", action: "load" })
-      );
-      return false;
-    } finally {
-      setLoadingCommissions(false);
-    }
-  }, [token]);
 
   const handleEditCommission = (commission: UserCommission) => {
     setEditingCommission(commission);
@@ -533,15 +393,6 @@ export function DownlineTreePageContent({
     );
   };
 
-  // Handle node click for commission view
-  const handleNodeClickForCommission = useCallback((nodeData: TeamNodeData) => {
-    if (nodeData.userId) {
-      void loadUserCommissions(nodeData.userId);
-    } else {
-      toast.error("User ID not available for this node");
-    }
-  }, [loadUserCommissions]);
-
   /* ======================== Build RF nodes/edges with auto layout ======================== */
 
   const { rfNodes, rfEdges } = useMemo(() => {
@@ -564,7 +415,7 @@ export function DownlineTreePageContent({
         type: 'teamNode',
         position: { x: x - NODE_W / 2, y: y - NODE_H / 2 },
         draggable: false,
-        selectable: true,
+        selectable: false,
         data: {
           sponsorId: n.sponsorId,
           username: n.username,
@@ -573,7 +424,7 @@ export function DownlineTreePageContent({
           level: n.depth === 0 ? 'Level-IB' : `Level-${n.depth}`,
           status: n.status ?? 1,
           isRoot: n.isRoot,
-          highlighted: highlightId === n.sponsorId,
+          highlighted: false,
           userId: n.userId,
           isIb: n.isIb,
         },
@@ -598,20 +449,16 @@ export function DownlineTreePageContent({
     });
 
     return { rfNodes, rfEdges };
-  }, [nodesById, edges, highlightId]);
+  }, [nodesById, edges]);
 
   /* ======================== Canvas ======================== */
 
   function GraphCanvas({
     nodes,
     edges,
-    onExpand,
-    onNodeClickForCommission,
   }: {
     nodes: GraphNode[];
     edges: GraphEdge[];
-    onExpand: (sponsorId: string) => void;
-    onNodeClickForCommission: (nodeData: TeamNodeData) => void;
   }) {
     const [query, setQuery] = useState('');
     const isDark = useIsDark();
@@ -682,17 +529,8 @@ export function DownlineTreePageContent({
           fitViewOptions={{ padding: 0.25 }}
           nodeTypes={nodeTypes}
           nodesDraggable={false}
+          elementsSelectable={false}
           defaultEdgeOptions={defaultEdgeOptions}
-          onNodeClick={(_, node) => {
-            const d = node.data as TeamNodeData;
-            // Show commission dialog on node click
-            onNodeClickForCommission(d);
-          }}
-          onNodeDoubleClick={(_, node) => {
-            // Expand on double click
-            const d = node.data as TeamNodeData;
-            onExpand(d.sponsorId);
-          }}
         >
           <Background
             variant={BackgroundVariant.Dots}
@@ -717,7 +555,6 @@ export function DownlineTreePageContent({
           <Panel position="top-left" className="rounded-lg bg-card/90 border border-border backdrop-blur px-3 py-2 shadow text-foreground">
             <div className="flex items-center gap-2">
               <span className="text-sm font-semibold">Downline Tree - {userName}</span>
-              <span className="text-xs text-muted-foreground">click node to view commission, double-click to expand</span>
             </div>
           </Panel>
 
@@ -810,16 +647,17 @@ export function DownlineTreePageContent({
               <GraphCanvas 
                 nodes={rfNodes} 
                 edges={rfEdges} 
-                onExpand={expandSponsor}
-                onNodeClickForCommission={handleNodeClickForCommission}
               />
             </ReactFlowProvider>
           </div>
         </div>
       </div>
+       </>
+  );
+} 
 
       {/* Commission Dialog */}
-      <Dialog open={commissionDialogOpen} onOpenChange={setCommissionDialogOpen}>
+      {/* <Dialog open={commissionDialogOpen} onOpenChange={setCommissionDialogOpen}>
         <DialogContent className="!max-w-[78vw] !w-[78vw] max-h-[95vh] overflow-y-auto sm:!max-w-[78vw]">
           <DialogHeader>
             <DialogTitle>User Commissions</DialogTitle>
@@ -842,9 +680,9 @@ export function DownlineTreePageContent({
               <div className="space-y-4">
                 <div className="rounded-lg border border-dashed bg-muted/30 px-4 py-3 text-sm text-muted-foreground">
                   All commission values in this table are shown in USD.
-                </div>
+                </div> */}
                 {/* Group commissions by Account Type */}
-                {(() => {
+                {/* {(() => {
                   const groupedByAccount = commissionData.commissions.reduce(
                   (acc, commission) => {
                     const key = `${commission.account_type_id}`;
@@ -1061,4 +899,4 @@ export function DownlineTreePageContent({
       </Dialog>
     </>
   );
-}
+} */}

@@ -6,7 +6,18 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
-import { Calendar, CheckCircle, Mail, Plus, RefreshCw, Search, Users, ShieldPlus, ShieldMinus } from "lucide-react";
+import {
+  Calendar,
+  ChevronDown,
+  Download,
+  Plus,
+  RefreshCw,
+  Search,
+  Users,
+  ShieldPlus,
+  ShieldMinus,
+} from "lucide-react";
+import * as XLSX from "xlsx";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { DeleteDialog } from "@/components/dialogs/delete-dialog";
@@ -23,6 +34,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -92,6 +109,54 @@ const statusFilters = [
   { label: "Active", value: "1" },
   { label: "Blocked", value: "2" },
 ];
+
+const formatExportDateTime = (value?: string | null) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const getUserStatusLabel = (status?: string | number | null) => {
+  switch (String(status ?? "")) {
+    case "0":
+      return "Pending";
+    case "1":
+      return "Active";
+    case "2":
+      return "Blocked";
+    default:
+      return status == null || String(status).trim() === "" ? "-" : String(status);
+  }
+};
+
+const getVerificationLabel = (value?: number | string | boolean | null) =>
+  String(value ?? "0") === "1" || value === true ? "Yes" : "No";
+
+const getIbStatusLabel = (sponsorId?: string | number | null) => {
+  const normalizedSponsorId = String(sponsorId ?? "").trim();
+  return normalizedSponsorId ? `IB: ${normalizedSponsorId}` : "Client";
+};
+
+const getExportTimestamp = () => {
+  const date = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+    "-",
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+    pad(date.getSeconds()),
+  ].join("");
+};
 
 const createInitialCreateFormState = (): AdminUserCreateFormData => ({
   first_name: "",
@@ -397,6 +462,84 @@ export default function NewUsersPage() {
   useEffect(() => {
     void loadUsers();
   }, [loadUsers]);
+
+  const handleExport = useCallback(async (formatType: "xlsx" | "csv") => {
+    if (!canViewUserList) {
+      toast.error("You do not have permission to export users");
+      return;
+    }
+    if (!token) {
+      toast.error("Authentication required to export data");
+      return;
+    }
+
+    const exportToastId = `users-export-${formatType}`;
+    try {
+      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
+      const response = await adminUsersApi.list({
+        token,
+        page: 1,
+        limit: Math.max(paginationMeta?.total ?? users.length, 10000),
+        search: search?.trim() ? search : undefined,
+        status: statusFilter !== "all" ? statusFilter : undefined,
+      });
+      const exportUsers = extractUsers(response?.data ?? null);
+
+      if (exportUsers.length === 0) {
+        toast.error("No data to export", { id: exportToastId });
+        return;
+      }
+
+      const exportData = exportUsers.map((user, index) => ({
+        "Sr. No.": index + 1,
+        // ID: user.id,
+        // UUID: user.uuid || "-",
+        Name: user.name || `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || "-",
+        Username: user.username || "-",
+        "IB Status": getIbStatusLabel(user.sponsor_id),
+        Email: user.email || "-",
+        Mobile: user.mobile || "-",
+        Country: user.country || "-",
+        // "Country Code": user.country_code || "-",
+        "Sponsor ID": user.sponsor_id || "-",
+        "Sponsor By": user.sponsor_by ?? "-",
+        // "Referral Code": user.referral_code || "-",
+        Status: getUserStatusLabel(user.status),
+        // "Email Verified": getVerificationLabel(user.email_verified),
+        // "Payment Verified": getVerificationLabel(user.payment_verified),
+        "Created At": formatExportDateTime(user.created_at),
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const filenameBase = `new-users-${getExportTimestamp()}`;
+      let filename = `${filenameBase}.xlsx`;
+
+      if (formatType === "xlsx") {
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "New Users");
+        XLSX.writeFile(workbook, filename);
+      } else {
+        const csv = XLSX.utils.sheet_to_csv(worksheet);
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        filename = `${filenameBase}.csv`;
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+      }
+
+      toast.success(`Exported ${exportUsers.length} users to ${filename}`, { id: exportToastId });
+    } catch (err) {
+      console.error(`Failed to export ${formatType}:`, err);
+      toast.error(
+        getAdminFriendlyErrorMessage(err, { resource: "users", action: "export" }),
+        { id: exportToastId },
+      );
+    }
+  }, [canViewUserList, token, paginationMeta?.total, users.length, search, statusFilter]);
 
   useEffect(() => {
     void loadIbPlans();
@@ -745,7 +888,26 @@ export default function NewUsersPage() {
                   Listed are all the crm users
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                {canViewUserList ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="gap-2">
+                        <Download className="h-4 w-4" />
+                        Export
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => void handleExport("xlsx")}>
+                        Export Excel (.xlsx)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => void handleExport("csv")}>
+                        Export CSV (.csv)
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : null}
                 {canAddUser ? (
                   <Button onClick={() => setCreateDialogOpen(true)}>
                     <Plus className="mr-2 h-4 w-4" />
