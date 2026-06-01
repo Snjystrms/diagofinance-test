@@ -912,12 +912,12 @@ export function USDTTransactionsPageContent() {
               <div className="space-y-4">
                 <div className="rounded-lg border p-4 space-y-2">
                   <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
+                    {/* <div>
                       <span className="text-muted-foreground">Request ID:</span>
                       <div className="font-medium">
                         {activeTab === "deposits" ? selectedDepositRequest?.id : selectedWithdrawalRequest?.id}
                       </div>
-                    </div>
+                    </div> */}
                     <div>
                       <span className="text-muted-foreground">Amount:</span>
                       <div className="font-medium">

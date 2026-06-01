@@ -66,8 +66,8 @@ const normalize = (item: CurrencyRateItem): CurrencyRateRow => ({
 const fmtDate = (s?: string) => (s ? formatDateTimeInIST(s) : "-");
 
 const defaultFormValue: CurrencyRateFormValue = {
-  from_currency: "EUR",
-  to_currency: "USD",
+  from_currency: "USD",
+  to_currency: "EUR",
   deposit_rate: "",
   withdrawal_rate: "",
   status: true,
@@ -109,30 +109,30 @@ function CurrencyRateFormDialog({
   loading: boolean;
 }) {
   const [form, setForm] = useState<CurrencyRateFormValue>(defaultFormValue);
-  const [fromCurrencyCustom, setFromCurrencyCustom] = useState("");
+  const [toCurrencyCustom, setToCurrencyCustom] = useState("");
 
-  const isFromCustom = !MAINSTREAM_CURRENCIES.some((c) => c.code === form.from_currency);
+  const isToCustom = !MAINSTREAM_CURRENCIES.some((c) => c.code === form.to_currency);
 
   const isEdit = Boolean(form.id);
 
   const syncForm = useCallback((data: CurrencyRateRow | null) => {
     if (!data) {
       setForm(defaultFormValue);
-      setFromCurrencyCustom("");
+      setToCurrencyCustom("");
       return;
     }
     setForm({
       id: data.id,
       from_currency: data.from_currency,
-      to_currency: "USD", // Always set to USD
+      to_currency: data.to_currency,
       deposit_rate: String(data.deposit_rate),
       withdrawal_rate: String(data.withdrawal_rate),
       status: data.status,
     });
-    setFromCurrencyCustom(
-      MAINSTREAM_CURRENCIES.some((c) => c.code === data.from_currency.toUpperCase())
+    setToCurrencyCustom(
+      MAINSTREAM_CURRENCIES.some((c) => c.code === data.to_currency.toUpperCase())
         ? ""
-        : data.from_currency
+        : data.to_currency
     );
   }, []);
 
@@ -154,22 +154,34 @@ function CurrencyRateFormDialog({
 
         <div className="grid gap-4 py-2">
           {/* From Currency */}
-          <div className="grid gap-1.5">
+          <div className="grid gap-1.5 max-w-[110px]">
             <Label htmlFor="from_currency">From Currency</Label>
+            <Input
+              id="from_currency"
+              value={form.from_currency || "USD"}
+              disabled
+              className="bg-muted"
+            />
+            <p className="text-xs text-muted-foreground whitespace-nowrap">All rates are converted from USD</p>
+          </div>
+
+          {/* To Currency */}
+          <div className="grid gap-1.5">
+            <Label htmlFor="to_currency">To Currency</Label>
             <Select
-              value={isFromCustom ? "CUSTOM" : form.from_currency}
+              value={isToCustom ? "CUSTOM" : form.to_currency}
               onValueChange={(value) => {
                 if (value === "CUSTOM") {
-                  setForm((prev) => ({ ...prev, from_currency: "CUSTOM" }));
-                  setFromCurrencyCustom("");
+                  setForm((prev) => ({ ...prev, to_currency: "CUSTOM" }));
+                  setToCurrencyCustom("");
                 } else {
-                  setForm((prev) => ({ ...prev, from_currency: value.toUpperCase() }));
-                  setFromCurrencyCustom("");
+                  setForm((prev) => ({ ...prev, to_currency: value.toUpperCase() }));
+                  setToCurrencyCustom("");
                 }
               }}
               disabled={isEdit}
             >
-              <SelectTrigger id="from_currency">
+              <SelectTrigger id="to_currency">
                 <SelectValue placeholder="Select currency" />
               </SelectTrigger>
               <SelectContent>
@@ -181,27 +193,15 @@ function CurrencyRateFormDialog({
                 <SelectItem value="CUSTOM">Other (type custom code)</SelectItem>
               </SelectContent>
             </Select>
-            {isFromCustom && (
+            {isToCustom && (
               <Input
-                value={fromCurrencyCustom}
+                value={toCurrencyCustom}
                 disabled={isEdit}
-                onChange={(e) => setFromCurrencyCustom(e.target.value.toUpperCase())}
+                onChange={(e) => setToCurrencyCustom(e.target.value.toUpperCase())}
                 placeholder="Type custom code (e.g. BDT)"
                 autoFocus
               />
             )}
-          </div>
-
-          {/* To Currency */}
-          <div className="grid gap-1.5">
-            <Label htmlFor="to_currency">To Currency</Label>
-            <Input
-              id="to_currency"
-              value="USD"
-              disabled
-              className="bg-muted"
-            />
-            <p className="text-xs text-muted-foreground">All rates are converted to USD</p>
           </div>
 
           {/* Deposit Rate */}
@@ -249,10 +249,10 @@ function CurrencyRateFormDialog({
           <Button
             disabled={loading}
             onClick={async () => {
-              const finalFromCurrency = (fromCurrencyCustom.trim() || form.from_currency).toUpperCase();
-              const finalToCurrency = "USD"; // Always USD
-              if (!finalFromCurrency || finalFromCurrency === "CUSTOM") {
-                toast.error("Please enter a custom currency code for From Currency");
+              const finalFromCurrency = form.from_currency.toUpperCase();
+              const finalToCurrency = (toCurrencyCustom.trim() || form.to_currency).toUpperCase();
+              if (!finalToCurrency || finalToCurrency === "CUSTOM") {
+                toast.error("Please enter a custom currency code for To Currency");
                 return;
               }
               if (form.deposit_rate.trim() === "" || Number.isNaN(Number(form.deposit_rate))) {
