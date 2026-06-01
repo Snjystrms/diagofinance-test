@@ -3,11 +3,19 @@
 import { useCallback, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { Award } from "lucide-react";
+import { Award, ChevronDown, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ProtectedRoute } from "@/components/protected-route";
 import { PermissionAwareCrudDataTable } from "@/components/permission-aware-crud-table";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/auth-context";
 import {
   adminAccountTypesApi,
@@ -56,6 +64,33 @@ const COMMISSION_LEVEL_ORDER = COMMISSION_LEVELS.reduce<Record<string, number>>(
   accumulator[level] = index;
   return accumulator;
 }, {});
+
+const getExportTimestamp = () => {
+  const date = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+    "-",
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+    pad(date.getSeconds()),
+  ].join("");
+};
+
+const formatExportDateTime = (value?: string | null) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 const toNumericValue = (value: unknown, fallback = 0) => {
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -329,6 +364,56 @@ export default function IbPlansManagementPage() {
     [fetchPlanDetail],
   );
 
+  const handleExport = useCallback((formatType: "xlsx" | "csv") => {
+    const exportToastId = `ib-plans-export-${formatType}`;
+    try {
+      if (data.length === 0) {
+        toast.error("No data to export", { id: exportToastId });
+        return;
+      }
+
+      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
+      const exportData = data.map((plan, index) => ({
+        "Sr. No.": index + 1,
+        Plan: plan.name || "-",
+        Description: plan.description || "-",
+        "Account Types": plan.account_types.length,
+        "IB Users": plan.ib_user_count,
+        Status: plan.status ? "Active" : "Inactive",
+        Updated: formatExportDateTime(plan.updated_at),
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const filenameBase = `ib-plans-${getExportTimestamp()}`;
+      let filename = `${filenameBase}.xlsx`;
+
+      if (formatType === "xlsx") {
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "IB Plans");
+        XLSX.writeFile(workbook, filename);
+      } else {
+        const csv = XLSX.utils.sheet_to_csv(worksheet);
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        filename = `${filenameBase}.csv`;
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+      }
+
+      toast.success(`Exported ${data.length} IB plans to ${filename}`, { id: exportToastId });
+    } catch (error: unknown) {
+      console.error(`Failed to export ${formatType}:`, error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "IB plans", action: "export" }),
+        { id: exportToastId },
+      );
+    }
+  }, [data]);
+
   const columns = useMemo(() => getColumns(), []);
 
   const PlanFormComponent = useCallback(
@@ -387,14 +472,33 @@ export default function IbPlansManagementPage() {
   return (
     <ProtectedRoute>
       <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
-        <div className="mb-4 space-y-1">
-          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-            <Award className="h-6 w-6 text-primary" />
-            IB Plans Management
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Create, update, and manage IB plans with account type specific commission levels.
-          </p>
+        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div className="space-y-1">
+            <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+              <Award className="h-6 w-6 text-primary" />
+              IB Plans Management
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Create, update, and manage IB plans with account type specific commission levels.
+            </p>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                Export
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport("xlsx")}>
+                Export Excel (.xlsx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("csv")}>
+                Export CSV (.csv)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <PermissionAwareCrudDataTable<IbPlanRow>

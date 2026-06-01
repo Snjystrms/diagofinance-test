@@ -5,7 +5,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
-import { Building2, Eye, Landmark, Pencil, Plus, RefreshCw, Search, Trash2, Users } from "lucide-react";
+import { Building2, ChevronDown, Download, Eye, Landmark, Pencil, Plus, RefreshCw, Search, Trash2, Users } from "lucide-react";
+import * as XLSX from "xlsx";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { DeleteDialog } from "@/components/dialogs/delete-dialog";
@@ -15,6 +16,12 @@ import { ProtectedRoute } from "@/components/protected-route";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
@@ -43,6 +50,20 @@ import { BankDetailFormDialog } from "./bank-detail-form-dialog";
 import { BankDetailViewDialog } from "./bank-detail-view-dialog";
 
 type DialogMode = "create" | "edit" | null;
+
+const getExportTimestamp = () => {
+  const date = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+    "-",
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+    pad(date.getSeconds()),
+  ].join("");
+};
 
 export function AdminBankDetailsPageContent() {
   const { token } = useAuth();
@@ -225,6 +246,66 @@ export function AdminBankDetailsPageContent() {
     }
   };
 
+  const handleExport = useCallback((formatType: "xlsx" | "csv") => {
+    if (!canList) {
+      toast.error("You do not have permission to export bank details");
+      return;
+    }
+
+    const exportToastId = `bank-details-export-${formatType}`;
+    try {
+      if (filteredRows.length === 0) {
+        toast.error("No data to export", { id: exportToastId });
+        return;
+      }
+
+      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
+      const exportData = filteredRows.map((row, index) => ({
+        "Sr. No.": index + 1,
+        User: row.user?.name || "-",
+        Email: row.user?.email || "-",
+        "Account Holder": row.account_holder_name || "-",
+        Bank: row.bank_name || "-",
+        Country: row.country || "-",
+        "Account Number": row.account_number || "-",
+        IBAN: row.iban_number || "-",
+        "SWIFT/IFSC": row.swift_ifsc_code || "-",
+        Address: row.address || "-",
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const filenameBase = `bank-details-${getExportTimestamp()}`;
+      let filename = `${filenameBase}.xlsx`;
+
+      if (formatType === "xlsx") {
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Bank Details");
+        XLSX.writeFile(workbook, filename);
+      } else {
+        const csv = XLSX.utils.sheet_to_csv(worksheet);
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        filename = `${filenameBase}.csv`;
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+      }
+
+      toast.success(`Exported ${filteredRows.length} bank details to ${filename}`, {
+        id: exportToastId,
+      });
+    } catch (error: unknown) {
+      console.error(`Failed to export ${formatType}:`, error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "bank details", action: "export" }),
+        { id: exportToastId },
+      );
+    }
+  }, [canList, filteredRows]);
+
   const columns = useMemo<ColumnDef<AdminBankDetailItem>[]>(
     () => [
         {
@@ -364,10 +445,29 @@ export function AdminBankDetailsPageContent() {
 
           <div className="flex flex-wrap gap-2">
             {canList ? (
-              <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
-                <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
-                Refresh
-              </Button>
+              <>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="gap-2">
+                      <Download className="h-4 w-4" />
+                      Export
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => handleExport("xlsx")}>
+                      Export Excel (.xlsx)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport("csv")}>
+                      Export CSV (.csv)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
+                  <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+                  Refresh
+                </Button>
+              </>
             ) : null}
             {canMutate ? (
               <Button onClick={openCreateDialog}>

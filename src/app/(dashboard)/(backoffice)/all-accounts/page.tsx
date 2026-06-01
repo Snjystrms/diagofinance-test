@@ -11,10 +11,17 @@ import { PermissionAwareCrudDataTable } from "@/components/permission-aware-crud
 import { getColumns } from "./columns";
 import { AccountTypeForm } from "./account-type-form";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Package } from "lucide-react";
+import { ChevronDown, Download, Package } from "lucide-react";
+import * as XLSX from "xlsx";
 import {
   adminAccountTypesApi,
   type AccountTypeCommissionItem,
@@ -66,6 +73,33 @@ const ACCOUNT_TYPE_LEVELS = [
   "Level-4",
   "Level-5",
 ] as const;
+
+const getExportTimestamp = () => {
+  const date = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+    "-",
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+    pad(date.getSeconds()),
+  ].join("");
+};
+
+const formatExportDateTime = (value?: string | null) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 const COMMISSION_LEVEL_ORDER = ACCOUNT_TYPE_LEVELS.reduce<Record<string, number>>(
   (accumulator, level, index) => {
@@ -447,6 +481,59 @@ export default function AllAccountsPage() {
     [fetchAccountTypeDetail],
   );
 
+  const handleExport = useCallback((formatType: "xlsx" | "csv") => {
+    const exportToastId = `account-types-export-${formatType}`;
+    try {
+      if (data.length === 0) {
+        toast.error("No data to export", { id: exportToastId });
+        return;
+      }
+
+      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
+      const exportData = data.map((accountType, index) => ({
+        "Sr. No.": index + 1,
+        Name: accountType.name || "-",
+        "Base Currency": accountType.base_currency || "-",
+        "Spread From": accountType.spread_from || "-",
+        Leverage:
+          accountType.leverage_type === "dynamic"
+            ? `Up to 1:${accountType.leverage_value} (dynamic)`
+            : `1:${accountType.leverage_value} (fixed)`,
+        Status: accountType.status ? "Active" : "Inactive",
+        Updated: formatExportDateTime(accountType.updated_at),
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const filenameBase = `account-types-${getExportTimestamp()}`;
+      let filename = `${filenameBase}.xlsx`;
+
+      if (formatType === "xlsx") {
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Account Types");
+        XLSX.writeFile(workbook, filename);
+      } else {
+        const csv = XLSX.utils.sheet_to_csv(worksheet);
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        filename = `${filenameBase}.csv`;
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+      }
+
+      toast.success(`Exported ${data.length} account types to ${filename}`, { id: exportToastId });
+    } catch (error: unknown) {
+      console.error(`Failed to export ${formatType}:`, error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "account types", action: "export" }),
+        { id: exportToastId },
+      );
+    }
+  }, [data]);
+
   const columns = useMemo(
     () => getColumns({ onToggleStatus: handleToggleStatus, actionLoadingId }),
     [handleToggleStatus, actionLoadingId]
@@ -488,14 +575,33 @@ export default function AllAccountsPage() {
     <ProtectedRoute>
       
         <div className="container mx-auto px-4 md:px-6 lg:px-8 py-10">
-          <div className="mb-4 space-y-1">
-            <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-              <Package className="h-6 w-6 text-primary" />
-              All Accounts
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Create, update, and manage account types
-            </p>
+          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div className="space-y-1">
+              <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+                <Package className="h-6 w-6 text-primary" />
+                All Accounts
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Create, update, and manage account types
+              </p>
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Export
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExport("xlsx")}>
+                  Export Excel (.xlsx)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport("csv")}>
+                  Export CSV (.csv)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           {/* Filters */}
           <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">

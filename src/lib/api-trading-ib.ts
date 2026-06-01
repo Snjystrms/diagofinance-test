@@ -892,6 +892,7 @@ export interface AdminIbUser {
   ib_plan_name?: string;
   partner_id?: string;
   referral_link?: string;
+  referral_code?: string;
   status?: number | string;
   is_ib_user?: boolean | number;
   created_at?: string;

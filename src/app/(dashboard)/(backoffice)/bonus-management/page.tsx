@@ -1,12 +1,14 @@
 "use client";
 
-import { useDeferredValue, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import toast from "react-hot-toast";
 import {
   ArrowDownCircle,
   ArrowUpCircle,
+  ChevronDown,
+  Download,
   Gift,
   Loader2,
   Plus,
@@ -14,6 +16,7 @@ import {
   Search,
   Wallet,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
@@ -33,6 +36,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -69,6 +78,33 @@ const formatMoney = (value?: number | null) =>
   }).format(Number(value ?? 0));
 
 const isBonusIn = (value: string) => value.toUpperCase() === "IN";
+
+const getExportTimestamp = () => {
+  const date = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+    "-",
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+    pad(date.getSeconds()),
+  ].join("");
+};
+
+const formatExportDateTime = (value?: string | null) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 export default function BonusManagementPage() {
   const { token } = useAuth();
@@ -303,6 +339,58 @@ export default function BonusManagementPage() {
     []
   );
 
+  const handleExport = useCallback((formatType: "xlsx" | "csv") => {
+    const exportToastId = `bonus-ledger-export-${formatType}`;
+    try {
+      if (filteredBonuses.length === 0) {
+        toast.error("No data to export", { id: exportToastId });
+        return;
+      }
+
+      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
+      const exportData = filteredBonuses.map((bonus, index) => ({
+        "Sr. No.": index + 1,
+        "MT5 Account": bonus.mt5User?.account_id ?? "-",
+        Name: bonus.mt5User?.name ?? "-",
+        Email: bonus.user?.email ?? "-",
+        Type: isBonusIn(bonus.type) ? "Given" : "Removed",
+        Amount: Number(bonus.amount ?? 0),
+        "Equity Ref.": Number(bonus.equity ?? 0),
+        Comment: bonus.comment || "-",
+        Created: formatExportDateTime(bonus.created_at),
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const filenameBase = `bonus-ledger-${getExportTimestamp()}`;
+      let filename = `${filenameBase}.xlsx`;
+
+      if (formatType === "xlsx") {
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Bonus Ledger");
+        XLSX.writeFile(workbook, filename);
+      } else {
+        const csv = XLSX.utils.sheet_to_csv(worksheet);
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        filename = `${filenameBase}.csv`;
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+      }
+
+      toast.success(`Exported ${filteredBonuses.length} bonus records to ${filename}`, { id: exportToastId });
+    } catch (error: unknown) {
+      console.error(`Failed to export ${formatType}:`, error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "bonus ledger", action: "export" }),
+        { id: exportToastId },
+      );
+    }
+  }, [filteredBonuses]);
+
   const handleSubmit = () => {
     const amount = Number(form.amount);
 
@@ -354,6 +442,23 @@ export default function BonusManagementPage() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2" disabled={!canList}>
+                    <Download className="h-4 w-4" />
+                    Export
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleExport("xlsx")}>
+                    Export Excel (.xlsx)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("csv")}>
+                    Export CSV (.csv)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               {canMutate ? (
                 <Button onClick={() => handleDialogOpenChange(true)}>
                   <Plus className="mr-2 h-4 w-4" />

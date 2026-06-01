@@ -8,7 +8,9 @@ import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import {
   AlertCircle,
   Calendar,
+  ChevronDown,
   CheckCircle2,
+  Download,
   Eye,
   Hash,
   Mail,
@@ -19,6 +21,7 @@ import {
   User,
   XCircle,
 } from "lucide-react";
+import * as XLSX from "xlsx";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
@@ -33,6 +36,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -148,6 +157,69 @@ import { formatDateTime } from "@/lib/formatters";
 const formatEnquiryType = (value: number) => {
   const option = ENQUIRY_OPTIONS.find((opt) => Number(opt.value) === value);
   return option?.label ?? "Unknown";
+};
+
+const getStatusLabel = (status: number) => {
+  switch (status) {
+    case 0:
+      return "Open";
+    case 1:
+      return "In Progress";
+    case 2:
+      return "Resolved";
+    case 3:
+      return "Closed";
+    default:
+      return "Unknown";
+  }
+};
+
+const getPriorityLabel = (priority: string | number | null | undefined) => {
+  const normalizedPriority =
+    typeof priority === "string" && Number.isNaN(Number(priority))
+      ? priority.toLowerCase()
+      : Number(priority);
+
+  switch (normalizedPriority) {
+    case 1:
+    case "low":
+      return "Low";
+    case 2:
+    case "medium":
+      return "Medium";
+    case 3:
+    case "high":
+      return "High";
+    default:
+      return "Unknown";
+  }
+};
+
+const getExportTimestamp = () => {
+  const date = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+    "-",
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+    pad(date.getSeconds()),
+  ].join("");
+};
+
+const formatExportDateTime = (value?: string | null) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 };
 
 export default function AdminTicketsPage() {
@@ -533,6 +605,66 @@ export default function AdminTicketsPage() {
     );
   };
 
+  const handleExport = useCallback((formatType: "xlsx" | "csv") => {
+    const exportToastId = `tickets-export-${formatType}`;
+    try {
+      if (tickets.length === 0) {
+        toast.error("No data to export", { id: exportToastId });
+        return;
+      }
+
+      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
+      const exportData = tickets.map((ticket, index) => ({
+        "Sr. No.": index + 1,
+        "Ticket ID": ticket.id,
+        UUID: ticket.uuid,
+        User: ticket.user
+          ? `${ticket.user.first_name ?? ""} ${ticket.user.last_name ?? ""}`.trim() || ticket.user.email
+          : "-",
+        Email: ticket.user?.email ?? "-",
+        Title: ticket.title || "-",
+        Description: ticket.description || "-",
+        Type: ticket.enquiry_type_label || formatEnquiryType(ticket.enquiry_type),
+        Priority: getPriorityLabel(ticket.priority_label ?? ticket.priority),
+        Status: getStatusLabel(ticket.status),
+        "Reply Note": ticket.reply_note || "-",
+        "Admin Notes": ticket.admin_notes || "-",
+        "Resolved At": formatExportDateTime(ticket.resolved_at),
+        Created: formatExportDateTime(ticket.created_at),
+        Updated: formatExportDateTime(ticket.updated_at),
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const filenameBase = `support-tickets-${getExportTimestamp()}`;
+      let filename = `${filenameBase}.xlsx`;
+
+      if (formatType === "xlsx") {
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Support Tickets");
+        XLSX.writeFile(workbook, filename);
+      } else {
+        const csv = XLSX.utils.sheet_to_csv(worksheet);
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        filename = `${filenameBase}.csv`;
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+      }
+
+      toast.success(`Exported ${tickets.length} tickets to ${filename}`, { id: exportToastId });
+    } catch (error: unknown) {
+      console.error(`Failed to export ${formatType}:`, error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "tickets", action: "export" }),
+        { id: exportToastId },
+      );
+    }
+  }, [tickets]);
+
   return (
     <>
       <div className="min-h-screen bg-background">
@@ -547,10 +679,29 @@ export default function AdminTicketsPage() {
                 Monitor and respond to user support tickets. Use the filters to narrow down specific tickets.
               </p>
             </div>
-            <Button variant="outline" onClick={() => { void loadTickets(); void loadStats(); }}>
-              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Download className="h-4 w-4" />
+                    Export
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleExport("xlsx")}>
+                    Export Excel (.xlsx)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("csv")}>
+                    Export CSV (.csv)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button variant="outline" onClick={() => { void loadTickets(); void loadStats(); }}>
+                <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+            </div>
           </div>
 
           {/* Stats cards */}

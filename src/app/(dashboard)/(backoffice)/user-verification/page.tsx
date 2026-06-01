@@ -25,8 +25,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
-import { Eye, CheckCircle2, XCircle, Calendar, FileText, User, Mail, Hash, Clock, AlertCircle, Shield, Image as ImageIcon, Plus, Upload } from "lucide-react";
+import { Eye, CheckCircle2, XCircle, Calendar, FileText, User, Mail, Hash, Clock, AlertCircle, Shield, Image as ImageIcon, Plus, Upload, Download, ChevronDown } from "lucide-react";
+import * as XLSX from "xlsx";
 
 import { adminKycApi, adminUsersApi, kycFileUrl, type AdminUsersListApiData, type PendingUser } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
@@ -208,6 +215,20 @@ const docFileKeyByStatusKey: Record<DocKey, DocFileKey> = {
   poa_front_file_status: "poa_front_file",
   poa_back_file_status: "poa_back_file",
   other_file_status: "other_file",
+};
+
+const getExportTimestamp = () => {
+  const date = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+    "-",
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+    pad(date.getSeconds()),
+  ].join("");
 };
 const primaryDocKeys: DocKey[] = [
   "poi_front_file_status",
@@ -689,6 +710,61 @@ export default function UserVerificationPage() {
   const statusSelectDisabled = isManager && !statusFeatureOptions.length;
   const statusSelectValue = statusFilter === "none" ? undefined : statusFilter;
 
+  const handleExport = useCallback((formatType: "xlsx" | "csv") => {
+    if (!canReview) {
+      toast.error("You do not have permission to export KYC submissions");
+      return;
+    }
+
+    const exportToastId = `kyc-submissions-export-${formatType}`;
+    try {
+      if (filteredRows.length === 0) {
+        toast.error("No data to export", { id: exportToastId });
+        return;
+      }
+
+      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
+      const exportData = filteredRows.map((row, index) => ({
+        "Sr. No.": index + 1,
+        Name: row.name || "-",
+        Email: row.email || "-",
+        "KYC Status": formatStatusLabel(String(row.kyc_status)),
+        Submitted: fmtDateTime(row.submitted_at),
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const filenameBase = `kyc-submissions-${getExportTimestamp()}`;
+      let filename = `${filenameBase}.xlsx`;
+
+      if (formatType === "xlsx") {
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "KYC Submissions");
+        XLSX.writeFile(workbook, filename);
+      } else {
+        const csv = XLSX.utils.sheet_to_csv(worksheet);
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        filename = `${filenameBase}.csv`;
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+      }
+
+      toast.success(`Exported ${filteredRows.length} KYC submissions to ${filename}`, {
+        id: exportToastId,
+      });
+    } catch (error: unknown) {
+      console.error(`Failed to export ${formatType}:`, error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "KYC submissions", action: "export" }),
+        { id: exportToastId },
+      );
+    }
+  }, [canReview, filteredRows]);
+
   const closeUploadDialog = useCallback(() => {
     setUploadOpen(false);
     setUploadForm(createEmptyKycUploadForm());
@@ -999,7 +1075,26 @@ const buildReviewPayload = () => {
             User Verification (KYC)
           </h1>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {canReview ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Export
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExport("xlsx")}>
+                  Export Excel (.xlsx)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport("csv")}>
+                  Export CSV (.csv)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : null}
           {canAddKyc ? (
             <Button onClick={() => setUploadOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />

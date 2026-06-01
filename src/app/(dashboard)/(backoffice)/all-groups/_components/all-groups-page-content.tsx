@@ -2,8 +2,9 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit, Plus, RefreshCw, Search, Trash2, Users, Pencil } from "lucide-react";
+import { ChevronDown, Download, Edit, Plus, RefreshCw, Search, Trash2, Users, Pencil } from "lucide-react";
 import toast from "react-hot-toast";
+import * as XLSX from "xlsx";
 
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { CapabilityGate, CapabilityProtectedView } from "@/components/capability-gate";
@@ -12,6 +13,12 @@ import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -54,6 +61,20 @@ const emptyForm: GroupFormState = {
   name: "",
   mt5_group_name: "",
   status: true,
+};
+
+const getExportTimestamp = () => {
+  const date = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+    "-",
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+    pad(date.getSeconds()),
+  ].join("");
 };
 
 function normalizeGroups(groups?: AdminGroupItem[]): GroupRow[] {
@@ -267,6 +288,58 @@ export function AllGroupsPageContent() {
     deleteMutation.mutate(group.id);
   };
 
+  const handleExport = (formatType: "xlsx" | "csv") => {
+    if (!canViewGroupList) {
+      toast.error("You do not have permission to export groups");
+      return;
+    }
+
+    const exportToastId = `groups-export-${formatType}`;
+    try {
+      if (filteredGroups.length === 0) {
+        toast.error("No data to export", { id: exportToastId });
+        return;
+      }
+
+      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
+      const exportData = filteredGroups.map((group, index) => ({
+        "Sr. No.": index + 1,
+        "Group Name": group.name || "-",
+        "MT5 Group Name": group.mt5_group_name || "-",
+        Status: group.status === 1 ? "Active" : "Inactive",
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const filenameBase = `groups-${getExportTimestamp()}`;
+      let filename = `${filenameBase}.xlsx`;
+
+      if (formatType === "xlsx") {
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Groups");
+        XLSX.writeFile(workbook, filename);
+      } else {
+        const csv = XLSX.utils.sheet_to_csv(worksheet);
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        filename = `${filenameBase}.csv`;
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+      }
+
+      toast.success(`Exported ${filteredGroups.length} groups to ${filename}`, { id: exportToastId });
+    } catch (error: unknown) {
+      console.error(`Failed to export ${formatType}:`, error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "groups", action: "export" }),
+        { id: exportToastId },
+      );
+    }
+  };
+
   const mutationInProgress = createMutation.isPending || updateMutation.isPending || deleteMutation.isPending;
 
   if (isError && groups.length === 0) {
@@ -311,6 +384,23 @@ export function AllGroupsPageContent() {
           </div>
 
           <div className="flex flex-wrap gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Export
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExport("xlsx")}>
+                  Export Excel (.xlsx)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleExport("csv")}>
+                  Export CSV (.csv)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="outline" onClick={() => refetch()} disabled={isFetching || mutationInProgress}>
               <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
               Refresh

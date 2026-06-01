@@ -11,7 +11,8 @@ import { PermissionAwareButton } from "@/components/permission-aware-button";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { BackofficeDetailDialogSkeleton } from "@/components/loading/backoffice-page-skeletons";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
-import { Plus, UserPlus } from "lucide-react";
+import { ChevronDown, Download, Plus, UserPlus } from "lucide-react";
+import * as XLSX from "xlsx";
 import { getColumns } from "./columns";
 import {
   adminManagersApi,
@@ -24,6 +25,13 @@ import {
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { ManagerForm } from "./manager-form";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 export type PermissionLite = { id: number; name: string };
@@ -75,6 +83,33 @@ const normalize = (m: ManagerItem): ManagerRow => ({
   updated_at: m.updated_at,
   permissions: flattenPermissions((m as ManagerItem & { permissions?: unknown }).permissions),
 });
+
+const getExportTimestamp = () => {
+  const date = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+    "-",
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+    pad(date.getSeconds()),
+  ].join("");
+};
+
+const formatExportDateTime = (value?: string | null) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
 
 /** ✅ Robustly normalize any incoming `permissions` into number[] */
 function toIdArray(perms: unknown): number[] {
@@ -323,6 +358,56 @@ export default function AllManagersPage() {
     [fetchManagerDetail]
   );
 
+  const handleExport = useCallback((formatType: "xlsx" | "csv") => {
+    const exportToastId = `managers-export-${formatType}`;
+    try {
+      if (data.length === 0) {
+        toast.error("No data to export", { id: exportToastId });
+        return;
+      }
+
+      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
+      const exportData = data.map((manager, index) => ({
+        "Sr. No.": index + 1,
+        Name: manager.name || "-",
+        Email: manager.email || "-",
+        Mobile: manager.mobile || "-",
+        Status: manager.status ? "Active" : "Inactive",
+        Created: formatExportDateTime(manager.created_at),
+        Permissions: manager.permissions.map((permission) => permission.name).join(", ") || "-",
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportData);
+      const filenameBase = `managers-${getExportTimestamp()}`;
+      let filename = `${filenameBase}.xlsx`;
+
+      if (formatType === "xlsx") {
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Managers");
+        XLSX.writeFile(workbook, filename);
+      } else {
+        const csv = XLSX.utils.sheet_to_csv(worksheet);
+        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const link = document.createElement("a");
+        filename = `${filenameBase}.csv`;
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+      }
+
+      toast.success(`Exported ${data.length} managers to ${filename}`, { id: exportToastId });
+    } catch (error: unknown) {
+      console.error(`Failed to export ${formatType}:`, error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "managers", action: "export" }),
+        { id: exportToastId },
+      );
+    }
+  }, [data]);
+
   const columns = useMemo(
     () =>
       getColumns({
@@ -393,16 +478,35 @@ export default function AllManagersPage() {
               </p>
             </div>
 
-            <PermissionAwareButton
-              requiredModule="manager"
-              requiredAction="write"
-              onClick={() => setCreateOpen(true)}
-              showTooltip
-              tooltipMessage="You need write permission for manager module to create"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Create Manager
-            </PermissionAwareButton>
+            <div className="flex flex-wrap gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Download className="h-4 w-4" />
+                    Export
+                    <ChevronDown className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => handleExport("xlsx")}>
+                    Export Excel (.xlsx)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleExport("csv")}>
+                    Export CSV (.csv)
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <PermissionAwareButton
+                requiredModule="manager"
+                requiredAction="write"
+                onClick={() => setCreateOpen(true)}
+                showTooltip
+                tooltipMessage="You need write permission for manager module to create"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Create Manager
+              </PermissionAwareButton>
+            </div>
           </div>
 
           <PermissionAwareCrudDataTable<ManagerRow>
