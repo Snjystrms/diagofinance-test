@@ -33,7 +33,7 @@ The application integrates with the following backend APIs:
 
 ### Authentication APIs
 
-1. **POST /user/register****
+1. **POST /user/register**
    - Registers a new user
    - Sends OTP to user's email
    - Redirects to verify OTP page
