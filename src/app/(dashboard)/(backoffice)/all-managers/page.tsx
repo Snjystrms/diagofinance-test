@@ -186,6 +186,7 @@ export default function AllManagersPage() {
 
   const filteredManagers = useMemo(() => {
     const term = managerSearch.trim().toLowerCase();
+    // Only filter if we have at least 3 characters or if search is empty
     if (!term || term.length < 3) return data;
     return data.filter((manager) => {
       const haystack = `${manager.name} ${manager.email} ${manager.mobile}`.toLowerCase();

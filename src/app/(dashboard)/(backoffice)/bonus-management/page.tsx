@@ -223,7 +223,9 @@ export default function BonusManagementPage() {
       const matchesType = typeFilter === "all" ? true : item.type?.toUpperCase() === typeFilter;
       if (!matchesType) return false;
 
-      if (!deferredHistorySearch || deferredHistorySearch.length < 3) return true;
+      // Only filter by search if we have at least 3 characters
+      const trimmedSearch = deferredHistorySearch.trim();
+      if (!trimmedSearch || trimmedSearch.length < 3) return true;
 
       const haystack = [
         item.mt5User?.account_id,
@@ -236,7 +238,7 @@ export default function BonusManagementPage() {
         .join(" ")
         .toLowerCase();
 
-      return haystack.includes(deferredHistorySearch);
+      return haystack.includes(trimmedSearch);
     });
   }, [allBonuses, deferredHistorySearch, typeFilter]);
 

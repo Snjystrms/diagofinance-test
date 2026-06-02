@@ -245,10 +245,13 @@ export default function IbUsersPage() {
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
-  const [search, setSearch] = useQueryState(
+  const [searchQuery, setSearchQuery] = useQueryState(
     "search",
     parseAsString.withDefault(""),
   );
+
+  // Local search state for immediate UI updates
+  const [searchInput, setSearchInput] = useState(searchQuery ?? "");
 
   const loadUsers = useCallback(async () => {
     if (!token) {
@@ -261,11 +264,14 @@ export default function IbUsersPage() {
       setLoading(true);
       setLoadError(null);
 
+      const trimmedSearch = searchQuery?.trim() || "";
+      const validSearch = trimmedSearch.length >= 3 ? trimmedSearch : undefined;
+
       const response = await adminIbUsersApi.list({
         token,
         page,
         per_page: perPage,
-        search: search?.trim() ? search : undefined,
+        search: validSearch,
       });
 
       const payload = response?.data;
@@ -354,7 +360,7 @@ export default function IbUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, page, perPage, search]);
+  }, [token, page, perPage, searchQuery]);
 
   useEffect(() => {
     void loadUsers();
@@ -398,11 +404,15 @@ export default function IbUsersPage() {
     const exportToastId = `ib-users-export-${formatType}`;
     try {
       toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
+      
+      const trimmedSearch = searchQuery?.trim() || "";
+      const validSearch = trimmedSearch.length >= 3 ? trimmedSearch : undefined;
+      
       const response = await adminIbUsersApi.list({
         token,
         page: 1,
         per_page: Math.max(pagination.total, users.length, 10000),
-        search: search?.trim() ? search : undefined,
+        search: validSearch,
       });
 
       const payload = response?.data;
@@ -471,7 +481,7 @@ export default function IbUsersPage() {
         { id: exportToastId },
       );
     }
-  }, [token, pagination.total, users.length, search]);
+  }, [token, pagination.total, users.length, searchQuery]);
 
   const handleOpenTreeChart = useCallback(
     async (user: AdminIbUser) => {
@@ -925,11 +935,13 @@ export default function IbUsersPage() {
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-3 md:flex-row md:items-center">
             <ApiSearchBar
-              value={search ?? ""}
-              onChange={(value) => setSearch(value)}
+              value={searchInput}
+              onChange={(value) => setSearchInput(value)}
               onSearch={(value) => {
                 void setPage(1);
-                void setSearch(value.trim() ? value : null);
+                const trimmed = value.trim();
+                // Only update query state if 3+ chars or empty (to clear)
+                void setSearchQuery(trimmed.length === 0 || trimmed.length >= 3 ? trimmed || null : searchQuery);
               }}
               placeholder="Search by name, email, mobile, or sponsor ID"
               minimumLength={3}

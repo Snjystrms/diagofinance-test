@@ -241,7 +241,10 @@ export default function AdminTicketsPage() {
   const [priorityFilter, setPriorityFilter] = useQueryState("priority", parseAsString.withDefault("all"));
   const [enquiryFilter, setEnquiryFilter] = useQueryState("type", parseAsString.withDefault("all"));
   const [userIdFilter, setUserIdFilter] = useQueryState("user", parseAsString.withDefault(""));
-  const [search, setSearch] = useQueryState("search", parseAsString.withDefault(""));
+  const [searchQuery, setSearchQuery] = useQueryState("search", parseAsString.withDefault(""));
+
+  // Local search state for immediate UI updates
+  const [searchInput, setSearchInput] = useState(searchQuery ?? "");
 
   const [selectedTicket, setSelectedTicket] = useState<AdminTicketItem | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -287,8 +290,11 @@ export default function AdminTicketsPage() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["adminTickets", token, page, perPage, statusFilter, priorityFilter, enquiryFilter, userIdFilter, search],
+    queryKey: ["adminTickets", token, page, perPage, statusFilter, priorityFilter, enquiryFilter, userIdFilter, searchQuery],
     queryFn: async () => {
+      const trimmedSearch = searchQuery?.trim() || "";
+      const validSearch = trimmedSearch.length >= 3 ? trimmedSearch : undefined;
+
       const response = await adminTicketApi.list(token!, {
         page,
         limit: perPage,
@@ -296,7 +302,7 @@ export default function AdminTicketsPage() {
         priority: priorityFilter && priorityFilter !== "all" ? priorityFilter : undefined,
         enquiry_type: enquiryFilter && enquiryFilter !== "all" ? enquiryFilter : undefined,
         user_id: userIdFilter?.trim() ? userIdFilter.trim() : undefined,
-        search: search?.trim() ? search.trim() : undefined,
+        search: validSearch,
       });
       return response?.data;
     },
@@ -717,11 +723,13 @@ export default function AdminTicketsPage() {
           <div className="rounded-lg border bg-card p-4 shadow-sm space-y-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
               <ApiSearchBar
-                value={search ?? ""}
-                onChange={(value) => setSearch(value)}
+                value={searchInput}
+                onChange={(value) => setSearchInput(value)}
                 onSearch={(value) => {
                   void setPage(1);
-                  void setSearch(value.trim() ? value : null);
+                  const trimmed = value.trim();
+                  // Only update query state if 3+ chars or empty (to clear)
+                  void setSearchQuery(trimmed.length === 0 || trimmed.length >= 3 ? trimmed || null : searchQuery);
                 }}
                 placeholder="Search tickets"
                 minimumLength={3}

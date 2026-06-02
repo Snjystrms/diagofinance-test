@@ -270,10 +270,13 @@ export default function IbManagementPage() {
     "status",
     parseAsString.withDefault("all"),
   );
-  const [search, setSearch] = useQueryState(
+  const [searchQuery, setSearchQuery] = useQueryState(
     "search",
     parseAsString.withDefault(""),
   );
+
+  // Local search state for immediate UI updates
+  const [searchInput, setSearchInput] = useState(searchQuery ?? "");
 
   const loadRequests = useCallback(async () => {
     if (!token) {
@@ -286,12 +289,15 @@ export default function IbManagementPage() {
       setLoading(true);
       setLoadError(null);
 
+      const trimmedSearch = searchQuery?.trim() || "";
+      const validSearch = trimmedSearch.length >= 3 ? trimmedSearch : undefined;
+
       const response = await adminIbRequestsApi.list({
         token,
         page,
         perPage,
         status: statusFilter && statusFilter !== "all" ? statusFilter : undefined,
-        search: search?.trim() ? search : undefined,
+        search: validSearch,
       });
 
       const payload = response?.data;
@@ -364,7 +370,7 @@ export default function IbManagementPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, page, perPage, statusFilter, search]);
+  }, [token, page, perPage, statusFilter, searchQuery]);
 
   useEffect(() => {
     void loadRequests();
@@ -723,11 +729,13 @@ export default function IbManagementPage() {
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
               <ApiSearchBar
-                value={search ?? ""}
-                onChange={(value) => setSearch(value)}
+                value={searchInput}
+                onChange={(value) => setSearchInput(value)}
                 onSearch={(value) => {
                   void setPage(1);
-                  void setSearch(value.trim() ? value : null);
+                  const trimmed = value.trim();
+                  // Only update query state if 3+ chars or empty (to clear)
+                  void setSearchQuery(trimmed.length === 0 || trimmed.length >= 3 ? trimmed || null : searchQuery);
                 }}
                 placeholder="Search by name, email, or phone"
                 minimumLength={3}
