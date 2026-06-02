@@ -602,7 +602,15 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "transaction-management",
-    navLabel: "All Transactions",
+    navLabel: "Deposit List",
+    managerCategories: ["Transaction"],
+  },
+  {
+    path: "/withdrawal-requests",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "transaction-management",
+    navLabel: "Withdrawal List",
     managerCategories: ["Transaction"],
   },
   {

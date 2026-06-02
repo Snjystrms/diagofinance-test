@@ -2753,8 +2753,11 @@ export const adminUSDTDepositApi = {
     }),
 };
 
-export const depositProofUrl = (fileName?: string | null) =>
-  fileName ? `${API_BASE_URL}${fileName}` : "";
+export const depositProofUrl = (fileName?: string | null) => {
+  if (!fileName) return "";
+  if (/^https?:\/\//i.test(fileName)) return fileName;
+  return `${API_BASE_URL}${fileName.startsWith("/") ? "" : "/"}${fileName}`;
+};
 
 export interface BinanceDepositCreateRequest {
   amount: number;

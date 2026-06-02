@@ -20,6 +20,9 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -29,17 +32,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { CheckCircle2, XCircle, Eye, Calendar, FileImage, RefreshCw, CircleDollarSign } from "lucide-react";
 
 import {
   adminUSDTDepositApi,
-  adminWithdrawalApi,
-  API_BASE_URL,
   depositProofUrl,
   type AdminUSDTDepositRequest,
-  type AdminWithdrawalRequest,
 } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { useAuth } from "@/contexts/auth-context";
@@ -48,12 +47,8 @@ import {
   assertCan,
   sanitizeFilterValue,
   useModuleCapabilities,
-  useTabCapabilities,
 } from "@/hooks/use-permission-capabilities";
-import {
-  DEPOSIT_STATUS_OPTIONS,
-  WITHDRAWAL_STATUS_OPTIONS,
-} from "../_lib/transaction-format";
+import { DEPOSIT_STATUS_OPTIONS } from "../_lib/transaction-format";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 /* ---------------- Helpers ---------------- */
@@ -106,65 +101,33 @@ const statusBadge = (status: string) => {
 export function USDTTransactionsPageContent() {
   const authCtx = useAuth?.();
   const ctxToken = authCtx?.token;
-  const user = authCtx?.user || null;
   const token =
     ctxToken ||
     (typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : "");
 
   const { filterFeatureOptions } = useManagerPermissions();
   const { isAdmin, isManager, can } = useModuleCapabilities("transaction");
-  const {
-    activeTab,
-    setActiveTab,
-    canViewTab,
-    getSafeTab,
-  } = useTabCapabilities<"transaction", "deposits" | "withdrawals">(
-    "transaction",
-    {
-      deposits: "viewDeposits",
-      withdrawals: "viewWithdrawals",
-    },
-    "deposits"
-  );
 
   const depositStatusFeatureOptions = useMemo(
     () => filterFeatureOptions("transaction", DEPOSIT_STATUS_OPTIONS),
     [filterFeatureOptions]
   );
 
-  const withdrawalStatusFeatureOptions = useMemo(
-    () => filterFeatureOptions("transaction", WITHDRAWAL_STATUS_OPTIONS),
-    [filterFeatureOptions]
-  );
-
-  const statusFeatureOptions = useMemo(
-    () => activeTab === "deposits" ? depositStatusFeatureOptions : withdrawalStatusFeatureOptions,
-    [activeTab, depositStatusFeatureOptions, withdrawalStatusFeatureOptions]
-  );
-
   const allowedStatusValues = useMemo(
-    () => statusFeatureOptions.map((opt) => opt.value),
-    [statusFeatureOptions]
+    () => depositStatusFeatureOptions.map((opt) => opt.value),
+    [depositStatusFeatureOptions]
   );
 
   const allowedStatusesSet = useMemo(() => {
     const set = new Set<string>();
-    statusFeatureOptions.forEach((opt) => {
+    depositStatusFeatureOptions.forEach((opt) => {
       opt.statuses.forEach((status) => set.add(status.toLowerCase()));
     });
     return set;
-  }, [statusFeatureOptions]);
+  }, [depositStatusFeatureOptions]);
 
   const canTakeDepositAction = can("approveDeposit");
-  const canTakeWithdrawalAction = can("approveWithdrawal");
-  const canViewDepositsTab = canViewTab("deposits");
-  const canViewWithdrawalsTab = canViewTab("withdrawals");
-
-  const canTakeAction = useMemo(
-    () =>
-      activeTab === "deposits" ? canTakeDepositAction : canTakeWithdrawalAction,
-    [activeTab, canTakeDepositAction, canTakeWithdrawalAction]
-  );
+  const canViewDeposits = can("viewDeposits");
 
   const canViewStatus = useCallback(
     (status: string) => {
@@ -175,7 +138,6 @@ export function USDTTransactionsPageContent() {
   );
 
   const [depositRows, setDepositRows] = useState<AdminUSDTDepositRequest[]>([]);
-  const [withdrawalRows, setWithdrawalRows] = useState<AdminWithdrawalRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
   const [page] = useQueryState("page", parseAsInteger.withDefault(1));
@@ -186,23 +148,15 @@ export function USDTTransactionsPageContent() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [depositTypeFilter, setDepositTypeFilter] = useState<"all" | "bank" | "usdt">("all");
 
-  const rows = useMemo(
-    () => activeTab === "deposits" ? depositRows : withdrawalRows,
-    [activeTab, depositRows, withdrawalRows]
-  );
-
-  // Action dialog state
-  const [actionDialogOpen, setActionDialogOpen] = useState(false);
-  const [selectedDepositRequest, setSelectedDepositRequest] = useState<AdminUSDTDepositRequest | null>(null);
-  const [selectedWithdrawalRequest, setSelectedWithdrawalRequest] = useState<AdminWithdrawalRequest | null>(null);
-  const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
-  const [adminNotes, setAdminNotes] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
   // View details dialog state
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [viewingDepositRequest, setViewingDepositRequest] = useState<AdminUSDTDepositRequest | null>(null);
-  const [viewingWithdrawalRequest, setViewingWithdrawalRequest] = useState<AdminWithdrawalRequest | null>(null);
+  const [proofBlobUrl, setProofBlobUrl] = useState<string>("");
+  const [proofLoading, setProofLoading] = useState(false);
+  const [proofError, setProofError] = useState(false);
+  const [verifyDecision, setVerifyDecision] = useState<"approve" | "reject">("approve");
+  const [adminNotes, setAdminNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const loadDeposits = useCallback(async () => {
     if (!token) return;
@@ -212,8 +166,7 @@ export function USDTTransactionsPageContent() {
       const res = await adminUSDTDepositApi.listAll(page, perPage, token, searchTerm);
       const requests = res?.data?.deposits ?? [];
       setDepositRows(requests);
-      
-      // Update pagination if available
+
       if (res?.data?.pagination) {
         setTotalPages(res.data.pagination.totalPages || res.data.pagination.total_pages || 1);
       }
@@ -230,88 +183,16 @@ export function USDTTransactionsPageContent() {
     }
   }, [token, page, perPage, search]);
 
-  const loadWithdrawals = useCallback(async () => {
-    if (!token) return;
-    try {
-      setLoadError(null);
-      const status =
-        statusFilter !== "all" && statusFilter !== "none" ? statusFilter : undefined;
-      const searchTerm = search && search.length >= 3 ? search : undefined;
-      const res = await adminWithdrawalApi.listAll(page, perPage, token, status, searchTerm) as {
-        data?: unknown[] | { withdrawals?: unknown[]; data?: unknown[]; requests?: unknown[]; pagination?: { totalPages?: number; total_pages?: number } };
-        meta?: { total?: number; limit?: number };
-        pagination?: { totalPages?: number; total_pages?: number };
-        withdrawals?: unknown[];
-        requests?: unknown[];
-      };
-      // Handle different response structures:
-      // 1. {success: true, data: [...], meta: {...}} - data is array directly
-      // 2. {success: true, data: {withdrawals: [...], pagination: {...}}} - nested structure
-      let withdrawals: AdminWithdrawalRequest[] = [];
-      if (Array.isArray(res?.data)) {
-        withdrawals = res.data as AdminWithdrawalRequest[];
-      } else if (res?.data && typeof res.data === 'object') {
-        withdrawals = (res.data.withdrawals ?? res.data.data ?? res.data.requests ?? []) as AdminWithdrawalRequest[];
-      } else {
-        withdrawals = (res?.withdrawals ?? res?.requests ?? []) as AdminWithdrawalRequest[];
-      }
-      setWithdrawalRows(withdrawals);
-      
-      // Update pagination if available - check both meta and data.pagination
-      if (res?.meta) {
-        const total = res.meta.total || 0;
-        const limit = res.meta.limit || perPage;
-        setTotalPages(Math.ceil(total / limit) || 1);
-      } else if (res?.data && typeof res.data === 'object' && !Array.isArray(res.data) && res.data.pagination) {
-        setTotalPages(res.data.pagination.totalPages || res.data.pagination.total_pages || 1);
-      } else if (res?.pagination) {
-        setTotalPages(res.pagination.totalPages || res.pagination.total_pages || 1);
-      }
-    } catch (e: unknown) {
-      console.error(e);
-      setLoadError(e);
-      toast.error(
-        getAdminFriendlyErrorMessage(e, {
-          resource: "withdrawal requests",
-          action: "load",
-        })
-      );
-      setWithdrawalRows([]);
-    }
-  }, [token, page, perPage, statusFilter, search]);
-
   const loadList = useCallback(async () => {
     if (!token) return;
-    if (activeTab === "deposits" && !canViewDepositsTab) {
-      if (canViewWithdrawalsTab) {
-        setActiveTab("withdrawals");
-      }
-      return;
-    }
-    if (activeTab === "withdrawals" && !canViewWithdrawalsTab) {
-      if (canViewDepositsTab) {
-        setActiveTab("deposits");
-      }
-      return;
-    }
+    if (!canViewDeposits) return;
     setLoading(true);
     try {
-      if (activeTab === "deposits") {
-        await loadDeposits();
-      } else {
-        await loadWithdrawals();
-      }
+      await loadDeposits();
     } finally {
       setLoading(false);
     }
-  }, [
-    token,
-    activeTab,
-    canViewDepositsTab,
-    canViewWithdrawalsTab,
-    loadDeposits,
-    loadWithdrawals,
-  ]);
+  }, [token, canViewDeposits, loadDeposits]);
 
   useEffect(() => {
     loadList();
@@ -322,178 +203,168 @@ export function USDTTransactionsPageContent() {
   }, [search]);
 
   useEffect(() => {
-    const safeTab = getSafeTab(activeTab);
-    if (safeTab !== activeTab) {
-      setActiveTab(safeTab);
+    const proofUrl = viewingDepositRequest?.payment_proof_url;
+    if (!viewDialogOpen || !proofUrl || !token) {
+      setProofBlobUrl("");
+      setProofError(false);
+      return;
     }
-  }, [activeTab, getSafeTab, setActiveTab]);
+
+    let cancelled = false;
+    const fullUrl = depositProofUrl(proofUrl);
+    setProofLoading(true);
+    setProofError(false);
+
+    fetch(fullUrl, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.blob();
+      })
+      .then((blob) => {
+        if (cancelled) return;
+        const objectUrl = URL.createObjectURL(blob);
+        setProofBlobUrl(objectUrl);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setProofError(true);
+        setProofBlobUrl("");
+      })
+      .finally(() => {
+        if (!cancelled) setProofLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [viewDialogOpen, viewingDepositRequest, token]);
+
+  useEffect(() => {
+    return () => {
+      if (proofBlobUrl) URL.revokeObjectURL(proofBlobUrl);
+    };
+  }, [proofBlobUrl]);
 
   useEffect(() => {
     if (!isManager) return;
-    if (!statusFeatureOptions.length) {
+    if (!depositStatusFeatureOptions.length) {
       if (statusFilter !== "none") {
         setStatusFilter("none");
       }
       return;
     }
     if (statusFilter === "none") {
-      setStatusFilter(statusFeatureOptions[0].value);
+      setStatusFilter(depositStatusFeatureOptions[0].value);
       return;
     }
     if (statusFilter === "all") {
-      if (statusFeatureOptions.length <= 1) {
-        setStatusFilter(statusFeatureOptions[0].value);
+      if (depositStatusFeatureOptions.length <= 1) {
+        setStatusFilter(depositStatusFeatureOptions[0].value);
       }
       return;
     }
     const nextFilter = sanitizeFilterValue(
       statusFilter,
       allowedStatusValues,
-      statusFeatureOptions[0].value
+      depositStatusFeatureOptions[0].value
     );
     if (nextFilter !== statusFilter) {
       setStatusFilter(nextFilter);
     }
-  }, [isManager, statusFeatureOptions, allowedStatusValues, statusFilter]);
+  }, [isManager, depositStatusFeatureOptions, allowedStatusValues, statusFilter]);
 
   const filteredRows = useMemo(() => {
-    let nextRows: Array<AdminUSDTDepositRequest | AdminWithdrawalRequest> = rows;
+    let nextRows: AdminUSDTDepositRequest[] = depositRows;
 
     if (isAdmin || !isManager) {
       if (["pending", "approved", "rejected"].includes(statusFilter)) {
-        nextRows = rows.filter((row) => row.status === statusFilter);
+        nextRows = depositRows.filter((row) => row.status === statusFilter);
       }
-    } else if (!statusFeatureOptions.length || statusFilter === "none") {
+    } else if (!depositStatusFeatureOptions.length || statusFilter === "none") {
       nextRows = [];
     } else if (statusFilter === "all") {
-      nextRows = rows.filter((row) => allowedStatusesSet.has((row.status || "").toLowerCase()));
+      nextRows = depositRows.filter((row) => allowedStatusesSet.has((row.status || "").toLowerCase()));
     } else {
-      const selectedOption = statusFeatureOptions.find((opt) => opt.value === statusFilter);
+      const selectedOption = depositStatusFeatureOptions.find((opt) => opt.value === statusFilter);
       const allowedForFilter = new Set(
         (selectedOption?.statuses || []).map((status) => status.toLowerCase())
       );
-      nextRows = rows.filter((row) => allowedForFilter.has((row.status || "").toLowerCase()));
+      nextRows = depositRows.filter((row) => allowedForFilter.has((row.status || "").toLowerCase()));
     }
 
-    if (activeTab !== "deposits" || depositTypeFilter === "all") {
+    if (depositTypeFilter === "all") {
       return nextRows;
     }
 
     return nextRows.filter(
       (row) =>
-        ((row as AdminUSDTDepositRequest).deposit_type || "").toLowerCase() ===
-        depositTypeFilter
+        ((row.deposit_type || "").toLowerCase() === depositTypeFilter)
     );
   }, [
-    rows,
+    depositRows,
     statusFilter,
-    activeTab,
     depositTypeFilter,
     isAdmin,
     isManager,
-    statusFeatureOptions,
+    depositStatusFeatureOptions,
     allowedStatusesSet,
   ]);
 
-  const showAllStatusOption = isAdmin || !isManager || statusFeatureOptions.length > 1;
-  const statusSelectDisabled = isManager && !statusFeatureOptions.length;
-
-  const handleApprove = useCallback(
-    (request: AdminUSDTDepositRequest | AdminWithdrawalRequest) => {
-      if (!assertCan(canTakeAction, `You do not have permission to approve ${activeTab}`, toast.error)) {
-        return;
-      }
-      if (activeTab === "deposits") {
-        setSelectedDepositRequest(request as AdminUSDTDepositRequest);
-      } else {
-        setSelectedWithdrawalRequest(request as AdminWithdrawalRequest);
-      }
-      setActionType("approve");
-      setAdminNotes("");
-      setActionDialogOpen(true);
-    },
-    [canTakeAction, activeTab]
-  );
-
-  const handleReject = useCallback(
-    (request: AdminUSDTDepositRequest | AdminWithdrawalRequest) => {
-      if (!assertCan(canTakeAction, `You do not have permission to reject ${activeTab}`, toast.error)) {
-        return;
-      }
-      if (activeTab === "deposits") {
-        setSelectedDepositRequest(request as AdminUSDTDepositRequest);
-      } else {
-        setSelectedWithdrawalRequest(request as AdminWithdrawalRequest);
-      }
-      setActionType("reject");
-      setAdminNotes("");
-      setActionDialogOpen(true);
-    },
-    [canTakeAction, activeTab]
-  );
+  const showAllStatusOption = isAdmin || !isManager || depositStatusFeatureOptions.length > 1;
 
   const handleViewDetails = useCallback(
-    (request: AdminUSDTDepositRequest | AdminWithdrawalRequest) => {
+    (request: AdminUSDTDepositRequest) => {
       if (!assertCan(canViewStatus(request.status), "You do not have permission to view this request", toast.error)) {
         return;
       }
-      if (activeTab === "deposits") {
-        setViewingDepositRequest(request as AdminUSDTDepositRequest);
-      } else {
-        setViewingWithdrawalRequest(request as AdminWithdrawalRequest);
-      }
+      setViewingDepositRequest(request);
       setViewDialogOpen(true);
     },
-    [canViewStatus, activeTab]
+    [canViewStatus]
   );
 
-  const submitAction = async () => {
-    if (!token || !actionType) return;
-    if (activeTab === "deposits" && !selectedDepositRequest) return;
-    if (activeTab === "withdrawals" && !selectedWithdrawalRequest) return;
+  const resetVerifyState = useCallback(() => {
+    setAdminNotes("");
+    setVerifyDecision("approve");
+  }, []);
+
+  const submitVerify = async () => {
+    if (!token || !viewingDepositRequest) return;
+    if (!assertCan(canTakeDepositAction, "You do not have permission to update this deposit", toast.error)) {
+      return;
+    }
+    if (verifyDecision === "reject" && !adminNotes.trim()) {
+      toast.error("Please provide a reason for rejection.");
+      return;
+    }
 
     try {
       setSubmitting(true);
-      let res;
-      
-      if (activeTab === "deposits" && selectedDepositRequest) {
-        res = await adminUSDTDepositApi.verify(
-          {
-            deposit_type: selectedDepositRequest.deposit_type || "bank",
-            request_id: selectedDepositRequest.id,
-            action: actionType,
-            admin_notes: adminNotes.trim() || undefined,
-          },
-          token
-        );
-      } else if (activeTab === "withdrawals" && selectedWithdrawalRequest) {
-        res = await adminWithdrawalApi.decision(
-          selectedWithdrawalRequest.id,
-          {
-            action: actionType,
-            remarks: adminNotes.trim() || undefined,
-          },
-          token
-        );
-      }
+      const res = await adminUSDTDepositApi.verify(
+        {
+          deposit_type: viewingDepositRequest.deposit_type || "bank",
+          request_id: viewingDepositRequest.id,
+          action: verifyDecision,
+          admin_notes: adminNotes.trim() || undefined,
+        },
+        token
+      );
 
       toast.success(
         res?.message ||
-          `${activeTab === "deposits" ? "Deposit" : "Withdrawal"} request ${actionType === "approve" ? "approved" : "rejected"} successfully`
+          `Deposit request ${verifyDecision === "approve" ? "approve" : "reject"} successfully`
       );
 
       await loadList();
 
-      setActionDialogOpen(false);
-      setSelectedDepositRequest(null);
-      setSelectedWithdrawalRequest(null);
-      setActionType(null);
-      setAdminNotes("");
+      setViewDialogOpen(false);
+      setViewingDepositRequest(null);
+      resetVerifyState();
     } catch (e: unknown) {
       console.error(e);
       toast.error(
         getAdminFriendlyErrorMessage(e, {
-          resource: activeTab === "deposits" ? "deposit requests" : "withdrawal requests",
+          resource: "deposit requests",
           action: "update",
         })
       );
@@ -582,188 +453,56 @@ export function USDTTransactionsPageContent() {
         enableSorting: false,
         cell: ({ row }) => {
           const request = row.original;
-          const isPending = request.status === "pending";
-          const canActOnRequest = canTakeAction && isPending && canViewStatus("pending");
 
           return (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="View Details"
-                onClick={() => handleViewDetails(request)}
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-              {canActOnRequest && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Approve"
-                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                    onClick={() => handleApprove(request)}
-                  >
-                    <CheckCircle2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Reject"
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => handleReject(request)}
-                  >
-                    <XCircle className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="View Details"
+              onClick={() => handleViewDetails(request)}
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
           );
         },
       },
     ],
-    [handleViewDetails, handleApprove, handleReject, canTakeAction, canViewStatus]
+    [handleViewDetails]
   );
 
-  const withdrawalColumns: ColumnDef<AdminWithdrawalRequest>[] = useMemo(
-    () => [
-      {
-        id: "id",
-        header: "Sr. No.",
-        accessorKey: "id",
-        cell: ({ row, table }) => <SerialNumberCell row={row} table={table} className="font-mono text-sm" />,
-      },
-      {
-        id: "user",
-        header: "User",
-        accessorKey: "user",
-        cell: ({ row }) => {
-          const userInfo = row.original.user;
-          if (!userInfo) return <span className="text-muted-foreground">—</span>;
-          return (
-            <div className="space-y-0.5">
-              <div className="font-medium">
-                {userInfo.first_name || userInfo.last_name
-                  ? `${userInfo.first_name || ""} ${userInfo.last_name || ""}`.trim()
-                  : "—"}
-              </div>
-              <div className="text-xs text-muted-foreground">{userInfo.email}</div>
-            </div>
-          );
-        },
-      },
-      {
-        id: "amount",
-        header: "Amount (USD)",
-        accessorKey: "amount",
-        cell: ({ row }) => (
-          <span className="font-medium">{formatAmount(row.original.amount)}</span>
-        ),
-      },
-      {
-        id: "status",
-        header: "Status",
-        accessorKey: "status",
-        cell: ({ row }) => statusBadge(row.original.status),
-      },
-      {
-        id: "created_at",
-        header: "Created",
-        accessorKey: "created_at",
-        cell: ({ row }) => (
-          <div className="flex items-center gap-1 text-sm">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span>{fmtDateTime(row.original.created_at)}</span>
-          </div>
-        ),
-      },
-      {
-        id: "actions",
-        header: "Actions",
-        enableSorting: false,
-        cell: ({ row }) => {
-          const request = row.original;
-          const isPending = request.status === "pending";
-          const canActOnRequest = canTakeAction && isPending && canViewStatus("pending");
-
-          return (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="View Details"
-                onClick={() => handleViewDetails(request)}
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-              {canActOnRequest && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Approve"
-                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                    onClick={() => handleApprove(request)}
-                  >
-                    <CheckCircle2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Reject"
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => handleReject(request)}
-                  >
-                    <XCircle className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-            </div>
-          );
-        },
-      },
-    ],
-    [handleViewDetails, handleApprove, handleReject, canTakeAction, canViewStatus]
-  );
-
-  const columns = useMemo(
-    () => activeTab === "deposits" ? depositColumns : withdrawalColumns,
-    [activeTab, depositColumns, withdrawalColumns]
-  );
-
-  if (!canViewDepositsTab && !canViewWithdrawalsTab) {
+  if (!canViewDeposits) {
     return (
-      
+
         <div className="flex items-center justify-center min-h-[60vh]">
           <p className="text-muted-foreground">
-            You do not have permission to view USDT deposit or withdrawal transactions.
+            You do not have permission to view USDT deposit transactions.
           </p>
         </div>
-      
+
     );
   }
 
-  if (loading && rows.length === 0) {
+  if (loading && depositRows.length === 0) {
     return (
-      
+
         <ListPageSkeleton
           actionCount={1}
           columnCount={6}
           rowCount={10}
           filterPillCount={4}
         />
-      
+
     );
   }
 
-  if (loadError && rows.length === 0) {
+  if (loadError && depositRows.length === 0) {
     return (
       <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
         <ApiErrorState
           error={loadError}
           audience="admin"
           variant="panel"
-          resource={activeTab === "deposits" ? "deposit requests" : "withdrawal requests"}
+          resource="deposit requests"
           action="load"
           onRetry={() => {
             void loadList();
@@ -774,16 +513,16 @@ export function USDTTransactionsPageContent() {
   }
 
   return (
-    
+
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
               <CircleDollarSign className="h-6 w-6 text-primary" />
-              All Transactions
+              Deposit List
             </h1>
             <p className="text-sm text-muted-foreground">
-              Manage and review all deposit and withdrawal requests
+              Manage and review all deposit requests
             </p>
           </div>
           <div className="flex gap-2">
@@ -794,348 +533,142 @@ export function USDTTransactionsPageContent() {
           </div>
         </div>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "deposits" | "withdrawals")} className="space-y-6">
-          <TabsList>
-            {canViewDepositsTab && <TabsTrigger value="deposits">Deposits</TabsTrigger>}
-            {canViewWithdrawalsTab && <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>}
-          </TabsList>
+        <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
+          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+            <ApiSearchBar
+              value={searchInput}
+              onChange={setSearchInput}
+              onSearch={(value) => {
+                void setSearch(value || null);
+              }}
+              placeholder="Search by user, email, amount, or reference"
+              minimumLength={3}
+              delay={300}
+            />
 
-          {canViewDepositsTab && (
-          <TabsContent value="deposits" className="space-y-6">
-            <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-                {/* Search Bar */}
-                <ApiSearchBar
-                  value={searchInput}
-                  onChange={setSearchInput}
-                  onSearch={(value) => {
-                    void setSearch(value || null);
-                  }}
-                  placeholder="Search by user, email, amount, or reference"
-                  minimumLength={3}
-                  delay={300}
-                />
-                
-                {/* Status Filter */}
-                {(!isManager || depositStatusFeatureOptions.length > 0) && (
-                  <div className="flex items-center gap-2">
-                    <label htmlFor="deposit-status-filter" className="text-sm font-medium">
-                      Filter by Status:
-                    </label>
-                    <Select
-                      value={statusFilter === "none" ? undefined : statusFilter}
-                      onValueChange={setStatusFilter}
-                      disabled={isManager && !depositStatusFeatureOptions.length}
-                    >
-                      <SelectTrigger id="deposit-status-filter" className="w-[200px]">
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(isAdmin || !isManager || depositStatusFeatureOptions.length > 1) && (
-                          <SelectItem value="all">All</SelectItem>
-                        )}
-                        {depositStatusFeatureOptions.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                <div className="flex items-center gap-2">
-                  <label htmlFor="deposit-type-filter" className="text-sm font-medium">
-                    Filter by Type:
-                  </label>
-                  <Select
-                    value={depositTypeFilter}
-                    onValueChange={(value) =>
-                      setDepositTypeFilter(value as "all" | "bank" | "usdt")
-                    }
-                  >
-                    <SelectTrigger id="deposit-type-filter" className="w-[180px]">
-                      <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="bank">Bank</SelectItem>
-                      <SelectItem value="usdt">USDT</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <AppDataTable<AdminUSDTDepositRequest>
-                data={activeTab === "deposits" ? (filteredRows as AdminUSDTDepositRequest[]) : []}
-                columns={depositColumns}
-                pageCount={totalPages}
-              />
-            </div>
-          </TabsContent>
-          )}
-
-          {canViewWithdrawalsTab && (
-          <TabsContent value="withdrawals" className="space-y-6">
-            <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-                {/* Search Bar */}
-                <ApiSearchBar
-                  value={searchInput}
-                  onChange={setSearchInput}
-                  onSearch={(value) => {
-                    void setSearch(value || null);
-                  }}
-                  placeholder="Search by user, email, amount, or wallet"
-                  minimumLength={3}
-                  delay={300}
-                />
-                
-                {/* Status Filter */}
-                {(!isManager || withdrawalStatusFeatureOptions.length > 0) && (
-                  <div className="flex items-center gap-2">
-                    <label htmlFor="status-filter" className="text-sm font-medium">
-                      Filter by Status:
-                    </label>
-                  <Select
-                    value={statusFilter === "none" ? undefined : statusFilter}
-                    onValueChange={setStatusFilter}
-                    disabled={isManager && !withdrawalStatusFeatureOptions.length}
-                  >
-                    <SelectTrigger className="w-[200px]">
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(isAdmin || !isManager || withdrawalStatusFeatureOptions.length > 1) && (
-                        <SelectItem value="all">All</SelectItem>
-                      )}
-                      {withdrawalStatusFeatureOptions.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  </div>
-                )}
-              </div>
-
-              <AppDataTable<AdminWithdrawalRequest>
-                data={activeTab === "withdrawals" ? (filteredRows as AdminWithdrawalRequest[]) : []}
-                columns={withdrawalColumns}
-                pageCount={totalPages}
-              />
-            </div>
-          </TabsContent>
-          )}
-        </Tabs>
-
-        {/* Action Dialog (Approve/Reject) */}
-        <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {actionType === "approve" ? "Approve" : "Reject"} {activeTab === "deposits" ? "Deposit" : "Withdrawal"} Request
-              </DialogTitle>
-              <DialogDescription>
-                {actionType === "approve"
-                  ? `Approve this ${activeTab === "deposits" ? "deposit" : "withdrawal"} request. You can add optional notes.`
-                  : `Reject this ${activeTab === "deposits" ? "deposit" : "withdrawal"} request. Please provide a reason for rejection.`}
-              </DialogDescription>
-            </DialogHeader>
-
-            {((activeTab === "deposits" && selectedDepositRequest) || (activeTab === "withdrawals" && selectedWithdrawalRequest)) && (
-              <div className="space-y-4">
-                <div className="rounded-lg border p-4 space-y-2">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    {/* <div>
-                      <span className="text-muted-foreground">Request ID:</span>
-                      <div className="font-medium">
-                        {activeTab === "deposits" ? selectedDepositRequest?.id : selectedWithdrawalRequest?.id}
-                      </div>
-                    </div> */}
-                    <div>
-                      <span className="text-muted-foreground">Amount:</span>
-                      <div className="font-medium">
-                        {formatAmount(
-                          activeTab === "deposits" 
-                            ? selectedDepositRequest?.amount || "0" 
-                            : selectedWithdrawalRequest?.amount || "0"
-                        )} USDT
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">User:</span>
-                      <div className="font-medium">
-                        {activeTab === "deposits" 
-                          ? (selectedDepositRequest?.user
-                              ? `${selectedDepositRequest.user.first_name || ""} ${selectedDepositRequest.user.last_name || ""}`.trim() ||
-                                selectedDepositRequest.user.email
-                              : "—")
-                          : (selectedWithdrawalRequest?.user
-                              ? `${selectedWithdrawalRequest.user.first_name || ""} ${selectedWithdrawalRequest.user.last_name || ""}`.trim() ||
-                                selectedWithdrawalRequest.user.email
-                              : "—")}
-                      </div>
-                    </div>
-                    {activeTab === "deposits" && selectedDepositRequest && (
-                      <div>
-                        <span className="text-muted-foreground">Reference:</span>
-                        <div className="font-mono text-xs truncate">
-                          {selectedDepositRequest.transaction_reference ||
-                            selectedDepositRequest.transaction_hash ||
-                            "—"}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label htmlFor="admin-notes" className="text-sm font-medium">
-                    {activeTab === "deposits" ? "Admin Notes" : "Remarks"} {actionType === "reject" && "(Recommended)"}
-                  </label>
-                  <Textarea
-                    id="admin-notes"
-                    rows={4}
-                    placeholder={
-                      actionType === "approve"
-                        ? `Add optional ${activeTab === "deposits" ? "notes" : "remarks"} (e.g., ${activeTab === "deposits" ? "Looks valid." : "Approved."})`
-                        : `Add reason for rejection (e.g., ${activeTab === "deposits" ? "Invalid proof." : "Insufficient balance."})`
-                    }
-                    value={adminNotes}
-                    onChange={(e) => setAdminNotes(e.target.value)}
-                  />
-                </div>
+            {(!isManager || depositStatusFeatureOptions.length > 0) && (
+              <div className="flex items-center gap-2">
+                <label htmlFor="deposit-status-filter" className="text-sm font-medium">
+                  Filter by Status:
+                </label>
+                <Select
+                  value={statusFilter === "none" ? undefined : statusFilter}
+                  onValueChange={setStatusFilter}
+                  disabled={isManager && !depositStatusFeatureOptions.length}
+                >
+                  <SelectTrigger id="deposit-status-filter" className="w-[200px]">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {showAllStatusOption && <SelectItem value="all">All</SelectItem>}
+                    {depositStatusFeatureOptions.map((opt) => (
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             )}
 
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setActionDialogOpen(false);
-                  setSelectedDepositRequest(null);
-                  setSelectedWithdrawalRequest(null);
-                  setActionType(null);
-                  setAdminNotes("");
-                }}
-                disabled={submitting}
+            <div className="flex items-center gap-2">
+              <label htmlFor="deposit-type-filter" className="text-sm font-medium">
+                Filter by Type:
+              </label>
+              <Select
+                value={depositTypeFilter}
+                onValueChange={(value) =>
+                  setDepositTypeFilter(value as "all" | "bank" | "usdt")
+                }
               >
-                Cancel
-              </Button>
-              <Button
-                onClick={submitAction}
-                disabled={submitting}
-                variant={actionType === "reject" ? "destructive" : "default"}
-              >
-                {submitting ? (
-                  <>
-                    <Spinner className="h-4 w-4 mr-2" />
-                    Processing...
-                  </>
-                ) : (
-                  `${actionType === "approve" ? "Approve" : "Reject"} Request`
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+                <SelectTrigger id="deposit-type-filter" className="w-[180px]">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="bank">Bank</SelectItem>
+                  <SelectItem value="usdt">USDT</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <AppDataTable<AdminUSDTDepositRequest>
+            data={filteredRows}
+            columns={depositColumns}
+            pageCount={totalPages}
+          />
+        </div>
 
         {/* View Details Dialog */}
-        <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <Dialog
+          open={viewDialogOpen}
+          onOpenChange={(o) => {
+            setViewDialogOpen(o);
+            if (!o) {
+              setViewingDepositRequest(null);
+              resetVerifyState();
+            }
+          }}
+        >
           <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{activeTab === "deposits" ? "Deposit" : "Withdrawal"} Request Details</DialogTitle>
-              <DialogDescription>View complete details of the {activeTab === "deposits" ? "deposit" : "withdrawal"} request</DialogDescription>
+              <DialogTitle>Deposit Request Details</DialogTitle>
+              <DialogDescription>View complete details of the deposit request</DialogDescription>
             </DialogHeader>
 
-            {((activeTab === "deposits" && viewingDepositRequest) || (activeTab === "withdrawals" && viewingWithdrawalRequest)) && (
+            {viewingDepositRequest && (
               <div className="space-y-6">
-                {/* Basic Info */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="rounded-lg border p-4">
                     <p className="text-xs text-muted-foreground mb-2">Request Information</p>
                     <div className="space-y-2 text-sm">
-                      {/* <div>
-                        <span className="text-muted-foreground">ID: </span>
-                        <span className="font-medium">
-                          {activeTab === "deposits" ? viewingDepositRequest?.id : viewingWithdrawalRequest?.id}
-                        </span>
-                      </div> */}
                       <div>
                         <span className="text-muted-foreground">Status: </span>
-                        {statusBadge(
-                          activeTab === "deposits" 
-                            ? viewingDepositRequest?.status || "pending"
-                            : viewingWithdrawalRequest?.status || "pending"
-                        )}
+                        {statusBadge(viewingDepositRequest.status || "pending")}
                       </div>
                       <div>
                         <span className="text-muted-foreground">Amount: </span>
                         <span className="font-medium">
-                          {formatAmount(
-                            activeTab === "deposits"
-                              ? viewingDepositRequest?.amount || "0"
-                              : viewingWithdrawalRequest?.amount || "0"
-                          )} USDT
+                          {formatAmount(viewingDepositRequest.amount || "0")} USDT
                         </span>
                       </div>
-                      {activeTab === "deposits" && viewingDepositRequest && (
-                        <>
-                          <div>
-                            <span className="text-muted-foreground">Deposit Type: </span>
-                            <span className="font-medium capitalize">
-                              {viewingDepositRequest.deposit_type || "—"}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Reference: </span>
-                            <div className="font-mono text-xs break-all">
-                              {viewingDepositRequest.transaction_reference ||
-                                viewingDepositRequest.transaction_hash ||
-                                "—"}
-                            </div>
-                          </div>
-                        </>
-                      )}
+                      <div>
+                        <span className="text-muted-foreground">Deposit Type: </span>
+                        <span className="font-medium capitalize">
+                          {viewingDepositRequest.deposit_type || "—"}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">Reference: </span>
+                        <div className="font-mono text-xs break-all">
+                          {viewingDepositRequest.transaction_reference ||
+                            viewingDepositRequest.transaction_hash ||
+                            "—"}
+                        </div>
+                      </div>
                     </div>
                   </div>
 
                   <div className="rounded-lg border p-4">
                     <p className="text-xs text-muted-foreground mb-2">User Information</p>
                     <div className="space-y-2 text-sm">
-                      {((activeTab === "deposits" && viewingDepositRequest?.user) || 
-                        (activeTab === "withdrawals" && viewingWithdrawalRequest?.user)) ? (
+                      {viewingDepositRequest.user ? (
                         <>
                           <div>
                             <span className="text-muted-foreground">Name: </span>
                             <span className="font-medium">
-                              {activeTab === "deposits"
-                                ? (viewingDepositRequest?.user?.first_name || viewingDepositRequest?.user?.last_name
-                                    ? `${viewingDepositRequest.user.first_name || ""} ${viewingDepositRequest.user.last_name || ""}`.trim()
-                                    : "—")
-                                : (viewingWithdrawalRequest?.user?.first_name || viewingWithdrawalRequest?.user?.last_name
-                                    ? `${viewingWithdrawalRequest.user.first_name || ""} ${viewingWithdrawalRequest.user.last_name || ""}`.trim()
-                                    : "—")}
+                              {viewingDepositRequest.user.first_name || viewingDepositRequest.user.last_name
+                                ? `${viewingDepositRequest.user.first_name || ""} ${viewingDepositRequest.user.last_name || ""}`.trim()
+                                : "—"}
                             </span>
                           </div>
                           <div>
                             <span className="text-muted-foreground">Email: </span>
                             <span className="font-medium">
-                              {activeTab === "deposits"
-                                ? viewingDepositRequest?.user?.email
-                                : viewingWithdrawalRequest?.user?.email}
+                              {viewingDepositRequest.user.email}
                             </span>
                           </div>
-                          {/* <div>
-                            <span className="text-muted-foreground">User ID: </span>
-                            <span className="font-medium">
-                              {activeTab === "deposits"
-                                ? viewingDepositRequest?.user?.id
-                                : viewingWithdrawalRequest?.user?.id}
-                            </span>
-                          </div> */}
                         </>
                       ) : (
                         <span className="text-muted-foreground">No user information available</span>
@@ -1144,34 +677,37 @@ export function USDTTransactionsPageContent() {
                   </div>
                 </div>
 
-                {/* Payment Proof - Only for deposits */}
-                {activeTab === "deposits" && viewingDepositRequest?.payment_proof_url && (
+                {viewingDepositRequest.payment_proof_url && (
                   <div className="rounded-lg border p-4">
                     <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
                       <FileImage className="h-4 w-4" />
                       Payment Proof
                     </p>
-                    <div className="rounded-md border bg-background p-4 flex items-center justify-center">
-                      <img
-                        src={depositProofUrl(viewingDepositRequest.payment_proof_url)}
-                        alt="Payment proof"
-                        className="max-h-96 w-auto object-contain"
-                        onError={(e) => {
-                          (e.target as HTMLImageElement).src = "";
-                          (e.target as HTMLImageElement).style.display = "none";
-                        }}
-                      />
+                    <div className="rounded-md border bg-background p-4 flex items-center justify-center min-h-[120px]">
+                      {proofLoading && !proofBlobUrl && (
+                        <Spinner className="h-6 w-6" />
+                      )}
+                      {proofError && (
+                        <span className="text-sm text-muted-foreground">
+                          Unable to load payment proof.
+                        </span>
+                      )}
+                      {proofBlobUrl && (
+                        <img
+                          src={proofBlobUrl}
+                          alt="Payment proof"
+                          className="max-h-96 w-auto object-contain"
+                        />
+                      )}
                     </div>
                   </div>
                 )}
 
-                {/* Admin Notes/Remarks & Approval Info */}
-                {((activeTab === "deposits" && (viewingDepositRequest?.admin_notes || viewingDepositRequest?.approved_by || viewingDepositRequest?.approved_at)) ||
-                  (activeTab === "withdrawals" && (viewingWithdrawalRequest?.remarks || viewingWithdrawalRequest?.approved_by || viewingWithdrawalRequest?.approved_at))) && (
+                {(viewingDepositRequest.admin_notes || viewingDepositRequest.approved_by || viewingDepositRequest.approved_at) && (
                   <div className="rounded-lg border p-4">
                     <p className="text-xs text-muted-foreground mb-2">Admin Information</p>
                     <div className="space-y-2 text-sm">
-                      {activeTab === "deposits" && viewingDepositRequest?.admin_notes && (
+                      {viewingDepositRequest.admin_notes && (
                         <div>
                           <span className="text-muted-foreground">Admin Notes: </span>
                           <div className="mt-1 p-2 bg-muted rounded-md">
@@ -1179,36 +715,12 @@ export function USDTTransactionsPageContent() {
                           </div>
                         </div>
                       )}
-                      {activeTab === "withdrawals" && viewingWithdrawalRequest?.remarks && (
-                        <div>
-                          <span className="text-muted-foreground">Remarks: </span>
-                          <div className="mt-1 p-2 bg-muted rounded-md">
-                            {viewingWithdrawalRequest.remarks}
-                          </div>
-                        </div>
-                      )}
-                      {/* {((activeTab === "deposits" && viewingDepositRequest?.approved_by) ||
-                        (activeTab === "withdrawals" && viewingWithdrawalRequest?.approved_by)) && (
-                        <div>
-                          <span className="text-muted-foreground">Approved By: </span>
-                          <span className="font-mono text-xs">
-                            {activeTab === "deposits"
-                              ? viewingDepositRequest?.approved_by
-                              : viewingWithdrawalRequest?.approved_by}
-                          </span>
-                        </div>
-                      )} */}
-                      {((activeTab === "deposits" && viewingDepositRequest?.approved_at) ||
-                        (activeTab === "withdrawals" && viewingWithdrawalRequest?.approved_at)) && (
+                      {viewingDepositRequest.approved_at && (
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <span className="text-muted-foreground">Approved At: </span>
                           <span>
-                            {fmtDateTime(
-                              activeTab === "deposits"
-                                ? viewingDepositRequest?.approved_at
-                                : viewingWithdrawalRequest?.approved_at
-                            )}
+                            {fmtDateTime(viewingDepositRequest.approved_at)}
                           </span>
                         </div>
                       )}
@@ -1216,42 +728,133 @@ export function USDTTransactionsPageContent() {
                   </div>
                 )}
 
-                {/* Timestamps */}
                 <div className="rounded-lg border p-4">
                   <p className="text-xs text-muted-foreground mb-2">Timestamps</p>
                   <div className="space-y-2 text-sm">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className="text-muted-foreground">Created: </span>
-                      <span>
-                        {fmtDateTime(
-                          activeTab === "deposits"
-                            ? viewingDepositRequest?.created_at
-                            : viewingWithdrawalRequest?.created_at
-                        )}
-                      </span>
+                      <span>{fmtDateTime(viewingDepositRequest.created_at)}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Calendar className="h-4 w-4 text-muted-foreground" />
                       <span className="text-muted-foreground">Updated: </span>
-                      <span>
-                        {fmtDateTime(
-                          activeTab === "deposits"
-                            ? viewingDepositRequest?.updated_at
-                            : viewingWithdrawalRequest?.updated_at
-                        )}
-                      </span>
+                      <span>{fmtDateTime(viewingDepositRequest.updated_at)}</span>
                     </div>
                   </div>
                 </div>
+
+                {(() => {
+                  const isPending = viewingDepositRequest.status === "pending";
+                  const canVerify =
+                    canTakeDepositAction && isPending && canViewStatus("pending");
+                  if (!canVerify) return null;
+
+                  return (
+                    <>
+                      <Separator />
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-semibold">Verification Decision</Label>
+                          <Tabs
+                            value={verifyDecision}
+                            onValueChange={(value) => {
+                              if (value === "approve" || value === "reject") {
+                                setVerifyDecision(value);
+                              }
+                            }}
+                            className="w-full"
+                          >
+                            <TabsList className="grid h-auto w-full grid-cols-2 rounded-2xl bg-muted/50 p-1">
+                              <TabsTrigger value="approve" className="rounded-xl">
+                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                                Approve
+                              </TabsTrigger>
+                              <TabsTrigger value="reject" className="rounded-xl">
+                                <XCircle className="mr-2 h-4 w-4" />
+                                Reject
+                              </TabsTrigger>
+                            </TabsList>
+                          </Tabs>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="admin-notes" className="text-sm font-semibold">
+                            Admin Notes{" "}
+                            {verifyDecision === "reject" && (
+                              <span className="text-destructive">*</span>
+                            )}
+                          </Label>
+                          <Textarea
+                            id="admin-notes"
+                            value={adminNotes}
+                            onChange={(e) => setAdminNotes(e.target.value)}
+                            placeholder={
+                              verifyDecision === "reject"
+                                ? "Please provide a reason for rejection..."
+                                : "Optional notes about this verification..."
+                            }
+                            className="min-h-[100px]"
+                          />
+                          {verifyDecision === "reject" && (
+                            <p className="text-xs text-muted-foreground">
+                              Rejection reason is required
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             )}
+
+            <DialogFooter className="flex-col gap-2 sm:flex-row">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setViewDialogOpen(false)}
+                disabled={submitting}
+                className="w-full sm:w-auto"
+              >
+                Close
+              </Button>
+              {viewingDepositRequest &&
+                canTakeDepositAction &&
+                viewingDepositRequest.status === "pending" &&
+                canViewStatus("pending") && (
+                  <Button
+                    type="button"
+                    onClick={submitVerify}
+                    disabled={submitting || (verifyDecision === "reject" && !adminNotes.trim())}
+                    className={`w-full sm:w-auto ${
+                      verifyDecision === "approve"
+                        ? "bg-green-600 hover:bg-green-700"
+                        : "bg-red-600 hover:bg-red-700"
+                    }`}
+                  >
+                    {submitting ? (
+                      <>
+                        <Spinner className="mr-2 h-4 w-4" />
+                        Processing...
+                      </>
+                    ) : verifyDecision === "approve" ? (
+                      <>
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        Approve
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="mr-2 h-4 w-4" />
+                        Reject
+                      </>
+                    )}
+                  </Button>
+                )}
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
-    
+
   );
 }
-
-
-

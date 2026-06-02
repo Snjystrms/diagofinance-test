@@ -1005,12 +1005,12 @@ function USDTDepositContent() {
                       Deposit Processed
                     </h3>
                     <p className="mb-4 text-muted-foreground">
-                      Your deposit has been reviewed and credited successfully.
+                      Your deposit is under review and will be credited soon!.
                     </p>
                     <div className="space-y-3">
                       <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/20">
                         <p className="text-sm text-emerald-800 dark:text-emerald-200">
-                          The admin team has completed the review and released the funds to your wallet.
+                          The admin team is reviewing your deposit and will credit the funds to your wallet once approved.
                         </p>
                       </div>
                       <Button

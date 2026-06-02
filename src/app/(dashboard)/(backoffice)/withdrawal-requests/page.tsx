@@ -1,17 +1,17 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
-import { USDTTransactionsPageContent } from "./_components/usdt-transactions-page-content";
+import { WithdrawalRequestsPageContent } from "./_components/withdrawal-requests-page-content";
 
 export const metadata: Metadata = {
-  title: "Deposit List | CRM Dashboard",
-  description: "Review and process USDT deposit requests.",
+  title: "Withdrawal List | CRM Dashboard",
+  description: "Review and process USDT withdrawal requests.",
 };
 
-export default function USDTTransactionsPage() {
+export default function WithdrawalRequestsPage() {
   return (
     <Suspense fallback={<ListPageSkeleton statsCount={4} columnCount={6} rowCount={8} />}>
-      <USDTTransactionsPageContent />
+      <WithdrawalRequestsPageContent />
     </Suspense>
   );
 }

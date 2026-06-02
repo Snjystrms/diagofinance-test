@@ -32,13 +32,17 @@ const PERMISSION_NAV_MAPPING: Record<string, NavItem> = {
     ],
   },
   usdt_transaction: {
-    title: "All Transactions",
+    title: "Transaction Management",
     url: "/usdt-transactions",
     icon: CreditCard,
     items: [
       {
-        title: "All Transactions",
+        title: "Deposit List",
         url: "/usdt-transactions",
+      },
+      {
+        title: "Withdrawal List",
+        url: "/withdrawal-requests",
       }
     ],
   },
@@ -251,7 +255,7 @@ export function canAccessRoute(permissions: Permission[], route: string): boolea
     '/audit-by-users': { module: 'audit', action: 'read' },
     '/activity-logs': { module: 'audit', action: 'read' },
     '/all-tickets': { module: 'ticket', action: 'read' },
-    '/withdrawal-requests': { module: 'withdrawal', action: 'read' },
+    '/withdrawal-requests': { module: 'usdt_transaction', action: 'read' },
     '/withdrawal-history': { module: 'withdrawal', action: 'read' },
   };
 

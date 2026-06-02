@@ -77,21 +77,69 @@ const StatusBadge = ({ status }: { status: string }) => {
 
 // Payment proof preview dialog
 const PaymentProofDialog = ({ paymentProofUrl }: { paymentProofUrl: string | null }) => {
+  const authCtx = useAuth?.()
+  const token = authCtx?.token || (typeof window !== 'undefined' ? localStorage.getItem('auth_token') || '' : '')
+
+  const [open, setOpen] = useState(false)
+  const [blobUrl, setBlobUrl] = useState<string>('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    if (!open || !paymentProofUrl || !token) {
+      setBlobUrl('')
+      setError(false)
+      return
+    }
+
+    const apiBaseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/+$/, '')
+    const fullUrl = paymentProofUrl.startsWith('http')
+      ? paymentProofUrl
+      : apiBaseUrl
+        ? `${apiBaseUrl}${paymentProofUrl.startsWith('/') ? '' : '/'}${paymentProofUrl}`
+        : paymentProofUrl
+
+    let cancelled = false
+    setLoading(true)
+    setError(false)
+
+    fetch(fullUrl, { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.blob()
+      })
+      .then((blob) => {
+        if (cancelled) return
+        setBlobUrl(URL.createObjectURL(blob))
+      })
+      .catch(() => {
+        if (cancelled) return
+        setError(true)
+        setBlobUrl('')
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [open, paymentProofUrl, token])
+
+  useEffect(() => {
+    return () => {
+      if (blobUrl) URL.revokeObjectURL(blobUrl)
+    }
+  }, [blobUrl])
+
   if (!paymentProofUrl) {
     return (
       <span className="text-muted-foreground text-sm">No proof uploaded</span>
     )
   }
 
-  const apiBaseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/+$/, '')
-  const imageUrl = paymentProofUrl.startsWith('http')
-    ? paymentProofUrl
-    : apiBaseUrl
-      ? `${apiBaseUrl}${paymentProofUrl}`
-      : paymentProofUrl
-
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm" className="h-8">
           <ImageIcon className="h-4 w-4 mr-2" />
@@ -105,12 +153,22 @@ const PaymentProofDialog = ({ paymentProofUrl }: { paymentProofUrl: string | nul
             Screenshot or image of the transaction
           </DialogDescription>
         </DialogHeader>
-        <div className="flex justify-center items-center p-4">
-          <img
-            src={imageUrl}
-            alt="Payment proof"
-            className="max-w-full max-h-[70vh] object-contain rounded-lg border"
-          />
+        <div className="flex justify-center items-center p-4 min-h-[200px]">
+          {loading && !blobUrl && (
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
+          )}
+          {error && (
+            <span className="text-sm text-muted-foreground">
+              Unable to load payment proof.
+            </span>
+          )}
+          {blobUrl && (
+            <img
+              src={blobUrl}
+              alt="Payment proof"
+              className="max-w-full max-h-[70vh] object-contain rounded-lg border"
+            />
+          )}
         </div>
       </DialogContent>
     </Dialog>

@@ -8,10 +8,10 @@ export type TransactionStatusOption = {
   statuses: string[];
 };
 
-export const DEPOSIT_STATUS_OPTIONS: TransactionStatusOption[] = [
-  { value: "pending", label: "Pending", featureKey: "pendingDepositList", statuses: ["pending"] },
-  { value: "approved", label: "Approved", featureKey: "approveDepositList", statuses: ["approved"] },
-  { value: "rejected", label: "Rejected", featureKey: "rejectDepositList", statuses: ["rejected"] },
+export const WITHDRAWAL_STATUS_OPTIONS: TransactionStatusOption[] = [
+  { value: "pending", label: "Pending", featureKey: "pendingWithdrawalList", statuses: ["pending"] },
+  { value: "approved", label: "Approved", featureKey: "approveWithdrawalList", statuses: ["approved"] },
+  { value: "rejected", label: "Rejected", featureKey: "rejectWithdrawalList", statuses: ["rejected"] },
 ];
 
 export const fmtDateTime = (s?: string | null) => {
