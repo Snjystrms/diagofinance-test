@@ -59,6 +59,11 @@ export function normalizeAdminBankDetailRow(raw: unknown): AdminBankDetailItem |
     bank_name: String(r.bank_name ?? ""),
     address: String(r.address ?? ""),
     country: String(r.country ?? ""),
+    status: String(r.status ?? "pending"),
+    admin_notes: r.admin_notes !== null && r.admin_notes !== undefined ? String(r.admin_notes) : null,
+    verified_by: r.verified_by !== null && r.verified_by !== undefined ? String(r.verified_by) : null,
+    verified_at: r.verified_at !== null && r.verified_at !== undefined ? String(r.verified_at) : null,
+    passbook_photo_url: r.passbook_photo_url !== null && r.passbook_photo_url !== undefined ? String(r.passbook_photo_url) : undefined,
   };
 }
 

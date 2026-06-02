@@ -44,7 +44,7 @@ import {
   ProfileSecurityTab,
 } from "@/components/profile/view_profile/components/profile-content-tabs";
 
-type ProfileFormSection = "personal" | "legal";
+type ProfileFormSection = "personal" | "legal" | "bank";
 
 type ProfileFormField =
   | "first_name"
@@ -108,7 +108,8 @@ type BankDetailsField =
   | "ibanNumber"
   | "bankName"
   | "bankAddress"
-  | "country";
+  | "country"
+  | "bookBankFileName";
 
 type PersonalEditSnapshot = {
   user: Pick<ProfileViewResponse["user"], "first_name" | "last_name" | "mobile" | "country_code">;
@@ -141,7 +142,9 @@ export default function ProfileContent() {
   const [isLoading2FAStatus, setIsLoading2FAStatus] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
   const [isPersonalEditing, setIsPersonalEditing] = useState(false);
+  const [isBankEditing, setIsBankEditing] = useState(false);
   const [personalEditSnapshot, setPersonalEditSnapshot] = useState<PersonalEditSnapshot | null>(null);
+  const [bankEditSnapshot, setBankEditSnapshot] = useState<BankDetailsFormState | null>(null);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [dobDate, setDobDate] = useState<Date | undefined>(undefined);
   const [dobMonth, setDobMonth] = useState<Date | undefined>(undefined);
@@ -160,6 +163,7 @@ export default function ProfileContent() {
   const [bankCountryMode, setBankCountryMode] = useState<LocationMode>("select");
   const [selectedBankCountryId, setSelectedBankCountryId] = useState<number | null>(null);
   const [bankDetailsRecordId, setBankDetailsRecordId] = useState<number | null>(null);
+  const [passbookPhotoFile, setPassbookPhotoFile] = useState<File | null>(null);
   const [bankDetailsSaving, setBankDetailsSaving] = useState(false);
   const [bankValidationErrors, setBankValidationErrors] = useState<Partial<Record<BankDetailsField, string>>>({});
   const [locationHydrated, setLocationHydrated] = useState(false);
@@ -202,7 +206,8 @@ export default function ProfileContent() {
       field === "ibanNumber" ||
       field === "bankName" ||
       field === "bankAddress" ||
-      field === "country"
+      field === "country" ||
+      field === "bookBankFileName"
     ) {
       setBankValidationErrors((current) => {
         if (!current[field]) return current;
@@ -215,6 +220,7 @@ export default function ProfileContent() {
 
   const applyBankDetailsToForm = (details: UserBankDetailsData) => {
     setBankDetailsRecordId(details.id);
+    setPassbookPhotoFile(null);
     setBankDetails((current) => ({
       ...current,
       accountName: details.account_holder_name ?? "",
@@ -224,6 +230,7 @@ export default function ProfileContent() {
       bankName: details.bank_name ?? "",
       bankAddress: details.address ?? "",
       country: details.country ?? "",
+      bookBankFileName: details.passbook_photo_url ?? "",
     }));
   };
 
@@ -597,6 +604,7 @@ export default function ProfileContent() {
       errors.ifscSwiftCode = "IFSC / Swift code must be 4 to 20 uppercase letters, digits, or hyphen.";
     }
 
+    // IBAN is optional, but if provided, validate format
     if (ibanNumber && !/^[A-Z0-9-]{10,34}$/.test(ibanNumber)) {
       errors.ibanNumber = "IBAN must be 10 to 34 uppercase letters, digits, or hyphen.";
     }
@@ -641,6 +649,7 @@ export default function ProfileContent() {
       bank_name: bankDetails.bankName.trim(),
       address: bankDetails.bankAddress.trim(),
       country: bankDetails.country.trim(),
+      passbook_photo: passbookPhotoFile ?? bankDetails.bookBankFileName.trim(),
     };
 
     try {
@@ -843,6 +852,7 @@ export default function ProfileContent() {
           applyBankDetailsToForm(bankResponse.data);
         } else {
           setBankDetailsRecordId(null);
+          setPassbookPhotoFile(null);
         }
       } catch (error) {
         console.error("Error loading profile:", error);
@@ -1031,6 +1041,10 @@ export default function ProfileContent() {
           setIsPersonalEditing(false);
           setPersonalEditSnapshot(null);
         }
+        if (section === "bank") {
+          setIsBankEditing(false);
+          setBankEditSnapshot(null);
+        }
         toast.success(
           response.message ||
             (section === "legal"
@@ -1194,6 +1208,24 @@ export default function ProfileContent() {
     setCalendarOpen(false);
     setIsPersonalEditing(false);
     setPersonalEditSnapshot(null);
+  };
+
+  const handleStartBankEditing = () => {
+    setBankEditSnapshot({ ...bankDetails });
+    setBankValidationErrors({});
+    setIsBankEditing(true);
+  };
+
+  const handleCancelBankEditing = () => {
+    if (bankEditSnapshot) {
+      setBankDetails(bankEditSnapshot);
+      setLocationHydrated(false);
+    }
+
+    setBankValidationErrors({});
+    setIsBankEditing(false);
+    setBankEditSnapshot(null);
+    setPassbookPhotoFile(null);
   };
 
   // Get verification status badge
@@ -2048,11 +2080,22 @@ export default function ProfileContent() {
           countryOptions={countryOptions}
           bankDetailsSaving={bankDetailsSaving}
           bankDetailsRecordId={bankDetailsRecordId}
+          isBankEditing={isBankEditing}
           onBankCountrySelection={handleBankCountrySelection}
           onUpdateBankDetails={updateBankDetails}
+          onPassbookPhotoFileChange={(file) => {
+            setPassbookPhotoFile(file);
+            if (file) {
+              updateBankDetails("bookBankFileName", file.name);
+            }
+          }}
+          passbookPhotoFileName={passbookPhotoFile?.name ?? null}
+          passbookPhotoFile={passbookPhotoFile}
           onSubmitBankDetails={() => {
             void handleBankDetailsSubmit();
           }}
+          onStartBankEditing={handleStartBankEditing}
+          onCancelBankEditing={handleCancelBankEditing}
           sanitizePersonText={sanitizePersonText}
           sanitizeIdentifierInput={sanitizeIdentifierInput}
         />

@@ -672,12 +672,18 @@ export interface UserBankDetailsPayload {
   bank_name: string;
   address: string;
   country: string;
+  passbook_photo?: string | File;
 }
 
 export interface UserBankDetailsData extends UserBankDetailsPayload {
   id: number;
-  uuid: string;
+  uuid?: string;
   user_id: number;
+  passbook_photo_url?: string;
+  status?: string;
+  admin_notes?: string | null;
+  verified_by?: number | string | null;
+  verified_at?: string | null;
 }
 
 export interface AdminBankDetailsUser {
@@ -692,6 +698,11 @@ export interface AdminBankDetailItem extends UserBankDetailsPayload {
   id: number;
   uuid: string;
   user_id: number;
+  passbook_photo_url?: string;
+  status?: string;
+  admin_notes?: string | null;
+  verified_by?: number | string | null;
+  verified_at?: string | null;
   user?: AdminBankDetailsUser;
 }
 
@@ -705,6 +716,11 @@ export interface AdminBankDetailCreateBody extends UserBankDetailsPayload {
 }
 
 export type AdminBankDetailUpdateBody = UserBankDetailsPayload;
+
+export type AdminBankDetailVerifyBody = {
+  status: "approved" | "rejected" | "pending";
+  admin_notes?: string;
+};
 
 export interface BrokerBankDetailPayload {
   account_holder_name: string;
@@ -1701,19 +1717,57 @@ export const authApi = {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
-  createBankDetails: (data: UserBankDetailsPayload, token: string) =>
-    apiCall<UserBankDetailsData>(`/user/bank-details`, {
+  createBankDetails: (data: UserBankDetailsPayload, token: string) => {
+    if (data.passbook_photo instanceof File) {
+      const formData = new FormData();
+      formData.append("account_holder_name", data.account_holder_name);
+      formData.append("account_number", data.account_number);
+      formData.append("iban_number", data.iban_number);
+      formData.append("swift_ifsc_code", data.swift_ifsc_code);
+      formData.append("bank_name", data.bank_name);
+      formData.append("address", data.address);
+      formData.append("country", data.country);
+      formData.append("passbook_photo", data.passbook_photo);
+
+      return apiCall<UserBankDetailsData>(`/user/bank-details`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+    }
+
+    return apiCall<UserBankDetailsData>(`/user/bank-details`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(data),
-    }),
+    });
+  },
 
-  updateBankDetails: (data: UserBankDetailsPayload, token: string) =>
-    apiCall<UserBankDetailsData>(`/user/bank-details`, {
+  updateBankDetails: (data: UserBankDetailsPayload, token: string) => {
+    if (data.passbook_photo instanceof File) {
+      const formData = new FormData();
+      formData.append("account_holder_name", data.account_holder_name);
+      formData.append("account_number", data.account_number);
+      formData.append("iban_number", data.iban_number);
+      formData.append("swift_ifsc_code", data.swift_ifsc_code);
+      formData.append("bank_name", data.bank_name);
+      formData.append("address", data.address);
+      formData.append("country", data.country);
+      formData.append("passbook_photo", data.passbook_photo);
+
+      return apiCall<UserBankDetailsData>(`/user/bank-details`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
+    }
+
+    return apiCall<UserBankDetailsData>(`/user/bank-details`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(data),
-    }),
+    });
+  },
 
   getUserDashboard: (token: string) =>
     apiCall<UserDashboardData>(`/user/dashboard`, {
@@ -1797,6 +1851,30 @@ export const adminBankDetailsApi = {
     }
 
     return apiCall<AdminBankDetailItem>(`/admin/bank-details/${encodeURIComponent(id)}`, {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+  },
+
+  verify: (
+    uuid: string,
+    body: AdminBankDetailVerifyBody,
+    token: string
+  ) => {
+    if (!token) {
+      throw new Error("Token is required to verify bank detail");
+    }
+
+    const id = String(uuid ?? "").trim();
+    if (!id) {
+      throw new Error("Bank detail UUID is required");
+    }
+
+    return apiCall<AdminBankDetailItem>(`/admin/bank-details/${encodeURIComponent(id)}/verify`, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,
