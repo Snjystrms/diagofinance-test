@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Loader2 } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -33,6 +34,15 @@ const COMMISSION_LEVELS = [
   "Level-3",
   "Level-4",
   "Level-5",
+] as const;
+
+const COMMISSION_FIELDS = [
+  ["rate_ib", "Rate IB"],
+  ["rate_sub_ib_1", "Sub IB 1"],
+  ["rate_sub_ib_2", "Sub IB 2"],
+  ["rate_sub_ib_3", "Sub IB 3"],
+  ["rate_sub_ib_4", "Sub IB 4"],
+  ["rate_sub_ib_5", "Sub IB 5"],
 ] as const;
 
 const buildDefaultCommissions = (): AccountTypeCommissionRow[] =>
@@ -143,6 +153,7 @@ export function AccountTypeForm({
   readOnly?: boolean;
 }) {
   const [form, setForm] = useState<FormValue>(createEmptyForm);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -173,21 +184,33 @@ export function AccountTypeForm({
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim()) return;
+    
+    setIsSubmitting(true);
     try {
       await Promise.resolve(onSubmit(form));
       onOpenChange(false);
     } catch {
       // keep dialog open when the request fails so the user can fix values
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const numberStr = (v: string | number) => {
+    if (v === "" || v === null || v === undefined) return "";
     const n = typeof v === "string" ? parseFloat(v) : v;
     if (!Number.isFinite(n)) return "";
     return String(n);
   };
 
-  const disabled = readOnly;
+  const disabled = readOnly || isSubmitting;
+
+  const getEditableFieldCount = (level: string) => {
+    const levelIndex = COMMISSION_LEVELS.indexOf(
+      level as (typeof COMMISSION_LEVELS)[number],
+    );
+    return levelIndex >= 0 ? levelIndex + 1 : COMMISSION_FIELDS.length;
+  };
 
   const updateCommission = (
     level: string,
@@ -247,8 +270,8 @@ export function AccountTypeForm({
               <Input
                 id="spread_from"
                 type="number"
-                step="1"
-                min="1"
+                step="0.1"
+                min="0.1"
                 value={form.spread_from}
                 onChange={(e) =>
                   setForm({ ...form, spread_from: e.target.value })
@@ -398,21 +421,12 @@ export function AccountTypeForm({
                         <th className="text-left px-3 py-2 font-medium text-muted-foreground">
                           Level
                         </th>
-                        {(
-                          [
-                            "Rate IB",
-                            "Sub IB 1",
-                            "Sub IB 2",
-                            "Sub IB 3",
-                            "Sub IB 4",
-                            "Sub IB 5",
-                          ] as const
-                        ).map((h) => (
+                        {COMMISSION_FIELDS.map(([, label]) => (
                           <th
-                            key={h}
+                            key={label}
                             className="text-left px-3 py-2 font-medium text-muted-foreground whitespace-nowrap"
                           >
-                            {h}
+                            {label}
                           </th>
                         ))}
                         <th className="text-center px-3 py-2 font-medium text-muted-foreground">
@@ -421,79 +435,81 @@ export function AccountTypeForm({
                       </tr>
                     </thead>
                     <tbody>
-                      {form.ib_commissions.map((commission, i) => (
-                        <tr
-                          key={commission.level}
-                          className={
-                            i !== form.ib_commissions.length - 1
-                              ? "border-b"
-                              : ""
-                          }
-                        >
-                          <td className="px-3 py-2">
-                            <span className="inline-block text-xs font-medium px-2 py-0.5 rounded bg-muted text-muted-foreground border">
-                              {commission.level}
-                            </span>
-                          </td>
+                      {form.ib_commissions.map((commission, i) => {
+                        const editableFieldCount = getEditableFieldCount(
+                          commission.level,
+                        );
 
-                          {(
-                            [
-                              "rate_ib",
-                              "rate_sub_ib_1",
-                              "rate_sub_ib_2",
-                              "rate_sub_ib_3",
-                              "rate_sub_ib_4",
-                              "rate_sub_ib_5",
-                            ] as const
-                          ).map((field) => (
-                            <td key={field} className="px-3 py-2">
-                              <div className="relative flex items-center">
-                                <Input
-                                  className="w-20 h-8 text-sm pr-6"
-                                  type="number"
-                                  step="1"
-                                  min="0"
-                                  value={numberStr(commission[field])}
-                                  onChange={(e) =>
+                        return (
+                          <tr
+                            key={commission.level}
+                            className={
+                              i !== form.ib_commissions.length - 1
+                                ? "border-b"
+                                : ""
+                            }
+                          >
+                            <td className="px-3 py-2">
+                              <span className="inline-block text-xs font-medium px-2 py-0.5 rounded bg-muted text-muted-foreground border">
+                                {commission.level}
+                              </span>
+                            </td>
+
+                            {COMMISSION_FIELDS.map(([field], fieldIndex) => (
+                              <td key={field} className="px-3 py-2">
+                                <div className="relative flex items-center">
+                                  <Input
+                                    className="w-20 h-8 text-sm pr-6"
+                                    type="number"
+                                    step="0.1"
+                                    min="0"
+                                    value={numberStr(commission[field])}
+                                    onChange={(e) =>
+                                      updateCommission(
+                                        commission.level,
+                                        (cur) => ({
+                                          ...cur,
+                                          [field]: Number(e.target.value || 0),
+                                        }),
+                                      )
+                                    }
+                                    disabled={
+                                      disabled || fieldIndex >= editableFieldCount
+                                    }
+                                    onWheel={(e) =>
+                                      (e.target as HTMLInputElement).blur()
+                                    }
+                                  />
+                                  <span className="absolute right-2 text-xs text-muted-foreground pointer-events-none select-none">
+                                    $
+                                  </span>
+                                </div>
+                              </td>
+                            ))}
+
+                            <td className="px-3 py-2 text-center">
+                              <div className="flex items-center justify-center gap-2">
+                                <Switch
+                                  checked={commission.status}
+                                  onCheckedChange={(value) =>
                                     updateCommission(
                                       commission.level,
                                       (cur) => ({
                                         ...cur,
-                                        [field]: Number(e.target.value || 0),
+                                        status: value,
                                       }),
                                     )
                                   }
                                   disabled={disabled}
-                                  onWheel={(e) =>
-                                    (e.target as HTMLInputElement).blur()
-                                  }
                                 />
-                                <span className="absolute right-2 text-xs text-muted-foreground pointer-events-none select-none">
-                                  $
+                                <span className="text-xs text-muted-foreground w-12 text-left">
+                                  {commission.status ? "Active" : "Inactive"}
                                 </span>
                               </div>
                             </td>
-                          ))}
-
-                          <td className="px-3 py-2 text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <Switch
-                                checked={commission.status}
-                                onCheckedChange={(value) =>
-                                  updateCommission(commission.level, (cur) => ({
-                                    ...cur,
-                                    status: value,
-                                  }))
-                                }
-                                disabled={disabled}
-                              />
-                              <span className="text-xs text-muted-foreground w-12 text-left">
-                                {commission.status ? "Active" : "Inactive"}
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -510,7 +526,8 @@ export function AccountTypeForm({
               {readOnly ? "Close" : "Cancel"}
             </Button>
             {!readOnly ? (
-              <Button type="submit">
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {isEdit ? "Save Changes" : "Create"}
               </Button>
             ) : null}
