@@ -16,7 +16,6 @@ import {
   Mail,
   MessageSquare,
   RefreshCw,
-  Search,
   Ticket,
   User,
   XCircle,
@@ -26,6 +25,7 @@ import * as XLSX from "xlsx";
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -61,7 +61,6 @@ import {
   type AdminTicketCloseRequest,
   type AdminTicketReplyRequest,
 } from "@/lib/api";
-import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 const STATUS_OPTIONS = [
@@ -243,7 +242,6 @@ export default function AdminTicketsPage() {
   const [enquiryFilter, setEnquiryFilter] = useQueryState("type", parseAsString.withDefault("all"));
   const [userIdFilter, setUserIdFilter] = useQueryState("user", parseAsString.withDefault(""));
   const [search, setSearch] = useQueryState("search", parseAsString.withDefault(""));
-  const [searchInput, setSearchInput] = useState(search ?? "");
 
   const [selectedTicket, setSelectedTicket] = useState<AdminTicketItem | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -254,15 +252,6 @@ export default function AdminTicketsPage() {
   const [isReplying, setIsReplying] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
   const [isChangingStatus, setIsChangingStatus] = useState(false);
-
-  useEffect(() => {
-    setSearchInput(search ?? "");
-  }, [search]);
-
-  const debouncedApplySearch = useDebouncedCallback((value: string) => {
-    void setPage(1);
-    void setSearch(value.trim() ? value : null);
-  }, 400);
 
   const loadStats = useCallback(async () => {
     if (!token) return;
@@ -727,33 +716,17 @@ export default function AdminTicketsPage() {
           {/* Filters */}
           <div className="rounded-lg border bg-card p-4 shadow-sm space-y-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
-              <div className="flex w-full max-w-xs items-center gap-2 rounded-md border bg-background px-3 py-1.5">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={searchInput}
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    setSearchInput(value);
-                    debouncedApplySearch(value);
-                  }}
-                  placeholder="Search tickets"
-                  className="h-8 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
-                />
-                {searchInput ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-1 text-xs text-muted-foreground hover:text-foreground"
-                    onClick={() => {
-                      setSearchInput("");
-                      void setSearch(null);
-                      void setPage(1);
-                    }}
-                  >
-                    Clear
-                  </Button>
-                ) : null}
-              </div>
+              <ApiSearchBar
+                value={search ?? ""}
+                onChange={(value) => setSearch(value)}
+                onSearch={(value) => {
+                  void setPage(1);
+                  void setSearch(value.trim() ? value : null);
+                }}
+                placeholder="Search tickets"
+                minimumLength={3}
+                delay={300}
+              />
 
               <Select
                 value={statusFilter ?? "all"}

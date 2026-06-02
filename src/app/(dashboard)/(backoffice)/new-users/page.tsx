@@ -24,6 +24,7 @@ import { DeleteDialog } from "@/components/dialogs/delete-dialog";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ProtectedRoute } from "@/components/protected-route";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -58,7 +59,6 @@ import {
 import { COUNTRIES } from "@/lib/countries";
 import { adminUserCreateSchema, type AdminUserCreateFormData } from "@/lib/validations";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
-import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { useCrudCapabilities, useModuleCapabilities } from "@/hooks/use-permission-capabilities";
 
 import { getColumnsWithActions } from "./columns";
@@ -377,11 +377,6 @@ export default function NewUsersPage() {
   useEffect(() => {
     setSearchInput(search ?? "");
   }, [search]);
-
-  const debouncedApplySearch = useDebouncedCallback((value: string) => {
-    void setPage(1);
-    void setSearch(value.trim() ? value : null);
-  }, 500);
 
   const setCountryValues = useCallback((countryName: string, mode: "create" | "edit") => {
     const countryData = COUNTRIES.find((country) => country.name === countryName);
@@ -956,33 +951,17 @@ export default function NewUsersPage() {
 
             <div className="flex flex-col gap-3">
               <div className="flex flex-col gap-3 md:flex-row md:items-center">
-                <div className="flex w-full max-w-xs items-center gap-2 rounded-md border bg-background px-3 py-1.5">
-                  <Search className="h-4 w-4 text-muted-foreground" />
-                  <Input
-                    value={searchInput}
-                    onChange={(event) => {
-                      const value = event.target.value;
-                      setSearchInput(value);
-                      debouncedApplySearch(value);
-                    }}
-                    placeholder="Search by name, email, or mobile"
-                    className="h-8 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
-                  />
-                  {searchInput ? (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 px-1 text-xs text-muted-foreground hover:text-foreground"
-                      onClick={() => {
-                        setSearchInput("");
-                        void setSearch(null);
-                        void setPage(1);
-                      }}
-                    >
-                      Clear
-                    </Button>
-                  ) : null}
-                </div>
+              <ApiSearchBar
+                value={searchInput}
+                onChange={setSearchInput}
+                onSearch={(value) => {
+                  void setSearch(value || null);
+                  void setPage(1);
+                }}
+                placeholder="Search by name, email, or mobile"
+                minimumLength={3}
+                delay={300}
+              />
                 <Select
                   value={statusFilter ?? "all"}
                   onValueChange={(value) => {

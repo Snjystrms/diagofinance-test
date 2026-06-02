@@ -5,12 +5,13 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import toast from "react-hot-toast";
-import { ChevronDown, Copy, Download, Network, RefreshCw, Search, Users } from "lucide-react";
+import { ChevronDown, Copy, Download, Network, RefreshCw, Users } from "lucide-react";
 import * as XLSX from "xlsx";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,7 +28,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -38,7 +38,6 @@ import {
 } from "@/components/ui/select";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/contexts/auth-context";
-import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import {
   API_BASE_URL,
@@ -250,16 +249,6 @@ export default function IbUsersPage() {
     "search",
     parseAsString.withDefault(""),
   );
-  const [searchInput, setSearchInput] = useState(search ?? "");
-
-  useEffect(() => {
-    setSearchInput(search ?? "");
-  }, [search]);
-
-  const debouncedApplySearch = useDebouncedCallback((value: string) => {
-    void setPage(1);
-    void setSearch(value.trim() ? value : null);
-  }, 500);
 
   const loadUsers = useCallback(async () => {
     if (!token) {
@@ -935,33 +924,17 @@ export default function IbUsersPage() {
 
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="flex flex-col gap-3 md:flex-row md:items-center">
-            <div className="flex w-full max-w-xs items-center gap-2 rounded-md border bg-background px-3 py-1.5">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <Input
-                value={searchInput}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setSearchInput(value);
-                  debouncedApplySearch(value);
-                }}
-                placeholder="Search by name, email, mobile, or sponsor ID"
-                className="h-8 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
-              />
-              {searchInput ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 px-1 text-xs text-muted-foreground hover:text-foreground"
-                  onClick={() => {
-                    setSearchInput("");
-                    void setSearch(null);
-                    void setPage(1);
-                  }}
-                >
-                  Clear
-                </Button>
-              ) : null}
-            </div>
+            <ApiSearchBar
+              value={search ?? ""}
+              onChange={(value) => setSearch(value)}
+              onSearch={(value) => {
+                void setPage(1);
+                void setSearch(value.trim() ? value : null);
+              }}
+              placeholder="Search by name, email, mobile, or sponsor ID"
+              minimumLength={3}
+              delay={300}
+            />
           </div>
 
           <div className="text-sm text-muted-foreground">

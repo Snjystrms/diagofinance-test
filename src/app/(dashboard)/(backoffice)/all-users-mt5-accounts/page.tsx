@@ -16,6 +16,7 @@ import * as XLSX from "xlsx";
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -28,7 +29,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/auth-context";
 import { adminMT5AccountsApi, type AdminMT5Account, type UpdateMT5AccountRequest, type CreateMT5AccountRequest } from "@/lib/api";
-import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { useModuleCapabilities } from "@/hooks/use-permission-capabilities";
 import { getColumnsWithActions } from "./columns";
 import { EditAccountDialog } from "./edit-account-dialog";
@@ -250,11 +250,6 @@ export default function AllUsersMT5AccountsPage() {
   useEffect(() => {
     setSearchInput(search ?? "");
   }, [search]);
-
-  const debouncedApplySearch = useDebouncedCallback((value: string) => {
-    void setPage(1);
-    void setSearch(value.trim() ? value : null);
-  }, 500);
 
   const loadAccounts = useCallback(async () => {
     if (!canViewMt5List) {
@@ -698,33 +693,17 @@ export default function AllUsersMT5AccountsPage() {
           <div className="flex flex-col gap-3">
             {/* Search and Filters Row */}
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
-              <div className="flex w-full max-w-xs items-center gap-2 rounded-md border bg-background px-3 py-1.5">
-                <Search className="h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={searchInput}
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    setSearchInput(value);
-                    debouncedApplySearch(value);
-                  }}
-                  placeholder="Search by name, email, mobile, account_id, or mt5_id"
-                  className="h-8 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
-                />
-                {searchInput ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-6 px-1 text-xs text-muted-foreground hover:text-foreground"
-                    onClick={() => {
-                      setSearchInput("");
-                      void setSearch(null);
-                      void setPage(1);
-                    }}
-                  >
-                    Clear
-                  </Button>
-                ) : null}
-              </div>
+              <ApiSearchBar
+                value={searchInput}
+                onChange={setSearchInput}
+                onSearch={(value) => {
+                  void setSearch(value || null);
+                  void setPage(1);
+                }}
+                placeholder="Search by name, email, mobile, account_id, or mt5_id"
+                minimumLength={3}
+                delay={300}
+              />
 
               <Select
                 value={statusFilter ?? "all"}

@@ -4,11 +4,12 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
-import { useQueryState, parseAsInteger } from "nuqs";
+import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -179,6 +180,8 @@ export function USDTTransactionsPageContent() {
   const [loadError, setLoadError] = useState<unknown | null>(null);
   const [page] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
+  const [search, setSearch] = useQueryState("search", parseAsString.withDefault(""));
+  const [searchInput, setSearchInput] = useState(search ?? "");
   const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [depositTypeFilter, setDepositTypeFilter] = useState<"all" | "bank" | "usdt">("all");
@@ -205,7 +208,8 @@ export function USDTTransactionsPageContent() {
     if (!token) return;
     try {
       setLoadError(null);
-      const res = await adminUSDTDepositApi.listAll(page, perPage, token);
+      const searchTerm = search && search.length >= 3 ? search : undefined;
+      const res = await adminUSDTDepositApi.listAll(page, perPage, token, searchTerm);
       const requests = res?.data?.deposits ?? [];
       setDepositRows(requests);
       
@@ -224,7 +228,7 @@ export function USDTTransactionsPageContent() {
       );
       setDepositRows([]);
     }
-  }, [token, page, perPage]);
+  }, [token, page, perPage, search]);
 
   const loadWithdrawals = useCallback(async () => {
     if (!token) return;
@@ -232,7 +236,8 @@ export function USDTTransactionsPageContent() {
       setLoadError(null);
       const status =
         statusFilter !== "all" && statusFilter !== "none" ? statusFilter : undefined;
-      const res = await adminWithdrawalApi.listAll(page, perPage, token, status) as {
+      const searchTerm = search && search.length >= 3 ? search : undefined;
+      const res = await adminWithdrawalApi.listAll(page, perPage, token, status, searchTerm) as {
         data?: unknown[] | { withdrawals?: unknown[]; data?: unknown[]; requests?: unknown[]; pagination?: { totalPages?: number; total_pages?: number } };
         meta?: { total?: number; limit?: number };
         pagination?: { totalPages?: number; total_pages?: number };
@@ -273,7 +278,7 @@ export function USDTTransactionsPageContent() {
       );
       setWithdrawalRows([]);
     }
-  }, [token, page, perPage, statusFilter]);
+  }, [token, page, perPage, statusFilter, search]);
 
   const loadList = useCallback(async () => {
     if (!token) return;
@@ -311,6 +316,10 @@ export function USDTTransactionsPageContent() {
   useEffect(() => {
     loadList();
   }, [loadList]);
+
+  useEffect(() => {
+    setSearchInput(search ?? "");
+  }, [search]);
 
   useEffect(() => {
     const safeTab = getSafeTab(activeTab);
@@ -795,6 +804,18 @@ export function USDTTransactionsPageContent() {
           <TabsContent value="deposits" className="space-y-6">
             <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
               <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                {/* Search Bar */}
+                <ApiSearchBar
+                  value={searchInput}
+                  onChange={setSearchInput}
+                  onSearch={(value) => {
+                    void setSearch(value || null);
+                  }}
+                  placeholder="Search by user, email, amount, or reference"
+                  minimumLength={3}
+                  delay={300}
+                />
+                
                 {/* Status Filter */}
                 {(!isManager || depositStatusFeatureOptions.length > 0) && (
                   <div className="flex items-center gap-2">
@@ -857,12 +878,25 @@ export function USDTTransactionsPageContent() {
           {canViewWithdrawalsTab && (
           <TabsContent value="withdrawals" className="space-y-6">
             <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-              {/* Status Filter */}
-              {(!isManager || withdrawalStatusFeatureOptions.length > 0) && (
-                <div className="mb-4 flex items-center gap-2">
-                  <label htmlFor="status-filter" className="text-sm font-medium">
-                    Filter by Status:
-                  </label>
+              <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+                {/* Search Bar */}
+                <ApiSearchBar
+                  value={searchInput}
+                  onChange={setSearchInput}
+                  onSearch={(value) => {
+                    void setSearch(value || null);
+                  }}
+                  placeholder="Search by user, email, amount, or wallet"
+                  minimumLength={3}
+                  delay={300}
+                />
+                
+                {/* Status Filter */}
+                {(!isManager || withdrawalStatusFeatureOptions.length > 0) && (
+                  <div className="flex items-center gap-2">
+                    <label htmlFor="status-filter" className="text-sm font-medium">
+                      Filter by Status:
+                    </label>
                   <Select
                     value={statusFilter === "none" ? undefined : statusFilter}
                     onValueChange={setStatusFilter}
@@ -882,8 +916,9 @@ export function USDTTransactionsPageContent() {
                       ))}
                     </SelectContent>
                   </Select>
-                </div>
-              )}
+                  </div>
+                )}
+              </div>
 
               <AppDataTable<AdminWithdrawalRequest>
                 data={activeTab === "withdrawals" ? (filteredRows as AdminWithdrawalRequest[]) : []}

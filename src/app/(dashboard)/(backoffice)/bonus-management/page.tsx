@@ -13,7 +13,6 @@ import {
   Loader2,
   Plus,
   RefreshCw,
-  Search,
   Wallet,
 } from "lucide-react";
 import * as XLSX from "xlsx";
@@ -22,9 +21,10 @@ import { AppDataTable } from "@/components/app-data-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { ApiErrorState } from "@/components/errors/api-error-state";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ProtectedRoute } from "@/components/protected-route";
-import { SearchSelectField } from "@/components/search-select-field";
+import { SearchSelectFieldEnhanced } from "@/components/ui/search-select-field-enhanced";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -223,7 +223,7 @@ export default function BonusManagementPage() {
       const matchesType = typeFilter === "all" ? true : item.type?.toUpperCase() === typeFilter;
       if (!matchesType) return false;
 
-      if (!deferredHistorySearch) return true;
+      if (!deferredHistorySearch || deferredHistorySearch.length < 3) return true;
 
       const haystack = [
         item.mt5User?.account_id,
@@ -508,15 +508,14 @@ export default function BonusManagementPage() {
                     </CardDescription>
                   </div>
                   <div className="flex flex-col gap-3 sm:flex-row">
-                    <div className="relative min-w-[220px]">
-                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        placeholder="Search account, user, email, comment"
-                        className="pl-9"
-                        value={historySearch}
-                        onChange={(event) => setHistorySearch(event.target.value)}
-                      />
-                    </div>
+                    <ApiSearchBar
+                      value={historySearch}
+                      onChange={(value) => setHistorySearch(value)}
+                      onSearch={(value) => setHistorySearch(value)}
+                      placeholder="Search account, user, email, comment"
+                      minimumLength={3}
+                      delay={300}
+                    />
                     <Select
                       value={typeFilter}
                       onValueChange={(value) => setTypeFilter(value as "all" | "IN" | "OUT")}
@@ -596,7 +595,7 @@ export default function BonusManagementPage() {
 
             <div className="space-y-5">
               <div className="space-y-2">
-                <SearchSelectField
+                <SearchSelectFieldEnhanced
                   id="bonus-user-search"
                   label="Find MT5 Account"
                   options={filteredMt5Users}
@@ -607,17 +606,18 @@ export default function BonusManagementPage() {
                   loadingMessage="Loading MT5 accounts..."
                   idleMessage="Type at least 3 letters to search MT5 accounts."
                   emptyMessage="No MT5 accounts found."
-                  onSearchValueChange={(value) => {
+                  minimumSearchLength={3}
+                  onSearchValueChange={(value: string) => {
                     setUserSearch(value);
                     setForm((current) => ({ ...current, mt5_id: "" }));
                   }}
-                  onOptionSelect={(item) => {
+                  onOptionSelect={(item: { account_id: string; name: string; email?: string }) => {
                     setUserSearch(item.account_id);
                     setForm((current) => ({ ...current, mt5_id: item.account_id }));
                   }}
-                  getOptionValue={(item) => item.account_id}
-                  getOptionLabel={(item) => item.account_id}
-                  getOptionDescription={(item) => `${item.name} | ${item.email}`}
+                  getOptionValue={(item: { account_id: string }) => item.account_id}
+                  getOptionLabel={(item: { account_id: string }) => item.account_id}
+                  getOptionDescription={(item: { name: string; email?: string }) => `${item.name} | ${item.email}`}
                 />
                 {isMt5UsersError ? (
                   <p className="text-xs text-destructive">

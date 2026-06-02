@@ -2154,14 +2154,21 @@ export const adminManagedManager2FAApi = {
 };
 
 export const adminKycApi = {
-  listPending: (status: string | number, token: string) =>
-    apiCall<{
+  listPending: (status: string | number, token: string, search?: string) => {
+    const qs = new URLSearchParams();
+    qs.set("status", encodeURIComponent(String(status)));
+    if (search && search.trim()) {
+      qs.set("search", search.trim());
+    }
+    
+    return apiCall<{
       items: Array<Record<string, unknown>>;
       pagination: { current_page: number; per_page: number; total: number; total_pages: number };
-    }>(`/admin/user-management/users/kyc/pending?status=${encodeURIComponent(String(status))}`, {
+    }>(`/admin/user-management/users/kyc/pending?${qs.toString()}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
-    }),
+    });
+  },
 
   getUserKyc: (userUuid: string, token: string) =>
     apiCall(`/admin/user-management/users/kyc/${encodeURIComponent(userUuid)}`, {
@@ -2646,11 +2653,19 @@ export interface AdminUSDTDepositVerifyResponse {
 }
 
 export const adminUSDTDepositApi = {
-  listAll: (page: number = 1, limit: number = 10, token: string) =>
-    apiCall<AdminUSDTDepositListResponse>(`/admin/deposits/all?page=${page}&limit=${limit}`, {
+  listAll: (page: number = 1, limit: number = 10, token: string, search?: string) => {
+    const qs = new URLSearchParams();
+    qs.set("page", String(page));
+    qs.set("limit", String(limit));
+    if (search && search.trim()) {
+      qs.set("search", search.trim());
+    }
+    
+    return apiCall<AdminUSDTDepositListResponse>(`/admin/deposits/all?${qs.toString()}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
-    }),
+    });
+  },
 
   verify: (data: AdminUSDTDepositVerifyRequest, token: string) =>
     apiCall<AdminUSDTDepositVerifyResponse>(`/admin/deposits/verify`, {
@@ -2970,12 +2985,15 @@ export const bankDepositApi = {
 };
 
 export const adminWithdrawalApi = {
-  listAll: (page: number = 1, limit: number = 10, token: string, status?: string) => {
+  listAll: (page: number = 1, limit: number = 10, token: string, status?: string, search?: string) => {
     const qs = new URLSearchParams();
     qs.set("page", String(page));
     qs.set("limit", String(limit));
     if (status && status !== "all") {
       qs.set("status", status);
+    }
+    if (search && search.trim()) {
+      qs.set("search", search.trim());
     }
 
     return apiCall<AdminWithdrawalListResponse>(`/admin/withdrawals?${qs.toString()}`, {

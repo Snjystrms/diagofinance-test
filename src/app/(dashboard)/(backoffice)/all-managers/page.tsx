@@ -11,6 +11,7 @@ import { PermissionAwareButton } from "@/components/permission-aware-button";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { BackofficeDetailDialogSkeleton } from "@/components/loading/backoffice-page-skeletons";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { ChevronDown, Download, Plus, UserPlus } from "lucide-react";
 import * as XLSX from "xlsx";
 import { getColumns } from "./columns";
@@ -180,6 +181,17 @@ export default function AllManagersPage() {
     staleTime: 60 * 1000,
   });
   const data = managersResult ?? [];
+
+  const [managerSearch, setManagerSearch] = useState("");
+
+  const filteredManagers = useMemo(() => {
+    const term = managerSearch.trim().toLowerCase();
+    if (!term || term.length < 3) return data;
+    return data.filter((manager) => {
+      const haystack = `${manager.name} ${manager.email} ${manager.mobile}`.toLowerCase();
+      return haystack.includes(term);
+    });
+  }, [data, managerSearch]);
 
   const { data: permissionsResult } = useQuery({
     queryKey: ["permissions", token],
@@ -509,9 +521,20 @@ export default function AllManagersPage() {
             </div>
           </div>
 
+          <div className="flex items-center gap-3">
+            <ApiSearchBar
+              value={managerSearch}
+              onChange={(value) => setManagerSearch(value)}
+              onSearch={(value) => setManagerSearch(value)}
+              placeholder="Search by name, email, or mobile"
+              minimumLength={3}
+              delay={200}
+            />
+          </div>
+
           <PermissionAwareCrudDataTable<ManagerRow>
-            data={data}
-            initialData={data}
+            data={filteredManagers}
+            initialData={filteredManagers}
             columns={columns}
             formComponent={ManagerFormComponent}
             title=""

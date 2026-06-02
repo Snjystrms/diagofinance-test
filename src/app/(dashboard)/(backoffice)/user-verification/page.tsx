@@ -10,6 +10,7 @@ import { ApiErrorState } from "@/components/errors/api-error-state";
 import { BackofficeDetailDialogSkeleton } from "@/components/loading/backoffice-page-skeletons";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { SearchSelectField } from "@/components/search-select-field";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
@@ -499,6 +500,8 @@ export default function UserVerificationPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("1");
+  const [search, setSearch] = useState<string>("");
+  const [searchInput, setSearchInput] = useState<string>("");
 
   // modal
   const [open, setOpen] = useState(false);
@@ -620,7 +623,8 @@ export default function UserVerificationPage() {
     try {
       setLoading(true);
       setLoadError(null);
-      const res = await adminKycApi.listPending(Number(statusFilter), token);
+      const searchTerm = search && search.length >= 3 ? search : undefined;
+      const res = await adminKycApi.listPending(Number(statusFilter), token, searchTerm);
       const data = res?.data as { items?: ListRow[] } | undefined;
       const items = data?.items ?? [];
       setRows(items);
@@ -634,11 +638,15 @@ export default function UserVerificationPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, statusFilter]);
+  }, [token, statusFilter, search]);
 
   useEffect(() => {
     loadList();
   }, [loadList]);
+
+  useEffect(() => {
+    setSearchInput(search);
+  }, [search]);
 
   useEffect(() => {
     if (!isManager) return;
@@ -659,6 +667,10 @@ export default function UserVerificationPage() {
 
   useEffect(() => {
     if (!uploadOpen || !token || !canAddKyc) return;
+    if (!uploadUserSearch.trim() || uploadUserSearch.length < 3) {
+      setUploadUserOptions([]);
+      return;
+    }
 
     let isActive = true;
     const timer = window.setTimeout(async () => {
@@ -668,7 +680,7 @@ export default function UserVerificationPage() {
           token,
           page: 1,
           limit: 20,
-          search: uploadUserSearch.trim() || undefined,
+          search: uploadUserSearch.trim(),
         });
 
         if (!isActive) return;
@@ -1106,27 +1118,42 @@ const buildReviewPayload = () => {
       </div>
 
       <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-        {/* Status Filter Dropdown */}
-        <div className="mb-4 flex items-center gap-2">
-          <label htmlFor="status-filter" className="text-sm font-medium">
-            Filter by Status:
-          </label>
-          <Select
-            value={statusSelectValue}
-            onValueChange={handleStatusFilterChange}
-            disabled={statusSelectDisabled}
-          >
-            <SelectTrigger className="w-[200px]">
-              <SelectValue placeholder="Select status" />
-            </SelectTrigger>
-            <SelectContent>
-              {statusFeatureOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* Search and Filter Controls */}
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+          {/* Search Bar */}
+          <ApiSearchBar
+            value={searchInput}
+            onChange={setSearchInput}
+            onSearch={(value) => {
+              setSearch(value || "");
+            }}
+            placeholder="Search by name, email, or user details"
+            minimumLength={3}
+            delay={300}
+          />
+          
+          {/* Status Filter Dropdown */}
+          <div className="flex items-center gap-2">
+            <label htmlFor="status-filter" className="text-sm font-medium">
+              Filter by Status:
+            </label>
+            <Select
+              value={statusSelectValue}
+              onValueChange={handleStatusFilterChange}
+              disabled={statusSelectDisabled}
+            >
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {statusFeatureOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         
         <AppDataTable<ListRow> data={filteredRows} columns={columns} pageCount={1} advanced />
