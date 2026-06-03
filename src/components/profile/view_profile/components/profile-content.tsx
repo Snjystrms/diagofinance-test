@@ -24,6 +24,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/auth-context";
+import { FALLBACK_COUNTRY_OPTIONS } from "@/lib/country-options";
+import type { LocationCountryOption } from "@/lib/country-options";
 import {
   authApi,
   admin2FAApi,
@@ -69,14 +71,6 @@ type ProfileFormField =
   | "estimated_annual_amount";
 
 type LocationMode = "select" | "other";
-
-type LocationCountryOption = {
-  id: number;
-  name: string;
-  iso2: string;
-  phone_code: string;
-  hasStates: boolean;
-};
 
 type LocationStateOption = {
   id: number;
@@ -151,7 +145,9 @@ export default function ProfileContent() {
   const [dobValue, setDobValue] = useState("");
   const [validationErrors, setValidationErrors] = useState<Partial<Record<ProfileFormField, string>>>({});
   const [financialCurrency, setFinancialCurrency] = useState("USD");
-  const [countryOptions, setCountryOptions] = useState<LocationCountryOption[]>([]);
+  const [countryOptions, setCountryOptions] = useState<LocationCountryOption[]>(() =>
+    FALLBACK_COUNTRY_OPTIONS.slice().sort((left, right) => left.name.localeCompare(right.name))
+  );
   const [stateOptions, setStateOptions] = useState<LocationStateOption[]>([]);
   const [cityOptions, setCityOptions] = useState<LocationCityOption[]>([]);
   const [selectedCountryId, setSelectedCountryId] = useState<number | null>(null);
@@ -163,6 +159,9 @@ export default function ProfileContent() {
   const [bankCountryMode, setBankCountryMode] = useState<LocationMode>("select");
   const [selectedBankCountryId, setSelectedBankCountryId] = useState<number | null>(null);
   const [bankDetailsRecordId, setBankDetailsRecordId] = useState<number | null>(null);
+  const [bankDetailsList, setBankDetailsList] = useState<UserBankDetailsData[]>([]);
+  const [bankDetailsDeletingId, setBankDetailsDeletingId] = useState<number | null>(null);
+  const [pendingDeleteBankId, setPendingDeleteBankId] = useState<number | null>(null);
   const [passbookPhotoFile, setPassbookPhotoFile] = useState<File | null>(null);
   const [bankDetailsSaving, setBankDetailsSaving] = useState(false);
   const [bankValidationErrors, setBankValidationErrors] = useState<Partial<Record<BankDetailsField, string>>>({});
@@ -232,6 +231,44 @@ export default function ProfileContent() {
       country: details.country ?? "",
       bookBankFileName: details.passbook_photo_url ?? "",
     }));
+  };
+
+  const resetBankForm = () => {
+    setBankDetailsRecordId(null);
+    setPassbookPhotoFile(null);
+    setBankDetails({
+      client: "primary-client",
+      accountName: "",
+      accountNumber: "",
+      ifscSwiftCode: "",
+      ibanNumber: "",
+      bankName: "",
+      bankAddress: "",
+      country: "",
+      bookBankFileName: "",
+    });
+  };
+
+  const refreshBankDetailsList = async (preferredId?: number | null) => {
+    if (!token) return;
+    try {
+      const response = await authApi.getBankDetails(token);
+      const list: UserBankDetailsData[] = Array.isArray(response.data) ? response.data : [];
+      setBankDetailsList(list);
+
+      if (list.length === 0) {
+        resetBankForm();
+        return;
+      }
+
+      const nextSelected =
+        list.find((entry) => entry.id === preferredId) ??
+        list.find((entry) => entry.id === bankDetailsRecordId) ??
+        list[0];
+      applyBankDetailsToForm(nextSelected);
+    } catch (error) {
+      console.error("Error refreshing bank details:", error);
+    }
   };
 
   const normalizeCountryCodeForInput = (value?: string | number | null) => {
@@ -654,17 +691,24 @@ export default function ProfileContent() {
 
     try {
       setBankDetailsSaving(true);
-      const response = bankDetailsRecordId
-        ? await authApi.updateBankDetails(payload, token)
+      const editingId = bankDetailsRecordId;
+      const response = editingId
+        ? await authApi.updateBankDetails(editingId, payload, token)
         : await authApi.createBankDetails(payload, token);
 
+      const savedId = response.data?.id ?? editingId ?? null;
       if (response.data) {
         applyBankDetailsToForm(response.data);
       }
 
+      await refreshBankDetailsList(savedId);
+
+      setIsBankEditing(false);
+      setBankEditSnapshot(null);
+
       toast.success(
         response.message ||
-          (bankDetailsRecordId
+          (editingId
             ? "Bank details updated successfully"
             : "Bank details added successfully")
       );
@@ -673,6 +717,65 @@ export default function ProfileContent() {
       toast.error(error instanceof Error ? error.message : "Failed to save bank details");
     } finally {
       setBankDetailsSaving(false);
+    }
+  };
+
+  const handleStartAddBankDetails = () => {
+    resetBankForm();
+    setBankEditSnapshot(null);
+    setBankValidationErrors({});
+    setLocationHydrated(false);
+    setIsBankEditing(true);
+  };
+
+  const handleStartEditBankDetails = (entry: UserBankDetailsData) => {
+    applyBankDetailsToForm(entry);
+    setBankEditSnapshot({
+      accountName: entry.account_holder_name ?? "",
+      accountNumber: entry.account_number ?? "",
+      ifscSwiftCode: entry.swift_ifsc_code ?? "",
+      ibanNumber: entry.iban_number ?? "",
+      bankName: entry.bank_name ?? "",
+      bankAddress: entry.address ?? "",
+      country: entry.country ?? "",
+      bookBankFileName: entry.passbook_photo_url ?? "",
+      client: bankDetails.client,
+    });
+    setBankValidationErrors({});
+    setLocationHydrated(false);
+    setIsBankEditing(true);
+  };
+
+  const handleRequestDeleteBankDetails = (id: number) => {
+    setPendingDeleteBankId(id);
+  };
+
+  const handleCancelDeleteBankDetails = () => {
+    setPendingDeleteBankId(null);
+  };
+
+  const handleConfirmDeleteBankDetails = async () => {
+    const id = pendingDeleteBankId;
+    if (!id || !token) {
+      setPendingDeleteBankId(null);
+      return;
+    }
+
+    try {
+      setBankDetailsDeletingId(id);
+      const response = await authApi.deleteBankDetails(id, token);
+      toast.success(response.message || "Bank details deleted successfully");
+      if (bankDetailsRecordId === id) {
+        setIsBankEditing(false);
+        setBankEditSnapshot(null);
+      }
+      await refreshBankDetailsList();
+    } catch (error) {
+      console.error("Error deleting bank details:", error);
+      toast.error(error instanceof Error ? error.message : "Failed to delete bank details");
+    } finally {
+      setBankDetailsDeletingId(null);
+      setPendingDeleteBankId(null);
     }
   };
 
@@ -694,15 +797,16 @@ export default function ProfileContent() {
 
     const loadCountries = async () => {
       try {
-        const countries = ((await GetCountries()) as LocationCountryOption[]).slice().sort((left, right) =>
-          left.name.localeCompare(right.name)
-        );
+        const fetched = (await GetCountries()) as LocationCountryOption[] | undefined;
+        if (cancelled) return;
 
-        if (!cancelled) {
-          setCountryOptions(countries);
+        if (Array.isArray(fetched) && fetched.length > 0) {
+          setCountryOptions(
+            fetched.slice().sort((left, right) => left.name.localeCompare(right.name))
+          );
         }
       } catch (error) {
-        console.error("Error loading countries:", error);
+        console.error("Error loading countries, keeping fallback list:", error);
       }
     };
 
@@ -849,10 +953,18 @@ export default function ProfileContent() {
         }
 
         if (bankResponse?.data) {
-          applyBankDetailsToForm(bankResponse.data);
+          const list: UserBankDetailsData[] = Array.isArray(bankResponse.data)
+            ? bankResponse.data
+            : [bankResponse.data];
+          setBankDetailsList(list);
+          if (list.length > 0) {
+            applyBankDetailsToForm(list[0]);
+          } else {
+            resetBankForm();
+          }
         } else {
-          setBankDetailsRecordId(null);
-          setPassbookPhotoFile(null);
+          setBankDetailsList([]);
+          resetBankForm();
         }
       } catch (error) {
         console.error("Error loading profile:", error);
@@ -1208,12 +1320,6 @@ export default function ProfileContent() {
     setCalendarOpen(false);
     setIsPersonalEditing(false);
     setPersonalEditSnapshot(null);
-  };
-
-  const handleStartBankEditing = () => {
-    setBankEditSnapshot({ ...bankDetails });
-    setBankValidationErrors({});
-    setIsBankEditing(true);
   };
 
   const handleCancelBankEditing = () => {
@@ -2074,12 +2180,14 @@ export default function ProfileContent() {
         />
         <ProfileBankDetailsTab
           bankDetails={bankDetails}
+          bankDetailsList={bankDetailsList}
           bankValidationErrors={bankValidationErrors}
           bankCountryMode={bankCountryMode}
           selectedBankCountryId={selectedBankCountryId}
           countryOptions={countryOptions}
           bankDetailsSaving={bankDetailsSaving}
           bankDetailsRecordId={bankDetailsRecordId}
+          bankDetailsDeletingId={bankDetailsDeletingId}
           isBankEditing={isBankEditing}
           onBankCountrySelection={handleBankCountrySelection}
           onUpdateBankDetails={updateBankDetails}
@@ -2094,8 +2202,13 @@ export default function ProfileContent() {
           onSubmitBankDetails={() => {
             void handleBankDetailsSubmit();
           }}
-          onStartBankEditing={handleStartBankEditing}
           onCancelBankEditing={handleCancelBankEditing}
+          onStartAddBankDetails={handleStartAddBankDetails}
+          onStartEditBankDetails={handleStartEditBankDetails}
+          onRequestDeleteBankDetails={handleRequestDeleteBankDetails}
+          onConfirmDeleteBankDetails={handleConfirmDeleteBankDetails}
+          onCancelDeleteBankDetails={handleCancelDeleteBankDetails}
+          pendingDeleteBankId={pendingDeleteBankId}
           sanitizePersonText={sanitizePersonText}
           sanitizeIdentifierInput={sanitizeIdentifierInput}
         />

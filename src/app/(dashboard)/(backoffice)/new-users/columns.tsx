@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Calendar, Eye, Globe, Mail, Pencil, Phone, Trash2, User, Plus, RefreshCw } from "lucide-react";
+import { Calendar, Eye, Globe, Mail, Pencil, Phone, Trash2, User, Plus, RefreshCw, Wallet } from "lucide-react";
 import toast from "react-hot-toast";
 
 import type { PendingUser } from "@/lib/api";
@@ -254,6 +254,17 @@ export const getColumnsWithActions = (
         </div>
       );
     },
+  },
+  {
+    id: "main_wallet_balance",
+    accessorKey: "main_wallet_balance",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Wallet Balance" />,
+    cell: ({ row }) => (
+      <div className="flex items-center gap-1 text-sm">
+        <Wallet className="h-4 w-4 text-muted-foreground" />
+        <span>{row.original.main_wallet_balance?.toFixed(2) || "0.00"}</span>
+      </div>
+    ),
   },
   {
     id: "ib_status",

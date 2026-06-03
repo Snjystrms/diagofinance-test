@@ -1,7 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Download, Eye, Loader2, Pencil, X, ZoomIn, ZoomOut } from "lucide-react";
+import {
+  Building2,
+  CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  Download,
+  Eye,
+  Loader2,
+  Pencil,
+  Plus,
+  Trash2,
+  X,
+  XCircle,
+} from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,6 +24,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -31,6 +46,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { TabsContent } from "@/components/ui/tabs";
+import type { UserBankDetailsData } from "@/lib/api";
 
 type LoginHistoryItem = {
   date: string;
@@ -229,12 +245,14 @@ export function ProfileSecurityTab({
 
 type BankTabProps = {
   bankDetails: BankDetailsFormState;
+  bankDetailsList: UserBankDetailsData[];
   bankValidationErrors: Partial<Record<BankDetailsField, string>>;
   bankCountryMode: LocationMode;
   selectedBankCountryId: number | null;
   countryOptions: CountryOption[];
   bankDetailsSaving: boolean;
   bankDetailsRecordId: number | null;
+  bankDetailsDeletingId: number | null;
   isBankEditing: boolean;
   onBankCountrySelection: (value: string) => void;
   onUpdateBankDetails: (field: keyof BankDetailsFormState, value: string) => void;
@@ -242,20 +260,60 @@ type BankTabProps = {
   passbookPhotoFileName: string | null;
   passbookPhotoFile: File | null;
   onSubmitBankDetails: () => void;
-  onStartBankEditing: () => void;
   onCancelBankEditing: () => void;
+  onStartAddBankDetails: () => void;
+  onStartEditBankDetails: (entry: UserBankDetailsData) => void;
+  onRequestDeleteBankDetails: (id: number) => void;
+  onConfirmDeleteBankDetails: () => void;
+  onCancelDeleteBankDetails: () => void;
+  pendingDeleteBankId: number | null;
   sanitizePersonText: (value: string) => string;
   sanitizeIdentifierInput: (value: string, maxLength?: number) => string;
 };
 
+const maskAccountNumber = (value: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) return "—";
+  if (trimmed.length <= 4) return `****${trimmed}`;
+  return `${"*".repeat(Math.max(0, trimmed.length - 4))}${trimmed.slice(-4)}`;
+};
+
+const renderBankStatusBadge = (status?: string | null) => {
+  const normalized = (status ?? "").toLowerCase();
+  if (normalized === "approved" || normalized === "verified" || normalized === "completed") {
+    return (
+      <Badge className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+        <CheckCircle2 className="mr-1 size-3" />
+        Verified
+      </Badge>
+    );
+  }
+  if (normalized === "rejected") {
+    return (
+      <Badge className="border-red-200 bg-red-100 text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
+        <XCircle className="mr-1 size-3" />
+        Rejected
+      </Badge>
+    );
+  }
+  return (
+    <Badge className="border-amber-500/35 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+      <Loader2 className="mr-1 size-3" />
+      Pending
+    </Badge>
+  );
+};
+
 export function ProfileBankDetailsTab({
   bankDetails,
+  bankDetailsList,
   bankValidationErrors,
   bankCountryMode,
   selectedBankCountryId,
   countryOptions,
   bankDetailsSaving,
   bankDetailsRecordId,
+  bankDetailsDeletingId,
   isBankEditing,
   onBankCountrySelection,
   onUpdateBankDetails,
@@ -263,8 +321,13 @@ export function ProfileBankDetailsTab({
   passbookPhotoFileName,
   passbookPhotoFile,
   onSubmitBankDetails,
-  onStartBankEditing,
   onCancelBankEditing,
+  onStartAddBankDetails,
+  onStartEditBankDetails,
+  onRequestDeleteBankDetails,
+  onConfirmDeleteBankDetails,
+  onCancelDeleteBankDetails,
+  pendingDeleteBankId,
   sanitizePersonText,
   sanitizeIdentifierInput,
 }: BankTabProps) {
@@ -320,14 +383,6 @@ export function ProfileBankDetailsTab({
     }
   };
 
-  const handleZoomIn = () => {
-    setImageZoom((prev) => Math.min(prev + 25, 200));
-  };
-
-  const handleZoomOut = () => {
-    setImageZoom((prev) => Math.max(prev - 25, 50));
-  };
-
   const handleDownload = () => {
     if (previewImageUrl) {
       const link = document.createElement("a");
@@ -341,19 +396,137 @@ export function ProfileBankDetailsTab({
 
   return (
     <TabsContent value="bank" className="space-y-6">
-      <Card className="mx-auto w-full max-w-5xl overflow-hidden rounded-[28px] border border-border/70 shadow-sm ib-portal-surface">
-        <CardHeader className="border-b border-border/60">
-          <CardTitle>Add Bank Details</CardTitle>
-          <CardDescription>
-            Add or update your bank details. Existing values are loaded automatically when available.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6 p-6">
-          <fieldset
-            disabled={!isBankEditing || bankDetailsSaving}
-            className={`space-y-6 ${!isBankEditing ? "opacity-80" : ""}`}
+      <div className="mx-auto flex w-full max-w-5xl flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="space-y-1">
+          <h2 className="text-lg font-semibold tracking-tight">Your Bank Accounts</h2>
+          <p className="text-sm text-muted-foreground">
+            Save one or more bank accounts. Each account must be verified before it can be used for withdrawals.
+          </p>
+        </div>
+        {!isBankEditing ? (
+          <Button
+            type="button"
+            onClick={onStartAddBankDetails}
+            size="lg"
+            className="self-start gap-2 sm:self-auto"
           >
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            <Plus className="size-4" />
+            Add Bank Details
+          </Button>
+        ) : null}
+      </div>
+
+      {bankDetailsList.length > 0 ? (
+        <div className="mx-auto grid w-full max-w-5xl gap-3 md:grid-cols-2">
+          {bankDetailsList.map((entry) => {
+            const isActiveEdit = isBankEditing && entry.id === bankDetailsRecordId;
+            const isDeleting = bankDetailsDeletingId === entry.id;
+            return (
+              <Card
+                key={entry.id}
+                className={
+                  isActiveEdit
+                    ? "overflow-hidden rounded-2xl border-primary/60 shadow-sm ring-1 ring-primary/30"
+                    : "overflow-hidden rounded-2xl border-border/60 shadow-sm"
+                }
+              >
+                <CardContent className="space-y-3 p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="flex size-12 flex-shrink-0 items-center justify-center rounded-xl bg-primary/10">
+                      <Building2 className="size-6 text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex flex-wrap items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-foreground">
+                            {entry.bank_name || "Bank Account"}
+                          </p>
+                          <p className="truncate text-sm text-muted-foreground">
+                            {entry.account_holder_name || "—"}
+                          </p>
+                        </div>
+                        {renderBankStatusBadge(entry.status)}
+                      </div>
+                      <div className="grid gap-1 text-xs text-muted-foreground sm:grid-cols-2">
+                        <span className="truncate">
+                          Account:{" "}
+                          <span className="font-mono text-foreground">
+                            {maskAccountNumber(entry.account_number)}
+                          </span>
+                        </span>
+                        <span className="truncate">Country: {entry.country || "—"}</span>
+                      </div>
+                      {entry.admin_notes ? (
+                        <p className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-700 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-300">
+                          Admin note: {entry.admin_notes}
+                        </p>
+                      ) : null}
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onStartEditBankDetails(entry)}
+                          disabled={bankDetailsSaving || bankDetailsDeletingId !== null}
+                          className="gap-1"
+                        >
+                          <Pencil className="size-3" />
+                          Edit
+                        </Button>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onRequestDeleteBankDetails(entry.id)}
+                          disabled={isDeleting}
+                          className="gap-1 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                        >
+                          {isDeleting ? (
+                            <Loader2 className="size-3 animate-spin" />
+                          ) : (
+                            <Trash2 className="size-3" />
+                          )}
+                          Delete
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      ) : !isBankEditing ? (
+        <Card className="mx-auto w-full max-w-5xl overflow-hidden rounded-2xl border-dashed border-border/60">
+          <CardContent className="flex flex-col items-center justify-center gap-3 p-10 text-center">
+            <div className="flex size-14 items-center justify-center rounded-full bg-muted">
+              <CreditCard className="size-7 text-muted-foreground" />
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm font-medium">No bank accounts saved yet</p>
+              <p className="text-xs text-muted-foreground">
+                Click &quot;Add Bank Details&quot; above to save your first account.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {isBankEditing ? (
+        <Card className="mx-auto w-full max-w-5xl overflow-hidden rounded-[28px] border border-border/70 shadow-sm ib-portal-surface">
+          <CardHeader className="border-b border-border/60">
+            <CardTitle>
+              {bankDetailsRecordId ? "Edit Bank Details" : "Add Bank Details"}
+            </CardTitle>
+            <CardDescription>
+              {bankDetailsRecordId
+                ? "Update your saved bank account. Submit to apply changes."
+                : "Add a new bank account. All fields marked required must be filled in."}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6 p-6">
+            <fieldset disabled={bankDetailsSaving} className="space-y-6">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="account_name">Account Holder Name</Label>
                 <Input
@@ -544,27 +717,19 @@ export function ProfileBankDetailsTab({
             </div>
           </fieldset>
           <div className="flex justify-end gap-3">
-            {isBankEditing ? (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onCancelBankEditing}
-                disabled={bankDetailsSaving}
-                size="lg"
-              >
-                <X className="mr-2 h-4 w-4" />
-                Cancel
-              </Button>
-            ) : null}
             <Button
               type="button"
-              onClick={() => {
-                if (!isBankEditing) {
-                  onStartBankEditing();
-                  return;
-                }
-                onSubmitBankDetails();
-              }}
+              variant="outline"
+              onClick={onCancelBankEditing}
+              disabled={bankDetailsSaving}
+              size="lg"
+            >
+              <X className="mr-2 h-4 w-4" />
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={onSubmitBankDetails}
               disabled={bankDetailsSaving}
               size="lg"
             >
@@ -573,18 +738,19 @@ export function ProfileBankDetailsTab({
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Saving...
                 </>
-              ) : isBankEditing ? (
+              ) : bankDetailsRecordId ? (
                 "Save Changes"
               ) : (
                 <>
-                  <Pencil className="mr-2 h-4 w-4" />
-                  Edit
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Bank Details
                 </>
               )}
             </Button>
           </div>
         </CardContent>
       </Card>
+      ) : null}
 
       {/* Image Viewer Dialog */}
       <Dialog open={imageViewerOpen} onOpenChange={setImageViewerOpen}>
@@ -662,6 +828,47 @@ export function ProfileBankDetailsTab({
               </Button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        open={pendingDeleteBankId !== null}
+        onOpenChange={(open) => {
+          if (!open && bankDetailsDeletingId === null) onCancelDeleteBankDetails();
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete this bank account?</DialogTitle>
+            <DialogDescription>
+              This action cannot be undone. The selected bank account will be permanently removed.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancelDeleteBankDetails}
+              disabled={bankDetailsDeletingId !== null}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={onConfirmDeleteBankDetails}
+              disabled={bankDetailsDeletingId !== null}
+              className="gap-2"
+            >
+              {bankDetailsDeletingId !== null ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Trash2 className="size-4" />
+              )}
+              Delete
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </TabsContent>

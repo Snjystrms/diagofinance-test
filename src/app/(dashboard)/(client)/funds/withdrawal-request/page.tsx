@@ -207,17 +207,23 @@ function WithdrawalRequestContent() {
         );
 
         const bankPayload = bankDetailsResponse.data as
+          | UserBankDetailsData[]
           | UserBankDetailsData
-          | { data?: UserBankDetailsData }
+          | { data?: UserBankDetailsData[] | UserBankDetailsData }
           | null
           | undefined;
-        const resolvedBankDetails =
-          bankPayload && "id" in bankPayload
-            ? bankPayload
-            : bankPayload && "data" in bankPayload
-              ? (bankPayload.data ?? null)
-              : null;
-        setBankDetails(resolvedBankDetails ?? null);
+        const bankList: UserBankDetailsData[] = Array.isArray(bankPayload)
+          ? bankPayload
+          : bankPayload && Array.isArray((bankPayload as { data?: unknown }).data)
+            ? ((bankPayload as { data?: UserBankDetailsData[] }).data ?? [])
+            : bankPayload && "id" in bankPayload
+              ? [bankPayload as UserBankDetailsData]
+              : [];
+        const preferredBank =
+          bankList.find((entry) => (entry.status ?? "").toLowerCase() === "approved") ??
+          bankList[0] ??
+          null;
+        setBankDetails(preferredBank);
 
         const paymentPayload = paymentMethodsResponse.data as
           | { data?: UserPaymentMethod[] }

@@ -213,6 +213,7 @@ export interface PendingUser {
   payment_verified: number;
   created_at: string;
   sponsor_by: string | number | null;
+  main_wallet_balance?: number | null;
 }
 
 export type AdminUsersListApiData = {
@@ -1712,7 +1713,13 @@ export const authApi = {
     }),
 
   getBankDetails: (token: string) =>
-    apiCall<UserBankDetailsData>(`/user/bank-details`, {
+    apiCall<UserBankDetailsData[]>(`/user/bank-details`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  getBankDetailById: (id: number, token: string) =>
+    apiCall<UserBankDetailsData>(`/user/bank-details/${id}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),
@@ -1743,7 +1750,7 @@ export const authApi = {
     });
   },
 
-  updateBankDetails: (data: UserBankDetailsPayload, token: string) => {
+  updateBankDetails: (id: number, data: UserBankDetailsPayload, token: string) => {
     if (data.passbook_photo instanceof File) {
       const formData = new FormData();
       formData.append("account_holder_name", data.account_holder_name);
@@ -1755,19 +1762,25 @@ export const authApi = {
       formData.append("country", data.country);
       formData.append("passbook_photo", data.passbook_photo);
 
-      return apiCall<UserBankDetailsData>(`/user/bank-details`, {
+      return apiCall<UserBankDetailsData>(`/user/bank-details/${id}`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
     }
 
-    return apiCall<UserBankDetailsData>(`/user/bank-details`, {
+    return apiCall<UserBankDetailsData>(`/user/bank-details/${id}`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
   },
+
+  deleteBankDetails: (id: number, token: string) =>
+    apiCall(`/user/bank-details/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
 
   getUserDashboard: (token: string) =>
     apiCall<UserDashboardData>(`/user/dashboard`, {
@@ -3113,6 +3126,49 @@ export const adminBroadcastEmailApi = {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(data),
+    }),
+};
+
+// ─── Email Exclusion List ────────────────────────────────────────────────────
+
+export interface EmailExclusion {
+  id: number;
+  email: string;
+  added_by_admin_id: string;
+  created_at: string;
+}
+
+export interface EmailExclusionListResponse {
+  success: boolean;
+  message: string;
+  data: EmailExclusion[];
+  total: number;
+}
+
+export interface EmailExclusionMutationResponse {
+  success: boolean;
+  message: string;
+}
+
+export const adminEmailExclusionsApi = {
+  list: (token: string) =>
+    apiCall<EmailExclusionListResponse>("/admin/user-management/email-exclusions", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  add: (email: string, token: string) =>
+    apiCall<EmailExclusionMutationResponse>("/admin/user-management/email-exclusions", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
+    }),
+
+  remove: (email: string, token: string) =>
+    apiCall<EmailExclusionMutationResponse>("/admin/user-management/email-exclusions", {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ email }),
     }),
 };
 

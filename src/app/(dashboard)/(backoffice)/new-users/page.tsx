@@ -157,6 +157,7 @@ const transformUser = (raw: Record<string, unknown>): PendingUser => {
     status: String(raw.status ?? ""),
     email_verified: typeof raw.email_verified === "number" ? raw.email_verified : Number(raw.email_verified ?? 0) || 0,
     payment_verified: typeof raw.payment_verified === "number" ? raw.payment_verified : Number(raw.payment_verified ?? 0) || 0,
+    main_wallet_balance: toNullableNumber(raw.main_wallet_balance),
     created_at: String(raw.created_at ?? ""),
   };
 };

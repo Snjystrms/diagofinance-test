@@ -172,7 +172,7 @@ export function BankDetailViewDialog({
                 <DetailRow label="Name" value={detail.user?.name} />
                 <DetailRow label="Email" value={detail.user?.email} />
                 <DetailRow label="Mobile" value={detail.user?.mobile} />
-                <DetailRow label="User UUID" value={detail.user?.uuid} />
+                {/* <DetailRow label="User UUID" value={detail.user?.uuid} /> */}
               </div>
             </div>
 

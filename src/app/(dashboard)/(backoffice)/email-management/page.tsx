@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useRef, useDeferredValue, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import {
   adminBroadcastEmailApi,
+  adminEmailExclusionsApi,
   adminUsersApi,
   type BroadcastEmailResponse,
+  type EmailExclusion,
   type PendingUser,
 } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,7 +17,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
+import { formatDateTime } from "@/lib/formatters";
 import toast from "react-hot-toast";
 
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
@@ -29,11 +40,16 @@ import {
   Plus,
   Search,
   UserPlus,
+  Ban,
+  Trash2,
+  Loader2,
+  ShieldOff,
 } from "lucide-react";
 
 export default function EmailManagementPage() {
   const { token } = useAuth();
   const { isManager, hasFeature } = useManagerPermissions();
+  const queryClient = useQueryClient();
 
   const canSendBroadcast =
     !isManager ||
@@ -42,6 +58,8 @@ export default function EmailManagementPage() {
 
   const canSearchClientEmails =
     !isManager || hasFeature("emailManagement", "getClientEmails");
+
+  const [activeTab, setActiveTab] = useState<"broadcast" | "exclusions">("broadcast");
 
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
@@ -71,7 +89,10 @@ export default function EmailManagementPage() {
         (Array.isArray(raw) ? (raw as PendingUser[]) : []);
       return list;
     },
-    enabled: Boolean(token) && (!isManager || canSearchClientEmails) && !isBroadcastAll,
+    enabled:
+      Boolean(token) &&
+      (!isManager || canSearchClientEmails) &&
+      (!isBroadcastAll || activeTab === "exclusions"),
     staleTime: 2 * 60 * 1000,
   });
 
@@ -83,6 +104,126 @@ export default function EmailManagementPage() {
       )
       .slice(0, 50);
   }, [deferredSearch, allUsers]);
+
+  // ---- Email exclusion list ----
+  const [exclusionInput, setExclusionInput] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<EmailExclusion | null>(null);
+
+  // Client search (for adding clients to exclusion list)
+  const [exclusionUserSearch, setExclusionUserSearch] = useState("");
+  const deferredExclusionSearch = useDeferredValue(
+    exclusionUserSearch.trim().toLowerCase()
+  );
+
+  // Filter (for searching within existing excluded emails)
+  const [exclusionListFilter, setExclusionListFilter] = useState("");
+  const deferredListFilter = useDeferredValue(
+    exclusionListFilter.trim().toLowerCase()
+  );
+
+  const exclusionsQuery = useQuery({
+    queryKey: ["email-exclusions", token],
+    queryFn: async () => {
+      const res = await adminEmailExclusionsApi.list(token!);
+      const list =
+        (res as unknown as { data?: EmailExclusion[] })?.data ?? [];
+      return list;
+    },
+    enabled: Boolean(token),
+    staleTime: 60 * 1000,
+  });
+
+  const exclusions = useMemo(
+    () => exclusionsQuery.data ?? [],
+    [exclusionsQuery.data]
+  );
+
+  const excludedEmailSet = useMemo(
+    () => new Set(exclusions.map((e) => e.email.toLowerCase())),
+    [exclusions]
+  );
+
+  const filteredExclusionUsers = useMemo(() => {
+    if (deferredExclusionSearch.length < 3) return [];
+    return allUsers
+      .filter((u) =>
+        `${u.name} ${u.email} ${u.username ?? ""}`
+          .toLowerCase()
+          .includes(deferredExclusionSearch)
+      )
+      .slice(0, 50);
+  }, [deferredExclusionSearch, allUsers]);
+
+  const filteredExclusions = useMemo(() => {
+    if (!deferredListFilter) return exclusions;
+    return exclusions.filter((e) =>
+      e.email.toLowerCase().includes(deferredListFilter)
+    );
+  }, [exclusions, deferredListFilter]);
+
+  const invalidateExclusions = () =>
+    queryClient.invalidateQueries({ queryKey: ["email-exclusions", token] });
+
+  const addExclusionMutation = useMutation({
+    mutationFn: (email: string) => adminEmailExclusionsApi.add(email, token!),
+    onSuccess: (res) => {
+      toast.success(res?.message || "Email added to exclusion list");
+      setExclusionInput("");
+      setExclusionUserSearch("");
+      void invalidateExclusions();
+    },
+    onError: (err) =>
+      toast.error(
+        getAdminFriendlyErrorMessage(err, {
+          resource: "email exclusion",
+          action: "add",
+        })
+      ),
+  });
+
+  const removeExclusionMutation = useMutation({
+    mutationFn: (email: string) => adminEmailExclusionsApi.remove(email, token!),
+    onSuccess: (res) => {
+      toast.success(res?.message || "Email removed from exclusion list");
+      setDeleteTarget(null);
+      void invalidateExclusions();
+    },
+    onError: (err) =>
+      toast.error(
+        getAdminFriendlyErrorMessage(err, {
+          resource: "email exclusion",
+          action: "remove",
+        })
+      ),
+  });
+
+  const handleAddExclusion = () => {
+    const email = exclusionInput.trim().toLowerCase();
+    if (!email) {
+      toast.error("Enter an email address");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast.error("Enter a valid email address");
+      return;
+    }
+    if (excludedEmailSet.has(email)) {
+      toast.error("Email is already excluded");
+      return;
+    }
+    addExclusionMutation.mutate(email);
+  };
+
+  const handleAddExclusionFromUser = (user: PendingUser) => {
+    const email = user.email.trim().toLowerCase();
+    if (!email) return;
+    if (excludedEmailSet.has(email)) {
+      toast.error("Email is already excluded");
+      return;
+    }
+    addExclusionMutation.mutate(email);
+  };
+
 
   // ---- helpers ----
   const addEmailValue = (val: string) => {
@@ -174,11 +315,33 @@ export default function EmailManagementPage() {
           Email Management
         </h1>
         <p className="text-sm text-muted-foreground">
-          Broadcast emails to all clients or a specific list of recipients.
+          Broadcast emails to clients and manage the exclusion list of addresses that should never receive emails.
         </p>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-3">
+      <Tabs
+        value={activeTab}
+        onValueChange={(v) => setActiveTab(v as "broadcast" | "exclusions")}
+        className="space-y-6"
+      >
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="broadcast" className="gap-2">
+            <Send className="h-3.5 w-3.5" />
+            Broadcast
+          </TabsTrigger>
+          <TabsTrigger value="exclusions" className="gap-2">
+            <Ban className="h-3.5 w-3.5" />
+            Exclusions
+            {exclusions.length > 0 && (
+              <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                {exclusions.length}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="broadcast" className="m-0">
+          <div className="grid gap-6 lg:grid-cols-3">
         {/* ── Compose form ── */}
         <div className="lg:col-span-2 space-y-5">
 
@@ -424,10 +587,289 @@ export default function EmailManagementPage() {
               <p>• Use <strong className="text-foreground">Specific Emails</strong> to target individual clients.</p>
               <p>• Search clients by name or email and click to add them.</p>
               <p>• You can also enter emails manually and press <kbd className="rounded border border-border/60 bg-muted px-1 py-0.5 text-xs">Enter</kbd>.</p>
+              <p>• Addresses on the <strong className="text-foreground">Exclusions</strong> tab will be skipped for every broadcast.</p>
             </CardContent>
           </Card>
         </div>
-      </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="exclusions" className="m-0">
+          <div className="grid gap-6 lg:grid-cols-3">
+            {/* ── Add + list (main) ── */}
+            <div className="lg:col-span-2 space-y-5">
+              {/* Add email card */}
+              <Card className="border rounded-2xl shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <ShieldOff className="h-4 w-4 text-primary" />
+                    Add to Exclusion List
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+
+                  {/* Client search */}
+                  <div className="space-y-1.5">
+                    <Label>Search clients</Label>
+                    <div className="relative">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        placeholder="Type at least 3 letters to search by name or email"
+                        className="pl-9"
+                        value={exclusionUserSearch}
+                        onChange={(e) => setExclusionUserSearch(e.target.value)}
+                        disabled={loadingUsers || addExclusionMutation.isPending}
+                      />
+                      {loadingUsers && (
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
+                      )}
+                    </div>
+
+                    {/* Dropdown */}
+                    {deferredExclusionSearch.length >= 3 && filteredExclusionUsers.length > 0 && (
+                      <div className="rounded-xl border border-border/60 bg-background shadow-md overflow-hidden">
+                        <div className="max-h-52 overflow-y-auto divide-y divide-border/50">
+                          {filteredExclusionUsers.map((user) => {
+                            const already = excludedEmailSet.has(user.email.toLowerCase());
+                            const isAddingThis =
+                              addExclusionMutation.isPending &&
+                              addExclusionMutation.variables === user.email.trim().toLowerCase();
+                            return (
+                              <button
+                                key={user.id}
+                                onClick={() => !already && handleAddExclusionFromUser(user)}
+                                disabled={already || addExclusionMutation.isPending}
+                                className={`w-full flex items-center justify-between px-3 py-2.5 text-left text-sm transition-colors ${
+                                  already
+                                    ? "opacity-40 cursor-not-allowed"
+                                    : "hover:bg-muted/50 cursor-pointer disabled:cursor-not-allowed"
+                                }`}
+                              >
+                                <div className="min-w-0">
+                                  <p className="font-medium text-foreground truncate">{user.name}</p>
+                                  <p className="text-xs text-muted-foreground truncate">{user.email}</p>
+                                </div>
+                                {isAddingThis ? (
+                                  <Loader2 className="h-4 w-4 animate-spin text-primary flex-shrink-0 ml-2" />
+                                ) : already ? (
+                                  <CheckCircle2 className="h-4 w-4 text-primary flex-shrink-0 ml-2" />
+                                ) : (
+                                  <UserPlus className="h-4 w-4 text-muted-foreground flex-shrink-0 ml-2" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                    {deferredExclusionSearch.length >= 3 &&
+                      filteredExclusionUsers.length === 0 &&
+                      !loadingUsers && (
+                        <p className="text-xs text-muted-foreground">No users found.</p>
+                      )}
+                    {deferredExclusionSearch.length < 3 && (
+                      <p className="text-xs text-muted-foreground">
+                        Type at least 3 letters to search users.
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Manual email entry */}
+                  <div className="space-y-1.5">
+                    <Label htmlFor="exclusion-email">Or enter email manually</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        id="exclusion-email"
+                        type="email"
+                        placeholder="user@example.com"
+                        value={exclusionInput}
+                        onChange={(e) => setExclusionInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddExclusion();
+                          }
+                        }}
+                        disabled={addExclusionMutation.isPending}
+                      />
+                      <Button
+                        onClick={handleAddExclusion}
+                        disabled={addExclusionMutation.isPending || !exclusionInput.trim()}
+                        className="gap-2"
+                      >
+                        {addExclusionMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Plus className="h-4 w-4" />
+                        )}
+                        Add
+                      </Button>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Emails added here will be excluded from all future broadcasts.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Exclusion list card */}
+              <Card className="border rounded-2xl shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <Ban className="h-4 w-4 text-primary" />
+                    Excluded Emails
+                    {exclusions.length > 0 && (
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                        {deferredListFilter
+                          ? `${filteredExclusions.length} / ${exclusions.length}`
+                          : exclusions.length}
+                      </span>
+                    )}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 p-0">
+                  {exclusions.length > 0 && (
+                    <div className="px-4 pt-4">
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          placeholder="Search excluded emails"
+                          className="pl-9"
+                          value={exclusionListFilter}
+                          onChange={(e) => setExclusionListFilter(e.target.value)}
+                        />
+                        {exclusionListFilter && (
+                          <button
+                            type="button"
+                            onClick={() => setExclusionListFilter("")}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                            aria-label="Clear filter"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {exclusionsQuery.isLoading ? (
+                    <div className="flex items-center justify-center py-12">
+                      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                    </div>
+                  ) : exclusions.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
+                      <ShieldOff className="h-8 w-8 opacity-30" />
+                      <p className="text-sm">No emails are currently excluded.</p>
+                    </div>
+                  ) : filteredExclusions.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
+                      <Search className="h-8 w-8 opacity-30" />
+                      <p className="text-sm">
+                        No exclusions match &ldquo;{exclusionListFilter}&rdquo;.
+                      </p>
+                    </div>
+                  ) : (
+                    <ul className="divide-y divide-border/60">
+                      {filteredExclusions.map((item) => (
+                        <li
+                          key={item.id}
+                          className="flex items-center justify-between gap-3 px-4 py-3"
+                        >
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-sm font-medium text-foreground">
+                              {item.email}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Added {formatDateTime(item.created_at)}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setDeleteTarget(item)}
+                            className="text-muted-foreground hover:text-destructive"
+                            disabled={
+                              removeExclusionMutation.isPending &&
+                              removeExclusionMutation.variables === item.email
+                            }
+                          >
+                            {removeExclusionMutation.isPending &&
+                            removeExclusionMutation.variables === item.email ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="h-4 w-4" />
+                            )}
+                          </Button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* ── Sidebar ── */}
+            <div className="space-y-5">
+              <Card className="border rounded-2xl shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-semibold">About Exclusions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2 text-sm text-muted-foreground">
+                  <p>• Search registered clients by name or email and click to exclude them instantly.</p>
+                  <p>• Enter any email manually for addresses that are not registered clients.</p>
+                  <p>• Use the search box above the list to find specific excluded emails.</p>
+                  <p>• Excluded addresses are skipped on every broadcast, in all recipient modes.</p>
+                  <p>• Removing an email from the list re-enables delivery immediately.</p>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Delete confirm dialog */}
+      <Dialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open && !removeExclusionMutation.isPending) setDeleteTarget(null);
+        }}
+      >
+        <DialogContent className="rounded-2xl sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <Trash2 className="h-4 w-4" />
+              Remove from Exclusion List
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Remove{" "}
+            <span className="font-semibold text-foreground">{deleteTarget?.email}</span>{" "}
+            from the exclusion list? This address will start receiving broadcasts again.
+          </p>
+          <DialogFooter className="gap-2 pt-2">
+            <Button
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => setDeleteTarget(null)}
+              disabled={removeExclusionMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              className="rounded-xl"
+              onClick={() =>
+                deleteTarget && removeExclusionMutation.mutate(deleteTarget.email)
+              }
+              disabled={removeExclusionMutation.isPending}
+            >
+              {removeExclusionMutation.isPending && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Remove
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
