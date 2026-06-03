@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { AccountTypeCardGrid } from "@/components/accounts/account-type-card-grid"
 import { ClientMt5AccountCard } from "@/components/accounts/client-mt5-account-card"
 import { ClientMt5PasswordResetDialog } from "@/components/accounts/client-mt5-password-reset-dialog"
@@ -144,6 +145,7 @@ type DashboardTradingAccount = {
 
 export function DashboardPageContent() {
   const auth = useAuth();
+  const router = useRouter();
   const { user, token } = auth;
   const { canCustomizeDashboard, getDashboardMode, getDashboardPreset, setDashboardMode } =
     useClientCustomization();
@@ -758,6 +760,7 @@ export function DashboardPageContent() {
         id: 'total-deposits',
         title: 'Total Deposits',
         component: (
+          <Link href="/funds/my_deposit" aria-label="View deposits" className="block cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-full">
           <div className="border border-border/50 rounded-3xl bg-card shadow-sm transition-all duration-200 hover:shadow-md h-full">
             <div className="pt-6 pb-6 px-6 h-full flex flex-col">
               <div className="flex items-center justify-between mb-4">
@@ -782,6 +785,7 @@ export function DashboardPageContent() {
               </div>
             </div>
           </div>
+          </Link>
         ),
         defaultLayout: { x: 0, y: 0, w: 4, h: 3, minW: 3, minH: 2 },
       },
@@ -790,6 +794,7 @@ export function DashboardPageContent() {
         id: 'total-withdrawals',
         title: 'Total Withdrawals',
         component: (
+          <Link href="/funds/withdraw" aria-label="View withdrawals" className="block cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-full">
           <div className="border border-border/50 rounded-3xl bg-card shadow-sm transition-all duration-200 hover:shadow-md h-full">
             <div className="pt-6 pb-6 px-6 h-full flex flex-col">
               <div className="flex items-center justify-between mb-4">
@@ -814,6 +819,7 @@ export function DashboardPageContent() {
               </div>
             </div>
           </div>
+          </Link>
         ),
         defaultLayout: { x: 4, y: 0, w: 4, h: 3, minW: 3, minH: 2 },
       },
@@ -822,6 +828,7 @@ export function DashboardPageContent() {
         id: 'trading-accounts',
         title: 'Trading Accounts',
         component: (
+          <Link href="/my_accounts/accounts-overview" aria-label="View trading accounts" className="block cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-full">
           <div className="border border-border/50 rounded-3xl bg-card shadow-sm transition-all duration-200 hover:shadow-md h-full">
             <div className="pt-6 pb-6 px-6 h-full flex flex-col">
               <div className="flex items-center justify-between mb-4">
@@ -843,6 +850,7 @@ export function DashboardPageContent() {
               </div>
             </div>
           </div>
+          </Link>
         ),
         defaultLayout: { x: 8, y: 0, w: 4, h: 3, minW: 3, minH: 2 },
       },
@@ -851,7 +859,7 @@ export function DashboardPageContent() {
         id: 'wallet-balance',
         title: 'Wallet Balance',
         component: (
-          <div className="border border-border/50 rounded-3xl bg-card shadow-sm h-full">
+          <div onClick={() => router.push('/my-wallet/wallet-overview')} className="border border-border/50 rounded-3xl bg-card shadow-sm h-full cursor-pointer">
             <div className="pb-3 px-6 pt-6 h-full flex flex-col">
               <div className="flex items-center justify-between mb-2">
                 <p className="uppercase tracking-wider text-xs font-bold text-muted-foreground flex items-center gap-2">
@@ -878,7 +886,7 @@ export function DashboardPageContent() {
                       Securely manage balances across deposits and transfers.
                     </p>
                   </div>
-                  <Link href="/funds/internal-transfer" className="inline-block mt-2">
+                  <Link href="/funds/internal-transfer" className="inline-block mt-2" onClick={(e) => e.stopPropagation()}>
                     <Button
                       variant="outline"
                       size="sm"
@@ -900,6 +908,7 @@ export function DashboardPageContent() {
         id: 'partner-wallet',
         title: 'Partner Wallet',
         component: (
+          <Link href="/ib-dashboard/wallet" aria-label="View IB Wallet" className="block cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-full">
           <div className="relative overflow-hidden border-2 border-blue-500/30 hover:border-blue-500/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-blue-500/10 via-indigo-500/5 to-transparent rounded-3xl group h-full">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/10 to-indigo-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
             <div className="relative z-10 pt-6 pb-6 px-6 h-full flex flex-col">
@@ -942,6 +951,7 @@ export function DashboardPageContent() {
               </div>
             </div>
           </div>
+          </Link>
         ),
         defaultLayout: { x: 4, y: 3, w: 4, h: 5, minW: 3, minH: 4 },
       }] : []),
@@ -950,7 +960,7 @@ export function DashboardPageContent() {
         id: 'profile-status',
         title: 'Profile Status',
         component: (
-          <div className="rounded-3xl h-full relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-background to-muted/30 group">
+          <div onClick={() => router.push('/profile/view_profile')} className="rounded-3xl h-full relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-background to-muted/30 group cursor-pointer">
                 <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-full blur-3xl opacity-50 group-hover:opacity-75 transition-opacity" />
             <div className="flex flex-row items-center justify-between pb-3 pt-5 px-5 relative z-10 border-b bg-gradient-to-r from-transparent to-primary/5">
                   <div className="flex items-center gap-3">
@@ -1013,7 +1023,7 @@ export function DashboardPageContent() {
                     </div>
                   )}
                   {profileTimeline.some(item => item.status === "Pending") && (
-                    <Link href="/profile/view_profile" className="block mt-4">
+                    <Link href="/profile/view_profile" className="block mt-4" onClick={(e) => e.stopPropagation()}>
                       <Button 
                         variant="outline" 
                         size="sm" 
@@ -1147,7 +1157,7 @@ export function DashboardPageContent() {
         id: 'deposit-funds',
         title: 'Deposit Funds',
         component: (
-          <div className="border border-dashed border-border/50 rounded-3xl bg-card h-full">
+          <div onClick={() => router.push('/funds/deposit')} className="border border-dashed border-border/50 rounded-3xl bg-card h-full cursor-pointer">
             <div className="pt-6 pb-6 h-full flex flex-col items-center justify-center text-center space-y-4">
               <div className="flex h-24 w-24 items-center justify-center rounded-full bg-muted/70">
                 <Wallet className="h-8 w-8 text-foreground" />
@@ -1158,7 +1168,7 @@ export function DashboardPageContent() {
                   Deposit funds to start your trading journey
                 </p>
               </div>
-              <Link href="/funds/deposit" className="w-full mt-2">
+              <Link href="/funds/deposit" className="w-full mt-2" onClick={(e) => e.stopPropagation()}>
                 <Button size="sm" className="w-full border border-border/50 text-foreground bg-muted/50 hover:bg-muted transition-all duration-200">
                   <PlusCircle className="h-4 w-4 mr-2" />
                   Deposit Funds
@@ -1280,6 +1290,7 @@ export function DashboardPageContent() {
               {/* Key Metrics Summary Row */}
               <div className="grid gap-4 sm:grid-cols-3 mb-6">
                 {/* Total Deposits Card */}
+                <Link href="/funds/my_deposit" aria-label="View deposits" className="block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                 <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/8 to-blue-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
                   <CardContent className="relative z-10 pt-6 pb-6 px-6">
@@ -1305,8 +1316,10 @@ export function DashboardPageContent() {
                     </div>
                   </CardContent>
                 </Card>
+                </Link>
                 
                 {/* Total Withdrawals Card */}
+                <Link href="/funds/withdraw" aria-label="View withdrawals" className="block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                 <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-amber">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/8 to-orange-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
                   <CardContent className="relative z-10 pt-6 pb-6 px-6">
@@ -1332,8 +1345,10 @@ export function DashboardPageContent() {
                     </div>
                   </CardContent>
                 </Card>
+                </Link>
 
                 {/* Trading Accounts Card */}
+                <Link href="/my_accounts/accounts-overview" aria-label="View trading accounts" className="block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                 <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-emerald">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-500/8 to-purple-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
                   <CardContent className="relative z-10 pt-6 pb-6 px-6">
@@ -1356,6 +1371,7 @@ export function DashboardPageContent() {
                     </div>
                   </CardContent>
                 </Card>
+                </Link>
               </div>
 
               {/* News & Promotions Carousel Row */}
@@ -1379,7 +1395,7 @@ export function DashboardPageContent() {
               {/* Top Cards Row - Enhanced grid */}
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {/* Wallet Balance Card - Enhanced */}
-                <Card className="sm:col-span-1 lg:col-span-1 relative overflow-hidden border-none shadow-2xl text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent rounded-3xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group">
+                <Card onClick={() => router.push('/my-wallet/wallet-overview')} className="sm:col-span-1 lg:col-span-1 relative overflow-hidden border-none shadow-2xl text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent rounded-3xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group cursor-pointer">
                   <div className="absolute inset-0 opacity-60">
                     <div className="absolute -left-20 -top-20 w-60 h-60 bg-primary-foreground/20 rounded-full blur-3xl animate-pulse" />
                     <div className="absolute right-10 top-10 w-40 h-40 bg-primary-foreground/15 rounded-full blur-3xl" />
@@ -1418,7 +1434,7 @@ export function DashboardPageContent() {
                           <Sparkles className="h-3.5 w-3.5 animate-pulse" />
                           <span className="font-medium">Instant transfers available</span>
                         </div>
-                        <Link href="/funds/internal-transfer" className="inline-block mt-2">
+<Link href="/funds/internal-transfer" className="inline-block mt-2" onClick={(e) => e.stopPropagation()}>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -1441,7 +1457,8 @@ export function DashboardPageContent() {
 
                 {/* Partner Wallet Card - Enhanced */}
                 {hasIbWalletData && ibWalletData && (
-                  <Card className="sm:col-span-1 lg:col-span-1 relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary">
+                  <Link href="/ib-dashboard/wallet" aria-label="View IB Wallet" className="sm:col-span-1 lg:col-span-1 block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
+                  <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/8 to-indigo-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
                     <CardHeader className="relative z-10 pb-3 px-6 pt-6">
                       <div className="flex items-center justify-between mb-2">
@@ -1495,11 +1512,12 @@ export function DashboardPageContent() {
                       </div>
                     </CardContent>
                   </Card>
+                  </Link>
                 )}
 
                 {/* Deposit Funds Card */}
                 {(!dashboardData?.wallet?.balance || dashboardData.wallet.balance === 0) && (
-                  <Card className="sm:col-span-1 lg:col-span-1 relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary">
+                  <Card onClick={() => router.push('/funds/deposit')} className="sm:col-span-1 lg:col-span-1 relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary cursor-pointer">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/8 to-purple-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
                     <CardContent className="pt-6 pb-6 px-6 relative z-10">
                       <div className="flex flex-col items-center justify-center text-center space-y-4">
@@ -1521,7 +1539,7 @@ export function DashboardPageContent() {
                           </p>
                         </div>
                         <div className="pt-1 border-t border-border/50 w-full">
-                          <Link href="/funds/deposit" className="w-full block mt-3">
+                          <Link href="/funds/deposit" className="w-full block mt-3" onClick={(e) => e.stopPropagation()}>
                             <Button size="sm" className="w-full">
                               <PlusCircle className="h-4 w-4 mr-2" />
                               Deposit Funds
@@ -1535,7 +1553,7 @@ export function DashboardPageContent() {
 
                 {/* Profile Status Card - Enhanced */}
                 <div className="sm:col-span-2 lg:col-span-1">
-                  <Card className="rounded-[28px] h-full relative overflow-hidden border shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface">
+                  <Card onClick={() => router.push('/profile/view_profile')} className="rounded-[28px] h-full relative overflow-hidden border shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface cursor-pointer">
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/8 to-purple-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
                     <CardHeader className="flex flex-row items-center justify-between pb-3 pt-5 px-5 relative z-10 border-b border-border/50">
                       <div className="flex items-center gap-3">
@@ -1598,7 +1616,7 @@ export function DashboardPageContent() {
                         </div>
                       )}
                       {profileTimeline.some(item => item.status === "Pending") && (
-                        <Link href="/profile/view_profile" className="block mt-4">
+<Link href="/profile/view_profile" className="block mt-4" onClick={(e) => e.stopPropagation()}>
                           <Button 
                             variant="outline" 
                             size="sm" 

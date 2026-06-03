@@ -83,7 +83,6 @@ export function SearchSelectFieldEnhanced<T extends SearchSelectOption>({
     (option: T) => {
       onOptionSelect(option);
       setIsOpen(false);
-      inputRef.current?.blur();
     },
     [onOptionSelect]
   );
@@ -186,11 +185,20 @@ export function SearchSelectFieldEnhanced<T extends SearchSelectOption>({
 
           {!loading && options.map((option) => {
             const isSelected = selectedValue !== undefined && getOptionValue(option) === String(selectedValue);
-            
+
             return (
               <div
                 key={getOptionValue(option)}
-                onClick={() => handleOptionClick(option)}
+                role="option"
+                aria-selected={isSelected}
+                onMouseDown={(event) => {
+                  event.preventDefault();
+                  handleOptionClick(option);
+                }}
+                onClick={(event) => {
+                  event.preventDefault();
+                  handleOptionClick(option);
+                }}
                 className={cn(
                   "cursor-pointer rounded px-3 py-2 text-sm transition-colors hover:bg-accent hover:text-accent-foreground",
                   isSelected && "bg-accent text-accent-foreground"

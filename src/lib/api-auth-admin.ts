@@ -3005,6 +3005,7 @@ export interface AdminWithdrawalDecisionResponse {
 export interface BankDepositRequest {
   amount: number;
   transaction_id: string;
+  payment_proof ?: string | File | null;
 }
 
 export interface BankDepositSubmitData {
@@ -3049,15 +3050,23 @@ export interface BankDepositListData {
 }
 
 export const bankDepositApi = {
-  submit: (data: BankDepositRequest, token: string) =>
-    apiCall<{ success: boolean; message: string; data: BankDepositSubmitData }>(
+  submit: (data: BankDepositRequest, token: string) => {
+    const formData = new FormData();
+    formData.append('amount', String(data.amount));
+    formData.append('transaction_id', data.transaction_id);
+    if (data.payment_proof) {
+      formData.append('payment_proof', data.payment_proof);
+    }
+
+    return apiCall<{ success: boolean; message: string; data: BankDepositSubmitData }>(
       `/user/bank-deposit/submit`,
       {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
       },
-    ),
+    );
+  },
 
   listRequests: (token: string, page = 1, limit = 10) =>
     apiCall<{ success: boolean; data: BankDepositListData }>(

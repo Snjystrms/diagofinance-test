@@ -85,6 +85,8 @@ function USDTDepositContent() {
   // Bank deposit state
   const [bankAmount, setBankAmount] = useState("");
   const [bankTxId, setBankTxId] = useState("");
+  const [bankPaymentProof, setBankPaymentProof] = useState<File | null>(null);
+  const [bankPaymentProofPreview, setBankPaymentProofPreview] = useState<string | null>(null);
   const [bankError, setBankError] = useState<string | null>(null);
   const [isSubmittingBank, setIsSubmittingBank] = useState(false);
   const [bankSubmitResult, setBankSubmitResult] = useState<{ id: number; status: string; created_at: string } | null>(null);
@@ -382,6 +384,21 @@ function USDTDepositContent() {
     }
   };
 
+  const handleBankPaymentProofChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setBankPaymentProof(file);
+      const reader = new FileReader();
+      reader.onloadend = () => setBankPaymentProofPreview(reader.result as string);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleBankRemovePaymentProof = () => {
+    setBankPaymentProof(null);
+    setBankPaymentProofPreview(null);
+  };
+
   const fetchBankRequests = useCallback(async () => {
     if (!token) return;
     try {
@@ -479,7 +496,15 @@ function USDTDepositContent() {
     }
     try {
       setIsSubmittingBank(true);
-      const res = await bankDepositApi.submit({ amount: convertedUsdAmount, transaction_id: bankTxId.trim() }, token);
+
+      const res = await bankDepositApi.submit(
+        {
+          amount: convertedUsdAmount,
+          transaction_id: bankTxId.trim(),
+          payment_proof: bankPaymentProof || undefined,
+        },
+        token
+      );
       const raw = res as unknown as { success: boolean; message?: string; data?: { id: number; status: string; created_at: string } };
       if (raw.success && raw.data) {
         setBankSubmitResult(raw.data);
@@ -1584,6 +1609,68 @@ function USDTDepositContent() {
                         </div>
                         <p className="text-xs text-muted-foreground">
                           Found on your bank statement or payment receipt.
+                        </p>
+                      </div>
+
+                      {/* Bank Payment Proof Upload */}
+                      <div className="space-y-2">
+                        <Label htmlFor="bank-payment-proof" className="text-sm font-semibold">
+                          Payment Proof (Screenshot) <span className="text-muted-foreground text-xs">(Optional)</span>
+                        </Label>
+                        {!bankPaymentProof ? (
+                          <div className="rounded-lg border-2 border-dashed border-border p-4 transition-colors hover:border-primary/50">
+                            <label
+                              htmlFor="bank-payment-proof"
+                              className="flex flex-col items-center justify-center cursor-pointer"
+                            >
+                              <Upload className="h-6 w-6 text-muted-foreground mb-1" />
+                              <p className="text-xs text-foreground mb-1">
+                                Click to upload or drag and drop
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                PNG, JPG, WEBP up to 5MB
+                              </p>
+                            </label>
+                            <input
+                              id="bank-payment-proof"
+                              type="file"
+                              accept="image/jpeg,image/jpg,image/png,image/webp"
+                              onChange={handleBankPaymentProofChange}
+                              className="hidden"
+                            />
+                          </div>
+                        ) : (
+                          <div className="relative border-2 border-border rounded-xl p-3">
+                            <div className="flex items-center gap-3">
+                              {bankPaymentProofPreview && (
+                                <img
+                                  src={bankPaymentProofPreview}
+                                  alt="Payment proof preview"
+                                  className="w-16 h-16 object-cover rounded-lg"
+                                />
+                              )}
+                              <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-foreground truncate">
+                                  {bankPaymentProof.name}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {(bankPaymentProof.size / 1024 / 1024).toFixed(2)} MB
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleBankRemovePaymentProof}
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                          Upload a screenshot of your bank transfer receipt (JPEG, PNG, or WebP, max 5MB)
                         </p>
                       </div>
 
