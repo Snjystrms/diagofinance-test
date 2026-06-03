@@ -172,7 +172,7 @@ interface LoginResponse {
 |----------|-------------|---------|
 | `NEXT_PUBLIC_API_URL` | Backend API base URL | `http://192.168.1.45:3000` |
 
-## Development 
+## Development ##
 
 ### Available Scripts
 
