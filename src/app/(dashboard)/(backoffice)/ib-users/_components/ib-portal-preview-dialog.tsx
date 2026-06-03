@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
+  BarChart3,
   CalendarClock,
   Copy,
   DollarSign,
@@ -691,8 +692,8 @@ function NetworkTab({
     <>
       <IbPageHeader
         eyebrow="Network"
-        title="Clients, sub-IBs & downline"
-        description="Referred clients, sub-brokers, and the full downline tree."
+        title="Clients, sub-IBs & total business"
+        description="Referred clients, sub-brokers, trading volume, and the full downline tree."
         actions={
           onViewDownlineTree ? (
             <Button
@@ -708,7 +709,7 @@ function NetworkTab({
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <IbMetricCard
           title="Direct Clients"
           value={loading ? <Skeleton className="h-7 w-20" /> : "0"}
@@ -730,7 +731,73 @@ function NetworkTab({
           icon={<TrendingUp className="h-5 w-5" />}
           accent="amber"
         />
+        <IbMetricCard
+          title="Total Business"
+          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(0)}
+          description="Cumulative volume from you and your team"
+          icon={<BarChart3 className="h-5 w-5" />}
+          accent="primary"
+        />
       </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <IbMetricCard
+          title="Your Business"
+          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(0)}
+          description="Volume from your own direct clients"
+          icon={<DollarSign className="h-5 w-5" />}
+          accent="emerald"
+        />
+        <IbMetricCard
+          title="Team Business"
+          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(0)}
+          description="Volume from sub-IBs and their downlines"
+          icon={<Network className="h-5 w-5" />}
+          accent="amber"
+        />
+        <IbMetricCard
+          title="Total Lots"
+          value={loading ? <Skeleton className="h-7 w-20" /> : "0"}
+          description="Round lots traded across your network"
+          icon={<BarChart3 className="h-5 w-5" />}
+          accent="slate"
+        />
+      </div>
+
+      <IbSectionCard
+        title="Business breakdown"
+        description="Volume and lots contributed by each level of your downline."
+      >
+        {loading ? (
+          <TabSkeleton rows={5} />
+        ) : (
+          <div className="overflow-hidden rounded-2xl border border-border/60">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Level</TableHead>
+                  <TableHead>Source</TableHead>
+                  <TableHead className="text-right">Volume</TableHead>
+                  <TableHead className="text-right">Lots</TableHead>
+                  <TableHead className="text-right">Commission Earned</TableHead>
+                  <TableHead className="text-right">Clients / Sub-IBs</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
+                    Business breakdown will load from
+                    <code className="mx-1 rounded bg-muted px-1.5 py-0.5 text-xs">
+                      /admin/ib-management/ib-users/:id/clients
+                    </code>
+                    once the endpoint is wired up.
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </IbSectionCard>
 
       <div className="grid gap-4 xl:grid-cols-2">
         <IbSectionCard
@@ -745,15 +812,16 @@ function NetworkTab({
                 <TableHeader>
                   <TableRow>
                     <TableHead>Client</TableHead>
-                    <TableHead>Lots</TableHead>
-                    <TableHead>Earned</TableHead>
-                    <TableHead>Pending</TableHead>
+                    <TableHead className="text-right">Lots</TableHead>
+                    <TableHead className="text-right">Volume</TableHead>
+                    <TableHead className="text-right">Earned</TableHead>
+                    <TableHead className="text-right">Pending</TableHead>
                     <TableHead>Registered</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   <TableRow>
-                    <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
+                    <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
                       Direct client list will load from
                       <code className="mx-1 rounded bg-muted px-1.5 py-0.5 text-xs">
                         /admin/ib-management/ib-users/:id/clients
@@ -780,14 +848,15 @@ function NetworkTab({
                   <TableRow>
                     <TableHead>Sub-IB</TableHead>
                     <TableHead>Level</TableHead>
-                    <TableHead>Lots</TableHead>
-                    <TableHead>Earned</TableHead>
-                    <TableHead>Pending</TableHead>
+                    <TableHead className="text-right">Lots</TableHead>
+                    <TableHead className="text-right">Volume</TableHead>
+                    <TableHead className="text-right">Earned</TableHead>
+                    <TableHead className="text-right">Pending</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   <TableRow>
-                    <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
+                    <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
                       Sub-IB list will load from
                       <code className="mx-1 rounded bg-muted px-1.5 py-0.5 text-xs">
                         /admin/ib-management/ib-users/:id/sub-ibs
