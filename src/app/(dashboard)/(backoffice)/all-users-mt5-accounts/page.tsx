@@ -9,9 +9,7 @@ import {
   Database,
   Download,
   RefreshCw,
-  Search,
 } from "lucide-react";
-import * as XLSX from "xlsx";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
@@ -28,7 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/auth-context";
-import { adminMT5AccountsApi, type AdminMT5Account, type UpdateMT5AccountRequest, type CreateMT5AccountRequest } from "@/lib/api";
+import { adminMT5AccountsApi, adminMt5UsersReportApi, type AdminMT5Account, type UpdateMT5AccountRequest, type CreateMT5AccountRequest } from "@/lib/api";
 import { useModuleCapabilities } from "@/hooks/use-permission-capabilities";
 import { getColumnsWithActions } from "./columns";
 import { EditAccountDialog } from "./edit-account-dialog";
@@ -49,69 +47,6 @@ const accountModeFilters = [
   { label: "Demo", value: "demo" },
   { label: "Live", value: "live" },
 ];
-
-const emptyExportValue = "-";
-
-const getExportTimestamp = () => {
-  const date = new Date();
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return [
-    date.getFullYear(),
-    pad(date.getMonth() + 1),
-    pad(date.getDate()),
-    "-",
-    pad(date.getHours()),
-    pad(date.getMinutes()),
-    pad(date.getSeconds()),
-  ].join("");
-};
-
-const formatExportDateTime = (value?: string | null) => {
-  if (!value) return emptyExportValue;
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-const getMt5AccountId = (account: AdminMT5Account) =>
-  account.account_id ?? account.mt5_id ?? account.id ?? emptyExportValue;
-
-const getMt5UserName = (account: AdminMT5Account) => {
-  const user = account.user ?? account.User;
-  const firstName = user?.first_name ?? account.first_name;
-  const lastName = user?.last_name ?? account.last_name;
-  const fullName = [firstName, lastName].filter(Boolean).join(" ").trim();
-  return user?.name || fullName || account.name || emptyExportValue;
-};
-
-const getMt5UserEmail = (account: AdminMT5Account) => {
-  const user = account.user ?? account.User;
-  return user?.email ?? account.email ?? emptyExportValue;
-};
-
-const getMt5AccountType = (account: AdminMT5Account) =>
-  account.accountType?.name ?? account.account_type ?? emptyExportValue;
-
-const getMt5GroupName = (account: AdminMT5Account) =>
-  account.group?.name ?? account.mt5_group_name ?? emptyExportValue;
-
-const getMt5StatusLabel = (status: AdminMT5Account["status"]) => {
-  const value = typeof status === "string" ? status.toLowerCase() : status;
-  return value === 1 || value === "1" || value === "active" ? "Active" : "Inactive";
-};
-
-const getMt5ModeLabel = (mode: AdminMT5Account["account_mode"]) => {
-  const value = typeof mode === "string" ? mode.toLowerCase() : "";
-  if (value === "live") return "Live";
-  if (value === "demo") return "Demo";
-  return emptyExportValue;
-};
 
 const extractItems = (data: unknown): AdminMT5Account[] => {
   if (!data) return [];
@@ -363,10 +298,10 @@ export default function AllUsersMT5AccountsPage() {
     const exportToastId = `mt5-accounts-export-${formatType}`;
     try {
       toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
-      const response = await adminMT5AccountsApi.list({
+
+      const { blob, filename } = await adminMt5UsersReportApi.export({
         token,
-        page: 1,
-        limit: Math.max(pagination.total, accounts.length, 10000),
+        format: formatType,
         status: statusFilter && statusFilter !== "all" ? statusFilter : undefined,
         account_mode:
           accountModeFilter && accountModeFilter !== "all" ? accountModeFilter : undefined,
@@ -376,52 +311,21 @@ export default function AllUsersMT5AccountsPage() {
         manager_id: managerIdFilter?.trim() ? managerIdFilter : undefined,
       });
 
-      const exportAccounts = extractItems(response?.data).filter((account) => {
-        if (!accountModeFilter || accountModeFilter === "all") return true;
-        return String(account.account_mode ?? "").toLowerCase() === accountModeFilter;
-      });
-
-      if (exportAccounts.length === 0) {
-        toast.error("No data to export", { id: exportToastId });
+      if (!blob.size) {
+        toast.error("No data returned for export", { id: exportToastId });
         return;
       }
 
-      const exportData = exportAccounts.map((account, index) => ({
-        "Sr. No.": index + 1,
-        Account: getMt5AccountId(account),
-        "MT5 Login": account.mt5_id || emptyExportValue,
-        User: getMt5UserName(account),
-        Email: getMt5UserEmail(account),
-        Type: getMt5AccountType(account),
-        Mode: getMt5ModeLabel(account.account_mode),
-        Group: getMt5GroupName(account),
-        Leverage: account.leverage ? `1:${account.leverage}` : emptyExportValue,
-        Status: getMt5StatusLabel(account.status),
-        Created: formatExportDateTime(account.created_at),
-      }));
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
 
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const filenameBase = `mt5-accounts-${getExportTimestamp()}`;
-      let filename = `${filenameBase}.xlsx`;
-
-      if (formatType === "xlsx") {
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "MT5 Accounts");
-        XLSX.writeFile(workbook, filename);
-      } else {
-        const csv = XLSX.utils.sheet_to_csv(worksheet);
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        filename = `${filenameBase}.csv`;
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(link.href);
-      }
-
-      toast.success(`Exported ${exportAccounts.length} accounts to ${filename}`, { id: exportToastId });
+      toast.success(`Downloaded ${filename}`, { id: exportToastId });
     } catch (error: unknown) {
       console.error(`Failed to export ${formatType}:`, error);
       toast.error(
@@ -432,8 +336,6 @@ export default function AllUsersMT5AccountsPage() {
   }, [
     canViewMt5List,
     token,
-    pagination.total,
-    accounts.length,
     statusFilter,
     accountModeFilter,
     search,

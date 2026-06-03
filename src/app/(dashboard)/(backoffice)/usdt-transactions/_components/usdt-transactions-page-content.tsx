@@ -677,12 +677,12 @@ export function USDTTransactionsPageContent() {
                   </div>
                 </div>
 
-                {viewingDepositRequest.payment_proof_url && (
-                  <div className="rounded-lg border p-4">
-                    <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
-                      <FileImage className="h-4 w-4" />
-                      Payment Proof
-                    </p>
+                <div className="rounded-lg border p-4">
+                  <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                    <FileImage className="h-4 w-4" />
+                    Payment Proof
+                  </p>
+                  {viewingDepositRequest.payment_proof_url ? (
                     <div className="rounded-md border bg-background p-4 flex items-center justify-center min-h-[120px]">
                       {proofLoading && !proofBlobUrl && (
                         <Spinner className="h-6 w-6" />
@@ -700,8 +700,18 @@ export function USDTTransactionsPageContent() {
                         />
                       )}
                     </div>
-                  </div>
-                )}
+                  ) : (
+                    <div className="rounded-md border border-dashed bg-muted/30 p-4 flex flex-col items-center justify-center gap-1 min-h-[120px] text-center">
+                      <FileImage className="h-8 w-8 text-muted-foreground opacity-60" />
+                      <span className="text-sm font-medium text-muted-foreground">
+                        No deposit image provided
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        The user has not uploaded a payment proof for this deposit request.
+                      </span>
+                    </div>
+                  )}
+                </div>
 
                 {(viewingDepositRequest.admin_notes || viewingDepositRequest.approved_by || viewingDepositRequest.approved_at) && (
                   <div className="rounded-lg border p-4">

@@ -1328,6 +1328,150 @@ export const adminTradingHistoryReportApi = {
   },
 };
 
+export interface AllUsersReportExportParams {
+  token: string;
+  format?: "xlsx" | "csv";
+  search?: string;
+  status?: string;
+}
+
+export const adminAllUsersReportApi = {
+  export: async ({
+    token,
+    format = "xlsx",
+    search,
+    status,
+  }: AllUsersReportExportParams) => {
+    if (!token) {
+      throw new Error("Token is required to export all users report");
+    }
+
+    if (!API_BASE_URL) {
+      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("format", format);
+    if (search && search.trim()) qs.set("search", search.trim());
+    if (status !== undefined && status !== null && `${status}` !== "" && status !== "all") {
+      qs.set("status", String(status));
+    }
+
+    const endpoint = `/admin/reports/all-users-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message:
+          (payload &&
+          typeof payload === "object" &&
+          "message" in payload &&
+          typeof payload.message === "string"
+            ? payload.message
+            : null) ||
+          `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+
+    const blob = await response.blob();
+    return {
+      blob,
+      filename: parseContentDispositionFilename(
+        response.headers.get("content-disposition"),
+        `all-users-report.${format === "csv" ? "csv" : "xlsx"}`
+      ),
+    };
+  },
+};
+
+export interface Mt5UsersReportExportParams {
+  token: string;
+  format?: "xlsx" | "csv";
+  search?: string;
+  status?: string;
+  account_mode?: string;
+  user_id?: string;
+  group_id?: string;
+  manager_id?: string;
+}
+
+export const adminMt5UsersReportApi = {
+  export: async ({
+    token,
+    format = "xlsx",
+    search,
+    status,
+    account_mode,
+    user_id,
+    group_id,
+    manager_id,
+  }: Mt5UsersReportExportParams) => {
+    if (!token) {
+      throw new Error("Token is required to export MT5 users report");
+    }
+
+    if (!API_BASE_URL) {
+      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("format", format);
+    if (search && search.trim()) qs.set("search", search.trim());
+    if (status !== undefined && status !== null && `${status}` !== "" && status !== "all") {
+      qs.set("status", String(status));
+    }
+    if (account_mode !== undefined && account_mode !== null && `${account_mode}` !== "" && account_mode !== "all") {
+      qs.set("account_mode", String(account_mode));
+    }
+    if (user_id !== undefined && user_id !== null && `${user_id}` !== "") qs.set("user_id", String(user_id));
+    if (group_id !== undefined && group_id !== null && `${group_id}` !== "") qs.set("group_id", String(group_id));
+    if (manager_id !== undefined && manager_id !== null && `${manager_id}` !== "") {
+      qs.set("manager_id", String(manager_id));
+    }
+
+    const endpoint = `/admin/reports/mt5-users-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message:
+          (payload &&
+          typeof payload === "object" &&
+          "message" in payload &&
+          typeof payload.message === "string"
+            ? payload.message
+            : null) ||
+          `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+
+    const blob = await response.blob();
+    return {
+      blob,
+      filename: parseContentDispositionFilename(
+        response.headers.get("content-disposition"),
+        `mt5-users-report.${format === "csv" ? "csv" : "xlsx"}`
+      ),
+    };
+  },
+};
+
 export interface AdminDashboardKpis {
   total_clients: number;
   total_ib: number;

@@ -17,7 +17,6 @@ import {
   ShieldPlus,
   ShieldMinus,
 } from "lucide-react";
-import * as XLSX from "xlsx";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { DeleteDialog } from "@/components/dialogs/delete-dialog";
@@ -49,6 +48,7 @@ import { useAuth } from "@/contexts/auth-context";
 import {
   adminUsersApi,
   adminIbPlansApi,
+  adminAllUsersReportApi,
   type AdminIbPlanItem,
   type AdminUserDetailApiData,
   type AdminUserUpdateBody,
@@ -109,54 +109,6 @@ const statusFilters = [
   { label: "Active", value: "1" },
   { label: "Blocked", value: "2" },
 ];
-
-const formatExportDateTime = (value?: string | null) => {
-  if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-};
-
-const getUserStatusLabel = (status?: string | number | null) => {
-  switch (String(status ?? "")) {
-    case "0":
-      return "Pending";
-    case "1":
-      return "Active";
-    case "2":
-      return "Blocked";
-    default:
-      return status == null || String(status).trim() === "" ? "-" : String(status);
-  }
-};
-
-const getVerificationLabel = (value?: number | string | boolean | null) =>
-  String(value ?? "0") === "1" || value === true ? "Yes" : "No";
-
-const getIbStatusLabel = (sponsorId?: string | number | null) => {
-  const normalizedSponsorId = String(sponsorId ?? "").trim();
-  return normalizedSponsorId ? `IB: ${normalizedSponsorId}` : "Client";
-};
-
-const getExportTimestamp = () => {
-  const date = new Date();
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return [
-    date.getFullYear(),
-    pad(date.getMonth() + 1),
-    pad(date.getDate()),
-    "-",
-    pad(date.getHours()),
-    pad(date.getMinutes()),
-    pad(date.getSeconds()),
-  ].join("");
-};
 
 const createInitialCreateFormState = (): AdminUserCreateFormData => ({
   first_name: "",
@@ -471,62 +423,29 @@ export default function NewUsersPage() {
     const exportToastId = `users-export-${formatType}`;
     try {
       toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
-      const response = await adminUsersApi.list({
+
+      const { blob, filename } = await adminAllUsersReportApi.export({
         token,
-        page: 1,
-        limit: Math.max(paginationMeta?.total ?? users.length, 10000),
+        format: formatType,
         search: search?.trim() ? search : undefined,
         status: statusFilter !== "all" ? statusFilter : undefined,
       });
-      const exportUsers = extractUsers(response?.data ?? null);
 
-      if (exportUsers.length === 0) {
-        toast.error("No data to export", { id: exportToastId });
+      if (!blob.size) {
+        toast.error("No data returned for export", { id: exportToastId });
         return;
       }
 
-      const exportData = exportUsers.map((user, index) => ({
-        "Sr. No.": index + 1,
-        // ID: user.id,
-        // UUID: user.uuid || "-",
-        Name: user.name || `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || "-",
-        Username: user.username || "-",
-        "IB Status": getIbStatusLabel(user.sponsor_id),
-        Email: user.email || "-",
-        Mobile: user.mobile || "-",
-        Country: user.country || "-",
-        // "Country Code": user.country_code || "-",
-        "Sponsor ID": user.sponsor_id || "-",
-        "Sponsor By": user.sponsor_by ?? "-",
-        // "Referral Code": user.referral_code || "-",
-        Status: getUserStatusLabel(user.status),
-        // "Email Verified": getVerificationLabel(user.email_verified),
-        // "Payment Verified": getVerificationLabel(user.payment_verified),
-        "Created At": formatExportDateTime(user.created_at),
-      }));
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
 
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const filenameBase = `new-users-${getExportTimestamp()}`;
-      let filename = `${filenameBase}.xlsx`;
-
-      if (formatType === "xlsx") {
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "New Users");
-        XLSX.writeFile(workbook, filename);
-      } else {
-        const csv = XLSX.utils.sheet_to_csv(worksheet);
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        filename = `${filenameBase}.csv`;
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(link.href);
-      }
-
-      toast.success(`Exported ${exportUsers.length} users to ${filename}`, { id: exportToastId });
+      toast.success(`Downloaded ${filename}`, { id: exportToastId });
     } catch (err) {
       console.error(`Failed to export ${formatType}:`, err);
       toast.error(
@@ -534,7 +453,7 @@ export default function NewUsersPage() {
         { id: exportToastId },
       );
     }
-  }, [canViewUserList, token, paginationMeta?.total, users.length, search, statusFilter]);
+  }, [canViewUserList, token, search, statusFilter]);
 
   useEffect(() => {
     void loadIbPlans();
