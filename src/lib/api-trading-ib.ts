@@ -526,6 +526,26 @@ export interface IbDashboardResponse {
   partner_info: IbDashboardPartnerInfo;
 }
 
+/**
+ * Admin-facing IB portal detail payload. Mirrors `IbDashboardResponse` so the
+ * admin can preview the same widgets the IB user sees on `/ib-dashboard`.
+ *
+ * Backend contract (placeholders — wire up when the endpoint is ready):
+ *   GET /admin/ib-management/ib-users/:id
+ *   → { success, message, data: AdminIbUserDetailResponse }
+ */
+export interface AdminIbUserDetailResponse {
+  user: AdminIbUser;
+  partner_wallet?: IbDashboardWallet;
+  client_wallet?: IbDashboardWallet;
+  today_earning?: IbDashboardWallet;
+  rebates_graph?: IbDashboardRebatesGraph[];
+  pending_rebates?: IbDashboardPendingRebates;
+  earning_summary?: IbDashboardEarningSummary;
+  partner_info?: IbDashboardPartnerInfo;
+  [key: string]: unknown;
+}
+
 export interface IbInternalTransferRequest {
   amount: number;
   comment?: string;
@@ -962,6 +982,23 @@ export const adminIbUsersApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
+  },
+  detail: (id: number | string, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to fetch IB user detail");
+    }
+
+    if (id === null || id === undefined || `${id}`.trim() === "") {
+      throw new Error("IB user ID is required to fetch IB user detail");
+    }
+
+    return apiCall<AdminIbUserDetailResponse>(
+      `/admin/ib-management/ib-users/${encodeURIComponent(String(id))}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
   },
   updatePlan: (
     userId: number | string,

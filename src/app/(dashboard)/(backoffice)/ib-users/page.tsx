@@ -1,11 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import toast from "react-hot-toast";
-import { ChevronDown, Copy, Download, Network, RefreshCw, Users } from "lucide-react";
+import { ChevronDown, Copy, Download, Eye, Network, RefreshCw, Users } from "lucide-react";
 import * as XLSX from "xlsx";
 
 import { AppDataTable } from "@/components/app-data-table";
@@ -765,6 +766,20 @@ export default function IbUsersPage() {
           return (
             <div className="flex flex-wrap items-center gap-2">
               <Button
+                asChild
+                size="icon"
+                variant="outline"
+                className="h-9 w-9 rounded-full border-violet-200 bg-violet-50 text-violet-700 shadow-sm transition-colors hover:bg-violet-100 hover:text-violet-800 dark:border-violet-900/70 dark:bg-violet-950/30 dark:text-violet-200"
+              >
+                <Link
+                  href={`/ib-users/${user.id ?? user.uuid ?? ""}`}
+                  aria-label={`View IB portal for ${deriveFullName(user)}`}
+                  title="View IB portal"
+                >
+                  <Eye className="h-4 w-4" />
+                </Link>
+              </Button>
+              <Button
                 size="sm"
                 variant="outline"
                 onClick={() => {
@@ -1029,7 +1044,7 @@ export default function IbUsersPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </div>
+        </div>
   );
 }
 
