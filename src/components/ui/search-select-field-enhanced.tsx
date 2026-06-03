@@ -13,7 +13,6 @@ type SearchSelectOption = {
   name: string;
   email?: string;
   description?: string;
-  [key: string]: any;
 };
 
 interface SearchSelectFieldEnhancedProps<T extends SearchSelectOption> {

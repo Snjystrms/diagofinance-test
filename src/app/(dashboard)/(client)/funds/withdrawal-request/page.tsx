@@ -718,12 +718,12 @@ function WithdrawalRequestContent() {
                           </div>
                         </div>
                       </div>
-                      {!supportsBankWithdrawal && !bankDetailsLoading && (
+                      {/* {!supportsBankWithdrawal && !bankDetailsLoading && (
                         <p className="text-xs text-destructive">
                           Bank withdrawal requires active `bank_transfer`
                           payment method and saved bank details.
                         </p>
-                      )}
+                      )} */}
                     </div>
                   ) : (
                     <>
