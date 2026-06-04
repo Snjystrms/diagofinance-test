@@ -425,6 +425,12 @@ export default function WithdrawalReportPage() {
           <span className="font-medium">{formatAmount(row.original.amount)}</span>
         ),
       },
+       {
+        id: "comment",
+        header: "Comment",
+        accessorKey: "comment",
+        cell: ({ row }) => row.original.comment || "-",
+      },
       {
         id: "payment_method",
         header: "Payment Method",
@@ -478,6 +484,12 @@ export default function WithdrawalReportPage() {
         header: "Status",
         accessorKey: "status",
         cell: ({ row }) => statusBadge(row.original.status),
+      },
+       {
+        id: "approved_by",
+        header: "Approved By",
+        accessorKey: "approved_by",
+        cell: ({ row }) => row.original.approved_by || "-",
       },
       {
         id: "created_at",

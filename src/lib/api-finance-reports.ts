@@ -600,6 +600,7 @@ export interface DepositReportItem {
   status_text: string;
   date: string;
   reference?: string | null;
+  approved_by?: string | null;
   created_at: string;
   marketing_name?: string | null;
   approved_rejected_by?: string | null;
@@ -692,6 +693,7 @@ export interface WithdrawalReportItem {
   status_text?: string;
   date?: string;
   created_at: string;
+  comment?: string | null;
   updated_at?: string;
   remarks?: string | null;
   approved_by?: string | null;
@@ -783,6 +785,7 @@ export interface IbWithdrawalReportItem {
   status_text?: string;
   date?: string;
   created_at: string;
+  comment?: string | null;
   updated_at?: string;
   remarks?: string | null;
   approved_by?: string | null;
@@ -1060,7 +1063,9 @@ export interface TransactionReportItem {
   payment_method?: string | null;
   reference?: string | null;
   status?: string | null;
+  comment?: string | null;
   status_text?: string | null;
+  approved_by?: string | null;
   date?: string | null;
   created_at: string;
 }

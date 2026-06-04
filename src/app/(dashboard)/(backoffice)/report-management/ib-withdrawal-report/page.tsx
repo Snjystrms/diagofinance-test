@@ -369,6 +369,12 @@ export default function IbWithdrawalReportPage() {
           <span className="font-medium">{formatAmount(row.original.amount)}</span>
         ),
       },
+       {
+        id: "comment",
+        header: "Comment",
+        accessorKey: "comment",
+        cell: ({ row }) => row.original.comment || "-",
+      },
       {
         id: "payment_method",
         header: "Payment Method",

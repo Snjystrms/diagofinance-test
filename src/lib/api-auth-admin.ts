@@ -213,6 +213,7 @@ export interface PendingUser {
   payment_verified: number;
   created_at: string;
   sponsor_by: string | number | null;
+  sponsor_by_email?: string | null;
   main_wallet_balance?: number | null;
 }
 

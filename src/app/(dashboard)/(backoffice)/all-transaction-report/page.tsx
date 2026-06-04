@@ -174,25 +174,31 @@ export default function AllTransactionReportPage() {
         cell: ({ row }) => <span className="font-medium">{formatAmount(row.original.amount)}</span>,
       },
       {
-        id: "payment_method",
-        header: "Payment Method",
-        accessorKey: "payment_method",
-        cell: ({ row }) => row.original.payment_method || "-",
+        id: "comment",
+        header: "Comment",
+        accessorKey: "comment",
+        cell: ({ row }) => row.original.comment || "-",
       },
       {
-        id: "reference",
-        header: "Reference",
-        accessorKey: "reference",
-        cell: ({ row }) => {
-          const reference = row.original.reference;
-          if (!reference) return <span className="text-muted-foreground">-</span>;
-          return (
-            <span className="block max-w-[260px] truncate text-sm" title={String(reference)}>
-              {reference}
-            </span>
-          );
-        },
+        id: "approved_by",
+        header: "Approved By",
+        accessorKey: "approved_by",
+        cell: ({ row }) => row.original.approved_by || "-",
       },
+      // {
+      //   id: "reference",
+      //   header: "Reference",
+      //   accessorKey: "reference",
+      //   cell: ({ row }) => {
+      //     const reference = row.original.reference;
+      //     if (!reference) return <span className="text-muted-foreground">-</span>;
+      //     return (
+      //       <span className="block max-w-[260px] truncate text-sm" title={String(reference)}>
+      //         {reference}
+      //       </span>
+      //     );
+      //   },
+      // },
       {
         id: "status",
         header: "Status",

@@ -11,6 +11,8 @@ import Image from 'next/image';
 import { Mail, CheckCircle, ArrowLeft, RefreshCw, Key, AlertCircle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/api';
+import { ApiRequestError } from '@/lib/api-core';
+import confetti from 'canvas-confetti';
 
 export function CheckEmailClient() {
   const [otp, setOtp] = useState('');
@@ -38,6 +40,22 @@ export function CheckEmailClient() {
       otpInput.focus();
     }
   }, []);
+
+  // Confetti on success
+  useEffect(() => {
+    if (!success) return;
+
+    const duration = 3000;
+    const end = Date.now() + duration;
+
+    const frame = () => {
+      confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0, y: 0.7 } });
+      confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1, y: 0.7 } });
+      if (Date.now() < end) requestAnimationFrame(frame);
+    };
+
+    frame();
+  }, [success]);
 
   const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 6);
@@ -77,7 +95,11 @@ export function CheckEmailClient() {
         setError(result.message || 'OTP verification failed. Please try again.');
       }
     } catch (err) {
-      setError('Network error. Please check your connection and try again.');
+      if (err instanceof ApiRequestError) {
+        setError(err.message);
+      } else {
+        setError('Network error. Please check your connection and try again.');
+      }
     } finally {
       setIsVerifying(false);
     }
@@ -139,10 +161,10 @@ export function CheckEmailClient() {
                   <CheckCircle className="h-8 w-8 text-green-600" />
                 </div>
                 <h1 className="text-3xl font-bold text-foreground mb-2">
-                  Email Verified!
+                  You're all set!
                 </h1>
                 <p className="text-muted-foreground text-lg">
-                  Your email has been successfully verified. Redirecting to login page...
+                  Your email has been verified successfully. Welcome aboard! Redirecting to login...
                 </p>
               </div>
             </div>
@@ -217,6 +239,7 @@ export function CheckEmailClient() {
                     placeholder="Enter 6-digit OTP"
                     value={otp}
                     onChange={handleOtpChange}
+                    onKeyDown={(e) => { if (e.key === 'Enter') handleVerifyOtp(); }}
                     className="text-center text-lg font-mono tracking-widest"
                     maxLength={6}
                   />
@@ -260,6 +283,7 @@ export function CheckEmailClient() {
                 {/* Action Buttons */}
                 <div className="space-y-3">
                   <Button 
+                    type="submit"
                     onClick={handleVerifyOtp}
                     disabled={isVerifying || otp.length !== 6}
                     className="w-full" 
