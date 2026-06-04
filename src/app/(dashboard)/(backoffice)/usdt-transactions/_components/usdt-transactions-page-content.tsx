@@ -630,7 +630,7 @@ export function USDTTransactionsPageContent() {
                       <div>
                         <span className="text-muted-foreground">Amount: </span>
                         <span className="font-medium">
-                          {formatAmount(viewingDepositRequest.amount || "0")} USDT
+                          {formatAmount(viewingDepositRequest.amount || "0")} USD
                         </span>
                       </div>
                       <div>

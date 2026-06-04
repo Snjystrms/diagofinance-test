@@ -116,6 +116,11 @@ const deriveTotalCommission = (user: AdminIbUser): string => {
 
 const derivePartnerId = (user: AdminIbUser) => user.referral_code ?? "-";
 
+const deriveReferredBy = (user: AdminIbUser) => {
+  if (!user.referred_by) return null;
+  return user.referred_by;
+};
+
 const getUserActionKey = (user: AdminIbUser) => {
   return String(user.id ?? user.uuid ?? user.email ?? user.name ?? "");
 };
@@ -446,6 +451,7 @@ export default function IbUsersPage() {
         Phone: derivePhone(user),
         "Total Commission": deriveTotalCommission(user),
         "Partner ID": derivePartnerId(user),
+        "Referred By": user.referred_by?.name ?? "-",
         // "Sponsor ID": deriveSponsorId(user),
         "IB Plan Name": user.ib_plan_name || "-",
         Status: getIbStatusLabel(user.status ?? user.is_ib_user),
@@ -649,7 +655,7 @@ export default function IbUsersPage() {
                 </div>
               ) : null}
 
-              {partnerId !== "-" ? (
+              {/* {partnerId !== "-" ? (
                 <div>
                   <span className="font-medium">Partner ID:</span> {partnerId}
                 </div>
@@ -658,7 +664,54 @@ export default function IbUsersPage() {
                 <div>
                   <span className="font-medium">Sponsor ID:</span> {sponsorId}
                 </div>
+              ) : null} */}
+            </div>
+          );
+        },
+      },
+      {
+        id: "referral_code",
+        header: "Partner ID",
+        cell: ({ row }) => {
+          const user = row.original;
+          const ibName = deriveIbName(user);
+          const partnerId = derivePartnerId(user);
+          const sponsorId = deriveSponsorId(user);
+          const totalCommission = deriveTotalCommission(user);
+          return (
+            <div className="space-y-1 text-sm">
+              {/* {totalCommission !== "-" ? (
+                <div className="text-center">
+                  {totalCommission}
+                </div>
+              ) : null} */}
+
+              {partnerId !== "-" ? (
+                <div>
+                  <span className="font-medium">{partnerId}</span> 
+                </div>
               ) : null}
+              {/* {sponsorId !== "-" ? (
+                <div>
+                  <span className="font-medium">Sponsor ID:</span> {sponsorId}
+                </div>
+              ) : null} */}
+            </div>
+          );
+        },
+      },
+      {
+        id: "referred_by",
+        header: "Referred By",
+        cell: ({ row }) => {
+          const ref = deriveReferredBy(row.original);
+          if (!ref) {
+            return <div className="text-sm text-muted-foreground">-</div>;
+          }
+          return (
+            <div className="space-y-1">
+              <div className="text-sm font-medium">{ref.name ?? "-"}</div>
+              <div className="text-xs text-muted-foreground">{ref.email ?? ""}</div>
             </div>
           );
         },

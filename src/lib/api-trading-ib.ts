@@ -915,6 +915,12 @@ export interface AdminIbUser {
   referral_code?: string;
   status?: number | string;
   is_ib_user?: boolean | number;
+  referred_by?: {
+    id?: number;
+    name?: string;
+    email?: string;
+    ib_name?: string;
+  };
   created_at?: string;
   updated_at?: string;
   [key: string]: unknown;

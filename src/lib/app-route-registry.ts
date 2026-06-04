@@ -598,6 +598,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     managerCategories: ["User Management"],
   },
   {
+    path: "/admin-transaction",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "transaction-management",
+    navLabel: "Admin Transaction",
+    managerCategories: ["Transaction"],
+  },
+  {
     path: "/usdt-transactions",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
