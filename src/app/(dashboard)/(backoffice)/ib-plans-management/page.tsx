@@ -378,7 +378,7 @@ export default function IbPlansManagementPage() {
         Plan: plan.name || "-",
         Description: plan.description || "-",
         "Account Types": plan.account_types.length,
-        "IB Users": plan.ib_user_count,
+        "Partner Users": plan.ib_user_count,
         Status: plan.status ? "Active" : "Inactive",
         Updated: formatExportDateTime(plan.updated_at),
       }));
@@ -476,10 +476,10 @@ export default function IbPlansManagementPage() {
           <div className="space-y-1">
             <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
               <Award className="h-6 w-6 text-primary" />
-              IB Plans Management
+              Partner Plans Management
             </h1>
             <p className="text-sm text-muted-foreground">
-              Create, update, and manage IB plans with account type specific commission levels.
+              Create, update, and manage Partner plans with account type specific commission levels.
             </p>
           </div>
           <DropdownMenu>

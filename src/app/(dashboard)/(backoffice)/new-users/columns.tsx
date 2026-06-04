@@ -181,7 +181,7 @@ export const getColumnsWithActions = (
           </div>
           <div className="text-xs text-muted-foreground">@{user.username || "-"}</div>
           <div className="text-xs text-muted-foreground">
-            {isIb ? `IB: ${sponsorId}` : "Client"}
+            {isIb ? `Partner: ${sponsorId}` : "Client"}
           </div>
         </div>
       );
@@ -281,7 +281,7 @@ export const getColumnsWithActions = (
       variant="default" 
       className="bg-primary/10 text-primary hover:bg-primary/10 border-primary/20 px-2.5 py-0.5 text-xs font-medium transition-colors"
     >
-      IB User
+      Partner
     </Badge>
   )}
   
@@ -309,7 +309,7 @@ export const getColumnsWithActions = (
         ) : (
            <div className="flex items-center gap-1.5">
                   <Plus className="h-3.5 w-3.5" />
-                  <span>Promote to IB</span>
+                  <span>Promote to Partner</span>
                 </div>
         )}
       </Button>

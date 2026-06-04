@@ -643,12 +643,12 @@ export default function IbManagementPage() {
   const dialogTitle =
     isReviewMode
       ? currentStatusCode === 1
-        ? "Review Approved IB"
-        : "Review Rejected IB"
-      : "Update IB Request";
+        ? "Review Approved Partner"
+        : "Review Rejected Partner"
+      : "Update Partner Request";
   const dialogDescription =
     isReviewMode
-      ? "Use the decision selector to move this IB request between approved and rejected states."
+      ? "Use the decision selector to move this Partner request between approved and rejected states."
       : "Choose the final decision inside the modal, then save it.";
 
   const renderTableSection = () => {
@@ -714,7 +714,7 @@ export default function IbManagementPage() {
             <div>
               <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
                 <UserCheck className="h-6 w-6 text-primary" />
-                IB Requests
+                Partner Requests
               </h1>
               <p className="text-sm text-muted-foreground">
                 Review and process Introducing Broker applications submitted by users.

@@ -208,7 +208,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   },
   {
     id: "ib-management",
-    title: "IB Management",
+    title: "Partner Management",
     url: "/all-ib",
     icon: UserCheck,
     audience: "backoffice",
@@ -217,7 +217,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   }, 
   {
     id: "ib-plans-management",
-    title: "IB Plans Management",
+    title: "Partner Plans Management",
     url: "/ib-plans-management",
     icon: UserCheck,
     audience: "backoffice",
@@ -244,7 +244,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   },
     {
     id: "manager-management",
-    title: "Manager Management",
+    title: "Sub-Admin Management",
     url: "/all-managers",
     icon: UserPlus,
     audience: "backoffice",
@@ -483,26 +483,26 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     path: "/ib-dashboard",
     audience: "client",
     roles: CLIENT_ROLES,
-    navLabel: "IB Dashboard",
+    navLabel: "Partner Dashboard",
     activeMatch: ["/ib-dashboard"],
   },
   {
     path: "/ib-dashboard/wallet",
     audience: "client",
     roles: CLIENT_ROLES,
-    navLabel: "IB Wallet",
+    navLabel: "Partner Wallet",
   },
   {
     path: "/ib-dashboard/clients",
     audience: "client",
     roles: CLIENT_ROLES,
-    navLabel: "IB Clients",
+    navLabel: "Partner Clients",
   },
   {
     path: "/ib-dashboard/transfer",
     audience: "client",
     roles: CLIENT_ROLES,
-    navLabel: "IB Transfer",
+    navLabel: "Partner Transfer",
   },
   {
     path: "/ib-dashboard/commissions",
@@ -634,7 +634,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "manager-management",
-    navLabel: "All Managers",
+    navLabel: "Sub-Admin List",
     managerCategories: ["Sub Admin"],
   },
   {
@@ -650,7 +650,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "ib-management",
-    navLabel: "IB Request",
+    navLabel: "Partner Request",
     managerCategories: ["IB Management"],
   },
   {
@@ -658,7 +658,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "ib-management",
-    navLabel: "IB Users",
+    navLabel: "Partner Users",
     managerCategories: ["IB Management"],
   },
   // {
@@ -675,7 +675,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "ib-plans-management",
-    navLabel: "IB Plans",
+    navLabel: "Partner Plans",
     managerCategories: ["IB Plans Management"],
     activeMatch: ["/ib-plans-management"],
   },
@@ -739,7 +739,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "reports",
-    navLabel: "IB Withdrawal Report",
+    navLabel: "Partner Withdrawal Report",
     managerCategories: ["Report Management"],
   },
    {
@@ -747,7 +747,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "reports",
-    navLabel: "IB Commission Report",
+    navLabel: "Partner Commission Report",
     managerCategories: ["Report Management"],
   },
     {
@@ -755,7 +755,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "ib-management",
-    navLabel: "IB Commission",
+    navLabel: "Partner Commission",
     managerCategories: ["Report Management"],
   },
   {
@@ -850,7 +850,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     path: "/ib-plans",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
-    navLabel: "IB Plans",
+    navLabel: "Partner Plans",
     managerCategories: ["IB Management"],
   },
   {
@@ -1083,7 +1083,7 @@ export function getUserNavigation(isIbUser = false): NavItem[] {
     item.title === "Become Partner"
       ? {
           ...item,
-          title: "Login to IB Portal",
+          title: "Login to Partner Portal",
           url: "/ib-dashboard",
           icon: BarChart3,
         }

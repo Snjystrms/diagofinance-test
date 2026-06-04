@@ -1090,9 +1090,9 @@ export default function NewUsersPage() {
         >
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>Promote to IB</DialogTitle>
+              <DialogTitle>Promote to Partner</DialogTitle>
               <DialogDescription>
-                Select an IB plan for {promoteTargetUser?.name || "this user"} before creating the IB profile.
+                Select a Partner plan for {promoteTargetUser?.name || "this user"} before creating the IB profile.
               </DialogDescription>
             </DialogHeader>
 

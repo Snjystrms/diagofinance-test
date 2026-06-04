@@ -85,9 +85,9 @@ export default function IbCommissionsPage() {
   return (
     <IbPageShell>
       <IbPageHeader
-        eyebrow="IB Commissions"
+        eyebrow="Partner Commissions"
         title="Commission table"
-        description="Review the live payout matrix for each account type available in the IB portal."
+        description="Review the live payout matrix for each account type available in the Partner portal."
         actions={
           <Button
             variant="outline"
@@ -104,7 +104,7 @@ export default function IbCommissionsPage() {
 
       <IbSectionCard
         title="Commission Rates"
-        description="Live commission rates by account type. Each level shows the payout for the IB and up to 5 sub-IB tiers."
+        description="Live commission rates by account type. Each level shows the payout for the Partner and up to 5 sub-Partner tiers."
         actions={
           <div className="min-w-[190px] space-y-1.5">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
@@ -198,12 +198,12 @@ export default function IbCommissionsPage() {
                             <TableHeader>
                               <TableRow className="bg-muted/20">
                                 <TableHead className="min-w-[120px]">Level</TableHead>
-                                <TableHead>IB</TableHead>
-                                <TableHead>Sub-IB 1</TableHead>
-                                <TableHead>Sub-IB 2</TableHead>
-                                <TableHead>Sub-IB 3</TableHead>
-                                <TableHead>Sub-IB 4</TableHead>
-                                <TableHead>Sub-IB 5</TableHead>
+                                <TableHead>Partner</TableHead>
+                                <TableHead>Sub-Partner 1</TableHead>
+                                <TableHead>Sub-Partner 2</TableHead>
+                                <TableHead>Sub-Partner 3</TableHead>
+                                <TableHead>Sub-Partner 4</TableHead>
+                                <TableHead>Sub-Partner 5</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>

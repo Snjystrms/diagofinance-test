@@ -235,7 +235,7 @@ function SubIbsTable({ rows }: { rows: SubIbRow[] }) {
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/30">
-            <TableHead>IB ID</TableHead>
+            <TableHead>Partner ID</TableHead>
             <TableHead>Name</TableHead>
             <TableHead>Level</TableHead>
             <TableHead className="text-right">Lots Traded</TableHead>
@@ -545,9 +545,9 @@ export default function IbClientsPage() {
   return (
     <IbPageShell>
       <IbPageHeader
-        eyebrow="IB Clients"
+        eyebrow="Partner's Clients"
         title="Client summary and rebate activity"
-        description="Browse direct clients, sub IBs, and rebate records from the same reporting surface."
+        description="Browse direct clients, sub Partners, and rebate records from the same reporting surface."
         actions={
           <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
@@ -560,7 +560,7 @@ export default function IbClientsPage() {
       <div className="grid gap-4 md:grid-cols-3">
         <IbMetricCard
           title="Current View"
-          value={activeTab === "clients" ? "Clients" : activeTab === "sub-ibs" ? "Sub IBs" : "Rebates"}
+          value={activeTab === "clients" ? "Clients" : activeTab === "sub-ibs" ? "Sub Partners" : "Rebates"}
           description={`${currentPagination.total} total records in this tab.`}
           icon={<Users className="h-5 w-5" />}
           accent="primary"
@@ -582,13 +582,13 @@ export default function IbClientsPage() {
       </div>
 
       <IbSectionCard
-        title="IB activity ledger"
+        title="Partner activity ledger"
         description="Filter and review client-side trading and rebate records."
       >
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabType)} className="space-y-6">
           <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl bg-muted/40 p-1">
             <TabsTrigger value="clients">Clients</TabsTrigger>
-            <TabsTrigger value="sub-ibs">Sub IBs</TabsTrigger>
+            <TabsTrigger value="sub-ibs">Sub Partners</TabsTrigger>
             <TabsTrigger value="rebates">Rebates</TabsTrigger>
           </TabsList>
 
@@ -653,8 +653,8 @@ export default function IbClientsPage() {
               </>
             ) : !subIbsError ? (
               <EmptyState
-                title="No sub IB records found"
-                description={search ? "No sub IB records match your search." : "Sub IB relationships will appear here after registrations are linked."}
+                title="No sub Partners records found"
+                description={search ? "No sub Partners records match your search." : "Sub Partners relationships will appear here after registrations are linked."}
                 icon={<Users className="h-5 w-5" />}
               />
             ) : null}

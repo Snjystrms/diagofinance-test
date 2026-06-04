@@ -45,7 +45,7 @@ export const getColumns = (): ColumnDef<IbPlanRow>[] => [
   {
     id: "ib_user_count",
     accessorKey: "ib_user_count",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="IB Users" />,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Partner Users" />,
     cell: ({ row }) => (
       <div className="inline-flex items-center gap-2">
         <Users className="h-4 w-4 text-emerald-600" />

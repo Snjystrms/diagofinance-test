@@ -453,7 +453,7 @@ export default function IbUsersPage() {
         "Partner ID": derivePartnerId(user),
         "Referred By": user.referred_by?.name ?? "-",
         // "Sponsor ID": deriveSponsorId(user),
-        "IB Plan Name": user.ib_plan_name || "-",
+        "Partner Plan Name": user.ib_plan_name || "-",
         Status: getIbStatusLabel(user.status ?? user.is_ib_user),
         Created: formatDateTime(user.created_at),
         "Referral Link": deriveReferralLink(user) || "-",
@@ -718,7 +718,7 @@ export default function IbUsersPage() {
       },
       {
         id: "ib_plan_name",
-        header: "IB Plan Name",
+        header: "Partner Plan Name",
         accessorFn: (row) => row.ib_plan_name ?? "-",
         cell: ({ row }) => {
         const planName = row.original.ib_plan_name;
@@ -826,8 +826,8 @@ export default function IbUsersPage() {
               >
                 <Link
                   href={`/ib-users/${user.id ?? user.uuid ?? ""}`}
-                  aria-label={`View IB portal for ${deriveFullName(user)}`}
-                  title="View IB portal"
+                  aria-label={`View Partner portal for ${deriveFullName(user)}`}
+                  title="View Partner portal"
                 >
                   <Eye className="h-4 w-4" />
                 </Link>
@@ -844,7 +844,7 @@ export default function IbUsersPage() {
                 {loadingPlan ? (
                   <Spinner className="mr-2 h-4 w-4" />
                 ) : null}
-                Update IB Plan
+                Update Partner Plan
               </Button>
               <Button
                 size="sm"
@@ -966,7 +966,7 @@ export default function IbUsersPage() {
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
               <Users className="h-6 w-6 text-primary" />
-              IB Users
+              Partner Users
             </h1>
             <p className="text-sm text-muted-foreground">
               View and manage all Introducing Broker users in the system.
@@ -1039,15 +1039,15 @@ export default function IbUsersPage() {
         >
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>Update IB Plan</DialogTitle>
+              <DialogTitle>Update Partner Plan</DialogTitle>
               <DialogDescription>
-                Select an IB plan for {planTargetUser ? deriveFullName(planTargetUser) : "this user"}.
+                Select a Partner plan for {planTargetUser ? deriveFullName(planTargetUser) : "this user"}.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label htmlFor="ib-plan-id">IB Plan</Label>
+                <Label htmlFor="ib-plan-id">Partner Plan</Label>
                 <Select
                   value={selectedIbPlanId}
                   onValueChange={setSelectedIbPlanId}
@@ -1055,7 +1055,7 @@ export default function IbUsersPage() {
                 >
                   <SelectTrigger id="ib-plan-id">
                     <SelectValue
-                      placeholder={loadingIbPlans ? "Loading plans..." : "Select IB plan"}
+                      placeholder={loadingIbPlans ? "Loading plans..." : "Select Partner plan"}
                     />
                   </SelectTrigger>
                   <SelectContent>
@@ -1067,7 +1067,7 @@ export default function IbUsersPage() {
                   </SelectContent>
                 </Select>
                 {!loadingIbPlans && ibPlans.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">No IB plans available.</p>
+                  <p className="text-xs text-muted-foreground">No Partner plans available.</p>
                 ) : null}
               </div>
             </div>

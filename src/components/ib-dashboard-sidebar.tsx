@@ -210,7 +210,7 @@ export function IbDashboardSidebar() {
             </div>
 
             <div className="text-center">
-              <p className="text-sidebar-foreground/70 text-[11px] uppercase tracking-[0.2em] mb-2">IB Wallet</p>
+              <p className="text-sidebar-foreground/70 text-[11px] uppercase tracking-[0.2em] mb-2">Partner Wallet</p>
               <p className="text-sidebar-foreground font-bold text-lg">
                 {formatCurrency(partnerWallet, currency)}
               </p>

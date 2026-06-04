@@ -435,9 +435,9 @@ export default function IbWithdrawalReportPage() {
 
   return (
     <ReportPageWrapper
-      title="IB Withdrawal Report"
+      title="Partner Withdrawal Report"
       titleIcon={<Landmark className="h-6 w-6 text-primary" />}
-      description="Manage and view IB withdrawal transactions"
+      description="Manage and view Partner withdrawal transactions"
       isLoading={loading}
       isEmpty={rows.length === 0}
       error={loadError}

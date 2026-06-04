@@ -175,7 +175,7 @@ export default function IbCommissionReportPage() {
       },
       {
         id: "trader_user",
-        header: "Trader User",
+        header: "Trader",
         accessorKey: "trader_name",
         cell: ({ row }) => {
           const name = row.original.trader_name;
@@ -250,7 +250,7 @@ export default function IbCommissionReportPage() {
 
   return (
     <ReportPageWrapper
-      title="IB Commission Report"
+      title="Partner Commission Report"
       titleIcon={<Landmark className="h-6 w-6 text-primary" />}
       description="View commission entries generated from trader activity."
       isLoading={loading}

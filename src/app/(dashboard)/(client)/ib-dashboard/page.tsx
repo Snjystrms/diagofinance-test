@@ -313,8 +313,8 @@ export default function IbDashboardPage() {
   return (
     <IbPageShell>
       <IbPageHeader
-        eyebrow="IB Workspace"
-        title={`IB dashboard for ${user.name}`}
+        eyebrow="Partner Workspace"
+        title={`Partner dashboard for ${user.name}`}
         description="Track rebates, move funds into the main wallet, and monitor referral performance from one place."
         actions={
           <>
@@ -335,7 +335,7 @@ export default function IbDashboardPage() {
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <IbMetricCard
-          title="IB Wallet"
+          title="Partner Wallet"
           value={formatCurrency(partner_wallet.balance, partner_wallet.currency)}
           description="Funds available for partner-level withdrawals and transfers."
           icon={<Wallet className="h-5 w-5" />}
@@ -424,12 +424,12 @@ export default function IbDashboardPage() {
           )}
         </IbSectionCard>
 
-        <IbSectionCard title="IB profile" description="Core IB program details and referral assets.">
+        <IbSectionCard title="Partner profile" description="Core Partner program details and referral assets.">
           <div className="space-y-4">
             <div className="ib-portal-note rounded-3xl border p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">IB User</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Partner User</p>
                   <p className="mt-2 text-2xl font-semibold text-foreground">{partner_info.ib_plan || "N/A"}</p>
                 </div>
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-background/70 bg-background/80">
@@ -440,7 +440,7 @@ export default function IbDashboardPage() {
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="min-w-0 rounded-3xl border border-border/60 bg-muted/20 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">IB ID</p>
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Partner ID</p>
                 <p className="mt-2 break-all text-lg font-semibold leading-snug text-foreground sm:text-xl">
                   {partner_info.partner_id}
                 </p>

@@ -152,9 +152,9 @@ export default function IbWalletPage() {
   return (
     <IbPageShell>
       <IbPageHeader
-        eyebrow="IB Wallet"
-        title="IB and client wallet ledger"
-        description="Review current balances and the latest transfer activity linked to your IB account."
+        eyebrow="Partner Wallet"
+        title="Partner and main wallet ledger"
+        description="Review current balances and the latest transfer activity linked to your Partner account."
         actions={
           <>
             <Button variant="outline" onClick={fetchWalletData}>
@@ -167,15 +167,15 @@ export default function IbWalletPage() {
 
       {usingFallbackData ? (
         <div className="rounded-[24px] border border-amber-300/60 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
-          Showing sample IB wallet data until the live wallet API payload is ready.
+          Showing sample Partner wallet data until the live wallet API payload is ready.
         </div>
       ) : null}
 
       <div className="grid gap-4 md:grid-cols-3">
         <IbMetricCard
-          title="IB Wallet"
+          title="Partner Wallet"
           value={formatCurrency(snapshot.partnerWallet.amount, snapshot.partnerWallet.currency)}
-          description="Current IB-side balance."
+          description="Current Partner-side balance."
           icon={<Wallet className="h-5 w-5" />}
           accent="primary"
         />
