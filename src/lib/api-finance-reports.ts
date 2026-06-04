@@ -793,6 +793,7 @@ export interface IbWithdrawalReportListParams {
   token: string;
   from_date?: string;
   to_date?: string;
+  search?: string;
   page?: number;
   per_page?: number;
 }
@@ -827,6 +828,7 @@ export const adminIbWithdrawalReportApi = {
     if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
     if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
     if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
+    if (queryParams.search) qs.set("search", queryParams.search);
 
     const endpoint = `/admin/reports/ib-withdrawal-report${qs.toString() ? `?${qs.toString()}` : ""}`;
 
@@ -900,25 +902,37 @@ export const adminInternalTransferReportApi = {
   },
 };
 
-export interface IbCommissionReportItem {
-  id: number | string;
-  ib_user_id?: number | string;
-  ib_user_name?: string | null;
-  ib_user_email?: string | null;
-  trader_user_id?: number | string;
-  trader_name?: string | null;
-  trader_email?: string | null;
-  mt5_account?: string | null;
-  trade_date?: string | null;
-  volume: number | string;
-  level: number | string;
-  commission_rate: number | string;
-  commission_amount: number | string;
-  pending_commission: number | string;
+export interface IbLevelTrader {
+  trader_user_id: number;
+  trader_name: string;
+  trader_email: string;
+  total_volume: number;
+  commission_amount: number;
+  pending_commission: number;
+}
+
+export interface IbCommissionLevel {
+  level: number;
+  commission_rate: number;
+  total_volume: number;
+  commission_amount: number;
+  pending_commission: number;
+  traders: IbLevelTrader[];
+}
+
+export interface IbCommissionGroup {
+  ib_user_id: number;
+  ib_user_name: string;
+  ib_user_email: string;
+  total_volume: number;
+  total_commission: number;
+  total_pending: number;
+  levels: IbCommissionLevel[];
 }
 
 export interface IbCommissionReportListParams {
   token: string;
+  search?: string;
   page?: number;
   per_page?: number;
 }
@@ -926,7 +940,7 @@ export interface IbCommissionReportListParams {
 export interface IbCommissionReportListPayload {
   success: boolean;
   message: string;
-  data: IbCommissionReportItem[];
+  data: IbCommissionGroup[];
   pagination: {
     current_page: number;
     per_page: number;
@@ -953,6 +967,7 @@ export const adminIbCommissionListReportApi = {
     const qs = new URLSearchParams();
     if (queryParams.page) qs.set("page", String(queryParams.page));
     if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
+    if (queryParams.search) qs.set("search", queryParams.search);
 
     const endpoint = `/admin/reports/commission-report${qs.toString() ? `?${qs.toString()}` : ""}`;
 
@@ -1217,6 +1232,7 @@ export interface TradingHistoryReportItem {
 
 export interface TradingHistoryReportListParams {
   token: string;
+  search?: string;
   page?: number;
   per_page?: number;
 }
@@ -1275,6 +1291,7 @@ export const adminTradingHistoryReportApi = {
     const qs = new URLSearchParams();
     if (queryParams.page) qs.set("page", String(queryParams.page));
     if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
+    if (queryParams.search) qs.set("search", queryParams.search);
 
     const endpoint = `/admin/reports/trading-history-report${qs.toString() ? `?${qs.toString()}` : ""}`;
 

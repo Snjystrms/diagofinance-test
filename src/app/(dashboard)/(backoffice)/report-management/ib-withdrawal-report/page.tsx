@@ -8,6 +8,7 @@ import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
 import { format } from "date-fns";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
@@ -79,6 +80,14 @@ export default function IbWithdrawalReportPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
 
+  // Search
+  const [searchQuery, setSearchQuery] = useQueryState("search", parseAsString);
+  const [searchInput, setSearchInput] = useState(searchQuery || "");
+
+  useEffect(() => {
+    setSearchInput(searchQuery || "");
+  }, [searchQuery]);
+
   // Filters - only date range for IB withdrawal report
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [fromDateStr, setFromDateStr] = useQueryState(
@@ -139,6 +148,7 @@ export default function IbWithdrawalReportPage() {
         token,
         from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
         to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
+        search: searchQuery || undefined,
         page,
         per_page: perPage,
       });
@@ -179,6 +189,7 @@ export default function IbWithdrawalReportPage() {
     perPage,
     fromDate,
     toDate,
+    searchQuery,
   ]);
 
   useEffect(() => {
@@ -223,6 +234,7 @@ export default function IbWithdrawalReportPage() {
         token,
         from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
         to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
+        search: searchQuery || undefined,
         page: 1,
         per_page: 10000, // Large number to get all records
       });
@@ -296,6 +308,7 @@ export default function IbWithdrawalReportPage() {
     token,
     fromDate,
     toDate,
+    searchQuery,
   ]);
 
   // Count active filters
@@ -435,7 +448,7 @@ export default function IbWithdrawalReportPage() {
 
   return (
     <ReportPageWrapper
-      title="Partner Withdrawal Report"
+      title="Partner Withdrawal Report"  
       titleIcon={<Landmark className="h-6 w-6 text-primary" />}
       description="Manage and view Partner withdrawal transactions"
       isLoading={loading}
@@ -518,6 +531,21 @@ export default function IbWithdrawalReportPage() {
               </Popover>
             </div>
           </div>
+        </div>
+
+        {/* Search */}
+        <div className="flex items-center gap-2">
+          <ApiSearchBar
+            value={searchInput}
+            onChange={(value) => setSearchInput(value)}
+            onSearch={(value) => {
+              setPage(1);
+              setSearchQuery(value.trim() || null);
+            }}
+            placeholder="Search by IB name, partner ID..."
+            minimumLength={3}
+            delay={300}
+          />
         </div>
 
         {/* Results Section */}

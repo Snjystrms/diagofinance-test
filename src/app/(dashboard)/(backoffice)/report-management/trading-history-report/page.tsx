@@ -5,9 +5,10 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { History, ReceiptText } from "lucide-react";
 import toast from "react-hot-toast";
-import { parseAsInteger, useQueryState } from "nuqs";
+import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { ReportPageWrapper } from "@/components/report-page-wrapper";
 import type { ReportExportFormat } from "@/components/report-page-wrapper";
 import { Badge } from "@/components/ui/badge";
@@ -62,10 +63,18 @@ export default function TradingHistoryReportPage() {
   const [rows, setRows] = useState<TradingHistoryReportItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
-  const [page] = useQueryState("page", parseAsInteger.withDefault(1));
+  const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+
+  // Search
+  const [searchQuery, setSearchQuery] = useQueryState("search", parseAsString);
+  const [searchInput, setSearchInput] = useState(searchQuery || "");
+
+  useEffect(() => {
+    setSearchInput(searchQuery || "");
+  }, [searchQuery]);
 
   const loadReport = useCallback(async () => {
     if (!token) {
@@ -80,6 +89,7 @@ export default function TradingHistoryReportPage() {
 
       const response = await adminTradingHistoryReportApi.list({
         token,
+        search: searchQuery || undefined,
         page,
         per_page: perPage,
       });
@@ -103,7 +113,7 @@ export default function TradingHistoryReportPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, perPage, token]);
+  }, [page, perPage, token, searchQuery]);
 
   useEffect(() => {
     void loadReport();
@@ -283,23 +293,39 @@ export default function TradingHistoryReportPage() {
       onRefresh={() => void loadReport()}
       isRefreshing={loading}
     >
-      <div className="rounded-lg border bg-card">
-        <div className="p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <div className="flex items-center gap-2 text-base font-semibold">
-              <ReceiptText className="h-4 w-4" />
-              Results
-            </div>
-            <span className="text-xs text-muted-foreground">
-              Showing {rows.length} of {total} results
-            </span>
-          </div>
-
-          <AppDataTable<TradingHistoryReportItem>
-            data={rows}
-            columns={columns}
-            pageCount={totalPages}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <ApiSearchBar
+            value={searchInput}
+            onChange={(value) => setSearchInput(value)}
+            onSearch={(value) => {
+              setPage(1);
+              setSearchQuery(value.trim() || null);
+            }}
+            placeholder="Search by name, email, account..."
+            minimumLength={3}
+            delay={300}
           />
+        </div>
+
+        <div className="rounded-lg border bg-card">
+          <div className="p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-base font-semibold">
+                <ReceiptText className="h-4 w-4" />
+                Results
+              </div>
+              <span className="text-xs text-muted-foreground">
+                Showing {rows.length} of {total} results
+              </span>
+            </div>
+
+            <AppDataTable<TradingHistoryReportItem>
+              data={rows}
+              columns={columns}
+              pageCount={totalPages}
+            />
+          </div>
         </div>
       </div>
     </ReportPageWrapper>
