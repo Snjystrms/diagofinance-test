@@ -3,15 +3,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
-import { ArrowLeftRight, CalendarIcon, Search, X } from "lucide-react";
+import { ArrowLeftRight, CalendarIcon } from "lucide-react";
 import toast from "react-hot-toast";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { ReportPageWrapper } from "@/components/report-page-wrapper";
 import type { ReportExportFormat } from "@/components/report-page-wrapper";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
@@ -88,17 +88,6 @@ export default function AllTransactionReportPage() {
     void loadReport();
   }, [loadReport]);
 
-  const handleSearch = useCallback(() => {
-    setSearchQuery(searchInput.trim() || null);
-    setPage(1);
-  }, [searchInput, setSearchQuery, setPage]);
-
-  const handleClearSearch = useCallback(() => {
-    setSearchInput("");
-    setSearchQuery(null);
-    setPage(1);
-  }, [setPage, setSearchQuery]);
-
   const handleExport = useCallback(
     async (formatType: ReportExportFormat) => {
       if (!canViewReport) {
@@ -167,9 +156,9 @@ export default function AllTransactionReportPage() {
         header: "User",
         accessorKey: "name",
         cell: ({ row }) => {
-          const name = row.original.name;
-          const email = row.original.email;
-          if (!name && !email) return <span className="text-muted-foreground">-</span>;
+          const raw = row.original.name_email;
+          if (!raw) return <span className="text-muted-foreground">-</span>;
+          const [name, email] = raw.split("/");
           return (
             <div className="space-y-0.5">
               <div className="font-medium">{name || "-"}</div>
@@ -255,42 +244,18 @@ export default function AllTransactionReportPage() {
       isRefreshing={loading}
     >
       <div className="space-y-4">
-        <div className="rounded-lg border bg-card p-5">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold">Search</h2>
-              {searchQuery && (
-                <Button variant="ghost" size="sm" onClick={handleClearSearch} className="h-8">
-                  <X className="mr-1 h-3.5 w-3.5" />
-                  Clear Filters
-                </Button>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  placeholder="Search transactions..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleSearch();
-                  }}
-                  className="pl-9"
-                />
-              </div>
-              <Button onClick={handleSearch} disabled={loading}>
-                <Search className="mr-2 h-4 w-4" />
-                Search
-              </Button>
-              {searchQuery && (
-                <Button variant="outline" onClick={handleClearSearch}>
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </div>
+        <div className="flex items-center gap-2">
+          <ApiSearchBar
+            value={searchInput}
+            onChange={(value) => setSearchInput(value)}
+            onSearch={(value) => {
+              setPage(1);
+              setSearchQuery(value.trim() || null);
+            }}
+            placeholder="Search transactions..."
+            minimumLength={3}
+            delay={300}
+          />
         </div>
 
         <div className="rounded-lg border bg-card">

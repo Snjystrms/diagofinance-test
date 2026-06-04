@@ -599,6 +599,7 @@ export interface DepositReportItem {
   status: number;
   status_text: string;
   date: string;
+  reference?: string | null;
   created_at: string;
   marketing_name?: string | null;
   approved_rejected_by?: string | null;
@@ -685,6 +686,7 @@ export interface WithdrawalReportItem {
   payment_method_id?: number | string;
   wallet_address?: string | null;
   chain_id?: string | null;
+  withdraw_to?: string | null;
   transaction_hash?: string | null;
   status: number | string;
   status_text?: string;
@@ -1037,6 +1039,7 @@ export interface TransactionReportItem {
   transaction_type_label?: string | null;
   name?: string | null;
   email?: string | null;
+  // name_email?: string | null;
   name_email?: string | null;
   amount: number | string;
   payment_method?: string | null;

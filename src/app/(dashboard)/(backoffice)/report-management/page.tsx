@@ -10,9 +10,9 @@ import { format } from "date-fns";
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -141,6 +141,14 @@ export default function ReportManagementPage() {
     parseAsString.withDefault("ASC") as any
   );
 
+  // Search
+  const [searchQuery, setSearchQuery] = useQueryState("search", parseAsString);
+  const [searchInput, setSearchInput] = useState(searchQuery || "");
+
+  useEffect(() => {
+    setSearchInput(searchQuery || "");
+  }, [searchQuery]);
+
   // Sync date state with query params
   useEffect(() => {
     if (fromDateStr) {
@@ -205,6 +213,7 @@ export default function ReportManagementPage() {
         to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
         page,
         per_page: perPage,
+        search: searchQuery || undefined,
         sort_column: sortColumn || undefined,
         sort_order: sortOrder || undefined,
       });
@@ -247,6 +256,7 @@ export default function ReportManagementPage() {
     toDate,
     sortColumn,
     sortOrder,
+    searchQuery,
   ]);
 
   useEffect(() => {
@@ -271,12 +281,15 @@ export default function ReportManagementPage() {
     setToDate(undefined);
     setSortColumn(null);
     setSortOrder(null);
+    setSearchInput("");
+    setSearchQuery(null);
     setPage(1);
   }, [
     setStatusFilter,
     setPaymentMethodFilter,
     setSortColumn,
     setSortOrder,
+    setSearchQuery,
     setPage,
   ]);
 
@@ -305,6 +318,7 @@ export default function ReportManagementPage() {
         to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
         page: 1,
         per_page: 10000,
+        search: searchQuery || undefined,
         sort_column: sortColumn || undefined,
         sort_order: sortOrder || undefined,
       });
@@ -357,7 +371,7 @@ export default function ReportManagementPage() {
         { id: exportToastId }
       );
     }
-  }, [canViewReport, token, statusFilter, paymentMethodFilter, fromDate, toDate, sortColumn, sortOrder]);
+  }, [canViewReport, token, statusFilter, paymentMethodFilter, fromDate, toDate, sortColumn, sortOrder, searchQuery]);
 
   // Count active filters
   const activeFilterCount = useMemo(() => {
@@ -368,8 +382,9 @@ export default function ReportManagementPage() {
     if (toDate) count++;
     if (sortColumn) count++;
     if (sortOrder) count++;
+    if (searchQuery) count++;
     return count;
-  }, [statusFilter, paymentMethodFilter, fromDate, toDate, sortColumn, sortOrder]);
+  }, [statusFilter, paymentMethodFilter, fromDate, toDate, sortColumn, sortOrder, searchQuery]);
 
   const columns: ColumnDef<DepositReportItem>[] = useMemo(
     () => [
@@ -384,15 +399,15 @@ export default function ReportManagementPage() {
       {
         id: "user",
         header: "User",
-        accessorKey: "name_email",
+        accessorKey: "name",
         cell: ({ row }) => {
-          const name = row.original.name;
-          const email = row.original.email;
-          if (!name && !email) return <span className="text-muted-foreground">—</span>;
+          const raw = row.original.name_email;
+          if (!raw) return <span className="text-muted-foreground">-</span>;
+          const [name, email] = raw.split("/");
           return (
             <div className="space-y-0.5">
-              <div className="font-medium">{name || "—"}</div>
-              <div className="text-xs text-muted-foreground">{email || "—"}</div>
+              <div className="font-medium">{name || "-"}</div>
+              <div className="text-xs text-muted-foreground">{email || "-"}</div>
             </div>
           );
         },
@@ -423,14 +438,15 @@ export default function ReportManagementPage() {
         header: "Transaction Hash",
         accessorKey: "transaction_hash",
         cell: ({ row }) => {
-          const hash = row.original.transaction_hash;
-          if (!hash) return <span className="text-muted-foreground">—</span>;
+          // const hash = row.original.transaction_hash;
+           const reference = row.original.reference;
+          if (!reference) return <span className="text-muted-foreground">—</span>;
           return (
             <span
               className="font-mono text-xs max-w-[200px] truncate block"
-              title={String(hash)}
+              title={String(reference)}
             >
-              {hash}
+              {reference}
             </span>
           );
         },
@@ -546,6 +562,19 @@ export default function ReportManagementPage() {
                 Reset
               </Button>
             ) : null}
+          </div>
+          <div className="mb-4">
+            <ApiSearchBar
+              value={searchInput}
+              onChange={(value) => setSearchInput(value)}
+              onSearch={(value) => {
+                setPage(1);
+                setSearchQuery(value.trim() || null);
+              }}
+              placeholder="Search by name, email..."
+              minimumLength={3}
+              delay={300}
+            />
           </div>
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <div className="space-y-1.5">

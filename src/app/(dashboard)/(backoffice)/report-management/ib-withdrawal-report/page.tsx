@@ -335,15 +335,15 @@ export default function IbWithdrawalReportPage() {
       {
         id: "user",
         header: "User",
-        accessorKey: "name_email",
+        accessorKey: "name",
         cell: ({ row }) => {
-          const name = row.original.name;
-          const email = row.original.email;
-          if (!name && !email) return <span className="text-muted-foreground">—</span>;
+          const raw = row.original.name_email;
+          if (!raw) return <span className="text-muted-foreground">-</span>;
+          const [name, email] = raw.split("/");
           return (
             <div className="space-y-0.5">
-              <div className="font-medium">{name || "—"}</div>
-              <div className="text-xs text-muted-foreground">{email || "—"}</div>
+              <div className="font-medium">{name || "-"}</div>
+              <div className="text-xs text-muted-foreground">{email || "-"}</div>
             </div>
           );
         },

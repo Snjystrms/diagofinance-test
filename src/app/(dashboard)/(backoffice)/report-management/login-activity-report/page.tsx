@@ -8,9 +8,8 @@ import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
 import { format } from "date-fns";
 
 import { AppDataTable } from "@/components/app-data-table";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { CalendarIcon, Search, X } from "lucide-react";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
+import { CalendarIcon } from "lucide-react";
 import * as XLSX from "xlsx";
 
 import {
@@ -111,26 +110,6 @@ export default function LoginActivityReportPage() {
     void loadReport();
   }, [loadReport]);
 
-  const handleSearch = useCallback(() => {
-    setSearchQuery(searchInput.trim() || null);
-    setPage(1);
-  }, [searchInput, setSearchQuery, setPage]);
-
-  const handleClearSearch = useCallback(() => {
-    setSearchInput("");
-    setSearchQuery(null);
-    setPage(1);
-  }, [setSearchQuery, setPage]);
-
-  const handleResetFilters = useCallback(() => {
-    setSearchInput("");
-    setSearchQuery(null);
-    setPage(1);
-  }, [
-    setSearchQuery,
-    setPage,
-  ]);
-
   const handleExport = useCallback(async (formatType: ReportExportFormat) => {
     if (!canViewReport) {
       toast.error("You do not have permission to export login activity report");
@@ -216,13 +195,6 @@ export default function LoginActivityReportPage() {
     token,
     searchQuery,
   ]);
-
-  // Count active filters
-  const activeFilterCount = useMemo(() => {
-    let count = 0;
-    if (searchQuery) count++;
-    return count;
-  }, [searchQuery]);
 
   const columns: ColumnDef<LoginActivityReportItem>[] = useMemo(
     () => [
@@ -367,64 +339,18 @@ export default function LoginActivityReportPage() {
       isRefreshing={loading}
     >
       <div className="space-y-4">
-        {/* Search Section */}
-        <div className="rounded-lg border bg-card p-5">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold">Search</h2>
-              {activeFilterCount > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleResetFilters}
-                  className="h-8"
-                >
-                  <X className="h-3.5 w-3.5 mr-1" />
-                  Clear Filters
-                </Button>
-              )}
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <div className="flex-1 relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search in IP address..."
-                  value={searchInput}
-                  onChange={(e) => setSearchInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handleSearch();
-                    }
-                  }}
-                  className="pl-9"
-                />
-              </div>
-              <Button
-                onClick={handleSearch}
-                disabled={loading}
-                size="default"
-              >
-                <Search className="h-4 w-4 mr-2" />
-                Search
-              </Button>
-              {searchQuery && (
-                <Button
-                  variant="outline"
-                  onClick={handleClearSearch}
-                  size="default"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-            
-            {searchQuery && (
-              <div className="text-sm text-muted-foreground">
-                Searching for IP address: <span className="font-medium">{searchQuery}</span>
-              </div>
-            )}
-          </div>
+        <div className="flex items-center gap-2">
+          <ApiSearchBar
+            value={searchInput}
+            onChange={(value) => setSearchInput(value)}
+            onSearch={(value) => {
+              setPage(1);
+              setSearchQuery(value.trim() || null);
+            }}
+            placeholder="Search in IP address..."
+            minimumLength={3}
+            delay={300}
+          />
         </div>
 
         {/* Results Section */}
