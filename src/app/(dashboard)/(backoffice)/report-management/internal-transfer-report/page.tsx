@@ -269,7 +269,7 @@ export default function InternalTransferReportPage() {
         cell: ({ row }) => {
           const status = row.original.status;
           if (status == null) return <span className="text-muted-foreground">—</span>;
-          const isSuccess = status === "completed";
+          const isSuccess = status === 1;
           return (
             <span
               className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${
