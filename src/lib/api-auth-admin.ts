@@ -439,6 +439,7 @@ export interface AdminUserTransactionItem {
   transaction_hash?: string | null;
   payment_method?: string | null;
   mt5_id?: string | null;
+  deposit_type?: string | null;
   note?: string | null;
   comment?: string | null;
   user?: AdminUserTransactionUser;

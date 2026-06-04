@@ -91,6 +91,15 @@ interface CrudUserDetails {
   updated_at?: string | null;
 }
 
+interface KycData {
+  verification_status: string;
+  kyc_status: string;
+  documents?: Record<string, number>;
+  document_files?: Record<string, string | null>;
+  document_urls?: Record<string, string | null>;
+  rejection_comments?: Record<string, string>;
+}
+
 const createPaginatedState = <T,>(): PaginatedTabState<T> => ({
   rows: [],
   pagination: null,
@@ -408,6 +417,7 @@ export default function NewUserDetailPage() {
   const [activeTab, setActiveTab] = useState<TabKey>("deposits");
   const [userUuid, setUserUuid] = useState<string>("");
   const [crudUser, setCrudUser] = useState<CrudUserDetails | null>(null);
+  const [kycData, setKycData] = useState<KycData | null>(null);
   const [mt5Summary, setMt5Summary] = useState<AdminUserMt5TabDetailsData | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [profileError, setProfileError] = useState<unknown | null>(null);
@@ -546,6 +556,7 @@ export default function NewUserDetailPage() {
     setUserUuid("");
     setCrudUser(null);
     setMt5Summary(null);
+    setKycData(null);
     setProfileError(null);
     setDepositsState(createPaginatedState<AdminUserTransactionItem>());
     setWithdrawalsState(createPaginatedState<AdminUserTransactionItem>());
@@ -589,6 +600,16 @@ export default function NewUserDetailPage() {
 
         setUserUuid(resolvedUuid);
         setCrudUser(crudUserData);
+
+        try {
+          const detailPayload = detailResponse?.data as Record<string, unknown> | undefined;
+          const kycPayload = detailPayload?.kyc as KycData | undefined;
+          if (kycPayload) {
+            setKycData(kycPayload);
+          }
+        } catch {
+          // KYC data is optional
+        }
 
         try {
           const mt5Response = await adminUsersApi.mt5TabDetails(resolvedUuid, token);
@@ -868,9 +889,9 @@ export default function NewUserDetailPage() {
                       </div>
 
                       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        <DetailItem label="IB ID" value={crudUser?.sponsor_id || "-"} />
-                        {/* <DetailItem label="Sponsor By" value={crudUser?.sponsor_by || "-"} /> */}
-                        {/* <DetailItem label="Referral Code" value={crudUser?.referral_code || "-"} /> */}
+                        {crudUser?.sponsor_id ? (
+                          <DetailItem label="IB ID" value={crudUser.sponsor_id} />
+                        ) : null}
                         <DetailItem label="Registered" value={formatDateTime(crudUser?.created_at)} />
                       </div>
                     </div>
@@ -885,7 +906,7 @@ export default function NewUserDetailPage() {
                           <span className="text-muted-foreground">Status</span>
                           <span className="font-medium">{statusBadge(crudUser?.status, "profile")}</span>
                         </div>
-                        <div className="flex items-center justify-between gap-3">
+                        {/* <div className="flex items-center justify-between gap-3">
                           <span className="text-muted-foreground">Is Approved</span>
                           <span className="font-medium">{normalizeBooleanLabel(crudUser?.is_approved)}</span>
                         </div>
@@ -896,7 +917,7 @@ export default function NewUserDetailPage() {
                         <div className="flex items-center justify-between gap-3">
                           <span className="text-muted-foreground">Approved At</span>
                           <span className="font-medium">{formatDateTime(crudUser?.approved_at)}</span>
-                        </div>
+                        </div> */}
                         {crudUser?.rejection_reason ? (
                           <div className="flex items-start justify-between gap-3">
                             <span className="text-muted-foreground">Rejection</span>
@@ -904,6 +925,70 @@ export default function NewUserDetailPage() {
                               {crudUser.rejection_reason}
                             </span>
                           </div>
+                        ) : null}
+                        {kycData ? (
+                          <>
+                            <div className="my-1 border-t border-border/40" />
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="text-muted-foreground">KYC Status</span>
+                              <span className="font-medium capitalize">{kycData.kyc_status}</span>
+                            </div>
+                            <div className="flex items-center justify-between gap-3">
+                              <span className="text-muted-foreground">Verification</span>
+                              <span className="font-medium capitalize">{kycData.verification_status}</span>
+                            </div>
+                            {kycData.document_urls && (
+                              <div className="my-1 border-t border-border/40" />
+                            )}
+                            {kycData.document_urls?.poi_front_file && (
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-muted-foreground">POI (Front)</span>
+                                <a href={kycData.document_urls.poi_front_file} target="_blank" rel="noopener noreferrer">
+                                  <img
+                                    src={kycData.document_urls.poi_front_file}
+                                    alt="POI Front"
+                                    className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
+                                  />
+                                </a>
+                              </div>
+                            )}
+                            {kycData.document_urls?.poa_front_file && (
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-muted-foreground">POA (Front)</span>
+                                <a href={kycData.document_urls.poa_front_file} target="_blank" rel="noopener noreferrer">
+                                  <img
+                                    src={kycData.document_urls.poa_front_file}
+                                    alt="POA Front"
+                                    className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
+                                  />
+                                </a>
+                              </div>
+                            )}
+                            {kycData.document_urls?.poa_back_file && (
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-muted-foreground">POA (Back)</span>
+                                <a href={kycData.document_urls.poa_back_file} target="_blank" rel="noopener noreferrer">
+                                  <img
+                                    src={kycData.document_urls.poa_back_file}
+                                    alt="POA Back"
+                                    className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
+                                  />
+                                </a>
+                              </div>
+                            )}
+                            {kycData.document_urls?.other_file && (
+                              <div className="flex items-center justify-between gap-3">
+                                <span className="text-muted-foreground">Other</span>
+                                <a href={kycData.document_urls.other_file} target="_blank" rel="noopener noreferrer">
+                                  <img
+                                    src={kycData.document_urls.other_file}
+                                    alt="Other Document"
+                                    className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
+                                  />
+                                </a>
+                              </div>
+                            )}
+                          </>
                         ) : null}
                       </CardContent>
                     </Card>
@@ -979,7 +1064,7 @@ export default function NewUserDetailPage() {
                                 <TableHead>Sr. No.</TableHead>
                                 <TableHead>Amount</TableHead>
                                 <TableHead>Transaction Hash</TableHead>
-                                <TableHead>User Comment</TableHead>
+                                <TableHead>Deposit Type</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Date</TableHead>
                               </TableRow>
@@ -992,7 +1077,7 @@ export default function NewUserDetailPage() {
                                   </TableCell>
                                   <TableCell>{formatNumericValue(item.amount)}</TableCell>
                                   <TableCell className="max-w-[200px] truncate">{item.transaction_hash || "-"}</TableCell>
-                                  <TableCell className="max-w-[220px] truncate">{item.user_comment || "-"}</TableCell>
+                                  <TableCell className="max-w-[220px] truncate">{item.deposit_type || "-"}</TableCell>
                                   <TableCell>{statusBadge(item.status, "transaction")}</TableCell>
                                   <TableCell>{formatDateTime(item.created_at)}</TableCell>
                                 </TableRow>
