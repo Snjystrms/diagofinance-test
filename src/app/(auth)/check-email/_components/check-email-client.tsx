@@ -134,7 +134,7 @@ export function CheckEmailClient() {
       } else {
         setError(result.message || 'Failed to resend OTP. Please try again.');
       }
-    } catch (err) {
+    } catch (_err) {
       setError('Network error. Please check your connection and try again.');
     } finally {
       setIsResending(false);
@@ -161,7 +161,7 @@ export function CheckEmailClient() {
                   <CheckCircle className="h-8 w-8 text-green-600" />
                 </div>
                 <h1 className="text-3xl font-bold text-foreground mb-2">
-                  You're all set!
+                  You&rsquo;re all set!
                 </h1>
                 <p className="text-muted-foreground text-lg">
                   Your email has been verified successfully. Welcome aboard! Redirecting to login...
