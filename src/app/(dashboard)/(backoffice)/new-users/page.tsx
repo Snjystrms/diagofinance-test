@@ -613,15 +613,15 @@ export default function NewUsersPage() {
         token,
       );
 
-      toast.success((response as { message?: string })?.message || "Client has been successfully promoted to IB");
+      toast.success((response as { message?: string })?.message || "Client has been successfully promoted to Partner");
       setPromoteDialogOpen(false);
       setPromoteTargetUser(null);
       setSelectedIbPlanId("");
       await loadUsers();
     } catch (err) {
-      console.error("Failed to promote user to IB:", err);
+      console.error("Failed to promote user to Partner:", err);
       toast.error(
-        getAdminFriendlyErrorMessage(err, { resource: "IB promotion", action: "create" })
+        getAdminFriendlyErrorMessage(err, { resource: "Partner promotion", action: "create" })
       );
     } finally {
       setPromoteSubmitting(false);

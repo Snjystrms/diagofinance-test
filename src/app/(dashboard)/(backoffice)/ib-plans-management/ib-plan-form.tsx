@@ -378,7 +378,7 @@ export function IbPlanForm({
         <form onSubmit={submit}>
           <DialogHeader className="pb-2">
             <DialogTitle>
-              {isEdit ? (readOnly ? "View IB Plan" : "Edit IB Plan") : "Create IB Plan"}
+              {isEdit ? (readOnly ? "View Partner Plan" : "Edit Partner Plan") : "Create Partner Plan"}
             </DialogTitle>
           </DialogHeader>
 
@@ -396,7 +396,7 @@ export function IbPlanForm({
                     onChange={(event) =>
                       setForm((current) => ({ ...current, name: event.target.value }))
                     }
-                    placeholder="e.g. VIP IB Plan"
+                    placeholder="e.g. VIP Partner Plan"
                     disabled={disabled}
                     required
                   />
@@ -427,7 +427,7 @@ export function IbPlanForm({
                         description: event.target.value,
                       }))
                     }
-                    placeholder="Describe this IB plan..."
+                    placeholder="Describe this Partner plan..."
                     disabled={disabled}
                     rows={2}
                   />

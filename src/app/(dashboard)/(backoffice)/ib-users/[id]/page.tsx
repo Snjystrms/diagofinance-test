@@ -55,17 +55,25 @@ import {
   adminIbUsersApi,
   type AdminIbPlanItem,
   type AdminIbUser,
+  type AdminIbWorkspaceData,
+  type AdminIbWalletData,
+  type AdminIbNetworkData,
+  type AdminIbClientsResponse,
+  type AdminIbSubIbsResponse,
+  type AdminIbClient,
+  type AdminIbSubIb,
+  type AdminIbWalletTransaction,
+  type AdminIbNetworkBusinessBreakdown,
 } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 
-type TabKey = "overview" | "wallet" | "commissions" | "network" | "profile";
+type TabKey = "overview" | "wallet" | "network" | "profile";
 
 const TAB_LABELS: Record<TabKey, string> = {
   overview: "Overview",
   wallet: "Wallet",
-  commissions: "Commissions",
   network: "Network",
   profile: "Profile",
 };
@@ -99,7 +107,7 @@ type IbPlanOption = {
 
 const normalizeIbPlanOption = (plan: AdminIbPlanItem): IbPlanOption => ({
   id: String(plan.id),
-  name: plan.name ?? `IB Plan ${plan.id}`,
+  name: plan.name ?? `Partner Plan ${plan.id}`,
   status: String(plan.status ?? ""),
 });
 
@@ -111,7 +119,7 @@ const deriveFullName = (user: PreviewUser): string => {
   const match = candidates.find(
     (value) => typeof value === "string" && value.trim().length > 0,
   );
-  return match ?? "IB User";
+  return match ?? "Partner User";
 };
 
 const deriveStatusLabel = (user: PreviewUser) => {
@@ -183,49 +191,58 @@ type TabShellProps = {
   loading: boolean;
 };
 
-function OverviewTab({ user, loading }: TabShellProps) {
-  const { fullName, partnerId, planName, referralLink } = user;
+function OverviewTab({
+  user,
+  loading,
+  data,
+}: TabShellProps & { data: AdminIbWorkspaceData | null }) {
+  const { fullName, referralLink } = user;
+  const ibWallet = data?.ib_wallet;
+  const mainWallet = data?.main_wallet;
+  const pendingRebates = data?.pending_rebates;
+  const totalEarned = data?.total_earned;
+  const rebatesGraph = data?.rebates_graph ?? [];
+  const earningSummary = data?.earning_summary;
+  const partnerInfo = data?.partner_info;
+
+  const todayEarnedStr = totalEarned
+    ? `Today: ${formatCurrency(totalEarned.today)}`
+    : "Today: 0.00";
 
   return (
     <>
       <IbPageHeader
-        eyebrow="IB Workspace"
-        title={`IB dashboard for ${fullName}`}
-        description="Read-only preview of the IB portal — same view the IB user sees on /ib-dashboard."
-        actions={
-          <Button type="button" variant="outline" size="sm" className="h-9 rounded-full">
-            <RefreshCw className="mr-2 h-3.5 w-3.5" />
-            Refresh
-          </Button>
-        }
+        eyebrow="Partner Workspace"
+        title={`Partner dashboard for ${fullName}`}
+        description="Read-only preview of the partner portal."
       />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <IbMetricCard
-          title="IB Wallet"
-          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(0)}
-          description="Funds available for partner-level withdrawals and transfers."
+          title="Partner Wallet"
+          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(ibWallet?.balance ?? 0)}
+          description={ibWallet ? `${ibWallet.currency}` : "Funds available for partner-level withdrawals"}
           icon={<Wallet className="h-5 w-5" />}
           accent="primary"
         />
         <IbMetricCard
           title="Main Wallet"
-          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(0)}
-          description="Client-side funds ready for trading activity."
+          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(mainWallet?.balance ?? 0)}
+          description={mainWallet ? `${mainWallet.currency}` : "Client-side funds ready for trading"}
           icon={<Wallet className="h-5 w-5" />}
           accent="emerald"
         />
         <IbMetricCard
           title="Pending Rebates"
-          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(0)}
-          description="Cycle information unavailable in preview"
+          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(pendingRebates?.amount ?? 0)}
+          description={pendingRebates ? `${pendingRebates.currency}` : "Cycle information"}
           icon={<CalendarClock className="h-5 w-5" />}
           accent="amber"
         />
         <IbMetricCard
           title="Total Earned"
-          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(0)}
-          description="Today: 0.00"
+          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(totalEarned?.amount ?? 0)}
+          description={todayEarnedStr}
           icon={<DollarSign className="h-5 w-5" />}
           accent="slate"
         />
@@ -234,37 +251,53 @@ function OverviewTab({ user, loading }: TabShellProps) {
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
         <IbSectionCard
           title="Rebate trend"
-          description="Recent rebate activity for the IB account."
+          description="Recent rebate activity for the partner account."
           actions={
             <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground">
               <TrendingUp className="h-3.5 w-3.5" />
-              Today earning 0.00
+              {todayEarnedStr}
             </span>
           }
         >
           {loading ? (
             <Skeleton className="h-[280px] w-full rounded-[24px]" />
+          ) : rebatesGraph.length > 0 ? (
+            <div className="flex h-[280px] flex-col items-center justify-center gap-2 rounded-[24px] border border-border/60 bg-muted/20 p-4">
+              <div className="grid w-full grid-cols-7 gap-1">
+                {rebatesGraph.map((point) => (
+                  <div key={point.date} className="flex flex-col items-center gap-1">
+                    <div
+                      className="w-full rounded-sm bg-primary/20"
+                      style={{ height: `${Math.max(4, point.rebates || 2)}px` }}
+                    />
+                    <span className="text-[10px] text-muted-foreground">
+                      {point.date.slice(5)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
           ) : (
             <div className="flex h-[280px] flex-col items-center justify-center gap-2 rounded-[24px] border border-dashed border-border/60 bg-muted/20 text-sm text-muted-foreground">
               <TrendingUp className="h-6 w-6" />
-              Rebate chart will render once the dashboard endpoint is wired up.
+              No rebate data available yet.
             </div>
           )}
         </IbSectionCard>
 
         <IbSectionCard
-          title="IB profile"
-          description="Core IB program details and referral assets."
+          title="Partner profile"
+          description="Core partner program details and referral assets."
         >
           <div className="space-y-4">
             <div className="ib-portal-note rounded-3xl border p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    IB User
+                    Partner Plan
                   </p>
                   <p className="mt-2 text-2xl font-semibold text-foreground">
-                    {planName}
+                    {partnerInfo?.ib_plan ?? user.planName}
                   </p>
                 </div>
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-background/70 bg-background/80">
@@ -276,10 +309,10 @@ function OverviewTab({ user, loading }: TabShellProps) {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="min-w-0 rounded-3xl border border-border/60 bg-muted/20 p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  IB ID
+                  Partner ID
                 </p>
                 <p className="mt-2 break-all text-lg font-semibold leading-snug text-foreground sm:text-xl">
-                  {partnerId}
+                  {partnerInfo?.partner_id ?? user.partnerId}
                 </p>
               </div>
               <div className="min-w-0 rounded-3xl border border-border/60 bg-muted/20 p-5">
@@ -287,7 +320,7 @@ function OverviewTab({ user, loading }: TabShellProps) {
                   Internal Transfers
                 </p>
                 <p className="mt-2 text-xl font-semibold text-foreground">
-                  {loading ? <Skeleton className="h-6 w-24" /> : formatCurrency(0)}
+                  {loading ? <Skeleton className="h-6 w-24" /> : formatCurrency(earningSummary?.total_internal_transfers ?? 0)}
                 </p>
               </div>
             </div>
@@ -320,18 +353,24 @@ function OverviewTab({ user, loading }: TabShellProps) {
                   size="icon"
                   className="shrink-0"
                   disabled={!referralLink}
+                  onClick={() => {
+                    if (referralLink) void navigator.clipboard.writeText(referralLink);
+                  }}
                 >
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
               <div className="mt-4 flex flex-wrap gap-3">
-                <Button variant="outline" size="sm" className="rounded-full">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="rounded-full"
+                  onClick={() => {
+                    if (referralLink) void navigator.clipboard.writeText(referralLink);
+                  }}
+                >
                   <Link2 className="mr-2 h-3.5 w-3.5" />
                   Copy link
-                </Button>
-                <Button size="sm" className="rounded-full">
-                  <Users className="mr-2 h-3.5 w-3.5" />
-                  Client summary
                 </Button>
               </div>
             </div>
@@ -342,27 +381,34 @@ function OverviewTab({ user, loading }: TabShellProps) {
   );
 }
 
-function WalletTab({ loading }: TabShellProps) {
+function WalletTab({
+  loading,
+  data,
+}: TabShellProps & { data: AdminIbWalletData | null }) {
+  const partnerWallet = data?.partner_wallet;
+  const clientWallet = data?.client_wallet;
+  const transactions = data?.recent_transactions ?? [];
+
   return (
     <>
       <IbPageHeader
         eyebrow="Wallet"
         title="Wallet balances and transaction history"
-        description="Partner (IB) wallet, main (client) wallet, and recent transfers."
+        description="Partner wallet, main wallet, and recent transactions."
       />
 
       <div className="grid gap-4 md:grid-cols-2">
         <IbMetricCard
           title="Partner Wallet"
-          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(0)}
-          description="IB-side commission wallet"
+          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(partnerWallet?.balance ?? 0)}
+          description={partnerWallet?.label ?? "Partner-side commission wallet"}
           icon={<Wallet className="h-5 w-5" />}
           accent="primary"
         />
         <IbMetricCard
           title="Client Wallet"
-          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(0)}
-          description="Main trading wallet"
+          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(clientWallet?.balance ?? 0)}
+          description={clientWallet?.label ?? "Main trading wallet"}
           icon={<Wallet className="h-5 w-5" />}
           accent="emerald"
         />
@@ -374,7 +420,7 @@ function WalletTab({ loading }: TabShellProps) {
       >
         {loading ? (
           <TabSkeleton rows={5} />
-        ) : (
+        ) : transactions.length > 0 ? (
           <div className="overflow-hidden rounded-2xl border border-border/60">
             <Table>
               <TableHeader>
@@ -387,85 +433,37 @@ function WalletTab({ loading }: TabShellProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow>
-                  <TableCell colSpan={5} className="py-10 text-center text-sm text-muted-foreground">
-                    No transactions yet. Once the wallet endpoint is wired up,
-                    recent transfers will appear here.
-                  </TableCell>
-                </TableRow>
+                {transactions.map((tx) => (
+                  <TableRow key={tx.id}>
+                    <TableCell className="capitalize">{tx.type}</TableCell>
+                    <TableCell className="font-medium tabular-nums">
+                      {formatCurrency(tx.net_amount ?? tx.amount)}
+                    </TableCell>
+                    <TableCell>
+                      <span className={cn(
+                        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+                        tx.status === "completed"
+                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+                          : "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300",
+                      )}>
+                        {tx.status}
+                      </span>
+                    </TableCell>
+                    <TableCell className="max-w-[200px] truncate text-muted-foreground">
+                      {tx.description}
+                    </TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {tx.date ? formatDateTimeInIST(tx.date, "\u2014") : "\u2014"}
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
           </div>
-        )}
-      </IbSectionCard>
-    </>
-  );
-}
-
-function CommissionsTab({ user, loading }: TabShellProps) {
-  return (
-    <>
-      <IbPageHeader
-        eyebrow="Commissions"
-        title="Commission rates & recent rebates"
-        description={`Live payout matrix for ${user.fullName}'s IB plan.`}
-      />
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <IbMetricCard
-          title="IB Plan"
-          value={user.planName}
-          description="Plan assigned to this user"
-          icon={<Gem className="h-5 w-5" />}
-          accent="primary"
-        />
-        <IbMetricCard
-          title="Total Earned"
-          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(0)}
-          description="Lifetime commission"
-          icon={<DollarSign className="h-5 w-5" />}
-          accent="emerald"
-        />
-        <IbMetricCard
-          title="Pending Rebates"
-          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(0)}
-          description="Awaiting next cycle"
-          icon={<CalendarClock className="h-5 w-5" />}
-          accent="amber"
-        />
-      </div>
-
-      <IbSectionCard
-        title="Commission rates"
-        description="Account-type payout ladder for the assigned plan."
-      >
-        {loading ? (
-          <TabSkeleton rows={4} />
         ) : (
-          <div className="overflow-hidden rounded-2xl border border-border/60">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Account Type</TableHead>
-                  <TableHead>Level</TableHead>
-                  <TableHead>IB Rate</TableHead>
-                  <TableHead>Sub-IB L1</TableHead>
-                  <TableHead>Sub-IB L2</TableHead>
-                  <TableHead>Sub-IB L3</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow>
-                  <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
-                    Commission rates will load from
-                    <code className="mx-1 rounded bg-muted px-1.5 py-0.5 text-xs">
-                      /admin/ib-management/ib-users/:id/plan
-                    </code>
-                    once the endpoint is available.
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+          <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
+            <Wallet className="h-6 w-6" />
+            No transactions yet.
           </div>
         )}
       </IbSectionCard>
@@ -473,7 +471,16 @@ function CommissionsTab({ user, loading }: TabShellProps) {
   );
 }
 
-function NetworkTab({ loading }: TabShellProps) {
+function NetworkTab({
+  loading,
+  networkData,
+  clientsData,
+  subIbsData,
+}: TabShellProps & {
+  networkData: AdminIbNetworkData | null;
+  clientsData: AdminIbClientsResponse | null;
+  subIbsData: AdminIbSubIbsResponse | null;
+}) {
   return (
     <>
       <IbPageHeader
@@ -485,28 +492,28 @@ function NetworkTab({ loading }: TabShellProps) {
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <IbMetricCard
           title="Direct Clients"
-          value={loading ? <Skeleton className="h-7 w-20" /> : "0"}
+          value={loading ? <Skeleton className="h-7 w-20" /> : String(networkData?.overview.direct_clients ?? 0)}
           description="Clients directly referred"
           icon={<Users className="h-5 w-5" />}
           accent="primary"
         />
         <IbMetricCard
-          title="Sub-IBs"
-          value={loading ? <Skeleton className="h-7 w-20" /> : "0"}
-          description="Active sub-brokers in downline"
+          title="Sub-Partners"
+          value={loading ? <Skeleton className="h-7 w-20" /> : String(networkData?.overview.sub_ibs ?? 0)}
+          description="Active sub-partners in downline"
           icon={<Network className="h-5 w-5" />}
           accent="emerald"
         />
         <IbMetricCard
           title="Total Downline"
-          value={loading ? <Skeleton className="h-7 w-20" /> : "0"}
+          value={loading ? <Skeleton className="h-7 w-20" /> : String(networkData?.overview.total_downline ?? 0)}
           description="All levels combined"
           icon={<TrendingUp className="h-5 w-5" />}
           accent="amber"
         />
         <IbMetricCard
           title="Total Business"
-          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(0)}
+          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(networkData?.overview.total_business ?? 0)}
           description="Cumulative volume from you and your team"
           icon={<BarChart3 className="h-5 w-5" />}
           accent="primary"
@@ -516,21 +523,21 @@ function NetworkTab({ loading }: TabShellProps) {
       <div className="grid gap-4 md:grid-cols-3">
         <IbMetricCard
           title="Your Business"
-          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(0)}
+          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(networkData?.overview.your_business ?? 0)}
           description="Volume from your own direct clients"
           icon={<DollarSign className="h-5 w-5" />}
           accent="emerald"
         />
         <IbMetricCard
           title="Team Business"
-          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(0)}
-          description="Volume from sub-IBs and their downlines"
+          value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(networkData?.overview.team_business ?? 0)}
+          description="Volume from sub-partners and their downlines"
           icon={<Network className="h-5 w-5" />}
           accent="amber"
         />
         <IbMetricCard
           title="Total Lots"
-          value={loading ? <Skeleton className="h-7 w-20" /> : "0"}
+          value={loading ? <Skeleton className="h-7 w-20" /> : String(networkData?.overview.total_lots ?? 0)}
           description="Round lots traded across your network"
           icon={<BarChart3 className="h-5 w-5" />}
           accent="slate"
@@ -543,7 +550,7 @@ function NetworkTab({ loading }: TabShellProps) {
       >
         {loading ? (
           <TabSkeleton rows={5} />
-        ) : (
+        ) : (networkData?.business_breakdown?.length ?? 0) > 0 ? (
           <div className="overflow-hidden rounded-2xl border border-border/60">
             <Table>
               <TableHeader>
@@ -553,21 +560,31 @@ function NetworkTab({ loading }: TabShellProps) {
                   <TableHead className="text-right">Volume</TableHead>
                   <TableHead className="text-right">Lots</TableHead>
                   <TableHead className="text-right">Commission Earned</TableHead>
-                  <TableHead className="text-right">Clients / Sub-IBs</TableHead>
+                  <TableHead className="text-right">Clients / Sub-Partners</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                <TableRow>
-                  <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
-                    Business breakdown will load from
-                    <code className="mx-1 rounded bg-muted px-1.5 py-0.5 text-xs">
-                      /admin/ib-management/ib-users/:id/clients
-                    </code>
-                    once the endpoint is wired up.
-                  </TableCell>
-                </TableRow>
+                {networkData!.business_breakdown.map((b) => (
+                  <TableRow key={b.level}>
+                    <TableCell className="font-medium">{b.level_label}</TableCell>
+                    <TableCell className="text-muted-foreground">{b.source}</TableCell>
+                    <TableCell className="text-right tabular-nums">{b.volume}</TableCell>
+                    <TableCell className="text-right tabular-nums">{b.lots}</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatCurrency(b.commission_earned)}</TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {b.clients > 0 ? `${b.clients} clients` : ""}
+                      {b.sub_ibs > 0 ? `${b.clients > 0 ? " / " : ""}${b.sub_ibs} sub-partners` : ""}
+                      {b.clients === 0 && b.sub_ibs === 0 ? "\u2014" : ""}
+                    </TableCell>
+                  </TableRow>
+                ))}
               </TableBody>
             </Table>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
+            <BarChart3 className="h-6 w-6" />
+            No business breakdown data yet.
           </div>
         )}
       </IbSectionCard>
@@ -575,11 +592,11 @@ function NetworkTab({ loading }: TabShellProps) {
       <div className="grid gap-4 xl:grid-cols-2">
         <IbSectionCard
           title="Direct clients"
-          description="Clients registered via the IB's referral link."
+          description="Clients registered via the partner's referral link."
         >
           {loading ? (
             <TabSkeleton rows={4} />
-          ) : (
+          ) : (clientsData?.data?.length ?? 0) > 0 ? (
             <div className="overflow-hidden rounded-2xl border border-border/60">
               <Table>
                 <TableHeader>
@@ -593,33 +610,46 @@ function NetworkTab({ loading }: TabShellProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow>
-                    <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
-                      Direct client list will load from
-                      <code className="mx-1 rounded bg-muted px-1.5 py-0.5 text-xs">
-                        /admin/ib-management/ib-users/:id/clients
-                      </code>
-                      .
-                    </TableCell>
-                  </TableRow>
+                  {clientsData!.data.map((client) => (
+                    <TableRow key={client.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{client.name}</p>
+                          <p className="text-xs text-muted-foreground">{client.email}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{client.lots}</TableCell>
+                      <TableCell className="text-right tabular-nums">{client.volume}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatCurrency(client.earned)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatCurrency(client.pending)}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {client.registered ? formatDateTimeInIST(client.registered, "\u2014") : "\u2014"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
+              <Users className="h-6 w-6" />
+              No direct clients yet.
             </div>
           )}
         </IbSectionCard>
 
         <IbSectionCard
-          title="Sub-IBs"
-          description="Sub-brokers attached to this IB at any level."
+          title="Sub-Partners"
+          description="Sub-partners attached to this partner at any level."
         >
           {loading ? (
             <TabSkeleton rows={4} />
-          ) : (
+          ) : (subIbsData?.data?.length ?? 0) > 0 ? (
             <div className="overflow-hidden rounded-2xl border border-border/60">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Sub-IB</TableHead>
+                    <TableHead>Sub-Partner</TableHead>
                     <TableHead>Level</TableHead>
                     <TableHead className="text-right">Lots</TableHead>
                     <TableHead className="text-right">Volume</TableHead>
@@ -628,17 +658,32 @@ function NetworkTab({ loading }: TabShellProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  <TableRow>
-                    <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
-                      Sub-IB list will load from
-                      <code className="mx-1 rounded bg-muted px-1.5 py-0.5 text-xs">
-                        /admin/ib-management/ib-users/:id/sub-ibs
-                      </code>
-                      .
-                    </TableCell>
-                  </TableRow>
+                  {subIbsData!.data.map((sub) => (
+                    <TableRow key={sub.id}>
+                      <TableCell>
+                        <div>
+                          <p className="font-medium">{sub.name}</p>
+                          <p className="text-xs text-muted-foreground">{sub.email}</p>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
+                          {sub.level_label}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right tabular-nums">{sub.lots}</TableCell>
+                      <TableCell className="text-right tabular-nums">{sub.volume}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatCurrency(sub.earned)}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatCurrency(sub.pending)}</TableCell>
+                    </TableRow>
+                  ))}
                 </TableBody>
               </Table>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
+              <Network className="h-6 w-6" />
+              No sub-partners yet.
             </div>
           )}
         </IbSectionCard>
@@ -652,9 +697,9 @@ function ProfileTab({ user, loading }: TabShellProps) {
     { label: "Full name", value: user.fullName },
     { label: "Email", value: user.user.email ?? "\u2014" },
     { label: "Mobile", value: user.user.mobile ?? user.user.phone ?? "\u2014" },
-    { label: "IB Name", value: user.user.ib_name ?? "\u2014" },
-    { label: "IB Plan", value: user.planName },
-    { label: "IB ID / Partner ID", value: user.partnerId },
+    { label: "Partner Name", value: user.user.ib_name ?? "\u2014" },
+    { label: "Partner Plan", value: user.planName },
+    { label: "Partner ID", value: user.partnerId },
     { label: "Sponsor ID", value: user.user.sponsor_id ?? "\u2014" },
     { label: "Referral Code", value: user.user.referral_code ?? "\u2014" },
     {
@@ -669,7 +714,7 @@ function ProfileTab({ user, loading }: TabShellProps) {
     <>
       <IbPageHeader
         eyebrow="Profile"
-        title="IB account profile"
+        title="Partner account profile"
         description="Identity, plan assignment, and registration metadata."
         actions={
           <Button
@@ -764,6 +809,31 @@ export default function IbUserDetailPage() {
   const [updatingPlan, setUpdatingPlan] = useState(false);
   const [showPlanSelect, setShowPlanSelect] = useState(false);
 
+  const [workspaceData, setWorkspaceData] = useState<AdminIbWorkspaceData | null>(null);
+  const [workspaceLoading, setWorkspaceLoading] = useState(false);
+  const [workspaceLoaded, setWorkspaceLoaded] = useState(false);
+
+  const [walletData, setWalletData] = useState<AdminIbWalletData | null>(null);
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [walletLoaded, setWalletLoaded] = useState(false);
+
+  const [networkData, setNetworkData] = useState<AdminIbNetworkData | null>(null);
+  const [networkLoading, setNetworkLoading] = useState(false);
+  const [networkLoaded, setNetworkLoaded] = useState(false);
+
+  const [clientsData, setClientsData] = useState<AdminIbClientsResponse | null>(null);
+  const [clientsLoading, setClientsLoading] = useState(false);
+  const [clientsLoaded, setClientsLoaded] = useState(false);
+
+  const [subIbsData, setSubIbsData] = useState<AdminIbSubIbsResponse | null>(null);
+  const [subIbsLoading, setSubIbsLoading] = useState(false);
+  const [subIbsLoaded, setSubIbsLoaded] = useState(false);
+
+  const userId = useMemo(() => {
+    const n = Number(id);
+    return Number.isFinite(n) ? n : null;
+  }, [id]);
+
   const loadUser = useCallback(async () => {
     if (!token || !id) {
       setUser(null);
@@ -775,12 +845,12 @@ export default function IbUserDetailPage() {
       setLoading(true);
       setError(null);
 
-      const userId = Number(id);
-      if (!Number.isFinite(userId)) {
+      const uid = Number(id);
+      if (!Number.isFinite(uid)) {
         throw new Error(`Invalid user ID: ${id}`);
       }
 
-      const response = await adminIbUsersApi.detail(userId, token);
+      const response = await adminIbUsersApi.detail(uid, token);
       const payload = response?.data;
 
       let resolvedUser: AdminIbUser | null = null;
@@ -807,11 +877,11 @@ export default function IbUserDetailPage() {
 
       setUser(resolvedUser);
     } catch (err: unknown) {
-      console.error("Failed to load IB user detail:", err);
+      console.error("Failed to load partner user detail:", err);
       setError(err);
       toast.error(
         getAdminFriendlyErrorMessage(err, {
-          resource: "IB user",
+          resource: "partner user",
           action: "load",
         }),
       );
@@ -836,10 +906,10 @@ export default function IbUserDetailPage() {
       const plans = Array.isArray(response?.data) ? response.data : [];
       setIbPlans(plans.map(normalizeIbPlanOption));
     } catch (err: unknown) {
-      console.error("Failed to load IB plans:", err);
+      console.error("Failed to load partner plans:", err);
       toast.error(
         getAdminFriendlyErrorMessage(err, {
-          resource: "IB plans",
+          resource: "partner plans",
           action: "load",
         }),
       );
@@ -852,6 +922,73 @@ export default function IbUserDetailPage() {
   useEffect(() => {
     void loadIbPlans();
   }, [loadIbPlans]);
+
+  const loadTabData = useCallback(async (tab: TabKey) => {
+    if (!token || !userId) return;
+
+    try {
+      switch (tab) {
+        case "overview": {
+          if (workspaceLoaded) return;
+          setWorkspaceLoading(true);
+          const res = await adminIbUsersApi.workspace(userId, token);
+          setWorkspaceData(res.data ?? null);
+          setWorkspaceLoaded(true);
+          break;
+        }
+        case "wallet": {
+          if (walletLoaded) return;
+          setWalletLoading(true);
+          const res = await adminIbUsersApi.wallet(userId, token);
+          setWalletData(res.data ?? null);
+          setWalletLoaded(true);
+          break;
+        }
+        case "network": {
+          const [netRes, cliRes, subRes] = await Promise.all([
+            networkLoaded ? null : adminIbUsersApi.network(userId, token),
+            clientsLoaded ? null : adminIbUsersApi.clients(userId, token),
+            subIbsLoaded ? null : adminIbUsersApi.subIbs(userId, token),
+          ]);
+          if (netRes) { setNetworkData(netRes.data ?? null); setNetworkLoaded(true); }
+          if (cliRes) {
+            const raw = cliRes as unknown as { data: AdminIbClient[]; pagination: AdminIbClientsResponse["pagination"] };
+            setClientsData({ data: raw.data ?? [], pagination: raw.pagination ?? { total: 0, per_page: 20, current_page: 1, last_page: 1 }, success: cliRes.success });
+            setClientsLoaded(true);
+          }
+          if (subRes) {
+            const raw = subRes as unknown as { data: AdminIbSubIb[]; pagination: AdminIbSubIbsResponse["pagination"] };
+            setSubIbsData({ data: raw.data ?? [], pagination: raw.pagination ?? { total: 0, per_page: 20, current_page: 1, last_page: 1 }, success: subRes.success });
+            setSubIbsLoaded(true);
+          }
+          break;
+        }
+        default:
+          break;
+      }
+    } catch (err: unknown) {
+      console.error(`Failed to load ${tab} data:`, err);
+      toast.error(
+        getAdminFriendlyErrorMessage(err, {
+          resource: `partner ${tab} data`,
+          action: "load",
+        }),
+      );
+    } finally {
+      switch (tab) {
+        case "overview": setWorkspaceLoading(false); break;
+        case "wallet": setWalletLoading(false); break;
+        case "network": setNetworkLoading(false); break;
+        default: break;
+      }
+    }
+  }, [token, userId, workspaceLoaded, walletLoaded, networkLoaded]);
+
+  useEffect(() => {
+    if (activeTab !== "profile") {
+      void loadTabData(activeTab);
+    }
+  }, [activeTab, loadTabData]);
 
   const handleUpdatePlan = useCallback(async () => {
     if (!token || !user || !selectedIbPlanId) return;
@@ -871,7 +1008,7 @@ export default function IbUserDetailPage() {
       );
 
       toast.success(
-        response?.message?.trim() || "IB plan updated successfully",
+        response?.message?.trim() || "Partner plan updated successfully",
       );
       setShowPlanSelect(false);
       setSelectedIbPlanId("");
@@ -899,7 +1036,7 @@ export default function IbUserDetailPage() {
     return {
       user,
       referralLink,
-      planName: user.ib_plan_name ?? "Standard IB",
+      planName: user.ib_plan_name ?? "Standard Partner Plan",
       partnerId: user.partner_id ?? user.referral_code ?? "\u2014",
       fullName: deriveFullName(user),
       statusLabel: deriveStatusLabel(user),
@@ -923,7 +1060,7 @@ export default function IbUserDetailPage() {
             error={error}
             audience="admin"
             variant="panel"
-            resource="IB user"
+            resource="partner user"
             action="load"
             onRetry={() => {
               void loadUser();
@@ -940,12 +1077,12 @@ export default function IbUserDetailPage() {
         {/* Top bar — admin context strip */}
         <div className="flex flex-col gap-3 border-b border-border/60 bg-muted/30 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2 text-xs font-semibold uppercase tracking-[0.22em] text-muted-foreground">
-            <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background px-3 py-1.5 text-foreground">
-              <Eye className="h-3.5 w-3.5 text-primary" />
-              Admin Preview
-            </span>
-            <span>\u00b7</span>
-            <span>Read-only view of the IB portal</span>
+              <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-background px-3 py-1.5 text-foreground">
+                <Eye className="h-3.5 w-3.5 text-primary" />
+                Admin Preview
+              </span>
+              <span>\u00b7</span>
+              <span>Read-only view of the partner portal</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {previewData ? (
@@ -990,18 +1127,18 @@ export default function IbUserDetailPage() {
           <div className="border-b border-border/60 bg-muted/20 px-6 py-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
               <div className="flex-1">
-                <label htmlFor="ib-plan-id" className="mb-1 block text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                  Select new IB plan
-                </label>
-                <Select
-                  value={selectedIbPlanId}
-                  onValueChange={setSelectedIbPlanId}
-                  disabled={loadingIbPlans || ibPlans.length === 0}
-                >
-                  <SelectTrigger id="ib-plan-id" className="max-w-xs">
-                    <SelectValue
-                      placeholder={loadingIbPlans ? "Loading plans..." : "Select IB plan"}
-                    />
+                  <label htmlFor="ib-plan-id" className="mb-1 block text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                    Select new partner plan
+                  </label>
+                  <Select
+                    value={selectedIbPlanId}
+                    onValueChange={setSelectedIbPlanId}
+                    disabled={loadingIbPlans || ibPlans.length === 0}
+                  >
+                    <SelectTrigger id="ib-plan-id" className="max-w-xs">
+                      <SelectValue
+                        placeholder={loadingIbPlans ? "Loading plans..." : "Select partner plan"}
+                      />
                   </SelectTrigger>
                   <SelectContent>
                     {ibPlans.map((plan) => (
@@ -1012,7 +1149,7 @@ export default function IbUserDetailPage() {
                   </SelectContent>
                 </Select>
                 {!loadingIbPlans && ibPlans.length === 0 ? (
-                  <p className="mt-1 text-xs text-muted-foreground">No IB plans available.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">No partner plans available.</p>
                 ) : null}
               </div>
               <div className="flex items-end gap-2">
@@ -1048,10 +1185,10 @@ export default function IbUserDetailPage() {
               variant="ghost"
               className="w-fit px-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
             >
-              <Link href="/ib-users">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to IB Users
-              </Link>
+                <Link href="/ib-users">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Partner Users
+                </Link>
             </Button>
           </div>
 
@@ -1087,19 +1224,21 @@ export default function IbUserDetailPage() {
               </TabsList>
 
               <TabsContent value="overview" className="space-y-6">
-                <OverviewTab user={previewData} loading={loading} />
+                <OverviewTab user={previewData} loading={workspaceLoading} data={workspaceData} />
               </TabsContent>
 
               <TabsContent value="wallet" className="space-y-6">
-                <WalletTab user={previewData} loading={loading} />
-              </TabsContent>
-
-              <TabsContent value="commissions" className="space-y-6">
-                <CommissionsTab user={previewData} loading={loading} />
+                <WalletTab user={previewData} loading={walletLoading} data={walletData} />
               </TabsContent>
 
               <TabsContent value="network" className="space-y-6">
-                <NetworkTab user={previewData} loading={loading} />
+                <NetworkTab
+                  user={previewData}
+                  loading={networkLoading || clientsLoading || subIbsLoading}
+                  networkData={networkData}
+                  clientsData={clientsData}
+                  subIbsData={subIbsData}
+                />
               </TabsContent>
 
               <TabsContent value="profile" className="space-y-6">

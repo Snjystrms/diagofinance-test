@@ -347,7 +347,7 @@ export function ManagerForm({
       <DialogContent className="sm:max-w-3xl">
         <form onSubmit={submit}>
           <DialogHeader>
-            <DialogTitle>{isEdit ? (readOnly ? "View Manager" : "Edit Manager") : "Create Manager"}</DialogTitle>
+            <DialogTitle>{isEdit ? (readOnly ? "View Sub-Admin" : "Edit Sub-Admin") : "Create Sub-Admin"}</DialogTitle>
           </DialogHeader>
 
           <div className="grid grid-cols-1 gap-4 py-4 md:grid-cols-2">

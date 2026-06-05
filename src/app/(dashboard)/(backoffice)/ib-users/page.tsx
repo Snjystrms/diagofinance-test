@@ -6,7 +6,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import toast from "react-hot-toast";
-import { ChevronDown, Copy, Download, Eye, Network, RefreshCw, Users } from "lucide-react";
+import { ChevronDown, Copy, Download, Eye, Landmark, Network, RefreshCw, Users } from "lucide-react";
 import * as XLSX from "xlsx";
 
 import { AppDataTable } from "@/components/app-data-table";
@@ -50,6 +50,9 @@ import {
 import { formatDateTimeInIST } from "@/lib/formatters";
 
 import { DownlineTreePageContent } from "../set-ib-commission/[userId]/_components/downline-tree-page-content";
+import { IbPlanForm } from "../ib-plans-management/ib-plan-form";
+import type { IbPlanRow } from "../ib-plans-management/page";
+import { IbCommissionDialog } from "./_components/ib-commission-dialog";
 
 const formatDateTime = (value?: string | null) => {
   if (!value) {
@@ -248,6 +251,11 @@ export default function IbUsersPage() {
   const [selectedTreeUserId, setSelectedTreeUserId] = useState<number | null>(
     null,
   );
+  const [viewPlanOpen, setViewPlanOpen] = useState(false);
+  const [viewPlanData, setViewPlanData] = useState<IbPlanRow | null>(null);
+  const [loadingPlanDetail, setLoadingPlanDetail] = useState(false);
+  const [commissionDialogOpen, setCommissionDialogOpen] = useState(false);
+  const [commissionTargetUser, setCommissionTargetUser] = useState<AdminIbUser | null>(null);
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
@@ -282,6 +290,7 @@ export default function IbUsersPage() {
 
       const payload = response?.data;
       const payloadObj = payload as Record<string, unknown>;
+      const responseObj = response as unknown as Record<string, unknown>;
 
       const extractItems = (data: unknown): AdminIbUser[] => {
         const dataObj = data as Record<string, unknown>;
@@ -323,7 +332,8 @@ export default function IbUsersPage() {
             ((payloadObj.data as Record<string, unknown>).meta as
               | Record<string, unknown>
               | undefined)?.pagination
-          : undefined)
+          : undefined) ??
+        (responseObj?.pagination as Record<string, unknown> | undefined)
       ) as Record<string, unknown> | undefined;
 
       const total =
@@ -560,6 +570,51 @@ export default function IbUsersPage() {
     setUpdatePlanDialogOpen(true);
   }, []);
 
+  const handleViewPlan = useCallback(async (planId: string | number | null | undefined) => {
+    if (!planId || !token) {
+      toast.error("Plan ID not available");
+      return;
+    }
+    try {
+      setLoadingPlanDetail(true);
+      const response = await adminIbPlansApi.getById(planId, token);
+      const planData = response?.data as AdminIbPlanItem | undefined;
+      if (!planData) {
+        toast.error("Plan details not found");
+        return;
+      }
+      const row: IbPlanRow = {
+        id: String(planData.id),
+        name: planData.name ?? "",
+        description: planData.description ?? "",
+        status: Boolean(planData.status),
+        ib_user_count: Number(planData.ib_user_count ?? 0),
+        created_at: planData.created_at,
+        updated_at: planData.updated_at,
+        account_types: (planData.account_types ?? []).map((at) => ({
+          account_type_id: String(at.account_type_id),
+          account_type_name: at.account_type_name ?? `Account Type ${at.account_type_id}`,
+          commissions: (at.commissions ?? []).map((c) => ({
+            level: c.level,
+            rate_ib: Number(c.rate_ib ?? 0),
+            rate_sub_ib_1: Number(c.rate_sub_ib_1 ?? 0),
+            rate_sub_ib_2: Number(c.rate_sub_ib_2 ?? 0),
+            rate_sub_ib_3: Number(c.rate_sub_ib_3 ?? 0),
+            rate_sub_ib_4: Number(c.rate_sub_ib_4 ?? 0),
+            rate_sub_ib_5: Number(c.rate_sub_ib_5 ?? 0),
+          })),
+        })),
+      };
+      setViewPlanData(row);
+      setViewPlanOpen(true);
+    } catch (error) {
+      console.error("Failed to load IB plan:", error);
+      toast.error("Failed to load plan details");
+    } finally {
+      setLoadingPlanDetail(false);
+    }
+  }, [token]);
+
   const handleSubmitPlanUpdate = useCallback(async () => {
     if (!token || !planTargetUser) {
       return;
@@ -627,7 +682,12 @@ export default function IbUsersPage() {
 
           return (
             <div className="space-y-1">
-              <div className="font-medium">{deriveFullName(user)}</div>
+              <Link
+                href={`/ib-users/${user.id ?? user.uuid ?? ""}`}
+                className="font-medium hover:underline"
+              >
+                {deriveFullName(user)}
+              </Link>
               <div className="text-sm text-muted-foreground">
                 {deriveEmail(user)}
               </div>
@@ -722,16 +782,21 @@ export default function IbUsersPage() {
         accessorFn: (row) => row.ib_plan_name ?? "-",
         cell: ({ row }) => {
         const planName = row.original.ib_plan_name;
-  
-  // Return early for empty states so the hyphen looks clean and centered
+        const planId = deriveIbPlanId(row.original);
+
   if (!planName) {
     return <div className="text-sm text-muted-foreground pl-4">-</div>;
   }
 
   return (
-    <div className="inline-flex h-9 items-center justify-center rounded-full border border-slate-200 bg-background px-3.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-200 dark:hover:bg-slate-900/70 whitespace-nowrap">
+    <button
+      type="button"
+      onClick={() => void handleViewPlan(planId || row.original.ib_plan_name)}
+      disabled={loadingPlanDetail}
+      className="inline-flex h-9 items-center justify-center rounded-full border border-slate-200 bg-background px-3.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-200 dark:hover:bg-slate-900/70 whitespace-nowrap cursor-pointer"
+    >
       {planName}
-    </div>
+    </button>
         );
         },
       },
@@ -862,12 +927,24 @@ export default function IbUsersPage() {
                 )}
                 Teams
               </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setCommissionTargetUser(user);
+                  setCommissionDialogOpen(true);
+                }}
+                className="h-9 rounded-full border-emerald-200 bg-emerald-50 px-3.5 text-emerald-700 shadow-sm transition-colors hover:bg-emerald-100 hover:text-emerald-800 dark:border-emerald-900/70 dark:bg-emerald-950/30 dark:text-emerald-200"
+              >
+                <Landmark className="mr-2 h-4 w-4" />
+                Commission
+              </Button>
             </div>
           );
         },
       },
     ],
-    [handleOpenTreeChart, handleOpenUpdatePlanDialog, isRowActionPending],
+    [handleOpenTreeChart, handleOpenUpdatePlanDialog, handleViewPlan, isRowActionPending, loadingPlanDetail],
   );
 
   if (selectedTreeUserId !== null) {
@@ -969,7 +1046,7 @@ export default function IbUsersPage() {
               Partner Users
             </h1>
             <p className="text-sm text-muted-foreground">
-              View and manage all Introducing Broker users in the system.
+              View and manage all Partner users in the system.
             </p>
           </div>
          <div className="flex items-center gap-2">
@@ -1097,6 +1174,29 @@ export default function IbUsersPage() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <IbPlanForm
+          open={viewPlanOpen}
+          onOpenChange={(open) => {
+            setViewPlanOpen(open);
+            if (!open) setViewPlanData(null);
+          }}
+          onSubmit={async () => {}}
+          initialData={viewPlanData}
+          readOnly
+          accountTypeOptions={[]}
+          loadAccountTypeById={async () => null}
+        />
+
+        <IbCommissionDialog
+          open={commissionDialogOpen}
+          onOpenChange={(open) => {
+            setCommissionDialogOpen(open);
+            if (!open) setCommissionTargetUser(null);
+          }}
+          user={commissionTargetUser}
+          token={token ?? ""}
+        />
         </div>
   );
 }

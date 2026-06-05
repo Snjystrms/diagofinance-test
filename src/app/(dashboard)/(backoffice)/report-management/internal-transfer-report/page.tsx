@@ -154,7 +154,7 @@ export default function InternalTransferReportPage() {
         "Comment": item.comment || "—",
         "Marketing Name": item.marketing_name || "—",
         "Type": item.type ?? "—",
-        "Status": item.status === 1 ? "Success" : item.status != null ? "Pending" : "—",
+        "Status": item.status === "completed" ? "Success" : item.status != null ? "Pending" : "—",
         "Created At": fmtDateTime(item.created_at),
       }));
 
@@ -269,7 +269,7 @@ export default function InternalTransferReportPage() {
         cell: ({ row }) => {
           const status = row.original.status;
           if (status == null) return <span className="text-muted-foreground">—</span>;
-          const isSuccess = status === 1;
+          const isSuccess = status === "completed";
           return (
             <span
               className={`text-[11px] font-medium px-2 py-0.5 rounded-full border ${

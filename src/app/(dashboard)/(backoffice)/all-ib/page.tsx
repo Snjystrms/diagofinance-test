@@ -361,10 +361,10 @@ export default function IbManagementPage() {
         total,
       });
     } catch (error: unknown) {
-      console.error("Failed to load IB requests:", error);
+      console.error("Failed to load Partner requests:", error);
       setLoadError(error);
       toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "IB requests", action: "load" })
+        getAdminFriendlyErrorMessage(error, { resource: "Partner requests", action: "load" })
       );
       setRequests([]);
     } finally {
@@ -479,16 +479,16 @@ export default function IbManagementPage() {
 
       toast.success(
         nextAction === "approve"
-          ? "IB request approved successfully."
-          : "IB request rejected successfully.",
+          ? "Partner request approved successfully."
+          : "Partner request rejected successfully.",
       );
 
       closeActionDialog();
       await loadRequests();
     } catch (error: unknown) {
-      console.error("Failed to update IB request:", error);
+      console.error("Failed to update Partner request:", error);
       toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "IB requests", action: "update" })
+        getAdminFriendlyErrorMessage(error, { resource: "Partner requests", action: "update" })
       );
     } finally {
       setProcessingId(null);
@@ -717,7 +717,7 @@ export default function IbManagementPage() {
                 Partner Requests
               </h1>
               <p className="text-sm text-muted-foreground">
-                Review and process Introducing Broker applications submitted by users.
+                Review and process Partner applications submitted by users.
               </p>
             </div>
             <Button variant="outline" onClick={loadRequests} disabled={loading}>
@@ -851,7 +851,7 @@ export default function IbManagementPage() {
               {isApproveDecision ? (
                 <div className="space-y-2">
                   <label htmlFor="ib-plan-id" className="text-sm font-medium">
-                    IB Plan
+                    Partner Plan
                   </label>
                   <Select
                     value={selectedIbPlanId}

@@ -889,9 +889,10 @@ export default function NewUserDetailPage() {
                       </div>
 
                       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        {crudUser?.sponsor_id ? (
-                          <DetailItem label="IB ID" value={crudUser.sponsor_id} />
-                        ) : null}
+                        <DetailItem
+                          label={crudUser?.sponsor_id ? "IB ID" : "Type"}
+                          value={crudUser?.sponsor_id ?? "Client"}
+                        />
                         <DetailItem label="Registered" value={formatDateTime(crudUser?.created_at)} />
                       </div>
                     </div>

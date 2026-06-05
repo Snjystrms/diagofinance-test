@@ -251,17 +251,17 @@ export default function AllManagersPage() {
         permissions: toIdArray(payload.permissions),
       };
       if (!body.password) {
-        toast.error("Password is required to create manager");
+        toast.error("Password is required to create sub-admin");
         return Promise.reject(new Error("Password required"));
       }
       await adminManagersApi.create(body, token);
       queryClient.invalidateQueries({ queryKey: ["managers", token] });
-      toast.success("Manager created successfully");
+      toast.success("Sub-Admin created successfully");
       return Promise.resolve();
     } catch (e: unknown) {
       console.error("Create manager error:", e);
       toast.error(
-        getAdminFriendlyErrorMessage(e, { resource: "managers", action: "create" })
+        getAdminFriendlyErrorMessage(e, { resource: "sub-admins", action: "create" })
       );
       return Promise.reject(e);
     }
@@ -286,12 +286,12 @@ export default function AllManagersPage() {
       }
       await adminManagersApi.update(row.id, body, token);
       queryClient.invalidateQueries({ queryKey: ["managers", token] });
-      toast.success("Manager updated successfully");
+      toast.success("Sub-Admin updated successfully");
       return Promise.resolve();
     } catch (e: unknown) {
-      console.error("Update manager error:", e);
+      console.error("Update sub-admin error:", e);
       toast.error(
-        getAdminFriendlyErrorMessage(e, { resource: "managers", action: "update" })
+        getAdminFriendlyErrorMessage(e, { resource: "sub-admins", action: "update" })
       );
       return Promise.reject(e);
     } finally {
@@ -321,7 +321,7 @@ export default function AllManagersPage() {
       } catch (e: unknown) {
         console.error("[Toggle] Error:", e);
         toast.error(
-          getAdminFriendlyErrorMessage(e, { resource: "manager status", action: "update" })
+          getAdminFriendlyErrorMessage(e, { resource: "sub-admin status", action: "update" })
         );
       } finally {
         setActionLoadingId(null);
@@ -337,12 +337,12 @@ export default function AllManagersPage() {
       setActionLoadingId(id);
       await adminManagersApi.delete(id, token);
       queryClient.invalidateQueries({ queryKey: ["managers", token] });
-      toast.success("Manager deleted");
+      toast.success("Sub-Admin deleted");
       return Promise.resolve();
     } catch (e: unknown) {
-      console.error("Delete manager error:", e);
+      console.error("Delete sub-admin error:", e);
       toast.error(
-        getAdminFriendlyErrorMessage(e, { resource: "managers", action: "delete" })
+        getAdminFriendlyErrorMessage(e, { resource: "sub-admins", action: "delete" })
       );
       return Promise.reject(e);
     } finally {
@@ -411,11 +411,11 @@ export default function AllManagersPage() {
         URL.revokeObjectURL(link.href);
       }
 
-      toast.success(`Exported ${data.length} managers to ${filename}`, { id: exportToastId });
+      toast.success(`Exported ${data.length} sub-admins to ${filename}`, { id: exportToastId });
     } catch (error: unknown) {
       console.error(`Failed to export ${formatType}:`, error);
       toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "managers", action: "export" }),
+        getAdminFriendlyErrorMessage(error, { resource: "sub-admins", action: "export" }),
         { id: exportToastId },
       );
     }
@@ -484,10 +484,10 @@ export default function AllManagersPage() {
             <div className="space-y-1">
               <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
                 <UserPlus className="h-6 w-6 text-primary" />
-                Managers
+                Sub-Admin
               </h1>
               <p className="text-sm text-muted-foreground">
-                Create, update, and manage managers & their permissions
+                Create, update, and manage sub-admin & their permissions
               </p>
             </div>
 
@@ -517,7 +517,7 @@ export default function AllManagersPage() {
                 tooltipMessage="You need write permission for manager module to create"
               >
                 <Plus className="mr-2 h-4 w-4" />
-                Create Manager
+                Create Sub-Admin
               </PermissionAwareButton>
             </div>
           </div>
@@ -591,7 +591,7 @@ export default function AllManagersPage() {
         >
           <DialogContent className="sm:max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Manager Details</DialogTitle>
+              <DialogTitle>Sub-Admin Details</DialogTitle>
             </DialogHeader>
 
             {viewLoading ? (
@@ -647,7 +647,7 @@ export default function AllManagersPage() {
               </div>
             ) : (
               <div className="py-6 text-center text-sm text-muted-foreground">
-                No manager details available.
+                No sub-admin details available.
               </div>
             )}
           </DialogContent>

@@ -968,6 +968,195 @@ export interface AdminIbUserPlanUpdateResponse {
   [key: string]: unknown;
 }
 
+/* ------------------------------------------------------------------ */
+/*  Admin IB Workspace (overview tab)                                  */
+/* ------------------------------------------------------------------ */
+
+export interface AdminIbWorkspaceUser {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  country: string;
+  ib_name: string;
+  status: number;
+  created_at: string;
+}
+
+export interface AdminIbWorkspaceWallet {
+  balance: number;
+  currency: string;
+}
+
+export interface AdminIbWorkspacePendingRebates {
+  amount: number;
+  currency: string;
+}
+
+export interface AdminIbWorkspaceTotalEarned {
+  amount: number;
+  today: number;
+  currency: string;
+}
+
+export interface AdminIbWorkspaceRebatesGraph {
+  date: string;
+  rebates: number;
+}
+
+export interface AdminIbWorkspaceEarningSummary {
+  total_earned: number;
+  total_internal_transfers: number;
+  currency: string;
+}
+
+export interface AdminIbWorkspacePartnerInfo {
+  ib_plan: string;
+  ib_plan_id: number;
+  partner_id: string;
+  referral_link: string;
+  ib_name: string;
+}
+
+export interface AdminIbWorkspaceData {
+  user: AdminIbWorkspaceUser;
+  ib_wallet: AdminIbWorkspaceWallet;
+  main_wallet: AdminIbWorkspaceWallet;
+  pending_rebates: AdminIbWorkspacePendingRebates;
+  total_earned: AdminIbWorkspaceTotalEarned;
+  rebates_graph: AdminIbWorkspaceRebatesGraph[];
+  earning_summary: AdminIbWorkspaceEarningSummary;
+  partner_info: AdminIbWorkspacePartnerInfo;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Admin IB Wallet (wallet tab)                                       */
+/* ------------------------------------------------------------------ */
+
+export interface AdminIbWalletTransaction {
+  id: number;
+  wallet_type: string;
+  type: string;
+  amount: number;
+  net_amount: number;
+  currency: string;
+  status: string;
+  description: string;
+  date: string;
+}
+
+export interface AdminIbWalletData {
+  partner_wallet: {
+    balance: number;
+    currency: string;
+    wallet_address: string;
+    label: string;
+  };
+  client_wallet: {
+    balance: number;
+    currency: string;
+    wallet_address: string;
+    label: string;
+  };
+  recent_transactions: AdminIbWalletTransaction[];
+  pagination: {
+    total: number;
+    per_page: number;
+    current_page: number;
+    last_page: number;
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Admin IB Network (network tab)                                     */
+/* ------------------------------------------------------------------ */
+
+export interface AdminIbNetworkBusinessBreakdown {
+  level: number;
+  level_label: string;
+  source: string;
+  lots: number;
+  volume: number;
+  commission_earned: number;
+  clients: number;
+  sub_ibs: number;
+}
+
+export interface AdminIbNetworkData {
+  ib_user: {
+    id: number;
+    name: string;
+    email: string;
+    ib_name: string;
+  };
+  overview: {
+    direct_clients: number;
+    sub_ibs: number;
+    total_downline: number;
+    total_business: number;
+    your_business: number;
+    team_business: number;
+    total_lots: number;
+    currency: string;
+  };
+  business_breakdown: AdminIbNetworkBusinessBreakdown[];
+}
+
+/* ------------------------------------------------------------------ */
+/*  Admin IB Clients (network tab — direct clients table)              */
+/* ------------------------------------------------------------------ */
+
+export interface AdminIbClient {
+  id: number;
+  name: string;
+  email: string;
+  mobile: string;
+  lots: number;
+  volume: number;
+  earned: number;
+  pending: number;
+  registered: string;
+}
+
+export interface AdminIbClientsResponse {
+  success: boolean;
+  data: AdminIbClient[];
+  pagination: {
+    total: number;
+    per_page: number;
+    current_page: number;
+    last_page: number;
+  };
+}
+
+/* ------------------------------------------------------------------ */
+/*  Admin IB Sub-IBs (network tab — sub-IBs table)                    */
+/* ------------------------------------------------------------------ */
+
+export interface AdminIbSubIb {
+  id: number;
+  name: string;
+  email: string;
+  ib_name: string;
+  level: number;
+  level_label: string;
+  lots: number;
+  volume: number;
+  earned: number;
+  pending: number;
+}
+
+export interface AdminIbSubIbsResponse {
+  success: boolean;
+  data: AdminIbSubIb[];
+  pagination: {
+    total: number;
+    per_page: number;
+    current_page: number;
+    last_page: number;
+  };
+}
+
 export const adminIbUsersApi = {
   list: ({ token, page = 1, per_page = 10, search }: AdminIbUsersListParams) => {
     if (!token) {
@@ -1026,6 +1215,59 @@ export const adminIbUsersApi = {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify(body),
       },
+    );
+  },
+
+  workspace: (id: number | string, token: string) => {
+    if (!token) throw new Error("Token is required to fetch IB workspace");
+    if (id === null || id === undefined || `${id}`.trim() === "")
+      throw new Error("IB user ID is required");
+    return apiCall<AdminIbWorkspaceData>(
+      `/admin/ib-management/ib-users/${encodeURIComponent(String(id))}/workspace`,
+      { method: "GET", headers: { Authorization: `Bearer ${token}` } },
+    );
+  },
+
+  wallet: (id: number | string, token: string, page = 1, perPage = 20) => {
+    if (!token) throw new Error("Token is required to fetch IB wallet");
+    if (id === null || id === undefined || `${id}`.trim() === "")
+      throw new Error("IB user ID is required");
+    const qs = new URLSearchParams({ page: String(page), per_page: String(perPage) });
+    return apiCall<AdminIbWalletData>(
+      `/admin/ib-management/ib-users/${encodeURIComponent(String(id))}/wallet?${qs.toString()}`,
+      { method: "GET", headers: { Authorization: `Bearer ${token}` } },
+    );
+  },
+
+  network: (id: number | string, token: string) => {
+    if (!token) throw new Error("Token is required to fetch IB network");
+    if (id === null || id === undefined || `${id}`.trim() === "")
+      throw new Error("IB user ID is required");
+    return apiCall<AdminIbNetworkData>(
+      `/admin/ib-management/ib-users/${encodeURIComponent(String(id))}/network`,
+      { method: "GET", headers: { Authorization: `Bearer ${token}` } },
+    );
+  },
+
+  clients: (id: number | string, token: string, page = 1, perPage = 20) => {
+    if (!token) throw new Error("Token is required to fetch IB clients");
+    if (id === null || id === undefined || `${id}`.trim() === "")
+      throw new Error("IB user ID is required");
+    const qs = new URLSearchParams({ page: String(page), per_page: String(perPage) });
+    return apiCall<AdminIbClientsResponse>(
+      `/admin/ib-management/ib-users/${encodeURIComponent(String(id))}/clients?${qs.toString()}`,
+      { method: "GET", headers: { Authorization: `Bearer ${token}` } },
+    );
+  },
+
+  subIbs: (id: number | string, token: string, page = 1, perPage = 20) => {
+    if (!token) throw new Error("Token is required to fetch IB sub-IBs");
+    if (id === null || id === undefined || `${id}`.trim() === "")
+      throw new Error("IB user ID is required");
+    const qs = new URLSearchParams({ page: String(page), per_page: String(perPage) });
+    return apiCall<AdminIbSubIbsResponse>(
+      `/admin/ib-management/ib-users/${encodeURIComponent(String(id))}/sub-ibs?${qs.toString()}`,
+      { method: "GET", headers: { Authorization: `Bearer ${token}` } },
     );
   },
 };
@@ -1335,7 +1577,7 @@ export interface AdminMT5Account {
   margin?: string | number;
   free_margin?: string | number;
   leverage?: string | number;
-  self_wallet?: string | number;
+  self_wallet?: number;
   currency?: string;
   server?: string | null;
   mt5_group_name?: string;

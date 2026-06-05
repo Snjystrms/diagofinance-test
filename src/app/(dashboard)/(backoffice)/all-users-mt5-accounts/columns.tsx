@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { Calendar, CreditCard, Eye, Pencil, Server, Trash2, User } from "lucide-react";
+import { Calendar, CreditCard, Eye, Pencil, Server, Trash2, User, Wallet } from "lucide-react";
 
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
@@ -39,7 +39,7 @@ const deriveAccountType = (account: AdminMT5Account) => {
 };
 
 const deriveGroupName = (account: AdminMT5Account) => {
-  return account.group?.name ?? account.mt5_group_name ?? emptyValue;
+  return account.mt5_group_name ?? emptyValue;
 };
 
 const getStatusBadge = (status: AdminMT5Account["status"]) => {
@@ -146,6 +146,22 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
     ),
     enableColumnFilter: false,
   },
+   {
+     id: "self_wallet",
+     accessorKey: "self_wallet",
+     header: ({ column }) => <DataTableColumnHeader column={column} title="Wallet Balance" />,
+     cell: ({ row }) => {
+       const balance = row.original.self_wallet;
+       if (balance == null) return <span className="text-muted-foreground">{emptyValue}</span>;
+       return (
+         <div className="flex items-center gap-2">
+           <Wallet className="h-4 w-4 text-muted-foreground" />
+           <span className="font-medium">{balance?.toFixed(2)}</span>
+         </div>
+       );
+     },
+     enableColumnFilter: true,
+   },
   {
     id: "leverage",
     accessorKey: "leverage",
