@@ -27,7 +27,7 @@ import { Spinner } from '@/components/ui/spinner';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/contexts/auth-context';
 import { User as UserIcon, CheckCircle2, XCircle } from 'lucide-react';
-import { fetchUsersByLevel, levelColor, levelToDepth, NODE_H, NODE_W, toastNoDownline, type UserByLevel, type UsersByLevelResponse } from '@/lib/downline-tree';
+import { fetchUsersByLevel, levelColor, levelToDepth, NODE_H, NODE_W, toastNoDownline, type UserByLevel, type UsersByLevelResponse, levelDisplayLabel } from '@/lib/downline-tree';
 
 /* ======================== visuals ======================== */
 
@@ -37,6 +37,11 @@ const fmtMoney = (n?: number) =>
   new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
     Number(n || 0)
   );
+
+const formatLevelLabel = (level: string) => {
+  if (level === "IB" || level === "Level-IB") return "Partner";
+  return level;
+};
 
 /* ======================== Theme hook ======================== */
 
@@ -69,7 +74,6 @@ interface TeamNodeData extends Record<string, unknown> {
   status?: number;
   isRoot?: boolean;
   highlighted?: boolean;
-  isIb?: boolean;
 }
 
 type GraphNode = Node<TeamNodeData, 'teamNode'>;
@@ -140,11 +144,7 @@ const TeamNode: React.FC<NodeProps<GraphNode>> = ({ data }) => {
         ) : (
           <div className="mt-0.5 inline-flex items-center gap-1 text-[10px] text-muted-foreground">
             <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-            {data.isIb ? (
-              <span className="font-medium text-violet-600 dark:text-violet-400">Partner</span>
-            ) : (
-              <span>Client</span>
-            )}
+            {formatLevelLabel(typeof data.level === 'string' ? data.level : `Level ${data.level}`)}
             {data.status === 1 ? (
               <span className="inline-flex items-center text-emerald-600 dark:text-emerald-400">
                 <CheckCircle2 className="h-3 w-3 ml-1" />
@@ -173,7 +173,6 @@ type NodeRecord = {
   status?: number;
   depth: number;
   isRoot?: boolean;
-  isIb?: boolean;
 };
 
 interface DownlineTreeDialogProps {
@@ -245,15 +244,10 @@ export function DownlineTreeDialog({ open, onOpenChange, userId, userName }: Dow
       const nextNodes: Record<string, NodeRecord> = { [rootId]: root };
       const nextEdges: Array<{ source: string; target: string }> = [];
 
-      // Collect all users and track which are IB by category key
+      // Collect all users from all levels
       const allUsers: UserByLevel[] = [];
-      const isIbMap = new Map<string, boolean>();
-      Object.entries(usersByLevel).forEach(([category, users]) => {
+      Object.values(usersByLevel).forEach((users) => {
         if (Array.isArray(users)) {
-          users.forEach((user) => {
-            const id = user.sponsor_id || `user_${user.id}`;
-            isIbMap.set(id, category === "IB");
-          });
           allUsers.push(...users);
         }
       });
@@ -289,7 +283,6 @@ export function DownlineTreeDialog({ open, onOpenChange, userId, userName }: Dow
             status: 1,
             depth,
             isRoot: false,
-            isIb: isIbMap.get(userId) ?? false,
           };
         }
 
@@ -331,7 +324,6 @@ export function DownlineTreeDialog({ open, onOpenChange, userId, userName }: Dow
                   status: 1,
                   depth: parentDepth,
                   isRoot: false,
-                  isIb: isIbMap.get(parentId) ?? false,
                 };
               }
             }
@@ -397,13 +389,8 @@ export function DownlineTreeDialog({ open, onOpenChange, userId, userName }: Dow
 
       const usersByLevel = data.users_by_level || {};
       const allUsers: UserByLevel[] = [];
-      const isIbMap = new Map<string, boolean>();
-      Object.entries(usersByLevel).forEach(([category, users]) => {
+      Object.values(usersByLevel).forEach((users) => {
         if (Array.isArray(users)) {
-          users.forEach((user) => {
-            const id = user.sponsor_id || `user_${user.id}`;
-            isIbMap.set(id, category === "IB");
-          });
           allUsers.push(...users);
         }
       });
@@ -435,7 +422,6 @@ export function DownlineTreeDialog({ open, onOpenChange, userId, userName }: Dow
               totalBV: 0,
               status: 1,
               depth: (parent.depth ?? 0) + depth,
-              isIb: isIbMap.get(id) ?? false,
             };
           }
         }
@@ -497,7 +483,6 @@ export function DownlineTreeDialog({ open, onOpenChange, userId, userName }: Dow
           status: n.status ?? 1,
           isRoot: n.isRoot,
           highlighted: highlightId === n.sponsorId,
-          isIb: n.isIb,
         },
         style: { width: NODE_W, height: NODE_H },
         sourcePosition: Position.Bottom,

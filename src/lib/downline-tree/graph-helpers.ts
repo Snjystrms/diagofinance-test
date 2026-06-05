@@ -39,3 +39,8 @@ export const fmtMoney = (n?: number) =>
   new Intl.NumberFormat(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
     Number(n || 0)
   );
+  export const levelDisplayLabel = (level: string | number): string => {
+  if (level === "IB" || level === "Level-IB" || level === 0) return "Partner";
+  if (typeof level === "string") return level; // "Level-1", "Level-2", etc.
+  return `Level-${level}`;
+};
