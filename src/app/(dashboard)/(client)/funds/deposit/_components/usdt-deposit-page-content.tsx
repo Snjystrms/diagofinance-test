@@ -399,6 +399,15 @@ function USDTDepositContent() {
     setBankPaymentProofPreview(null);
   };
 
+  const handleNewBankDeposit = () => {
+    setBankSubmitResult(null);
+    setBankError(null);
+    setBankPaymentProof(null);
+    setBankPaymentProofPreview(null);
+    setBankAmount("");
+    setBankTxId("");
+  };
+
   const fetchBankRequests = useCallback(async () => {
     if (!token) return;
     try {
@@ -899,7 +908,7 @@ function USDTDepositContent() {
                     {/* Transaction Hash Input */}
                     <div className="space-y-3">
                       <Label htmlFor="txhash" className="text-sm font-semibold text-foreground">
-                        Transaction Hash <span className="text-muted-foreground text-xs">(Optional if screenshot provided)</span>
+                        Transaction Hash
                       </Label>
                       <div className="relative">
                         <Hash className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
@@ -919,7 +928,7 @@ function USDTDepositContent() {
                     {/* Payment Proof Upload */}
                     <div className="space-y-3">
                       <Label htmlFor="payment_proof" className="text-sm font-semibold text-foreground">
-                        Payment Proof (Screenshot) <span className="text-muted-foreground text-xs">(Optional if transaction hash provided)</span>
+                        Payment Proof (Screenshot)
                       </Label>
                       {!paymentProof ? (
                         <div className="rounded-lg border-2 border-dashed border-border p-6 transition-colors hover:border-primary/50">
@@ -1507,27 +1516,35 @@ function USDTDepositContent() {
                     </CardHeader>
                     <CardContent className="space-y-5">
 
-                      {/* Success receipt */}
-                      {bankSubmitResult && (
-                        <div className="rounded-xl border border-emerald-500/30 bg-emerald-50 p-4 dark:bg-emerald-950/20 space-y-2">
-                          <div className="flex items-center gap-2">
-                            <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                            <p className="font-semibold text-emerald-800 dark:text-emerald-300 text-sm">
-                              Request submitted successfully
-                            </p>
+                      {bankSubmitResult ? (
+                        <div className="py-8 text-center">
+                          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
+                            <CheckCircle className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
                           </div>
-                          <p className="text-xs text-emerald-700/70 dark:text-emerald-400/70"><Badge variant="outline" className="text-xs border-emerald-500/40 text-emerald-700 dark:text-emerald-300">{bankSubmitResult.status}</Badge>
+                          <h3 className="mb-2 text-xl font-semibold text-foreground">
+                            Deposit Submitted
+                          </h3>
+                          <p className="mb-4 text-muted-foreground">
+                            Your bank deposit request is under review and will be credited soon!.
                           </p>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-xs text-emerald-700 dark:text-emerald-400 h-7 px-2"
-                            onClick={() => setBankSubmitResult(null)}
-                          >
-                            Dismiss
-                          </Button>
+                          <div className="space-y-3">
+                            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/20">
+                              <p className="text-sm text-emerald-800 dark:text-emerald-200">
+                                The admin team is reviewing your deposit and will credit the funds to your wallet once approved.
+                              </p>
+                            </div>
+                            <Button
+                              variant="outline"
+                              className="w-full border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                              onClick={handleNewBankDeposit}
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              Make New Bank Deposit
+                            </Button>
+                          </div>
                         </div>
-                      )}
+                      ) : (
+                        <>
 
                       {bankError && (
                         <div className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
@@ -1696,6 +1713,8 @@ function USDTDepositContent() {
                           </>
                         )}
                       </Button>
+                        </>
+                      )}
                     </CardContent>
                   </Card>
 

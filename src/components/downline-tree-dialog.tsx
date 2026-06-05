@@ -69,6 +69,7 @@ interface TeamNodeData extends Record<string, unknown> {
   status?: number;
   isRoot?: boolean;
   highlighted?: boolean;
+  isIb?: boolean;
 }
 
 type GraphNode = Node<TeamNodeData, 'teamNode'>;
@@ -133,13 +134,17 @@ const TeamNode: React.FC<NodeProps<GraphNode>> = ({ data }) => {
           <div className="mt-0.5 flex flex-wrap items-center gap-1">
             <Badge className="text-[9px] h-4 px-1 py-0 bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-700">
               <CheckCircle2 className="h-3 w-3 mr-1" />
-              IB
+              Partner
             </Badge>
           </div>
         ) : (
           <div className="mt-0.5 inline-flex items-center gap-1 text-[10px] text-muted-foreground">
             <span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: color }} />
-            {typeof data.level === 'string' ? data.level : `Level ${data.level}`}
+            {data.isIb ? (
+              <span className="font-medium text-violet-600 dark:text-violet-400">Partner</span>
+            ) : (
+              <span>Client</span>
+            )}
             {data.status === 1 ? (
               <span className="inline-flex items-center text-emerald-600 dark:text-emerald-400">
                 <CheckCircle2 className="h-3 w-3 ml-1" />
@@ -168,6 +173,7 @@ type NodeRecord = {
   status?: number;
   depth: number;
   isRoot?: boolean;
+  isIb?: boolean;
 };
 
 interface DownlineTreeDialogProps {
@@ -239,10 +245,15 @@ export function DownlineTreeDialog({ open, onOpenChange, userId, userName }: Dow
       const nextNodes: Record<string, NodeRecord> = { [rootId]: root };
       const nextEdges: Array<{ source: string; target: string }> = [];
 
-      // Collect all users from all levels
+      // Collect all users and track which are IB by category key
       const allUsers: UserByLevel[] = [];
-      Object.values(usersByLevel).forEach((users) => {
+      const isIbMap = new Map<string, boolean>();
+      Object.entries(usersByLevel).forEach(([category, users]) => {
         if (Array.isArray(users)) {
+          users.forEach((user) => {
+            const id = user.sponsor_id || `user_${user.id}`;
+            isIbMap.set(id, category === "IB");
+          });
           allUsers.push(...users);
         }
       });
@@ -273,11 +284,12 @@ export function DownlineTreeDialog({ open, onOpenChange, userId, userName }: Dow
           nextNodes[userId] = {
             sponsorId: userId,
             username: user.name,
-            packageSum: 0, // Not provided in response
-            totalBV: 0, // Not provided in response
-            status: 1, // Assume active if not provided
+            packageSum: 0,
+            totalBV: 0,
+            status: 1,
             depth,
             isRoot: false,
+            isIb: isIbMap.get(userId) ?? false,
           };
         }
 
@@ -319,6 +331,7 @@ export function DownlineTreeDialog({ open, onOpenChange, userId, userName }: Dow
                   status: 1,
                   depth: parentDepth,
                   isRoot: false,
+                  isIb: isIbMap.get(parentId) ?? false,
                 };
               }
             }
@@ -384,8 +397,13 @@ export function DownlineTreeDialog({ open, onOpenChange, userId, userName }: Dow
 
       const usersByLevel = data.users_by_level || {};
       const allUsers: UserByLevel[] = [];
-      Object.values(usersByLevel).forEach((users) => {
+      const isIbMap = new Map<string, boolean>();
+      Object.entries(usersByLevel).forEach(([category, users]) => {
         if (Array.isArray(users)) {
+          users.forEach((user) => {
+            const id = user.sponsor_id || `user_${user.id}`;
+            isIbMap.set(id, category === "IB");
+          });
           allUsers.push(...users);
         }
       });
@@ -417,6 +435,7 @@ export function DownlineTreeDialog({ open, onOpenChange, userId, userName }: Dow
               totalBV: 0,
               status: 1,
               depth: (parent.depth ?? 0) + depth,
+              isIb: isIbMap.get(id) ?? false,
             };
           }
         }
@@ -478,6 +497,7 @@ export function DownlineTreeDialog({ open, onOpenChange, userId, userName }: Dow
           status: n.status ?? 1,
           isRoot: n.isRoot,
           highlighted: highlightId === n.sponsorId,
+          isIb: n.isIb,
         },
         style: { width: NODE_W, height: NODE_H },
         sourcePosition: Position.Bottom,

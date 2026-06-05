@@ -554,7 +554,7 @@ export function DownlineTreePageContent({
 
           <Panel position="top-left" className="rounded-lg bg-card/90 border border-border backdrop-blur px-3 py-2 shadow text-foreground">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold">Downline Tree - {userName}</span>
+              <span className="text-sm font-semibold">Team - {userName}</span>
             </div>
           </Panel>
 
@@ -635,9 +635,9 @@ export function DownlineTreePageContent({
               Back
             </Button>
             <div>
-              <h1 className="text-2xl font-semibold tracking-tight">Downline Tree</h1>
+              <h1 className="text-2xl font-semibold tracking-tight">Team</h1>
               <p className="text-sm text-muted-foreground">
-                {userName ? `Viewing downline for ${userName}` : 'Viewing downline structure'}
+                {userName ? `Viewing team of ${userName}` : 'Viewing team structure'}
               </p>
             </div>
           </div>
