@@ -855,7 +855,7 @@ export interface InternalTransferReportItem {
   marketing_name?: string | null;
   comment?: string | null;
   type?: number | null;
-  status?: number | null;
+  status?: number | string | null;
 }
 
 export interface InternalTransferReportListParams {

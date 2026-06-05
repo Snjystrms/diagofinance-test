@@ -405,23 +405,23 @@ export default function IbWithdrawalReportPage() {
           );
         },
       },
-      {
-        id: "transaction_hash",
-        header: "Transaction Hash",
-        accessorKey: "transaction_hash",
-        cell: ({ row }) => {
-          const hash = row.original.transaction_hash;
-          if (!hash) return <span className="text-muted-foreground">—</span>;
-          return (
-            <span
-              className="font-mono text-xs max-w-[200px] truncate block"
-              title={String(hash)}
-            >
-              {hash}
-            </span>
-          );
-        },
-      },
+      // {
+      //   id: "transaction_hash",
+      //   header: "Transaction Hash",
+      //   accessorKey: "transaction_hash",
+      //   cell: ({ row }) => {
+      //     const hash = row.original.transaction_hash;
+      //     if (!hash) return <span className="text-muted-foreground">—</span>;
+      //     return (
+      //       <span
+      //         className="font-mono text-xs max-w-[200px] truncate block"
+      //         title={String(hash)}
+      //       >
+      //         {hash}
+      //       </span>
+      //     );
+      //   },
+      // },
       {
         id: "status",
         header: "Status",

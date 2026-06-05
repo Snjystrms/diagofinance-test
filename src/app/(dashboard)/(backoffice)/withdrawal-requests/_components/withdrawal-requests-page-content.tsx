@@ -345,6 +345,14 @@ export function WithdrawalRequestsPageContent() {
           <span className="font-medium">{formatAmount(row.original.amount)}</span>
         ),
       },
+         {
+        id: "payment_method",
+        header: "Payment Type",
+        accessorKey: "payment_method",
+        cell: ({ row }) => (
+          <span className="font-medium">{row.original.payment_method.name || "—"}</span>
+        ),
+      },
       {
         id: "status",
         header: "Status",
@@ -541,7 +549,7 @@ export function WithdrawalRequestsPageContent() {
                     <div>
                       <span className="text-muted-foreground">Amount:</span>
                       <div className="font-medium">
-                        {formatAmount(selectedWithdrawalRequest.amount || "0")} USDT
+                        {formatAmount(selectedWithdrawalRequest.amount || "0")} USD
                       </div>
                     </div>
                     <div>
@@ -627,7 +635,7 @@ export function WithdrawalRequestsPageContent() {
                       <div>
                         <span className="text-muted-foreground">Amount: </span>
                         <span className="font-medium">
-                          {formatAmount(viewingWithdrawalRequest.amount || "0")} USDT
+                          {formatAmount(viewingWithdrawalRequest.amount || "0")} USD
                         </span>
                       </div>
                     </div>
@@ -657,6 +665,75 @@ export function WithdrawalRequestsPageContent() {
                         <span className="text-muted-foreground">No user information available</span>
                       )}
                     </div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border p-4">
+                  <p className="text-xs text-muted-foreground mb-2">Payment Information</p>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Payment Method: </span>
+                      <span className="font-medium">
+                        {viewingWithdrawalRequest.payment_method?.name || "—"}
+                      </span>
+                    </div>
+                    {viewingWithdrawalRequest.wallet_address ? (
+                      <>
+                        <div>
+                          <span className="text-muted-foreground">Wallet Address: </span>
+                          <span className="font-medium break-all font-mono text-xs">
+                            {viewingWithdrawalRequest.wallet_address}
+                          </span>
+                        </div>
+                        {viewingWithdrawalRequest.chain_id && (
+                          <div>
+                            <span className="text-muted-foreground">Chain: </span>
+                            <span className="font-medium">{viewingWithdrawalRequest.chain_id}</span>
+                          </div>
+                        )}
+                      </>
+                    ) : viewingWithdrawalRequest.bank_detail ? (
+                      <>
+                        <div>
+                          <span className="text-muted-foreground">Account Holder: </span>
+                          <span className="font-medium">{viewingWithdrawalRequest.bank_detail.account_holder_name}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Account Number: </span>
+                          <span className="font-medium font-mono">{viewingWithdrawalRequest.bank_detail.account_number}</span>
+                        </div>
+                        {viewingWithdrawalRequest.bank_detail.iban_number && (
+                          <div>
+                            <span className="text-muted-foreground">IBAN: </span>
+                            <span className="font-medium font-mono text-xs">{viewingWithdrawalRequest.bank_detail.iban_number}</span>
+                          </div>
+                        )}
+                        <div>
+                          <span className="text-muted-foreground">Bank Name: </span>
+                          <span className="font-medium">{viewingWithdrawalRequest.bank_detail.bank_name}</span>
+                        </div>
+                        {viewingWithdrawalRequest.bank_detail.swift_ifsc_code && (
+                          <div>
+                            <span className="text-muted-foreground">SWIFT/IFSC: </span>
+                            <span className="font-medium">{viewingWithdrawalRequest.bank_detail.swift_ifsc_code}</span>
+                          </div>
+                        )}
+                        {viewingWithdrawalRequest.bank_detail.address && (
+                          <div>
+                            <span className="text-muted-foreground">Address: </span>
+                            <span className="font-medium">{viewingWithdrawalRequest.bank_detail.address}</span>
+                          </div>
+                        )}
+                        {viewingWithdrawalRequest.bank_detail.country && (
+                          <div>
+                            <span className="text-muted-foreground">Country: </span>
+                            <span className="font-medium">{viewingWithdrawalRequest.bank_detail.country}</span>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">No payment details available</span>
+                    )}
                   </div>
                 </div>
 

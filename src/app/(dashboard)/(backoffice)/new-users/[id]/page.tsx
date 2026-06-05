@@ -427,7 +427,9 @@ export default function NewUserDetailPage() {
   const [withdrawalsState, setWithdrawalsState] = useState(() => createPaginatedState<AdminUserTransactionItem>());
   const [bankDetailsState, setBankDetailsState] = useState(() => createPaginatedState<AdminUserBankDetailItem>());
   const [activityState, setActivityState] = useState(() => createPaginatedState<AdminUserActivityLogItem>());
-  const [referralState, setReferralState] = useState(() => createPaginatedState<AdminUserReferralItem>());
+  const [referrer, setReferrer] = useState<AdminUserReferralItem | null>(null);
+  const [referralLoading, setReferralLoading] = useState(false);
+  const [referralError, setReferralError] = useState<unknown | null>(null);
   const [walletHistoryState, setWalletHistoryState] = useState(() => createPaginatedState<AdminUserWalletHistoryItem>());
   const [mt5AccountsState, setMt5AccountsState] = useState(() => createCollectionState<AdminUserMt5AccountItem>());
 
@@ -511,23 +513,24 @@ export default function NewUserDetailPage() {
     }
   }, [token, userUuid, id]);
 
-  const loadReferralPage = useCallback(async (page = 1) => {
+  const loadReferral = useCallback(async () => {
     if (!token || !userUuid) return;
     try {
-      setReferralState((prev) => ({ ...prev, loading: true, error: null }));
-      const response = await adminUsersApi.referralBy(userUuid, token, page, DEFAULT_PAGE_SIZE);
-      const normalized = normalizePaginatedRows(response.data);
-      setReferralState({
-        rows: normalized.rows,
-        pagination: withFallbackPagination(normalized.pagination, page, normalized.rows.length),
-        loading: false,
-        error: null,
-        loaded: true,
-      });
+      setReferralLoading(true);
+      setReferralError(null);
+      const response = await adminUsersApi.referralBy(userUuid, token, 1, DEFAULT_PAGE_SIZE);
+      const data = response?.data as Record<string, unknown> | undefined;
+      if (data && typeof data === "object" && !Array.isArray(data)) {
+        setReferrer(data as unknown as AdminUserReferralItem);
+      } else {
+        setReferrer(null);
+      }
     } catch (error) {
       console.error(`Failed to load referral data for user ${id}:`, error);
-      setReferralState((prev) => ({ ...prev, loading: false, error, loaded: true }));
+      setReferralError(error);
       toast.error(getAdminFriendlyErrorMessage(error, { resource: "referral details", action: "load" }));
+    } finally {
+      setReferralLoading(false);
     }
   }, [token, userUuid, id]);
 
@@ -562,7 +565,9 @@ export default function NewUserDetailPage() {
     setWithdrawalsState(createPaginatedState<AdminUserTransactionItem>());
     setBankDetailsState(createPaginatedState<AdminUserBankDetailItem>());
     setActivityState(createPaginatedState<AdminUserActivityLogItem>());
-    setReferralState(createPaginatedState<AdminUserReferralItem>());
+    setReferrer(null);
+    setReferralError(null);
+    setReferralLoading(false);
     setWalletHistoryState(createPaginatedState<AdminUserWalletHistoryItem>());
     setMt5AccountsState(createCollectionState<AdminUserMt5AccountItem>());
 
@@ -678,8 +683,8 @@ export default function NewUserDetailPage() {
         }
         break;
       case "referralBy":
-        if (!referralState.loaded && !referralState.loading) {
-          void loadReferralPage(1);
+        if (referrer === null && !referralLoading && !referralError) {
+          void loadReferral();
         }
         break;
       case "walletHistory":
@@ -701,12 +706,13 @@ export default function NewUserDetailPage() {
     loadActivityPage,
     loadBankDetailsPage,
     loadDepositsPage,
-    loadReferralPage,
+    loadReferral,
     loadWalletHistoryPage,
     loadWithdrawalsPage,
     loadingProfile,
-    referralState.loaded,
-    referralState.loading,
+    referralLoading,
+    referralError,
+    referrer,
     token,
     userUuid,
     walletHistoryState.loaded,
@@ -1111,25 +1117,53 @@ export default function NewUserDetailPage() {
                               <TableRow>
                                 <TableHead>Sr. No.</TableHead>
                                 <TableHead>Amount</TableHead>
-                                <TableHead>Transaction Hash</TableHead>
+                                <TableHead>Payment Method</TableHead>
+                                <TableHead>Payment Details</TableHead>
                                 <TableHead>User Comment</TableHead>
                                 <TableHead>Status</TableHead>
                                 <TableHead>Date</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {withdrawalsState.rows.map((item, index) => (
-                                <TableRow key={item.id}>
-                                  <TableCell className="font-medium">
-                                    <SerialNumberCell serialNumber={index + 1} />
-                                  </TableCell>
-                                  <TableCell>{formatNumericValue(item.amount)}</TableCell>
-                                  <TableCell className="max-w-[200px] truncate">{item.transaction_hash || "-"}</TableCell>
-                                  <TableCell className="max-w-[220px] truncate">{item.user_comment || "-"}</TableCell>
-                                  <TableCell>{statusBadge(item.status, "transaction")}</TableCell>
-                                  <TableCell>{formatDateTime(item.created_at)}</TableCell>
-                                </TableRow>
-                              ))}
+                              {withdrawalsState.rows.map((item, index) => {
+                                const raw = item as Record<string, unknown>;
+                                const isCrypto = item.payment_method?.type === "local";
+                                const isBank = item.payment_method?.type === "bank_transfer";
+                                return (
+                                  <TableRow key={item.id}>
+                                    <TableCell className="font-medium">
+                                      <SerialNumberCell serialNumber={index + 1} />
+                                    </TableCell>
+                                    <TableCell>{formatNumericValue(item.amount)}</TableCell>
+                                    <TableCell>{item.payment_method?.name || "-"}</TableCell>
+                                    <TableCell className="max-w-[220px] whitespace-normal text-xs">
+                                      {isCrypto ? (
+                                        <div className="space-y-0.5">
+                                          <div className="break-all"><span className="text-muted-foreground">Wallet: </span>{String(raw.wallet_address ?? "-")}</div>
+                                          <div><span className="text-muted-foreground">Chain: </span>{String(raw.chain_id ?? "-")}</div>
+                                        </div>
+                                      ) : isBank ? (
+                                        (() => {
+                                          const bd = raw.bank_detail as Record<string, unknown> | null | undefined;
+                                          return bd ? (
+                                            <div className="space-y-0.5">
+                                              <div><span className="text-muted-foreground">Bank: </span>{String(bd.bank_name ?? "-")}</div>
+                                              <div><span className="text-muted-foreground">Holder: </span>{String(bd.account_holder_name ?? "-")}</div>
+                                              <div><span className="text-muted-foreground">A/c: </span>{String(bd.account_number ?? "-")}</div>
+                                              <div><span className="text-muted-foreground">IFSC: </span>{String(bd.swift_ifsc_code ?? bd.iban_number ?? "-")}</div>
+                                            </div>
+                                          ) : "-";
+                                        })()
+                                      ) : (
+                                        "-"
+                                      )}
+                                    </TableCell>
+                                    <TableCell className="max-w-[220px] truncate">{item.user_comment || "-"}</TableCell>
+                                    <TableCell>{statusBadge(item.status, "transaction")}</TableCell>
+                                    <TableCell>{formatDateTime(item.created_at)}</TableCell>
+                                  </TableRow>
+                                );
+                              })}
                             </TableBody>
                           </Table>
                           <PaginationControls
@@ -1162,9 +1196,9 @@ export default function NewUserDetailPage() {
                             <TableHeader>
                               <TableRow>
                                 <TableHead>Sr. No.</TableHead>
-                                <TableHead>Account ID</TableHead>
                                 <TableHead>MT5 Login</TableHead>
                                 <TableHead>Group</TableHead>
+                                <TableHead>Balance</TableHead>
                                 <TableHead>Investor Password</TableHead>
                                 <TableHead>Main Password</TableHead>
                                 <TableHead>Created</TableHead>
@@ -1176,9 +1210,10 @@ export default function NewUserDetailPage() {
                                   <TableCell className="font-medium">
                                     <SerialNumberCell serialNumber={index + 1} />
                                   </TableCell>
-                                  <TableCell className="font-medium">{item.account_id}</TableCell>
+                                  
                                   <TableCell>{item.mt5_id || "-"}</TableCell>
                                   <TableCell className="max-w-[220px] truncate">{item.group_name || "-"}</TableCell>
+                                  <TableCell className="font-mono text-xs">{item.balance || "-"}</TableCell>
                                   <TableCell className="font-mono text-xs">{item.investor_password || "-"}</TableCell>
                                   <TableCell className="font-mono text-xs">{item.main_password || "-"}</TableCell>
                                   <TableCell>{formatDateTime(item.date)}</TableCell>
@@ -1209,6 +1244,7 @@ export default function NewUserDetailPage() {
                                 <TableHead>IBAN / IFSC</TableHead>
                                 <TableHead>Country</TableHead>
                                 <TableHead>Contact</TableHead>
+                                <TableHead>Status</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -1222,6 +1258,11 @@ export default function NewUserDetailPage() {
                                   <TableCell className="max-w-[220px] whitespace-normal">
                                     <div>{item.user?.email || "-"}</div>
                                     <div className="text-xs text-muted-foreground">{item.user?.mobile || "-"}</div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant={item.status === "active" ? "default" : "secondary"}>
+                                      {item.status || "-"}
+                                    </Badge>
                                   </TableCell>
                                 </TableRow>
                               ))}
@@ -1288,45 +1329,40 @@ export default function NewUserDetailPage() {
                     </TabsContent>
 
                     <TabsContent value="referralBy" className="space-y-4">
-                      {renderSectionState(
-                        referralState,
-                        () => {
-                          void loadReferralPage(referralState.pagination?.current_page ?? 1);
-                        },
-                        "No referrals found",
-                        "This user does not currently have any downstream referrals.",
-                        "referral data",
-                        <div className="space-y-4">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Mobile</TableHead>
-                                <TableHead>Referral Code</TableHead>
-                                <TableHead>Created</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {referralState.rows.map((item, index) => (
-                                <TableRow key={`${item.id ?? item.email ?? "ref"}-${index}`}>
-                                  <TableCell className="font-medium">{item.name || "-"}</TableCell>
-                                  <TableCell>{item.email || "-"}</TableCell>
-                                  <TableCell>{item.mobile || "-"}</TableCell>
-                                  <TableCell>{item.referral_code || "-"}</TableCell>
-                                  <TableCell>{formatDateTime(item.created_at)}</TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                          <PaginationControls
-                            pagination={referralState.pagination}
-                            loading={referralState.loading}
-                            onPageChange={(page) => {
-                              void loadReferralPage(page);
-                            }}
-                          />
-                        </div>,
+                      {referralLoading && !referrer ? (
+                        <TableSectionSkeleton columnCount={4} rowCount={1} />
+                      ) : referralError ? (
+                        <ApiErrorState
+                          error={referralError}
+                          audience="admin"
+                          variant="panel"
+                          resource="referral details"
+                          action="load"
+                          onRetry={() => void loadReferral()}
+                          title={
+                            user?.type === "manager" && getErrorHttpStatus(referralError) === 401
+                              ? "Insufficient permissions"
+                              : undefined
+                          }
+                          unauthorizedMessage={
+                            user?.type === "manager" && getErrorHttpStatus(referralError) === 401
+                              ? "Your manager role does not include access to referral details. Ask an administrator if you need it."
+                              : undefined
+                          }
+                        />
+                      ) : !referrer ? (
+                        <EmptySectionState
+                          title="No referrer found"
+                          description="This user was not referred by anyone."
+                        />
+                      ) : (
+                        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                          <DetailItem label="Name" value={referrer.name} />
+                          <DetailItem label="Email" value={referrer.email} />
+                          <DetailItem label="Mobile" value={referrer.mobile} />
+                          <DetailItem label="IB ID" value={String((referrer as Record<string, unknown>).sponsor_id ?? referrer.referral_code ?? "-")} />
+                          <DetailItem label="Since" value={formatDateTime(referrer.created_at)} />
+                        </div>
                       )}
                     </TabsContent>
 

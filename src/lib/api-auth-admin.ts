@@ -389,6 +389,7 @@ export interface AdminUserMt5AccountItem {
   investor_password?: string | null;
   main_password?: string | null;
   date?: string | null;
+  balance?: string | null;
   [key: string]: unknown;
 }
 
@@ -437,13 +438,18 @@ export interface AdminUserTransactionItem {
   admin_comment?: string | null;
   user_comment?: string | null;
   transaction_hash?: string | null;
-  payment_method?: string | null;
+  payment_method?:  {
+    id: number;
+    type: string;
+     name: string;
+  },
   mt5_id?: string | null;
   deposit_type?: string | null;
   note?: string | null;
   comment?: string | null;
   user?: AdminUserTransactionUser;
   [key: string]: unknown;
+  
 }
 
 export interface AdminUserBankDetailUser {
@@ -466,6 +472,7 @@ export interface AdminUserBankDetailItem {
   address?: string | null;
   country?: string | null;
   user?: AdminUserBankDetailUser;
+  status?: string | null;
   [key: string]: unknown;
 }
 
@@ -2943,9 +2950,19 @@ export interface AdminWithdrawalRequest {
   amount: string;
   status: "pending" | "approved" | "rejected";
   remarks: string | null;
+  admin_notes?: string | null;
   approved_by: string | null;
   approved_at: string | null;
   created_at: string;
+  wallet_address?: string | null;
+  chain_id?: string | null;
+  bank_detail_id?: number | null;
+  transaction_hash?: string | null;
+  payment_method: {
+    id: number;
+    type: string;
+    name: string;
+  };
   updated_at: string;
   user?: {
     id: number;
@@ -2953,6 +2970,16 @@ export interface AdminWithdrawalRequest {
     first_name: string | null;
     last_name: string | null;
   };
+  bank_detail?: {
+    id: number;
+    account_holder_name: string;
+    account_number: string;
+    iban_number: string | null;
+    swift_ifsc_code: string | null;
+    bank_name: string;
+    address: string | null;
+    country: string | null;
+  } | null;
 }
 
 export interface AdminWithdrawalListResponse {

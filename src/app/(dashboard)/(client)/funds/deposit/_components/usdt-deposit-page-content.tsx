@@ -1632,7 +1632,7 @@ function USDTDepositContent() {
                       {/* Bank Payment Proof Upload */}
                       <div className="space-y-2">
                         <Label htmlFor="bank-payment-proof" className="text-sm font-semibold">
-                          Payment Proof (Screenshot) <span className="text-muted-foreground text-xs">(Optional)</span>
+                          Payment Proof (Screenshot)
                         </Label>
                         {!bankPaymentProof ? (
                           <div className="rounded-lg border-2 border-dashed border-border p-4 transition-colors hover:border-primary/50">

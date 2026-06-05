@@ -140,7 +140,7 @@ export function USDTTransactionsPageContent() {
   const [depositRows, setDepositRows] = useState<AdminUSDTDepositRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
-  const [page] = useQueryState("page", parseAsInteger.withDefault(1));
+  const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
   const [search, setSearch] = useQueryState("search", parseAsString.withDefault(""));
   const [searchInput, setSearchInput] = useState(search ?? "");
@@ -201,6 +201,10 @@ export function USDTTransactionsPageContent() {
   useEffect(() => {
     setSearchInput(search ?? "");
   }, [search]);
+
+  useEffect(() => {
+    void setPage(1);
+  }, [statusFilter, depositTypeFilter, setPage]);
 
   useEffect(() => {
     const proofUrl = viewingDepositRequest?.payment_proof_url;
