@@ -1397,8 +1397,8 @@ export default function NewUserDetailPage() {
                                    <SerialNumberCell serialNumber={getPaginatedSerialNumber(index, walletHistoryState.pagination)} />
                                   </TableCell>
                                   <TableCell className="font-medium">{item.payment_type || "-"}</TableCell>
-                                  <TableCell className={Number(item.amount ?? 0) < 0 ? "text-rose-600" : "text-emerald-700 dark:text-emerald-300"}>
-                                    {formatSignedValue(item.amount)}
+                                  <TableCell className={["withdrawal", "transfer_out"].includes(String(item.payment_type ?? "").toLowerCase()) || Number(item.amount ?? 0) < 0 ? "text-rose-600" : "text-emerald-700 dark:text-emerald-300"}>
+                                    {formatSignedValue(["withdrawal", "transfer_out"].includes(String(item.payment_type ?? "").toLowerCase()) ? -Math.abs(Number(item.amount ?? 0)) : item.amount)}
                                   </TableCell>
                                   <TableCell>{item.wallet_type || "-"}</TableCell>
                                   <TableCell>{formatNumericValue(item.balance_before)}</TableCell>

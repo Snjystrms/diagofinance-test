@@ -316,8 +316,42 @@ export default function NewUsersPage() {
   const [manageSponsorTab, setManageSponsorTab] = useState<"transfer" | "remove">("transfer");
   const [selectedNewSponsorId, setSelectedNewSponsorId] = useState("");
   const [manageSponsorSubmitting, setManageSponsorSubmitting] = useState(false);
-  const [sponsorOptions, setSponsorOptions] = useState<SponsorOption[]>([]);
-  const [loadingSponsorOptions, setLoadingSponsorOptions] = useState(false);
+
+  const [sponsorSearchQuery, setSponsorSearchQuery] = useState("");
+  const [sponsorSearchResults, setSponsorSearchResults] = useState<SponsorOption[]>([]);
+  const [sponsorSearching, setSponsorSearching] = useState(false);
+
+  const handleSponsorSearch = useCallback(async (query: string) => {
+    if (!token || !manageSponsorTargetUser || !query.trim() || query.trim().length < 3) {
+      setSponsorSearchResults([]);
+      return;
+    }
+    try {
+      setSponsorSearching(true);
+      const response = await adminUsersApi.list({
+        token,
+        page: 1,
+        limit: 50,
+        search: query.trim(),
+      });
+      const results = extractUsers(response?.data ?? null)
+        .filter((user) => user.id !== manageSponsorTargetUser.id && Boolean(String(user.sponsor_id ?? "").trim()))
+        .map((user) => ({
+          id: user.id,
+          name:
+            user.name?.trim() ||
+            `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() ||
+            user.username ||
+            user.email ||
+            `User ${user.id}`,
+        }));
+      setSponsorSearchResults(results);
+    } catch {
+      setSponsorSearchResults([]);
+    } finally {
+      setSponsorSearching(false);
+    }
+  }, [token, manageSponsorTargetUser]);
 
   const createUserForm = useForm<AdminUserCreateFormData>({
     resolver: zodResolver(adminUserCreateSchema),
@@ -635,50 +669,14 @@ export default function NewUsersPage() {
     }
   }, [token, promoteTargetUser, selectedIbPlanId, loadUsers]);
 
-  const loadSponsorOptions = useCallback(async (targetUserId: number) => {
-    if (!token) {
-      setSponsorOptions([]);
-      return;
-    }
-
-    try {
-      setLoadingSponsorOptions(true);
-      const response = await adminUsersApi.list({
-        token,
-        page: 1,
-        limit: 500,
-      });
-      const available = extractUsers(response?.data ?? null)
-        .filter((user) => user.id !== targetUserId && Boolean(String(user.sponsor_id ?? "").trim()))
-        .map((user) => ({
-          id: user.id,
-          name:
-            user.name?.trim() ||
-            `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() ||
-            user.username ||
-            user.email ||
-            `User ${user.id}`,
-        }));
-
-      setSponsorOptions(available);
-    } catch (err) {
-      console.error("Failed to load sponsor options:", err);
-      toast.error(
-        getAdminFriendlyErrorMessage(err, { resource: "sponsor users", action: "load" })
-      );
-      setSponsorOptions([]);
-    } finally {
-      setLoadingSponsorOptions(false);
-    }
-  }, [token]);
-
   const handleManageSponsorOpen = useCallback((user: PendingUser) => {
     setManageSponsorTargetUser(user);
     setManageSponsorTab("transfer");
     setSelectedNewSponsorId("");
+    setSponsorSearchQuery("");
+    setSponsorSearchResults([]);
     setManageSponsorDialogOpen(true);
-    void loadSponsorOptions(user.id);
-  }, [loadSponsorOptions]);
+  }, []);
 
   const handleManageSponsorSubmit = useCallback(async () => {
     if (!token || !manageSponsorTargetUser) return;
@@ -710,7 +708,8 @@ export default function NewUsersPage() {
       setManageSponsorDialogOpen(false);
       setManageSponsorTargetUser(null);
       setSelectedNewSponsorId("");
-      setSponsorOptions([]);
+      setSponsorSearchQuery("");
+      setSponsorSearchResults([]);
       await loadUsers();
     } catch (err) {
       console.error("Failed to update sponsor:", err);
@@ -993,7 +992,8 @@ export default function NewUsersPage() {
               setManageSponsorTargetUser(null);
               setManageSponsorTab("transfer");
               setSelectedNewSponsorId("");
-              setSponsorOptions([]);
+              setSponsorSearchQuery("");
+              setSponsorSearchResults([]);
             }
           }}
         >
@@ -1017,25 +1017,43 @@ export default function NewUsersPage() {
 
               <TabsContent value="transfer" className="space-y-3">
                 <div className="space-y-2">
-                  <Label htmlFor="new-sponsor-user-id">New Sponsor</Label>
-                  <Select
-                    value={selectedNewSponsorId}
-                    onValueChange={setSelectedNewSponsorId}
-                    disabled={loadingSponsorOptions}
-                  >
-                    <SelectTrigger id="new-sponsor-user-id">
-                      <SelectValue placeholder={loadingSponsorOptions ? "Loading sponsors..." : "Select sponsor"} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {sponsorOptions.map((option) => (
-                        <SelectItem key={option.id} value={String(option.id)}>
+                  <Label htmlFor="sponsor-search">New Sponsor</Label>
+                  <ApiSearchBar
+                    value={sponsorSearchQuery}
+                    onChange={setSponsorSearchQuery}
+                    onSearch={(value) => {
+                      void handleSponsorSearch(value || "");
+                    }}
+                    placeholder="Search sponsor by name, email, or mobile"
+                    minimumLength={3}
+                    delay={300}
+                  />
+                  {sponsorSearching ? (
+                    <p className="text-xs text-muted-foreground">Searching...</p>
+                  ) : null}
+                  {!sponsorSearching && sponsorSearchQuery.length >= 3 && sponsorSearchResults.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No sponsor users found.</p>
+                  ) : null}
+                  {sponsorSearchResults.length > 0 ? (
+                    <div className="max-h-48 overflow-auto rounded-md border">
+                      {sponsorSearchResults.map((option) => (
+                        <button
+                          key={option.id}
+                          type="button"
+                          className={`w-full px-3 py-2 text-left text-sm hover:bg-accent ${
+                            selectedNewSponsorId === String(option.id) ? "bg-accent font-medium" : ""
+                          }`}
+                          onClick={() => setSelectedNewSponsorId(String(option.id))}
+                        >
                           {option.name}
-                        </SelectItem>
+                        </button>
                       ))}
-                    </SelectContent>
-                  </Select>
-                  {!loadingSponsorOptions && sponsorOptions.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">No sponsor users available.</p>
+                    </div>
+                  ) : null}
+                  {selectedNewSponsorId ? (
+                    <p className="text-xs text-muted-foreground">
+                      Selected: {sponsorSearchResults.find((o) => String(o.id) === selectedNewSponsorId)?.name ?? `Sponsor #${selectedNewSponsorId}`}
+                    </p>
                   ) : null}
                 </div>
               </TabsContent>
@@ -1056,7 +1074,8 @@ export default function NewUsersPage() {
                   setManageSponsorTargetUser(null);
                   setManageSponsorTab("transfer");
                   setSelectedNewSponsorId("");
-                  setSponsorOptions([]);
+                  setSponsorSearchQuery("");
+                  setSponsorSearchResults([]);
                 }}
                 disabled={manageSponsorSubmitting}
               >
