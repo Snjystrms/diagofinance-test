@@ -13,7 +13,6 @@ import {
   Megaphone,
   Package,
   Settings2,
-  Shield,
   TrendingUp,
   UserCheck,
   UserPlus,
@@ -106,8 +105,8 @@ export const crmData = {
   },
   teams: [
     {
-      name: "Forex CRM Platform",
-      logo: Shield,
+      name: "Vinnexia Capital",
+      logo: "/vinnexia-logo.png",
       plan: "Enterprise",
     },
   ],

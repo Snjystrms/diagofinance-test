@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import { ChevronsUpDown, Plus } from "lucide-react"
 
 import {
@@ -27,7 +28,7 @@ export function TeamSwitcher({
 }: {
   teams: {
     name: string
-    logo: React.ElementType
+    logo: React.ElementType | string
     plan: string
   }[]
   variant?: "default" | "enterprise"
@@ -61,9 +62,13 @@ export function TeamSwitcher({
                   isCollapsed && "justify-center gap-0"
                 )}
               >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-sidebar-border bg-sidebar-primary/10 text-sidebar-primary">
-                  <activeTeam.logo className="size-5" />
-                </div>
+{/* <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-sidebar-border bg-sidebar-primary/10 text-sidebar-primary"> */}
+                  {typeof activeTeam.logo === "string" ? (
+                    <Image src={activeTeam.logo} alt={activeTeam.name} width={60} height={60} className="size-10 object-contain" />
+                  ) : (
+                    <activeTeam.logo className="size-10" />
+                  )}
+                {/* </div> */}
                 {!isCollapsed && (
                   <>
                     <div className="grid flex-1 gap-0.5 text-left leading-tight">
@@ -101,7 +106,11 @@ export function TeamSwitcher({
                 className="gap-2 p-2"
               >
                 <div className="flex size-6 items-center justify-center rounded-md border">
-                  <team.logo className="size-3 shrink-0" />
+                  {typeof team.logo === "string" ? (
+                    <Image src={team.logo} alt={team.name} width={12} height={12} className="size-3 shrink-0 object-contain" />
+                  ) : (
+                    <team.logo className="size-3 shrink-0" />
+                  )}
                 </div>
                 {team.name}
                 <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>

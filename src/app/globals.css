@@ -446,6 +446,26 @@
   .crm-card-spacing {
     padding: var(--space-6);
   }
+
+  .bull-theme-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background-repeat: no-repeat;
+  }
+
+  .bull-theme-welcome-overlay {
+    background-image: url('/welcome-bull.png');
+    background-position: right center;
+    background-size: cover;
+  }
+
+  .bull-theme-wallet-overlay {
+    background-image: url('/wallet-balance-bull.png');
+    background-position: bottom right;
+    background-size: cover;
+  }
 }
 
 /* Custom scrollbar */

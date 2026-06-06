@@ -1077,10 +1077,69 @@ const themeSwatches: ThemeSwatch[] = [
         ring: "#7c3aed"
       }
     }
+  },
+  {
+    id: "golden-bull-bright",
+    name: "Golden Bull Bright",
+    leftColor: "#F5F0E6",
+    rightColor: "#E8DCC8",
+    cssVariables: {
+      primary: "#7D5B25",
+      secondary: "#CBB067",
+      accent: "#F0BD4E",
+      background: "#F5F0E6",
+      foreground: "#1A1A1A",
+      border: "#D8C8A8",
+      muted: "#EDE6D8",
+      mutedForeground: "#7A6B4F",
+      sidebar: {
+        background: "#EDE6D8",
+        foreground: "#1A1A1A",
+        primary: "#7D5B25",
+        primaryForeground: "#F5F0E6",
+        accent: "#E8DCC8",
+        accentForeground: "#7D5B25",
+        border: "#D8C8A8",
+        ring: "#CBB067"
+      }
+    }
+  },
+  {
+    id: "golden-bull-dark",
+    name: "Golden Bull Dark",
+    leftColor: "#030303",
+    rightColor: "#1A1A1A",
+    cssVariables: {
+      primary: "#CBB067",
+      secondary: "#7D5B25",
+      accent: "#F0BD4E",
+      background: "#030303",
+      foreground: "#F0F0F0",
+      border: "#2A2A2A",
+      muted: "#1A1A1A",
+      mutedForeground: "#9A9A9A",
+      sidebar: {
+        background: "#0A0A0A",
+        foreground: "#F0F0F0",
+        primary: "#CBB067",
+        primaryForeground: "#030303",
+        accent: "#1A1A1A",
+        accentForeground: "#F0BD4E",
+        border: "#2A2A2A",
+        ring: "#CBB067"
+      }
+    }
   }
 ]
 
 const swatchById = new Map(themeSwatches.map((swatch) => [swatch.id, swatch]))
+
+export function isGoldenBullTheme(pairId: string, mode?: ThemeMode): boolean {
+  const pair = themePairs.find((p) => p.id === pairId)
+  if (!pair) return false
+  const themeId = mode === "dark" ? pair.darkThemeId : pair.brightThemeId
+  return themeId === "golden-bull-dark" || themeId === "golden-bull-bright"
+}
 
 export const themePairs: ThemePair[] = [
   { id: "clean-slate", name: "Clean Slate", brightThemeId: "default", darkThemeId: "charcoal" },
@@ -1106,7 +1165,8 @@ export const themePairs: ThemePair[] = [
   { id: "nord-tundra", name: "Nord Tundra", brightThemeId: "nord-aurora", darkThemeId: "nordic-frost" },
   { id: "solar-abyss", name: "Solar Abyss", brightThemeId: "solar-flare", darkThemeId: "oceanic-abyss" },
   { id: "synth-graphite", name: "Synth Graphite", brightThemeId: "synthwave-84", darkThemeId: "graphite" },
-  { id: "gold-obsidian", name: "Gold Obsidian", brightThemeId: "rose-gold-dark", darkThemeId: "monokai-pro" }
+  { id: "gold-obsidian", name: "Gold Obsidian", brightThemeId: "rose-gold-dark", darkThemeId: "monokai-pro" },
+  { id: "golden-bull", name: "Golden Bull", brightThemeId: "golden-bull-bright", darkThemeId: "golden-bull-dark" }
 ]
 
 const defaultThemePair = themePairs[0]
