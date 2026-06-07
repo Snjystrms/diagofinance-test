@@ -6,15 +6,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { resetPasswordSchema, type ResetPasswordFormData } from '@/lib/validations';
 import { useAuthMutations } from '@/hooks/use-auth-mutations';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { ProtectedRoute } from '@/components/protected-route';
 import { Spinner } from '@/components/ui/spinner';
 import Link from 'next/link';
-import Image from 'next/image';
-import { Key, ArrowLeft } from 'lucide-react';
+import { Key, ArrowLeft, CheckCircle } from 'lucide-react';
 import { PasswordInput } from '@/components/password-input';
+import { AuthLayout } from '@/app/(auth)/_components/auth-layout';
 
 export function ResetPasswordTokenClient() {
   const router = useRouter();
@@ -33,7 +31,6 @@ export function ResetPasswordTokenClient() {
     },
   });
 
-  // Set the token from URL params
   useEffect(() => {
     if (token) {
       form.setValue('token', token);
@@ -45,7 +42,6 @@ export function ResetPasswordTokenClient() {
     try {
       await resetPasswordMutation.mutateAsync(data);
       setIsSuccess(true);
-      // Redirect to login after 3 seconds
       setTimeout(() => {
         router.push('/login');
       }, 3000);
@@ -59,134 +55,140 @@ export function ResetPasswordTokenClient() {
   if (isSuccess) {
     return (
       <ProtectedRoute requireAuth={false}>
-        <div className="min-h-screen flex">
-          <div className="hidden lg:flex lg:w-2/5 relative bg-background">
-            <Image
-              src="/loginbackground.png"
-              alt="Reset password background"
-              fill
-              className="object-cover"
-              priority
-            />
-          </div>
-          <div className="flex-1 flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
-            <div className="max-w-md w-full space-y-8">
-              <div className="text-center">
-                <div className="mx-auto flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-6">
-                  <Key className="h-8 w-8 text-green-600" />
-                </div>
-                <h1 className="text-3xl font-bold text-foreground mb-2">
-                  Password Reset Successful!
-                </h1>
-                <p className="text-muted-foreground text-lg">
-                  Your password has been successfully reset. You can now log in with your new password.
-                </p>
-                <div className="mt-6">
-                  <Button asChild>
-                    <Link href="/login">
-                      <ArrowLeft className="h-4 w-4 mr-2" />
-                      Back to Login
-                    </Link>
-                  </Button>
-                </div>
-              </div>
+        <AuthLayout>
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-full mb-6"
+              style={{ background: 'rgba(34,197,94,0.15)' }}>
+              <CheckCircle className="h-8 w-8 text-green-400" />
+            </div>
+            <h1 className="text-3xl font-bold text-white mb-2">
+              Password Reset Successful!
+            </h1>
+            <p className="text-white/40 text-lg">
+              Your password has been successfully reset. You can now log in with your new password.
+            </p>
+            <div className="mt-6">
+              <Link
+                href="/login"
+                className="
+                  inline-flex items-center gap-2
+                  px-6 py-2.5 rounded-lg text-sm font-semibold
+                  bg-[#FFB800] text-black
+                  hover:bg-[#FFB800]/90
+                  transition-all
+                  shadow-[0_0_20px_rgba(255,184,0,0.2)]
+                "
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Login
+              </Link>
             </div>
           </div>
-        </div>
+        </AuthLayout>
       </ProtectedRoute>
     );
   }
 
   return (
     <ProtectedRoute requireAuth={false}>
-      <div className="min-h-screen flex">
-        <div className="hidden lg:flex lg:w-2/5 relative bg-background">
-          <Image
-            src="/loginbackground.png"
-            alt="Reset password background"
-            fill
-            className="object-cover"
-            priority
-          />
+      <AuthLayout>
+        <div className="text-center">
+          <h2 className="mt-6 text-3xl font-extrabold text-white">
+            Reset your password
+          </h2>
+          <p className="mt-2 text-sm text-white/40">
+            Enter your new password below
+          </p>
         </div>
-        <div className="flex-1 flex items-center justify-center bg-background py-12 px-4 sm:px-6 lg:px-8">
-          <div className="max-w-md w-full space-y-8">
-            <div className="text-center">
-              <h2 className="mt-6 text-3xl font-extrabold text-foreground">
-                Reset your password
-              </h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Enter your new password below
-              </p>
+
+        {/* Card with gold border accent */}
+        <div
+          className="rounded-xl border border-[#FFB800]/20 bg-[#0f0f0f] overflow-hidden"
+          style={{ boxShadow: '0 0 0 1px rgba(255,184,0,0.08), 0 24px 60px rgba(0,0,0,0.6)' }}
+        >
+          {/* Gold top bar accent */}
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-[#FFB800]/60 to-transparent" />
+
+          <div className="px-8 pt-7 pb-2">
+            <div className="flex items-center gap-2 mb-1">
+              <Key className="h-5 w-5 text-[#FFB800]" />
+              <h3 className="text-white font-semibold text-lg">Reset Password</h3>
             </div>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Reset Password</CardTitle>
-                <CardDescription>
-                  Please enter your new password
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                    <FormField
-                      control={form.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>New Password</FormLabel>
-                          <FormControl>
-                            <PasswordInput
-                              placeholder="Enter your new password"
-                              autoComplete="new-password"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="confirm_password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Confirm New Password</FormLabel>
-                          <FormControl>
-                            <PasswordInput
-                              placeholder="Confirm your new password"
-                              autoComplete="new-password"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      disabled={isLoading}
-                    >
-                      {isLoading ? (
-                        <>
-                          <Spinner size="sm" className="mr-2" />
-                          Resetting Password...
-                        </>
-                      ) : (
-                        'Reset Password'
-                      )}
-                    </Button>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
+            <p className="text-white/40 text-sm mt-0.5">
+              Please enter your new password
+            </p>
           </div>
+
+          <div className="px-8 pb-8 pt-4">
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-white/70 text-sm">New Password</FormLabel>
+                      <FormControl>
+                        <PasswordInput
+                          placeholder="Enter your new password"
+                          autoComplete="new-password"
+                          {...field}
+                          className="w-full bg-[#1a1a1a] border border-[#FFB800]/20 rounded-lg text-white placeholder:text-white/20 text-sm px-4 py-2.5 outline-none focus:border-[#FFB800]/50 focus:ring-1 focus:ring-[#FFB800]/15 transition-all"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-red-400 text-xs" />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="confirm_password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-white/70 text-sm">Confirm New Password</FormLabel>
+                      <FormControl>
+                        <PasswordInput
+                          placeholder="Confirm your new password"
+                          autoComplete="new-password"
+                          {...field}
+                          className="w-full bg-[#1a1a1a] border border-[#FFB800]/20 rounded-lg text-white placeholder:text-white/20 text-sm px-4 py-2.5 outline-none focus:border-[#FFB800]/50 focus:ring-1 focus:ring-[#FFB800]/15 transition-all"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-red-400 text-xs" />
+                    </FormItem>
+                  )}
+                />
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="
+                    w-full py-3 rounded-lg text-sm font-bold tracking-wide
+                    bg-[#FFB800] text-black
+                    hover:bg-[#FFB800]/90
+                    disabled:opacity-40 disabled:cursor-not-allowed
+                    transition-all flex items-center justify-center gap-2
+                    shadow-[0_0_20px_rgba(255,184,0,0.2)]
+                  "
+                >
+                  {isLoading ? (
+                    <>
+                      <Spinner size="sm" className="border-black/40" />
+                      Resetting Password...
+                    </>
+                  ) : (
+                    'Reset Password'
+                  )}
+                </button>
+              </form>
+            </Form>
+          </div>
+
+          {/* Gold bottom bar accent */}
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-[#FFB800]/30 to-transparent" />
         </div>
-      </div>
+      </AuthLayout>
     </ProtectedRoute>
   );
 }

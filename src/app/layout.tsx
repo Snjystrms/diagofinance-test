@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Geist_Mono } from "next/font/google";
+import { Inter, Geist_Mono, Cinzel, Arvo } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 import { QueryProvider } from "@/components/query-provider";
@@ -16,6 +16,18 @@ const interSans = Inter({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const cinzel = Cinzel({
+  variable: "--font-cinzel",
+  subsets: ["latin"],
+  weight: ["400", "700", "900"],
+});
+
+const arvo = Arvo({
+  variable: "--font-arvo",
+  subsets: ["latin"],
+  weight: ["400", "700"],
 });
 
 export const metadata: Metadata = {
@@ -47,7 +59,7 @@ export default function RootLayout({
       </head>
       <body
         suppressHydrationWarning
-        className={`${interSans.variable} ${geistMono.variable} antialiased`}
+        className={`${interSans.variable} ${geistMono.variable} ${cinzel.variable} ${arvo.variable} antialiased`}
       >
         <NuqsAdapter>
         <QueryProvider>

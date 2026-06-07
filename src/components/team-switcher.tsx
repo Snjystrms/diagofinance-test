@@ -77,10 +77,12 @@ export function TeamSwitcher({
                           {roleLabel ?? "Workspace"}
                         </span>
                       )}
-                      <span className="truncate text-sm font-semibold text-sidebar-foreground">
+                      <span
+                        className="truncate font-cinzel text-[11px] font-bold uppercase tracking-[0.2em] text-transparent [-webkit-text-stroke:0.5px_white] [text-shadow:0_0_4px_rgba(255,255,255,0.25)]"
+                      >
                         {activeTeam.name}
                       </span>
-                      <span className="truncate text-[12px] text-sidebar-foreground/65">
+                      <span className="truncate font-arvo text-[10px] font-bold tracking-wide text-[#FFB800]">
                         {activeTeam.plan}
                       </span>
                     </div>

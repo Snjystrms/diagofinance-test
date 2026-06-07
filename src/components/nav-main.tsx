@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils"
 export function NavMain({
   items,
   variant = "default",
-  sectionLabel = "Platform",
+  sectionLabel = "Overview",
 }: {
   items: {
     title: string
@@ -87,14 +87,15 @@ export function NavMain({
           const isActive = isDirectActive || hasActiveSubItem
           const topLevelButtonClass = isEnterprise
             ? cn(
-                "group h-11 rounded-xl px-3.5 text-[15px] font-medium tracking-[-0.01em] text-sidebar-foreground transition-all duration-300 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[inset_0_0_0_1px_hsl(var(--sidebar-border))] data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground [&>svg]:size-[18px] [&>svg]:shrink-0 [&>svg]:text-sidebar-foreground/55",
-                hasActiveSubItem && !isDirectActive && "bg-sidebar-accent/75 text-sidebar-accent-foreground shadow-[inset_0_0_0_1px_hsl(var(--sidebar-border))] [&>svg]:text-sidebar-accent-foreground",
-                isDirectActive && "bg-sidebar-primary text-sidebar-primary-foreground shadow-[inset_0_0_0_1px_hsl(var(--sidebar-primary))] [&>svg]:text-sidebar-primary-foreground",
+                "group h-11 rounded-xl px-3.5 text-[15px] font-medium tracking-[-0.01em] text-sidebar-foreground transition-all duration-300 [&>svg]:size-[18px] [&>svg]:shrink-0 [&>svg]:text-sidebar-foreground/55",
+                !isActive && "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground",
+                hasActiveSubItem && !isDirectActive && "bg-sidebar-primary/[0.08] text-sidebar-foreground [&>svg]:text-sidebar-primary/70 hover:bg-sidebar-primary/15",
+                isDirectActive && "bg-sidebar-primary/20 text-sidebar-primary font-semibold ring-1 ring-inset ring-sidebar-primary/50 shadow-lg shadow-sidebar-primary/25 [&>svg]:text-sidebar-primary hover:bg-sidebar-primary/30 hover:text-sidebar-primary",
                 isCollapsed && "justify-center px-0"
               )
             : isActive
-              ? "bg-[#ffffff0f] text-sidebar-accent-foreground font-semibold border-l-[3px] border-sidebar-primary [&>span]:font-semibold [&>svg]:opacity-100 [&>svg]:size-6"
-              : "[&>svg]:size-6"
+              ? "bg-sidebar-primary/10 text-sidebar-foreground font-semibold border-l-[3px] border-sidebar-primary [&>span]:font-semibold [&>svg]:text-sidebar-primary [&>svg]:opacity-100 [&>svg]:size-6"
+              : "[&>svg]:size-6 [&>svg]:text-sidebar-foreground/55"
           
           return (
             <Collapsible
@@ -109,7 +110,6 @@ export function NavMain({
                     tooltip={item.title}
                     asChild={!hasSubItems}
                     size="default"
-                    isActive={isActive}
                     className={topLevelButtonClass}
                   >
                     {hasSubItems ? (
@@ -187,14 +187,16 @@ export function NavMain({
                             <SidebarMenuSubButton 
                               asChild
                               size="md"
-                              isActive={isSubActive}
                               className={cn(
                                 isEnterprise
                                   ? "h-9 rounded-lg px-3 text-[14px] font-medium tracking-[-0.01em] text-sidebar-foreground/70 transition-all duration-300 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                                  : "text-sm",
+                                  : cn(
+                                      "text-sm transition-colors duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                                      isSubActive && "bg-sidebar-primary/10 font-semibold text-sidebar-primary [&>span]:font-semibold"
+                                    ),
                                 isEnterprise &&
                                   isSubActive &&
-                                  "bg-sidebar-primary text-sidebar-primary-foreground shadow-[inset_0_0_0_1px_hsl(var(--sidebar-primary))]"
+                                  "bg-sidebar-primary/20 text-sidebar-primary font-semibold ring-1 ring-inset ring-sidebar-primary/40 shadow-md shadow-sidebar-primary/20 hover:bg-sidebar-primary/25"
                               )}
                             >
                               <Link href={subItem.url}>

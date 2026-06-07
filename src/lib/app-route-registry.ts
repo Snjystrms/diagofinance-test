@@ -107,7 +107,7 @@ export const crmData = {
     {
       name: "Vinnexia Capital",
       logo: "/vinnexia-logo.png",
-      plan: "Enterprise",
+      plan: "Precision, Power, Performance.",
     },
   ],
 };
