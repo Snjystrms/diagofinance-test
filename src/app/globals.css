@@ -458,15 +458,23 @@
   }
 
   .bull-theme-welcome-overlay {
-    background-image: url('/welcome-bull.png');
+    background-image: url('/welcome-bull-light.png');
     background-position: right center;
     background-size: cover;
   }
 
   .bull-theme-wallet-overlay {
-    background-image: url('/wallet-balance-bull.png');
+    background-image: url('/wallet-balance-bull-bright.png');
     background-position: bottom right;
     background-size: cover;
+  }
+
+  .dark .bull-theme-welcome-overlay {
+    background-image: url('/welcome-bull.png');
+  }
+
+  .dark .bull-theme-wallet-overlay {
+    background-image: url('/wallet-balance-bull.png');
   }
 }
 

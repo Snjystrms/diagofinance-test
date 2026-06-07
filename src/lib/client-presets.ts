@@ -41,7 +41,7 @@ export const defaultClientPreset: ClientPreset = {
   id: "default",
   name: "Default CRM Preset",
   themeId: "lavender",
-  themePairId: "midnight-ivory",
+  themePairId: "golden-bull",
   themeMode: "bright",
   sidebarId: "default",
   dashboards: {
@@ -69,7 +69,7 @@ const clientPresets: Record<string, ClientPreset> = {
     id: "client-a",
     name: "Client A Preset",
     themeId: "lavender",
-    themePairId: "midnight-ivory",
+    themePairId: "golden-bull",
     themeMode: "bright",
     sidebarId: "two-panel",
     dashboards: {
