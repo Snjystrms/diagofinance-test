@@ -40,7 +40,7 @@ export const getDashboardHiddenStorageKey = (area: DashboardArea) =>
 export const defaultClientPreset: ClientPreset = {
   id: "default",
   name: "Default CRM Preset",
-  themeId: "lavender",
+  themeId: "golden-bull-dark",
   themePairId: "golden-bull",
   themeMode: "bright",
   sidebarId: "default",
@@ -68,7 +68,7 @@ const clientPresets: Record<string, ClientPreset> = {
   "client-a": {
     id: "client-a",
     name: "Client A Preset",
-    themeId: "lavender",
+    themeId: "golden-bull-dark",
     themePairId: "golden-bull",
     themeMode: "bright",
     sidebarId: "two-panel",
