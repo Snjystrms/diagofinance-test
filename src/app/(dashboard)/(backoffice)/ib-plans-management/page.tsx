@@ -3,7 +3,7 @@
 import { useCallback, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { Award, ChevronDown, Download, RefreshCw } from "lucide-react";
+import { Award, ChevronDown, Download, Plus, RefreshCw } from "lucide-react";
 import * as XLSX from "xlsx";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
@@ -223,6 +223,7 @@ export default function IbPlansManagementPage() {
   const queryClient = useQueryClient();
   const [viewOpen, setViewOpen] = useState(false);
   const [viewItem, setViewItem] = useState<IbPlanRow | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const {
     data: plansResult,
@@ -472,7 +473,7 @@ export default function IbPlansManagementPage() {
   return (
     <ProtectedRoute>
       <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
-        <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
               <Award className="h-6 w-6 text-primary" />
@@ -500,6 +501,10 @@ export default function IbPlansManagementPage() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add New
+            </Button>
             <Button variant="outline" onClick={() => void refetch()} disabled={loading}>
               <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               Refresh
@@ -515,6 +520,7 @@ export default function IbPlansManagementPage() {
           title=""
           description=""
           requiredModule="ibPlan"
+          hideAddButton={true}
           onAdd={async (partial) => {
             const { id: _ignored, ...rest } = partial as Partial<IbPlanRow>;
             return handleAdd(rest as Omit<IbPlanRow, "id">);
@@ -526,6 +532,19 @@ export default function IbPlansManagementPage() {
           }}
           onFetchItem={fetchPlanDetail}
           rowIsReadOnly={() => false}
+        />
+
+        <IbPlanForm
+          open={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
+          initialData={null}
+          onSubmit={async (data) => {
+            const { id: _ignored, ...rest } = data;
+            await handleAdd(rest as Omit<IbPlanRow, "id">);
+            setIsCreateDialogOpen(false);
+          }}
+          accountTypeOptions={accountTypesResult}
+          loadAccountTypeById={fetchAccountTypeDetail}
         />
 
         <IbPlanForm

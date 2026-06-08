@@ -20,7 +20,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChevronDown, Download, Package, RefreshCw } from "lucide-react";
+import { ChevronDown, Download, Package, Plus, RefreshCw } from "lucide-react";
 import * as XLSX from "xlsx";
 import {
   adminAccountTypesApi,
@@ -316,6 +316,7 @@ export default function AllAccountsPage() {
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
   const [viewItem, setViewItem] = useState<AccountTypeRow | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   // filters
   const [statusFilter, setStatusFilter] = useState<"all" | "true" | "false">("all");
@@ -575,7 +576,7 @@ export default function AllAccountsPage() {
     <ProtectedRoute>
       
         <div className="container mx-auto px-4 md:px-6 lg:px-8 py-10">
-          <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
                 <Package className="h-6 w-6 text-primary" />
@@ -603,6 +604,10 @@ export default function AllAccountsPage() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <Button onClick={() => setIsCreateDialogOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Add New
+              </Button>
               <Button variant="outline" onClick={() => void fetchList()} disabled={loading}>
                 <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                 Refresh
@@ -665,9 +670,10 @@ export default function AllAccountsPage() {
             initialData={data}
             columns={columns}
             formComponent={AccountTypeForm}
-            title="All Accounts"
-            description="Create, update, and manage account types"
+            title=""
+            description=""
             requiredModule="account-types"
+            hideAddButton={true}
             onAdd={async (partial) => {
               const { id: _ignore, ...rest } = partial as Partial<AccountTypeRow>;
               return handleAdd(rest as Omit<AccountTypeRow, "id">);
@@ -679,6 +685,17 @@ export default function AllAccountsPage() {
             }}
             onFetchItem={fetchAccountTypeDetail}
             rowIsReadOnly={() => false}
+          />
+
+          <AccountTypeForm
+            open={isCreateDialogOpen}
+            onOpenChange={setIsCreateDialogOpen}
+            initialData={null}
+            onSubmit={async (data) => {
+              const { id: _ignore, ...rest } = data as Partial<AccountTypeRow>;
+              await handleAdd(rest as Omit<AccountTypeRow, "id">);
+              setIsCreateDialogOpen(false);
+            }}
           />
 
           <AccountTypeForm

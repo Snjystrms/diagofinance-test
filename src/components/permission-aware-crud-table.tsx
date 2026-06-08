@@ -43,7 +43,7 @@ export function PermissionAwareCrudDataTable<T extends { id: string }>({
   onUpdate,
   onDelete,
   rowIsReadOnly,
-  hideAddButton = false, // ✅ default false
+  hideAddButton = false,
   onFetchItem,
   onView,
 }: PermissionAwareCrudDataTableProps<T>) {

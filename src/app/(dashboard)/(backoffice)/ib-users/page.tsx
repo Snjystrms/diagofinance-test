@@ -983,10 +983,10 @@ export default function IbUsersPage() {
       return (
         <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center">
           <div className="rounded-full bg-muted px-4 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            No IB Users
+            No Partner Users
           </div>
           <p className="max-w-md text-sm text-muted-foreground">
-            There are currently no IB users matching your filters. Adjust the
+            There are currently no Partner users matching your filters. Adjust the
             filters or refresh to check for new users.
           </p>
           <div className="flex flex-wrap gap-2">

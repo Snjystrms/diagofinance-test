@@ -174,9 +174,9 @@ export function AdminTransactionContent() {
     {
       id: "transaction_type",
       accessorKey: "transaction_type",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Transaction Type" />,
       cell: ({ row }) => (
-        <span className="text-sm capitalize">{transactionTypeLabel(row.original.transaction_type)}</span>
+        <span className="text-sm capitalize">{transactionTypeLabel(row.original.transaction_category)}</span>
       ),
     },
     {
@@ -213,14 +213,6 @@ export function AdminTransactionContent() {
       header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
       cell: ({ row }) => statusBadge(row.original.status),
     },
-    {
-      id: "reference_type",
-      header: "Reference",
-      accessorKey: "reference_type",
-      cell: ({ row }) => (
-        <span className="text-sm capitalize">{row.original.reference_type?.replace(/_/g, " ") || "-"}</span>
-      ),
-    },
      {
       id: "transaction_hash",
       header: "Transaction Hash",
@@ -230,12 +222,12 @@ export function AdminTransactionContent() {
       ),
     },
     {
-      id: "description",
-      header: "Description",
-      accessorKey: "description",
+      id: "admin_notes",
+      header: "Admin Notes",
+      accessorKey: "admin_notes",
       cell: ({ row }) => (
-        <span className="max-w-[200px] truncate text-sm text-muted-foreground" title={row.original.description}>
-          {row.original.description || "-"}
+        <span className="max-w-[200px] truncate text-sm text-muted-foreground">
+          {row.original.admin_notes || "-"}
         </span>
       ),
     },

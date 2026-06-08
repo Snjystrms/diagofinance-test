@@ -658,7 +658,7 @@ export default function IbManagementPage() {
           error={loadError}
           audience="admin"
           variant="panel"
-          resource="IB requests"
+          resource="Partner requests"
           action="load"
           onRetry={() => {
             void loadRequests();
@@ -675,10 +675,10 @@ export default function IbManagementPage() {
       return (
         <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center">
           <div className="rounded-full bg-muted px-4 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            No IB Requests
+            No Partner Requests
           </div>
           <p className="max-w-md text-sm text-muted-foreground">
-            There are currently no Introducing Broker requests matching your filters. Adjust the
+            There are currently no Partner requests matching your filters. Adjust the
             filters or refresh to check for new submissions.
           </p>
           <Button variant="outline" onClick={loadRequests} disabled={loading}>

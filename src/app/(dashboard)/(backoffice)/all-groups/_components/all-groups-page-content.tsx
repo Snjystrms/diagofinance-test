@@ -416,10 +416,10 @@ export function AllGroupsPageContent() {
 
         <Card>
           <CardHeader className="gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
+            {/* <div>
               <CardTitle>Group List</CardTitle>
               <CardDescription>Search by group name, MT5 group name, or ID.</CardDescription>
-            </div>
+            </div> */}
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="relative max-w-md">

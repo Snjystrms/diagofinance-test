@@ -2797,7 +2797,7 @@ export interface AdminUSDTDepositVerifyResponse {
 }
 
 export const adminUSDTDepositApi = {
-  listAll: (page: number = 1, limit: number = 10, token: string, search?: string, status?: string) => {
+  listAll: (page: number = 1, limit: number = 10, token: string, search?: string, status?: string, depositType?: string | null) => {
     const qs = new URLSearchParams();
     qs.set("page", String(page));
     qs.set("limit", String(limit));
@@ -2806,6 +2806,9 @@ export const adminUSDTDepositApi = {
     }
     if (status && status !== "all") {
       qs.set("status", status);
+    }
+    if (depositType && depositType !== "all" && depositType !== "none") {
+      qs.set("deposit_type", depositType);
     }
     
     return apiCall<AdminUSDTDepositListResponse>(`/admin/deposits/all?${qs.toString()}`, {

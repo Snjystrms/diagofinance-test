@@ -145,7 +145,7 @@ export function USDTTransactionsPageContent() {
   const [searchInput, setSearchInput] = useState<string>(search ?? "");
   const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useQueryState("status", parseAsString.withDefault("all"));
-  const [depositTypeFilter, setDepositTypeFilter] = useState<"all" | "bank" | "usd">("all");
+  const [depositTypeFilter, setDepositTypeFilter] = useQueryState("deposit_type", parseAsString.withDefault("all"));
 
   // View details dialog state
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -167,7 +167,8 @@ export function USDTTransactionsPageContent() {
       const searchTerm =
         typeof search === "string" && search.trim().length >= 3 ? search.trim() : undefined;
       const statusParam = statusFilter !== "all" && statusFilter !== "none" ? statusFilter : undefined;
-      const res = await adminUSDTDepositApi.listAll(page, perPage, token, searchTerm, statusParam);
+      const depositTypeParam = depositTypeFilter !== "all" && depositTypeFilter !== "none" ? depositTypeFilter : undefined;
+      const res = await adminUSDTDepositApi.listAll(page, perPage, token, searchTerm, statusParam, depositTypeParam);
       if (currentRequestId !== requestIdRef.current) return;
       const requests = res?.data?.deposits ?? [];
       setDepositRows(requests);
@@ -187,7 +188,7 @@ export function USDTTransactionsPageContent() {
       );
       setDepositRows([]);
     }
-  }, [token, page, perPage, search, statusFilter]);
+  }, [token, page, perPage, search, statusFilter, depositTypeFilter]);
 
   const loadList = useCallback(async () => {
     if (!token) return;
@@ -282,16 +283,6 @@ export function USDTTransactionsPageContent() {
       setStatusFilter(nextFilter);
     }
   }, [isManager, depositStatusFeatureOptions, allowedStatusValues, statusFilter]);
-
-  const filteredRows = useMemo(() => {
-    if (depositTypeFilter === "all") {
-      return depositRows;
-    }
-    return depositRows.filter(
-      (row) =>
-        ((row.deposit_type || "").toLowerCase() === depositTypeFilter)
-    );
-  }, [depositRows, depositTypeFilter]);
 
   const showAllStatusOption = isAdmin || !isManager || depositStatusFeatureOptions.length > 1;
 
@@ -568,7 +559,7 @@ export function USDTTransactionsPageContent() {
               <Select
                 value={depositTypeFilter}
                 onValueChange={(value) =>
-                  setDepositTypeFilter(value as "all" | "bank" | "usd")
+                  setDepositTypeFilter(value)
                 }
               >
                 <SelectTrigger id="deposit-type-filter" className="w-[180px]">
@@ -584,7 +575,7 @@ export function USDTTransactionsPageContent() {
           </div>
 
           <AppDataTable<AdminUSDTDepositRequest>
-            data={filteredRows}
+            data={depositRows}
             columns={depositColumns}
             pageCount={totalPages}
             getRowId={(row) => String(row.id)}

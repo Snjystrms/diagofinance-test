@@ -38,6 +38,7 @@ export interface AdminTransactionItem {
   user: AdminTransactionUser;
   transaction_category: string;
   original_model: string;
+  admin_notes: string | null;
 }
 
 export interface AdminTransactionPagination {
