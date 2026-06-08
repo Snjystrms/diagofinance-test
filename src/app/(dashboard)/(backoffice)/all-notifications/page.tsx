@@ -455,8 +455,8 @@ export default function AllNotificationsPage() {
                   Mark All as Read
                 </Button>
               )}
-              <Button variant="outline" onClick={loadNotifications} className="flex items-center gap-2">
-                <RefreshCw className="h-4 w-4" />
+              <Button variant="outline" onClick={() => void loadNotifications()} disabled={loading}>
+                <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                 Refresh
               </Button>
             </div>

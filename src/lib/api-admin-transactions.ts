@@ -64,7 +64,7 @@ export interface AdminTransactionsFiltersApplied {
   date_to: string | null;
   amount_min: number | null;
   amount_max: number | null;
-  search_user: string | null;
+  search: string | null;
   sort_by: string;
   sort_order: string;
 }
@@ -88,7 +88,7 @@ export interface AdminTransactionsAllParams {
   date_to?: string | null;
   amount_min?: number | null;
   amount_max?: number | null;
-  search_user?: string | null;
+  search?: string | null;
   sort_by?: string | null;
   sort_order?: string | null;
 }
@@ -195,7 +195,7 @@ export const adminTransactionsApi = {
     if (queryParams.amount_max !== undefined && queryParams.amount_max !== null) {
       qs.set("amount_max", String(queryParams.amount_max));
     }
-    if (queryParams.search_user) qs.set("search_user", queryParams.search_user);
+    if (queryParams.search) qs.set("search", queryParams.search);
 
     const endpoint = `/admin/transactions/all?${qs.toString()}`;
 

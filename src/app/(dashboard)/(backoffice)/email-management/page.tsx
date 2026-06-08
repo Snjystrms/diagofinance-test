@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useDeferredValue, useMemo } from "react";
+import { useState, useRef, useDeferredValue, useMemo, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -49,6 +49,7 @@ import {
   Clock,
   FileImage,
   ExternalLink,
+  RefreshCw,
 } from "lucide-react";
 
 export default function EmailManagementPage() {
@@ -344,14 +345,30 @@ export default function EmailManagementPage() {
   return (
     <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8 space-y-6">
       {/* Header */}
-      <div className="space-y-1">
-        <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-          <Mail className="h-6 w-6 text-primary" />
-          Email Management
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Broadcast emails to clients and manage the exclusion list of addresses that should never receive emails.
-        </p>
+      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div className="space-y-1">
+          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+            <Mail className="h-6 w-6 text-primary" />
+            Email Management
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Broadcast emails to clients and manage the exclusion list of addresses that should never receive emails.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              void queryClient.invalidateQueries({ queryKey: ["broadcast-email-history", token] });
+              void queryClient.invalidateQueries({ queryKey: ["email-exclusions", token] });
+              void queryClient.invalidateQueries({ queryKey: ["email-mgmt-users", token] });
+            }}
+            disabled={historyQuery.isLoading || exclusionsQuery.isLoading}
+          >
+            <RefreshCw className={`mr-2 h-4 w-4 ${historyQuery.isLoading || exclusionsQuery.isLoading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       <Tabs

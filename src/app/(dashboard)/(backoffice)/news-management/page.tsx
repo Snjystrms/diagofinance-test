@@ -432,13 +432,11 @@ export default function NewsManagementPage() {
             ) : null}
             <Button
               variant="outline"
-              size="icon"
-              onClick={() => refetch()}
+              onClick={() => void refetch()}
               disabled={isLoading}
-              title="Refresh"
-              aria-label="Refresh"
             >
-              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+              Refresh
             </Button>
           </div>
         </div>

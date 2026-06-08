@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
 import {
@@ -13,14 +13,12 @@ import {
   ArrowUpFromLine,
   TrendingUp,
   Banknote,
-  Search,
-  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -80,6 +78,8 @@ export function AdminTransactionContent() {
   const [withdrawalDialogOpen, setWithdrawalDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
 
+  const requestIdRef = useRef(0);
+
   useEffect(() => {
     setSearchInput(searchUser || "");
   }, [searchUser]);
@@ -89,9 +89,15 @@ export function AdminTransactionContent() {
       setLoading(false);
       return;
     }
+    const currentRequestId = ++requestIdRef.current;
     try {
       setLoading(true);
       setLoadError(null);
+      setRows([]);
+      const searchTerm =
+        typeof searchUser === "string" && searchUser.trim().length >= 3
+          ? searchUser.trim()
+          : undefined;
       const [txRes, statsRes] = await Promise.all([
         adminTransactionsApi.all({
           token,
@@ -99,42 +105,35 @@ export function AdminTransactionContent() {
           limit: perPage,
           sort_by: "created_at",
           sort_order: "DESC",
-          search_user: searchUser || undefined,
+          search: searchTerm,
           transaction_type: (typeFilter as AdminTransactionItem["transaction_type"]) || undefined,
           status: (statusFilter as AdminTransactionItem["status"]) || undefined,
         }),
         adminTransactionsApi.stats(token),
       ]);
-      const txPayload = (txRes as { data?: AdminTransactionsAllData }).data;
+      if (currentRequestId !== requestIdRef.current) return;
+      const txPayload = txRes.data;
       const txItems = Array.isArray(txPayload?.transactions) ? txPayload.transactions : [];
       setRows(txItems);
       setTotalPages(txPayload?.pagination?.total_pages ?? 1);
       setTotalRecords(txPayload?.pagination?.total_records ?? txItems.length);
-      const statsPayload = (statsRes as { data?: AdminTransactionStatsData }).data;
+      const statsPayload = statsRes.data;
       setStats(statsPayload ?? null);
     } catch (error: unknown) {
+      if (currentRequestId !== requestIdRef.current) return;
       setLoadError(error);
       setRows([]);
       toast.error(getAdminFriendlyErrorMessage(error, { resource: "transactions", action: "load" }));
     } finally {
-      setLoading(false);
+      if (currentRequestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [page, perPage, searchUser, typeFilter, statusFilter, token, canView]);
 
   useEffect(() => {
     void loadData();
   }, [loadData]);
-
-  const handleSearch = useCallback(() => {
-    setSearchUser(searchInput.trim() || null);
-    setPage(1);
-  }, [searchInput, setSearchUser, setPage]);
-
-  const handleClearSearch = useCallback(() => {
-    setSearchInput("");
-    setSearchUser(null);
-    setPage(1);
-  }, [setPage, setSearchUser]);
 
   const handleDepositSuccess = useCallback((res: AdminClientDepositData) => {
     toast.success(`Deposit of $${formatAmount(res.amount)} processed for client #${res.client_id}`);
@@ -364,16 +363,19 @@ export function AdminTransactionContent() {
       {/* Filters */}
       <div className="rounded-lg border bg-card p-5">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="relative min-w-[220px] flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search by user email or name..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleSearch(); }}
-              className="pl-9"
-            />
-          </div>
+          <ApiSearchBar
+            value={searchInput}
+            onChange={setSearchInput}
+            onSearch={(val) => {
+              setSearchUser(val.trim() || null);
+              setPage(1);
+            }}
+            placeholder="Search by user email or name..."
+            className="min-w-[220px] flex-1 max-w-full"
+            disabled={loading}
+            minimumLength={3}
+            delay={300}
+          />
           <Select
             value={typeFilter ?? "all"}
             onValueChange={(v) => { setTypeFilter(v === "all" ? null : v); setPage(1); }}
@@ -410,14 +412,6 @@ export function AdminTransactionContent() {
               <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={handleSearch} disabled={loading}>
-            <Search className="mr-2 h-4 w-4" /> Search
-          </Button>
-          {searchUser && (
-            <Button variant="outline" size="icon" onClick={handleClearSearch}>
-              <X className="h-4 w-4" />
-            </Button>
-          )}
         </div>
       </div>
 

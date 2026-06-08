@@ -77,6 +77,14 @@ export function ApiSearchBar({
       <Input
         value={value}
         onChange={handleInputChange}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            if (timeoutRef.current) {
+              clearTimeout(timeoutRef.current);
+            }
+            onSearch?.(value);
+          }
+        }}
         placeholder={placeholder}
         disabled={disabled}
         className="h-8 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"

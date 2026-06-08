@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import toast from "react-hot-toast";
-import { CircleDollarSign, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
+import { CircleDollarSign, Loader2, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { ProtectedRoute } from "@/components/protected-route";
 import { AppDataTable } from "@/components/app-data-table";
@@ -498,16 +498,22 @@ export default function CurrencyManagementPage() {
             </h1>
             <p className="text-sm text-muted-foreground">Create, edit, and manage currency rates</p>
           </div>
-          <Button
-            onClick={() => {
-              setEditingItem(null);
-              setIsFormOpen(true);
-            }}
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add Currency Rate
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button variant="outline" onClick={() => void refetch()} disabled={isLoading}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+            <Button
+              onClick={() => {
+                setEditingItem(null);
+                setIsFormOpen(true);
+              }}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Currency Rate
+            </Button>
+          </div>
         </div>
 
         <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">

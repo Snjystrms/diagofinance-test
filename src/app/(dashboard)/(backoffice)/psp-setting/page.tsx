@@ -38,7 +38,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2, Pencil, Trash2, CreditCard } from "lucide-react";
+import { Loader2, Pencil, Trash2, CreditCard, RefreshCw } from "lucide-react";
 import toast from "react-hot-toast";
 
 const formatType = (type: string) =>
@@ -230,17 +230,25 @@ export default function PspSettingPage() {
     <div className="space-y-6 p-6">
 
       {/* ── Page header ────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm">
-          <CreditCard className="h-5 w-5 text-primary" />
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm">
+            <CreditCard className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold tracking-tight text-foreground">
+              PSP Setting
+            </h1>
+            <p className="text-xs text-muted-foreground">
+              Manage your payment method configurations
+            </p>
+          </div>
         </div>
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">
-            PSP Setting
-          </h1>
-          <p className="text-xs text-muted-foreground">
-            Manage your payment method configurations
-          </p>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" onClick={() => refetch()} disabled={isLoading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
         </div>
       </div>
 

@@ -12,7 +12,7 @@ import { ApiErrorState } from "@/components/errors/api-error-state";
 import { BackofficeDetailDialogSkeleton } from "@/components/loading/backoffice-page-skeletons";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
-import { ChevronDown, Download, Plus, UserPlus } from "lucide-react";
+import { ChevronDown, Download, Plus, RefreshCw, UserPlus } from "lucide-react";
 import * as XLSX from "xlsx";
 import { getColumns } from "./columns";
 import {
@@ -507,18 +507,22 @@ export default function AllManagersPage() {
                   <DropdownMenuItem onClick={() => handleExport("csv")}>
                     Export CSV (.csv)
                   </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-              <PermissionAwareButton
-                requiredModule="manager"
-                requiredAction="write"
-                onClick={() => setCreateOpen(true)}
-                showTooltip
-                tooltipMessage="You need write permission for manager module to create"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Create Sub-Admin
-              </PermissionAwareButton>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button variant="outline" onClick={() => void refetch()} disabled={loading}>
+              <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </Button>
+            <PermissionAwareButton
+              requiredModule="manager"
+              requiredAction="write"
+              onClick={() => setCreateOpen(true)}
+              showTooltip
+              tooltipMessage="You need write permission for manager module to create"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Create Sub-Admin
+            </PermissionAwareButton>
             </div>
           </div>
 
