@@ -98,6 +98,8 @@ export type BankDetailFormValues = {
   bank_name: string;
   address: string;
   country: string;
+  passbook_photo: File | null;
+  passbook_photo_url?: string | null;
 };
 
 export const emptyBankDetailForm = (): BankDetailFormValues => ({
@@ -109,6 +111,8 @@ export const emptyBankDetailForm = (): BankDetailFormValues => ({
   bank_name: "",
   address: "",
   country: "",
+  passbook_photo: null,
+  passbook_photo_url: null,
 });
 
 export const toBankDetailUpdatePayload = (
@@ -121,6 +125,7 @@ export const toBankDetailUpdatePayload = (
   bank_name: values.bank_name.trim(),
   address: values.address.trim(),
   country: values.country.trim(),
+  passbook_photo: values.passbook_photo ?? values.passbook_photo_url ?? undefined,
 });
 
 export const toBankDetailCreatePayload = (
@@ -160,10 +165,7 @@ export const validateBankDetailForm = (
     return "Account number must be 6-18 digits only.";
   }
 
-  if (!iban) {
-    return "IBAN number is required.";
-  }
-  if (!/^[A-Z]{2}[A-Z0-9]{13,32}$/.test(iban)) {
+  if (iban && !/^[A-Z]{2}[A-Z0-9]{13,32}$/.test(iban)) {
     return "Enter a valid IBAN number.";
   }
 
@@ -228,6 +230,8 @@ export const mapBankDetailToForm = (detail: AdminBankDetailItem): BankDetailForm
   bank_name: detail.bank_name ?? "",
   address: detail.address ?? "",
   country: detail.country ?? "",
+  passbook_photo: null,
+  passbook_photo_url: detail.passbook_photo_url ?? null,
 });
 
 const normalizeUserOption = (raw: Record<string, unknown>): AdminUserOption => {

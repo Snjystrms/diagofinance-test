@@ -1820,12 +1820,19 @@ export const authApi = {
 };
 
 export const adminBankDetailsApi = {
-  list: (token: string) => {
+  list: (token: string, search?: string | null) => {
     if (!token) {
       throw new Error("Token is required to fetch bank details");
     }
 
-    return apiCall<AdminBankDetailsListData>(`/admin/bank-details`, {
+    const qs = new URLSearchParams();
+    if (search && search.trim()) {
+      qs.set("search", search.trim());
+    }
+
+    const endpoint = `/admin/bank-details${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<AdminBankDetailsListData>(endpoint, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -1834,6 +1841,25 @@ export const adminBankDetailsApi = {
   create: (body: AdminBankDetailCreateBody, token: string) => {
     if (!token) {
       throw new Error("Token is required to create bank details");
+    }
+
+    if (body.passbook_photo instanceof File) {
+      const formData = new FormData();
+      formData.append("user_uuid", body.user_uuid);
+      formData.append("account_holder_name", body.account_holder_name);
+      formData.append("account_number", body.account_number);
+      formData.append("iban_number", body.iban_number);
+      formData.append("swift_ifsc_code", body.swift_ifsc_code);
+      formData.append("bank_name", body.bank_name);
+      formData.append("address", body.address);
+      formData.append("country", body.country);
+      formData.append("passbook_photo", body.passbook_photo);
+
+      return apiCall<AdminBankDetailItem>(`/admin/bank-details`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
     }
 
     return apiCall<AdminBankDetailItem>(`/admin/bank-details`, {
@@ -1870,6 +1896,24 @@ export const adminBankDetailsApi = {
     const id = String(uuid ?? "").trim();
     if (!id) {
       throw new Error("Bank detail UUID is required");
+    }
+
+    if (body.passbook_photo instanceof File) {
+      const formData = new FormData();
+      formData.append("account_holder_name", body.account_holder_name);
+      formData.append("account_number", body.account_number);
+      formData.append("iban_number", body.iban_number);
+      formData.append("swift_ifsc_code", body.swift_ifsc_code);
+      formData.append("bank_name", body.bank_name);
+      formData.append("address", body.address);
+      formData.append("country", body.country);
+      formData.append("passbook_photo", body.passbook_photo);
+
+      return apiCall<AdminBankDetailItem>(`/admin/bank-details/${encodeURIComponent(id)}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
     }
 
     return apiCall<AdminBankDetailItem>(`/admin/bank-details/${encodeURIComponent(id)}`, {
@@ -2705,7 +2749,7 @@ export interface AdminUSDTDepositRequest {
   transaction_hash: string | null;
   transaction_reference?: string | null;
   payment_proof_url: string | null;
-  amount: string | number;
+  amount: number;
   status: "pending" | "approved" | "rejected";
   admin_notes: string | null;
   approved_by: string | null;
@@ -2753,12 +2797,15 @@ export interface AdminUSDTDepositVerifyResponse {
 }
 
 export const adminUSDTDepositApi = {
-  listAll: (page: number = 1, limit: number = 10, token: string, search?: string) => {
+  listAll: (page: number = 1, limit: number = 10, token: string, search?: string, status?: string) => {
     const qs = new URLSearchParams();
     qs.set("page", String(page));
     qs.set("limit", String(limit));
     if (search && search.trim()) {
       qs.set("search", search.trim());
+    }
+    if (status && status !== "all") {
+      qs.set("status", status);
     }
     
     return apiCall<AdminUSDTDepositListResponse>(`/admin/deposits/all?${qs.toString()}`, {

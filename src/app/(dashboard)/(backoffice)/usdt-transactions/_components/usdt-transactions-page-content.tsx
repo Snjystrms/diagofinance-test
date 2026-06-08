@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
 import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
 
@@ -145,8 +144,8 @@ export function USDTTransactionsPageContent() {
   const [search, setSearch] = useQueryState("search", parseAsString);
   const [searchInput, setSearchInput] = useState<string>(search ?? "");
   const [totalPages, setTotalPages] = useState(1);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [depositTypeFilter, setDepositTypeFilter] = useState<"all" | "bank" | "usdt">("all");
+  const [statusFilter, setStatusFilter] = useQueryState("status", parseAsString.withDefault("all"));
+  const [depositTypeFilter, setDepositTypeFilter] = useState<"all" | "bank" | "usd">("all");
 
   // View details dialog state
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
@@ -157,14 +156,19 @@ export function USDTTransactionsPageContent() {
   const [verifyDecision, setVerifyDecision] = useState<"approve" | "reject">("approve");
   const [adminNotes, setAdminNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const requestIdRef = useRef(0);
 
   const loadDeposits = useCallback(async () => {
     if (!token) return;
+    const currentRequestId = ++requestIdRef.current;
     try {
       setLoadError(null);
+      setDepositRows([]);
       const searchTerm =
         typeof search === "string" && search.trim().length >= 3 ? search.trim() : undefined;
-      const res = await adminUSDTDepositApi.listAll(page, perPage, token, searchTerm);
+      const statusParam = statusFilter !== "all" && statusFilter !== "none" ? statusFilter : undefined;
+      const res = await adminUSDTDepositApi.listAll(page, perPage, token, searchTerm, statusParam);
+      if (currentRequestId !== requestIdRef.current) return;
       const requests = res?.data?.deposits ?? [];
       setDepositRows(requests);
 
@@ -172,6 +176,7 @@ export function USDTTransactionsPageContent() {
         setTotalPages(res.data.pagination.totalPages || res.data.pagination.total_pages || 1);
       }
     } catch (e: unknown) {
+      if (currentRequestId !== requestIdRef.current) return;
       console.error(e);
       setLoadError(e);
       toast.error(
@@ -182,7 +187,7 @@ export function USDTTransactionsPageContent() {
       );
       setDepositRows([]);
     }
-  }, [token, page, perPage, search]);
+  }, [token, page, perPage, search, statusFilter]);
 
   const loadList = useCallback(async () => {
     if (!token) return;
@@ -279,41 +284,14 @@ export function USDTTransactionsPageContent() {
   }, [isManager, depositStatusFeatureOptions, allowedStatusValues, statusFilter]);
 
   const filteredRows = useMemo(() => {
-    let nextRows: AdminUSDTDepositRequest[] = depositRows;
-
-    if (isAdmin || !isManager) {
-      if (["pending", "approved", "rejected"].includes(statusFilter)) {
-        nextRows = depositRows.filter((row) => row.status === statusFilter);
-      }
-    } else if (!depositStatusFeatureOptions.length || statusFilter === "none") {
-      nextRows = [];
-    } else if (statusFilter === "all") {
-      nextRows = depositRows.filter((row) => allowedStatusesSet.has((row.status || "").toLowerCase()));
-    } else {
-      const selectedOption = depositStatusFeatureOptions.find((opt) => opt.value === statusFilter);
-      const allowedForFilter = new Set(
-        (selectedOption?.statuses || []).map((status) => status.toLowerCase())
-      );
-      nextRows = depositRows.filter((row) => allowedForFilter.has((row.status || "").toLowerCase()));
-    }
-
     if (depositTypeFilter === "all") {
-      return nextRows;
+      return depositRows;
     }
-
-    return nextRows.filter(
+    return depositRows.filter(
       (row) =>
         ((row.deposit_type || "").toLowerCase() === depositTypeFilter)
     );
-  }, [
-    depositRows,
-    statusFilter,
-    depositTypeFilter,
-    isAdmin,
-    isManager,
-    depositStatusFeatureOptions,
-    allowedStatusesSet,
-  ]);
+  }, [depositRows, depositTypeFilter]);
 
   const showAllStatusOption = isAdmin || !isManager || depositStatusFeatureOptions.length > 1;
 
@@ -380,12 +358,19 @@ export function USDTTransactionsPageContent() {
 
   const depositColumns: ColumnDef<AdminUSDTDepositRequest>[] = useMemo(
     () => [
-      {
-        id: "id",
-        header: "Sr. No.",
-        accessorKey: "id",
-        cell: ({ row, table }) => <SerialNumberCell row={row} table={table} className="font-mono text-sm" />,
-      },
+   {
+  id: "sr_no",
+  header: "Sr. No.",
+  cell: ({ row, table }) => {
+    const pageIndex = table.getState().pagination.pageIndex ?? 0;
+    const pageSize = table.getState().pagination.pageSize ?? 10;
+    return (
+      <span className="font-mono text-sm">
+        {pageIndex * pageSize + row.index + 1}
+      </span>
+    );
+  },
+},
       {
         id: "user",
         header: "User",
@@ -410,7 +395,7 @@ export function USDTTransactionsPageContent() {
         header: "Amount (USD)",
         accessorKey: "amount",
         cell: ({ row }) => (
-          <span className="font-medium">{formatAmount(row.original.amount)}</span>
+          <span className="font-medium">{formatAmount(row.original.amount.toFixed(2))}</span>
         ),
       },
       {
@@ -583,7 +568,7 @@ export function USDTTransactionsPageContent() {
               <Select
                 value={depositTypeFilter}
                 onValueChange={(value) =>
-                  setDepositTypeFilter(value as "all" | "bank" | "usdt")
+                  setDepositTypeFilter(value as "all" | "bank" | "usd")
                 }
               >
                 <SelectTrigger id="deposit-type-filter" className="w-[180px]">
@@ -592,7 +577,7 @@ export function USDTTransactionsPageContent() {
                 <SelectContent>
                   <SelectItem value="all">All</SelectItem>
                   <SelectItem value="bank">Bank</SelectItem>
-                  <SelectItem value="usdt">USDT</SelectItem>
+                  <SelectItem value="usd">USD</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -602,6 +587,7 @@ export function USDTTransactionsPageContent() {
             data={filteredRows}
             columns={depositColumns}
             pageCount={totalPages}
+            getRowId={(row) => String(row.id)}
           />
         </div>
 

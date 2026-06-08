@@ -1081,7 +1081,6 @@ export default function IbUserDetailPage() {
                 <Eye className="h-3.5 w-3.5 text-primary" />
                 Admin Preview
               </span>
-              <span>\u00b7</span>
               <span>Read-only view of the partner portal</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -1101,7 +1100,7 @@ export default function IbUserDetailPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-9 rounded-full border-blue-200 bg-blue-50 px-3.5 text-blue-700 hover:bg-blue-100 hover:text-blue-800 dark:border-blue-900/70 dark:bg-blue-950/30 dark:text-blue-200"
+                  className="h-9 rounded-full"
                   onClick={() => setShowPlanSelect(!showPlanSelect)}
                 >
                   Update Plan

@@ -138,42 +138,6 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
                   }}
                 />
 
-                {/* ── Mobile ── */}
-                <ValidatedFormField
-                  control={form.control}
-                  name={fieldPath<TFormValues>("mobile")}
-                  label="Mobile"
-                  rules={{
-                    required: "Mobile number is required",
-                    minLength: {
-                      value: 10,
-                      message: "Mobile number must be 10 digits",
-                    },
-                  }}
-                  renderControl={({ field }) => (
-                    <Input
-                      {...field}
-                      type="tel"
-                      inputMode="numeric"
-                      autoComplete="tel"
-                      placeholder="Enter 10-digit mobile number"
-                      maxLength={10}
-                      pattern="\d{10}"
-                      value={sanitizeDigits(String(field.value ?? ""), 10)}
-                      onInput={(event) => {
-                        const nextValue = sanitizeDigits(
-                          event.currentTarget.value,
-                          10,
-                        );
-                        event.currentTarget.value = nextValue;
-                      }}
-                      onChange={(event) =>
-                        field.onChange(sanitizeDigits(event.target.value, 10))
-                      }
-                    />
-                  )}
-                />
-
                 {/* ── Country ── */}
                 <ValidatedFormField
                   control={form.control}
@@ -239,6 +203,41 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
                         ))}
                       </SelectContent>
                     </Select>
+                  )}
+                />
+                                {/* ── Mobile ── */}
+                <ValidatedFormField
+                  control={form.control}
+                  name={fieldPath<TFormValues>("mobile")}
+                  label="Mobile"
+                  rules={{
+                    required: "Mobile number is required",
+                    minLength: {
+                      value: 10,
+                      message: "Mobile number must be 10 digits",
+                    },
+                  }}
+                  renderControl={({ field }) => (
+                    <Input
+                      {...field}
+                      type="tel"
+                      inputMode="numeric"
+                      autoComplete="tel"
+                      placeholder="Enter 10-digit mobile number"
+                      maxLength={10}
+                      pattern="\d{10}"
+                      value={sanitizeDigits(String(field.value ?? ""), 10)}
+                      onInput={(event) => {
+                        const nextValue = sanitizeDigits(
+                          event.currentTarget.value,
+                          10,
+                        );
+                        event.currentTarget.value = nextValue;
+                      }}
+                      onChange={(event) =>
+                        field.onChange(sanitizeDigits(event.target.value, 10))
+                      }
+                    />
                   )}
                 />
 

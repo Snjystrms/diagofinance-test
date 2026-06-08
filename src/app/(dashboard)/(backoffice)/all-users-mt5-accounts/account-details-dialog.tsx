@@ -137,7 +137,7 @@ export function AccountDetailsDialog({
                 <DetailItem label="Spread From" value={account.spread_from ?? accountType?.spread_from} />
                 <DetailItem label="Maximum Leverage" value={account.maximum_leverage ?? accountType?.maximum_leverage} />
                 <DetailItem label="Leverage Type" value={account.leverage_type ?? accountType?.leverage_type} />
-                <DetailItem label="Stop Out Level" value={account.stop_out_level ?? accountType?.stop_out_level} />
+                {/* <DetailItem label="Stop Out Level" value={account.stop_out_level ?? accountType?.stop_out_level} /> */}
                 {/* <DetailItem label="Hedge Margin" value={account.hedge_margin ?? accountType?.hedge_margin} /> */}
                 {/* <DetailItem label="Swap Free" value={account.swap_free_option ?? accountType?.swap_free_option} /> */}
                 <DetailItem label="Base Currencies" value={account.base_currency ?? accountType?.base_currency} />

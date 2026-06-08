@@ -283,6 +283,7 @@ export function IbPlanForm({
   loadAccountTypeById: (id: string) => Promise<IbPlanAccountTypeRow | null>;
 }) {
   const [form, setForm] = useState<FormValue>(createEmptyForm);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     if (initialData) {
@@ -365,10 +366,13 @@ export function IbPlanForm({
     event.preventDefault();
     if (!form.name.trim() || form.account_types.length === 0) return;
     try {
+      setSaving(true);
       await Promise.resolve(onSubmit(form));
       onOpenChange(false);
     } catch {
       // Keep dialog open on failure.
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -485,8 +489,11 @@ export function IbPlanForm({
             {!readOnly && (
               <Button
                 type="submit"
-                disabled={!form.name.trim() || form.account_types.length === 0}
+                disabled={saving || !form.name.trim() || form.account_types.length === 0}
               >
+                {saving ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : null}
                 {isEdit ? "Save Changes" : "Create Plan"}
               </Button>
             )}

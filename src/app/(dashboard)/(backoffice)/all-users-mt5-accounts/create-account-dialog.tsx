@@ -389,22 +389,24 @@ export function CreateAccountDialog({
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="balance">Balance *</Label>
-                <Input
-                  id="balance"
-                  type="number"
-                  value={formData.balance || ""}
-                  onChange={(event) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      balance: event.target.value ? Number(event.target.value) : 0,
-                    }))
-                  }
-                  placeholder="Enter balance"
-                  required
-                />
-              </div>
+              {formData.account_mode === "demo" && (
+                <div className="space-y-2">
+                  <Label htmlFor="balance">Balance *</Label>
+                  <Input
+                    id="balance"
+                    type="number"
+                    value={formData.balance || ""}
+                    onChange={(event) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        balance: event.target.value ? Number(event.target.value) : 0,
+                      }))
+                    }
+                    placeholder="Enter balance"
+                    required
+                  />
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-4">

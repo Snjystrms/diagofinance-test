@@ -98,9 +98,7 @@ function validateForm(values: BankDetailFormValues, isCreateMode: boolean): Form
   } else if (!/^\d{6,18}$/.test(values.account_number.trim())) {
     errors.account_number = "Account number must be 6-18 digits only.";
   }
-  if (!values.iban_number.trim()) {
-    errors.iban_number = "IBAN number is required.";
-  } else if (!/^[A-Z]{2}[A-Z0-9]{13,32}$/.test(values.iban_number.trim().toUpperCase())) {
+  if (values.iban_number.trim() && !/^[A-Z]{2}[A-Z0-9]{13,32}$/.test(values.iban_number.trim().toUpperCase())) {
     errors.iban_number = "Enter a valid IBAN number.";
   }
   if (!values.swift_ifsc_code.trim()) {
@@ -143,6 +141,7 @@ export function BankDetailFormDialog({
   const [countryOptions, setCountryOptions] = useState<CountryOption[]>([]);
   const [touchedFields, setTouchedFields] = useState<Partial<Record<keyof BankDetailFormValues, boolean>>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [passbookPreview, setPassbookPreview] = useState<string | null>(null);
   const isCreateMode = mode === "create";
   const title = isCreateMode ? "Add bank details" : "Edit bank details";
   const description = isCreateMode
@@ -185,8 +184,21 @@ export function BankDetailFormDialog({
     if (!open) {
       setTouchedFields({});
       setSubmitAttempted(false);
+      setPassbookPreview(null);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (values.passbook_photo && values.passbook_photo.type.startsWith("image/")) {
+      const url = URL.createObjectURL(values.passbook_photo);
+      setPassbookPreview(url);
+      return () => URL.revokeObjectURL(url);
+    } else if (values.passbook_photo_url) {
+      setPassbookPreview(values.passbook_photo_url);
+    } else {
+      setPassbookPreview(null);
+    }
+  }, [values.passbook_photo, values.passbook_photo_url]);
 
   const markTouched = (field: keyof BankDetailFormValues) => {
     setTouchedFields((prev) => ({ ...prev, [field]: true }));
@@ -363,6 +375,35 @@ export function BankDetailFormDialog({
               />
               {shouldShowError("address") && errors.address ? (
                 <p className="text-xs text-destructive">{errors.address}</p>
+              ) : null}
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label htmlFor="passbook-photo">Passbook Photo</Label>
+              <Input
+                id="passbook-photo"
+                type="file"
+                accept=".jpg,.jpeg,.png,.pdf"
+                onChange={(event) => {
+                  const file = event.target.files?.[0] ?? null;
+                  onValuesChange({ ...values, passbook_photo: file });
+                }}
+                disabled={submitting}
+              />
+              {passbookPreview ? (
+                <div className="mt-2 rounded-md border p-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={passbookPreview}
+                    alt="Passbook preview"
+                    className="max-h-48 w-auto object-contain rounded-md"
+                  />
+                </div>
+              ) : values.passbook_photo ? (
+                <p className="text-xs text-muted-foreground">Selected: {values.passbook_photo.name}</p>
+              ) : values.passbook_photo_url ? (
+                <p className="text-xs text-muted-foreground">
+                  Current file: {values.passbook_photo_url.split("/").pop()}
+                </p>
               ) : null}
             </div>
           </div>

@@ -222,6 +222,14 @@ export function AdminTransactionContent() {
         <span className="text-sm capitalize">{row.original.reference_type?.replace(/_/g, " ") || "-"}</span>
       ),
     },
+     {
+      id: "transaction_hash",
+      header: "Transaction Hash",
+      accessorKey: "transaction_hash",
+      cell: ({ row }) => (
+        <span className="text-sm capitalize">{row.original.transaction_hash || "-"}</span>
+      ),
+    },
     {
       id: "description",
       header: "Description",
@@ -300,8 +308,9 @@ export function AdminTransactionContent() {
             <TrendingUp className="mr-2 h-4 w-4" />
             Internal Transfer
           </Button>
-          <Button variant="ghost" size="icon" onClick={loadData} disabled={loading}>
+          <Button variant="outline" size="sm" onClick={loadData} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
           </Button>
         </div>
       </div>

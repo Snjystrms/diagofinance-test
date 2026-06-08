@@ -168,7 +168,8 @@ export function EditAccountDialog({
                   <SelectContent>
                     {groups.map((group) => (
                       <SelectItem key={group.id} value={String(group.id)}>
-                        {group.name || `Group ${group.id}`} (ID: {group.id})
+                        {group.name}
+                         {/* (ID: {group.id}) */}
                       </SelectItem>
                     ))}
                   </SelectContent>

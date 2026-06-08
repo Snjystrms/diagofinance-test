@@ -33,7 +33,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { Eye, CheckCircle2, XCircle, Calendar, FileText, User, Mail, Hash, Clock, AlertCircle, Shield, Image as ImageIcon, Plus, Upload, Download, ChevronDown } from "lucide-react";
+import {   Eye, CheckCircle2, XCircle, Calendar, FileText, User, Mail, Hash, Clock, AlertCircle, Shield, Image as ImageIcon, Plus, Upload, Download, ChevronDown, RefreshCw } from "lucide-react";
 import * as XLSX from "xlsx";
 
 import { adminKycApi, adminUsersApi, kycFileUrl, type AdminUsersListApiData, type PendingUser } from "@/lib/api";
@@ -883,7 +883,7 @@ export default function UserVerificationPage() {
           return (
             <Button
               variant="ghost"
-              size="icon"
+              size="sm"
               aria-label="View"
               onClick={() => {
                 if (canView) openDetail(row.original.uuid);
@@ -891,6 +891,7 @@ export default function UserVerificationPage() {
               disabled={!canView}
             >
               <Eye className="h-4 w-4" />
+              Review
             </Button>
           );
         },
@@ -1086,6 +1087,9 @@ const buildReviewPayload = () => {
             <Shield className="h-6 w-6 text-primary" />
             User Verification (KYC)
           </h1>
+           <p className="text-sm text-muted-foreground">
+                View and manage user KYC submissions, review document details, and update verification status.
+              </p>
         </div>
         <div className="flex flex-wrap gap-2">
           {canReview ? (
@@ -1113,7 +1117,10 @@ const buildReviewPayload = () => {
               Add KYC
             </Button>
           ) : null}
-          <Button variant="outline" onClick={loadList}>Refresh</Button>
+          <Button variant="outline" onClick={loadList} disabled={loading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
         </div>
       </div>
 

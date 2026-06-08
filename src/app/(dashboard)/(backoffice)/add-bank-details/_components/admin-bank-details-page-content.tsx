@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
-import { Building2, ChevronDown, Download, Eye, Landmark, Pencil, Plus, RefreshCw, Search, Trash2, Users } from "lucide-react";
+import { Building2, ChevronDown, Download, Eye, Landmark, Pencil, Plus, RefreshCw, Trash2, Users } from "lucide-react";
 import * as XLSX from "xlsx";
 
 import { AppDataTable } from "@/components/app-data-table";
@@ -13,6 +13,7 @@ import { DeleteDialog } from "@/components/dialogs/delete-dialog";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ProtectedRoute } from "@/components/protected-route";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,7 +23,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { useAuth } from "@/contexts/auth-context";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import {
@@ -74,6 +74,7 @@ export function AdminBankDetailsPageContent() {
   const canMutate = hasFeature("userManagement", "addBankDetails");
 
   const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [formValues, setFormValues] = useState<BankDetailFormValues>(emptyBankDetailForm);
   const [userSearch, setUserSearch] = useState("");
@@ -82,7 +83,7 @@ export function AdminBankDetailsPageContent() {
   const [deleteCandidate, setDeleteCandidate] = useState<AdminBankDetailItem | null>(null);
 
   const deferredUserSearch = useDeferredValue(userSearch.trim());
-  const queryKey = useMemo(() => ["admin-bank-details", token] as const, [token]);
+  const queryKey = useMemo(() => ["admin-bank-details", token, search] as const, [token, search]);
 
   const {
     data: bankDetailsResponse,
@@ -94,7 +95,7 @@ export function AdminBankDetailsPageContent() {
   } = useQuery({
     queryKey,
     queryFn: async () => {
-      const response = await adminBankDetailsApi.list(token!);
+      const response = await adminBankDetailsApi.list(token!, search || undefined);
       const payload = response.data ?? { count: 0, rows: [] };
       const rawRows = extractBankDetailListRows(payload as unknown);
       const rows = rawRows
@@ -207,7 +208,7 @@ export function AdminBankDetailsPageContent() {
   });
 
   const rows = useMemo(() => bankDetailsResponse?.rows ?? [], [bankDetailsResponse]);
-  const filteredRows = useMemo(() => filterBankDetails(rows, search), [rows, search]);
+  const filteredRows = rows;
 
   const totalBankDetails = bankDetailsResponse?.count ?? rows.length;
   const pendingCount = useMemo(() => rows.filter(row => row.status === "pending").length, [rows]);
@@ -567,13 +568,14 @@ export function AdminBankDetailsPageContent() {
           <CardContent className="space-y-4">
             {canList ? (
               <>
-                <div className="relative max-w-md">
-                  <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Search bank details"
-                    className="pl-9"
+                <div className="max-w-md">
+                  <ApiSearchBar
+                    value={searchInput}
+                    onChange={setSearchInput}
+                    onSearch={(value) => setSearch(value)}
+                    placeholder="Search by user, account holder, bank name..."
+                    minimumLength={3}
+                    delay={300}
                   />
                 </div>
 
