@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { DeleteDialog } from "@/components/dialogs/delete-dialog";
-import { Newspaper, Plus, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Newspaper, Plus, Pencil, Trash2, Loader2, Eye, RefreshCw, ImageIcon } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
@@ -21,8 +21,8 @@ import { formatDateTimeInIST } from "@/lib/formatters";
 import { adminNewsApi, type NewsItem } from "@/lib/api-auth-admin";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { NewsForm, type NewsFormValue } from "./news-form";
+import { ViewNewsDialog } from "./view-news-dialog";
 import Image from "next/image";
-import { ImageIcon } from "lucide-react";
 import { useCrudCapabilities } from "@/hooks/use-permission-capabilities";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 
@@ -73,6 +73,10 @@ export default function NewsManagementPage() {
   // Form dialog state
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<NewsRow | null>(null);
+
+  // View dialog state
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [viewingItem, setViewingItem] = useState<NewsRow | null>(null);
 
   // Delete dialog state
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
@@ -339,6 +343,18 @@ export default function NewsManagementPage() {
         header: "",
         cell: ({ row }) => (
           <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => {
+                setViewingItem(row.original);
+                setIsViewOpen(true);
+              }}
+              title="View"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
             {canEdit ? (
               <Button
                 variant="outline"
@@ -401,18 +417,30 @@ export default function NewsManagementPage() {
               Create, edit, and manage news articles
             </p>
           </div>
-          {canAdd ? (
+          <div className="flex items-center gap-2">
+            {canAdd ? (
+              <Button
+                onClick={() => {
+                  setEditingItem(null);
+                  setIsFormOpen(true);
+                }}
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Add News
+              </Button>
+            ) : null}
             <Button
-              onClick={() => {
-                setEditingItem(null);
-                setIsFormOpen(true);
-              }}
-              className="gap-2"
+              variant="outline"
+              size="icon"
+              onClick={() => refetch()}
+              disabled={isLoading}
+              title="Refresh"
+              aria-label="Refresh"
             >
-              <Plus className="h-4 w-4" />
-              Add News
+              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
             </Button>
-          ) : null}
+          </div>
         </div>
 
         {/* Filters */}
@@ -468,6 +496,33 @@ export default function NewsManagementPage() {
           onSubmit={handleFormSubmit}
           initialData={editingItem}
           newsType="news"
+        />
+
+        {/* View Details */}
+        <ViewNewsDialog
+          open={isViewOpen}
+          onOpenChange={(o) => {
+            setIsViewOpen(o);
+            if (!o) setViewingItem(null);
+          }}
+          itemId={viewingItem?.id ?? null}
+          itemType="news"
+          initialData={
+            viewingItem
+              ? {
+                  id: viewingItem.id,
+                  title: viewingItem.title,
+                  short_description: viewingItem.short_description,
+                  description: viewingItem.description,
+                  image: viewingItem.image,
+                  image_url: viewingItem.image_url,
+                  status: viewingItem.status,
+                  type: viewingItem.type,
+                  created_at: viewingItem.created_at,
+                  updated_at: viewingItem.updated_at,
+                }
+              : null
+          }
         />
 
         {/* Delete Confirmation */}

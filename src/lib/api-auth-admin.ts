@@ -3097,14 +3097,21 @@ export const bankDepositApi = {
     );
   },
 
-  listRequests: (token: string, page = 1, limit = 10) =>
-    apiCall<{ success: boolean; data: BankDepositListData }>(
-      `/user/bank-deposit/user-requests?page=${page}&limit=${limit}`,
+  listRequests: (token: string, page = 1, limit = 10, status?: string) => {
+    const qs = new URLSearchParams();
+    qs.set("page", String(page));
+    qs.set("limit", String(limit));
+    if (status && status !== "all") {
+      qs.set("status", status);
+    }
+    return apiCall<{ success: boolean; data: BankDepositListData }>(
+      `/user/bank-deposit/user-requests?${qs.toString()}`,
       {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       },
-    ),
+    );
+  },
 
   getRequest: (id: number | string, token: string) =>
     apiCall<{ success: boolean; data: BankDepositRecord }>(
@@ -3146,6 +3153,32 @@ export interface BroadcastEmailRequest {
   subject: string;
   body: string;
   emails?: string[];
+  attachment_1?: string | null;
+  attachment_2?: string | null;
+  attachment_3?: string | null;
+}
+
+export interface BroadcastEmailHistoryItem {
+  id: number;
+  uuid: string;
+  subject: string;
+  body: string;
+  recipient_type: string;
+  total_recipients: number;
+  sent_count: number;
+  failed_count: number;
+  sent_by_admin_id: string;
+  attachment_urls: string[];
+  created_at: string;
+}
+
+export interface BroadcastEmailHistoryResponse {
+  success: boolean;
+  message: string;
+  data: BroadcastEmailHistoryItem[];
+  total: number;
+  page: number;
+  limit: number;
 }
 
 export interface BroadcastEmailResponse {
@@ -3159,12 +3192,26 @@ export interface BroadcastEmailResponse {
 }
 
 export const adminBroadcastEmailApi = {
-  send: (data: BroadcastEmailRequest, token: string) =>
-    apiCall<BroadcastEmailResponse>("/admin/user-management/broadcast-email", {
+  send: (data: BroadcastEmailRequest | FormData, token: string) => {
+    const isFormData = data instanceof FormData;
+    return apiCall<BroadcastEmailResponse>("/admin/user-management/broadcast-email", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    }),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+      },
+      body: isFormData ? data : JSON.stringify(data),
+    });
+  },
+
+  history: (params: { token: string; page?: number; limit?: number }) => {
+    const { token, page = 1, limit = 10 } = params;
+    const qs = new URLSearchParams({ page: String(page), limit: String(limit) });
+    return apiCall<BroadcastEmailHistoryResponse>(
+      `/admin/user-management/broadcast-email/history?${qs.toString()}`,
+      { method: "GET", headers: { Authorization: `Bearer ${token}` } }
+    );
+  },
 };
 
 // ─── Email Exclusion List ────────────────────────────────────────────────────

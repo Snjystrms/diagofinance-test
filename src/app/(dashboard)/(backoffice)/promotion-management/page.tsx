@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { DeleteDialog } from "@/components/dialogs/delete-dialog";
-import { Megaphone, Plus, Pencil, Trash2, Loader2, ImageIcon } from "lucide-react";
+import { Megaphone, Plus, Pencil, Trash2, Loader2, ImageIcon, Eye, RefreshCw } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
@@ -21,6 +21,7 @@ import { formatDateTimeInIST } from "@/lib/formatters";
 import { adminNewsApi, type NewsItem } from "@/lib/api-auth-admin";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { NewsForm, type NewsFormValue } from "../news-management/news-form";
+import { ViewNewsDialog } from "../news-management/view-news-dialog";
 import Image from "next/image";
 
 type PromotionRow = {
@@ -61,6 +62,9 @@ export default function PromotionManagementPage() {
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PromotionRow | null>(null);
+
+  const [isViewOpen, setIsViewOpen] = useState(false);
+  const [viewingItem, setViewingItem] = useState<PromotionRow | null>(null);
 
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
@@ -278,16 +282,16 @@ export default function PromotionManagementPage() {
           </div>
         ),
       },
-      {
-        id: "type",
-        accessorKey: "type",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
-        cell: ({ row }) => (
-          <Badge className="bg-purple-100 text-purple-700 border-purple-300 capitalize">
-            {row.original.type}
-          </Badge>
-        ),
-      },
+      // {
+      //   id: "type",
+      //   accessorKey: "type",
+      //   header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
+      //   cell: ({ row }) => (
+      //     <Badge className="bg-purple-100 text-purple-700 border-purple-300 capitalize">
+      //       {row.original.type}
+      //     </Badge>
+      //   ),
+      // },
       {
         id: "created_at",
         accessorKey: "created_at",
@@ -303,6 +307,18 @@ export default function PromotionManagementPage() {
         header: "",
         cell: ({ row }) => (
           <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => {
+                setViewingItem(row.original);
+                setIsViewOpen(true);
+              }}
+              title="View"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
             <Button
               variant="outline"
               size="icon"
@@ -354,16 +370,28 @@ export default function PromotionManagementPage() {
               Create, edit, and manage promotional content
             </p>
           </div>
-          <Button
-            onClick={() => {
-              setEditingItem(null);
-              setIsFormOpen(true);
-            }}
-            className="gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add Promotion
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => {
+                setEditingItem(null);
+                setIsFormOpen(true);
+              }}
+              className="gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Promotion
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => refetch()}
+              disabled={isLoading}
+              title="Refresh"
+              aria-label="Refresh"
+            >
+              <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -422,6 +450,33 @@ export default function PromotionManagementPage() {
           onSubmit={handleFormSubmit}
           initialData={editingItem}
           newsType="promotion"
+        />
+
+        {/* View Details */}
+        <ViewNewsDialog
+          open={isViewOpen}
+          onOpenChange={(o) => {
+            setIsViewOpen(o);
+            if (!o) setViewingItem(null);
+          }}
+          itemId={viewingItem?.id ?? null}
+          itemType="promotion"
+          initialData={
+            viewingItem
+              ? {
+                  id: viewingItem.id,
+                  title: viewingItem.title,
+                  short_description: viewingItem.short_description,
+                  description: viewingItem.description,
+                  image: viewingItem.image,
+                  image_url: viewingItem.image_url,
+                  status: viewingItem.status,
+                  type: viewingItem.type,
+                  created_at: viewingItem.created_at,
+                  updated_at: viewingItem.updated_at,
+                }
+              : null
+          }
         />
 
         {/* Delete Confirmation */}

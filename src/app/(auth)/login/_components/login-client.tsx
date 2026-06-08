@@ -495,7 +495,7 @@ export function LoginClient() {
                               autoComplete="current-password"
                               onChange={field.onChange}
                               value={field.value}
-                              className="
+                              inputClassName="
                                 w-full bg-[#1a1a1a] border border-[#FFB800]/20 rounded-lg
                                 text-white placeholder:text-white/20 text-sm
                                 px-4 py-2.5 outline-none

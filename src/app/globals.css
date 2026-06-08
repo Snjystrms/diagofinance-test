@@ -169,6 +169,12 @@
   }
 }
 
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @layer utilities {
   .sidebar-transition {
     @apply transition-all duration-300 ease-in-out;

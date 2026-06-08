@@ -179,7 +179,7 @@ function AccountTypeCard({
                             <Input
                               className="w-20 h-8 text-sm pr-6"
                               type="number"
-                              step="1"
+                              step="any"
                               min="0"
                               value={numberStr(commission[field])}
                               onChange={(event) =>

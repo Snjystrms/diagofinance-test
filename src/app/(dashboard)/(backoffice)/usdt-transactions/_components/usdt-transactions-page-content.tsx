@@ -142,8 +142,8 @@ export function USDTTransactionsPageContent() {
   const [loadError, setLoadError] = useState<unknown | null>(null);
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
-  const [search, setSearch] = useQueryState("search", parseAsString.withDefault(""));
-  const [searchInput, setSearchInput] = useState(search ?? "");
+  const [search, setSearch] = useQueryState("search", parseAsString);
+  const [searchInput, setSearchInput] = useState<string>(search ?? "");
   const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [depositTypeFilter, setDepositTypeFilter] = useState<"all" | "bank" | "usdt">("all");
@@ -162,7 +162,8 @@ export function USDTTransactionsPageContent() {
     if (!token) return;
     try {
       setLoadError(null);
-      const searchTerm = search && search.length >= 3 ? search : undefined;
+      const searchTerm =
+        typeof search === "string" && search.trim().length >= 3 ? search.trim() : undefined;
       const res = await adminUSDTDepositApi.listAll(page, perPage, token, searchTerm);
       const requests = res?.data?.deposits ?? [];
       setDepositRows(requests);

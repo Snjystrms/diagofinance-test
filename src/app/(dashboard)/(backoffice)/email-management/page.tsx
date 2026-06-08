@@ -8,6 +8,8 @@ import {
   adminEmailExclusionsApi,
   adminUsersApi,
   type BroadcastEmailResponse,
+  type BroadcastEmailHistoryItem,
+  type BroadcastEmailHistoryResponse,
   type EmailExclusion,
   type PendingUser,
 } from "@/lib/api";
@@ -44,6 +46,9 @@ import {
   Trash2,
   Loader2,
   ShieldOff,
+  Clock,
+  FileImage,
+  ExternalLink,
 } from "lucide-react";
 
 export default function EmailManagementPage() {
@@ -59,10 +64,12 @@ export default function EmailManagementPage() {
   const canSearchClientEmails =
     !isManager || hasFeature("emailManagement", "getClientEmails");
 
-  const [activeTab, setActiveTab] = useState<"broadcast" | "exclusions">("broadcast");
+  const [activeTab, setActiveTab] = useState<"broadcast" | "history" | "exclusions">("broadcast");
 
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
+  const [attachments, setAttachments] = useState<(File | null)[]>([null, null, null]);
+  const [visibleSlots, setVisibleSlots] = useState(1);
 
   // manual entry
   const [emailInput, setEmailInput] = useState("");
@@ -76,6 +83,18 @@ export default function EmailManagementPage() {
   const [isBroadcastAll, setIsBroadcastAll] = useState(true);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BroadcastEmailResponse["data"] | null>(null);
+
+  // ── History ──
+  const [historyPage, setHistoryPage] = useState(1);
+  const historyQuery = useQuery({
+    queryKey: ["broadcast-email-history", token, historyPage],
+    queryFn: async () => {
+      const res = await adminBroadcastEmailApi.history({ token: token!, page: historyPage, limit: 10 });
+      return res as unknown as BroadcastEmailHistoryResponse;
+    },
+    enabled: Boolean(token) && activeTab === "history",
+    staleTime: 30 * 1000,
+  });
 
   // Fetch all users once (large limit) so search is client-side
   const { data: allUsers = [], isLoading: loadingUsers } = useQuery({
@@ -277,12 +296,26 @@ export default function EmailManagementPage() {
     setLoading(true);
     setResult(null);
     try {
-      const payload = isBroadcastAll
-        ? { subject: subject.trim(), body: body.trim() }
-        : { subject: subject.trim(), body: body.trim(), emails };
-      const res = await adminBroadcastEmailApi.send(payload, token);
-      const resData = res as unknown as BroadcastEmailResponse;
-      setResult(resData.data ?? null);
+      const hasFiles = attachments.some((f) => f !== null);
+      let res: BroadcastEmailResponse;
+      if (hasFiles) {
+        const fd = new FormData();
+        fd.append("subject", subject.trim());
+        fd.append("body", body.trim());
+        if (!isBroadcastAll) {
+          emails.forEach((email) => fd.append("emails[]", email));
+        }
+        attachments.forEach((file, i) => {
+          if (file) fd.append(`attachment_${i + 1}`, file);
+        });
+        res = await adminBroadcastEmailApi.send(fd, token) as BroadcastEmailResponse;
+      } else {
+        const payload = isBroadcastAll
+          ? { subject: subject.trim(), body: body.trim() }
+          : { subject: subject.trim(), body: body.trim(), emails };
+        res = await adminBroadcastEmailApi.send(payload, token) as BroadcastEmailResponse;
+      }
+      setResult(res.data ?? null);
       toast.success(res.message || "Broadcast sent successfully");
     } catch (error) {
       toast.error(
@@ -301,6 +334,8 @@ export default function EmailManagementPage() {
     setUserSearch("");
     setResult(null);
     setIsBroadcastAll(true);
+    setAttachments([null, null, null]);
+    setVisibleSlots(1);
   };
 
   const canSearchUsers = userSearch.trim().length >= 3;
@@ -321,13 +356,17 @@ export default function EmailManagementPage() {
 
       <Tabs
         value={activeTab}
-        onValueChange={(v) => setActiveTab(v as "broadcast" | "exclusions")}
+        onValueChange={(v) => setActiveTab(v as "broadcast" | "history" | "exclusions")}
         className="space-y-6"
       >
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-md grid-cols-3">
           <TabsTrigger value="broadcast" className="gap-2">
             <Send className="h-3.5 w-3.5" />
             Broadcast
+          </TabsTrigger>
+          <TabsTrigger value="history" className="gap-2">
+            <Clock className="h-3.5 w-3.5" />
+            History
           </TabsTrigger>
           <TabsTrigger value="exclusions" className="gap-2">
             <Ban className="h-3.5 w-3.5" />
@@ -524,6 +563,65 @@ export default function EmailManagementPage() {
                   className="resize-y"
                 />
               </div>
+
+              {/* Attachments */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <FileImage className="h-4 w-4 text-muted-foreground" />
+                  Attachments (images, optional, max 3)
+                </Label>
+                {Array.from({ length: visibleSlots }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    {attachments[i] ? (
+                      <>
+                        <div className="flex-1 flex items-center gap-2 rounded-lg border border-border/60 bg-muted/30 px-3 py-2 text-sm">
+                          <FileImage className="h-4 w-4 text-muted-foreground shrink-0" />
+                          <span className="truncate text-foreground">{attachments[i]!.name}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAttachments((prev) => {
+                              const next = [...prev];
+                              next[i] = null;
+                              return next;
+                            });
+                          }}
+                          className="text-muted-foreground hover:text-destructive transition-colors"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </>
+                    ) : (
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        className="flex-1"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0] || null;
+                          setAttachments((prev) => {
+                            const next = [...prev];
+                            next[i] = file;
+                            return next;
+                          });
+                        }}
+                      />
+                    )}
+                  </div>
+                ))}
+                {visibleSlots < 3 && attachments.some((f) => f !== null) && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setVisibleSlots((p) => Math.min(3, p + 1))}
+                    className="gap-1"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add more
+                  </Button>
+                )}
+              </div>
             </CardContent>
           </Card>
 
@@ -592,6 +690,113 @@ export default function EmailManagementPage() {
           </Card>
         </div>
           </div>
+        </TabsContent>
+
+        {/* ── History tab ── */}
+        <TabsContent value="history" className="m-0">
+          <Card className="border rounded-2xl shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Clock className="h-4 w-4 text-primary" />
+                Broadcast History
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {historyQuery.isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : !historyQuery.data?.data?.length ? (
+                <div className="flex flex-col items-center justify-center gap-2 py-12 text-muted-foreground">
+                  <Mail className="h-8 w-8 opacity-30" />
+                  <p className="text-sm">No broadcast history yet.</p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-border/60 text-left text-xs font-medium text-muted-foreground">
+                        <th className="px-4 py-3">Subject</th>
+                        <th className="px-4 py-3">Recipients</th>
+                        <th className="px-4 py-3 text-center">Sent</th>
+                        <th className="px-4 py-3 text-center">Failed</th>
+                        <th className="px-4 py-3">Attachments</th>
+                        <th className="px-4 py-3">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/40">
+                      {historyQuery.data.data.map((item: BroadcastEmailHistoryItem) => (
+                        <tr key={item.id} className="hover:bg-muted/20 transition-colors">
+                          <td className="px-4 py-3 font-medium text-foreground max-w-[200px] truncate">
+                            {item.subject}
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {item.total_recipients}
+                          </td>
+                          <td className="px-4 py-3 text-center text-green-600 dark:text-green-400">
+                            {item.sent_count}
+                          </td>
+                          <td className="px-4 py-3 text-center text-red-600 dark:text-red-400">
+                            {item.failed_count}
+                          </td>
+                          <td className="px-4 py-3">
+                            {item.attachment_urls?.length > 0 ? (
+                              <div className="flex gap-1">
+                                {item.attachment_urls.map((url, i) => (
+                                  <a
+                                    key={i}
+                                    href={`${process.env.NEXT_PUBLIC_API_URL || ""}/${url}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                                  >
+                                    <FileImage className="h-3 w-3" />
+                                    {i + 1}
+                                  </a>
+                                ))}
+                              </div>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">—</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                            {formatDateTime(item.created_at)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Pagination */}
+          {historyQuery.data && historyQuery.data.total > 10 && (
+            <div className="flex items-center justify-between pt-4">
+              <p className="text-sm text-muted-foreground">
+                Page {historyPage} of {Math.ceil(historyQuery.data.total / 10)}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={historyPage <= 1}
+                  onClick={() => setHistoryPage((p) => Math.max(1, p - 1))}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={historyPage >= Math.ceil(historyQuery.data.total / 10)}
+                  onClick={() => setHistoryPage((p) => p + 1)}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="exclusions" className="m-0">

@@ -1,7 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { ChevronDown, Landmark } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Landmark,
+} from "lucide-react";
 import toast from "react-hot-toast";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 
@@ -212,43 +219,56 @@ export default function IbCommissionReportPage() {
             </div>
 
             {totalPages > 1 && (
-              <div className="mt-4 flex items-center justify-between border-t pt-4">
-                <span className="text-sm text-muted-foreground">
-                  Page {page} of {totalPages}
-                </span>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page <= 1}
-                    onClick={() => setPage(1)}
-                  >
-                    First
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page <= 1}
-                    onClick={() => setPage(page - 1)}
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page >= totalPages}
-                    onClick={() => setPage(page + 1)}
-                  >
-                    Next
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={page >= totalPages}
-                    onClick={() => setPage(totalPages)}
-                  >
-                    Last
-                  </Button>
+              <div className="mt-4 flex w-full flex-col-reverse items-center justify-between gap-4 border-t pt-4 sm:flex-row sm:gap-8">
+                <div className="flex-1 whitespace-nowrap text-sm text-muted-foreground">
+                  Showing {groups.length} of {total} results
+                </div>
+                <div className="flex flex-col-reverse items-center gap-4 sm:flex-row sm:gap-6 lg:gap-8">
+                  <div className="flex items-center justify-center text-sm font-medium">
+                    Page {page} of {totalPages}
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Button
+                      aria-label="Go to first page"
+                      variant="outline"
+                      size="icon"
+                      className="hidden size-8 lg:flex"
+                      onClick={() => setPage(1)}
+                      disabled={page <= 1}
+                    >
+                      <ChevronsLeft />
+                    </Button>
+                    <Button
+                      aria-label="Go to previous page"
+                      variant="outline"
+                      size="icon"
+                      className="size-8"
+                      onClick={() => setPage(page - 1)}
+                      disabled={page <= 1}
+                    >
+                      <ChevronLeft />
+                    </Button>
+                    <Button
+                      aria-label="Go to next page"
+                      variant="outline"
+                      size="icon"
+                      className="size-8"
+                      onClick={() => setPage(page + 1)}
+                      disabled={page >= totalPages}
+                    >
+                      <ChevronRight />
+                    </Button>
+                    <Button
+                      aria-label="Go to last page"
+                      variant="outline"
+                      size="icon"
+                      className="hidden size-8 lg:flex"
+                      onClick={() => setPage(totalPages)}
+                      disabled={page >= totalPages}
+                    >
+                      <ChevronsRight />
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}

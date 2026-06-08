@@ -747,7 +747,7 @@ function ProfileTab({ user, loading }: TabShellProps) {
         ))}
       </div>
 
-      <IbSectionCard
+      {/* <IbSectionCard
         title="Activity timeline"
         description="A short log of the IB's recent portal actions."
       >
@@ -787,7 +787,7 @@ function ProfileTab({ user, loading }: TabShellProps) {
             })}
           </div>
         )}
-      </IbSectionCard>
+      </IbSectionCard> */}
     </>
   );
 }

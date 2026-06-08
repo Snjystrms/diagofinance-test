@@ -408,21 +408,28 @@ function USDTDepositContent() {
     setBankTxId("");
   };
 
+  const [bankRequestStatusFilter, setBankRequestStatusFilter] = useState<string>("all");
   const fetchBankRequests = useCallback(async () => {
     if (!token) return;
     try {
       setBankRequestsLoading(true);
-      const res = await bankDepositApi.listRequests(token);
+      const statusParam = bankRequestStatusFilter !== "all" ? bankRequestStatusFilter : undefined;
+      const res = await bankDepositApi.listRequests(token, 1, 50, statusParam);
       const raw = res as unknown as { success: boolean; data: { requests: BankDepositRecord[] } };
       if (raw.success && Array.isArray(raw.data?.requests)) {
-        setBankRequests(raw.data.requests);
+        const sorted = [...raw.data.requests].sort((a, b) => {
+          const idA = typeof a.id === "number" ? a.id : 0;
+          const idB = typeof b.id === "number" ? b.id : 0;
+          return idA - idB;
+        });
+        setBankRequests(sorted);
       }
     } catch (e) {
       console.error("Failed to fetch bank requests:", e);
     } finally {
       setBankRequestsLoading(false);
     }
-  }, [token]);
+  }, [token, bankRequestStatusFilter]);
 
   const fetchBrokerBankDetails = useCallback(async () => {
     if (!token) {
@@ -1725,9 +1732,21 @@ function USDTDepositContent() {
                         <CardTitle className="text-base font-semibold">Your Requests</CardTitle>
                         <CardDescription className="text-xs">Recent bank deposit submissions</CardDescription>
                       </div>
-                      <Button variant="outline" size="sm" onClick={fetchBankRequests} disabled={bankRequestsLoading}>
-                        <RefreshCw className={`h-3.5 w-3.5 ${bankRequestsLoading ? "animate-spin" : ""}`} />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <select
+                          value={bankRequestStatusFilter}
+                          onChange={(e) => setBankRequestStatusFilter(e.target.value)}
+                          className="h-8 rounded-lg border border-input bg-background px-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        >
+                          <option value="all">All statuses</option>
+                          <option value="pending">Pending</option>
+                          <option value="approved">Approved</option>
+                          <option value="rejected">Rejected</option>
+                        </select>
+                        <Button variant="outline" size="sm" onClick={fetchBankRequests} disabled={bankRequestsLoading}>
+                          <RefreshCw className={`h-3.5 w-3.5 ${bankRequestsLoading ? "animate-spin" : ""}`} />
+                        </Button>
+                      </div>
                     </CardHeader>
                     <CardContent className="p-0">
                       {bankRequestsLoading ? (
@@ -1744,7 +1763,7 @@ function USDTDepositContent() {
                           <Table>
                             <TableHeader>
                               <TableRow className="bg-muted/30">
-                                <TableHead className="text-xs">ID</TableHead>
+                                <TableHead className="text-xs">Sr. No.</TableHead>
                                 <TableHead className="text-xs">Amount</TableHead>
                                 <TableHead className="text-xs">Txn ID</TableHead>
                                 <TableHead className="text-xs">Status</TableHead>
@@ -1752,7 +1771,8 @@ function USDTDepositContent() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {bankRequests.map((req, index) => {
+                              {bankRequests
+                                .map((req, index) => {
                                 const statusColor =
                                   req.status === "approved"
                                     ? "border-emerald-500/40 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20"
