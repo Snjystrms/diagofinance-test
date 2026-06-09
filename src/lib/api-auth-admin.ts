@@ -927,6 +927,7 @@ export interface AccountTypeItem {
   created_at?: string;
   updated_at?: string;
   ib_commissions?: AccountTypeCommissionItem[];
+  commissions?: AccountTypeCommissionItem[];
 }
 
 export interface AdminGroupItem {

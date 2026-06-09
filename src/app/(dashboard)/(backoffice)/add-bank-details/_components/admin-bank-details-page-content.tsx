@@ -520,55 +520,11 @@ export function AdminBankDetailsPageContent() {
           </div>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Records</CardTitle>
-              <Building2 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalBankDetails}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Verification</CardTitle>
-              <Landmark className="h-4 w-4 text-orange-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{pendingCount}</div>
-              <p className="text-xs text-muted-foreground mt-1">Awaiting approval</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Countries</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{countriesCovered}</div>
-            </CardContent>
-          </Card>
-        </div>
-
         <Card>
-          <CardHeader className="gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <CardTitle>Bank Details List</CardTitle>
-              <CardDescription>
-                Search by user, account holder, bank name, account number.
-              </CardDescription>
-            </div>
-            {canList ? (
-              <Badge variant="secondary" className="w-fit">
-                {filteredRows.length} of {rows.length} records
-              </Badge>
-            ) : null}
-          </CardHeader>
           <CardContent className="space-y-4">
             {canList ? (
               <>
-                <div className="max-w-md">
+                <div className="pt-4 max-w-md">
                   <ApiSearchBar
                     value={searchInput}
                     onChange={setSearchInput}

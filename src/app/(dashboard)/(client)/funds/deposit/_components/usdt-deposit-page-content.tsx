@@ -555,9 +555,17 @@ function USDTDepositContent() {
       return;
     }
 
-    // Validate that at least one of transaction_hash or payment_proof is provided
+    // Validate that both transaction_hash and payment_proof are provided
     if (!transactionHash.trim() && !paymentProof) {
-      setError("Either transaction hash or payment proof (screenshot) is required");
+      setError("Transaction hash and payment proof are both required");
+      return;
+    }
+    if (!transactionHash.trim()) {
+      setError("Transaction hash is required");
+      return;
+    }
+    if (!paymentProof) {
+      setError("Payment proof (screenshot) is required");
       return;
     }
 
@@ -574,7 +582,7 @@ function USDTDepositContent() {
       const data = await submitUSDTDeposit(
         {
           amount: amount,
-          transaction_hash: transactionHash.trim() || undefined,
+          transaction_hash: transactionHash.trim(),
           payment_proof: paymentProof || undefined,
         },
         token || undefined
@@ -605,7 +613,7 @@ function USDTDepositContent() {
   };
 
   const isValidHash = transactionHash.trim() === "" || (transactionHash.startsWith("0x") && transactionHash.length >= 10);
-  const canSubmit = amount.trim() !== "" && parseFloat(amount) > 0 && (transactionHash.trim() !== "" || paymentProof !== null) && isValidHash;
+  const canSubmit = amount.trim() !== "" && parseFloat(amount) > 0 && transactionHash.trim() !== "" && paymentProof !== null && isValidHash;
 
   // If user needs registration fee, show different content
   if (needsRegistrationFee) {
@@ -915,7 +923,7 @@ function USDTDepositContent() {
                     {/* Transaction Hash Input */}
                     <div className="space-y-3">
                       <Label htmlFor="txhash" className="text-sm font-semibold text-foreground">
-                        Transaction Hash
+                        Transaction Hash <span className="text-destructive">*</span>
                       </Label>
                       <div className="relative">
                         <Hash className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
@@ -935,7 +943,7 @@ function USDTDepositContent() {
                     {/* Payment Proof Upload */}
                     <div className="space-y-3">
                       <Label htmlFor="payment_proof" className="text-sm font-semibold text-foreground">
-                        Payment Proof (Screenshot)
+                        Payment Proof (Screenshot) <span className="text-destructive">*</span>
                       </Label>
                       {!paymentProof ? (
                         <div className="rounded-lg border-2 border-dashed border-border p-6 transition-colors hover:border-primary/50">
@@ -1057,6 +1065,7 @@ function USDTDepositContent() {
                       <Button
                         variant="outline"
                         className="w-full border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                        onClick={() => window.open(`https://bscscan.com/tx/${transactionHash}`, '_blank')}
                       >
                         <ExternalLink className="h-4 w-4 mr-2" />
                         View on Explorer

@@ -222,7 +222,7 @@ const normalize = (a: AccountTypeItem): AccountTypeRow => ({
   status: coerceBoolean(a.status, true),
   created_at: a.created_at,
   updated_at: a.updated_at,
-  ib_commissions: normalizeCommissions(a.ib_commissions),
+  ib_commissions: normalizeCommissions(a.ib_commissions ?? a.commissions),
 });
 
 const extractSingleAccountType = (payload: unknown): AccountTypeItem | null => {

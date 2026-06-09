@@ -43,7 +43,10 @@ export default function TransactionsHistoryPage() {
   
   // Filter state
   const [transactionType, setTransactionType] = useState<string>('all')
-  const [walletType, setWalletType] = useState<string>('all')
+  const [status, setStatus] = useState<string>('all')
+  const [period, setPeriod] = useState<string>('all')
+  const [startDate, setStartDate] = useState<string>('')
+  const [endDate, setEndDate] = useState<string>('')
 
   const fetchTransactions = useCallback(async () => {
     if (!token) {
@@ -60,7 +63,10 @@ export default function TransactionsHistoryPage() {
         page?: number
         per_page?: number
         transaction_type?: string
-        wallet_type?: string
+        status?: string
+        start_date?: string
+        end_date?: string
+        period?: string
       } = {
         page: page,
         per_page: perPage,
@@ -69,8 +75,17 @@ export default function TransactionsHistoryPage() {
       if (transactionType !== 'all') {
         params.transaction_type = transactionType
       }
-      if (walletType !== 'all') {
-        params.wallet_type = walletType
+      if (status !== 'all') {
+        params.status = status
+      }
+      if (period !== 'all') {
+        params.period = period
+      }
+      if (startDate) {
+        params.start_date = startDate
+      }
+      if (endDate) {
+        params.end_date = endDate
       }
 
       const response = await walletApi.getTransactions(token, params)
@@ -86,7 +101,7 @@ export default function TransactionsHistoryPage() {
     } finally {
       setLoading(false)
     }
-  }, [token, page, perPage, transactionType, walletType])
+  }, [token, page, perPage, transactionType, status, period, startDate, endDate])
 
   useEffect(() => {
     fetchTransactions()
@@ -111,6 +126,7 @@ export default function TransactionsHistoryPage() {
         )
       case 'rejected':
       case 'failed':
+      case 'declined':
         return (
           <Badge className="bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 border-red-300 dark:border-red-800 flex items-center gap-1.5 w-fit px-2.5 py-1">
             <XCircle className="h-3.5 w-3.5" />
@@ -135,8 +151,19 @@ export default function TransactionsHistoryPage() {
   }
 
   const handleFilterChange = () => {
-    setPage(1) // Reset to first page when filters change
+    setPage(1)
   }
+
+  const handleResetFilters = () => {
+    setTransactionType('all')
+    setStatus('all')
+    setPeriod('all')
+    setStartDate('')
+    setEndDate('')
+    setPage(1)
+  }
+
+  const hasActiveFilters = transactionType !== 'all' || status !== 'all' || period !== 'all' || startDate || endDate
 
   const pagination = transactionsData?.pagination
   const totalPages = pagination?.total_pages || pagination?.last_page || 1
@@ -242,7 +269,7 @@ export default function TransactionsHistoryPage() {
             <div className="text-sm">
               <span className="text-green-600 dark:text-green-400 font-medium">$</span>
               <span className="text-foreground font-semibold">
-                {formatAmount(transaction.amount, transaction.currency)}
+                {formatAmount(transaction.amount.toFixed(2), transaction.currency)}
               </span>
             </div>
           )
@@ -389,29 +416,102 @@ export default function TransactionsHistoryPage() {
         </Select>
       </div>
 
-      {/* Wallet Type Filter */}
+      {/* Status Filter */}
       <div className="flex items-center gap-2 w-full min-[450px]:w-auto">
-        <Label htmlFor="wallet-type" className="text-sm font-medium whitespace-nowrap">
-          Wallet Type
+        <Label htmlFor="status-filter" className="text-sm font-medium whitespace-nowrap">
+          Status
         </Label>
         <Select
-          value={walletType}
+          value={status}
           onValueChange={(value) => {
-            setWalletType(value)
+            setStatus(value)
             handleFilterChange()
           }}
         >
-          <SelectTrigger id="wallet-type" className="h-9 w-full min-[450px]:w-40">
-            <SelectValue placeholder="All wallets" />
+          <SelectTrigger id="status-filter" className="h-9 w-full min-[450px]:w-40">
+            <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Wallets</SelectItem>
-            <SelectItem value="main">Main</SelectItem>
-            <SelectItem value="bonus">Bonus</SelectItem>
-            <SelectItem value="commission">Commission</SelectItem>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="approved">Approved</SelectItem>
+            <SelectItem value="failed">Failed</SelectItem>
+            <SelectItem value="declined">Declined</SelectItem>
           </SelectContent>
         </Select>
       </div>
+
+      {/* Period Filter */}
+      <div className="flex items-center gap-2 w-full min-[450px]:w-auto">
+        <Label htmlFor="period-filter" className="text-sm font-medium whitespace-nowrap">
+          Period
+        </Label>
+        <Select
+          value={period}
+          onValueChange={(value) => {
+            setPeriod(value)
+            if (value !== 'all') {
+              setStartDate('')
+              setEndDate('')
+            }
+            handleFilterChange()
+          }}
+        >
+          <SelectTrigger id="period-filter" className="h-9 w-full min-[450px]:w-40">
+            <SelectValue placeholder="All time" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Time</SelectItem>
+            <SelectItem value="last7days">Last 7 Days</SelectItem>
+            <SelectItem value="last15days">Last 15 Days</SelectItem>
+            <SelectItem value="lastmonth">Last Month</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Start Date Filter */}
+      <div className="flex items-center gap-2 w-full min-[450px]:w-auto">
+        <Label htmlFor="start-date" className="text-sm font-medium whitespace-nowrap">
+          From
+        </Label>
+        <input
+          id="start-date"
+          type="date"
+          value={startDate}
+          onChange={(e) => {
+            setStartDate(e.target.value)
+            if (e.target.value) setPeriod('all')
+            handleFilterChange()
+          }}
+          className="h-9 w-full min-[450px]:w-36 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+      </div>
+
+      {/* End Date Filter */}
+      <div className="flex items-center gap-2 w-full min-[450px]:w-auto">
+        <Label htmlFor="end-date" className="text-sm font-medium whitespace-nowrap">
+          To
+        </Label>
+        <input
+          id="end-date"
+          type="date"
+          value={endDate}
+          onChange={(e) => {
+            setEndDate(e.target.value)
+            if (e.target.value) setPeriod('all')
+            handleFilterChange()
+          }}
+          className="h-9 w-full min-[450px]:w-36 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+      </div>
+
+      {/* Reset Button */}
+      {hasActiveFilters && (
+        <Button variant="ghost" size="sm" onClick={handleResetFilters} className="h-9 px-3 text-muted-foreground hover:text-foreground">
+          <XCircle className="h-4 w-4 mr-1.5" />
+          Reset
+        </Button>
+      )}
 
     </div>
   </CardContent>
@@ -455,11 +555,11 @@ export default function TransactionsHistoryPage() {
                   <Clock className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
                   <h3 className="text-lg font-semibold mb-2">No Transactions Found</h3>
                   <p className="text-muted-foreground mb-6">
-                    {transactionType !== 'all' || walletType !== 'all'
+                    {hasActiveFilters
                       ? 'Try adjusting your filters to see more results.'
                       : "You haven't made any transactions yet."}
                   </p>
-                  {transactionType === 'all' && walletType === 'all' && (
+                  {!hasActiveFilters && (
                     <Button
                       onClick={() => router.push('/funds/deposit')}
                       variant="outline"

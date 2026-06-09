@@ -954,7 +954,7 @@ export default function IbUsersPage() {
         onBack={() => {
           setSelectedTreeUserId(null);
         }}
-        backLabel="Back to IB Users"
+        backLabel="Back to Partner Users"
       />
     );
   }

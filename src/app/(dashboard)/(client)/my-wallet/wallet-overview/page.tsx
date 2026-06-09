@@ -203,11 +203,11 @@ export default function WalletOverviewPage() {
               </div>
               <CardHeader className="relative z-10 pb-0 px-0">
                 <p className="uppercase tracking-[0.2em] text-[11px] font-semibold text-primary-foreground/80">
-                  Wallet Balance
+                  Total Balance
                 </p>
                 <div className="flex items-baseline gap-2 mt-2">
                   <span className="text-4xl font-black leading-tight">
-                    {walletData ? formatAmount(walletData.total_balance) : '0.00'}
+                    {walletData ? formatAmount(walletData.total_balance.toFixed(2)) : '0.00'}
                   </span>
                   <span className="text-base font-semibold text-primary-foreground/80">
                     USD
@@ -218,7 +218,7 @@ export default function WalletOverviewPage() {
                 <div className="flex items-start justify-between gap-6">
                   <div className="flex-1">
                     <p className="text-primary-foreground/85 text-base font-medium mb-1">
-                      Your Safe Wallet
+                      Main Wallet + MT5 Accounts
                     </p>
                     <p className="text-primary-foreground/75 text-sm leading-relaxed">
                       Securely store and manage balances across deposits, withdrawals, and transfers in one place.

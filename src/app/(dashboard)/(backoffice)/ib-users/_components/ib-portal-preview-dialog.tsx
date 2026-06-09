@@ -768,7 +768,7 @@ function NetworkTab({
 
       <IbSectionCard
         title="Business breakdown"
-        description="Volume and lots contributed by each level of your downline."
+        description="Lots contributed by each level of your downline."
       >
         {loading ? (
           <TabSkeleton rows={5} />
@@ -779,7 +779,7 @@ function NetworkTab({
                 <TableRow>
                   <TableHead>Level</TableHead>
                   <TableHead>Source</TableHead>
-                  <TableHead className="text-right">Volume</TableHead>
+                  {/* <TableHead className="text-right">Volume</TableHead> */}
                   <TableHead className="text-right">Lots</TableHead>
                   <TableHead className="text-right">Commission Earned</TableHead>
                   <TableHead className="text-right">Clients / Sub-Partners</TableHead>
@@ -790,7 +790,7 @@ function NetworkTab({
                   <TableRow key={b.level}>
                     <TableCell className="font-medium">{b.level_label}</TableCell>
                     <TableCell className="text-muted-foreground">{b.source}</TableCell>
-                    <TableCell className="text-right tabular-nums">{b.volume}</TableCell>
+                    {/* <TableCell className="text-right tabular-nums">{b.volume}</TableCell> */}
                     <TableCell className="text-right tabular-nums">{b.lots}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatCurrency(b.commission_earned)}</TableCell>
                     <TableCell className="text-right tabular-nums">
@@ -874,7 +874,7 @@ function NetworkTab({
                     <TableHead>Sub-Partner</TableHead>
                     <TableHead>Level</TableHead>
                     <TableHead className="text-right">Lots</TableHead>
-                    <TableHead className="text-right">Volume</TableHead>
+                    {/* <TableHead className="text-right">Volume</TableHead> */}
                     <TableHead className="text-right">Earned</TableHead>
                     <TableHead className="text-right">Pending</TableHead>
                   </TableRow>
@@ -894,7 +894,7 @@ function NetworkTab({
                         </span>
                       </TableCell>
                       <TableCell className="text-right tabular-nums">{sub.lots}</TableCell>
-                      <TableCell className="text-right tabular-nums">{sub.volume}</TableCell>
+                      {/* <TableCell className="text-right tabular-nums">{sub.volume}</TableCell> */}
                       <TableCell className="text-right tabular-nums">{formatCurrency(sub.earned)}</TableCell>
                       <TableCell className="text-right tabular-nums">{formatCurrency(sub.pending)}</TableCell>
                     </TableRow>

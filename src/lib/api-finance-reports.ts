@@ -114,16 +114,20 @@ export const walletApi = {
       page?: number;
       per_page?: number;
       transaction_type?: string;
-      wallet_type?: string;
-      limit?: number;
+      status?: string;
+      start_date?: string;
+      end_date?: string;
+      period?: string;
     }
   ) => {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", String(params.page));
     if (params?.per_page) queryParams.append("per_page", String(params.per_page));
     if (params?.transaction_type) queryParams.append("transaction_type", params.transaction_type);
-    if (params?.wallet_type) queryParams.append("wallet_type", params.wallet_type);
-    if (params?.limit) queryParams.append("limit", String(params.limit));
+    if (params?.status) queryParams.append("status", params.status);
+    if (params?.start_date) queryParams.append("start_date", params.start_date);
+    if (params?.end_date) queryParams.append("end_date", params.end_date);
+    if (params?.period) queryParams.append("period", params.period);
 
     const queryString = queryParams.toString();
     const url = `/user/transactions${queryString ? `?${queryString}` : ""}`;

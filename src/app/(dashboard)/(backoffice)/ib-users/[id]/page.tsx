@@ -546,7 +546,7 @@ function NetworkTab({
 
       <IbSectionCard
         title="Business breakdown"
-        description="Volume and lots contributed by each level of your downline."
+        description="lots contributed by each level of your downline."
       >
         {loading ? (
           <TabSkeleton rows={5} />
@@ -557,7 +557,7 @@ function NetworkTab({
                 <TableRow>
                   <TableHead>Level</TableHead>
                   <TableHead>Source</TableHead>
-                  <TableHead className="text-right">Volume</TableHead>
+                  {/* <TableHead className="text-right">Volume</TableHead> */}
                   <TableHead className="text-right">Lots</TableHead>
                   <TableHead className="text-right">Commission Earned</TableHead>
                   <TableHead className="text-right">Clients / Sub-Partners</TableHead>
@@ -568,7 +568,7 @@ function NetworkTab({
                   <TableRow key={b.level}>
                     <TableCell className="font-medium">{b.level_label}</TableCell>
                     <TableCell className="text-muted-foreground">{b.source}</TableCell>
-                    <TableCell className="text-right tabular-nums">{b.volume}</TableCell>
+                    {/* <TableCell className="text-right tabular-nums">{b.volume}</TableCell> */}
                     <TableCell className="text-right tabular-nums">{b.lots}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatCurrency(b.commission_earned)}</TableCell>
                     <TableCell className="text-right tabular-nums">
@@ -603,7 +603,7 @@ function NetworkTab({
                   <TableRow>
                     <TableHead>Client</TableHead>
                     <TableHead className="text-right">Lots</TableHead>
-                    <TableHead className="text-right">Volume</TableHead>
+                    {/* <TableHead className="text-right">Volume</TableHead> */}
                     <TableHead className="text-right">Earned</TableHead>
                     <TableHead className="text-right">Pending</TableHead>
                     <TableHead>Registered</TableHead>
@@ -619,7 +619,7 @@ function NetworkTab({
                         </div>
                       </TableCell>
                       <TableCell className="text-right tabular-nums">{client.lots}</TableCell>
-                      <TableCell className="text-right tabular-nums">{client.volume}</TableCell>
+                      {/* <TableCell className="text-right tabular-nums">{client.volume}</TableCell> */}
                       <TableCell className="text-right tabular-nums">{formatCurrency(client.earned)}</TableCell>
                       <TableCell className="text-right tabular-nums">{formatCurrency(client.pending)}</TableCell>
                       <TableCell className="text-muted-foreground">
@@ -652,7 +652,7 @@ function NetworkTab({
                     <TableHead>Sub-Partner</TableHead>
                     <TableHead>Level</TableHead>
                     <TableHead className="text-right">Lots</TableHead>
-                    <TableHead className="text-right">Volume</TableHead>
+                    {/* <TableHead className="text-right">Volume</TableHead> */}
                     <TableHead className="text-right">Earned</TableHead>
                     <TableHead className="text-right">Pending</TableHead>
                   </TableRow>
@@ -672,7 +672,7 @@ function NetworkTab({
                         </span>
                       </TableCell>
                       <TableCell className="text-right tabular-nums">{sub.lots}</TableCell>
-                      <TableCell className="text-right tabular-nums">{sub.volume}</TableCell>
+                      {/* <TableCell className="text-right tabular-nums">{sub.volume}</TableCell> */}
                       <TableCell className="text-right tabular-nums">{formatCurrency(sub.earned)}</TableCell>
                       <TableCell className="text-right tabular-nums">{formatCurrency(sub.pending)}</TableCell>
                     </TableRow>
@@ -746,48 +746,6 @@ function ProfileTab({ user, loading }: TabShellProps) {
           </div>
         ))}
       </div>
-
-      {/* <IbSectionCard
-        title="Activity timeline"
-        description="A short log of the IB's recent portal actions."
-      >
-        {loading ? (
-          <TabSkeleton rows={3} />
-        ) : (
-          <div className="space-y-2">
-            {[
-              { icon: ArrowUpRight, label: "Login activity", tone: "text-rose-600" },
-              { icon: ArrowDownRight, label: "Plan assignment", tone: "text-emerald-600" },
-              { icon: ArrowUpRight, label: "KYC update", tone: "text-amber-600" },
-            ].map((entry, index) => {
-              const Icon = entry.icon;
-              return (
-                <div
-                  key={index}
-                  className="flex items-start gap-3 rounded-2xl border border-border/60 bg-background p-4"
-                >
-                  <div
-                    className={cn(
-                      "mt-0.5 flex h-9 w-9 items-center justify-center rounded-2xl bg-muted/40",
-                      entry.tone,
-                    )}
-                  >
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground">
-                      {entry.label}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Timeline entries will load once activity log endpoint is wired up.
-                    </p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </IbSectionCard> */}
     </>
   );
 }
@@ -1054,7 +1012,7 @@ export default function IbUserDetailPage() {
             onClick={() => router.push("/ib-users")}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to IB Users
+            Back to Partner Users
           </Button>
           <ApiErrorState
             error={error}
