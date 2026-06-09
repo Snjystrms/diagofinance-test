@@ -908,6 +908,7 @@ export interface AdminIbUser {
   mobile?: string;
   phone?: string;
   sponsor_id?: string;
+  sponsor_by?: string;
   ib_name?: string;
   ib_plan_name?: string;
   partner_id?: string;

@@ -89,6 +89,7 @@ type PreviewUser = Pick<
   | "mobile"
   | "phone"
   | "sponsor_id"
+  | "sponsor_by"
   | "ib_name"
   | "ib_plan_name"
   | "partner_id"
@@ -184,6 +185,7 @@ type ResolvedPreview = {
   fullName: string;
   statusLabel: string;
   isActive: boolean;
+  sponsor_by: string;
 };
 
 type TabShellProps = {
@@ -700,7 +702,7 @@ function ProfileTab({ user, loading }: TabShellProps) {
     { label: "Partner Name", value: user.user.ib_name ?? "\u2014" },
     { label: "Partner Plan", value: user.planName },
     { label: "Partner ID", value: user.partnerId },
-    { label: "Sponsor ID", value: user.user.sponsor_id ?? "\u2014" },
+    { label: "Sponsor By", value: user.user.sponsor_by ?? "\u2014" },
     { label: "Referral Code", value: user.user.referral_code ?? "\u2014" },
     {
       label: "Registered",
@@ -999,6 +1001,7 @@ export default function IbUserDetailPage() {
       fullName: deriveFullName(user),
       statusLabel: deriveStatusLabel(user),
       isActive: isActive(user),
+      sponsor_by: user.sponsor_by ?? "",
     };
   }, [user]);
 
