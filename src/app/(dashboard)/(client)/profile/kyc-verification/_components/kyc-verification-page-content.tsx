@@ -587,7 +587,15 @@ export function KycVerificationPageContent() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="border-2 border-dashed border-border rounded-lg p-8 bg-muted/50">
+            <div
+              className="border-2 border-dashed border-border rounded-lg p-8 bg-muted/50"
+              onClick={(e) => {
+                if (!selectValue) {
+                  e.stopPropagation();
+                  toast.error('Please select a document type from the dropdown first.');
+                }
+              }}
+            >
               <div className="flex flex-col items-center justify-center space-y-4">
                 <div className="relative">
                   <div className="w-16 h-20 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -637,7 +645,7 @@ export function KycVerificationPageContent() {
                   <Button
                     type="button"
                     variant="outline"
-                    disabled={disabled}
+                    disabled={disabled || !selectValue}
                     onClick={() => document.getElementById(`file-${title}`)?.click()}
                   >
                     Browse Files
@@ -649,7 +657,7 @@ export function KycVerificationPageContent() {
                   accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
                   className="hidden"
                   onChange={onChange}
-                  disabled={disabled}
+                  disabled={disabled || !selectValue}
                 />
 
                 <div className="flex items-start gap-2 text-xs text-muted-foreground">
@@ -737,7 +745,15 @@ export function KycVerificationPageContent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="border-2 border-dashed border-border rounded-lg p-6 bg-muted/50">
+              <div
+                className="border-2 border-dashed border-border rounded-lg p-6 bg-muted/50"
+                onClick={(e) => {
+                  if (!selectValue) {
+                    e.stopPropagation();
+                    toast.error('Please select a document type from the dropdown first.');
+                  }
+                }}
+              >
                 <div className="flex flex-col items-center justify-center space-y-3">
                   <div className="relative">
                     <div className="w-12 h-16 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -787,7 +803,7 @@ export function KycVerificationPageContent() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      disabled={disabled}
+                      disabled={disabled || !selectValue}
                       onClick={() => document.getElementById(`file-front-${title}`)?.click()}
                     >
                       Browse Files
@@ -799,7 +815,7 @@ export function KycVerificationPageContent() {
                     accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
                     className="hidden"
                     onChange={onFrontChange}
-                    disabled={disabled}
+                    disabled={disabled || !selectValue}
                   />
 
                   <div className="flex items-start gap-2 text-xs text-muted-foreground">
@@ -819,7 +835,15 @@ export function KycVerificationPageContent() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="border-2 border-dashed border-border rounded-lg p-6 bg-muted/50">
+              <div
+                className="border-2 border-dashed border-border rounded-lg p-6 bg-muted/50"
+                onClick={(e) => {
+                  if (!selectValue) {
+                    e.stopPropagation();
+                    toast.error('Please select a document type from the dropdown first.');
+                  }
+                }}
+              >
                 <div className="flex flex-col items-center justify-center space-y-3">
                   <div className="relative">
                     <div className="w-12 h-16 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -869,7 +893,7 @@ export function KycVerificationPageContent() {
                       type="button"
                       variant="outline"
                       size="sm"
-                      disabled={disabled}
+                      disabled={disabled || !selectValue}
                       onClick={() => document.getElementById(`file-back-${title}`)?.click()}
                     >
                       Browse Files
@@ -881,7 +905,7 @@ export function KycVerificationPageContent() {
                     accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
                     className="hidden"
                     onChange={onBackChange}
-                    disabled={disabled}
+                    disabled={disabled || !selectValue}
                   />
 
                   <div className="flex items-start gap-2 text-xs text-muted-foreground">

@@ -115,8 +115,8 @@ export function AdminDashboardView({ adminDashboardData, userName }: AdminDashbo
   ] satisfies KpiCardItem[];
 
   const secondaryKpiCards = [
-    { title: "Approved Deposits",      value: kpis?.approved_deposit ?? 0,    description: "Total approved",         icon: CheckCircle2, ibVariant: "ib-portal-surface-emerald", href: "/report-management?status=1" },
-    { title: "Pending Deposits",       value: kpis?.pending_deposit ?? 0,     description: "Awaiting approval",      icon: Clock,        ibVariant: "ib-portal-surface-amber",   href: "/report-management?status=0" },
+    { title: "Approved Deposits",      value: kpis?.approved_deposit ?? 0,    description: "Total approved",         icon: CheckCircle2, ibVariant: "ib-portal-surface-emerald", href: "/report-management/deposit-report?status=1" },
+    { title: "Pending Deposits",       value: kpis?.pending_deposit ?? 0,     description: "Awaiting approval",      icon: Clock,        ibVariant: "ib-portal-surface-amber",   href: "/report-management/deposit-report?status=0" },
     { title: "Pending Withdrawals",    value: kpis?.pending_withdraw ?? 0,    description: "Awaiting processing",    icon: TrendingDown, ibVariant: "ib-portal-surface-amber",   href: "/report-management/withdrawal-report?status=pending" },
     { title: "Pending IB Withdrawals", value: kpis?.pending_ib_withdraw ?? 0, description: "IB withdrawal requests", icon: Wallet,       ibVariant: "ib-portal-surface-primary", href: "/report-management/ib-withdrawal-report" },
   ] satisfies KpiCardItem[];

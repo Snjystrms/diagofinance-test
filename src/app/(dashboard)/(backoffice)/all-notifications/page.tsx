@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Spinner } from "@/components/ui/spinner";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import { useAuth } from "@/contexts/auth-context";
@@ -28,7 +29,6 @@ import {
   CheckCircle2,
   Clock,
   Calendar,
-  Search,
   CheckCheck,
   RefreshCw,
 } from "lucide-react";
@@ -90,6 +90,13 @@ export default function AllNotificationsPage() {
   const [markingRead, setMarkingRead] = useState<number | null>(null);
   const [markingAllRead, setMarkingAllRead] = useState(false);
 
+  const searchTermRef = useRef(searchTerm);
+  useEffect(() => {
+    searchTermRef.current = searchTerm;
+  }, [searchTerm]);
+
+  const skipNextEffectRef = useRef(false);
+
   // Check permissions
   const canViewNotifications = useMemo(() => {
     if (isAdmin) return true;
@@ -115,17 +122,17 @@ export default function AllNotificationsPage() {
     return false;
   }, [isAdmin, isManager, hasFeature]);
 
-  const loadNotifications = useCallback(async () => {
+  const loadNotifications = useCallback(async (search?: string, pageNum?: number) => {
     if (!token || !canViewNotifications) return;
 
     try {
       setLoading(true);
       setLoadError(null);
       const response = await adminNotificationApi.getNotifications(token, {
-        page,
+        page: pageNum ?? page,
         limit,
         status: statusFilter,
-        search: searchTerm || undefined,
+        search: (search ?? searchTermRef.current) || undefined,
       });
 
       // apiCall returns ApiResponse<T>, so response.data is the data object
@@ -163,15 +170,26 @@ export default function AllNotificationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, page, limit, statusFilter, searchTerm, canViewNotifications]);
+  }, [token, page, limit, statusFilter, canViewNotifications]);
 
-  // Reset to page 1 when filters change
+  // Reset to page 1 when status filter changes
   useEffect(() => {
     setPage(1);
-  }, [statusFilter, searchTerm]);
+  }, [statusFilter]);
 
   useEffect(() => {
+    if (skipNextEffectRef.current) {
+      skipNextEffectRef.current = false;
+      return;
+    }
     loadNotifications();
+  }, [loadNotifications]);
+
+  const handleSearch = useCallback((value: string) => {
+    setSearchTerm(value);
+    setPage(1);
+    skipNextEffectRef.current = true;
+    loadNotifications(value, 1);
   }, [loadNotifications]);
 
   const handleMarkAsRead = useCallback(
@@ -385,14 +403,14 @@ export default function AllNotificationsPage() {
               <Bell className="h-6 w-6 text-primary" />
               <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Total</p>
             </div>
-            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{summary.total}</p>
+            <p className="text-3xl font-semibold">{summary.total}</p>
           </div>
           <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-card p-4 shadow-sm">
             <div className="flex items-center gap-2 mb-2">
               <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
               <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Unread</p>
             </div>
-            <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">
+            <p className="text-3xl font-semibold">
               {summary.unread}
             </p>
           </div>
@@ -401,7 +419,7 @@ export default function AllNotificationsPage() {
               <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
               <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Read</p>
             </div>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+            <p className="text-3xl font-semibold">
               {summary.read}
             </p>
           </div>
@@ -429,11 +447,12 @@ export default function AllNotificationsPage() {
 
             {/* Search */}
             <div className="flex-1 flex items-center gap-2">
-              <Search className="h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search notifications..."
+              <ApiSearchBar
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={setSearchTerm}
+                onSearch={handleSearch}
+                placeholder="Search notifications..."
+                minimumLength={3}
                 className="max-w-sm"
               />
             </div>

@@ -2862,20 +2862,22 @@ export interface BinanceDepositCreateResponse {
 
 export interface DepositListItem {
   id: number;
-  uuid: string;
-  amount: string;
+  uuid: string | null;
+  amount: number;
   status: number;
   file: string | null;
   user_comment: string | null;
   admin_comment: string | null;
   created_at: string;
-  payment_method_id: number;
+  payment_method_id: number | null;
   merchant_trade_no?: string | null;
   coinsbuy_deposit_id?: string | null;
+  transaction_hash: string | null;
+  source: string;
   paymentMethod: {
-    id: number;
     type: string;
-  };
+    name: string;
+  } | null;
 }
 
 export interface DepositListResponse {
@@ -2912,13 +2914,38 @@ export const binanceDepositApi = {
       body: JSON.stringify(data),
     }),
 
-  getList: (page: number = 1, perPage: number = 10, token: string, paymentMethodId?: number) => {
+  getList: (
+    page: number = 1,
+    perPage: number = 10,
+    token: string,
+    options?: {
+      search?: string;
+      payment_method_id?: number | null;
+      status?: number | null;
+      source?: string | null;
+      payment_category?: string | null;
+      date_from?: string | null;
+      date_to?: string | null;
+      sort_column?: string;
+      sort_order?: string;
+    }
+  ) => {
     const qs = new URLSearchParams();
     qs.set("per_page", String(perPage));
     qs.set("page", String(page));
-    if (paymentMethodId !== undefined && paymentMethodId !== null) {
-      qs.set("payment_method_id", String(paymentMethodId));
+    qs.set("sort_column", options?.sort_column || "created_at");
+    qs.set("sort_order", options?.sort_order || "DESC");
+    if (options?.search) qs.set("search", options.search);
+    if (options?.payment_method_id !== undefined && options?.payment_method_id !== null) {
+      qs.set("payment_method_id", String(options.payment_method_id));
     }
+    if (options?.status !== undefined && options?.status !== null) {
+      qs.set("status", String(options.status));
+    }
+    if (options?.source) qs.set("source", options.source);
+    if (options?.payment_category) qs.set("payment_category", options.payment_category);
+    if (options?.date_from) qs.set("date_from", options.date_from);
+    if (options?.date_to) qs.set("date_to", options.date_to);
     return apiCall<DepositListResponse>(`/user/deposit/list?${qs.toString()}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },

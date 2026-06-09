@@ -523,7 +523,7 @@ export interface AdminTicketStatsPayload {
 }
 
 export interface AdminTicketReplyRequest {
-  reply_note: string;
+  message: string;
   admin_notes?: string;
 }
 

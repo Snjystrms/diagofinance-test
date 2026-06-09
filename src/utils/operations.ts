@@ -1,5 +1,5 @@
 // API Operations for Personal Information
-import { ApiResponse } from '@/lib/api'
+import { ApiResponse, DepositListResponse } from '@/lib/api'
 import { formatInIST } from '@/lib/date-time'
 
 // Base API configuration (from .env only)
@@ -10,7 +10,7 @@ async function apiCall<T>(
   endpoint: string,
   options: RequestInit = {},
   token?: string
-): Promise<ApiResponse<T>> {
+): Promise<T> {
   if (!API_BASE_URL) {
     throw new Error('NEXT_PUBLIC_API_BASE_URL is not configured')
   }
@@ -45,7 +45,7 @@ async function apiCall<T>(
 export const authOperations = {
   // Login user
   login: async (credentials: { email: string; password: string }): Promise<ApiResponse> => {
-    return apiCall('/auth/login', {
+    return apiCall<ApiResponse>('/auth/login', {
       method: 'POST',
       body: JSON.stringify(credentials),
     })
@@ -53,7 +53,7 @@ export const authOperations = {
 
   // Register user
   register: async (userData: Record<string, unknown>): Promise<ApiResponse> => {
-    return apiCall('/auth/register', {
+    return apiCall<ApiResponse>('/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData),
     })
@@ -61,7 +61,7 @@ export const authOperations = {
 
   // Verify OTP
   verifyOtp: async (otpData: { otp: string; email: string }): Promise<ApiResponse> => {
-    return apiCall('/auth/verify-otp', {
+    return apiCall<ApiResponse>('/auth/verify-otp', {
       method: 'POST',
       body: JSON.stringify(otpData),
     })
@@ -69,7 +69,7 @@ export const authOperations = {
 
   // Resend OTP
   resendOtp: async (email: string): Promise<ApiResponse> => {
-    return apiCall('/auth/resend-otp', {
+    return apiCall<ApiResponse>('/auth/resend-otp', {
       method: 'POST',
       body: JSON.stringify({ email }),
     })
@@ -77,7 +77,7 @@ export const authOperations = {
 
   // Forgot password
   forgotPassword: async (email: string): Promise<ApiResponse> => {
-    return apiCall('/auth/forget-password', {
+    return apiCall<ApiResponse>('/auth/forget-password', {
       method: 'POST',
       body: JSON.stringify({ email }),
     })
@@ -85,7 +85,7 @@ export const authOperations = {
 
   // Reset password
   resetPassword: async (resetData: { token: string; password: string; confirm_password: string }): Promise<ApiResponse> => {
-    return apiCall('/auth/reset-password', {
+    return apiCall<ApiResponse>('/auth/reset-password', {
       method: 'POST',
       body: JSON.stringify(resetData),
     })
@@ -93,7 +93,7 @@ export const authOperations = {
 
   // Logout
   logout: async (token: string): Promise<ApiResponse> => {
-    return apiCall('/auth/logout', {
+    return apiCall<ApiResponse>('/auth/logout', {
       method: 'POST',
     }, token)
   }
@@ -202,25 +202,44 @@ interface DepositRequestsApiResponse {
 // Get user deposit requests
 export async function getUserDepositRequests(
   page: number = 1,
-  limit: number = 10,
-  token?: string
-): Promise<DepositRequestsResponse> {
-  const response = await apiCall<DepositRequestsApiResponse>(
-    `/user/usdt-deposit/user-requests?page=${page}&limit=${limit}`,
+  perPage: number = 10,
+  token?: string,
+  options?: {
+    search?: string;
+    payment_method_id?: number | null;
+    status?: number | null;
+    source?: string | null;
+    payment_category?: string | null;
+    date_from?: string | null;
+    date_to?: string | null;
+    sort_column?: string;
+    sort_order?: string;
+  }
+): Promise<DepositListResponse> {
+  const qs = new URLSearchParams()
+  qs.set('page', String(page))
+  qs.set('per_page', String(perPage))
+  qs.set('sort_column', options?.sort_column || 'created_at')
+  qs.set('sort_order', options?.sort_order || 'DESC')
+  if (options?.search) qs.set('search', options.search)
+  if (options?.payment_method_id !== undefined && options?.payment_method_id !== null) {
+    qs.set('payment_method_id', String(options.payment_method_id))
+  }
+  if (options?.status !== undefined && options?.status !== null) {
+    qs.set('status', String(options.status))
+  }
+  if (options?.source) qs.set('source', options.source)
+  if (options?.payment_category) qs.set('payment_category', options.payment_category)
+  if (options?.date_from) qs.set('date_from', options.date_from)
+  if (options?.date_to) qs.set('date_to', options.date_to)
+
+  return apiCall<DepositListResponse>(
+    `/user/deposit/list?${qs.toString()}`,
     {
       method: 'GET',
     },
     token
   )
-  
-  // Ensure we return the correct structure
-  return {
-    success: response.success,
-    data: {
-      requests: response.data?.requests || [],
-      pagination: response.data?.pagination,
-    },
-  } as DepositRequestsResponse
 }
 
 // Withdrawal Types
@@ -336,10 +355,10 @@ export async function createWithdrawalRequest(
   data: WithdrawalRequest,
   token?: string
 ): Promise<WithdrawalResponse> {
-  return apiCall<WithdrawalItem>('/user/withdrawals', {
+  return apiCall<WithdrawalResponse>('/user/withdrawals', {
     method: 'POST',
     body: JSON.stringify(data),
-  }, token) as Promise<WithdrawalResponse>
+  }, token)
 }
 
 // Get user withdrawal requests
@@ -379,7 +398,7 @@ export async function getUserWithdrawals(
       }
     } else if (!response.success) {
       console.error('API returned unsuccessful response:', response)
-      throw new Error(response.message || 'Failed to fetch withdrawals')
+      throw new Error('Failed to fetch withdrawals')
     }
     
     // Ensure we return the correct structure
@@ -399,7 +418,7 @@ export async function getUserWithdrawals(
 // User Operations
 export const userOperations = {
   submitRegistrationFee: async (transactionHash: string, token: string): Promise<ApiResponse> => {
-    return apiCall('/user/registration-fee', {
+    return apiCall<ApiResponse>('/user/registration-fee', {
       method: 'POST',
       body: JSON.stringify({ transaction_hash: transactionHash }),
     }, token)
@@ -413,7 +432,7 @@ export const transactionOperations = {
     hashcode: string,
     txHash: string
   ): Promise<ApiResponse> => {
-    return apiCall('/user/verify-email-transaction', {
+    return apiCall<ApiResponse>('/user/verify-email-transaction', {
       method: 'POST',
       body: JSON.stringify({
         hashcode,

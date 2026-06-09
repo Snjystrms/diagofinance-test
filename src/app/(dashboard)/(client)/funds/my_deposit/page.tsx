@@ -1,34 +1,48 @@
 'use client'
 
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { AppDataTable } from '@/components/app-data-table'
 import { ApiErrorState } from '@/components/errors/api-error-state'
 import { ClientTablePageSkeleton } from '@/components/loading/client-page-skeletons'
 import { useAuth } from '@/contexts/auth-context'
-import { getUserDepositRequests, type DepositRequestItem } from '@/utils/operations'
-import { binanceDepositApi, coinsbuyDepositApi, type DepositListItem, type BinanceDepositStatusResponse, type CoinsBuyDepositStatusResponse, type DepositListResponse } from '@/lib/api'
-import { getFriendlyErrorMessage } from '@/lib/friendly-errors'
+import { getUserDepositRequests } from '@/utils/operations'
+import { type DepositListItem } from '@/lib/api'
 import { CLIENT_WALLET_REFRESH_EVENT } from '@/lib/client-events'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import toast from 'react-hot-toast'
 import { type ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { ApiSearchBar } from '@/components/ui/api-search-bar'
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header'
 import { SerialNumberCell } from '@/components/data-table/serial-number-cell'
-import { 
-  Clock, 
-  CheckCircle, 
-  XCircle, 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { Calendar } from '@/components/ui/calendar'
+import { format } from 'date-fns'
+import { cn } from '@/lib/utils'
+import {
+  Clock,
+  CheckCircle,
+  XCircle,
   ExternalLink,
   Image as ImageIcon,
   DollarSign,
-  Hash,
-  Calendar,
+  Calendar as CalendarIcon,
   FileText,
-  Eye
+  Search,
+  X,
 } from 'lucide-react'
 import { formatDateTimeInIST } from '@/lib/formatters'
 import {
@@ -39,11 +53,14 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { useQueryState, parseAsInteger } from 'nuqs'
+import { Card, CardContent } from '@/components/ui/card'
+import { useQueryState, parseAsInteger, parseAsString } from 'nuqs'
 
 // Status badge component
-const StatusBadge = ({ status }: { status: string }) => {
+const StatusBadge = ({ status }: { status: number }) => {
+  const statusMap: Record<number, string> = { 0: 'pending', 1: 'approved', 2: 'rejected' }
+  const statusText = statusMap[status] || 'pending'
+
   const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', className: string, icon: React.ReactNode }> = {
     pending: {
       variant: 'secondary',
@@ -62,15 +79,15 @@ const StatusBadge = ({ status }: { status: string }) => {
     },
   }
 
-  const statusConfig = variants[status.toLowerCase()] || variants.pending
+  const statusConfig = variants[statusText] || variants.pending
 
   return (
-    <Badge 
+    <Badge
       variant={statusConfig.variant}
       className={`${statusConfig.className} flex items-center gap-1 w-fit`}
     >
       {statusConfig.icon}
-      <span className="capitalize">{status}</span>
+      <span className="capitalize">{statusText}</span>
     </Badge>
   )
 }
@@ -80,10 +97,10 @@ const PaymentProofDialog = ({ paymentProofUrl }: { paymentProofUrl: string | nul
   const authCtx = useAuth?.()
   const token = authCtx?.token || (typeof window !== 'undefined' ? localStorage.getItem('auth_token') || '' : '')
 
-  const [open, setOpen] = useState(false)
-  const [blobUrl, setBlobUrl] = useState<string>('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(false)
+  const [open, setOpen] = React.useState(false)
+  const [blobUrl, setBlobUrl] = React.useState<string>('')
+  const [loading, setLoading] = React.useState(false)
+  const [error, setError] = React.useState(false)
 
   useEffect(() => {
     if (!open || !paymentProofUrl || !token) {
@@ -233,234 +250,9 @@ const AdminNotesCell = ({ notes }: { notes: string | null }) => {
   )
 }
 
-// Deposit status cell with eye icon - handles both Binance Pay and Coinsbuy
-const DepositStatusCell = ({ deposit, token }: { deposit: DepositListItem; token: string | null }) => {
-  const [binanceStatusData, setBinanceStatusData] = useState<BinanceDepositStatusResponse['data'] | null>(null);
-  const [coinsbuyStatusData, setCoinsbuyStatusData] = useState<CoinsBuyDepositStatusResponse['data'] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [open, setOpen] = useState(false);
-
-  const paymentMethodId = deposit.payment_method_id || deposit.paymentMethod?.id;
-  const isBinancePay = paymentMethodId === 1;
-  const isCoinsbuy = paymentMethodId === 3;
-
-  const fetchStatus = async () => {
-    if (!token) {
-      toast.error('Please sign in again to continue.');
-      return;
-    }
-    
-    setLoading(true);
-    try {
-      if (isBinancePay && deposit.merchant_trade_no) {
-        const response = await binanceDepositApi.getStatus(deposit.merchant_trade_no, token);
-        console.log('Binance status response (full):', JSON.stringify(response, null, 2));
-        
-        if (response.success) {
-          let statusData: BinanceDepositStatusResponse['data'] | null = null;
-          
-          if (response.data) {
-            if (typeof response.data === 'object' && 'data' in response.data) {
-              const statusResponse = response.data as BinanceDepositStatusResponse;
-              statusData = statusResponse.data;
-            } else if (typeof response.data === 'object' && 'deposit_uuid' in response.data && 'merchant_trade_no' in response.data) {
-              statusData = response.data as BinanceDepositStatusResponse['data'];
-            }
-          }
-          
-          if (statusData) {
-            console.log('Status data extracted:', statusData);
-            setBinanceStatusData(statusData);
-          } else {
-            console.error('Could not extract status data. Response structure:', response);
-            toast.error('Status data not available');
-          }
-        } else {
-          toast.error(getFriendlyErrorMessage(response.message || 'Unable to fetch status', {
-            audience: 'client',
-            resource: 'deposit status',
-            action: 'load',
-          }));
-        }
-      } else if (isCoinsbuy && deposit.coinsbuy_deposit_id) {
-        const response = await coinsbuyDepositApi.getStatus(deposit.coinsbuy_deposit_id, token);
-        console.log('Coinsbuy status response (full):', JSON.stringify(response, null, 2));
-        
-        if (response.success) {
-          let statusData: CoinsBuyDepositStatusResponse['data'] | null = null;
-          
-          if (response.data) {
-            if (typeof response.data === 'object' && 'data' in response.data) {
-              const statusResponse = response.data as CoinsBuyDepositStatusResponse;
-              statusData = statusResponse.data;
-            } else if (typeof response.data === 'object' && 'deposit_uuid' in response.data && 'coinsbuy_deposit_id' in response.data) {
-              statusData = response.data as CoinsBuyDepositStatusResponse['data'];
-            }
-          }
-          
-          if (statusData) {
-            console.log('Coinsbuy status data extracted:', statusData);
-            setCoinsbuyStatusData(statusData);
-          } else {
-            console.error('Could not extract status data. Response structure:', response);
-            toast.error('Status data not available');
-          }
-        } else {
-          toast.error(getFriendlyErrorMessage(response.message || 'Unable to fetch status', {
-            audience: 'client',
-            resource: 'deposit status',
-            action: 'load',
-          }));
-        }
-      } else {
-        toast.error('Required information not available for this deposit type');
-      }
-    } catch (error) {
-      console.error('Error fetching deposit status:', error);
-      toast.error(getFriendlyErrorMessage(error, {
-        audience: 'client',
-        resource: 'deposit status',
-        action: 'load',
-      }));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleOpenChange = (isOpen: boolean) => {
-    setOpen(isOpen);
-    if (isOpen && !binanceStatusData && !coinsbuyStatusData) {
-      fetchStatus();
-    }
-  };
-
-  // Check if we have the required identifier for the payment method
-  const hasRequiredIdentifier = (isBinancePay && deposit.merchant_trade_no) || (isCoinsbuy && deposit.coinsbuy_deposit_id);
-  
-  if (!hasRequiredIdentifier) {
-    return (
-      <Button variant="ghost" size="sm" className="h-8" disabled title="Status information not available yet">
-        <Eye className="h-4 w-4 mr-2 opacity-50" />
-        <span className="text-xs text-muted-foreground">N/A</span>
-      </Button>
-    );
-  }
-
-  const getStatusBadge = (status: number, additionalStatus?: string | number) => {
-    if (status === 1) {
-      return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400">Approved</Badge>;
-    } else if (status === 2) {
-      return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">Rejected</Badge>;
-    }
-    return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">Pending</Badge>;
-  };
-
-  const getCoinsbuyStatusText = (status: number) => {
-    const statusMap: Record<number, string> = {
-      0: 'Pending',
-      1: 'Processing',
-      2: 'Confirmed',
-      3: 'Failed',
-    };
-    return statusMap[status] || `Status ${status}`;
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-8">
-          <Eye className="h-4 w-4 mr-2" />
-          View Status
-        </Button>
-      </DialogTrigger>
-      <DialogContent className="max-w-2xl">
-        <DialogHeader>
-          <DialogTitle>Deposit Status</DialogTitle>
-          <DialogDescription>
-            Current status of your {isBinancePay ? 'Binance Pay' : isCoinsbuy ? 'Coinsbuy' : 'deposit'}
-          </DialogDescription>
-        </DialogHeader>
-        {loading ? (
-          <div className="flex items-center justify-center p-8">
-            <Clock className="h-6 w-6 animate-spin text-muted-foreground" />
-          </div>
-        ) : binanceStatusData ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs text-muted-foreground">Deposit Status</Label>
-                <div className="mt-1">
-                  {getStatusBadge(binanceStatusData.deposit_status, binanceStatusData.binance_status)}
-                </div>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Binance Status</Label>
-                <div className="mt-1 font-medium">{binanceStatusData.binance_status}</div>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Amount</Label>
-                <div className="mt-1 font-medium">{binanceStatusData.amount} {binanceStatusData.currency}</div>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Merchant Trade No</Label>
-                <div className="mt-1 font-mono text-sm">{binanceStatusData.merchant_trade_no}</div>
-              </div>
-              {binanceStatusData.transaction_id && (
-                <div className="col-span-2">
-                  <Label className="text-xs text-muted-foreground">Transaction ID</Label>
-                  <div className="mt-1 font-mono text-sm break-all">{binanceStatusData.transaction_id}</div>
-                </div>
-              )}
-              {binanceStatusData.transaction_time && (
-                <div className="col-span-2">
-                  <Label className="text-xs text-muted-foreground">Transaction Time</Label>
-                  <div className="mt-1 text-sm">
-                    {formatDateTimeInIST(binanceStatusData.transaction_time)}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : coinsbuyStatusData ? (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-xs text-muted-foreground">Deposit Status</Label>
-                <div className="mt-1">
-                  {getStatusBadge(coinsbuyStatusData.deposit_status, coinsbuyStatusData.coinsbuy_status)}
-                </div>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Coinsbuy Status</Label>
-                <div className="mt-1 font-medium">{getCoinsbuyStatusText(coinsbuyStatusData.coinsbuy_status)}</div>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Coinsbuy Deposit ID</Label>
-                <div className="mt-1 font-mono text-sm">{coinsbuyStatusData.coinsbuy_deposit_id}</div>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Tracking ID</Label>
-                <div className="mt-1 font-mono text-sm">{coinsbuyStatusData.tracking_id}</div>
-              </div>
-              <div>
-                <Label className="text-xs text-muted-foreground">Confirmations Needed</Label>
-                <div className="mt-1 font-medium">{coinsbuyStatusData.confirmations_needed}</div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="text-center p-8 text-muted-foreground">
-            No status data available
-          </div>
-        )}
-      </DialogContent>
-    </Dialog>
-  );
-};
-
-// Define columns for local deposits
-const localColumns: ColumnDef<DepositRequestItem>[] = [
- {
+// Define unified columns for all deposits
+const columns: ColumnDef<DepositListItem>[] = [
+  {
     id: "sr_no",
     header: "Sr. No.",
     cell: ({ row, table }) => <SerialNumberCell row={row} table={table} />,
@@ -475,9 +267,9 @@ const localColumns: ColumnDef<DepositRequestItem>[] = [
     cell: ({ row }) => (
       <div className="flex items-center gap-2 font-semibold">
         <DollarSign className="h-4 w-4 text-green-600" />
-        <span>{parseFloat(row.original.amount).toLocaleString('en-US', { 
-          minimumFractionDigits: 2, 
-          maximumFractionDigits: 8 
+        <span>{row.original.amount.toLocaleString('en-US', {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 8
         })} USDT</span>
       </div>
     ),
@@ -494,6 +286,26 @@ const localColumns: ColumnDef<DepositRequestItem>[] = [
     },
   },
   {
+    id: 'paymentMethod',
+    accessorKey: 'paymentMethod',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Payment Method" />
+    ),
+    cell: ({ row }) => (
+      <Badge variant="outline">{row.original.paymentMethod?.name || row.original.paymentMethod?.type || 'N/A'}</Badge>
+    ),
+  },
+  {
+    id: 'source',
+    accessorKey: 'source',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Source" />
+    ),
+    cell: ({ row }) => (
+      <span className="text-sm capitalize">{row.original.source?.replace(/_/g, ' ') || '-'}</span>
+    ),
+  },
+  {
     id: 'transaction_hash',
     accessorKey: 'transaction_hash',
     header: ({ column }) => (
@@ -502,22 +314,22 @@ const localColumns: ColumnDef<DepositRequestItem>[] = [
     cell: ({ row }) => <TransactionHashCell hash={row.original.transaction_hash} />,
   },
   {
-    id: 'payment_proof_url',
-    accessorKey: 'payment_proof_url',
+    id: 'file',
+    accessorKey: 'file',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Payment Proof" />
     ),
     cell: ({ row }) => (
-      <PaymentProofDialog paymentProofUrl={row.original.payment_proof_url} />
+      <PaymentProofDialog paymentProofUrl={row.original.file} />
     ),
   },
   {
-    id: 'admin_notes',
-    accessorKey: 'admin_notes',
+    id: 'admin_comment',
+    accessorKey: 'admin_comment',
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Admin Notes" />
     ),
-    cell: ({ row }) => <AdminNotesCell notes={row.original.admin_notes} />,
+    cell: ({ row }) => <AdminNotesCell notes={row.original.admin_comment} />,
   },
   {
     id: 'created_at',
@@ -527,327 +339,404 @@ const localColumns: ColumnDef<DepositRequestItem>[] = [
     ),
     cell: ({ row }) => (
       <div className="flex items-center gap-2 text-sm">
-        <Calendar className="h-4 w-4 text-muted-foreground" />
+        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
         <span>
           {formatDateTimeInIST(row.original.created_at)}
-        </span>
-      </div>
-    ),
-  },
-  {
-    id: 'updated_at',
-    accessorKey: 'updated_at',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Updated At" />
-    ),
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2 text-sm">
-        <Calendar className="h-4 w-4 text-muted-foreground" />
-        <span>
-          {formatDateTimeInIST(row.original.updated_at)}
         </span>
       </div>
     ),
   },
 ]
 
-// Define columns for Binance deposits
-const binanceColumns: ColumnDef<DepositListItem>[] = [
-  {
-    id: "sr_no",
-    header: "Sr. No.",
-    cell: ({ row, table }) => <SerialNumberCell row={row} table={table} />,
-    enableSorting: false,
-  },
-  {
-    id: 'amount',
-    accessorKey: 'amount',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Amount" />
-    ),
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2 font-semibold">
-        <DollarSign className="h-4 w-4 text-green-600" />
-        <span>{parseFloat(row.original.amount).toLocaleString('en-US', { 
-          minimumFractionDigits: 2, 
-          maximumFractionDigits: 8 
-        })} USDT</span>
-      </div>
-    ),
-  },
-  {
-    id: 'status',
-    accessorKey: 'status',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Status" />
-    ),
-    cell: ({ row }) => {
-      const statusMap: Record<number, string> = { 0: 'pending', 1: 'approved', 2: 'rejected' };
-      return <StatusBadge status={statusMap[row.original.status] || 'pending'} />;
-    },
-  },
-  {
-    id: 'paymentMethod',
-    accessorKey: 'paymentMethod.type',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Payment Method" />
-    ),
-    cell: ({ row }) => (
-      <Badge variant="outline">{row.original.paymentMethod?.type || 'N/A'}</Badge>
-    ),
-  },
-  {
-    id: 'user_comment',
-    accessorKey: 'user_comment',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="User Comment" />
-    ),
-    cell: ({ row }) => (
-      <span className="text-sm">{row.original.user_comment || '-'}</span>
-    ),
-  },
-  {
-    id: 'created_at',
-    accessorKey: 'created_at',
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Created At" />
-    ),
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2 text-sm">
-        <Calendar className="h-4 w-4 text-muted-foreground" />
-        <span>
-          {formatDateTimeInIST(row.original.created_at)}
-        </span>
-      </div>
-    ),
-  },
-  {
-    id: 'status_action',
-    header: 'Actions',
-    cell: ({ row }) => (
-      <DepositStatusCell 
-        deposit={row.original} 
-        token={null} // Will be passed from parent via column mapping
-      />
-    ),
-  },
-];
-
 export default function MyDepositPage() {
   const { token } = useAuth()
-  const [activeTab, setActiveTab] = useState<"On-Chain" | "crypto">("On-Chain")
-  const [error] = useState<unknown | null>(null)
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
   const [perPage, setPerPage] = useQueryState('perPage', parseAsInteger.withDefault(10))
 
-  const { data: localDepositsData, isLoading: localLoading, refetch: refetchLocalDeposits, error: localDepositsError } = useQuery({
-    queryKey: ['myDeposits', 'local', token, page, perPage],
-    queryFn: () => getUserDepositRequests(page, perPage, token!),
-    enabled: Boolean(token) && activeTab === 'On-Chain',
-    staleTime: 30 * 1000,
-    placeholderData: (prev) => prev,
-  })
+  // Filters
+  const [searchQuery, setSearchQuery] = useQueryState('search', parseAsString)
+  const [searchInput, setSearchInput] = useState(searchQuery || '')
 
-  const { data: cryptoDepositsData, isLoading: cryptoLoading, refetch: refetchCryptoDeposits, error: cryptoDepositsError } = useQuery({
-    queryKey: ['myDeposits', 'crypto', token, page, perPage],
-    queryFn: () => binanceDepositApi.getList(page, perPage, token!),
-    enabled: Boolean(token) && activeTab === 'crypto',
-    staleTime: 30 * 1000,
-    placeholderData: (prev) => prev,
-  })
+  const [statusFilter, setStatusFilter] = useQueryState(
+    'status',
+    parseAsString
+  )
+  const [sourceFilter, setSourceFilter] = useQueryState(
+    'source',
+    parseAsString
+  )
+  const [paymentCategoryFilter, setPaymentCategoryFilter] = useQueryState(
+    'payment_category',
+    parseAsString
+  )
+  const [paymentMethodIdFilter, setPaymentMethodIdFilter] = useQueryState(
+    'payment_method_id',
+    parseAsString
+  )
 
-  const loading = activeTab === 'On-Chain' ? localLoading : cryptoLoading
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined)
+  const [dateFromStr, setDateFromStr] = useQueryState('date_from', parseAsString)
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined)
+  const [dateToStr, setDateToStr] = useQueryState('date_to', parseAsString)
 
-  const depositRequests: DepositRequestItem[] = localDepositsData?.data?.requests ?? []
-  const localTotalPages = localDepositsData?.data?.pagination?.totalPages ?? 1
-  const localTotal = localDepositsData?.data?.pagination?.total ?? depositRequests.length
-
-  const cryptoRaw = cryptoDepositsData?.data as unknown
-  let binanceDeposits: DepositListItem[] = []
-  let cryptoTotalPages = 1
-  let cryptoTotal = 0
-  if (cryptoRaw) {
-    const lr = cryptoRaw as { data?: DepositListItem[]; pagination?: { last_page?: number; current_page?: number; total?: number } }
-    if (Array.isArray(lr)) {
-      binanceDeposits = lr as DepositListItem[]
-    } else if (Array.isArray(lr.data)) {
-      binanceDeposits = lr.data
-      if (lr.pagination) {
-        cryptoTotalPages = lr.pagination.last_page ?? lr.pagination.current_page ?? 1
-        cryptoTotal = lr.pagination.total ?? binanceDeposits.length
+  // Sync date state with query params
+  useEffect(() => {
+    if (dateFromStr) {
+      const parsed = new Date(dateFromStr)
+      if (!isNaN(parsed.getTime())) {
+        setDateFrom(parsed)
       }
     }
-  }
-  const totalPages = activeTab === 'On-Chain' ? localTotalPages : cryptoTotalPages
-  const total = activeTab === 'On-Chain' ? localTotal : cryptoTotal
-  const activeError = error ?? (activeTab === 'On-Chain' ? localDepositsError : cryptoDepositsError)
+  }, [dateFromStr])
 
+  useEffect(() => {
+    if (dateToStr) {
+      const parsed = new Date(dateToStr)
+      if (!isNaN(parsed.getTime())) {
+        setDateTo(parsed)
+      }
+    }
+  }, [dateToStr])
 
+  // Update query params when dates change
+  useEffect(() => {
+    if (dateFrom) {
+      setDateFromStr(format(dateFrom, 'yyyy-MM-dd'))
+    } else {
+      setDateFromStr(null)
+    }
+  }, [dateFrom, setDateFromStr])
 
-  // Recalculate pageCount based on total
-  const pageCount = useMemo(() => {
-    if (totalPages > 0) return totalPages
-    if (total > 0 && perPage) return Math.ceil(total / perPage)
-    return 1
-  }, [totalPages, total, perPage])
+  useEffect(() => {
+    if (dateTo) {
+      setDateToStr(format(dateTo, 'yyyy-MM-dd'))
+    } else {
+      setDateToStr(null)
+    }
+  }, [dateTo, setDateToStr])
+
+  // Sync search input with query param
+  useEffect(() => {
+    setSearchInput(searchQuery || '')
+  }, [searchQuery])
+
+  const { data: depositsData, isLoading, refetch, error } = useQuery({
+    queryKey: [
+      'myDeposits',
+      token,
+      page,
+      perPage,
+      searchQuery,
+      statusFilter,
+      sourceFilter,
+      paymentCategoryFilter,
+      paymentMethodIdFilter,
+      dateFromStr,
+      dateToStr,
+    ],
+    queryFn: () =>
+      getUserDepositRequests(page, perPage, token!, {
+        search: searchQuery || undefined,
+        status:
+          statusFilter && statusFilter !== 'all'
+            ? Number(statusFilter)
+            : null,
+        source: sourceFilter && sourceFilter !== 'all' ? sourceFilter : null,
+        payment_category:
+          paymentCategoryFilter && paymentCategoryFilter !== 'all'
+            ? paymentCategoryFilter
+            : null,
+        payment_method_id:
+          paymentMethodIdFilter && paymentMethodIdFilter !== 'all'
+            ? Number(paymentMethodIdFilter)
+            : null,
+        date_from: dateFromStr || null,
+        date_to: dateToStr || null,
+      }),
+    enabled: Boolean(token),
+    staleTime: 30 * 1000,
+    placeholderData: (prev) => prev,
+  })
+
+  const deposits: DepositListItem[] = depositsData?.data ?? []
+  const totalPages = depositsData?.pagination?.last_page ?? 1
+  const total = depositsData?.pagination?.total ?? deposits.length
+
+  const pageCount = totalPages > 0 ? totalPages : (total > 0 && perPage ? Math.ceil(total / perPage) : 1)
 
   useEffect(() => {
     const handleWalletRefresh = () => {
-      void refetchLocalDeposits()
-      void refetchCryptoDeposits()
+      void refetch()
     }
 
     window.addEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh)
     return () => {
       window.removeEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh)
     }
-  }, [refetchCryptoDeposits, refetchLocalDeposits])
+  }, [refetch])
 
-  if (loading && depositRequests.length === 0 && binanceDeposits.length === 0) {
+  const handleResetFilters = () => {
+    setSearchQuery(null)
+    setSearchInput('')
+    setStatusFilter(null)
+    setSourceFilter(null)
+    setPaymentCategoryFilter(null)
+    setPaymentMethodIdFilter(null)
+    setDateFrom(undefined)
+    setDateTo(undefined)
+    setPage(1)
+  }
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0
+    if (searchQuery) count++
+    if (statusFilter) count++
+    if (sourceFilter) count++
+    if (paymentCategoryFilter) count++
+    if (paymentMethodIdFilter) count++
+    if (dateFromStr) count++
+    if (dateToStr) count++
+    return count
+  }, [
+    searchQuery,
+    statusFilter,
+    sourceFilter,
+    paymentCategoryFilter,
+    paymentMethodIdFilter,
+    dateFromStr,
+    dateToStr,
+  ])
+
+  if (isLoading && deposits.length === 0) {
     return (
       <ClientTablePageSkeleton columnCount={8} rowCount={8} />
     )
   }
 
-  if (activeError && depositRequests.length === 0 && binanceDeposits.length === 0) {
+  if (error && deposits.length === 0) {
     return (
-      
-        <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
-          <ApiErrorState
-            error={activeError}
-            audience="client"
-            resource="deposit requests"
-            action="load"
-            variant="panel"
-            onRetry={() => {
-              if (activeTab === "On-Chain") {
-                void refetchLocalDeposits()
-                return
-              }
-
-              void refetchCryptoDeposits()
-            }}
-          />
-        </div>
-      
+      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+        <ApiErrorState
+          error={error}
+          audience="client"
+          resource="deposit requests"
+          action="load"
+          variant="panel"
+          onRetry={() => {
+            void refetch()
+          }}
+        />
+      </div>
     )
   }
 
   return (
-    
-      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <h1 className="mb-1 flex items-center gap-2 text-3xl font-semibold text-foreground">
-                <DollarSign className="h-6 w-6 text-primary" />
-                My Deposit Requests
-              </h1>
-              <p className="text-base text-muted-foreground max-w-2xl">
-                View and track the status of your USDT deposit requests
-              </p>
-            </div>
+    <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div className="space-y-2">
+            <h1 className="mb-1 flex items-center gap-2 text-3xl font-semibold text-foreground">
+              <DollarSign className="h-6 w-6 text-primary" />
+              My Deposit Requests
+            </h1>
+            <p className="text-base text-muted-foreground max-w-2xl">
+              View and track the status of all your deposit requests
+            </p>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="rounded-lg border bg-card p-5">
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-base font-semibold">
+              <Search className="h-4 w-4" />
+              Filters
+            </h2>
+            {activeFilterCount > 0 ? (
+              <Button variant="ghost" size="sm" onClick={handleResetFilters}>
+                <X className="h-4 w-4 mr-1" />
+                Reset
+              </Button>
+            ) : null}
           </div>
 
-          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "On-Chain" | "crypto")} className="space-y-6">
-            <TabsList>
-              <TabsTrigger value="On-Chain">On-Chain</TabsTrigger>
-              <TabsTrigger value="crypto">Crypto currency</TabsTrigger>
-            </TabsList>
+          <div className="mb-4">
+            <ApiSearchBar
+              value={searchInput}
+              onChange={(value) => setSearchInput(value)}
+              onSearch={(value) => {
+                setPage(1)
+                setSearchQuery(value.trim() || null)
+              }}
+              placeholder="Search by amount, comment, or transaction hash"
+              minimumLength={3}
+              delay={300}
+              className="max-w-sm"
+            />
+          </div>
 
-            <TabsContent value="On-Chain" className="space-y-6">
-              {depositRequests.length === 0 && !loading ? (
-                <Card>
-                  <CardContent className="py-10">
-                    <div className="text-center">
-                      <DollarSign className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                      <h3 className="text-lg font-semibold mb-2">No Deposit Requests</h3>
-                      <p className="text-muted-foreground mb-4">
-                        You haven&apos;t submitted any deposit requests yet.
-                      </p>
-                      <Button onClick={() => window.location.href = '/funds/deposit'}>
-                        Make a Deposit
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <AppDataTable<DepositRequestItem>
-                  data={depositRequests}
-                  columns={localColumns}
-                  pageCount={pageCount}
-                />
-              )}
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+            <div className="space-y-1.5">
+              <Label htmlFor="status-filter" className="text-xs font-medium text-muted-foreground">Status</Label>
+              <Select
+                value={statusFilter || undefined}
+                onValueChange={(value) => {
+                  setStatusFilter(value === 'all' ? null : value)
+                  setPage(1)
+                }}
+              >
+                <SelectTrigger id="status-filter" className="h-9">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="0">Pending</SelectItem>
+                  <SelectItem value="1">Approved</SelectItem>
+                  <SelectItem value="2">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              {activeError && depositRequests.length > 0 && (
-                <ApiErrorState
-                  error={activeError}
-                  audience="client"
-                  resource="deposit requests"
-                  action="load"
-                  variant="inline"
-                  onRetry={() => {
-                    void refetchLocalDeposits()
-                  }}
-                />
-              )}
-            </TabsContent>
+            <div className="space-y-1.5">
+              <Label htmlFor="source-filter" className="text-xs font-medium text-muted-foreground">Source</Label>
+              <Select
+                value={sourceFilter || undefined}
+                onValueChange={(value) => {
+                  setSourceFilter(value === 'all' ? null : value)
+                  setPage(1)
+                }}
+              >
+                <SelectTrigger id="source-filter" className="h-9">
+                  <SelectValue placeholder="All Sources" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Sources</SelectItem>
+                  <SelectItem value="deposit">Deposit</SelectItem>
+                  <SelectItem value="bank_deposit">Bank Deposit</SelectItem>
+                  <SelectItem value="usdt_deposit">USDT Deposit</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-            <TabsContent value="crypto" className="space-y-6">
-              {binanceDeposits.length === 0 && !loading ? (
-                <Card>
-                  <CardContent className="py-10">
-                    <div className="text-center">
-                      <DollarSign className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                      <h3 className="text-lg font-semibold mb-2">No Crypto Currency Deposits</h3>
-                      <p className="text-muted-foreground mb-4">
-                        You haven&apos;t made any Crypto Currency deposits yet.
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : (
-                <AppDataTable<DepositListItem>
-                  data={binanceDeposits}
-                  columns={binanceColumns.map(col => {
-                    if (col.id === 'status_action') {
-                      return {
-                        ...col,
-                        cell: ({ row }) => {
-                          return (
-                            <DepositStatusCell 
-                              deposit={row.original} 
-                              token={token}
-                            />
-                          );
-                        },
-                      };
-                    }
-                    return col;
-                  })}
-                  pageCount={pageCount}
-                />
-              )}
+            <div className="space-y-1.5">
+              <Label htmlFor="payment-category-filter" className="text-xs font-medium text-muted-foreground">Payment Category</Label>
+              <Select
+                value={paymentCategoryFilter || undefined}
+                onValueChange={(value) => {
+                  setPaymentCategoryFilter(value === 'all' ? null : value)
+                  setPage(1)
+                }}
+              >
+                <SelectTrigger id="payment-category-filter" className="h-9">
+                  <SelectValue placeholder="All Categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  <SelectItem value="crypto">Crypto</SelectItem>
+                  <SelectItem value="bank">Bank</SelectItem>
+                  <SelectItem value="usd">USD</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              {activeError && binanceDeposits.length > 0 && (
-                <ApiErrorState
-                  error={activeError}
-                  audience="client"
-                  resource="crypto deposits"
-                  action="load"
-                  variant="inline"
-                  onRetry={() => {
-                    void refetchCryptoDeposits()
-                  }}
-                />
-              )}
-            </TabsContent>
-          </Tabs>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-full h-9 justify-start text-left font-normal',
+                      !dateFrom && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {dateFrom ? format(dateFrom, 'MMM dd, yyyy') : <span>Select date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateFrom}
+                    onSelect={(date) => {
+                      setDateFrom(date)
+                      setPage(1)
+                    }}
+                    initialFocus
+                    captionLayout="dropdown"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">To Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-full h-9 justify-start text-left font-normal',
+                      !dateTo && 'text-muted-foreground'
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {dateTo ? format(dateTo, 'MMM dd, yyyy') : <span>Select date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={dateTo}
+                    onSelect={(date) => {
+                      setDateTo(date)
+                      setPage(1)
+                    }}
+                    initialFocus
+                    captionLayout="dropdown"
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
         </div>
+
+        {deposits.length === 0 && !isLoading ? (
+          <Card>
+            <CardContent className="py-10">
+              <div className="text-center">
+                <DollarSign className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">No Deposit Requests</h3>
+                <p className="text-muted-foreground mb-4">
+                  You haven&apos;t submitted any deposit requests yet.
+                </p>
+                <Button onClick={() => window.location.href = '/funds/deposit'}>
+                  Make a Deposit
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <AppDataTable<DepositListItem>
+            data={deposits}
+            columns={columns}
+            pageCount={pageCount}
+          />
+        )}
+
+        {error && deposits.length > 0 && (
+          <ApiErrorState
+            error={error}
+            audience="client"
+            resource="deposit requests"
+            action="load"
+            variant="inline"
+            onRetry={() => {
+              void refetch()
+            }}
+          />
+        )}
       </div>
-    
+    </div>
   )
 }
-
-
-

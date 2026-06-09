@@ -371,7 +371,7 @@ export default function AdminTicketsPage() {
     try {
       setIsReplying(true);
       const payload: AdminTicketReplyRequest = {
-        reply_note: replyNote.trim(),
+        message: replyNote.trim(),
         admin_notes: replyAdminNotes.trim() || undefined,
       };
       await adminTicketApi.reply(selectedTicket.id ?? selectedTicket.uuid, payload, token);
@@ -426,7 +426,7 @@ export default function AdminTicketsPage() {
         // Change to In Progress - use reply endpoint
         // The API automatically changes status to 1 when replying
         const payload: AdminTicketReplyRequest = {
-          reply_note: "Status changed to In Progress",
+          message: "Status changed to In Progress",
           admin_notes: `Status changed to In Progress by admin`,
         };
         await adminTicketApi.reply(selectedTicket.id ?? selectedTicket.uuid, payload, token);
@@ -793,7 +793,7 @@ export default function AdminTicketsPage() {
                 </SelectContent>
               </Select>
 
-              <Input
+              {/* <Input
                 value={userIdFilter ?? ""}
                 onChange={(event) => {
                   const value = event.target.value;
@@ -806,7 +806,7 @@ export default function AdminTicketsPage() {
 
               <Button variant="outline" onClick={() => { void loadTickets(); }}>
                 Apply
-              </Button>
+              </Button> */}
             </div>
           </div>
 
@@ -821,7 +821,7 @@ export default function AdminTicketsPage() {
           <DialogHeader className="pb-4">
             <DialogTitle className="flex items-center gap-2 text-lg">
               <Ticket className="h-4 w-4 text-primary" />
-              Ticket #{selectedTicket?.id}
+              Ticket - {selectedTicket?.enquiry_type_label}
             </DialogTitle>
           </DialogHeader>
 
@@ -883,6 +883,19 @@ export default function AdminTicketsPage() {
                   </Button>
                 </div>
               )} */}
+
+              {/* Admin Note Display - Only show if status is 1 (In Progress) or 3 (Closed) */}
+              {(selectedTicket.status === 1 || selectedTicket.status === 3) && selectedTicket.reply_note && (
+                <div className="space-y-2 p-3 rounded-lg border bg-muted/30">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <MessageSquare className="h-4 w-4" />
+                    Admin Note
+                  </div>
+                  <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                    {selectedTicket.reply_note}
+                  </div>
+                </div>
+              )}
 
               {/* Close Ticket Section - Only show if status is 1 (In Progress) */}
               {selectedTicket.status === 1 && (

@@ -718,7 +718,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     managerCategories: ["Report Management"],
   },
   {
-    path: "/report-management",
+    path: "/report-management/deposit-report",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "reports",
