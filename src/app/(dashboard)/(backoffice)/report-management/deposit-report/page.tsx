@@ -589,7 +589,7 @@ export default function ReportManagementPage() {
               delay={300}
             />
           </div>
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
             <div className="space-y-1.5">
               <Label htmlFor="status-filter" className="text-xs font-medium text-muted-foreground">Status</Label>
               <Select
@@ -599,7 +599,7 @@ export default function ReportManagementPage() {
                   setPage(1);
                 }}
               >
-                <SelectTrigger id="status-filter" className="h-9">
+                <SelectTrigger id="status-filter" className="h-9 w-full">
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -610,7 +610,7 @@ export default function ReportManagementPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1.5">
+            {/* <div className="space-y-1.5">
               <Label htmlFor="payment-method-filter" className="text-xs font-medium text-muted-foreground">Payment Method</Label>
               <Select
                 value={paymentMethodFilter || undefined}
@@ -626,7 +626,7 @@ export default function ReportManagementPage() {
                   <SelectItem value="all">All Methods</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
+            </div> */}
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
               <Popover>
@@ -694,7 +694,7 @@ export default function ReportManagementPage() {
                   setPage(1);
                 }}
               >
-                <SelectTrigger id="sort-column" className="h-9">
+                <SelectTrigger id="sort-column" className="h-9 w-full">
                   <SelectValue placeholder="Select column" />
                 </SelectTrigger>
                 <SelectContent>
@@ -713,7 +713,7 @@ export default function ReportManagementPage() {
                   setPage(1);
                 }}
               >
-                <SelectTrigger id="sort-order" className="h-9">
+                <SelectTrigger id="sort-order" className="h-9 w-full">
                   <SelectValue placeholder="Select order" />
                 </SelectTrigger>
                 <SelectContent>

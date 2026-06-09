@@ -477,7 +477,20 @@ export default function IbWithdrawalReportPage() {
               </Button>
             ) : null}
           </div>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="mb-4">
+            <ApiSearchBar
+              value={searchInput}
+              onChange={(value) => setSearchInput(value)}
+              onSearch={(value) => {
+                setPage(1);
+                setSearchQuery(value.trim() || null);
+              }}
+              placeholder="Search by IB name, partner ID..."
+              minimumLength={3}
+              delay={300}
+            />
+          </div>
+          <div className="grid gap-3 md:grid-cols-4 xl:grid-cols-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
               <Popover>
@@ -537,21 +550,6 @@ export default function IbWithdrawalReportPage() {
               </Popover>
             </div>
           </div>
-        </div>
-
-        {/* Search */}
-        <div className="flex items-center gap-2">
-          <ApiSearchBar
-            value={searchInput}
-            onChange={(value) => setSearchInput(value)}
-            onSearch={(value) => {
-              setPage(1);
-              setSearchQuery(value.trim() || null);
-            }}
-            placeholder="Search by IB name, partner ID..."
-            minimumLength={3}
-            delay={300}
-          />
         </div>
 
         {/* Results Section */}

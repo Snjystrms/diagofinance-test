@@ -316,16 +316,6 @@ export default function NewsManagementPage() {
         ),
       },
       {
-        id: "type",
-        accessorKey: "type",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
-        cell: ({ row }) => (
-          <Badge className="bg-blue-100 text-blue-700 border-blue-300 capitalize">
-            {row.original.type}
-          </Badge>
-        ),
-      },
-      {
         id: "created_at",
         accessorKey: "created_at",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Created" />,

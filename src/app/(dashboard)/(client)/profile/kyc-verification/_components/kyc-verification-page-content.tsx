@@ -1122,7 +1122,7 @@ export function KycVerificationPageContent() {
                 />
 
                 <UploadSection
-                  title="Other Documents"
+                  title="Other Documents (Optional)"
                   description={
                     otherType
                       ? (

@@ -59,7 +59,7 @@ function PromotionDetailDialog({
       <DialogContent className="max-w-lg p-0 overflow-hidden rounded-2xl">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 px-6 gap-3">
-            <Loader2 className="h-7 w-7 animate-spin text-purple-500" />
+            <Loader2 className="h-7 w-7 animate-spin text-accent" />
             <p className="text-sm text-muted-foreground">Loading promotion…</p>
           </div>
         ) : isError || !item ? (
@@ -81,7 +81,7 @@ function PromotionDetailDialog({
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
                 <div className="absolute bottom-4 left-5 right-5">
-                  <Badge className="bg-purple-600/90 text-white border-0 text-[10px] font-semibold mb-2">
+                  <Badge className="bg-accent/90 text-accent-foreground border-0 text-[10px] font-semibold mb-2">
                     Promotion
                   </Badge>
                   <DialogHeader>
@@ -92,8 +92,8 @@ function PromotionDetailDialog({
                 </div>
               </div>
             ) : (
-              <div className="flex h-24 w-full items-center justify-center bg-purple-50 dark:bg-purple-950/20 border-b border-border/40">
-                <Megaphone className="h-8 w-8 text-purple-400/50" />
+              <div className="flex h-24 w-full items-center justify-center bg-accent/5 dark:bg-accent/10 border-b border-border/40">
+                <Megaphone className="h-8 w-8 text-accent/50" />
               </div>
             )}
 
@@ -105,7 +105,7 @@ function PromotionDetailDialog({
                   <div className="flex items-start gap-3">
                     <Badge
                       variant="outline"
-                      className="mt-0.5 text-[10px] font-semibold px-2 py-0.5 bg-purple-50 text-purple-700 border-purple-300 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800 shrink-0"
+                      className="mt-0.5 text-[10px] font-semibold px-2 py-0.5 bg-accent/5 text-accent border-accent/30 dark:bg-accent/10 dark:text-accent dark:border-accent/30 shrink-0"
                     >
                       Promotion
                     </Badge>
@@ -168,7 +168,7 @@ function PromotionDetailDialog({
 /* ─── Card ───────────────────────────────────────────────────────────────── */
 function PromotionCard({ item, onView }: { item: NewsItem; onView: () => void }) {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-purple-500/40 hover:shadow-lg">
+    <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-accent/40 hover:shadow-lg">
       {/* Image */}
       {item.image_url ? (
         <div className="relative h-44 w-full overflow-hidden bg-muted">
@@ -193,7 +193,7 @@ function PromotionCard({ item, onView }: { item: NewsItem; onView: () => void })
         <div className="flex items-center justify-between gap-2">
           <Badge
             variant="outline"
-            className="text-[10px] font-semibold px-2 py-0.5 bg-purple-50 text-purple-700 border-purple-300 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800"
+            className="text-[10px] font-semibold px-2 py-0.5 bg-accent/5 text-accent border-accent/30 dark:bg-accent/10 dark:text-accent dark:border-accent/30"
           >
             Promotion
           </Badge>
@@ -221,7 +221,7 @@ function PromotionCard({ item, onView }: { item: NewsItem; onView: () => void })
           <Button
             variant="outline"
             size="sm"
-            className="h-8 w-full gap-2 text-xs font-semibold border-purple-200 text-purple-700 hover:bg-purple-50 hover:border-purple-400 dark:border-purple-800 dark:text-purple-400 dark:hover:bg-purple-950/40"
+            className="h-8 w-full gap-2 text-xs font-semibold border-accent/20 text-accent hover:bg-accent/5 hover:border-accent/40 dark:border-accent/30 dark:text-accent dark:hover:bg-accent/10"
             onClick={onView}
           >
             <Eye className="h-3.5 w-3.5" />

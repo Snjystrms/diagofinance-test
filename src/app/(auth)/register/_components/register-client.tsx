@@ -273,8 +273,8 @@ export function RegisterClient() {
                 >
                   {registerMutation.isPending || isLoading ? (
                     <>
-                      <Spinner size="sm" className="border-black/40" />
-                      Creating account...
+                  <Spinner className="mr-2 h-4 w-4" />
+                  Creating account...
                     </>
                   ) : (
                     'Create account'

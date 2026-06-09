@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import toast from "react-hot-toast";
-import { CircleDollarSign, Loader2, Pencil, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { CircleDollarSign, Loader2, Pencil, Plus, RefreshCw, Trash2, Search } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { ProtectedRoute } from "@/components/protected-route";
 import { AppDataTable } from "@/components/app-data-table";
@@ -516,17 +516,29 @@ export default function CurrencyManagementPage() {
           </div>
         </div>
 
-        <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-          <div className="space-y-1 md:col-span-2">
-            <Label htmlFor="search-currency-rates">Search</Label>
-            <Input
-              id="search-currency-rates"
-              placeholder="Search by currency code..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-        </div>
+       <div className="mb-4 flex flex-col gap-3 rounded-lg border bg-card p-4 shadow-sm md:flex-row md:items-center md:justify-between">
+  <div className="flex w-full max-w-md items-center gap-2 rounded-md border bg-background px-3 py-1.5">
+    <Search className="h-4 w-4 text-muted-foreground" />
+    <Input
+      id="search-currency-rates"
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      placeholder="Search by currency code..."
+      className="h-8 border-0 bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
+    />
+    {search ? (
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="h-6 px-1 text-xs text-muted-foreground hover:text-foreground"
+        onClick={() => setSearch("")}
+      >
+        Clear
+      </Button>
+    ) : null}
+  </div>
+</div>
 
         {isError && (
           <div className="mb-4 rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">

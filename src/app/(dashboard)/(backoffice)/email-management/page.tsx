@@ -51,6 +51,7 @@ import {
   FileImage,
   ExternalLink,
   RefreshCw,
+  Eye,
 } from "lucide-react";
 
 export default function EmailManagementPage() {
@@ -88,6 +89,7 @@ export default function EmailManagementPage() {
 
   // ── History ──
   const [historyPage, setHistoryPage] = useState(1);
+  const [viewItem, setViewItem] = useState<BroadcastEmailHistoryItem | null>(null);
   const historyQuery = useQuery({
     queryKey: ["broadcast-email-history", token, historyPage],
     queryFn: async () => {
@@ -740,6 +742,7 @@ export default function EmailManagementPage() {
                         <th className="px-4 py-3 text-center">Failed</th>
                         <th className="px-4 py-3">Attachments</th>
                         <th className="px-4 py-3">Date</th>
+                        <th className="px-4 py-3 text-center">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/40">
@@ -779,6 +782,15 @@ export default function EmailManagementPage() {
                           </td>
                           <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
                             {formatDateTime(item.created_at)}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <button
+                              onClick={() => setViewItem(item)}
+                              className="inline-flex items-center justify-center rounded-lg p-1.5 text-muted-foreground hover:bg-primary/10 hover:text-primary transition-colors"
+                              aria-label="View email details"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
                           </td>
                         </tr>
                       ))}
@@ -1089,6 +1101,108 @@ export default function EmailManagementPage() {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               )}
               Remove
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View email details dialog */}
+      <Dialog
+        open={Boolean(viewItem)}
+        onOpenChange={(open) => {
+          if (!open) setViewItem(null);
+        }}
+      >
+        <DialogContent className="rounded-2xl sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-foreground">
+              <Mail className="h-4 w-4 text-primary" />
+              Email Details
+            </DialogTitle>
+          </DialogHeader>
+          {viewItem && (
+            <div className="space-y-5">
+              {/* Subject */}
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Subject</Label>
+                <p className="text-sm font-semibold text-foreground">{viewItem.subject}</p>
+              </div>
+
+              {/* Recipients info */}
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Recipients</Label>
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="secondary">Type: {viewItem.recipient_type}</Badge>
+                  <Badge variant="secondary">Total: {viewItem.total_recipients}</Badge>
+                  <Badge variant="secondary" className="text-green-600 dark:text-green-400">Sent: {viewItem.sent_count}</Badge>
+                  <Badge variant="secondary" className="text-red-600 dark:text-red-400">Failed: {viewItem.failed_count}</Badge>
+                </div>
+              </div>
+
+              {/* Body */}
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Body</Label>
+                <div className="rounded-xl border border-border/60 bg-muted/30 p-3 text-sm text-foreground whitespace-pre-wrap">
+                  {viewItem.body}
+                </div>
+              </div>
+
+              {/* Attachments */}
+              {viewItem.attachment_urls && viewItem.attachment_urls.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-xs text-muted-foreground">Attachments</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                    {viewItem.attachment_urls.map((url, i) => {
+                      const fullUrl = `${process.env.NEXT_PUBLIC_API_URL || ""}/${url}`;
+                      return (
+                        <div key={i} className="space-y-1">
+                          <a
+                            href={fullUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block rounded-xl border border-border/60 overflow-hidden hover:border-primary transition-colors"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={fullUrl}
+                              alt={`Attachment ${i + 1}`}
+                              className="h-32 w-full object-cover"
+                              loading="lazy"
+                            />
+                          </a>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">Image {i + 1}</span>
+                            <a
+                              href={fullUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-xs text-primary hover:underline"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              Open
+                            </a>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Date */}
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Sent on</Label>
+                <p className="text-sm text-foreground">{formatDateTime(viewItem.created_at)}</p>
+              </div>
+            </div>
+          )}
+          <DialogFooter className="gap-2 pt-2">
+            <Button
+              variant="outline"
+              className="rounded-xl"
+              onClick={() => setViewItem(null)}
+            >
+              Close
             </Button>
           </DialogFooter>
         </DialogContent>

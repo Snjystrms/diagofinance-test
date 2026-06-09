@@ -59,7 +59,7 @@ function NewsDetailDialog({
       <DialogContent className="max-w-lg p-0 overflow-hidden rounded-2xl">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 px-6 gap-3">
-            <Loader2 className="h-7 w-7 animate-spin text-blue-500" />
+            <Loader2 className="h-7 w-7 animate-spin text-primary" />
             <p className="text-sm text-muted-foreground">Loading article…</p>
           </div>
         ) : isError || !item ? (
@@ -81,7 +81,7 @@ function NewsDetailDialog({
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
                 <div className="absolute bottom-4 left-5 right-5">
-                  <Badge className="bg-blue-600/90 text-white border-0 text-[10px] font-semibold mb-2">
+                  <Badge className="bg-primary/90 text-primary-foreground border-0 text-[10px] font-semibold mb-2">
                     News
                   </Badge>
                   <DialogHeader>
@@ -92,8 +92,8 @@ function NewsDetailDialog({
                 </div>
               </div>
             ) : (
-              <div className="flex h-24 w-full items-center justify-center bg-blue-50 dark:bg-blue-950/20 border-b border-border/40">
-                <Newspaper className="h-8 w-8 text-blue-400/50" />
+              <div className="flex h-24 w-full items-center justify-center bg-primary/5 dark:bg-primary/10 border-b border-border/40">
+                <Newspaper className="h-8 w-8 text-primary/50" />
               </div>
             )}
 
@@ -105,7 +105,7 @@ function NewsDetailDialog({
                   <div className="flex items-start gap-3">
                     <Badge
                       variant="outline"
-                      className="mt-0.5 text-[10px] font-semibold px-2 py-0.5 bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800 shrink-0"
+                      className="mt-0.5 text-[10px] font-semibold px-2 py-0.5 bg-primary/5 text-primary border-primary/30 dark:bg-primary/10 dark:text-primary dark:border-primary/30 shrink-0"
                     >
                       News
                     </Badge>
@@ -168,7 +168,7 @@ function NewsDetailDialog({
 /* ─── Card ───────────────────────────────────────────────────────────────── */
 function NewsCard({ item, onView }: { item: NewsItem; onView: () => void }) {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-blue-500/40 hover:shadow-lg">
+    <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-lg">
       {/* Image */}
       {item.image_url ? (
         <div className="relative h-44 w-full overflow-hidden bg-muted">
@@ -193,7 +193,7 @@ function NewsCard({ item, onView }: { item: NewsItem; onView: () => void }) {
         <div className="flex items-center justify-between gap-2">
           <Badge
             variant="outline"
-            className="text-[10px] font-semibold px-2 py-0.5 bg-blue-50 text-blue-700 border-blue-300 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800"
+            className="text-[10px] font-semibold px-2 py-0.5 bg-primary/5 text-primary border-primary/30 dark:bg-primary/10 dark:text-primary dark:border-primary/30"
           >
             News
           </Badge>
@@ -221,7 +221,7 @@ function NewsCard({ item, onView }: { item: NewsItem; onView: () => void }) {
           <Button
             variant="outline"
             size="sm"
-            className="h-8 w-full gap-2 text-xs font-semibold border-blue-200 text-blue-700 hover:bg-blue-50 hover:border-blue-400 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-950/40"
+            className="h-8 w-full gap-2 text-xs font-semibold border-primary/20 text-primary hover:bg-primary/5 hover:border-primary/40 dark:border-primary/30 dark:text-primary dark:hover:bg-primary/10"
             onClick={onView}
           >
             <Eye className="h-3.5 w-3.5" />

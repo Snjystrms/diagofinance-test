@@ -371,8 +371,8 @@ export function LoginClient() {
                   >
                     {isVerifying2FA ? (
                       <>
-                        <Spinner size="sm" className="border-black/40" />
-                        Verifying...
+                  <Spinner className="mr-2 h-4 w-4" />
+                  Verifying...
                       </>
                     ) : (
                       'Verify & Login'
@@ -429,8 +429,8 @@ export function LoginClient() {
                       >
                         {isForgotPasswordLoading ? (
                           <>
-                            <Spinner size="sm" className="border-black/40" />
-                            Sending Reset Link...
+                  <Spinner className="mr-2 h-4 w-4" />
+                  Sending Reset Link...
                           </>
                         ) : (
                           'Send Reset Link'
@@ -533,8 +533,8 @@ export function LoginClient() {
                     >
                       {isLoading ? (
                         <>
-                          <Spinner size="sm" className="border-black/40" />
-                          Signing in...
+                  <Spinner className="mr-2 h-4 w-4" />
+                  Signing in...
                         </>
                       ) : (
                         'Sign In'
