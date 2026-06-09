@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useDeferredValue, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import toast from "react-hot-toast";
+import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
 import {
   ArrowDownCircle,
   ArrowUpCircle,
@@ -120,13 +121,31 @@ export default function BonusManagementPage() {
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
   const [form, setForm] = useState<BonusFormState>(emptyForm);
   const [userSearch, setUserSearch] = useState("");
-  const [historySearch, setHistorySearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState<"all" | "IN" | "OUT">("all");
+  
+  // Use query params for search and filter to enable data table pagination
+  const [historySearch, setHistorySearch] = useQueryState(
+    "search",
+    parseAsString.withDefault("")
+  );
+  const [typeFilter, setTypeFilter] = useQueryState<"all" | "IN" | "OUT">(
+    "type",
+    parseAsString.withDefault("all") as any
+  );
+  
+  // Get page and perPage from URL (managed by useDataTable)
+  const [urlPage] = useQueryState("page", parseAsInteger.withDefault(1));
+  const [urlPerPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
 
-  const deferredUserSearch = useDeferredValue(userSearch.trim().toLowerCase());
-  const deferredHistorySearch = useDeferredValue(historySearch.trim().toLowerCase());
+  // Build search term - only use if 3+ characters
+  const searchTerm = useMemo(() => {
+    const trimmed = historySearch.trim();
+    return trimmed.length >= 3 ? trimmed : "";
+  }, [historySearch]);
 
-  const bonusListQueryKey = useMemo(() => ["admin-bonus-list", token] as const, [token]);
+  const bonusListQueryKey = useMemo(
+    () => ["admin-bonus-list", token, urlPage, urlPerPage, searchTerm, typeFilter] as const,
+    [token, urlPage, urlPerPage, searchTerm, typeFilter]
+  );
   const bonusUsersQueryKey = useMemo(() => ["admin-bonus-mt5-users", token] as const, [token]);
 
   const {
@@ -138,8 +157,23 @@ export default function BonusManagementPage() {
   } = useQuery({
     queryKey: bonusListQueryKey,
     queryFn: async () => {
-      const response = await adminBonusApi.list({ page: 1, per_page: 100 }, token!);
-      return response.data ?? { bonuses: [], pagination: { current_page: 1, total_pages: 1, total_records: 0, per_page: 100 } };
+      const params: Record<string, string | number> = {
+        page: urlPage,
+        per_page: urlPerPage,
+      };
+
+      // Add search if it's at least 3 characters
+      if (searchTerm) {
+        params.search = searchTerm;
+      }
+
+      // Add type filter if not "all"
+      if (typeFilter && typeFilter !== "all") {
+        params.type = typeFilter;
+      }
+
+      const response = await adminBonusApi.list(params, token!);
+      return response.data ?? { bonuses: [], pagination: { current_page: 1, total_pages: 1, total_records: 0, per_page: urlPerPage } };
     },
     enabled: Boolean(token) && canList,
     staleTime: 60 * 1000,
@@ -203,13 +237,14 @@ export default function BonusManagementPage() {
   });
 
   const filteredMt5Users = useMemo(() => {
-    if (deferredUserSearch.length < 3) return [];
+    const trimmedSearch = userSearch.trim().toLowerCase();
+    if (trimmedSearch.length < 3) return [];
 
     return mt5Users.filter((item) => {
       const haystack = `${item.account_id} ${item.name} ${item.email}`.toLowerCase();
-      return haystack.includes(deferredUserSearch);
+      return haystack.includes(trimmedSearch);
     }).slice(0, 50);
-  }, [deferredUserSearch, mt5Users]);
+  }, [userSearch, mt5Users]);
 
   const selectedMt5User = useMemo(
     () => mt5Users.find((item) => item.account_id === form.mt5_id) ?? null,
@@ -218,29 +253,12 @@ export default function BonusManagementPage() {
 
   const allBonuses = useMemo(() => bonusListData?.bonuses ?? [], [bonusListData]);
 
-  const filteredBonuses = useMemo(() => {
-    return allBonuses.filter((item) => {
-      const matchesType = typeFilter === "all" ? true : item.type?.toUpperCase() === typeFilter;
-      if (!matchesType) return false;
-
-      // Only filter by search if we have at least 3 characters
-      const trimmedSearch = deferredHistorySearch.trim();
-      if (!trimmedSearch || trimmedSearch.length < 3) return true;
-
-      const haystack = [
-        item.mt5User?.account_id,
-        item.mt5User?.name,
-        item.user?.email,
-        item.comment,
-        item.type,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .toLowerCase();
-
-      return haystack.includes(trimmedSearch);
-    });
-  }, [allBonuses, deferredHistorySearch, typeFilter]);
+  const pagination = useMemo(() => bonusListData?.pagination ?? {
+    current_page: 1,
+    total_pages: 1,
+    total_records: 0,
+    per_page: urlPerPage,
+  }, [bonusListData, urlPerPage]);
 
   const summary = useMemo(() => {
     const granted = allBonuses
@@ -251,13 +269,13 @@ export default function BonusManagementPage() {
       .reduce((sum, item) => sum + Number(item.amount || 0), 0);
 
     return {
-      totalRecords: bonusListData?.pagination?.total_records ?? allBonuses.length,
+      totalRecords: pagination.total_records,
       granted,
       removed,
       net: granted - removed,
       activeAccounts: new Set(allBonuses.map((item) => item.mt5User?.account_id).filter(Boolean)).size,
     };
-  }, [allBonuses, bonusListData]);
+  }, [allBonuses, pagination]);
 
   const columns = useMemo<ColumnDef<AdminBonusLedgerItem>[]>(
     () => [
@@ -344,13 +362,13 @@ export default function BonusManagementPage() {
   const handleExport = useCallback((formatType: "xlsx" | "csv") => {
     const exportToastId = `bonus-ledger-export-${formatType}`;
     try {
-      if (filteredBonuses.length === 0) {
+      if (allBonuses.length === 0) {
         toast.error("No data to export", { id: exportToastId });
         return;
       }
 
       toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
-      const exportData = filteredBonuses.map((bonus, index) => ({
+      const exportData = allBonuses.map((bonus, index) => ({
         "Sr. No.": index + 1,
         "MT5 Account": bonus.mt5User?.account_id ?? "-",
         Name: bonus.mt5User?.name ?? "-",
@@ -383,7 +401,7 @@ export default function BonusManagementPage() {
         URL.revokeObjectURL(link.href);
       }
 
-      toast.success(`Exported ${filteredBonuses.length} bonus records to ${filename}`, { id: exportToastId });
+      toast.success(`Exported ${allBonuses.length} bonus records to ${filename}`, { id: exportToastId });
     } catch (error: unknown) {
       console.error(`Failed to export ${formatType}:`, error);
       toast.error(
@@ -391,7 +409,7 @@ export default function BonusManagementPage() {
         { id: exportToastId },
       );
     }
-  }, [filteredBonuses]);
+  }, [allBonuses]);
 
   const handleSubmit = () => {
     const amount = Number(form.amount);
@@ -478,49 +496,29 @@ export default function BonusManagementPage() {
             </div>
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {[
-              { label: "Ledger Records", value: summary.totalRecords, tone: "text-foreground", icon: Gift },
-              { label: "Bonus Added", value: formatMoney(summary.granted), tone: "text-emerald-600", icon: ArrowUpCircle },
-              { label: "Bonus Removed", value: formatMoney(summary.removed), tone: "text-rose-600", icon: ArrowDownCircle },
-              { label: "Active MT5 Accounts", value: summary.activeAccounts, tone: "text-primary", icon: Wallet },
-            ].map(({ label, value, tone, icon: Icon }) => (
-              <Card key={label} className="overflow-hidden">
-                <CardContent className="flex items-center justify-between p-5">
-                  <div className="space-y-1">
-                    <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">{label}</p>
-                    <p className={cn("text-2xl font-semibold", tone)}>{value}</p>
-                  </div>
-                  <span className="rounded-2xl border border-border/70 bg-muted/40 p-3">
-                    <Icon className={cn("h-5 w-5", tone)} />
-                  </span>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
           <div>
             <Card className="border-border/70">
               <CardHeader className="gap-4 border-b border-border/60">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                  <div>
-                    <CardTitle className="text-xl">Bonus Ledger</CardTitle>
-                    <CardDescription>
-                      Review all recent bonus credits and deductions across MT5 accounts.
-                    </CardDescription>
-                  </div>
                   <div className="flex flex-col gap-3 sm:flex-row">
                     <ApiSearchBar
                       value={historySearch}
-                      onChange={(value) => setHistorySearch(value)}
-                      onSearch={(value) => setHistorySearch(value)}
+                      onChange={setHistorySearch}
+                      onSearch={(value) => {
+                        // Only update if empty (clearing) or if 3+ characters
+                        if (!value || value.trim().length >= 3) {
+                          void setHistorySearch(value);
+                        }
+                      }}
                       placeholder="Search account, user, email, comment"
                       minimumLength={3}
-                      delay={300}
+                      delay={500}
                     />
                     <Select
                       value={typeFilter}
-                      onValueChange={(value) => setTypeFilter(value as "all" | "IN" | "OUT")}
+                      onValueChange={(value) => {
+                        void setTypeFilter(value as "all" | "IN" | "OUT");
+                      }}
                     >
                       <SelectTrigger className="w-[180px]">
                         <SelectValue placeholder="Filter type" />
@@ -548,11 +546,11 @@ export default function BonusManagementPage() {
                     resource="bonus ledger"
                     action="load"
                   />
-                ) : filteredBonuses.length > 0 ? (
+                ) : allBonuses.length > 0 ? (
                   <AppDataTable<AdminBonusLedgerItem>
-                    data={filteredBonuses}
+                    data={allBonuses}
                     columns={columns}
-                    pageCount={1}
+                    pageCount={pagination.total_pages}
                     getRowId={(row) => String(row.id)}
                   />
                 ) : (

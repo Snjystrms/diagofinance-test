@@ -2062,13 +2062,15 @@ export const adminBrokerBankDetailsApi = {
 
 export const adminBonusApi = {
   list: (
-    {
-      page,
-      per_page,
-    }: {
+    params: {
       page?: number;
       per_page?: number;
-    },
+      search?: string;
+      type?: string;
+      mt5_id?: string;
+      sort_column?: string;
+      sort_order?: string;
+    } | Record<string, string | number>,
     token: string
   ) => {
     if (!token) {
@@ -2076,8 +2078,12 @@ export const adminBonusApi = {
     }
 
     const qs = new URLSearchParams();
-    if (page) qs.set("page", String(page));
-    if (per_page) qs.set("per_page", String(per_page));
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== "") {
+        qs.set(key, String(value));
+      }
+    });
 
     const suffix = qs.toString() ? `?${qs.toString()}` : "";
 
