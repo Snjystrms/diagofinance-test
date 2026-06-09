@@ -553,12 +553,13 @@ export default function ReportManagementPage() {
             </DropdownMenu>
 
             <Button 
-              variant="ghost" 
+              variant="outline" 
               size="sm"
               onClick={loadReport} 
               disabled={loading}
             >
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              Refresh
             </Button>
           </div>
         </div>

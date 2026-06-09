@@ -14,7 +14,6 @@ import {
   Loader2,
   Plus,
   RefreshCw,
-  Wallet,
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -28,7 +27,7 @@ import { ProtectedRoute } from "@/components/protected-route";
 import { SearchSelectFieldEnhanced } from "@/components/ui/search-select-field-enhanced";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -127,9 +126,9 @@ export default function BonusManagementPage() {
     "search",
     parseAsString.withDefault("")
   );
-  const [typeFilter, setTypeFilter] = useQueryState<"all" | "IN" | "OUT">(
+  const [typeFilter, setTypeFilter] = useQueryState(
     "type",
-    parseAsString.withDefault("all") as any
+    parseAsString.withDefault("all")
   );
   
   // Get page and perPage from URL (managed by useDataTable)

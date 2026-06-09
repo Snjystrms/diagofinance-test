@@ -7,6 +7,7 @@ import {
   adminBroadcastEmailApi,
   adminEmailExclusionsApi,
   adminUsersApi,
+  type ApiResponse,
   type BroadcastEmailResponse,
   type BroadcastEmailHistoryItem,
   type BroadcastEmailHistoryResponse,
@@ -298,7 +299,7 @@ export default function EmailManagementPage() {
     setResult(null);
     try {
       const hasFiles = attachments.some((f) => f !== null);
-      let res: BroadcastEmailResponse;
+      let res: ApiResponse<BroadcastEmailResponse["data"]>;
       if (hasFiles) {
         const fd = new FormData();
         fd.append("subject", subject.trim());
@@ -309,12 +310,12 @@ export default function EmailManagementPage() {
         attachments.forEach((file, i) => {
           if (file) fd.append(`attachment_${i + 1}`, file);
         });
-        res = await adminBroadcastEmailApi.send(fd, token) as BroadcastEmailResponse;
+        res = await adminBroadcastEmailApi.send(fd, token);
       } else {
         const payload = isBroadcastAll
           ? { subject: subject.trim(), body: body.trim() }
           : { subject: subject.trim(), body: body.trim(), emails };
-        res = await adminBroadcastEmailApi.send(payload, token) as BroadcastEmailResponse;
+        res = await adminBroadcastEmailApi.send(payload, token);
       }
       setResult(res.data ?? null);
       toast.success(res.message || "Broadcast sent successfully");

@@ -3277,7 +3277,7 @@ export interface BroadcastEmailResponse {
 export const adminBroadcastEmailApi = {
   send: (data: BroadcastEmailRequest | FormData, token: string) => {
     const isFormData = data instanceof FormData;
-    return apiCall<BroadcastEmailResponse>("/admin/user-management/broadcast-email", {
+    return apiCall<BroadcastEmailResponse["data"]>("/admin/user-management/broadcast-email", {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,

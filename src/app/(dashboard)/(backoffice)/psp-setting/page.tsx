@@ -141,7 +141,7 @@ export default function PspSettingPage() {
   const [togglingId, setTogglingId] = useState<number | null>(null);
 
   // ── data ────────────────────────────────────────────────────────────────────
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ["payment-methods", token],
     queryFn: () => adminPaymentMethodsApi.list(token!),
     enabled: Boolean(token) && (!isManager || canManagePspSettings),
