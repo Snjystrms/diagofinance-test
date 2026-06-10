@@ -790,9 +790,10 @@ export default function IbManagementPage() {
                 <div className="text-muted-foreground">
                   {deriveEmail(actionRequest)} • {derivePhone(actionRequest)}
                 </div>
-                {/* <div className="text-xs text-muted-foreground">
-                  Request ID: {deriveRequestId(actionRequest) ?? "—"}
-                </div> */}
+                <div className="flex items-center gap-4 pt-1 text-xs text-muted-foreground">
+                  <span>Created: {formatDateTime((actionRequest as Record<string, unknown>).created_at_ist as string ?? actionRequest.created_at ?? null)}</span>
+                  <span>Updated: {formatDateTime((actionRequest as Record<string, unknown>).updated_at_ist as string ?? (actionRequest as Record<string, unknown>).updated_at as string ?? null)}</span>
+                </div>
               </div>
 
               {isReviewMode ? (

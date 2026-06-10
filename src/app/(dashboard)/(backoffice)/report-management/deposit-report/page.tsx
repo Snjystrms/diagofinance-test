@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
@@ -185,12 +185,16 @@ export default function ReportManagementPage() {
     }
   }, [toDate, setToDateStr]);
 
+  const requestIdRef = useRef(0);
+
   const loadReport = useCallback(async () => {
     if (!token) {
       setRows([]);
       setLoading(false);
       return;
     }
+
+    const requestId = ++requestIdRef.current;
 
     try {
       setLoading(true);
@@ -218,8 +222,8 @@ export default function ReportManagementPage() {
         sort_order: sortOrder || undefined,
       });
 
-      // apiCall returns the raw JSON body directly.
-      // The response IS { success, message, data: [...], pagination: {...}, filters: {...} }
+      if (requestId !== requestIdRef.current) return;
+
       const payload = response as unknown as DepositReportListPayload;
       const reportItems = Array.isArray(payload?.data) ? payload.data : [];
 
@@ -234,6 +238,7 @@ export default function ReportManagementPage() {
         setTotal(reportItems.length);
       }
     } catch (error: unknown) {
+      if (requestId !== requestIdRef.current) return;
       console.error("Failed to load deposit report:", error);
       setLoadError(error);
       toast.error(
@@ -244,7 +249,9 @@ export default function ReportManagementPage() {
       );
       setRows([]);
     } finally {
-      setLoading(false);
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
     }
   }, [
     token,
@@ -465,7 +472,7 @@ export default function ReportManagementPage() {
       },
       {
         id: "approved_by",
-        header: "Approved By",
+        header: "Action By",
         accessorKey: "approved_by",
         cell: ({ row }) => row.original.approved_by || "-",
       },
