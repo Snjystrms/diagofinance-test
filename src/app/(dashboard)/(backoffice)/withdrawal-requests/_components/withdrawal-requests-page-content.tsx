@@ -19,6 +19,9 @@ import {
   DialogFooter,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -100,16 +103,12 @@ export function WithdrawalRequestsPageContent() {
   const [totalPages, setTotalPages] = useState(1);
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
-  // Action dialog state
-  const [actionDialogOpen, setActionDialogOpen] = useState(false);
-  const [selectedWithdrawalRequest, setSelectedWithdrawalRequest] = useState<AdminWithdrawalRequest | null>(null);
-  const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
-  const [adminNotes, setAdminNotes] = useState("");
-  const [submitting, setSubmitting] = useState(false);
-
   // View details dialog state
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [viewingWithdrawalRequest, setViewingWithdrawalRequest] = useState<AdminWithdrawalRequest | null>(null);
+  const [verifyDecision, setVerifyDecision] = useState<"approve" | "reject">("approve");
+  const [adminNotes, setAdminNotes] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   const loadWithdrawals = useCallback(async () => {
     if (!token) return;
@@ -235,32 +234,6 @@ export function WithdrawalRequestsPageContent() {
 
   const showAllStatusOption = isAdmin || !isManager || withdrawalStatusFeatureOptions.length > 1;
 
-  const handleApprove = useCallback(
-    (request: AdminWithdrawalRequest) => {
-      if (!assertCan(canTakeWithdrawalAction, "You do not have permission to approve withdrawals", toast.error)) {
-        return;
-      }
-      setSelectedWithdrawalRequest(request);
-      setActionType("approve");
-      setAdminNotes("");
-      setActionDialogOpen(true);
-    },
-    [canTakeWithdrawalAction]
-  );
-
-  const handleReject = useCallback(
-    (request: AdminWithdrawalRequest) => {
-      if (!assertCan(canTakeWithdrawalAction, "You do not have permission to reject withdrawals", toast.error)) {
-        return;
-      }
-      setSelectedWithdrawalRequest(request);
-      setActionType("reject");
-      setAdminNotes("");
-      setActionDialogOpen(true);
-    },
-    [canTakeWithdrawalAction]
-  );
-
   const handleViewDetails = useCallback(
     (request: AdminWithdrawalRequest) => {
       if (!assertCan(canViewStatus(request.status), "You do not have permission to view this request", toast.error)) {
@@ -272,15 +245,27 @@ export function WithdrawalRequestsPageContent() {
     [canViewStatus]
   );
 
+  const resetVerifyState = useCallback(() => {
+    setAdminNotes("");
+    setVerifyDecision("approve");
+  }, []);
+
   const submitAction = async () => {
-    if (!token || !actionType || !selectedWithdrawalRequest) return;
+    if (!token || !viewingWithdrawalRequest) return;
+    if (!assertCan(canTakeWithdrawalAction, "You do not have permission to update this withdrawal", toast.error)) {
+      return;
+    }
+    if (verifyDecision === "reject" && !adminNotes.trim()) {
+      toast.error("Please provide a reason for rejection.");
+      return;
+    }
 
     try {
       setSubmitting(true);
       const res = await adminWithdrawalApi.decision(
-        selectedWithdrawalRequest.id,
+        viewingWithdrawalRequest.id,
         {
-          action: actionType,
+          action: verifyDecision,
           remarks: adminNotes.trim() || undefined,
         },
         token
@@ -288,15 +273,14 @@ export function WithdrawalRequestsPageContent() {
 
       toast.success(
         res?.message ||
-          `Withdrawal request ${actionType === "approve" ? "approved" : "rejected"} successfully`
+          `Withdrawal request ${verifyDecision === "approve" ? "approved" : "rejected"} successfully`
       );
 
       await loadList();
 
-      setActionDialogOpen(false);
-      setSelectedWithdrawalRequest(null);
-      setActionType(null);
-      setAdminNotes("");
+      setViewDialogOpen(false);
+      setViewingWithdrawalRequest(null);
+      resetVerifyState();
     } catch (e: unknown) {
       console.error(e);
       toast.error(
@@ -376,47 +360,21 @@ export function WithdrawalRequestsPageContent() {
         enableSorting: false,
         cell: ({ row }) => {
           const request = row.original;
-          const isPending = request.status === "pending";
-          const canActOnRequest = canTakeWithdrawalAction && isPending && canViewStatus("pending");
 
           return (
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                aria-label="View Details"
-                onClick={() => handleViewDetails(request)}
-              >
-                <Eye className="h-4 w-4" />
-              </Button>
-              {canActOnRequest && (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Approve"
-                    className="text-green-600 hover:text-green-700 hover:bg-green-50"
-                    onClick={() => handleApprove(request)}
-                  >
-                    <CheckCircle2 className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    aria-label="Reject"
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                    onClick={() => handleReject(request)}
-                  >
-                    <XCircle className="h-4 w-4" />
-                  </Button>
-                </>
-              )}
-            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="View Details"
+              onClick={() => handleViewDetails(request)}
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
           );
         },
       },
     ],
-    [handleViewDetails, handleApprove, handleReject, canTakeWithdrawalAction, canViewStatus]
+    [handleViewDetails]
   );
 
   if (!canViewWithdrawals) {
@@ -528,94 +486,17 @@ export function WithdrawalRequestsPageContent() {
           />
         </div>
 
-        {/* Action Dialog (Approve/Reject) */}
-        <Dialog open={actionDialogOpen} onOpenChange={setActionDialogOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>
-                {actionType === "approve" ? "Approve" : "Reject"} Withdrawal Request
-              </DialogTitle>
-              <DialogDescription>
-                {actionType === "approve"
-                  ? "Approve this withdrawal request. You can add optional remarks."
-                  : "Reject this withdrawal request. Please provide a reason for rejection."}
-              </DialogDescription>
-            </DialogHeader>
-
-            {selectedWithdrawalRequest && (
-              <div className="space-y-4">
-                <div className="rounded-lg border p-4 space-y-2">
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Amount:</span>
-                      <div className="font-medium">
-                        {formatAmount(selectedWithdrawalRequest.amount || "0")} USD
-                      </div>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">User:</span>
-                      <div className="font-medium">
-                        {selectedWithdrawalRequest.user
-                          ? `${selectedWithdrawalRequest.user.first_name || ""} ${selectedWithdrawalRequest.user.last_name || ""}`.trim() ||
-                            selectedWithdrawalRequest.user.email
-                          : "—"}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label htmlFor="admin-notes" className="text-sm font-medium">
-                    Remarks {actionType === "reject" && "(Recommended)"}
-                  </label>
-                  <Textarea
-                    id="admin-notes"
-                    rows={4}
-                    placeholder={
-                      actionType === "approve"
-                        ? "Add optional remarks (e.g., Approved.)"
-                        : "Add reason for rejection (e.g., Insufficient balance.)"
-                    }
-                    value={adminNotes}
-                    onChange={(e) => setAdminNotes(e.target.value)}
-                  />
-                </div>
-              </div>
-            )}
-
-            <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setActionDialogOpen(false);
-                  setSelectedWithdrawalRequest(null);
-                  setActionType(null);
-                  setAdminNotes("");
-                }}
-                disabled={submitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={submitAction}
-                disabled={submitting}
-                variant={actionType === "reject" ? "destructive" : "default"}
-              >
-                {submitting ? (
-                  <>
-                    <Spinner className="h-4 w-4 mr-2" />
-                    Processing...
-                  </>
-                ) : (
-                  `${actionType === "approve" ? "Approve" : "Reject"} Request`
-                )}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
         {/* View Details Dialog */}
-        <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
+        <Dialog
+          open={viewDialogOpen}
+          onOpenChange={(o) => {
+            setViewDialogOpen(o);
+            if (!o) {
+              setViewingWithdrawalRequest(null);
+              resetVerifyState();
+            }
+          }}
+        >
           <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Withdrawal Request Details</DialogTitle>
@@ -777,8 +658,115 @@ export function WithdrawalRequestsPageContent() {
                     </div>
                   </div>
                 </div>
+
+                {(() => {
+                  const isPending = viewingWithdrawalRequest.status === "pending";
+                  const canVerify =
+                    canTakeWithdrawalAction && isPending && canViewStatus("pending");
+                  if (!canVerify) return null;
+
+                  return (
+                    <>
+                      <Separator />
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm font-semibold">Verification Decision</Label>
+                          <Tabs
+                            value={verifyDecision}
+                            onValueChange={(value) => {
+                              if (value === "approve" || value === "reject") {
+                                setVerifyDecision(value);
+                              }
+                            }}
+                            className="w-full"
+                          >
+                            <TabsList className="grid h-auto w-full grid-cols-2 rounded-2xl bg-muted/50 p-1">
+                              <TabsTrigger value="approve" className="rounded-xl">
+                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                                Approve
+                              </TabsTrigger>
+                              <TabsTrigger value="reject" className="rounded-xl">
+                                <XCircle className="mr-2 h-4 w-4" />
+                                Reject
+                              </TabsTrigger>
+                            </TabsList>
+                          </Tabs>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label htmlFor="admin-notes" className="text-sm font-semibold">
+                            Admin Notes{" "}
+                            {verifyDecision === "reject" && (
+                              <span className="text-destructive">*</span>
+                            )}
+                          </Label>
+                          <Textarea
+                            id="admin-notes"
+                            value={adminNotes}
+                            onChange={(e) => setAdminNotes(e.target.value)}
+                            placeholder={
+                              verifyDecision === "reject"
+                                ? "Please provide a reason for rejection..."
+                                : "Optional notes about this verification..."
+                            }
+                            className="min-h-[100px]"
+                          />
+                          {verifyDecision === "reject" && (
+                            <p className="text-xs text-muted-foreground">
+                              Rejection reason is required
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             )}
+
+            <DialogFooter className="flex-col gap-2 sm:flex-row">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setViewDialogOpen(false)}
+                disabled={submitting}
+                className="w-full sm:w-auto"
+              >
+                Close
+              </Button>
+              {viewingWithdrawalRequest &&
+                canTakeWithdrawalAction &&
+                viewingWithdrawalRequest.status === "pending" &&
+                canViewStatus("pending") && (
+                  <Button
+                    type="button"
+                    onClick={submitAction}
+                    disabled={submitting || (verifyDecision === "reject" && !adminNotes.trim())}
+                    className={`w-full sm:w-auto ${
+                      verifyDecision === "approve"
+                        ? "bg-green-600 hover:bg-green-700"
+                        : "bg-red-600 hover:bg-red-700"
+                    }`}
+                  >
+                    {submitting ? (
+                      <>
+                        <Spinner className="mr-2 h-4 w-4" />
+                        Processing...
+                      </>
+                    ) : verifyDecision === "approve" ? (
+                      <>
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        Approve
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="mr-2 h-4 w-4" />
+                        Reject
+                      </>
+                    )}
+                  </Button>
+                )}
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>

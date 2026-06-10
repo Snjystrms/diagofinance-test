@@ -42,39 +42,64 @@ export const mapBrokerBankDetailToForm = (
   is_active: isBrokerBankDetailActive(detail),
 });
 
+export type BrokerBankDetailFieldErrors = Partial<
+  Record<keyof BrokerBankDetailFormValues, string>
+>;
+
 export const validateBrokerBankDetailForm = (
   values: BrokerBankDetailFormValues
-) => {
+): BrokerBankDetailFieldErrors => {
+  const errors: BrokerBankDetailFieldErrors = {};
+
   if (!values.account_holder_name.trim()) {
-    return "Account holder name is required.";
+    errors.account_holder_name = "Account holder name is required.";
+  } else if (!/^[a-zA-Z\s.'-]{2,80}$/.test(values.account_holder_name.trim())) {
+    errors.account_holder_name = "Enter a valid account holder name.";
   }
 
   if (!values.account_number.trim()) {
-    return "Account number is required.";
+    errors.account_number = "Account number is required.";
+  } else if (!/^\d{6,18}$/.test(values.account_number.trim())) {
+    errors.account_number = "Account number must be 6-18 digits only.";
   }
 
   if (!values.bank_name.trim()) {
-    return "Bank name is required.";
+    errors.bank_name = "Bank name is required.";
+  } else if (values.bank_name.trim().length < 2) {
+    errors.bank_name = "Bank name must be at least 2 characters.";
   }
 
   if (!values.country.trim()) {
-    return "Country is required.";
+    errors.country = "Country is required.";
   }
 
-  if (!values.iban_number.trim()) {
-    return "IBAN number is required.";
+  if (
+    values.iban_number.trim() &&
+    !/^[A-Z]{2}[A-Z0-9]{13,32}$/.test(values.iban_number.trim().toUpperCase())
+  ) {
+    errors.iban_number = "Enter a valid IBAN number.";
   }
 
   if (!values.swift_ifsc_code.trim()) {
-    return "Swift / IFSC code is required.";
+    errors.swift_ifsc_code = "Swift / IFSC code is required.";
+  } else if (
+    !/^[A-Z0-9]{8,15}$/.test(values.swift_ifsc_code.trim().toUpperCase())
+  ) {
+    errors.swift_ifsc_code = "Enter a valid Swift / IFSC code.";
   }
 
   if (!values.address.trim()) {
-    return "Address is required.";
+    errors.address = "Address is required.";
+  } else if (values.address.trim().length < 5) {
+    errors.address = "Address must be at least 5 characters.";
   }
 
-  return null;
+  return errors;
 };
+
+export const hasBrokerBankDetailErrors = (
+  errors: BrokerBankDetailFieldErrors
+): boolean => Object.keys(errors).length > 0;
 
 export const filterBrokerBankDetails = (
   rows: BrokerBankDetailItem[],

@@ -39,10 +39,12 @@ import { formatDateTimeInIST } from "@/lib/formatters";
 import {
   emptyBrokerBankDetailForm,
   filterBrokerBankDetails,
+  hasBrokerBankDetailErrors,
   isBrokerBankDetailActive,
   mapBrokerBankDetailToForm,
   toBrokerBankDetailPayload,
   validateBrokerBankDetailForm,
+  type BrokerBankDetailFieldErrors,
   type BrokerBankDetailFormValues,
 } from "../_lib/broker-bank-details";
 import { BrokerBankDetailFormDialog } from "./broker-bank-detail-form-dialog";
@@ -70,6 +72,7 @@ export function AdminBrokerBankDetailsPageContent() {
   const [formValues, setFormValues] = useState<BrokerBankDetailFormValues>(
     emptyBrokerBankDetailForm
   );
+  const [validationErrors, setValidationErrors] = useState<BrokerBankDetailFieldErrors>({});
   const [selectedDetail, setSelectedDetail] = useState<BrokerBankDetailItem | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [viewOpen, setViewOpen] = useState(false);
@@ -207,6 +210,7 @@ export function AdminBrokerBankDetailsPageContent() {
   const openCreateDialog = () => {
     setSelectedDetail(null);
     setFormValues(emptyBrokerBankDetailForm());
+    setValidationErrors({});
     setDialogMode("create");
   };
 
@@ -217,6 +221,7 @@ export function AdminBrokerBankDetailsPageContent() {
 
       setSelectedDetail(detail);
       setFormValues(mapBrokerBankDetailToForm(detail));
+      setValidationErrors({});
       setDialogMode("edit");
     },
     [loadBankDetail]
@@ -234,10 +239,10 @@ export function AdminBrokerBankDetailsPageContent() {
   );
 
   const handleDialogSubmit = () => {
-    const validationError = validateBrokerBankDetailForm(formValues);
+    const errors = validateBrokerBankDetailForm(formValues);
+    setValidationErrors(errors);
 
-    if (validationError) {
-      toast.error(validationError);
+    if (hasBrokerBankDetailErrors(errors)) {
       return;
     }
 
@@ -516,6 +521,7 @@ export function AdminBrokerBankDetailsPageContent() {
               setDialogMode(null);
               setSelectedDetail(null);
               setFormValues(emptyBrokerBankDetailForm());
+              setValidationErrors({});
             }
           }}
           onSubmit={handleDialogSubmit}
@@ -523,6 +529,7 @@ export function AdminBrokerBankDetailsPageContent() {
           submitting={createMutation.isPending || updateMutation.isPending}
           values={formValues}
           onValuesChange={setFormValues}
+          validationErrors={validationErrors}
         />
 
         <BrokerBankDetailViewDialog

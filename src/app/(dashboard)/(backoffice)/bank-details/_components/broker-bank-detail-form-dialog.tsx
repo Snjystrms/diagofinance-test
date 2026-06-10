@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
+import { GetCountries } from "react-country-state-city";
+
 import {
   Dialog,
   DialogContent,
@@ -11,12 +14,27 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 
 import type { BrokerBankDetailItem } from "@/lib/api";
 
-import type { BrokerBankDetailFormValues } from "../_lib/broker-bank-details";
+import type {
+  BrokerBankDetailFieldErrors,
+  BrokerBankDetailFormValues,
+} from "../_lib/broker-bank-details";
+
+type CountryOption = {
+  id: number;
+  name: string;
+};
 
 type BrokerBankDetailFormDialogProps = {
   detail?: BrokerBankDetailItem | null;
@@ -28,7 +46,17 @@ type BrokerBankDetailFormDialogProps = {
   submitting: boolean;
   values: BrokerBankDetailFormValues;
   onValuesChange: (values: BrokerBankDetailFormValues) => void;
+  validationErrors: BrokerBankDetailFieldErrors;
 };
+
+const sanitizePersonText = (value: string): string =>
+  value.replace(/[^a-zA-Z\s.'-]/g, "");
+
+const sanitizeAccountNumber = (value: string): string =>
+  value.replace(/\D/g, "");
+
+const sanitizeAlphanumeric = (value: string): string =>
+  value.replace(/[^a-zA-Z0-9]/g, "").toUpperCase();
 
 function Field({
   id,
@@ -37,6 +65,8 @@ function Field({
   onChange,
   placeholder,
   disabled,
+  error,
+  optional,
 }: {
   id: string;
   label: string;
@@ -44,17 +74,26 @@ function Field({
   onChange: (value: string) => void;
   placeholder: string;
   disabled?: boolean;
+  error?: string;
+  optional?: boolean;
 }) {
   return (
     <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
+      <Label htmlFor={id}>
+        {label}
+        {optional ? (
+          <span className="text-muted-foreground"> (Optional)</span>
+        ) : null}
+      </Label>
       <Input
         id={id}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         disabled={disabled}
+        className={error ? "border-destructive" : ""}
       />
+      {error ? <p className="text-sm text-destructive">{error}</p> : null}
     </div>
   );
 }
@@ -69,15 +108,47 @@ export function BrokerBankDetailFormDialog({
   submitting,
   values,
   onValuesChange,
+  validationErrors,
 }: BrokerBankDetailFormDialogProps) {
   const isCreateMode = mode === "create";
+  const [countryOptions, setCountryOptions] = useState<CountryOption[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadCountries = async () => {
+      try {
+        const countries = ((await GetCountries()) as CountryOption[])
+          .slice()
+          .sort((left, right) => left.name.localeCompare(right.name));
+        if (isMounted) {
+          setCountryOptions(countries);
+        }
+      } catch (error) {
+        console.error("Failed to load countries:", error);
+      }
+    };
+
+    void loadCountries();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const countryValue = useMemo(() => {
+    const matched = countryOptions.find(
+      (country) => country.name === values.country
+    );
+    return matched ? String(matched.id) : "";
+  }, [countryOptions, values.country]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>
-            {isCreateMode ? "Add broker bank detail" : "Edit broker bank detail"}
+            {isCreateMode
+              ? "Add broker bank detail"
+              : "Edit broker bank detail"}
           </DialogTitle>
           <DialogDescription>
             {isCreateMode
@@ -96,57 +167,115 @@ export function BrokerBankDetailFormDialog({
               id="bank-name"
               label="Bank name"
               value={values.bank_name}
-              onChange={(bank_name) => onValuesChange({ ...values, bank_name })}
+              onChange={(bank_name) =>
+                onValuesChange({
+                  ...values,
+                  bank_name: sanitizePersonText(bank_name).slice(0, 80),
+                })
+              }
               placeholder="Example: HDFC Bank"
               disabled={submitting}
+              error={validationErrors.bank_name}
             />
             <Field
               id="account-holder-name"
               label="Account holder name"
               value={values.account_holder_name}
               onChange={(account_holder_name) =>
-                onValuesChange({ ...values, account_holder_name })
+                onValuesChange({
+                  ...values,
+                  account_holder_name: sanitizePersonText(
+                    account_holder_name
+                  ).slice(0, 80),
+                })
               }
               placeholder="Example: Company Ltd"
               disabled={submitting}
+              error={validationErrors.account_holder_name}
             />
             <Field
               id="account-number"
               label="Account number"
               value={values.account_number}
               onChange={(account_number) =>
-                onValuesChange({ ...values, account_number })
+                onValuesChange({
+                  ...values,
+                  account_number: sanitizeAccountNumber(account_number).slice(
+                    0,
+                    18
+                  ),
+                })
               }
               placeholder="Example: 1234567890"
               disabled={submitting}
+              error={validationErrors.account_number}
             />
-            <Field
-              id="country"
-              label="Country"
-              value={values.country}
-              onChange={(country) => onValuesChange({ ...values, country })}
-              placeholder="Example: India"
-              disabled={submitting}
-            />
+            <div className="space-y-2">
+              <Label htmlFor="country-select">Country</Label>
+              <Select
+                value={countryValue}
+                onValueChange={(selectedCountryId) => {
+                  const selectedCountry = countryOptions.find(
+                    (country) => String(country.id) === selectedCountryId
+                  );
+                  onValuesChange({
+                    ...values,
+                    country: selectedCountry?.name ?? "",
+                  });
+                }}
+                disabled={submitting}
+              >
+                <SelectTrigger
+                  id="country-select"
+                  className={
+                    validationErrors.country ? "border-destructive" : ""
+                  }
+                >
+                  <SelectValue placeholder="Select country" />
+                </SelectTrigger>
+                <SelectContent>
+                  {countryOptions.map((country) => (
+                    <SelectItem key={country.id} value={String(country.id)}>
+                      {country.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {validationErrors.country ? (
+                <p className="text-sm text-destructive">
+                  {validationErrors.country}
+                </p>
+              ) : null}
+            </div>
             <Field
               id="iban-number"
               label="IBAN number"
               value={values.iban_number}
               onChange={(iban_number) =>
-                onValuesChange({ ...values, iban_number })
+                onValuesChange({
+                  ...values,
+                  iban_number: sanitizeAlphanumeric(iban_number).slice(0, 34),
+                })
               }
               placeholder="Example: GB29NWBK60161331926819"
               disabled={submitting}
+              optional
             />
             <Field
               id="swift-ifsc-code"
               label="Swift / IFSC code"
               value={values.swift_ifsc_code}
               onChange={(swift_ifsc_code) =>
-                onValuesChange({ ...values, swift_ifsc_code })
+                onValuesChange({
+                  ...values,
+                  swift_ifsc_code: sanitizeAlphanumeric(
+                    swift_ifsc_code
+                  ).slice(0, 15),
+                })
               }
               placeholder="Example: HDFC0001234"
               disabled={submitting}
+              error={validationErrors.swift_ifsc_code}
             />
 
             <div className="space-y-2 md:col-span-2">
@@ -159,15 +288,27 @@ export function BrokerBankDetailFormDialog({
                 }
                 placeholder="Example: 221B Baker Street"
                 disabled={submitting}
-                className="min-h-24"
+                className={
+                  validationErrors.address
+                    ? "border-destructive min-h-24"
+                    : "min-h-24"
+                }
               />
+              {validationErrors.address ? (
+                <p className="text-sm text-destructive">
+                  {validationErrors.address}
+                </p>
+              ) : null}
             </div>
 
             <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3 md:col-span-2">
               <div className="space-y-1">
-                <div className="text-sm font-medium">Active for client deposits</div>
+                <div className="text-sm font-medium">
+                  Active for client deposits
+                </div>
                 <div className="text-xs text-muted-foreground">
-                  When enabled, clients can use this bank account on the deposit page.
+                  When enabled, clients can use this bank account on the deposit
+                  page.
                 </div>
               </div>
               <Switch

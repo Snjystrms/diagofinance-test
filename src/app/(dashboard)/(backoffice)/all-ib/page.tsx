@@ -201,8 +201,8 @@ const deriveUserNotes = (request: AdminIbRequest) => {
   const candidate =
     request.notes ??
     (req.user_notes as string | undefined) ??
-    (req.request_notes as string | undefined) ??
-    (req.comment as string | undefined) ??
+    (req.request_notes as string | undefined) ??  
+    (req.user_comment as string | undefined) ??
     null;
   return candidate && String(candidate).trim().length > 0
     ? String(candidate)
@@ -215,6 +215,7 @@ const deriveAdminComment = (request: AdminIbRequest) => {
     request.admin_comment ??
     (req.adminComment as string | undefined) ??
     (req.review_comment as string | undefined) ??
+    (req.admin_comment as string | undefined) ??
     null;
   return candidate && String(candidate).trim().length > 0
     ? String(candidate)
@@ -548,7 +549,7 @@ export default function IbManagementPage() {
       },
       {
         id: "notes",
-        header: "Notes",
+        header: "Notes By Client/Admin",
         cell: ({ row }) => {
           const request = row.original;
           const userNotes = deriveUserNotes(request);

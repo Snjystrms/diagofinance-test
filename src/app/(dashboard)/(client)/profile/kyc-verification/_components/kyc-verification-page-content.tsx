@@ -1064,12 +1064,13 @@ export function KycVerificationPageContent() {
                 <UploadSection
                   title="Proof of Identification (POI)"
                   description={
-                    poiType
+                    poiType 
                       ? (
-                          [
+                          [ 
+                            { value: 'aadhaar_card', label: 'Aadhaar Card' },
                             { value: 'driving_licence', label: 'Driving Licence' },
                             { value: 'passport', label: 'Passport' },
-                            { value: 'national_id', label: 'National ID Card' },
+                            { value: 'pan_card', label: 'PAN Card' },
                             { value: 'voter_id', label: 'Voter ID' },
                           ].find((opt) => opt.value === poiType)?.label ?? 'Proof of Identification'
                         )
@@ -1078,9 +1079,10 @@ export function KycVerificationPageContent() {
                   selectValue={poiType}
                   onSelectChange={setPoiType}
                   selectOptions={[
+                    { value: 'aadhaar_card', label: 'Aadhaar Card' },
                     { value: 'driving_licence', label: 'Driving Licence' },
                     { value: 'passport', label: 'Passport' },
-                    { value: 'national_id', label: 'National ID Card' },
+                    { value: 'pan_card', label: 'PAN Card' },
                     { value: 'voter_id', label: 'Voter ID' },
                   ]}
                   selectPlaceholder="Select Option"
@@ -1096,10 +1098,12 @@ export function KycVerificationPageContent() {
                     poaType
                       ? (
                           [
-                            { value: 'bank_statement', label: 'Bank Statement' },
-                            { value: 'utility_bill', label: 'Utility Bill' },
-                            { value: 'local_authority_bill', label: 'Local Authority Bill' },
-                            { value: 'official_document', label: 'Any other Official Document' },
+                             { value: 'aadhaar_card', label: 'Aadhaar Card' },
+                             { value: 'driving_licence', label: 'Driving Licence' },
+                             { value: 'passport', label: 'Passport' },
+                             { value: 'voter_id', label: 'Voter ID' },
+                             { value: 'bank_statement', label: 'Bank Statement' },
+                             { value: 'utility_bill', label: 'Utility Bill' },
                           ].find((opt) => opt.value === poaType)?.label ?? 'Proof of Address Document'
                         )
                       : 'Proof of Address Document'
@@ -1107,6 +1111,10 @@ export function KycVerificationPageContent() {
                   selectValue={poaType}
                   onSelectChange={setPoaType}
                   selectOptions={[
+                    { value: 'aadhaar_card', label: 'Aadhaar Card' },
+                    { value: 'driving_licence', label: 'Driving Licence' },
+                    { value: 'passport', label: 'Passport' },
+                    { value: 'voter_id', label: 'Voter ID' },
                     { value: 'bank_statement', label: 'Bank Statement' },
                     { value: 'utility_bill', label: 'Utility Bill' },
                     { value: 'local_authority_bill', label: 'Local Authority Bill' },

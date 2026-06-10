@@ -107,26 +107,22 @@ export function AdminDashboardView({ adminDashboardData, userName }: AdminDashbo
     return { total: last, growthPercent };
   }, [clientsChartData]);
 
-  const primaryKpiCards = [
-    { title: "Total Clients",   value: kpis?.total_clients ?? 0,  description: "All registered clients", icon: Users,      ibVariant: "ib-portal-surface-primary", href: "/new-users" },
-    { title: "Total IB",        value: kpis?.total_ib ?? 0,       description: "Introducing Brokers",    icon: Building2,  ibVariant: "ib-portal-surface-primary", href: "/ib-users" },
-    { title: "Pending Clients", value: kpis?.pending_clients ?? 0, description: "Awaiting approval",     icon: Clock,      ibVariant: "ib-portal-surface-amber",   href: "/new-users?status=0" },
-    { title: "Active Traders",  value: kpis?.active_traders ?? 0, description: "Currently trading",      icon: TrendingUp, ibVariant: "ib-portal-surface-emerald", href: "/all-users-mt5-accounts" },
-  ] satisfies KpiCardItem[];
+ // Replace the three separate arrays and KpiGrid calls with this:
 
-  const secondaryKpiCards = [
-    { title: "Approved Deposits",      value: kpis?.approved_deposit ?? 0,    description: "Total approved",         icon: CheckCircle2, ibVariant: "ib-portal-surface-emerald", href: "/report-management/deposit-report?status=1" },
-    { title: "Pending Deposits",       value: kpis?.pending_deposit ?? 0,     description: "Awaiting approval",      icon: Clock,        ibVariant: "ib-portal-surface-amber",   href: "/report-management/deposit-report?status=0" },
-    { title: "Pending Withdrawals",    value: kpis?.pending_withdraw ?? 0,    description: "Awaiting processing",    icon: TrendingDown, ibVariant: "ib-portal-surface-amber",   href: "/report-management/withdrawal-report?status=pending" },
-    { title: "Pending IB Withdrawals", value: kpis?.pending_ib_withdraw ?? 0, description: "IB withdrawal requests", icon: Wallet,       ibVariant: "ib-portal-surface-primary", href: "/report-management/ib-withdrawal-report" },
-  ] satisfies KpiCardItem[];
-
-  const tertiaryKpiCards = [
-    { title: "FTD Users",             value: kpis?.ftd_users ?? 0,                    description: "First-time deposit users",   icon: UserCheck, ibVariant: "ib-portal-surface-emerald", href: "/new-users" },
-    { title: "Non-FTD Users",         value: kpis?.non_ftd_users ?? 0,                description: "Users without first deposit", icon: UserX,     ibVariant: "ib-portal-surface",         href: "/new-users" },
-    { title: "Pending IB Requests",   value: kpis?.pending_ib_request ?? 0,           description: "Waiting for IB approval",    icon: FileClock, ibVariant: "ib-portal-surface-emerald", href: "/all-ib" },
-    { title: "Pending Bank Details",  value: kpis?.pending_bank_details_request ?? 0, description: "Bank detail review queue",   icon: Landmark,  ibVariant: "ib-portal-surface-primary", href: "/add-bank-details" },
-  ] satisfies KpiCardItem[];
+const allKpiCards = [
+  // Row 1
+  { title: "Total Clients",          value: kpis?.total_clients ?? 0,                   description: "All registered clients",      icon: Users,        ibVariant: "ib-portal-surface-primary", href: "/new-users" },
+  { title: "Total IB",               value: kpis?.total_ib ?? 0,                        description: "Introducing Brokers",         icon: Building2,    ibVariant: "ib-portal-surface-primary", href: "/ib-users" },
+  { title: "Active Traders",         value: kpis?.active_traders ?? 0,                  description: "Currently trading",           icon: TrendingUp,   ibVariant: "ib-portal-surface-emerald", href: "/all-users-mt5-accounts" },
+  // Row 2
+  { title: "Approved Deposits",      value: kpis?.approved_deposit ?? 0,                description: "Total approved",              icon: CheckCircle2, ibVariant: "ib-portal-surface-emerald", href: "/usdt-transactions?status=approved" },
+  { title: "Pending Deposits",       value: kpis?.pending_deposit ?? 0,                 description: "Awaiting approval",           icon: Clock,        ibVariant: "ib-portal-surface-amber",   href: "/usdt-transactions?status=pending" },
+  { title: "Pending Withdrawals",    value: kpis?.pending_withdraw ?? 0,                description: "Awaiting processing",         icon: TrendingDown, ibVariant: "ib-portal-surface-amber",   href: "/withdrawal-requests" },
+  // Row 3
+  { title: "Pending IB Withdrawals", value: kpis?.pending_ib_withdraw ?? 0,             description: "IB withdrawal requests",      icon: Wallet,       ibVariant: "ib-portal-surface-primary", href: "/usdt-transactions?status=pending" },
+  { title: "Pending Clients",        value: kpis?.pending_kyc_clients ?? 0,             description: "Awaiting approval",           icon: Clock,        ibVariant: "ib-portal-surface-amber",   href: "/new-users?status=0" },
+  { title: "Pending Bank Details",   value: kpis?.pending_bank_details_request ?? 0,    description: "Bank detail review queue",    icon: Landmark,     ibVariant: "ib-portal-surface-primary", href: "/add-bank-details" },
+] satisfies KpiCardItem[];
 
   const greeting = (() => {
     const h = new Date().getHours();
@@ -135,38 +131,38 @@ export function AdminDashboardView({ adminDashboardData, userName }: AdminDashbo
     return firstName ? `${g}, ${firstName}` : g;
   })();
 
-  const KpiGrid = ({ cards }: { cards: KpiCardItem[] }) => (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-6">
-      {cards.map((item) => {
-        const Icon = item.icon;
-        return (
-          <Link
-            key={item.title}
-            href={item.href}
-            aria-label={`Open ${item.title}`}
-            className="block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+const KpiGrid = ({ cards }: { cards: KpiCardItem[] }) => (
+  <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-6">
+    {cards.map((item) => {
+      const Icon = item.icon;
+      return (
+        <Link
+          key={item.title}
+          href={item.href}
+          aria-label={`Open ${item.title}`}
+          className="block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <Card
+            className={`relative h-full overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ${item.ibVariant}`}
           >
-            <Card
-              className={`relative h-full overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ${item.ibVariant}`}
-            >
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between gap-3 mb-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground leading-tight">
-                    {item.title}
-                  </p>
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
-                    <Icon className="h-4 w-4 text-foreground" />
-                  </div>
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground leading-tight">
+                  {item.title}
+                </p>
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                  <Icon className="h-4 w-4 text-foreground" />
                 </div>
-                <div className="text-2xl font-semibold tracking-tight text-foreground">{item.value}</div>
-                <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
-              </CardContent>
-            </Card>
-          </Link>
-        );
-      })}
-    </div>
-  );
+              </div>
+              <div className="text-2xl font-semibold tracking-tight text-foreground">{item.value}</div>
+              <p className="text-xs text-muted-foreground mt-1">{item.description}</p>
+            </CardContent>
+          </Card>
+        </Link>
+      );
+    })}
+  </div>
+);
 
   return (
     <div className="min-h-full w-full p-4 lg:p-6 xl:p-8">
@@ -190,9 +186,7 @@ export function AdminDashboardView({ adminDashboardData, userName }: AdminDashbo
       </div>
 
       {/* KPI Card rows */}
-      <KpiGrid cards={primaryKpiCards} />
-      <KpiGrid cards={secondaryKpiCards} />
-      <KpiGrid cards={tertiaryKpiCards} />
+    <KpiGrid cards={allKpiCards} />
 
       {/* Charts */}
      <EnhancedDashboardCharts adminDashboardData={adminDashboardData} />

@@ -802,6 +802,7 @@ export interface AdminIbRequest {
   status?: number;
   notes?: string | null;
   admin_comment?: string | null;
+  user_comment?: string | null;
   ib_name?: string | null;
   created_at?: string;
   updated_at?: string;
