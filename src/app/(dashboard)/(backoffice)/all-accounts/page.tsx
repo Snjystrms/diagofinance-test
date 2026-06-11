@@ -54,14 +54,11 @@ export type AccountTypeRow = {
   maximum_leverage: string;
   leverage_type: "fixed" | "dynamic" | string;
   leverage_value: number;
-  stop_out_level: string;   // keep string for consistent display (e.g., "50.00")
-  hedge_margin: string;     // keep string for consistent display
-  swap_free_option: boolean;
   base_currency: string;
+  commission_pool: number;
   status: boolean;
   created_at?: string;
   updated_at?: string;
-  ib_commissions: AccountTypeCommissionRow[];
 };
 
 // ---- helpers: normalize / serialize ----
@@ -209,20 +206,11 @@ const normalize = (a: AccountTypeItem): AccountTypeRow => ({
   maximum_leverage: toStringValue(a.maximum_leverage),
   leverage_type: (a.leverage_type as string) ?? "dynamic",
   leverage_value: toNumericValue(a.leverage_value),
-  stop_out_level:
-    typeof a.stop_out_level === "number"
-      ? a.stop_out_level.toFixed(2)
-      : String(a.stop_out_level ?? "0.00"),
-  hedge_margin:
-    typeof a.hedge_margin === "number"
-      ? a.hedge_margin.toFixed(2)
-      : String(a.hedge_margin ?? "0.00"),
-  swap_free_option: coerceBoolean(a.swap_free_option),
   base_currency: a.base_currency ?? "",
+  commission_pool: toNumericValue(a.commission_pool, 0),
   status: coerceBoolean(a.status, true),
   created_at: a.created_at,
   updated_at: a.updated_at,
-  ib_commissions: normalizeCommissions(a.ib_commissions ?? a.commissions),
 });
 
 const extractSingleAccountType = (payload: unknown): AccountTypeItem | null => {
@@ -277,27 +265,9 @@ const serialize = (r: Partial<AccountTypeRow>): AccountTypeUpsertBody => ({
   }),
   leverage_type: (r.leverage_type as string) ?? "dynamic",
   leverage_value: toNumericValue(r.leverage_value),
-  stop_out_level: Number(
-    toNumericValue(r.stop_out_level)
-  ),
-  hedge_margin: Number(
-    toNumericValue(r.hedge_margin)
-  ),
-  swap_free_option: coerceBoolean(r.swap_free_option, true),
   base_currency: r.base_currency ?? "",
+  commission_pool: toNumericValue(r.commission_pool, 0),
   status: coerceBoolean(r.status, true),
-  ib_commissions: (r.ib_commissions ?? []).map((commission) => ({
-    ...(commission.id ? { id: commission.id } : {}),
-    is_default: coerceBoolean(commission.is_default, commission.level === "IB"),
-    level: commission.level,
-    rate_ib: toNumericValue(commission.rate_ib),
-    rate_sub_ib_1: toNumericValue(commission.rate_sub_ib_1),
-    rate_sub_ib_2: toNumericValue(commission.rate_sub_ib_2),
-    rate_sub_ib_3: toNumericValue(commission.rate_sub_ib_3),
-    rate_sub_ib_4: toNumericValue(commission.rate_sub_ib_4),
-    rate_sub_ib_5: toNumericValue(commission.rate_sub_ib_5),
-    status: coerceBoolean(commission.status, true),
-  })),
 });
 
 // simple debounce hook

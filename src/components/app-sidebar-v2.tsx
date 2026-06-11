@@ -60,6 +60,7 @@ import { useAuth } from "@/contexts/auth-context"
 import { generateSubadminNavigation } from "@/lib/permission-nav-mapper"
 import { getSidebarNavigation } from "@/lib/app-route-registry"
 import type { NavItem } from "@/types/permissions"
+import { useUnreadNotificationCount } from "@/hooks/use-unread-notification-count"
 
 // Helper function to get icon for sub-items based on title
 const getSubItemIcon = (title: string) => {
@@ -173,6 +174,9 @@ export function AppSidebarV2({ ...props }: React.ComponentProps<typeof Sidebar>)
   const [activeItem, setActiveItem] = React.useState<string | null>(null);
   const lastActiveItemRef = React.useRef<string | null>(null);
   const isCollapsed = state === "collapsed";
+  const unreadCount = useUnreadNotificationCount(
+    user?.type === "user" ? "user" : "admin"
+  );
 
   // Ensure sidebar starts collapsed on mount
   React.useEffect(() => {
@@ -333,6 +337,11 @@ export function AppSidebarV2({ ...props }: React.ComponentProps<typeof Sidebar>)
                             <>
                               {item.icon && (React.isValidElement(item.icon) ? item.icon : <item.icon className="size-5 transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]" />)}
                               {!isCollapsed && <span className="animate-in fade-in-0 slide-in-from-left-2 duration-500">{item.title}</span>}
+                              {item.url === "/all-notifications" && unreadCount > 0 && !isCollapsed && (
+                                <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-[10px] font-semibold bg-red-500 text-white">
+                                  {unreadCount > 99 ? "99+" : unreadCount}
+                                </span>
+                              )}
                             </>
                           ) : (
                             <Link href={item.url}>

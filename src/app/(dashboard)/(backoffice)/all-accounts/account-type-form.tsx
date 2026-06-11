@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 
-import type { AccountTypeCommissionRow, AccountTypeRow } from "./page";
+import type { AccountTypeRow } from "./page";
 import {
   Dialog,
   DialogContent,
@@ -26,37 +26,6 @@ import {
 type FormValue = Omit<AccountTypeRow, "id" | "created_at" | "updated_at"> & {
   id?: string;
 };
-
-const COMMISSION_LEVELS = [
-  "IB",
-  "Level-1",
-  "Level-2",
-  "Level-3",
-  "Level-4",
-  "Level-5",
-] as const;
-
-const COMMISSION_FIELDS = [
-  ["rate_ib", "Rate IB"],
-  ["rate_sub_ib_1", "Sub IB 1"],
-  ["rate_sub_ib_2", "Sub IB 2"],
-  ["rate_sub_ib_3", "Sub IB 3"],
-  ["rate_sub_ib_4", "Sub IB 4"],
-  ["rate_sub_ib_5", "Sub IB 5"],
-] as const;
-
-const buildDefaultCommissions = (): AccountTypeCommissionRow[] =>
-  COMMISSION_LEVELS.map((level, index) => ({
-    is_default: index === 0,
-    level,
-    rate_ib: 0,
-    rate_sub_ib_1: 0,
-    rate_sub_ib_2: 0,
-    rate_sub_ib_3: 0,
-    rate_sub_ib_4: 0,
-    rate_sub_ib_5: 0,
-    status: true,
-  }));
 
 const extractEditableNumberString = (
   value: string | number | undefined,
@@ -92,51 +61,15 @@ const extractEditableNumberString = (
   return "";
 };
 
-const mergeCommissions = (
-  commissions?: AccountTypeCommissionRow[],
-): AccountTypeCommissionRow[] => {
-  const byLevel = new Map<string, AccountTypeCommissionRow>();
-
-  for (const item of buildDefaultCommissions()) {
-    byLevel.set(item.level, item);
-  }
-
-  for (const item of commissions ?? []) {
-    byLevel.set(item.level, {
-      ...item,
-      is_default: Boolean(item.is_default),
-      status: Boolean(item.status),
-    });
-  }
-
-  return COMMISSION_LEVELS.map(
-    (level) =>
-      byLevel.get(level) ?? {
-        is_default: level === "IB",
-        level,
-        rate_ib: 0,
-        rate_sub_ib_1: 0,
-        rate_sub_ib_2: 0,
-        rate_sub_ib_3: 0,
-        rate_sub_ib_4: 0,
-        rate_sub_ib_5: 0,
-        status: true,
-      },
-  );
-};
-
 const createEmptyForm = (): FormValue => ({
   name: "",
   spread_from: "",
   maximum_leverage: "2000",
   leverage_type: "dynamic",
   leverage_value: 2000,
-  stop_out_level: "50.00",
-  hedge_margin: "0.00",
-  swap_free_option: true,
   base_currency: "USD",
+  commission_pool: 0,
   status: true,
-  ib_commissions: buildDefaultCommissions(),
 });
 
 export function AccountTypeForm({
@@ -167,12 +100,9 @@ export function AccountTypeForm({
         ),
         leverage_type: (initialData.leverage_type as string) || "dynamic",
         leverage_value: Number(initialData.leverage_value || 0),
-        stop_out_level: initialData.stop_out_level ?? "0.00",
-        hedge_margin: initialData.hedge_margin ?? "0.00",
-        swap_free_option: Boolean(initialData.swap_free_option),
         base_currency: initialData.base_currency ?? "USD",
+        commission_pool: Number(initialData.commission_pool || 0),
         status: Boolean(initialData.status),
-        ib_commissions: mergeCommissions(initialData.ib_commissions),
       });
     } else {
       setForm(createEmptyForm());
@@ -204,25 +134,6 @@ export function AccountTypeForm({
   };
 
   const disabled = readOnly || isSubmitting;
-
-  const getEditableFieldCount = (level: string) => {
-    const levelIndex = COMMISSION_LEVELS.indexOf(
-      level as (typeof COMMISSION_LEVELS)[number],
-    );
-    return levelIndex >= 0 ? levelIndex + 1 : COMMISSION_FIELDS.length;
-  };
-
-  const updateCommission = (
-    level: string,
-    updater: (current: AccountTypeCommissionRow) => AccountTypeCommissionRow,
-  ) => {
-    setForm((current) => ({
-      ...current,
-      ib_commissions: current.ib_commissions.map((commission) =>
-        commission.level === level ? updater(commission) : commission,
-      ),
-    }));
-  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -278,6 +189,25 @@ export function AccountTypeForm({
                 }
                 onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 placeholder="0.5"
+                disabled={disabled}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="commission_pool">Commission</Label>
+              <Input
+                id="commission_pool"
+                type="number"
+                step="1"
+                min="1"
+                value={form.commission_pool}
+               onChange={(e) =>
+                  setForm({
+                    ...form,
+                    commission_pool: Number(e.target.value || 0),
+                  }) }
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                placeholder="5"
                 disabled={disabled}
                 required
               />
@@ -405,7 +335,7 @@ export function AccountTypeForm({
               </div>
             </div>
 
-            <div className="space-y-3 md:col-span-2">
+            {/* <div className="space-y-3 md:col-span-2">
               <div>
                 <Label>IB Commissions</Label>
                 <p className="text-sm text-muted-foreground">
@@ -514,7 +444,7 @@ export function AccountTypeForm({
                   </table>
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
 
           <DialogFooter>

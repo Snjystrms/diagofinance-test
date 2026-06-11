@@ -331,7 +331,7 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
                 ) : null}
 
                 {/* ── IB Plan (optional) ── */}
-                <ValidatedFormField
+                {/* <ValidatedFormField
                   control={form.control}
                   name={fieldPath<TFormValues>("ib_plan_id")}
                   label="Partner/IB Plan"
@@ -363,7 +363,7 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
                       </SelectContent>
                     </Select>
                   )}
-                />
+                /> */}
               </div>
             )}
 

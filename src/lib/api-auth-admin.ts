@@ -255,14 +255,13 @@ export type AdminUserCreateBody = {
   country?: string;
   country_code?: string;
   referral_code?: string;
-  ib_plan_id?: number;
 };
 
 export type AdminUserUpdateBody = Partial<AdminUserCreateBody>;
 export type PromoteToIbBody = {
   client_id: number;
   ib_name: string;
-  ib_plan_id: number;
+  // ib_plan_id: number;
 };
 
 export type PromoteToIbResponseData = {
@@ -879,23 +878,9 @@ export type AccountTypeUpsertBody = {
   maximum_leverage: string | number;
   leverage_type: "fixed" | "dynamic" | string;
   leverage_value: number;
-  stop_out_level: number;
-  hedge_margin: number;
-  swap_free_option: boolean;
   base_currency: string;
+  commission_pool: number;
   status: boolean;
-  ib_commissions: Array<{
-    id?: number | string;
-    is_default?: boolean;
-    level: string;
-    rate_ib: number;
-    rate_sub_ib_1: number;
-    rate_sub_ib_2: number;
-    rate_sub_ib_3: number;
-    rate_sub_ib_4: number;
-    rate_sub_ib_5: number;
-    status: boolean;
-  }>;
 };
 
 export interface AccountTypeCommissionItem {
@@ -921,15 +906,11 @@ export interface AccountTypeItem {
   maximum_leverage: string | number | null;
   leverage_type: "fixed" | "dynamic" | string;
   leverage_value: number | string | null;
-  stop_out_level: string | number | null;
-  hedge_margin: string | number | null;
-  swap_free_option: boolean | number | string;
   base_currency: string;
+  commission_pool?: number;
   status: boolean | number | string;
   created_at?: string;
   updated_at?: string;
-  ib_commissions?: AccountTypeCommissionItem[];
-  commissions?: AccountTypeCommissionItem[];
 }
 
 export interface AdminGroupItem {
@@ -1239,7 +1220,7 @@ export const adminUsersApi = {
       body: JSON.stringify({
         client_id: body.client_id,
         ib_name: ibName,
-        ib_plan_id: body.ib_plan_id,
+        // ib_plan_id: body.ib_plan_id,
       }),
     });
   },

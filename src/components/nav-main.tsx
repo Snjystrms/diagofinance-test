@@ -14,6 +14,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarMenuSub,
@@ -22,6 +23,8 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
+import { useUnreadNotificationCount } from "@/hooks/use-unread-notification-count"
+import { useAuth } from "@/contexts/auth-context"
 
 export function NavMain({
   items,
@@ -46,6 +49,10 @@ export function NavMain({
   const { state } = useSidebar()
   const isCollapsed = state === "collapsed"
   const isEnterprise = variant === "enterprise"
+  const { user } = useAuth()
+  const unreadCount = useUnreadNotificationCount(
+    user?.type === "user" ? "user" : "admin"
+  )
 
   React.useEffect(() => {
     const urls = items.flatMap((item) => [item.url, ...(item.items?.map((subItem) => subItem.url) ?? [])]);
@@ -133,6 +140,11 @@ export function NavMain({
                             )}
                           >
                             {item.title}
+                          </span>
+                        )}
+                        {item.url === "/all-notifications" && unreadCount > 0 && !isCollapsed && (
+                          <span className="inline-flex items-center justify-center min-w-5 h-5 px-1.5 rounded-full text-[10px] font-semibold bg-red-500 text-white">
+                            {unreadCount > 99 ? "99+" : unreadCount}
                           </span>
                         )}
                         {!isCollapsed && (

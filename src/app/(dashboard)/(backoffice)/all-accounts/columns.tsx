@@ -50,8 +50,20 @@ export const getColumns = (opts: {
     header: ({ column }) => <DataTableColumnHeader column={column} title="Spread From" />,
     cell: ({ row }) => (
       <div className="inline-flex items-center gap-1">
-        <Swords className="h-4 w-4 text-sky-600" />
+        <Swords className="h-4 w-4 text-primary" />
         <span className="font-medium">{row.original.spread_from}</span>
+      </div>
+    ),
+    enableColumnFilter: true,
+  },
+  {
+    id: "commission_pool",
+    accessorKey: "commission_pool",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Commission Pool" />,
+    cell: ({ row }) => (
+      <div className="inline-flex items-center gap-1">
+        <Coins className="h-4 w-4 text-primary" />
+        <span className="font-medium">{row.original.commission_pool}</span>
       </div>
     ),
     enableColumnFilter: true,
@@ -145,7 +157,7 @@ export const getColumns = (opts: {
     header: ({ column }) => <DataTableColumnHeader column={column} title="Updated" />,
     cell: ({ row }) => (
       <div className="inline-flex items-center gap-1">
-        <Cog className="h-4 w-4 text-indigo-600" />
+        <Cog className="h-4 w-4 text-primary" />
         <span className="text-sm">{fmtDate(row.original.updated_at)}</span>
       </div>
     ),

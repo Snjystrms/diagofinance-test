@@ -47,9 +47,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/auth-context";
 import {
   adminUsersApi,
-  adminIbPlansApi,
   adminAllUsersReportApi,
-  type AdminIbPlanItem,
   type AdminUserDetailApiData,
   type AdminUserUpdateBody,
   type AdminUsersListApiData,
@@ -81,7 +79,6 @@ const updateUserSchema = z
     password: z.string().optional().or(z.literal("")),
     confirm_password: z.string().optional().or(z.literal("")),
     referral_code: z.string().trim().optional().or(z.literal("")),
-    ib_plan_id: z.string().optional().or(z.literal("")),
   })
   .refine((data) => {
     if (!data.password && !data.confirm_password) return true;
@@ -92,12 +89,6 @@ const updateUserSchema = z
   });
 
 type UpdateUserFormData = z.infer<typeof updateUserSchema>;
-
-type IbPlanOption = {
-  id: string;
-  name: string;
-  status: string;
-};
 
 type SponsorOption = {
   id: number;
@@ -121,7 +112,6 @@ const createInitialCreateFormState = (): AdminUserCreateFormData => ({
   password: "",
   confirm_password: "",
   referral_code: "",
-  ib_plan_id: "",
 });
 
 const createInitialUpdateFormState = (): UpdateUserFormData => ({
@@ -134,7 +124,6 @@ const createInitialUpdateFormState = (): UpdateUserFormData => ({
   password: "",
   confirm_password: "",
   referral_code: "",
-  ib_plan_id: "",
 });
 
 const transformUser = (raw: Record<string, unknown>): PendingUser => {
@@ -264,12 +253,6 @@ const extractSingleUser = (payload?: AdminUserDetailApiData | null): PendingUser
   return null;
 };
 
-const normalizeIbPlanOption = (plan: AdminIbPlanItem): IbPlanOption => ({
-  id: String(plan.id),
-  name: plan.name ?? `IB Plan ${plan.id}`,
-  status: String(plan.status ?? ""),
-});
-
 export default function NewUsersPage() {
   const { token } = useAuth();
   const {
@@ -313,11 +296,8 @@ export default function NewUsersPage() {
   const [promotingUserIds, setPromotingUserIds] = useState<Set<number>>(new Set());
   const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null);
   const [userToDelete, setUserToDelete] = useState<PendingUser | null>(null);
-  const [ibPlans, setIbPlans] = useState<IbPlanOption[]>([]);
-  const [loadingIbPlans, setLoadingIbPlans] = useState(false);
   const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
   const [promoteTargetUser, setPromoteTargetUser] = useState<PendingUser | null>(null);
-  const [selectedIbPlanId, setSelectedIbPlanId] = useState("");
   const [promoteSubmitting, setPromoteSubmitting] = useState(false);
   const [manageSponsorDialogOpen, setManageSponsorDialogOpen] = useState(false);
   const [manageSponsorTargetUser, setManageSponsorTargetUser] = useState<PendingUser | null>(null);
@@ -377,32 +357,14 @@ export default function NewUsersPage() {
   const setCountryValues = useCallback((countryName: string, mode: "create" | "edit") => {
     const countryData = COUNTRIES.find((country) => country.name === countryName);
     if (!countryData) return;
-    const form = mode === "create" ? createUserForm : editUserForm;
-    form.setValue("country", countryName, { shouldValidate: true });
-    form.setValue("country_code", countryData.code, { shouldValidate: true });
+    if (mode === "create") {
+      createUserForm.setValue("country", countryName, { shouldValidate: true });
+      createUserForm.setValue("country_code", countryData.code, { shouldValidate: true });
+    } else {
+      editUserForm.setValue("country", countryName, { shouldValidate: true });
+      editUserForm.setValue("country_code", countryData.code, { shouldValidate: true });
+    }
   }, [createUserForm, editUserForm]);
-
-  const loadIbPlans = useCallback(async () => {
-    if (!token) {
-      setIbPlans([]);
-      return;
-    }
-
-    try {
-      setLoadingIbPlans(true);
-      const response = await adminIbPlansApi.list({ token });
-      const plans = Array.isArray(response?.data) ? response.data : [];
-      setIbPlans(plans.map(normalizeIbPlanOption));
-    } catch (err) {
-      console.error("Failed to load IB plans:", err);
-      toast.error(
-        getAdminFriendlyErrorMessage(err, { resource: "IB plans", action: "load" })
-      );
-      setIbPlans([]);
-    } finally {
-      setLoadingIbPlans(false);
-    }
-  }, [token]);
 
   const loadUsers = useCallback(async () => {
     if (!canViewUserList) {
@@ -499,20 +461,12 @@ export default function NewUsersPage() {
     }
   }, [canViewUserList, token, search, statusFilter]);
 
-  useEffect(() => {
-    void loadIbPlans();
-  }, [loadIbPlans]);
-
   const handleCreate = async (values: AdminUserCreateFormData) => {
     if (!token) return;
     try {
       setCreatingUser(true);
-      const { confirm_password: _confirmPassword, ib_plan_id: rawIbPlanId, ...rest } = values;
-      const payload = {
-        ...rest,
-        ...(rawIbPlanId ? { ib_plan_id: Number(rawIbPlanId) } : {}),
-      };
-      const response = await adminUsersApi.create(payload, token);
+      const { confirm_password: _confirmPassword, ...rest } = values;
+      const response = await adminUsersApi.create(rest, token);
       toast.success((response as { message?: string })?.message || "User created successfully");
       setCreateDialogOpen(false);
       createUserForm.reset(createInitialCreateFormState());
@@ -544,7 +498,6 @@ export default function NewUsersPage() {
         password: "",
         confirm_password: "",
         referral_code: detailUser.referral_code ?? "",
-        ib_plan_id: detailUser.ib_plan_id != null ? String(detailUser.ib_plan_id) : "",
       });
       setEditDialogOpen(true);
     } catch (err) {
@@ -561,13 +514,9 @@ export default function NewUsersPage() {
     if (!token || !selectedUser) return;
     try {
       setUpdatingUser(true);
-      const { confirm_password: _confirmPassword, ib_plan_id: rawIbPlanId, ...rest } = values;
+      const { confirm_password: _confirmPassword, ...rest } = values;
       const basePayload = rest.password ? rest : { ...rest, password: undefined };
-      const body: AdminUserUpdateBody = {
-        ...basePayload,
-        ...(rawIbPlanId ? { ib_plan_id: Number(rawIbPlanId) } : {}),
-      };
-      const response = await adminUsersApi.update(selectedUser.id, body, token);
+      const response = await adminUsersApi.update(selectedUser.id, basePayload, token);
       toast.success((response as { message?: string })?.message || "User updated successfully");
       setEditDialogOpen(false);
       setSelectedUser(null);
@@ -625,9 +574,8 @@ export default function NewUsersPage() {
     }
 
     setPromoteTargetUser(user);
-    setSelectedIbPlanId((current) => current || ibPlans[0]?.id || "");
     setPromoteDialogOpen(true);
-  }, [ibPlans]);
+  }, []);
 
   const handlePromoteToIb = useCallback(async () => {
     if (!token || !promoteTargetUser) return;
@@ -639,11 +587,6 @@ export default function NewUsersPage() {
 
     if (!ibName) {
       toast.error("IB name is required");
-      return;
-    }
-
-    if (!selectedIbPlanId) {
-      toast.error("Please select an IB plan");
       return;
     }
 
@@ -659,7 +602,6 @@ export default function NewUsersPage() {
         {
           client_id: promoteTargetUser.id,
           ib_name: ibName,
-          ib_plan_id: Number(selectedIbPlanId),
         },
         token,
       );
@@ -667,7 +609,6 @@ export default function NewUsersPage() {
       toast.success((response as { message?: string })?.message || "Client has been successfully promoted to Partner");
       setPromoteDialogOpen(false);
       setPromoteTargetUser(null);
-      setSelectedIbPlanId("");
       await loadUsers();
     } catch (err) {
       console.error("Failed to promote user to Partner:", err);
@@ -684,7 +625,7 @@ export default function NewUsersPage() {
         return next;
       });
     }
-  }, [token, promoteTargetUser, selectedIbPlanId, loadUsers]);
+  }, [token, promoteTargetUser, loadUsers]);
 
   const handleManageSponsorOpen = useCallback((user: PendingUser) => {
     setManageSponsorTargetUser(user);
@@ -962,8 +903,6 @@ export default function NewUsersPage() {
             form={createUserForm}
             onSubmit={handleCreate}
             onCountryChange={(value) => setCountryValues(value, "create")}
-            ibPlanOptions={ibPlans}
-            loadingIbPlans={loadingIbPlans}
           />
         ) : null}
 
@@ -988,8 +927,6 @@ export default function NewUsersPage() {
           form={editUserForm}
           onSubmit={handleUpdate}
           onCountryChange={(value) => setCountryValues(value, "edit")}
-          ibPlanOptions={ibPlans}
-          loadingIbPlans={loadingIbPlans}
         />
 
         <DeleteDialog
@@ -1125,7 +1062,6 @@ export default function NewUsersPage() {
             setPromoteDialogOpen(open);
             if (!open) {
               setPromoteTargetUser(null);
-              setSelectedIbPlanId("");
             }
           }}
         >
@@ -1152,7 +1088,7 @@ export default function NewUsersPage() {
                 />
               </div>
 
-              <div className="space-y-2">
+              {/* <div className="space-y-2">
                 <Label htmlFor="ib-plan-id">IB Plan</Label>
                 <Select value={selectedIbPlanId} onValueChange={setSelectedIbPlanId} disabled={loadingIbPlans || ibPlans.length === 0}>
                   <SelectTrigger id="ib-plan-id">
@@ -1169,7 +1105,7 @@ export default function NewUsersPage() {
                 {!loadingIbPlans && ibPlans.length === 0 ? (
                   <p className="text-xs text-muted-foreground">No IB plans available.</p>
                 ) : null}
-              </div>
+              </div> */}
             </div>
 
             <DialogFooter>
@@ -1179,7 +1115,6 @@ export default function NewUsersPage() {
                 onClick={() => {
                   setPromoteDialogOpen(false);
                   setPromoteTargetUser(null);
-                  setSelectedIbPlanId("");
                 }}
                 disabled={promoteSubmitting}
               >
@@ -1188,7 +1123,7 @@ export default function NewUsersPage() {
               <Button
                 type="button"
                 onClick={() => void handlePromoteToIb()}
-                disabled={promoteSubmitting || !selectedIbPlanId}
+                disabled={promoteSubmitting}
               >
                 {promoteSubmitting ? "Promoting..." : "Promote"}
               </Button>
