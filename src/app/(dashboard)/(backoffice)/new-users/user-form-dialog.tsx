@@ -41,6 +41,13 @@ type UserFormDialogValues = FieldValues & {
   password?: string;
   confirm_password?: string;
   referral_code?: string;
+  ib_plan_id?: string;
+};
+
+type IbPlanOption = {
+  id: string;
+  name: string;
+  status: string;
 };
 
 interface UserFormDialogProps<TFormValues extends UserFormDialogValues> {
@@ -54,6 +61,8 @@ interface UserFormDialogProps<TFormValues extends UserFormDialogValues> {
   loadingDetails?: boolean;
   passwordOptional?: boolean;
   showReferralCode?: boolean;
+  ibPlanOptions?: IbPlanOption[];
+  loadingIbPlans?: boolean;
   form: UseFormReturn<TFormValues>;
   onSubmit: (values: TFormValues) => void;
   onCountryChange: (country: string) => void;
@@ -74,6 +83,8 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
   loadingDetails = false,
   passwordOptional = false,
   showReferralCode = true,
+  ibPlanOptions = [],
+  loadingIbPlans = false,
   form,
   onSubmit,
   onCountryChange,
@@ -318,6 +329,41 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
                     // intentionally no `rules` — this field is optional
                   />
                 ) : null}
+
+                {/* ── IB Plan (optional) ── */}
+                <ValidatedFormField
+                  control={form.control}
+                  name={fieldPath<TFormValues>("ib_plan_id")}
+                  label="Partner/IB Plan"
+                  className="sm:col-span-2"
+                  renderControl={({ field }) => (
+                    <Select
+                      value={field.value ?? ""}
+                      onValueChange={(value) => {
+                        field.onChange(value === "__none__" ? "" : value);
+                      }}
+                      disabled={loadingIbPlans}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue
+                          placeholder={
+                            loadingIbPlans
+                              ? "Loading plans..."
+                              : "Select partner/IB plan (optional)"
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent side="bottom" avoidCollisions={false}>
+                        <SelectItem value="__none__">None</SelectItem>
+                        {ibPlanOptions.map((plan) => (
+                          <SelectItem key={plan.id} value={plan.id}>
+                            {plan.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </div>
             )}
 

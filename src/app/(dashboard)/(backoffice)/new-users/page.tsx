@@ -81,6 +81,7 @@ const updateUserSchema = z
     password: z.string().optional().or(z.literal("")),
     confirm_password: z.string().optional().or(z.literal("")),
     referral_code: z.string().trim().optional().or(z.literal("")),
+    ib_plan_id: z.string().optional().or(z.literal("")),
   })
   .refine((data) => {
     if (!data.password && !data.confirm_password) return true;
@@ -120,6 +121,7 @@ const createInitialCreateFormState = (): AdminUserCreateFormData => ({
   password: "",
   confirm_password: "",
   referral_code: "",
+  ib_plan_id: "",
 });
 
 const createInitialUpdateFormState = (): UpdateUserFormData => ({
@@ -132,6 +134,7 @@ const createInitialUpdateFormState = (): UpdateUserFormData => ({
   password: "",
   confirm_password: "",
   referral_code: "",
+  ib_plan_id: "",
 });
 
 const transformUser = (raw: Record<string, unknown>): PendingUser => {
@@ -155,6 +158,11 @@ const transformUser = (raw: Record<string, unknown>): PendingUser => {
     sponsor_by: raw.sponsor_by == null ? null : String(raw.sponsor_by),
     sponsor_by_email: raw.sponsor_by_email == null ? null : String(raw.sponsor_by_email),
     referral_code: String(raw.referral_code ?? ""),
+    ib_plan_id: (() => {
+      const v = raw.ib_plan_id;
+      if (v == null || typeof v === "object") return null;
+      return typeof v === "number" || typeof v === "string" ? v : null;
+    })(),
     status: String(raw.status ?? ""),
     email_verified: typeof raw.email_verified === "number" ? raw.email_verified : Number(raw.email_verified ?? 0) || 0,
     payment_verified: typeof raw.payment_verified === "number" ? raw.payment_verified : Number(raw.payment_verified ?? 0) || 0,
@@ -499,7 +507,11 @@ export default function NewUsersPage() {
     if (!token) return;
     try {
       setCreatingUser(true);
-      const { confirm_password: _confirmPassword, ...payload } = values;
+      const { confirm_password: _confirmPassword, ib_plan_id: rawIbPlanId, ...rest } = values;
+      const payload = {
+        ...rest,
+        ...(rawIbPlanId ? { ib_plan_id: Number(rawIbPlanId) } : {}),
+      };
       const response = await adminUsersApi.create(payload, token);
       toast.success((response as { message?: string })?.message || "User created successfully");
       setCreateDialogOpen(false);
@@ -532,6 +544,7 @@ export default function NewUsersPage() {
         password: "",
         confirm_password: "",
         referral_code: detailUser.referral_code ?? "",
+        ib_plan_id: detailUser.ib_plan_id != null ? String(detailUser.ib_plan_id) : "",
       });
       setEditDialogOpen(true);
     } catch (err) {
@@ -548,8 +561,12 @@ export default function NewUsersPage() {
     if (!token || !selectedUser) return;
     try {
       setUpdatingUser(true);
-      const { confirm_password: _confirmPassword, ...payload } = values;
-      const body: AdminUserUpdateBody = payload.password ? payload : { ...payload, password: undefined };
+      const { confirm_password: _confirmPassword, ib_plan_id: rawIbPlanId, ...rest } = values;
+      const basePayload = rest.password ? rest : { ...rest, password: undefined };
+      const body: AdminUserUpdateBody = {
+        ...basePayload,
+        ...(rawIbPlanId ? { ib_plan_id: Number(rawIbPlanId) } : {}),
+      };
       const response = await adminUsersApi.update(selectedUser.id, body, token);
       toast.success((response as { message?: string })?.message || "User updated successfully");
       setEditDialogOpen(false);
@@ -945,6 +962,8 @@ export default function NewUsersPage() {
             form={createUserForm}
             onSubmit={handleCreate}
             onCountryChange={(value) => setCountryValues(value, "create")}
+            ibPlanOptions={ibPlans}
+            loadingIbPlans={loadingIbPlans}
           />
         ) : null}
 
@@ -969,6 +988,8 @@ export default function NewUsersPage() {
           form={editUserForm}
           onSubmit={handleUpdate}
           onCountryChange={(value) => setCountryValues(value, "edit")}
+          ibPlanOptions={ibPlans}
+          loadingIbPlans={loadingIbPlans}
         />
 
         <DeleteDialog

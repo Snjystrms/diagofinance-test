@@ -1402,17 +1402,47 @@ function USDTDepositContent() {
                           Transfer funds to one of the approved accounts below, then submit the Transaction ID.
                         </CardDescription>
                       </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={fetchBrokerBankDetails}
-                        disabled={brokerBankDetailsLoading}
-                        aria-label="Refresh bank account details"
-                      >
-                        <RefreshCw
-                          className={`h-3.5 w-3.5 ${brokerBankDetailsLoading ? "animate-spin" : ""}`}
-                        />
-                      </Button>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            if (visibleBrokerBankDetails.length === 0) return;
+                            const text = visibleBrokerBankDetails
+                              .map((detail, idx) => {
+                                const lines = [
+                                  `Account ${idx + 1}: ${detail.bank_name}`,
+                                  `Account Name: ${detail.account_holder_name || "-"}`,
+                                  `Account Number: ${detail.account_number || "-"}`,
+                                  detail.iban_number ? `IBAN: ${detail.iban_number}` : null,
+                                  `IFSC / SWIFT: ${detail.swift_ifsc_code || "-"}`,
+                                  `Address: ${detail.address || "-"}`,
+                                  `Country: ${detail.country || "-"}`,
+                                ].filter(Boolean);
+                                return lines.join("\n");
+                              })
+                              .join("\n\n");
+                            navigator.clipboard.writeText(text).then(() => {
+                              toast.success("Bank details copied to clipboard");
+                            });
+                          }}
+                          disabled={visibleBrokerBankDetails.length === 0}
+                          aria-label="Copy all bank details"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={fetchBrokerBankDetails}
+                          disabled={brokerBankDetailsLoading}
+                          aria-label="Refresh bank account details"
+                        >
+                          <RefreshCw
+                            className={`h-3.5 w-3.5 ${brokerBankDetailsLoading ? "animate-spin" : ""}`}
+                          />
+                        </Button>
+                      </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                       {brokerBankDetailsLoading ? (
@@ -1648,7 +1678,7 @@ function USDTDepositContent() {
                       {/* Bank Payment Proof Upload */}
                       <div className="space-y-2">
                         <Label htmlFor="bank-payment-proof" className="text-sm font-semibold">
-                          Payment Proof (Screenshot)
+                          Payment Proof<span className="text-destructive">*</span>
                         </Label>
                         {!bankPaymentProof ? (
                           <div className="rounded-lg border-2 border-dashed border-border p-4 transition-colors hover:border-primary/50">
@@ -1670,6 +1700,7 @@ function USDTDepositContent() {
                               accept="image/jpeg,image/jpg,image/png,image/webp"
                               onChange={handleBankPaymentProofChange}
                               className="hidden"
+                              disabled={isSubmittingBank}
                             />
                           </div>
                         ) : (
@@ -1713,6 +1744,7 @@ function USDTDepositContent() {
                           isSubmittingBank ||
                           !bankAmount.trim() ||
                           !bankTxId.trim() ||
+                          !bankPaymentProof ||
                           visibleBrokerBankDetails.length === 0
                         }
                         className="h-11 w-full rounded-xl text-base font-semibold"

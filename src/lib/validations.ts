@@ -72,6 +72,7 @@ export const adminUserCreateSchema = z.object({
   password: securePasswordSchema,
   confirm_password: z.string().min(1, 'Please confirm your password'),
   referral_code: z.string().trim().max(100, 'Referral code must be less than 100 characters').optional().or(z.literal('')),
+  ib_plan_id: z.string().optional().or(z.literal('')),
 }).refine((data) => data.password === data.confirm_password, {
   message: "Passwords don't match",
   path: ['confirm_password'],

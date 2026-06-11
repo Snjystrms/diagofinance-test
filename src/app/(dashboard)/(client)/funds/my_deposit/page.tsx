@@ -44,6 +44,7 @@ import {
   Search,
   X,
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { formatDateTimeInIST } from '@/lib/formatters'
 import {
   Dialog,
@@ -264,15 +265,19 @@ const columns: ColumnDef<DepositListItem>[] = [
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Amount" />
     ),
-    cell: ({ row }) => (
-      <div className="flex items-center gap-2 font-semibold">
-        <DollarSign className="h-4 w-4 text-green-600" />
-        <span>{row.original.amount.toLocaleString('en-US', {
-          minimumFractionDigits: 2,
-          maximumFractionDigits: 8
-        })} USDT</span>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const pmType = row.original.paymentMethod?.type
+      const currencyLabel = pmType === 'usdt_transfer' ? 'USDT' : 'USD'
+      return (
+        <div className="flex items-center gap-2 font-semibold">
+          <DollarSign className="h-4 w-4 text-green-600" />
+          <span>{row.original.amount.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          })} {currencyLabel}</span>
+        </div>
+      )
+    },
   },
   {
     id: 'status',
@@ -350,6 +355,7 @@ const columns: ColumnDef<DepositListItem>[] = [
 
 export default function MyDepositPage() {
   const { token } = useAuth()
+   const router = useRouter()
   const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
   const [perPage, setPerPage] = useQueryState('perPage', parseAsInteger.withDefault(10))
 
@@ -575,7 +581,7 @@ export default function MyDepositPage() {
             />
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+          <div className="grid gap-3 grid-cols-2 xl:grid-cols-5 w-full">
             <div className="space-y-1.5">
               <Label htmlFor="status-filter" className="text-xs font-medium text-muted-foreground">Status</Label>
               <Select
@@ -585,7 +591,7 @@ export default function MyDepositPage() {
                   setPage(1)
                 }}
               >
-                <SelectTrigger id="status-filter" className="h-9">
+                <SelectTrigger id="status-filter" className="h-9 w-full">
                   <SelectValue placeholder="All Status" />
                 </SelectTrigger>
                 <SelectContent>
@@ -606,7 +612,7 @@ export default function MyDepositPage() {
                   setPage(1)
                 }}
               >
-                <SelectTrigger id="source-filter" className="h-9">
+                <SelectTrigger id="source-filter" className="h-9 w-full">
                   <SelectValue placeholder="All Sources" />
                 </SelectTrigger>
                 <SelectContent>
@@ -627,7 +633,7 @@ export default function MyDepositPage() {
                   setPage(1)
                 }}
               >
-                <SelectTrigger id="payment-category-filter" className="h-9">
+                <SelectTrigger id="payment-category-filter" className="h-9 w-full">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
@@ -710,7 +716,7 @@ export default function MyDepositPage() {
                 <p className="text-muted-foreground mb-4">
                   You haven&apos;t submitted any deposit requests yet.
                 </p>
-                <Button onClick={() => window.location.href = '/funds/deposit'}>
+                <Button onClick={() => router.push('/funds/deposit')}>
                   Make a Deposit
                 </Button>
               </div>

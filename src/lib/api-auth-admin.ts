@@ -207,6 +207,7 @@ export interface PendingUser {
   country_code?: string;
   sponsor_id: string;
   referral_code?: string;
+  ib_plan_id?: number | string | null;
   status: string;
   two_fa_enabled?: boolean | number | string;
   email_verified: number;
@@ -254,6 +255,7 @@ export type AdminUserCreateBody = {
   country?: string;
   country_code?: string;
   referral_code?: string;
+  ib_plan_id?: number;
 };
 
 export type AdminUserUpdateBody = Partial<AdminUserCreateBody>;
