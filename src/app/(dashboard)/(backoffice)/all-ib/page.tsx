@@ -32,7 +32,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/auth-context";
-import { adminIbPlansApi, adminIbRequestsApi, type AdminIbPlanItem, type AdminIbRequest } from "@/lib/api";
+import { adminIbRequestsApi, type AdminIbRequest } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
@@ -42,18 +42,6 @@ const statusFilters = [
   { label: "Approved", value: "1" },
   { label: "Rejected", value: "2" },
 ];
-
-type IbPlanOption = {
-  id: string;
-  name: string;
-  status: string;
-};
-
-const normalizeIbPlanOption = (plan: AdminIbPlanItem): IbPlanOption => ({
-  id: String(plan.id),
-  name: plan.name ?? `IB Plan ${plan.id}`,
-  status: String(plan.status ?? ""),
-});
 
 const asStatusCode = (request: AdminIbRequest): number => {
   const req = request as AdminIbRequest & Record<string, unknown>;
@@ -261,8 +249,6 @@ export default function IbManagementPage() {
   const [selectedDecision, setSelectedDecision] = useState<"approve" | "reject">("approve");
   const [actionRequest, setActionRequest] = useState<AdminIbRequest | null>(null);
   const [actionComment, setActionComment] = useState("");
-  const [ibPlans, setIbPlans] = useState<IbPlanOption[]>([]);
-  const [loadingIbPlans, setLoadingIbPlans] = useState(false);
   const [selectedIbPlanId, setSelectedIbPlanId] = useState("");
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
@@ -377,32 +363,6 @@ export default function IbManagementPage() {
     void loadRequests();
   }, [loadRequests]);
 
-  const loadIbPlans = useCallback(async () => {
-    if (!token) {
-      setIbPlans([]);
-      return;
-    }
-
-    try {
-      setLoadingIbPlans(true);
-      const response = await adminIbPlansApi.list({ token });
-      const plans = Array.isArray(response?.data) ? response.data : [];
-      setIbPlans(plans.map(normalizeIbPlanOption));
-    } catch (error: unknown) {
-      console.error("Failed to load IB plans:", error);
-      toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "IB plans", action: "load" })
-      );
-      setIbPlans([]);
-    } finally {
-      setLoadingIbPlans(false);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    void loadIbPlans();
-  }, [loadIbPlans]);
-
   const openActionDialog = useCallback(
     (request: AdminIbRequest, type: "approve" | "reject" | "review") => {
       setActionType(type);
@@ -421,9 +381,9 @@ export default function IbManagementPage() {
 
       setActionComment(deriveAdminComment(request) ?? "");
       const existingPlanId = deriveIbPlanId(request);
-      setSelectedIbPlanId(existingPlanId || ibPlans[0]?.id || "");
+      setSelectedIbPlanId(existingPlanId || "");
     },
-    [ibPlans],
+    [],
   );
 
   const closeActionDialog = useCallback(() => {
@@ -858,22 +818,12 @@ export default function IbManagementPage() {
                   <Select
                     value={selectedIbPlanId}
                     onValueChange={setSelectedIbPlanId}
-                    disabled={loadingIbPlans || ibPlans.length === 0}
                   >
                     <SelectTrigger id="ib-plan-id">
-                      <SelectValue placeholder={loadingIbPlans ? "Loading plans..." : "Select IB plan"} />
+                      <SelectValue placeholder="Select IB plan" />
                     </SelectTrigger>
-                    <SelectContent>
-                      {ibPlans.map((plan) => (
-                        <SelectItem key={plan.id} value={plan.id}>
-                          {plan.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
+                    <SelectContent />
                   </Select>
-                  {!loadingIbPlans && ibPlans.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">No IB plans available.</p>
-                  ) : null}
                 </div>
               ) : null}
             </div>

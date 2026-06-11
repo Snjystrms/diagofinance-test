@@ -301,7 +301,7 @@ export default function IbPlansManagementPage() {
       return {
         account_type_id: String(accountType.id),
         account_type_name: accountType.name ?? `Account Type ${accountType.id}`,
-        commissions: normalizeAccountTypeCommissionRows(accountType.ib_commissions),
+        commissions: normalizeAccountTypeCommissionRows([]), // accountType.ib_commissions not available
       };
     },
     [token],

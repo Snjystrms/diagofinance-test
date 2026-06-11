@@ -33,6 +33,7 @@ import { formatDateTimeInIST } from "@/lib/formatters";
 
 import { DownlineTreePageContent } from "../set-ib-commission/[userId]/_components/downline-tree-page-content";
 import { IbCommissionDialog } from "./_components/ib-commission-dialog";
+import { IbDirectRatesDialog } from "./_components/ib-direct-rates-dialog";
 
 const formatDateTime = (value?: string | null) => {
   if (!value) {
@@ -195,6 +196,8 @@ export default function IbUsersPage() {
   );
   const [commissionDialogOpen, setCommissionDialogOpen] = useState(false);
   const [commissionTargetUser, setCommissionTargetUser] = useState<AdminIbUser | null>(null);
+  const [directRatesDialogOpen, setDirectRatesDialogOpen] = useState(false);
+  const [directRatesTargetUser, setDirectRatesTargetUser] = useState<AdminIbUser | null>(null);
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
@@ -584,22 +587,22 @@ export default function IbUsersPage() {
           );
         },
       },
-      {
-        id: "ib_plan_name",
-        header: "Partner Plan Name",
-        accessorFn: (row) => row.ib_plan_name ?? "-",
-        cell: ({ row }) => {
-          const planName = row.original.ib_plan_name;
-          if (!planName) {
-            return <div className="text-sm text-muted-foreground pl-4">-</div>;
-          }
-          return (
-            <div className="text-sm">
-              {planName}
-            </div>
-          );
-        },
-      },
+      // {
+      //   id: "ib_plan_name",
+      //   header: "Partner Plan Name",
+      //   accessorFn: (row) => row.ib_plan_name ?? "-",
+      //   cell: ({ row }) => {
+      //     const planName = row.original.ib_plan_name;
+      //     if (!planName) {
+      //       return <div className="text-sm text-muted-foreground pl-4">-</div>;
+      //     }
+      //     return (
+      //       <div className="text-sm">
+      //         {planName}
+      //       </div>
+      //     );
+      //   },
+      // },
       {
         id: "status",
         header: "Status",
@@ -730,8 +733,8 @@ export default function IbUsersPage() {
                 size="sm"
                 variant="outline"
                 onClick={() => {
-                  setCommissionTargetUser(user);
-                  setCommissionDialogOpen(true);
+                  setDirectRatesTargetUser(user);
+                  setDirectRatesDialogOpen(true);
                 }}
                 className="h-8 rounded-md border-slate-200 bg-background px-2.5 text-xs text-slate-600 shadow-sm transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-300"
               >
@@ -911,6 +914,15 @@ export default function IbUsersPage() {
             if (!open) setCommissionTargetUser(null);
           }}
           user={commissionTargetUser}
+          token={token ?? ""}
+        />
+        <IbDirectRatesDialog
+          open={directRatesDialogOpen}
+          onOpenChange={(open) => {
+            setDirectRatesDialogOpen(open);
+            if (!open) setDirectRatesTargetUser(null);
+          }}
+          user={directRatesTargetUser}
           token={token ?? ""}
         />
         </div>
