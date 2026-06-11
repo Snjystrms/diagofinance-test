@@ -1,5 +1,5 @@
 ﻿'use client'
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useAuth } from "@/contexts/auth-context";
 import { submitUSDTDeposit } from "@/utils/operations";
 import { walletApi, binanceDepositApi, coinsbuyDepositApi, bankDepositApi, userBrokerBankDetailsApi, type WalletSummaryData, type BinanceDepositCreateResponse, type CoinsBuyDepositCreateResponse, type BankDepositRecord, type BrokerBankDetailItem } from "@/lib/api";
-import { userPaymentMethodsApi, userCurrencyRatesApi, type UserPaymentMethod, type CurrencyRateItem } from "@/lib/api-auth-admin";
+import { userPaymentMethodsApi, userCurrencyRatesApi, userBrokerCryptoWalletsApi, type UserPaymentMethod, type CurrencyRateItem, type BrokerCryptoWalletItem } from "@/lib/api-auth-admin";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { CLIENT_WALLET_REFRESH_EVENT, notifyWalletRefresh } from "@/lib/client-events";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -41,6 +41,51 @@ import {
   Banknote
 } from "lucide-react";
 
+function useAuthImageUrl(url: string | null | undefined, token: string | null): string | null {
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const objectUrlRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!url || !token) {
+      setBlobUrl(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchImage = async () => {
+      try {
+        const response = await fetch(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok || cancelled) return;
+        const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        if (cancelled) {
+          URL.revokeObjectURL(objectUrl);
+          return;
+        }
+        objectUrlRef.current = objectUrl;
+        setBlobUrl(objectUrl);
+      } catch {
+        if (!cancelled) setBlobUrl(null);
+      }
+    };
+
+    void fetchImage();
+
+    return () => {
+      cancelled = true;
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current);
+        objectUrlRef.current = null;
+      }
+    };
+  }, [url, token]);
+
+  return blobUrl;
+}
+
 const isBrokerBankDetailActive = (detail: BrokerBankDetailItem) =>
   detail.is_active === true || detail.is_active === 1;
 
@@ -67,7 +112,6 @@ function USDTDepositContent() {
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
   const [paymentProofPreview, setPaymentProofPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [depositStatus, setDepositStatus] = useState("pending"); // pending, submitted, confirmed
   const [error, setError] = useState<string | null>(null);
   const [walletData, setWalletData] = useState<WalletSummaryData | null>(null);
@@ -95,9 +139,17 @@ function USDTDepositContent() {
   const [brokerBankDetails, setBrokerBankDetails] = useState<BrokerBankDetailItem[]>([]);
   const [brokerBankDetailsLoading, setBrokerBankDetailsLoading] = useState(false);
   const [brokerBankDetailsError, setBrokerBankDetailsError] = useState<string | null>(null);
+  const [selectedBankDetailId, setSelectedBankDetailId] = useState<number | null>(null);
   const [bankCurrency, setBankCurrency] = useState("INR");
   const [currencyRates, setCurrencyRates] = useState<CurrencyRateItem[]>([]);
   const [currencyRatesLoading, setCurrencyRatesLoading] = useState(false);
+
+  // Broker crypto wallets state
+  const [cryptoWallets, setCryptoWallets] = useState<BrokerCryptoWalletItem[]>([]);
+  const [cryptoWalletsLoading, setCryptoWalletsLoading] = useState(false);
+  const [cryptoWalletsError, setCryptoWalletsError] = useState<string | null>(null);
+  const [selectedCryptoWalletId, setSelectedCryptoWalletId] = useState<number | null>(null);
+  const [cryptoCopied, setCryptoCopied] = useState(false);
   const wallets = walletData ? Object.values(walletData.wallets || {}) : [];
   const primaryWallet = wallets.find((wallet) => wallet.is_primary) || wallets[0];
   const currency = primaryWallet?.currency || "USD";
@@ -124,6 +176,9 @@ function USDTDepositContent() {
   const minimumAmountLabel = needsRegistrationFee ? "$25 equivalent" : "$10 equivalent";
   const settlementLabel = "Supported digital asset";
 
+  const selectedCryptoWallet = cryptoWallets.find((w) => w.id === selectedCryptoWalletId) || cryptoWallets[0] || null;
+  const authScreenshotUrl = useAuthImageUrl(selectedCryptoWallet?.wallet_screenshot_url, token);
+
   const typedAmountNum = parseFloat(amount) || 0;
   const depositReadiness =
     availableBalance > 0 ? Math.min(100, Math.round((typedAmountNum / availableBalance) * 100)) : 0;
@@ -131,6 +186,7 @@ function USDTDepositContent() {
     const activeDetails = brokerBankDetails.filter((detail) => isBrokerBankDetailActive(detail));
     return activeDetails.length > 0 ? activeDetails : brokerBankDetails;
   }, [brokerBankDetails]);
+  const selectedBankDetail = visibleBrokerBankDetails.find((d) => d.id === selectedBankDetailId) || visibleBrokerBankDetails[0] || null;
   const availableBankCurrencies = useMemo(() => {
     const activeRates = currencyRates.filter((rate) => {
       const rawStatus = String(rate.status).toLowerCase();
@@ -212,21 +268,6 @@ function USDTDepositContent() {
       window.removeEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh);
     };
   }, [token]);
-
-  // Deposit details
-  const depositAddress = "0xcD8d359Fe7086f4AEf9C0549542bBCB72E95f7E0";
-  const network = "BNB Smart Chain";
-  const networkLabel = `${settlementLabel} on ${network}`;
-
-  const handleCopyAddress = async () => {
-    try {
-      await navigator.clipboard.writeText(depositAddress);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    } catch (error) {
-      console.error("Failed to copy address:", error);
-    }
-  };
 
   const handlePaymentProofChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -442,7 +483,11 @@ function USDTDepositContent() {
       setBrokerBankDetailsLoading(true);
       setBrokerBankDetailsError(null);
       const response = await userBrokerBankDetailsApi.list(token);
-      setBrokerBankDetails(Array.isArray(response.data) ? response.data : []);
+      const details = Array.isArray(response.data) ? response.data : [];
+      setBrokerBankDetails(details);
+      if (details.length > 0 && selectedBankDetailId === null) {
+        setSelectedBankDetailId(details[0].id);
+      }
     } catch (fetchError) {
       console.error("Failed to fetch broker bank details:", fetchError);
       setBrokerBankDetails([]);
@@ -476,6 +521,36 @@ function USDTDepositContent() {
     }
   }, [token]);
 
+  const fetchCryptoWallets = useCallback(async () => {
+    if (!token) {
+      setCryptoWallets([]);
+      setCryptoWalletsError(null);
+      return;
+    }
+    try {
+      setCryptoWalletsLoading(true);
+      setCryptoWalletsError(null);
+      const response = await userBrokerCryptoWalletsApi.list(token);
+      const wallets = Array.isArray(response.data) ? response.data : [];
+      setCryptoWallets(wallets);
+      if (wallets.length > 0 && selectedCryptoWalletId === null) {
+        setSelectedCryptoWalletId(wallets[0].id);
+      }
+    } catch (fetchError) {
+      console.error("Failed to fetch crypto wallets:", fetchError);
+      setCryptoWallets([]);
+      setCryptoWalletsError(
+        getFriendlyErrorMessage(fetchError, {
+          audience: "client",
+          resource: "crypto wallet details",
+          action: "load",
+        })
+      );
+    } finally {
+      setCryptoWalletsLoading(false);
+    }
+  }, [token, selectedCryptoWalletId]);
+
   useEffect(() => {
     if (activeTab === "bank") {
       void fetchBankRequests();
@@ -483,6 +558,12 @@ function USDTDepositContent() {
       void fetchCurrencyRates();
     }
   }, [activeTab, fetchBankRequests, fetchBrokerBankDetails, fetchCurrencyRates]);
+
+  useEffect(() => {
+    if (activeTab === "local") {
+      void fetchCryptoWallets();
+    }
+  }, [activeTab, fetchCryptoWallets]);
 
   useEffect(() => {
     if (availableBankCurrencies.length === 0) return;
@@ -772,7 +853,7 @@ function USDTDepositContent() {
                   <div className="grid gap-3 sm:grid-cols-3">
                     <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
                       <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Network</div>
-                      <div className="mt-2 text-sm font-semibold text-foreground">{network}</div>
+                      <div className="mt-2 text-sm font-semibold text-foreground">{selectedCryptoWallet?.network || "—"}</div>
                     </div>
                     <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
                       <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Minimum</div>
@@ -787,84 +868,181 @@ function USDTDepositContent() {
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                  
-                 {/* Left Column - QR Code and Details */}
+                 {/* Left Column - Crypto Wallet Details */}
             <Card className="border border-border/60 bg-card shadow-sm">
               <CardHeader className="text-center pb-6 relative z-10">
-                <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
-                  <div className="rounded-lg border border-primary/20 bg-primary/10 p-1.5">
-                    <QrCode className="h-5 w-5 text-primary" />
+                <div className="flex items-center justify-between">
+                  <div className="flex-1" />
+                  <div className="space-y-1">
+                    <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
+                      <div className="rounded-lg border border-primary/20 bg-primary/10 p-1.5">
+                        <QrCode className="h-5 w-5 text-primary" />
+                      </div>
+                      Transfer Destination
+                    </CardTitle>
+                    <CardDescription>
+                      Select a wallet and use the transfer details below for your deposit.
+                    </CardDescription>
                   </div>
-                  Transfer Destination
-                </CardTitle>
-                <CardDescription>
-                  Use these transfer details for deposits routed through {network}.
-                </CardDescription>
-              </CardHeader>
-               
-              <CardContent className="space-y-6 relative z-10">
-                {/* QR Code */}
-                <div className="flex justify-center">
-                  <div className="rounded-[28px] border border-border/60 bg-muted/20 p-5 shadow-inner">
-                    <img
-                      src="/qr_bsc_address.png"
-                      alt="Deposit QR code"
-                      className="h-64 w-64 rounded-2xl bg-white object-contain"
-                    />
-                  </div>
-                </div>
-
-                {/* Network and Amount Info */}
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                    <div className="text-xs font-medium text-muted-foreground">Network</div>
-                    <Badge variant="secondary" className="mt-2">
-                      {network}
-                    </Badge>
-                  </div>
-                  <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                    <div className="text-xs font-medium text-muted-foreground">Minimum</div>
-                    <div className="mt-2 font-semibold text-foreground">{minimumAmountLabel}</div>
-                  </div>
-                </div>
-
-                {/* Deposit Address */}
-                <div className="space-y-3">
-                  <Label className="text-sm font-semibold text-foreground">
-                    Destination Address
-                  </Label>
-                  <div className="flex items-center gap-2">
-                    <div className="flex-1 bg-muted/50 rounded-lg p-3 border">
-                      <code className="text-sm font-mono break-all">
-                        {depositAddress}
-                      </code>
-                    </div>
+                  <div className="flex flex-1 justify-end">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={handleCopyAddress}
-                      className="h-12 px-3 bg-background hover:bg-accent border-border"
+                      onClick={fetchCryptoWallets}
+                      disabled={cryptoWalletsLoading}
+                      aria-label="Refresh crypto wallets"
                     >
-                      <Copy className="h-4 w-4" />
-                      {copied ? "Copied!" : "Copy"}
+                      <RefreshCw className={`h-3.5 w-3.5 ${cryptoWalletsLoading ? "animate-spin" : ""}`} />
                     </Button>
                   </div>
                 </div>
-
-                {/* Important Notes */}
-                <div className="rounded-2xl border border-amber-300/40 bg-amber-50/70 p-4 dark:border-amber-800/50 dark:bg-amber-950/20">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
-                    <div className="text-sm text-amber-900 dark:text-amber-100">
-                      <p className="font-medium mb-1">Important Notes:</p>
-                      <ul className="space-y-1 text-xs text-amber-800/90 dark:text-amber-200/90">
-                        <li>Only send supported assets on {network}</li>
-                        <li>Minimum deposit: {minimumAmountLabel}</li>
-                        <li>Confirmation time may vary depending on network traffic</li>
-                        <li>Double-check the address and network before sending</li>
-                      </ul>
-                    </div>
+              </CardHeader>
+               
+              <CardContent className="space-y-6 relative z-10">
+                {cryptoWalletsLoading ? (
+                  <div className="space-y-3">
+                    {[1, 2].map((item) => (
+                      <div key={item} className="rounded-2xl border border-border/50 bg-muted/20 p-4">
+                        <Skeleton className="mb-3 h-5 w-40" />
+                        <Skeleton className="h-20 w-full rounded-xl" />
+                      </div>
+                    ))}
                   </div>
-                </div>
+                ) : cryptoWalletsError ? (
+                  <ApiErrorState
+                    message={cryptoWalletsError}
+                    audience="client"
+                    resource="crypto wallet details"
+                    action="load"
+                    variant="inline"
+                  />
+                ) : cryptoWallets.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-border/60 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+                    Crypto wallet details are not available right now. Please contact support before sending funds.
+                  </div>
+                ) : (
+                  <>
+                    {/* Wallet Selector - show if multiple wallets */}
+                    {cryptoWallets.length > 1 && (
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold text-foreground">Select Wallet</Label>
+                        <div className="grid gap-2">
+                          {cryptoWallets.map((wallet) => (
+                            <button
+                              key={wallet.id}
+                              type="button"
+                              onClick={() => setSelectedCryptoWalletId(wallet.id)}
+                              className={`flex items-center gap-3 rounded-xl border-2 p-3 text-left transition-all ${
+                                selectedCryptoWalletId === wallet.id
+                                  ? "border-primary bg-primary/5"
+                                  : "border-border/60 bg-muted/20 hover:border-primary/40"
+                              }`}
+                            >
+                              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                                selectedCryptoWalletId === wallet.id
+                                  ? "bg-primary/20 text-primary"
+                                  : "bg-muted/40 text-muted-foreground"
+                              }`}>
+                                <QrCode className="h-4 w-4" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <div className="text-sm font-semibold text-foreground truncate">
+                                  {wallet.label || wallet.network}
+                                </div>
+                                <div className="text-xs text-muted-foreground font-mono truncate">
+                                  {wallet.wallet_address}
+                                </div>
+                              </div>
+                              <Badge variant={selectedCryptoWalletId === wallet.id ? "default" : "secondary"} className="shrink-0">
+                                {wallet.network}
+                              </Badge>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Selected Wallet Details */}
+                    {selectedCryptoWallet && (
+                      <>
+                        {/* Wallet Screenshot / QR */}
+                        {selectedCryptoWallet.wallet_screenshot_url && (
+                          <div className="flex justify-center">
+                            <div className="rounded-[28px] border border-border/60 bg-muted/20 p-5 shadow-inner">
+                              {authScreenshotUrl ? (
+                                <img
+                                  src={authScreenshotUrl}
+                                  alt={`${selectedCryptoWallet.label || selectedCryptoWallet.network} wallet QR code`}
+                                  className="h-64 w-64 rounded-2xl bg-white object-contain"
+                                />
+                              ) : (
+                                <Skeleton className="h-64 w-64 rounded-2xl" />
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Network Info */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                            <div className="text-xs font-medium text-muted-foreground">Network</div>
+                            <Badge variant="secondary" className="mt-2">
+                              {selectedCryptoWallet.network}
+                            </Badge>
+                          </div>
+                          <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                            <div className="text-xs font-medium text-muted-foreground">Minimum</div>
+                            <div className="mt-2 font-semibold text-foreground">{minimumAmountLabel}</div>
+                          </div>
+                        </div>
+
+                        {/* Deposit Address */}
+                        <div className="space-y-3">
+                          <Label className="text-sm font-semibold text-foreground">
+                            Destination Address
+                          </Label>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 bg-muted/50 rounded-lg p-3 border">
+                              <code className="text-sm font-mono break-all">
+                                {selectedCryptoWallet.wallet_address}
+                              </code>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                navigator.clipboard.writeText(selectedCryptoWallet.wallet_address).then(() => {
+                                  setCryptoCopied(true);
+                                  setTimeout(() => setCryptoCopied(false), 1500);
+                                });
+                              }}
+                              className="h-12 px-3 bg-background hover:bg-accent border-border"
+                            >
+                              <Copy className="h-4 w-4" />
+                              {cryptoCopied ? "Copied!" : "Copy"}
+                            </Button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Important Notes */}
+                    <div className="rounded-2xl border border-amber-300/40 bg-amber-50/70 p-4 dark:border-amber-800/50 dark:bg-amber-950/20">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                        <div className="text-sm text-amber-900 dark:text-amber-100">
+                          <p className="font-medium mb-1">Important Notes:</p>
+                          <ul className="space-y-1 text-xs text-amber-800/90 dark:text-amber-200/90">
+                            <li>Only send supported assets on the selected network</li>
+                            <li>Minimum deposit: {minimumAmountLabel}</li>
+                            <li>Confirmation time may vary depending on network traffic</li>
+                            <li>Double-check the address and network before sending</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -1399,7 +1577,9 @@ function USDTDepositContent() {
                           Bank Account Details
                         </CardTitle>
                         <CardDescription>
-                          Transfer funds to one of the approved accounts below, then submit the Transaction ID.
+                          {visibleBrokerBankDetails.length > 1
+                            ? "Select a bank account and transfer funds, then submit the Transaction ID."
+                            : "Transfer funds to the approved account below, then submit the Transaction ID."}
                         </CardDescription>
                       </div>
                       <div className="flex items-center gap-2">
@@ -1407,27 +1587,22 @@ function USDTDepositContent() {
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            if (visibleBrokerBankDetails.length === 0) return;
-                            const text = visibleBrokerBankDetails
-                              .map((detail, idx) => {
-                                const lines = [
-                                  `Account ${idx + 1}: ${detail.bank_name}`,
-                                  `Account Name: ${detail.account_holder_name || "-"}`,
-                                  `Account Number: ${detail.account_number || "-"}`,
-                                  detail.iban_number ? `IBAN: ${detail.iban_number}` : null,
-                                  `IFSC / SWIFT: ${detail.swift_ifsc_code || "-"}`,
-                                  `Address: ${detail.address || "-"}`,
-                                  `Country: ${detail.country || "-"}`,
-                                ].filter(Boolean);
-                                return lines.join("\n");
-                              })
-                              .join("\n\n");
-                            navigator.clipboard.writeText(text).then(() => {
+                            if (!selectedBankDetail) return;
+                            const lines = [
+                              `Bank: ${selectedBankDetail.bank_name}`,
+                              `Account Name: ${selectedBankDetail.account_holder_name || "-"}`,
+                              `Account Number: ${selectedBankDetail.account_number || "-"}`,
+                              selectedBankDetail.iban_number ? `IBAN: ${selectedBankDetail.iban_number}` : null,
+                              `IFSC / SWIFT: ${selectedBankDetail.swift_ifsc_code || "-"}`,
+                              `Address: ${selectedBankDetail.address || "-"}`,
+                              `Country: ${selectedBankDetail.country || "-"}`,
+                            ].filter(Boolean);
+                            navigator.clipboard.writeText(lines.join("\n")).then(() => {
                               toast.success("Bank details copied to clipboard");
                             });
                           }}
-                          disabled={visibleBrokerBankDetails.length === 0}
-                          aria-label="Copy all bank details"
+                          disabled={!selectedBankDetail}
+                          aria-label="Copy bank details"
                         >
                           <Copy className="h-3.5 w-3.5" />
                         </Button>
@@ -1478,52 +1653,91 @@ function USDTDepositContent() {
                         </div>
                       ) : (
                         <div className="space-y-4">
-                          {visibleBrokerBankDetails.map((detail) => {
-                            const active = isBrokerBankDetailActive(detail);
+                          {/* Bank Selector - show if multiple accounts */}
+                          {visibleBrokerBankDetails.length > 1 && (
+                            <div className="space-y-2">
+                              <Label className="text-sm font-semibold text-foreground">Select Bank Account</Label>
+                              <div className="grid gap-2">
+                                {visibleBrokerBankDetails.map((detail) => {
+                                  const active = isBrokerBankDetailActive(detail);
+                                  return (
+                                    <button
+                                      key={detail.id}
+                                      type="button"
+                                      onClick={() => setSelectedBankDetailId(detail.id)}
+                                      className={`flex items-center gap-3 rounded-xl border-2 p-3 text-left transition-all ${
+                                        selectedBankDetailId === detail.id
+                                          ? "border-primary bg-primary/5"
+                                          : "border-border/60 bg-muted/20 hover:border-primary/40"
+                                      }`}
+                                    >
+                                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                                        selectedBankDetailId === detail.id
+                                          ? "bg-primary/20 text-primary"
+                                          : "bg-muted/40 text-muted-foreground"
+                                      }`}>
+                                        <Building2 className="h-4 w-4" />
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <div className="text-sm font-semibold text-foreground truncate">
+                                          {detail.bank_name}
+                                        </div>
+                                        <div className="text-xs text-muted-foreground font-mono truncate">
+                                          {detail.account_number || detail.iban_number || "-"}
+                                        </div>
+                                      </div>
+                                      <Badge variant={active ? (selectedBankDetailId === detail.id ? "default" : "secondary") : "outline"} className="shrink-0">
+                                        {active ? "Active" : "Inactive"}
+                                      </Badge>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
 
-                            return (
-                              <div
-                                key={detail.id}
-                                className="rounded-2xl border border-border/60 bg-muted/20 p-4 shadow-sm"
-                              >
+                          {/* Selected Bank Details */}
+                          {selectedBankDetail && (
+                            <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 shadow-sm">
+                              {visibleBrokerBankDetails.length <= 1 && (
                                 <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
                                   <div>
                                     <div className="text-base font-semibold text-foreground">
-                                      {detail.bank_name}
+                                      {selectedBankDetail.bank_name}
                                     </div>
                                     <div className="text-sm text-muted-foreground">
-                                      {detail.country}
+                                      {selectedBankDetail.country}
                                     </div>
                                   </div>
-                                  <Badge variant={active ? "default" : "secondary"}>
-                                    {active ? "Active" : "Inactive"}
+                                  <Badge variant={isBrokerBankDetailActive(selectedBankDetail) ? "default" : "secondary"}>
+                                    {isBrokerBankDetailActive(selectedBankDetail) ? "Active" : "Inactive"}
                                   </Badge>
                                 </div>
+                              )}
 
-                                <div className="grid gap-3 md:grid-cols-2">
-                                  {[
-                                    { label: "Account Name", value: detail.account_holder_name },
-                                    { label: "Account Number", value: detail.account_number },
-                                    { label: "IBAN Number", value: detail.iban_number },
-                                    { label: "IFSC / SWIFT", value: detail.swift_ifsc_code },
-                                    { label: "Address", value: detail.address },
-                                  ].map(({ label, value }) => (
-                                    <div
-                                      key={`${detail.id}-${label}`}
-                                      className="rounded-xl border border-border/50 bg-background/80 px-4 py-3"
-                                    >
-                                      <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                                        {label}
-                                      </div>
-                                      <div className="mt-1 break-all font-mono text-sm font-medium text-foreground">
-                                        {value || "-"}
-                                      </div>
+                              <div className="grid gap-3 md:grid-cols-2">
+                                {[
+                                  { label: "Account Name", value: selectedBankDetail.account_holder_name },
+                                  { label: "Account Number", value: selectedBankDetail.account_number },
+                                  { label: "IBAN Number", value: selectedBankDetail.iban_number },
+                                  { label: "IFSC / SWIFT", value: selectedBankDetail.swift_ifsc_code },
+                                  { label: "Address", value: selectedBankDetail.address },
+                                ].map(({ label, value }) => (
+                                  <div
+                                    key={`${selectedBankDetail.id}-${label}`}
+                                    className="rounded-xl border border-border/50 bg-background/80 px-4 py-3"
+                                  >
+                                    <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                      {label}
                                     </div>
-                                  ))}
-                                </div>
+                                    <div className="mt-1 break-all font-mono text-sm font-medium text-foreground">
+                                      {value || "-"}
+                                    </div>
+                                  </div>
+                                ))}
                               </div>
-                            );
-                          })}
+                            </div>
+                          )}
                         </div>
                       )}
 

@@ -1983,6 +1983,30 @@ export const userBrokerBankDetailsApi = {
   },
 };
 
+export interface BrokerCryptoWalletItem {
+  id: number;
+  network: string;
+  wallet_address: string;
+  wallet_screenshot_url: string;
+  label: string | null;
+  is_active: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export const userBrokerCryptoWalletsApi = {
+  list: (token: string) => {
+    if (!token) {
+      throw new Error("Token is required to fetch broker crypto wallets");
+    }
+
+    return apiCall<BrokerCryptoWalletItem[]>(`/user/broker-crypto-wallets`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
+
 export const adminBrokerBankDetailsApi = {
   list: (token: string) => {
     if (!token) {

@@ -1501,6 +1501,102 @@ export const adminMT5RequestApi = {
     }),
 };
 
+/* ------------------------------------------------------------------ */
+/*  Broker Crypto Wallets                                              */
+/* ------------------------------------------------------------------ */
+
+export interface BrokerCryptoWallet {
+  id: number;
+  network: string;
+  wallet_address: string;
+  wallet_screenshot_url: string;
+  label: string | null;
+  is_active: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BrokerCryptoWalletsListResponse {
+  status: number;
+  message: string;
+  data: {
+    count: number;
+    rows: BrokerCryptoWallet[];
+  };
+}
+
+export interface BrokerCryptoWalletResponse {
+  status: number;
+  message: string;
+  data: BrokerCryptoWallet;
+}
+
+export interface BrokerCryptoWalletCreateBody {
+  network: string;
+  wallet_address: string;
+  wallet_screenshot: File;
+  label?: string;
+  is_active?: number;
+}
+
+export interface BrokerCryptoWalletUpdateBody {
+  network: string;
+  wallet_address: string;
+  wallet_screenshot?: File;
+  label?: string;
+  is_active?: number;
+}
+
+export const adminBrokerCryptoWalletsApi = {
+  list: (token: string) =>
+    apiCall<BrokerCryptoWalletsListResponse["data"]>(`/admin/broker-crypto-wallets`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  getById: (id: string | number, token: string) =>
+    apiCall<BrokerCryptoWalletResponse["data"]>(`/admin/broker-crypto-wallets/${id}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  create: (data: BrokerCryptoWalletCreateBody, token: string) => {
+    const formData = new FormData();
+    formData.append("network", data.network);
+    formData.append("wallet_address", data.wallet_address);
+    formData.append("wallet_screenshot", data.wallet_screenshot);
+    if (data.label !== undefined) formData.append("label", data.label ?? "");
+    if (data.is_active !== undefined) formData.append("is_active", String(data.is_active));
+
+    return apiCall<BrokerCryptoWalletResponse>(`/admin/broker-crypto-wallets`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+  },
+
+  update: (id: string | number, data: BrokerCryptoWalletUpdateBody, token: string) => {
+    const formData = new FormData();
+    formData.append("network", data.network);
+    formData.append("wallet_address", data.wallet_address);
+    if (data.wallet_screenshot) formData.append("wallet_screenshot", data.wallet_screenshot);
+    if (data.label !== undefined) formData.append("label", data.label ?? "");
+    if (data.is_active !== undefined) formData.append("is_active", String(data.is_active));
+
+    return apiCall<BrokerCryptoWalletResponse>(`/admin/broker-crypto-wallets/${id}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+  },
+
+  delete: (id: string | number, token: string) =>
+    apiCall<{ success: boolean; message: string }>(`/admin/broker-crypto-wallets/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+};
+
 export interface MT5Account {
   id: number;
   name: string;

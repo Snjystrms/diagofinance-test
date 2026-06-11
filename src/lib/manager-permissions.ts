@@ -161,6 +161,12 @@ export const managerPermissionConfig: Record<string, ModuleFeatureMap> = {
     giveBonus: ["Give Bonus"],
     removeBonus: ["Remove Bonus"],
   },
+  cryptoWalletManagement: {
+    cryptoWalletList: ["Crypto Wallet List"],
+    addCryptoWallet: ["Add Crypto Wallet"],
+    editCryptoWallet: ["Edit Crypto Wallet"],
+    deleteCryptoWallet: ["Delete Crypto Wallet"],
+  },
 };
 
 export type ManagerPermissionModule = keyof typeof managerPermissionConfig;

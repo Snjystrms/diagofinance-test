@@ -48,6 +48,12 @@ export const permissionCapabilities = {
   ibManagement: {
     promoteClientToIb: "moveClientToIb",
   },
+  cryptoWalletManagement: {
+    list: "cryptoWalletList",
+    add: "addCryptoWallet",
+    edit: "editCryptoWallet",
+    delete: "deleteCryptoWallet",
+  },
 } satisfies Partial<Record<ManagerPermissionModule, CapabilityDefinition>>;
 
 export type CapabilityModuleKey = keyof typeof permissionCapabilities;
