@@ -220,7 +220,7 @@ export function CreateAccountDialog({
 
     setIsSubmitting(true);
     try {
-      await onSubmit({
+      const payload: CreateMT5AccountRequest = {
         user_id: formData.user_id,
         account_type_id: formData.account_type_id,
         group_id: formData.group_id,
@@ -228,9 +228,14 @@ export function CreateAccountDialog({
         account_mode: formData.account_mode,
         main_password: formData.main_password,
         investor_password: formData.investor_password,
-        balance: formData.balance,
         extra_fields: formData.extra_fields,
-      });
+      };
+
+      if (formData.account_mode === "demo") {
+        payload.balance = formData.balance;
+      }
+
+      await onSubmit(payload);
       onOpenChange(false);
     } catch (error) {
       console.error("Error creating account:", error);

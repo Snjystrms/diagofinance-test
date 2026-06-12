@@ -51,19 +51,18 @@ function DialogContent({
   children,
   showCloseButton = true,
   preventClose = false,
-  onOpenChange,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean
   preventClose?: boolean
 }) {
-  const handlePointerDownOutside = (event: React.PointerDownEvent) => {
+  const handlePointerDownOutside = (event: { preventDefault: () => void }) => {
     if (preventClose) {
       event.preventDefault();
     }
   };
 
-  const handleEscapeKeyDown = (event: KeyboardEvent) => {
+  const handleEscapeKeyDown = (event: { preventDefault: () => void }) => {
     if (preventClose) {
       event.preventDefault();
     }

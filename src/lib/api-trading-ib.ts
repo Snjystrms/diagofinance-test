@@ -1727,7 +1727,7 @@ export interface CreateMT5AccountRequest {
   account_mode: "demo" | "live";
   main_password: string;
   investor_password: string;
-  balance: number;
+  balance?: number;
   extra_fields: Record<string, unknown>;
 }
 
