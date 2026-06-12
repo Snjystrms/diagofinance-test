@@ -414,6 +414,11 @@ export function KycVerificationPageContent() {
 
     const currentPicked = reuploadFiles[fieldKey] ?? null;
 
+    const isApproved = kycStatusData?.kyc.approved ||
+      kycStatusData?.kyc.status?.toLowerCase() === 'approved' ||
+      kycStatusData?.kyc.status?.toLowerCase() === 'verified' ||
+      kycStatusData?.kyc.status?.toLowerCase() === 'full-verified';
+
     return (
       <Card key={title} className="bg-card border-border">
         <CardContent className="py-4 space-y-3">
@@ -447,8 +452,8 @@ export function KycVerificationPageContent() {
             </div>
           )}
 
-          {/* Allow re-upload for any submitted document */}
-          {data.status !== 'not_submitted' && (
+          {/* Allow re-upload for submitted documents - but NOT when overall KYC is approved or individual doc is approved */}
+          {!isApproved && data.status !== 'not_submitted' && data.status !== 'approved' && (
             <div className="mt-2 space-y-2">
               <div className="flex items-center gap-3">
                 <label htmlFor={`reupload-${fieldKey}`}>

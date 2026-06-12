@@ -2,12 +2,16 @@
 
 import Image from 'next/image';
 import type { ReactNode } from 'react';
+import { useClientCustomization } from '@/contexts/client-customization-context';
 
 interface AuthLayoutProps {
   children: ReactNode;
 }
 
 export function AuthLayout({ children }: AuthLayoutProps) {
+  const { themeMode } = useClientCustomization();
+  const logoSrc = themeMode === 'bright' ? '/vinnexia-logo.svg' : '/vinnexia-logo-dark.svg';
+
   return (
     <div className="min-h-screen flex bg-[#080808]">
 
@@ -43,7 +47,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           {/* Logo + wordmark */}
           <div className="flex flex-col items-center mb-8">
             <Image
-              src="/vinnexia-logo-dark.svg"
+              src={logoSrc}
               alt="Vinnexia"
               width={72}
               height={72}
@@ -120,7 +124,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           {/* Mobile-only logo */}
           <div className="flex flex-col items-center lg:hidden">
             <Image
-              src="/vinnexia-logo-dark.svg"
+              src={logoSrc}
               alt="Vinnexia"
               width={52}
               height={52}
