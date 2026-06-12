@@ -112,15 +112,15 @@ export function AdminDashboardView({ adminDashboardData, userName }: AdminDashbo
 const allKpiCards = [
   // Row 1
   { title: "Total Clients",          value: kpis?.total_clients ?? 0,                   description: "All registered clients",      icon: Users,        ibVariant: "ib-portal-surface-primary", href: "/new-users" },
-  { title: "Total IB",               value: kpis?.total_ib ?? 0,                        description: "Introducing Brokers",         icon: Building2,    ibVariant: "ib-portal-surface-primary", href: "/ib-users" },
+  { title: "Total Partners",         value: kpis?.total_ib ?? 0,                        description: "Introducing Brokers",         icon: Building2,    ibVariant: "ib-portal-surface-primary", href: "/ib-users" },
   { title: "Active Traders",         value: kpis?.active_traders ?? 0,                  description: "Currently trading",           icon: TrendingUp,   ibVariant: "ib-portal-surface-emerald", href: "/all-users-mt5-accounts" },
   // Row 2
   { title: "Approved Deposits",      value: kpis?.approved_deposit ?? 0,                description: "Total approved",              icon: CheckCircle2, ibVariant: "ib-portal-surface-emerald", href: "/usdt-transactions?status=approved" },
   { title: "Pending Deposits",       value: kpis?.pending_deposit ?? 0,                 description: "Awaiting approval",           icon: Clock,        ibVariant: "ib-portal-surface-amber",   href: "/usdt-transactions?status=pending" },
-  { title: "Pending Withdrawals",    value: kpis?.pending_withdraw ?? 0,                description: "Awaiting processing",         icon: TrendingDown, ibVariant: "ib-portal-surface-amber",   href: "/withdrawal-requests" },
+  { title: "Pending Withdrawals",    value: kpis?.pending_withdraw ?? 0,                description: "Awaiting processing",         icon: Clock, ibVariant: "ib-portal-surface-amber",   href: "/withdrawal-requests" },
   // Row 3
-  { title: "Pending IB Withdrawals", value: kpis?.pending_ib_withdraw ?? 0,             description: "IB withdrawal requests",      icon: Wallet,       ibVariant: "ib-portal-surface-primary", href: "/usdt-transactions?status=pending" },
-  { title: "Pending Clients",        value: kpis?.pending_kyc_clients ?? 0,             description: "Awaiting approval",           icon: Clock,        ibVariant: "ib-portal-surface-amber",   href: "/new-users?status=0" },
+  { title: "Pending Partner Request", value: kpis?.pending_ib_request ?? 0,             description: "Pending Partner requests",      icon: Clock,       ibVariant: "ib-portal-surface-primary", href: "/all-ib?status=0" },
+  { title: "Pending KYC Clients",        value: kpis?.pending_kyc_clients ?? 0,             description: "Awaiting approval",           icon: Clock,        ibVariant: "ib-portal-surface-amber",   href: "/user-verification" },
   { title: "Pending Bank Details",   value: kpis?.pending_bank_details_request ?? 0,    description: "Bank detail review queue",    icon: Landmark,     ibVariant: "ib-portal-surface-primary", href: "/add-bank-details" },
 ] satisfies KpiCardItem[];
 

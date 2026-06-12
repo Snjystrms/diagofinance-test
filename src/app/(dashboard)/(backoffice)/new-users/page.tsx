@@ -1069,7 +1069,7 @@ export default function NewUsersPage() {
             <DialogHeader>
               <DialogTitle>Promote to Partner</DialogTitle>
               <DialogDescription>
-                Select a Partner plan for {promoteTargetUser?.name || "this user"} before creating the IB profile.
+                This action will promote {promoteTargetUser?.name || "this user"} to a Partner. Please confirm the details before proceeding.
               </DialogDescription>
             </DialogHeader>
 

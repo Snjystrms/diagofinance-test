@@ -393,7 +393,7 @@ export function KycVerificationPageContent() {
     fieldKey: string,
     data?: KycDocumentStatus
   ) => {
-    if (!data) return null;
+    if (!data || data.status === 'not_submitted') return null;
     const badgeVariant =
       data.status === 'approved'
         ? 'success'
@@ -447,8 +447,8 @@ export function KycVerificationPageContent() {
             </div>
           )}
 
-          {/* If rejected ? allow re-upload of ONLY this field */}
-          {data.status === 'rejected' && (
+          {/* Allow re-upload for any submitted document */}
+          {data.status !== 'not_submitted' && (
             <div className="mt-2 space-y-2">
               <div className="flex items-center gap-3">
                 <label htmlFor={`reupload-${fieldKey}`}>
@@ -473,7 +473,7 @@ export function KycVerificationPageContent() {
                   onClick={() => reuploadSingle(fieldKey)}
                   disabled={!currentPicked || reuploadingKey === fieldKey}
                 >
-                  {reuploadingKey === fieldKey ? 'Uploading…' : 'Re-upload'}
+                  {reuploadingKey === fieldKey ? 'Uploading…' : data.status === 'rejected' ? 'Re-upload' : 'Upload'}
                 </Button>
               </div>
 

@@ -43,7 +43,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           {/* Logo + wordmark */}
           <div className="flex flex-col items-center mb-8">
             <Image
-              src="/vinnexia-logo.png"
+              src="/vinnexia-logo-dark.svg"
               alt="Vinnexia"
               width={72}
               height={72}
@@ -120,7 +120,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           {/* Mobile-only logo */}
           <div className="flex flex-col items-center lg:hidden">
             <Image
-              src="/vinnexia-logo.png"
+              src="/vinnexia-logo-dark.svg"
               alt="Vinnexia"
               width={52}
               height={52}

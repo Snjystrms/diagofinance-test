@@ -892,7 +892,7 @@ export const adminIbRequestsApi = {
     }
 
     return apiCall(`/admin/ib-requests/${id}`, {
-      method: "PATCH",
+      method: "PUT",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });

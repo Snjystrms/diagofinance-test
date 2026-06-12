@@ -210,26 +210,7 @@ const deriveAdminComment = (request: AdminIbRequest) => {
     : null;
 };
 
-const deriveIbPlanId = (request: AdminIbRequest) => {
-  const req = request as AdminIbRequest & Record<string, unknown>;
-  const candidates = [
-    req.ib_plan_id,
-    req.ibPlanId,
-    req.plan_id,
-    req.planId,
-  ];
 
-  for (const candidate of candidates) {
-    if (typeof candidate === "number" && Number.isFinite(candidate)) {
-      return String(candidate);
-    }
-    if (typeof candidate === "string" && candidate.trim().length > 0) {
-      return candidate.trim();
-    }
-  }
-
-  return "";
-};
 
 export default function IbManagementPage() {
   const { token } = useAuth();
@@ -249,7 +230,6 @@ export default function IbManagementPage() {
   const [selectedDecision, setSelectedDecision] = useState<"approve" | "reject">("approve");
   const [actionRequest, setActionRequest] = useState<AdminIbRequest | null>(null);
   const [actionComment, setActionComment] = useState("");
-  const [selectedIbPlanId, setSelectedIbPlanId] = useState("");
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(20));
@@ -375,13 +355,10 @@ export default function IbManagementPage() {
 
       if (type === "reject") {
         setActionComment("");
-        setSelectedIbPlanId("");
         return;
       }
 
       setActionComment(deriveAdminComment(request) ?? "");
-      const existingPlanId = deriveIbPlanId(request);
-      setSelectedIbPlanId(existingPlanId || "");
     },
     [],
   );
@@ -390,7 +367,6 @@ export default function IbManagementPage() {
     setActionRequest(null);
     setSelectedDecision("approve");
     setActionComment("");
-    setSelectedIbPlanId("");
     setProcessingId(null);
   }, []);
 
@@ -409,12 +385,6 @@ export default function IbManagementPage() {
     const comment = actionComment.trim();
     const resolvedIbNameRaw = actionRequest.ib_name ?? deriveFullName(actionRequest);
     const ibName = resolvedIbNameRaw === "—" ? "" : String(resolvedIbNameRaw).trim();
-    const ibPlanId = selectedIbPlanId.trim();
-
-    if (nextAction === "approve" && !ibPlanId) {
-      toast.error("Please select an IB plan");
-      return;
-    }
 
     try {
       setProcessingId(identifier);
@@ -425,7 +395,6 @@ export default function IbManagementPage() {
               status: 1,
               ib_name: ibName,
               admin_comment: comment || undefined,
-              ib_plan_id: Number(ibPlanId),
             }
           : {
               status: 2,
@@ -458,7 +427,6 @@ export default function IbManagementPage() {
     token,
     actionRequest,
     actionComment,
-    selectedIbPlanId,
     closeActionDialog,
     loadRequests,
   ]);
@@ -810,23 +778,7 @@ export default function IbManagementPage() {
                 ) : null}
               </div>
 
-              {isApproveDecision ? (
-                <div className="space-y-2">
-                  <label htmlFor="ib-plan-id" className="text-sm font-medium">
-                    Partner Plan
-                  </label>
-                  <Select
-                    value={selectedIbPlanId}
-                    onValueChange={setSelectedIbPlanId}
-                  >
-                    <SelectTrigger id="ib-plan-id">
-                      <SelectValue placeholder="Select IB plan" />
-                    </SelectTrigger>
-                    <SelectContent />
-                  </Select>
-                </div>
-              ) : null}
-            </div>
+              </div>
           ) : null}
 
           <DialogFooter className="gap-3 pt-2 sm:justify-end">
@@ -837,7 +789,7 @@ export default function IbManagementPage() {
               variant={isApproveDecision ? "default" : "destructive"}
               onClick={handleActionSubmit}
               className="px-5"
-              disabled={processingId !== null || (isApproveDecision && !selectedIbPlanId)}
+              disabled={processingId !== null}
             >
               {processingId !== null ? (
                 <>

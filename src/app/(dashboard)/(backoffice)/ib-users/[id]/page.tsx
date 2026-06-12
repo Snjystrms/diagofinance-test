@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { format } from "date-fns";
+import { useAuth } from "@/contexts/auth-context";
 import toast from "react-hot-toast";
 import {
   ArrowDownRight,
@@ -10,17 +12,21 @@ import {
   ArrowLeft,
   BarChart3,
   CalendarClock,
+  CalendarIcon,
   Copy,
   DollarSign,
   ExternalLink,
   Eye,
   Gem,
+  Landmark,
   Link2,
   Network,
   RefreshCw,
+  Search,
   TrendingUp,
   Users,
   Wallet,
+  UserStar,
 } from "lucide-react";
 
 import {
@@ -31,6 +37,8 @@ import {
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
@@ -47,11 +55,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/contexts/auth-context";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import {
-  adminIbPlansApi,
+  adminIbCommissionReportApi,
+  // adminIbPlansApi,
   adminIbUsersApi,
   type AdminIbPlanItem,
   type AdminIbUser,
@@ -64,18 +77,20 @@ import {
   type AdminIbSubIb,
   type AdminIbWalletTransaction,
   type AdminIbNetworkBusinessBreakdown,
+  type IbCommissionReportPayload,
 } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
-import { formatDateTimeInIST } from "@/lib/formatters";
+import { formatAmount, formatDateTimeInIST } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 
-type TabKey = "overview" | "wallet" | "network" | "profile";
+type TabKey = "overview" | "wallet" | "network" | "profile" | "commission";
 
 const TAB_LABELS: Record<TabKey, string> = {
   overview: "Overview",
   wallet: "Wallet",
   network: "Network",
   profile: "Profile",
+  commission: "Commission",
 };
 
 type PreviewUser = Pick<
@@ -296,14 +311,20 @@ function OverviewTab({
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Partner Plan
+                    Partner Info
                   </p>
                   <p className="mt-2 text-2xl font-semibold text-foreground">
-                    {partnerInfo?.ib_plan ?? user.planName}
+                    {user.user.ib_name ?? user.fullName}
+                  </p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    {user.user.email ?? "\u2014"}
+                  </p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">
+                    {user.user.mobile ?? user.user.phone ?? "\u2014"}
                   </p>
                 </div>
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-background/70 bg-background/80">
-                  <Gem className="h-5 w-5" />
+                  <UserStar className="h-5 w-5" />
                 </div>
               </div>
             </div>
@@ -700,7 +721,6 @@ function ProfileTab({ user, loading }: TabShellProps) {
     { label: "Email", value: user.user.email ?? "\u2014" },
     { label: "Mobile", value: user.user.mobile ?? user.user.phone ?? "\u2014" },
     { label: "Partner Name", value: user.user.ib_name ?? "\u2014" },
-    { label: "Partner Plan", value: user.planName },
     { label: "Partner ID", value: user.partnerId },
     { label: "Sponsor By", value: user.user.sponsor_by ?? "\u2014" },
     { label: "Referral Code", value: user.user.referral_code ?? "\u2014" },
@@ -752,6 +772,206 @@ function ProfileTab({ user, loading }: TabShellProps) {
   );
 }
 
+function CommissionTab({
+  user,
+  loading,
+}: TabShellProps) {
+  const { token } = useAuth();
+  const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
+  const [toDate, setToDate] = useState<Date | undefined>(undefined);
+  const [report, setReport] = useState<IbCommissionReportPayload | null>(null);
+  const [reportLoading, setReportLoading] = useState(false);
+  const [loadError, setLoadError] = useState<unknown | null>(null);
+
+  const userId = user.user.id ?? user.user.uuid;
+  const activeFilterCount = (fromDate ? 1 : 0) + (toDate ? 1 : 0);
+
+  const loadReport = useCallback(async () => {
+    if (!token || !userId) return;
+    try {
+      setReportLoading(true);
+      setLoadError(null);
+      const response = await adminIbCommissionReportApi.getCommissionLevelReport({
+        token,
+        user_id: String(userId),
+        date_from: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
+        date_to: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
+      });
+      const payload = response && typeof response === "object" && "data" in response
+        ? (response as { data?: IbCommissionReportPayload }).data ?? response
+        : response;
+      setReport(payload as IbCommissionReportPayload);
+    } catch (error) {
+      setReport(null);
+      setLoadError(error);
+      toast.error(getAdminFriendlyErrorMessage(error, { resource: "commission report", action: "load" }));
+    } finally {
+      setReportLoading(false);
+    }
+  }, [token, userId, fromDate, toDate]);
+
+  useEffect(() => {
+    void loadReport();
+  }, [loadReport]);
+
+  return (
+    <>
+      <IbPageHeader
+        eyebrow="Commission"
+        title="Commission Structure"
+        description="Commission earned across your downline levels."
+      />
+
+      <div className="space-y-4">
+        <IbSectionCard
+          title="Commission Filters"
+          description="Filter commission data by date range."
+          actions={
+            activeFilterCount > 0 ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { setFromDate(undefined); setToDate(undefined); }}
+              >
+                Reset
+              </Button>
+            ) : null
+          }
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("h-9 w-full justify-start text-left font-normal", !fromDate && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {fromDate ? format(fromDate, "MMM dd, yyyy") : <span>Select date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={fromDate} onSelect={setFromDate} initialFocus captionLayout="dropdown" />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">To Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("h-9 w-full justify-start text-left font-normal", !toDate && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {toDate ? format(toDate, "MMM dd, yyyy") : <span>Select date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={toDate} onSelect={setToDate} initialFocus captionLayout="dropdown" />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+        </IbSectionCard>
+
+        {reportLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <Skeleton className="h-6 w-6 rounded-full" />
+            <span className="ml-2 text-sm text-muted-foreground">Loading commission report…</span>
+          </div>
+        ) : loadError ? (
+          <div className="rounded-2xl border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
+            Failed to load commission report. Please try again.
+          </div>
+        ) : report ? (
+          <>
+            <div className="grid gap-4 md:grid-cols-3">
+              <IbMetricCard
+                title="Total Commission"
+                value={formatAmount(report.summary.total_commission)}
+                description="Across all levels"
+                icon={<Landmark className="h-5 w-5" />}
+                accent="primary"
+              />
+              <IbMetricCard
+                title="Total Downline Users"
+                value={String(report.summary.total_downline_users)}
+                description="Users in your network"
+                icon={<Users className="h-5 w-5" />}
+                accent="emerald"
+              />
+              <IbMetricCard
+                title="Total Trades"
+                value={String(report.summary.total_trade_count)}
+                description="Trades across network"
+                icon={<TrendingUp className="h-5 w-5" />}
+                accent="amber"
+              />
+            </div>
+
+            {report.levels.map((level) => (
+              <IbSectionCard
+                key={level.level}
+                title={level.level_label}
+                description={`Users: ${level.user_count} | Trades: ${level.trade_count} | Days: ${level.trade_days}`}
+                actions={
+                  <Badge variant="secondary" className="font-medium">
+                    {formatAmount(level.total_commission)}
+                  </Badge>
+                }
+              >
+                <div className="overflow-hidden rounded-2xl border border-border/60">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>User</TableHead>
+                        <TableHead>Sponsor ID</TableHead>
+                        <TableHead className="text-right">Volume</TableHead>
+                        <TableHead className="text-right">Commission</TableHead>
+                        <TableHead className="text-right">Trades</TableHead>
+                        <TableHead className="text-right">Trade Days</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {level.users.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                            No users at this level.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        level.users.map((u) => (
+                          <TableRow key={u.user_id}>
+                            <TableCell>
+                              <div className="font-medium">{u.name}</div>
+                              <div className="text-xs text-muted-foreground">{u.email}</div>
+                            </TableCell>
+                            <TableCell>{u.sponsor_id || "\u2014"}</TableCell>
+                            <TableCell className="text-right tabular-nums">{formatAmount(u.volume)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{formatAmount(u.commission)}</TableCell>
+                            <TableCell className="text-right tabular-nums">{u.trade_count}</TableCell>
+                            <TableCell className="text-right tabular-nums">{u.trade_days}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </IbSectionCard>
+            ))}
+          </>
+        ) : (
+          <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
+            No commission data available for this user.
+          </div>
+        )}
+      </div>
+    </>
+  );
+}
+
 export default function IbUserDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
@@ -767,7 +987,7 @@ export default function IbUserDetailPage() {
   const [loadingIbPlans, setLoadingIbPlans] = useState(false);
   const [selectedIbPlanId, setSelectedIbPlanId] = useState("");
   const [updatingPlan, setUpdatingPlan] = useState(false);
-  const [showPlanSelect, setShowPlanSelect] = useState(false);
+  // const [showPlanSelect, setShowPlanSelect] = useState(false);
 
   const [workspaceData, setWorkspaceData] = useState<AdminIbWorkspaceData | null>(null);
   const [workspaceLoading, setWorkspaceLoading] = useState(false);
@@ -854,34 +1074,34 @@ export default function IbUserDetailPage() {
     void loadUser();
   }, [loadUser]);
 
-  const loadIbPlans = useCallback(async () => {
-    if (!token) {
-      setIbPlans([]);
-      return;
-    }
+  // const loadIbPlans = useCallback(async () => {
+  //   if (!token) {
+  //     setIbPlans([]);
+  //     return;
+  //   }
 
-    try {
-      setLoadingIbPlans(true);
-      const response = await adminIbPlansApi.list({ token });
-      const plans = Array.isArray(response?.data) ? response.data : [];
-      setIbPlans(plans.map(normalizeIbPlanOption));
-    } catch (err: unknown) {
-      console.error("Failed to load partner plans:", err);
-      toast.error(
-        getAdminFriendlyErrorMessage(err, {
-          resource: "partner plans",
-          action: "load",
-        }),
-      );
-      setIbPlans([]);
-    } finally {
-      setLoadingIbPlans(false);
-    }
-  }, [token]);
+  //   try {
+  //     setLoadingIbPlans(true);
+  //     const response = await adminIbPlansApi.list({ token });
+  //     const plans = Array.isArray(response?.data) ? response.data : [];
+  //     setIbPlans(plans.map(normalizeIbPlanOption));
+  //   } catch (err: unknown) {
+  //     console.error("Failed to load partner plans:", err);
+  //     toast.error(
+  //       getAdminFriendlyErrorMessage(err, {
+  //         resource: "partner plans",
+  //         action: "load",
+  //       }),
+  //     );
+  //     setIbPlans([]);
+  //   } finally {
+  //     setLoadingIbPlans(false);
+  //   }
+  // }, [token]);
 
-  useEffect(() => {
-    void loadIbPlans();
-  }, [loadIbPlans]);
+  // useEffect(() => {
+  //   void loadIbPlans();
+  // }, [loadIbPlans]);
 
   const loadTabData = useCallback(async (tab: TabKey) => {
     if (!token || !userId) return;
@@ -950,41 +1170,41 @@ export default function IbUserDetailPage() {
     }
   }, [activeTab, loadTabData]);
 
-  const handleUpdatePlan = useCallback(async () => {
-    if (!token || !user || !selectedIbPlanId) return;
+  // const handleUpdatePlan = useCallback(async () => {
+  //   if (!token || !user || !selectedIbPlanId) return;
 
-    const userId = resolveNumericUserId(user);
-    if (!userId) {
-      toast.error("User ID not available");
-      return;
-    }
+  //   const userId = resolveNumericUserId(user);
+  //   if (!userId) {
+  //     toast.error("User ID not available");
+  //     return;
+  //   }
 
-    try {
-      setUpdatingPlan(true);
-      const response = await adminIbUsersApi.updatePlan(
-        userId,
-        { ib_plan_id: Number(selectedIbPlanId) },
-        token,
-      );
+  //   try {
+  //     setUpdatingPlan(true);
+  //     const response = await adminIbUsersApi.updatePlan(
+  //       userId,
+  //       { ib_plan_id: Number(selectedIbPlanId) },
+  //       token,
+  //     );
 
-      toast.success(
-        response?.message?.trim() || "Partner plan updated successfully",
-      );
-      setShowPlanSelect(false);
-      setSelectedIbPlanId("");
-      await loadUser();
-    } catch (err: unknown) {
-      console.error("Failed to update IB plan:", err);
-      toast.error(
-        getAdminFriendlyErrorMessage(err, {
-          resource: "IB plan",
-          action: "update",
-        }),
-      );
-    } finally {
-      setUpdatingPlan(false);
-    }
-  }, [token, user, selectedIbPlanId, loadUser]);
+  //     toast.success(
+  //       response?.message?.trim() || "Partner plan updated successfully",
+  //     );
+  //     setShowPlanSelect(false);
+  //     setSelectedIbPlanId("");
+  //     await loadUser();
+  //   } catch (err: unknown) {
+  //     console.error("Failed to update IB plan:", err);
+  //     toast.error(
+  //       getAdminFriendlyErrorMessage(err, {
+  //         resource: "IB plan",
+  //         action: "update",
+  //       }),
+  //     );
+  //   } finally {
+  //     setUpdatingPlan(false);
+  //   }
+  // }, [token, user, selectedIbPlanId, loadUser]);
 
   const previewData = useMemo(() => {
     if (!user) return null;
@@ -1057,7 +1277,7 @@ export default function IbUserDetailPage() {
                 >
                   {previewData.statusLabel}
                 </Badge>
-                <Button
+                {/* <Button
                   type="button"
                   variant="outline"
                   size="sm"
@@ -1065,7 +1285,7 @@ export default function IbUserDetailPage() {
                   onClick={() => setShowPlanSelect(!showPlanSelect)}
                 >
                   Update Plan
-                </Button>
+                </Button> */}
                 <Button
                   asChild
                   variant="outline"
@@ -1083,7 +1303,7 @@ export default function IbUserDetailPage() {
         </div>
 
         {/* Plan update inline section */}
-        {showPlanSelect && (
+        {/* {showPlanSelect && (
           <div className="border-b border-border/60 bg-muted/20 px-6 py-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
               <div className="flex-1">
@@ -1135,7 +1355,7 @@ export default function IbUserDetailPage() {
               </div>
             </div>
           </div>
-        )}
+        )} */}
 
         {/* Back button + page shell */}
         <div className="flex flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
@@ -1203,6 +1423,12 @@ export default function IbUserDetailPage() {
 
               <TabsContent value="profile" className="space-y-6">
                 <ProfileTab user={previewData} loading={loading} />
+              </TabsContent>
+
+              <TabsContent value="commission" className="space-y-6">
+                {previewData ? (
+                  <CommissionTab user={previewData} loading={loading} />
+                ) : null}
               </TabsContent>
             </Tabs>
           ) : null}
