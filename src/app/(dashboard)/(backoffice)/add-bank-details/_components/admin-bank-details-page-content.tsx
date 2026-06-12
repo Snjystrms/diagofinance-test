@@ -3,6 +3,7 @@
 import { useCallback, useDeferredValue, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
+import { parseAsInteger, useQueryState } from "nuqs";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
 import { Building2, ChevronDown, Download, Eye, Landmark, Pencil, Plus, RefreshCw, Trash2, Users } from "lucide-react";
@@ -82,8 +83,11 @@ export function AdminBankDetailsPageContent() {
   const [viewOpen, setViewOpen] = useState(false);
   const [deleteCandidate, setDeleteCandidate] = useState<AdminBankDetailItem | null>(null);
 
+  const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
+  const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
+
   const deferredUserSearch = useDeferredValue(userSearch.trim());
-  const queryKey = useMemo(() => ["admin-bank-details", token, search] as const, [token, search]);
+  const queryKey = useMemo(() => ["admin-bank-details", token, search, page, perPage] as const, [token, search, page, perPage]);
 
   const {
     data: bankDetailsResponse,
@@ -95,22 +99,26 @@ export function AdminBankDetailsPageContent() {
   } = useQuery({
     queryKey,
     queryFn: async () => {
-      const response = await adminBankDetailsApi.list(token!, search || undefined);
+      const response = await adminBankDetailsApi.list(token!, search || undefined, page, perPage);
       const payload = response.data ?? { count: 0, rows: [] };
       const rawRows = extractBankDetailListRows(payload as unknown);
       const rows = rawRows
         .map((row) => normalizeAdminBankDetailRow(row))
         .filter((row): row is AdminBankDetailItem => row !== null);
 
-      const payloadRecord = payload as { count?: number; pagination?: { total?: number } };
+      const payloadRecord = payload as { count?: number; pagination?: { total?: number; page_count?: number } };
       const count =
         typeof payloadRecord.count === "number"
           ? payloadRecord.count
           : typeof payloadRecord.pagination?.total === "number"
             ? payloadRecord.pagination.total
             : rows.length;
+      const pageCount =
+        typeof payloadRecord.pagination?.page_count === "number"
+          ? payloadRecord.pagination.page_count
+          : 1;
 
-      return { count: count ?? rows.length, rows };
+      return { count, rows, pageCount };
     },
     enabled: Boolean(token) && canList,
     staleTime: 60 * 1000,
@@ -528,7 +536,10 @@ export function AdminBankDetailsPageContent() {
                   <ApiSearchBar
                     value={searchInput}
                     onChange={setSearchInput}
-                    onSearch={(value) => setSearch(value)}
+                    onSearch={(value) => {
+                      setPage(1);
+                      setSearch(value);
+                    }}
                     placeholder="Search by user, account holder, bank name..."
                     minimumLength={3}
                     delay={300}
@@ -541,7 +552,7 @@ export function AdminBankDetailsPageContent() {
                   <AppDataTable<AdminBankDetailItem>
                     data={filteredRows}
                     columns={columns}
-                    pageCount={1}
+                    pageCount={bankDetailsResponse?.pageCount ?? 1}
                     getRowId={(row) =>
                       resolveBankDetailRouteId(row) ??
                       `fallback-${row.user_id}-${row.account_number}-${row.bank_name}`

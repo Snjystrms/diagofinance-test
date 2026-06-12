@@ -121,7 +121,22 @@ export async function apiCall<T>(
     console.log("[apiCall] Config:", { method: config.method, headers: config.headers });
   }
 
-  const response = await fetch(url, config);
+  let response: Response;
+
+  try {
+    response = await fetch(url, config);
+  } catch (networkError) {
+    if (networkError instanceof TypeError && networkError.message === "Failed to fetch") {
+      throw new ApiRequestError({
+        message: "Unable to connect to the server. Please check your internet connection or try again later.",
+        status: 0,
+        statusText: "Network Error",
+        endpoint,
+        payload: null,
+      });
+    }
+    throw networkError;
+  }
 
   if (endpoint.includes("ib-requests/status")) {
     console.log("[apiCall] Response status:", response.status, response.statusText);

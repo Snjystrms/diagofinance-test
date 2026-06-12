@@ -37,6 +37,7 @@ export interface AdminTransactionItem {
   updated_at: string;
   user: AdminTransactionUser;
   transaction_category: string;
+  transaction_label: string;
   original_model: string;
   admin_notes: string | null;
 }

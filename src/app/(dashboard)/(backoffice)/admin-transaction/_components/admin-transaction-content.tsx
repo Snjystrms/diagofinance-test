@@ -176,7 +176,7 @@ export function AdminTransactionContent() {
       accessorKey: "transaction_type",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Transaction Type" />,
       cell: ({ row }) => (
-        <span className="text-sm capitalize">{transactionTypeLabel(row.original.transaction_category)}</span>
+        <span className="text-sm capitalize">{transactionTypeLabel(row.original.transaction_label)}</span>
       ),
     },
     {

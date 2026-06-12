@@ -720,6 +720,12 @@ export interface AdminBankDetailItem extends UserBankDetailsPayload {
 export interface AdminBankDetailsListData {
   count: number;
   rows: AdminBankDetailItem[];
+  pagination?: {
+    page: number;
+    per_page: number;
+    total: number;
+    page_count: number;
+  };
 }
 
 export interface AdminBankDetailCreateBody extends UserBankDetailsPayload {
@@ -1804,17 +1810,19 @@ export const authApi = {
 };
 
 export const adminBankDetailsApi = {
-  list: (token: string, search?: string | null) => {
+  list: (token: string, search?: string | null, page: number = 1, perPage: number = 10) => {
     if (!token) {
       throw new Error("Token is required to fetch bank details");
     }
 
     const qs = new URLSearchParams();
+    qs.set("page", String(page));
+    qs.set("per_page", String(perPage));
     if (search && search.trim()) {
       qs.set("search", search.trim());
     }
 
-    const endpoint = `/admin/bank-details${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const endpoint = `/admin/bank-details?${qs.toString()}`;
 
     return apiCall<AdminBankDetailsListData>(endpoint, {
       method: "GET",

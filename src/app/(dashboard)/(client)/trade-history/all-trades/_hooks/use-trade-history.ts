@@ -21,7 +21,7 @@ import {
 
 export const useTradeHistory = (token: string | null | undefined) => {
   const [accounts, setAccounts] = useState<UserMT5AccountListItem[]>([]);
-  const [login, setLogin] = useState('');
+  const [login, setLogin] = useState<string>('');
   const [fromDt, setFromDt] = useState<Date | undefined>(createDefaultFromDate);
   const [toDt, setToDt] = useState<Date | undefined>(createDefaultToDate);
   const [positions, setPositions] = useState<PositionRow[]>([]);
@@ -53,7 +53,8 @@ export const useTradeHistory = (token: string | null | undefined) => {
         if (!isActive) return;
 
         setAccounts(mt5Accounts);
-        setLogin((current) => current || mt5Accounts[0]?.mt5_id || '');
+        const firstMt5Id = mt5Accounts[0]?.mt5_id;
+        setLogin((current) => current || (firstMt5Id != null ? String(firstMt5Id) : ''));
       } catch {
         if (isActive) {
           setError('Failed to load MT5 accounts');

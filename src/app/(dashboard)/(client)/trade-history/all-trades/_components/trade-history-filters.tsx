@@ -57,7 +57,7 @@ export function TradeHistoryFilters({
                 </SelectTrigger>
                 <SelectContent>
                   {accounts.map((account) => (
-                    <SelectItem key={account.id} value={account.mt5_id}>
+                    <SelectItem key={account.id} value={String(account.mt5_id)}>
                       {account.mt5_id} - {account.account_id}
                     </SelectItem>
                   ))}

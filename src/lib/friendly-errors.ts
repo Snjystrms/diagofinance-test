@@ -267,6 +267,8 @@ export function getFriendlyError(error: unknown, options: FriendlyErrorOptions =
       return {
         title: "Check the details",
         message:
+          parts.detail ||
+          parts.message ||
           options.validationMessage ||
           (audience === "admin"
             ? "The request could not be processed. Review the filters or form values and try again."
@@ -316,7 +318,7 @@ export function getFriendlyError(error: unknown, options: FriendlyErrorOptions =
     case 422:
       return {
         title: "Review required",
-        message: options.validationMessage || "Some information needs correction. Please review the details and try again.",
+        message: parts.detail || parts.message || options.validationMessage || "Some information needs correction. Please review the details and try again.",
         status,
         severity: "warning",
         canRetry: true,

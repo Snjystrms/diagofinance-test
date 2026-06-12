@@ -54,7 +54,7 @@ export default function AllTradesPage() {
             <Button
               variant="outline"
               onClick={() => void refreshAll()}
-              disabled={(isLoadingTrades || isLoadingPositions) || !login.trim()}
+              disabled={(isLoadingTrades || isLoadingPositions) || !String(login).trim()}
             >
               <RefreshCw
                 className={cn('mr-2 h-4 w-4', (isLoadingTrades || isLoadingPositions) && 'animate-spin')}

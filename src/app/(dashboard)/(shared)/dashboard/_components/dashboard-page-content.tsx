@@ -1485,10 +1485,10 @@ export function DashboardPageContent() {
                     <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/8 to-indigo-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
                     <CardHeader className="relative z-10 pb-3 px-6 pt-6">
                       <div className="flex items-center justify-between mb-2">
-                        <p className="uppercase tracking-wider text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                        <div className="uppercase tracking-wider text-xs font-semibold text-muted-foreground flex items-center gap-2">
                           <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                           Partner Wallet
-                        </p>
+                        </div>
                         <div className="p-1.5 rounded-lg backdrop-blur-sm border bg-muted/70 border-border/50">
                           <Shield className="h-4 w-4 text-foreground" />
                         </div>
