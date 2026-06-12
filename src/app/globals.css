@@ -469,10 +469,16 @@
     background-size: cover;
   }
 
-  .bull-theme-wallet-overlay {
+.bull-theme-wallet-overlay {
     background-image: url('/wallet-balance-bull-bright.png');
     background-position: bottom right;
-    background-size: cover;
+    background-size: auto;
+    background-color: #eeb03f;
+  }
+
+  .dark .bull-theme-wallet-overlay {
+    background-image: url('/wallet-balance-bull.png');
+    background-color: #1f1402;
   }
 
   .dark .bull-theme-welcome-overlay {

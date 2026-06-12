@@ -70,6 +70,7 @@ import {
 } from "lucide-react"
 import { useAuth } from "@/contexts/auth-context"
 import { ProfileCompletionDialog } from "@/components/profile-completion-dialog"
+import { Mt5AccountCreationDialog } from "@/components/mt5-account-creation-dialog"
 import {
   authApi,
   ibRequestsApi,
@@ -153,6 +154,7 @@ export function DashboardPageContent() {
   const isBullTheme = isGoldenBullTheme(themePairId, themeMode);
   const queryClient = useQueryClient();
   const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [showMt5Dialog, setShowMt5Dialog] = useState(false);
   const [incompleteSections, setIncompleteSections] = useState<Array<{
     key: "personal_information" | "legal_information" | "documents_verification";
     title: string;
@@ -233,6 +235,7 @@ export function DashboardPageContent() {
   const [isDepositsStatisticsLoading, setIsDepositsStatisticsLoading] = useState(false);
   const [isWithdrawalsStatisticsLoading, setIsWithdrawalsStatisticsLoading] = useState(false);
   const [dashboardError, setDashboardError] = useState<unknown | null>(null);
+  const [tradingSummaryError, setTradingSummaryError] = useState<unknown | null>(null);
   const [depositStatisticsPeriod, setDepositStatisticsPeriod] = useState<7 | 30>(30);
   const [withdrawalStatisticsPeriod, setWithdrawalStatisticsPeriod] = useState<7 | 30>(30);
   // MT4 dashboard tabs are intentionally hidden for now. Restore the original union when MT4 UI returns.
@@ -265,7 +268,11 @@ export function DashboardPageContent() {
     try {
       const [userDashboardResult, tradingResponse, ibWalletResponse, depositsStatsResponse, withdrawalsStatsResponse] = await Promise.all([
         authApi.getUserDashboard(token),
-        authApi.getTradingAccountsSummary(token),
+        authApi.getTradingAccountsSummary(token).catch((err) => {
+          console.error("Trading accounts summary failed:", err);
+          setTradingSummaryError(err);
+          return { success: false, data: null };
+        }),
         ibRequestsApi.getIbWallet(token).catch((err) => {
           console.log("IB Wallet not available (user may not be IB):", err);
           return null;
@@ -346,9 +353,14 @@ export function DashboardPageContent() {
     const fetchDashboardData = async () => {
       setIsDashboardLoading(true);
       setDashboardError(null);
+      setTradingSummaryError(null);
       try {
         const [tradingResponse, ibWalletResponse] = await Promise.all([
-          authApi.getTradingAccountsSummary(token),
+          authApi.getTradingAccountsSummary(token).catch((err) => {
+            console.error("Trading accounts summary failed:", err);
+            if (isMounted) setTradingSummaryError(err);
+            return { success: false, data: null };
+          }),
           ibRequestsApi.getIbWallet(token).catch((err) => {
             console.log("IB Wallet not available (user may not be IB):", err);
             return null;
@@ -1831,7 +1843,23 @@ export function DashboardPageContent() {
                 ) : null}
           {/* Trading Accounts Grid */}
           <div className="space-y-6">
-            {hasAnyMt5Accounts ? (
+            {tradingSummaryError ? (
+              <ApiErrorState
+                error={tradingSummaryError}
+                audience="client"
+                resource="trading accounts"
+                action="load"
+                variant="panel"
+                onRetry={() => {
+                  void authApi.getTradingAccountsSummary(token!).then((res) => {
+                    if (res.success && res.data) {
+                      setTradingSummary(res.data);
+                      setTradingSummaryError(null);
+                    }
+                  });
+                }}
+              />
+            ) : hasAnyMt5Accounts ? (
               <>
                 {/* Platform Tabs */}
                 <Card className="border-0 bg-card/70 shadow-xl backdrop-blur-sm">
@@ -2063,7 +2091,12 @@ export function DashboardPageContent() {
       {isUser && (
         <ProfileCompletionDialog
           open={showProfileDialog}
-          onOpenChange={setShowProfileDialog}
+          onOpenChange={(open) => {
+            setShowProfileDialog(open);
+            if (open === false) {
+              setShowMt5Dialog(true);
+            }
+          }}
           incompleteSections={incompleteSections.map(section => ({
             ...section,
             icon: section.key === 'personal_information' ? (
@@ -2074,6 +2107,14 @@ export function DashboardPageContent() {
               <FileText className="h-5 w-5 text-orange-600" />
             ),
           }))}
+        />
+      )}
+
+      {/* MT5 Account Creation Dialog */}
+      {isUser && (
+        <Mt5AccountCreationDialog
+          open={showMt5Dialog}
+          onOpenChange={setShowMt5Dialog}
         />
       )}
     </ProtectedRoute>
