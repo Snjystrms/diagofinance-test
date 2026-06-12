@@ -55,10 +55,10 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               priority
             />
             <span
-              className="mt-4 font-cinzel text-2xl font-bold uppercase tracking-[0.25em] text-white"
+              className="truncate font-cinzel text-[21px] font-bold uppercase tracking-[0.2em] text-transparent [-webkit-text-stroke:0.5px_white] [text-shadow:0_0_4px_rgba(255,255,255,0.25)]"
               style={{ textShadow: '0 0 20px rgba(255,184,0,0.25)' }}
             >
-              VINNEXIA
+              VINNEXIA CAPITAL
             </span>
             <span className="font-arvo text-xs font-semibold tracking-[0.18em] text-[#FFB800] mt-1.5 uppercase">
               Trade With Confidence

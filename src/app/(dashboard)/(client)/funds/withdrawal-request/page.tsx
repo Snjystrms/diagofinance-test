@@ -1091,6 +1091,12 @@ function WithdrawalRequestContent() {
   );
 }
 
+import { KyCGuard } from "@/components/kyc-guard";
+
 export default function WithdrawalRequestPage() {
-  return <WithdrawalRequestContent />;
+  return (
+    <KyCGuard>
+      <WithdrawalRequestContent />
+    </KyCGuard>
+  );
 }

@@ -24,17 +24,20 @@ interface ProfileCompletionDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   incompleteSections: IncompleteSection[];
+  hideSkipButton?: boolean;
+  showCloseButton?: boolean;
 }
 
 export function ProfileCompletionDialog({
   open,
   onOpenChange,
   incompleteSections,
+  hideSkipButton = false,
+  showCloseButton = true,
 }: ProfileCompletionDialogProps) {
   const router = useRouter();
 
   const handleNavigate = (route: string) => {
-    onOpenChange(false);
     router.push(route);
   };
 
@@ -42,9 +45,15 @@ export function ProfileCompletionDialog({
     onOpenChange(false);
   };
 
+  const handleOpenChange = (newOpen: boolean) => {
+    if (!hideSkipButton) {
+      onOpenChange(newOpen);
+    }
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-2xl">
+    <Dialog open={open} onOpenChange={handleOpenChange}>
+      <DialogContent className="sm:max-w-2xl" preventClose={hideSkipButton} showCloseButton={showCloseButton && !hideSkipButton}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-xl">
             <AlertCircle className="h-5 w-5 text-primary" />
@@ -80,9 +89,11 @@ export function ProfileCompletionDialog({
         </div>
 
         <DialogFooter className="flex items-center justify-between">
-          <Button variant="outline" onClick={handleSkip} className="border-border/80 bg-background/70">
-            I&apos;ll do this later
-          </Button>
+          {!hideSkipButton && (
+            <Button variant="outline" onClick={handleSkip} className="border-border/80 bg-background/70">
+              I&apos;ll do this later
+            </Button>
+          )}
           {incompleteSections.length > 0 && (
             <Button onClick={() => handleNavigate(incompleteSections[0].route)}>
               Complete All Sections

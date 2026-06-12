@@ -74,7 +74,6 @@ const defaultFormValue: CurrencyRateFormValue = {
 };
 
 const MAINSTREAM_CURRENCIES = [
-  { code: "USD", label: "US Dollar (USD)" },
   { code: "EUR", label: "Euro (EUR)" },
   { code: "INR", label: "Indian Rupee (INR)" },
   { code: "GBP", label: "British Pound (GBP)" },
