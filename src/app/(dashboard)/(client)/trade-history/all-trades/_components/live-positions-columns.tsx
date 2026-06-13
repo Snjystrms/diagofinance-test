@@ -37,29 +37,33 @@ export const livePositionsColumns: ColumnDef<PositionRow>[] = [
       </Badge>
     ),
   },
-  {
+{
     id: 'time',
     header: 'Opened (IST)',
     accessorKey: 'time_ist',
+    meta: { mobileHidden: true },
   },
   {
     id: 'symbol',
     header: 'Symbol',
     accessorKey: 'symbol',
   },
-  {
+{
     id: 'position',
     header: 'Position',
     accessorKey: 'position',
+    meta: { mobileHidden: true },
   },
-  {
+{
     id: 'price_open',
     header: 'Open Price',
+    meta: { mobileHidden: true },
     cell: ({ row }) => formatTradeNumber(row.original.price_open, 5),
   },
   {
     id: 'price_current',
     header: 'Current Price',
+    meta: { mobileHidden: true },
     cell: ({ row }) => formatTradeNumber(row.original.price_current, 5),
   },
   {
@@ -76,9 +80,10 @@ export const livePositionsColumns: ColumnDef<PositionRow>[] = [
       </span>
     ),
   },
-  {
+{
     id: 'sl_tp',
     header: 'SL / TP',
+    meta: { mobileHidden: true },
     cell: ({ row }) => (
       <div className="space-y-1 text-xs">
         <div>SL: {formatTradeNumber(row.original.price_sl, 5)}</div>
@@ -86,10 +91,11 @@ export const livePositionsColumns: ColumnDef<PositionRow>[] = [
       </div>
     ),
   },
-  {
+{
     id: 'comment',
     header: 'Comment',
     accessorKey: 'comment',
+    meta: { mobileHidden: true },
     cell: ({ row }) => row.original.comment || '-',
   },
 ];

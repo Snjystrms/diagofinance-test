@@ -194,7 +194,7 @@ export default function WalletOverviewPage() {
           </div>
 
           {/* Total Balance Card + Quick Actions */}
-          <div className="grid gap-4 md:grid-cols-5 items-stretch">
+          <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 items-stretch">
             {/* Total Balance Card with Actions */}
             <Card className="md:col-span-3 relative overflow-hidden border-none shadow-xl text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent rounded-3xl p-6 h-full">
               <div className="absolute inset-0 opacity-60">

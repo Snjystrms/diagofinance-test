@@ -3,11 +3,9 @@ import { API_BASE_URL, ApiResponse, PaginationMeta, apiCall } from "./api-core";
 export interface AccountType {
   id: number;
   name: string;
-  spread_from: string;
   maximum_leverage: string;
-  leverage_type?: string;
+  mode: string;
   leverage_value?: number | string;
-  base_currency: string;
 }
 
 export interface AccountTypesResponse {
@@ -28,11 +26,9 @@ export interface UserMT5AccountCreateRequest {
   account_type_id: number;
   account_mode: "demo" | "live";
   balance?: number;
-  extra_fields: Record<string, unknown>;
-  group_id: number;
-  investor_password: string;
   leverage: number;
-  main_password: string;
+  password: string;
+  confirm_password: string;
 }
 
 export interface UserMT5AccountCreateData {
@@ -1722,13 +1718,11 @@ export interface UpdateMT5AccountRequest {
 export interface CreateMT5AccountRequest {
   user_id: number;
   account_type_id: number;
-  group_id: number;
   leverage: number;
   account_mode: "demo" | "live";
-  main_password: string;
-  investor_password: string;
+  password: string;
+  confirm_password: string;
   balance?: number;
-  extra_fields: Record<string, unknown>;
 }
 
 export interface AdminMT5AccountsListResponse {

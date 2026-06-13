@@ -65,18 +65,18 @@ export function AccountTypeCardGrid({
 
               <div className="space-y-3">
                 <div className="flex items-start justify-between gap-4">
-                  <span className="text-sm text-muted-foreground">Spread From:</span>
-                  <span className="text-sm font-medium">{accountType.spread_from}</span>
-                </div>
-
-                <div className="flex items-start justify-between gap-4">
                   <span className="text-sm text-muted-foreground">Maximum Leverage:</span>
                   <span className="text-sm font-medium">{accountType.maximum_leverage}</span>
                 </div>
 
                 <div className="flex items-start justify-between gap-4">
-                  <span className="text-sm text-muted-foreground">Base Currency:</span>
-                  <span className="text-sm font-medium">{accountType.base_currency}</span>
+                  <span className="text-sm text-muted-foreground">Leverage Value:</span>
+                  <span className="text-sm font-medium">{accountType.leverage_value ?? '-'}</span>
+                </div>
+
+                <div className="flex items-start justify-between gap-4">
+                  <span className="text-sm text-muted-foreground">Mode:</span>
+                  <span className="text-sm font-medium">{accountType.mode}</span>
                 </div>
               </div>
 

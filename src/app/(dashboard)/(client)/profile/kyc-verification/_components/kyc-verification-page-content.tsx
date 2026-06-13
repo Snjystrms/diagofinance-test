@@ -741,7 +741,7 @@ export function KycVerificationPageContent() {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid sm:grid-cols-2 gap-4">
           {/* Front Side */}
           <Card className="bg-card border-border">
             <CardHeader className="pb-4">

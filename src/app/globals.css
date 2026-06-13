@@ -438,21 +438,63 @@
   }
 
   .crm-page-padding {
-    padding: var(--space-5);
+    padding: var(--space-3);
+  }
+
+  @media (min-width: 640px) {
+    .crm-page-padding {
+      padding: var(--space-4);
+    }
+  }
+
+  @media (min-width: 768px) {
+    .crm-page-padding {
+      padding: var(--space-5);
+    }
   }
 
   .crm-page-padding-lg {
-    padding: var(--space-6);
+    padding: var(--space-4);
+  }
+
+  @media (min-width: 768px) {
+    .crm-page-padding-lg {
+      padding: var(--space-6);
+    }
   }
 
   .crm-section-stack {
     display: flex;
     flex-direction: column;
-    gap: var(--space-5);
+    gap: var(--space-3);
+  }
+
+  @media (min-width: 640px) {
+    .crm-section-stack {
+      gap: var(--space-4);
+    }
+  }
+
+  @media (min-width: 768px) {
+    .crm-section-stack {
+      gap: var(--space-5);
+    }
   }
 
   .crm-card-spacing {
-    padding: var(--space-6);
+    padding: var(--space-3);
+  }
+
+  @media (min-width: 640px) {
+    .crm-card-spacing {
+      padding: var(--space-4);
+    }
+  }
+
+  @media (min-width: 768px) {
+    .crm-card-spacing {
+      padding: var(--space-6);
+    }
   }
 
   .bull-theme-overlay {

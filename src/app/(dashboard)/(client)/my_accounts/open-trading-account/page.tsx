@@ -61,8 +61,6 @@ import { getFriendlyErrorMessage } from '@/lib/friendly-errors';
 import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
 
-const DEFAULT_GROUP_ID = 1;
-
 const LEVERAGE_CHOICES = [
   { value: 50, label: '1:50 - Lower exposure' },
   { value: 100, label: '1:100 - Standard' },
@@ -268,11 +266,9 @@ export default function OpenTradingAccountPage() {
           account_type_id: selectedAccountType.id,
           account_mode: accountMode,
           ...(accountMode === 'demo' ? { balance: demoBalance } : {}),
-          extra_fields: {},
-          group_id: DEFAULT_GROUP_ID,
-          investor_password: data.investorPassword,
           leverage,
-          main_password: data.mainPassword,
+          password: data.mainPassword,
+          confirm_password: data.mainPassword,
         },
         token
       );
@@ -606,16 +602,16 @@ export default function OpenTradingAccountPage() {
                           </div>
                           <div className="grid gap-3 grid-cols-3">
                             <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
-                              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Spread</div>
-                              <div className="mt-2 text-sm font-semibold text-foreground">{selectedAccountType.spread_from}</div>
-                            </div>
-                            <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
                               <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Max leverage</div>
                               <div className="mt-2 text-sm font-semibold text-foreground">{selectedAccountType.maximum_leverage}</div>
                             </div>
                             <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
-                              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Base currency</div>
-                              <div className="mt-2 text-sm font-semibold text-foreground">{selectedAccountType.base_currency}</div>
+                              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Leverage value</div>
+                              <div className="mt-2 text-sm font-semibold text-foreground">{selectedAccountType.leverage_value ?? '-'}</div>
+                            </div>
+                            <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
+                              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Mode</div>
+                              <div className="mt-2 text-sm font-semibold text-foreground">{selectedAccountType.mode}</div>
                             </div>
                           </div>
                           <div className="grid gap-3 grid-cols-2">

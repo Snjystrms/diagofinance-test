@@ -14,6 +14,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Eye, EyeOff, Settings2, RotateCcw, X } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import 'react-grid-layout/css/styles.css';
 
 export interface DashboardWidget {
@@ -55,6 +56,7 @@ export function DashboardGrid({
   rowHeight = 100,
   className = '',
 }: DashboardGridProps) {
+  const isMobile = useIsMobile();
   const [layouts, setLayouts] = useState<Layout[]>([]);
   const [hiddenWidgets, setHiddenWidgets] = useState<Set<string>>(new Set());
   const [isResizeMode, setIsResizeMode] = useState(false);
@@ -218,6 +220,84 @@ export function DashboardGrid({
     window.addEventListener('resize', updateWidth);
     return () => window.removeEventListener('resize', updateWidth);
   }, []);
+
+  if (isMobile) {
+    return (
+      <div ref={containerRef} className={`flex flex-col gap-4 ${className}`}>
+        {editable && (
+          <div className="flex items-center justify-end">
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Settings2 className="h-4 w-4" />
+                  Widgets
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>Widget Settings</DialogTitle>
+                  <DialogDescription>Show or hide widgets on your dashboard</DialogDescription>
+                </DialogHeader>
+                <div className="max-h-[400px] space-y-2 overflow-y-auto">
+                  {widgets.map((widget) => (
+                    <div
+                      key={widget.id}
+                      className="flex items-center justify-between rounded-lg border border-border p-3 hover:bg-muted/50"
+                    >
+                      <span className="font-medium">{widget.title}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => toggleWidgetVisibility(widget.id)}
+                        className="gap-2"
+                      >
+                        {hiddenWidgets.has(widget.id) ? (
+                          <>
+                            <EyeOff className="h-4 w-4" />
+                            Show
+                          </>
+                        ) : (
+                          <>
+                            <Eye className="h-4 w-4" />
+                            Hide
+                          </>
+                        )}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-end gap-2 pt-4">
+                  <Button variant="outline" size="sm" onClick={resetLayout} className="gap-2">
+                    <RotateCcw className="h-4 w-4" />
+                    Reset
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        )}
+        {visibleWidgets.map((widget) => (
+          <Card key={widget.id} className="overflow-hidden">
+            <div className="p-3 sm:p-4">{widget.component}</div>
+          </Card>
+        ))}
+        {visibleWidgets.length === 0 && (
+          <Card className="p-8 text-center">
+            <EyeOff className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+            <h3 className="mb-2 text-lg font-semibold">All widgets are hidden</h3>
+            <p className="mb-4 text-muted-foreground">
+              {editable
+                ? 'Use the Widgets button to show widgets on your dashboard.'
+                : 'This dashboard preset currently hides all widgets.'}
+            </p>
+            <Button onClick={() => saveHiddenWidgets(new Set())} variant="outline" disabled={!editable}>
+              Show All Widgets
+            </Button>
+          </Card>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div ref={containerRef} className={`dashboard-grid-container ${className}`}>

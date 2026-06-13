@@ -1,3 +1,5 @@
+"use client";
+
 import { flexRender, type Table as TanstackTable } from "@tanstack/react-table";
 import type * as React from "react";
 
@@ -11,6 +13,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getCommonPinningStyles } from "@/lib/data-table";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 interface DataTableProps<TData> extends React.ComponentProps<"div"> {
@@ -25,33 +28,47 @@ export function DataTable<TData>({
   className,
   ...props
 }: DataTableProps<TData>) {
+  const isMobile = useIsMobile();
+
   return (
     <div
       className={cn("flex w-full flex-col gap-2.5 overflow-auto", className)}
       {...props}
     >
       {children}
-      <div className="overflow-hidden rounded-md border">
+      <div className={cn(
+        "rounded-md border",
+        isMobile ? "overflow-x-auto" : "overflow-hidden",
+      )}>
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead
-                    key={header.id}
-                    colSpan={header.colSpan}
-                    style={{
-                      ...getCommonPinningStyles({ column: header.column }),
-                    }}
-                  >
-                    {header.isPlaceholder
-                      ? null
-                      : flexRender(
-                          header.column.columnDef.header,
-                          header.getContext(),
-                        )}
-                  </TableHead>
-                ))}
+                {headerGroup.headers.map((header) => {
+                  const isFirstVisCol = header.column.getIndex() === 0;
+                  const mobileHidden = (header.column.columnDef.meta as Record<string, unknown> | undefined)?.mobileHidden === true;
+                  if (mobileHidden && isMobile) return null;
+                  return (
+                    <TableHead
+                      key={header.id}
+                      colSpan={header.colSpan}
+                      className={cn(
+                        isMobile && isFirstVisCol && "sticky left-0 z-10 bg-background",
+                        mobileHidden && "hidden",
+                      )}
+                      style={{
+                        ...getCommonPinningStyles({ column: header.column }),
+                      }}
+                    >
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                            header.column.columnDef.header,
+                            header.getContext(),
+                          )}
+                    </TableHead>
+                  );
+                })}
               </TableRow>
             ))}
           </TableHeader>
@@ -62,19 +79,28 @@ export function DataTable<TData>({
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      style={{
-                        ...getCommonPinningStyles({ column: cell.column }),
-                      }}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext(),
-                      )}
-                    </TableCell>
-                  ))}
+                  {row.getVisibleCells().map((cell) => {
+                    const isFirstVisCol = cell.column.getIndex() === 0;
+                    const mobileHidden = (cell.column.columnDef.meta as Record<string, unknown> | undefined)?.mobileHidden === true;
+                    if (mobileHidden && isMobile) return null;
+                    return (
+                      <TableCell
+                        key={cell.id}
+                        className={cn(
+                          isMobile && isFirstVisCol && "sticky left-0 z-10 bg-background",
+                          mobileHidden && "hidden",
+                        )}
+                        style={{
+                          ...getCommonPinningStyles({ column: cell.column }),
+                        }}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext(),
+                        )}
+                      </TableCell>
+                    );
+                  })}
                 </TableRow>
               ))
             ) : (

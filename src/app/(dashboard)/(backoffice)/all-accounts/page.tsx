@@ -49,13 +49,15 @@ export type AccountTypeCommissionRow = {
 // Row type for the table
 export type AccountTypeRow = {
   id: string;
+  live_id?: string;
+  demo_id?: string;
   name: string;
-  spread_from: string;
   maximum_leverage: string;
-  leverage_type: "fixed" | "dynamic" | string;
   leverage_value: number;
-  base_currency: string;
-  commission_pool: number;
+  live_group_name: string;
+  live_mt5_group_name: string;
+  demo_group_name: string;
+  demo_mt5_group_name: string;
   status: boolean;
   created_at?: string;
   updated_at?: string;
@@ -201,17 +203,62 @@ const normalizeCommissions = (
 
 const normalize = (a: AccountTypeItem): AccountTypeRow => ({
   id: String(a.id),
+  live_id: a.mode === "live" ? String(a.id) : undefined,
+  demo_id: a.mode === "demo" ? String(a.id) : undefined,
   name: a.name ?? "",
-  spread_from: toStringValue(a.spread_from),
   maximum_leverage: toStringValue(a.maximum_leverage),
-  leverage_type: (a.leverage_type as string) ?? "dynamic",
   leverage_value: toNumericValue(a.leverage_value),
-  base_currency: a.base_currency ?? "",
-  commission_pool: toNumericValue(a.commission_pool, 0),
+  live_group_name: a.mode === "live" ? (a.group?.name ?? "") : "",
+  live_mt5_group_name: a.mode === "live" ? (a.group?.mt5_group_name ?? "") : "",
+  demo_group_name: a.mode === "demo" ? (a.group?.name ?? "") : "",
+  demo_mt5_group_name: a.mode === "demo" ? (a.group?.mt5_group_name ?? "") : "",
   status: coerceBoolean(a.status, true),
   created_at: a.created_at,
   updated_at: a.updated_at,
 });
+
+const groupAccountTypes = (items: AccountTypeItem[]): AccountTypeRow[] => {
+  const byName = new Map<string, { live?: AccountTypeItem; demo?: AccountTypeItem }>();
+
+  for (const item of items) {
+    const key = (item.name ?? "").toLowerCase().trim();
+    if (!key) continue;
+    const existing = byName.get(key) ?? {};
+    if (item.mode === "live" || item.mode === "demo") {
+      existing[item.mode] = item;
+    } else {
+      existing.live = item;
+    }
+    byName.set(key, existing);
+  }
+
+  const rows: AccountTypeRow[] = [];
+
+  for (const [, pair] of byName) {
+    const live = pair.live;
+    const demo = pair.demo;
+    const primary = live ?? demo;
+    if (!primary) continue;
+
+    rows.push({
+      id: String(primary.id),
+      live_id: live ? String(live.id) : undefined,
+      demo_id: demo ? String(demo.id) : undefined,
+      name: primary.name ?? "",
+      maximum_leverage: toStringValue(primary.maximum_leverage),
+      leverage_value: toNumericValue(primary.leverage_value),
+      live_group_name: live?.group?.name ?? "",
+      live_mt5_group_name: live?.group?.mt5_group_name ?? "",
+      demo_group_name: demo?.group?.name ?? "",
+      demo_mt5_group_name: demo?.group?.mt5_group_name ?? "",
+      status: coerceBoolean(primary.status, true),
+      created_at: primary.created_at,
+      updated_at: primary.updated_at,
+    });
+  }
+
+  return rows;
+};
 
 const extractSingleAccountType = (payload: unknown): AccountTypeItem | null => {
   if (!payload || typeof payload !== "object") {
@@ -234,6 +281,15 @@ const extractSingleAccountType = (payload: unknown): AccountTypeItem | null => {
     !Array.isArray(payloadObj.data)
   ) {
     const nestedData = payloadObj.data as Record<string, unknown>;
+
+    if (
+      nestedData.live &&
+      typeof nestedData.live === "object" &&
+      !Array.isArray(nestedData.live)
+    ) {
+      return nestedData.live as AccountTypeItem;
+    }
+
     if (
       nestedData.accountType &&
       typeof nestedData.accountType === "object" &&
@@ -259,14 +315,14 @@ const coerceBoolean = (value: unknown, fallback = false) => {
 
 const serialize = (r: Partial<AccountTypeRow>): AccountTypeUpsertBody => ({
   name: r.name && r.name.trim() !== "" ? r.name.trim() : "",
-  spread_from: toNumericValue(r.spread_from, 0),
+  live_group_name: r.live_group_name ?? "",
+  live_mt5_group_name: r.live_mt5_group_name ?? "",
+  demo_group_name: r.demo_group_name ?? "",
+  demo_mt5_group_name: r.demo_mt5_group_name ?? "",
   maximum_leverage: toNumericValue(r.maximum_leverage, 0, {
     preferLastMatch: true,
   }),
-  leverage_type: (r.leverage_type as string) ?? "dynamic",
   leverage_value: toNumericValue(r.leverage_value),
-  base_currency: r.base_currency ?? "",
-  commission_pool: toNumericValue(r.commission_pool, 0),
   status: coerceBoolean(r.status, true),
 });
 
@@ -311,7 +367,7 @@ export default function AllAccountsPage() {
         status: statusFilter !== "all" ? statusFilter : undefined,
         search: effectiveSearch || undefined,
       });
-      return ((res?.data?.accountTypes || []) as AccountTypeItem[]).map(normalize);
+      return groupAccountTypes((res?.data?.accountTypes || []) as AccountTypeItem[]);
     },
     enabled: Boolean(token),
     staleTime: 60 * 1000,
@@ -330,6 +386,17 @@ export default function AllAccountsPage() {
       }
 
       const response = await adminAccountTypesApi.getById(id, token);
+      const payload = response?.data as Record<string, unknown> | undefined;
+
+      if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+        if ("live" in payload && typeof payload.live === "object" && payload.live !== null) {
+          const liveItem = payload.live as AccountTypeItem;
+          const demoItem = (payload.demo as AccountTypeItem | undefined) ?? undefined;
+          const rows = groupAccountTypes([liveItem, ...(demoItem ? [demoItem] : [])]);
+          if (rows.length > 0) return rows[0];
+        }
+      }
+
       const accountType = extractSingleAccountType(response?.data);
 
       if (!accountType || accountType.id === undefined || accountType.id === null) {
@@ -464,12 +531,12 @@ export default function AllAccountsPage() {
       const exportData = data.map((accountType, index) => ({
         "Sr. No.": index + 1,
         Name: accountType.name || "-",
-        "Base Currency": accountType.base_currency || "-",
-        "Spread From": accountType.spread_from || "-",
-        Leverage:
-          accountType.leverage_type === "dynamic"
-            ? `Up to 1:${accountType.leverage_value} (dynamic)`
-            : `1:${accountType.leverage_value} (fixed)`,
+        "Live Group": accountType.live_group_name || "-",
+        "Live MT5 Group": accountType.live_mt5_group_name || "-",
+        "Demo Group": accountType.demo_group_name || "-",
+        "Demo MT5 Group": accountType.demo_mt5_group_name || "-",
+        "Max Leverage": accountType.maximum_leverage || "-",
+        "Leverage Value": accountType.leverage_value || "-",
         Status: accountType.status ? "Active" : "Inactive",
         Updated: formatExportDateTime(accountType.updated_at),
       }));

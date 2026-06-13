@@ -866,7 +866,7 @@ function USDTDepositContent() {
                   </div>
                 </div>
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                  
                  {/* Left Column - Crypto Wallet Details */}
             <Card className="border border-border/60 bg-card shadow-sm">
@@ -983,7 +983,7 @@ function USDTDepositContent() {
                         )}
 
                         {/* Network Info */}
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
                             <div className="text-xs font-medium text-muted-foreground">Network</div>
                             <Badge variant="secondary" className="mt-2">
@@ -1289,7 +1289,7 @@ function USDTDepositContent() {
             {hasBinance && <TabsContent value="binance_pay" className="space-y-8">
               {/* Binance Pay Content */}
               {(
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Left Column - Binance Info */}
                 <Card className="border border-border/60 bg-card shadow-sm">
                   <CardHeader className="text-center pb-6 relative z-10">
@@ -1436,7 +1436,7 @@ function USDTDepositContent() {
             {hasCoinsbuy && <TabsContent value="coinsbuy" className="space-y-8">
               {/* CoinsBuy Content */}
               {(
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Left Column - CoinsBuy Info */}
                 <Card className="border border-border/60 bg-card shadow-sm">
                   <CardHeader className="text-center pb-6 relative z-10">
@@ -1563,7 +1563,7 @@ function USDTDepositContent() {
 
             {/* â”€â”€ Bank Transfer tab â”€â”€ */}
             {hasBank && <TabsContent value="bank" className="space-y-8">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
 
                 {/* Left â€” Bank account details (dummy) */}
                 <div className="space-y-6">

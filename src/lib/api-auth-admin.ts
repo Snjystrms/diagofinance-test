@@ -904,12 +904,12 @@ export type ManagerUpdateBody = {
 
 export type AccountTypeUpsertBody = {
   name: string;
-  spread_from: string | number;
+  live_group_name: string;
+  live_mt5_group_name: string;
+  demo_group_name: string;
+  demo_mt5_group_name: string;
   maximum_leverage: string | number;
-  leverage_type: "fixed" | "dynamic" | string;
   leverage_value: number;
-  base_currency: string;
-  commission_pool: number;
   status: boolean;
 };
 
@@ -929,18 +929,33 @@ export interface AccountTypeCommissionItem {
   updated_at?: string;
 }
 
+export interface AccountTypeGroupItem {
+  id: number;
+  name: string;
+  mt5_group_name: string;
+  platform: string;
+  status: number | boolean;
+}
+
 export interface AccountTypeItem {
   id: number | string;
   name: string;
-  spread_from: string | number | null;
+  mode?: "live" | "demo" | string;
+  spread_from?: string | number | null;
   maximum_leverage: string | number | null;
-  leverage_type: "fixed" | "dynamic" | string;
+  leverage_type?: "fixed" | "dynamic" | string;
   leverage_value: number | string | null;
-  base_currency: string;
+  base_currency?: string;
   commission_pool?: number;
   status: boolean | number | string;
+  group?: AccountTypeGroupItem;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface AccountTypeCreateResponseData {
+  live: AccountTypeItem;
+  demo: AccountTypeItem;
 }
 
 export interface AdminGroupItem {
@@ -991,7 +1006,7 @@ export const adminAccountTypesApi = {
   },
 
   create: (body: AccountTypeUpsertBody, token: string) =>
-    apiCall<{ accountType?: AccountTypeItem } | AccountTypeItem>(`/admin/account-types/create`, {
+    apiCall<{ success?: boolean; message?: string; data?: AccountTypeCreateResponseData }>(`/admin/account-types/create`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,

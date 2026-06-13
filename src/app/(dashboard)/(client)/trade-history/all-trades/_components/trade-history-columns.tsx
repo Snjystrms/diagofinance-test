@@ -35,10 +35,11 @@ export const tradeHistoryColumns: ColumnDef<TradeRow>[] = [
       </Badge>
     ),
   },
-  {
+{
     id: 'time',
     header: 'Time (IST)',
     accessorKey: 'time_ist',
+    meta: { mobileHidden: true },
   },
   {
     id: 'symbol',
@@ -46,21 +47,24 @@ export const tradeHistoryColumns: ColumnDef<TradeRow>[] = [
     accessorKey: 'symbol',
     cell: ({ row }) => row.original.symbol || '-',
   },
-  {
+{
     id: 'side',
     header: 'Side',
     accessorKey: 'side',
+    meta: { mobileHidden: true },
     cell: ({ row }) => row.original.side || '-',
   },
-  {
+{
     id: 'status',
     header: 'Status',
     accessorKey: 'status',
+    meta: { mobileHidden: true },
     cell: ({ row }) => row.original.status || '-',
   },
-  {
+{
     id: 'tickets',
     header: 'Deal / Order / Position',
+    meta: { mobileHidden: true },
     cell: ({ row }) => (
       <div className="space-y-1 text-xs">
         <div>Deal: {row.original.deal ?? '-'}</div>
@@ -88,16 +92,18 @@ export const tradeHistoryColumns: ColumnDef<TradeRow>[] = [
       </span>
     ),
   },
-  {
+{
     id: 'comment',
     header: 'Comment',
     accessorKey: 'comment',
+    meta: { mobileHidden: true },
     cell: ({ row }) => row.original.comment || '-',
   },
   {
     id: 'mt5_ticket',
     header: 'MT5 Ticket',
     accessorKey: 'mt5_ticket',
+    meta: { mobileHidden: true },
     cell: ({ row }) => row.original.mt5_ticket ?? '-',
   },
 ];

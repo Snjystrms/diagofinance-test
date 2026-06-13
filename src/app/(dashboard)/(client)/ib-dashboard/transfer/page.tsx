@@ -326,7 +326,7 @@ export default function TransferPage() {
               </div>
 
               {/* Wallet snapshots */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     IB Wallet

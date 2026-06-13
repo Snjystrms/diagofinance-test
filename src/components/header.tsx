@@ -165,6 +165,7 @@ export function Header() {
           <button
             onClick={() => setTwoFactorModalOpen(true)}
             disabled={isLoading2FAStatus}
+            aria-label={isLoading2FAStatus ? "Loading 2FA status" : is2FAEnabled ? "2FA is enabled" : "2FA is disabled"}
             className="ib-portal-kicker inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] transition-all duration-200 hover:shadow-sm disabled:opacity-60 flex-shrink-0"
           >
             {isLoading2FAStatus ? (

@@ -194,16 +194,16 @@ function PaginationControls({
 
 function ClientsTable({ rows }: { rows: ClientRow[] }) {
   return (
-    <div className="overflow-hidden rounded-[24px] border border-border/60">
+    <div className="overflow-x-auto rounded-[24px] border border-border/60">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/30">
             <TableHead>Client ID</TableHead>
             <TableHead>Name</TableHead>
-            <TableHead className="text-right">Lots Traded</TableHead>
-            <TableHead className="text-right">Pending Rebates</TableHead>
+            <TableHead className="text-right hidden md:table-cell">Lots Traded</TableHead>
+            <TableHead className="text-right hidden md:table-cell">Pending Rebates</TableHead>
             <TableHead className="text-right">Earned Rebates</TableHead>
-            <TableHead>Registration Date</TableHead>
+            <TableHead className="hidden md:table-cell">Registration Date</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -211,14 +211,14 @@ function ClientsTable({ rows }: { rows: ClientRow[] }) {
             <TableRow key={`${row.client_id}`}>
               <TableCell className="font-mono text-xs sm:text-sm">{row.client_id}</TableCell>
               <TableCell className="font-medium">{row.client_name}</TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-right hidden md:table-cell">
                 {toNum(row.lots_traded).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </TableCell>
-              <TableCell className="text-right">{formatCurrency(toNum(row.pending_rebates), "USD")}</TableCell>
+              <TableCell className="text-right hidden md:table-cell">{formatCurrency(toNum(row.pending_rebates), "USD")}</TableCell>
               <TableCell className="text-right font-semibold text-emerald-600 dark:text-emerald-300">
                 {formatCurrency(toNum(row.earned_rebates), "USD")}
               </TableCell>
-              <TableCell className="text-sm text-muted-foreground">{formatDate(row.registration_date)}</TableCell>
+              <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{formatDate(row.registration_date)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -231,17 +231,17 @@ function ClientsTable({ rows }: { rows: ClientRow[] }) {
 
 function SubIbsTable({ rows }: { rows: SubIbRow[] }) {
   return (
-    <div className="overflow-hidden rounded-[24px] border border-border/60">
+    <div className="overflow-x-auto rounded-[24px] border border-border/60">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/30">
             <TableHead>Partner ID</TableHead>
             <TableHead>Name</TableHead>
-            <TableHead>Level</TableHead>
-            <TableHead className="text-right">Lots Traded</TableHead>
-            <TableHead className="text-right">Pending Rebates</TableHead>
+            <TableHead className="hidden md:table-cell">Level</TableHead>
+            <TableHead className="text-right hidden md:table-cell">Lots Traded</TableHead>
+            <TableHead className="text-right hidden md:table-cell">Pending Rebates</TableHead>
             <TableHead className="text-right">Earned Rebates</TableHead>
-            <TableHead>Registration Date</TableHead>
+            <TableHead className="hidden md:table-cell">Registration Date</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -249,19 +249,19 @@ function SubIbsTable({ rows }: { rows: SubIbRow[] }) {
             <TableRow key={`${row.sub_ib_user_id}`}>
               <TableCell className="font-mono text-xs">{row.sub_ib_id || row.sub_ib_user_id}</TableCell>
               <TableCell className="font-medium">{row.name}</TableCell>
-              <TableCell>
+              <TableCell className="hidden md:table-cell">
                 <span className="inline-flex rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-xs font-medium">
                   {row.level}
                 </span>
               </TableCell>
-              <TableCell className="text-right">
+              <TableCell className="text-right hidden md:table-cell">
                 {toNum(row.lots_traded).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </TableCell>
-              <TableCell className="text-right">{formatCurrency(toNum(row.pending_rebates), "USD")}</TableCell>
+              <TableCell className="text-right hidden md:table-cell">{formatCurrency(toNum(row.pending_rebates), "USD")}</TableCell>
               <TableCell className="text-right font-semibold text-emerald-600 dark:text-emerald-300">
                 {formatCurrency(toNum(row.earned_rebates), "USD")}
               </TableCell>
-              <TableCell className="text-sm text-muted-foreground">{formatDate(row.registration_date)}</TableCell>
+              <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{formatDate(row.registration_date)}</TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -281,19 +281,19 @@ const STATUS_STYLE: Record<string, string> = {
 
 function RebatesTable({ rows }: { rows: RebateDeal[] }) {
   return (
-    <div className="overflow-x-auto overflow-hidden rounded-[24px] border border-border/60">
+    <div className="overflow-x-auto rounded-[24px] border border-border/60">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/30">
             <TableHead>MT5 ID</TableHead>
             <TableHead>Client</TableHead>
-            <TableHead>Account</TableHead>
+            <TableHead className="hidden md:table-cell">Account</TableHead>
             <TableHead>Symbol</TableHead>
-            <TableHead>Side</TableHead>
+            <TableHead className="hidden md:table-cell">Side</TableHead>
             <TableHead className="text-right">Volume</TableHead>
             <TableHead className="text-right">Commission</TableHead>
-            <TableHead>Status</TableHead>
-            <TableHead>Open Time</TableHead>
+            <TableHead className="hidden md:table-cell">Status</TableHead>
+            <TableHead className="hidden md:table-cell">Open Time</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -310,14 +310,14 @@ function RebatesTable({ rows }: { rows: RebateDeal[] }) {
                     <div className="text-xs text-muted-foreground">ID: {row.client_id}</div>
                   </div>
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden md:table-cell">
                   <div className="space-y-0.5">
                     <div className="font-mono text-xs">{row.trading_account}</div>
                     <div className="text-xs text-muted-foreground">{row.account_type}</div>
                   </div>
                 </TableCell>
                 <TableCell className="font-medium">{row.symbol}</TableCell>
-                <TableCell>
+                <TableCell className="hidden md:table-cell">
                   <Badge
                     variant="outline"
                     className={row.side === "BUY"
@@ -334,12 +334,12 @@ function RebatesTable({ rows }: { rows: RebateDeal[] }) {
                 <TableCell className="text-right font-semibold text-emerald-600 dark:text-emerald-300">
                   {toNum(row.commission).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 5 })}
                 </TableCell>
-                <TableCell>
+                <TableCell className="hidden md:table-cell">
                   <Badge className={`border-0 text-xs font-semibold ${statusClass}`}>
                     {row.rebate_status}
                   </Badge>
                 </TableCell>
-                <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{row.open_time}</TableCell>
+                <TableCell className="text-xs text-muted-foreground whitespace-nowrap hidden md:table-cell">{row.open_time}</TableCell>
               </TableRow>
             );
           })}
@@ -361,7 +361,7 @@ function ClientsLoadingState() {
           <Skeleton className="h-4 w-full max-w-xl rounded-full" />
         </div>
       </section>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
         {Array.from({ length: 3 }).map((_, i) => (
           <div key={i} className="rounded-[28px] border border-border/60 bg-card p-6 shadow-sm">
             <div className="space-y-4">
@@ -557,7 +557,7 @@ export default function IbClientsPage() {
       />
 
       {/* Metric cards */}
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
         <IbMetricCard
           title="Current View"
           value={activeTab === "clients" ? "Clients" : activeTab === "sub-ibs" ? "Sub Partners" : "Rebates"}
@@ -586,7 +586,7 @@ export default function IbClientsPage() {
         description="Filter and review client-side trading and rebate records."
       >
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabType)} className="space-y-6">
-          <TabsList className="grid h-auto w-full grid-cols-3 rounded-2xl bg-muted/40 p-1">
+          <TabsList className="grid h-auto w-full grid-cols-1 sm:grid-cols-3 rounded-2xl bg-muted/40 p-1">
             <TabsTrigger value="clients">Clients</TabsTrigger>
             <TabsTrigger value="sub-ibs">Sub Partners</TabsTrigger>
             <TabsTrigger value="rebates">Rebates</TabsTrigger>

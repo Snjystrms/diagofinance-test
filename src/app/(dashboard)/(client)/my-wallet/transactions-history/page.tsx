@@ -214,6 +214,7 @@ export default function TransactionsHistoryPage() {
         id: 'payment_method',
         header: 'Payment Method',
         accessorKey: 'payment_method',
+        meta: { mobileHidden: true },
         cell: ({ row }) => {
           const transaction = row.original
           return transaction.payment_method ? (
@@ -229,6 +230,7 @@ export default function TransactionsHistoryPage() {
         id: 'reference',
         header: 'Transaction Hash',
         accessorKey: 'reference',
+        meta: { mobileHidden: true },
         cell: ({ row }) => {
           const transaction = row.original
           if (!transaction.reference) {
@@ -248,6 +250,7 @@ export default function TransactionsHistoryPage() {
         id: 'description',
         header: 'Description',
         accessorKey: 'description',
+        meta: { mobileHidden: true },
         cell: ({ row }) => {
           const transaction = row.original
           return (
@@ -278,6 +281,7 @@ export default function TransactionsHistoryPage() {
       {
         id: 'from_to',
         header: 'From / To',
+        meta: { mobileHidden: true },
         cell: ({ row }) => {
           const transaction = row.original
           return (

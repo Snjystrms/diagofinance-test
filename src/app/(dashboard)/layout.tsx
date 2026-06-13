@@ -86,7 +86,7 @@ export default function DashboardLayout({
         <SidebarInset>
           <Header />
           <DashboardBreadcrumbs />
-          <main className="flex-1 overflow-y-auto bg-background">
+          <main className="flex-1 overflow-y-auto bg-background p-3 sm:p-4 md:p-5 lg:p-6">
             <div className="w-full max-w-none">
               {children}
             </div>

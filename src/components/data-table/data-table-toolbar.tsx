@@ -38,7 +38,7 @@ export function DataTableToolbar<TData>({
       role="toolbar"
       aria-orientation="horizontal"
       className={cn(
-        "flex w-full items-start justify-between gap-2 p-1",
+        "flex w-full flex-col gap-2 p-1 sm:flex-row sm:items-start sm:justify-between sm:gap-2",
         className,
       )}
       {...props}
@@ -87,7 +87,7 @@ function DataTableToolbarFilter<TData>({
               placeholder={columnMeta.placeholder ?? columnMeta.label}
               value={(column.getFilterValue() as string) ?? ""}
               onChange={(event) => column.setFilterValue(event.target.value)}
-              className="h-8 w-40 lg:w-56"
+              className="h-8 w-full sm:w-40 lg:w-56"
             />
           );
 

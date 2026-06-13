@@ -160,7 +160,7 @@ export default function IbCommissionsPage() {
 
                   <AccordionContent className="pb-5">
                     {accountTypeCommissions.length > 0 ? (
-                      <div className="overflow-hidden rounded-[24px] border border-border/60 bg-card shadow-sm">
+                      <div className="overflow-x-auto rounded-[24px] border border-border/60 bg-card shadow-sm">
                         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 bg-muted/25 px-5 py-4">
                           <div>
                             {/* <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">

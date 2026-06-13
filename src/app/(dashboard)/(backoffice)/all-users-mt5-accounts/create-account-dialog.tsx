@@ -14,8 +14,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/contexts/auth-context";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
-import { accountTypesApi, adminGroupsApi, adminUsersApi } from "@/lib/api";
-import type { AccountType, AdminGroupItem, CreateMT5AccountRequest, PendingUser } from "@/lib/api";
+import { accountTypesApi, adminUsersApi } from "@/lib/api";
+import type { AccountType, CreateMT5AccountRequest, PendingUser } from "@/lib/api";
 
 interface CreateAccountDialogProps {
   open: boolean;
@@ -24,7 +24,7 @@ interface CreateAccountDialogProps {
 }
 
 type CreateAccountFormState = CreateMT5AccountRequest & {
-  confirm_main_password: string;
+  confirm_password: string;
 };
 
 export function CreateAccountDialog({
@@ -36,14 +36,11 @@ export function CreateAccountDialog({
   const [formData, setFormData] = useState<CreateAccountFormState>({
     user_id: 0,
     account_type_id: 0,
-    group_id: 1,
     leverage: 100,
     account_mode: "demo",
-    main_password: "",
-    investor_password: "",
+    password: "",
+    confirm_password: "",
     balance: 10000,
-    extra_fields: {},
-    confirm_main_password: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userSearchQuery, setUserSearchQuery] = useState("");
@@ -52,17 +49,12 @@ export function CreateAccountDialog({
   const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null);
   const [accountTypes, setAccountTypes] = useState<AccountType[]>([]);
   const [loadingAccountTypes, setLoadingAccountTypes] = useState(false);
-  const [groups, setGroups] = useState<AdminGroupItem[]>([]);
-  const [loadingGroups, setLoadingGroups] = useState(false);
-  const [selectedAccountType, setSelectedAccountType] = useState<AccountType | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showInvestorPassword, setShowInvestorPassword] = useState(false);
 
   useEffect(() => {
     if (open && token) {
       void loadAccountTypes();
-      void loadGroups();
     }
   }, [open, token]);
 
@@ -88,27 +80,6 @@ export function CreateAccountDialog({
       );
     } finally {
       setLoadingAccountTypes(false);
-    }
-  };
-
-  const loadGroups = async () => {
-    if (!token) return;
-
-    try {
-      setLoadingGroups(true);
-      const response = await adminGroupsApi.list(token);
-      const groupsList = Array.isArray(response?.data) ? response.data : [];
-      setGroups(groupsList);
-    } catch (error) {
-      console.error("Failed to load groups:", error);
-      toast.error(
-        getAdminFriendlyErrorMessage(error, {
-          resource: "groups",
-          action: "load",
-        })
-      );
-    } finally {
-      setLoadingGroups(false);
     }
   };
 
@@ -169,20 +140,15 @@ export function CreateAccountDialog({
     setFormData({
       user_id: 0,
       account_type_id: 0,
-      group_id: 1,
       leverage: 100,
       account_mode: "demo",
-      main_password: "",
-      investor_password: "",
+      password: "",
+      confirm_password: "",
       balance: 10000,
-      extra_fields: {},
-      confirm_main_password: "",
     });
     setSelectedUser(null);
-    setSelectedAccountType(null);
     setUserSearchQuery("");
     setUsers([]);
-    setGroups([]);
   }, [open]);
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -198,17 +164,12 @@ export function CreateAccountDialog({
       return;
     }
 
-    if (!formData.group_id || formData.group_id === 0) {
-      toast.error("Please select a group");
-      return;
-    }
-
-    if (!formData.main_password || formData.main_password.length < 6) {
+    if (!formData.password || formData.password.length < 6) {
       toast.error("Password must be at least 6 characters");
       return;
     }
 
-    if (formData.main_password !== formData.confirm_main_password) {
+    if (formData.password !== formData.confirm_password) {
       toast.error("Passwords do not match");
       return;
     }
@@ -223,12 +184,10 @@ export function CreateAccountDialog({
       const payload: CreateMT5AccountRequest = {
         user_id: formData.user_id,
         account_type_id: formData.account_type_id,
-        group_id: formData.group_id,
         leverage: formData.leverage,
         account_mode: formData.account_mode,
-        main_password: formData.main_password,
-        investor_password: formData.investor_password,
-        extra_fields: formData.extra_fields,
+        password: formData.password,
+        confirm_password: formData.confirm_password,
       };
 
       if (formData.account_mode === "demo") {
@@ -294,13 +253,11 @@ export function CreateAccountDialog({
               <div className="space-y-2">
                 <Label>Account Type *</Label>
                 <Select
-                  value={selectedAccountType?.id ? String(selectedAccountType.id) : ""}
+                  value={formData.account_type_id ? String(formData.account_type_id) : ""}
                   onValueChange={(value) => {
-                    const type = accountTypes.find((item) => String(item.id) === value) || null;
-                    setSelectedAccountType(type);
                     setFormData((prev) => ({
                       ...prev,
-                      account_type_id: type ? Number(type.id) : 0,
+                      account_type_id: value ? Number(value) : 0,
                     }));
                   }}
                   disabled={loadingAccountTypes || accountTypes.length === 0}
@@ -316,11 +273,11 @@ export function CreateAccountDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {accountTypes.map((type) => (
-                      <SelectItem key={type.id} value={String(type.id)}>
+                      <SelectItem key={`${type.id}-${type.mode}`} value={String(type.id)}>
                         <div className="flex flex-col">
                           <span>{type.name}</span>
                           <span className="text-xs text-muted-foreground">
-                            Leverage: {type.maximum_leverage} | Spread: {type.spread_from}
+                            Leverage: {type.maximum_leverage} | Mode: {type.mode}
                           </span>
                         </div>
                       </SelectItem>
@@ -350,34 +307,6 @@ export function CreateAccountDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="group_id">Group ID *</Label>
-                <Select
-                  value={formData.group_id ? String(formData.group_id) : ""}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, group_id: value ? Number(value) : 0 }))
-                  }
-                  disabled={loadingGroups || groups.length === 0}
-                >
-                  <SelectTrigger id="group_id" className="w-full">
-                    <SelectValue
-                      placeholder={
-                        loadingGroups ? "Loading groups..." : "Select group..."
-                      }
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {groups.map((group) => (
-                      <SelectItem key={group.id} value={String(group.id)}>
-                        {group.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
                 <Label htmlFor="leverage">Leverage *</Label>
                 <Input
                   id="leverage"
@@ -393,37 +322,37 @@ export function CreateAccountDialog({
                   required
                 />
               </div>
-
-              {formData.account_mode === "demo" && (
-                <div className="space-y-2">
-                  <Label htmlFor="balance">Balance *</Label>
-                  <Input
-                    id="balance"
-                    type="number"
-                    value={formData.balance || ""}
-                    onChange={(event) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        balance: event.target.value ? Number(event.target.value) : 0,
-                      }))
-                    }
-                    placeholder="Enter balance"
-                    required
-                  />
-                </div>
-              )}
             </div>
+
+            {formData.account_mode === "demo" && (
+              <div className="space-y-2">
+                <Label htmlFor="balance">Balance *</Label>
+                <Input
+                  id="balance"
+                  type="number"
+                  value={formData.balance || ""}
+                  onChange={(event) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      balance: event.target.value ? Number(event.target.value) : 0,
+                    }))
+                  }
+                  placeholder="Enter balance"
+                  required
+                />
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="main_password">Main Password *</Label>
+                <Label htmlFor="password">Password *</Label>
                 <div className="relative">
                   <Input
-                    id="main_password"
+                    id="password"
                     type={showPassword ? "text" : "password"}
-                    value={formData.main_password}
+                    value={formData.password}
                     onChange={(event) =>
-                      setFormData((prev) => ({ ...prev, main_password: event.target.value }))
+                      setFormData((prev) => ({ ...prev, password: event.target.value }))
                     }
                     placeholder="Enter password"
                     required
@@ -442,14 +371,14 @@ export function CreateAccountDialog({
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="confirm_main_password">Confirm Main Password *</Label>
+                <Label htmlFor="confirm_password">Confirm Password *</Label>
                 <div className="relative">
                   <Input
-                    id="confirm_main_password"
+                    id="confirm_password"
                     type={showConfirmPassword ? "text" : "password"}
-                    value={formData.confirm_main_password}
+                    value={formData.confirm_password}
                     onChange={(event) =>
-                      setFormData((prev) => ({ ...prev, confirm_main_password: event.target.value }))
+                      setFormData((prev) => ({ ...prev, confirm_password: event.target.value }))
                     }
                     placeholder="Confirm password"
                     required
@@ -463,34 +392,6 @@ export function CreateAccountDialog({
                     onClick={() => setShowConfirmPassword((prev) => !prev)}
                   >
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="investor_password">Investor Password *</Label>
-                <div className="relative">
-                  <Input
-                    id="investor_password"
-                    type={showInvestorPassword ? "text" : "password"}
-                    value={formData.investor_password}
-                    onChange={(event) =>
-                      setFormData((prev) => ({ ...prev, investor_password: event.target.value }))
-                    }
-                    placeholder="Enter investor password"
-                    required
-                    minLength={6}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
-                    onClick={() => setShowInvestorPassword((prev) => !prev)}
-                  >
-                    {showInvestorPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>

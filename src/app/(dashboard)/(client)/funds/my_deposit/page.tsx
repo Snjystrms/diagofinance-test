@@ -303,6 +303,7 @@ const columns: ColumnDef<DepositListItem>[] = [
   {
     id: 'source',
     accessorKey: 'source',
+    meta: { mobileHidden: true },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Source" />
     ),
@@ -313,6 +314,7 @@ const columns: ColumnDef<DepositListItem>[] = [
   {
     id: 'transaction_hash',
     accessorKey: 'transaction_hash',
+    meta: { mobileHidden: true },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Transaction Hash" />
     ),
@@ -321,6 +323,7 @@ const columns: ColumnDef<DepositListItem>[] = [
   {
     id: 'file',
     accessorKey: 'file',
+    meta: { mobileHidden: true },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Payment Proof" />
     ),
@@ -331,6 +334,7 @@ const columns: ColumnDef<DepositListItem>[] = [
   {
     id: 'admin_comment',
     accessorKey: 'admin_comment',
+    meta: { mobileHidden: true },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Admin Notes" />
     ),
@@ -581,7 +585,7 @@ export default function MyDepositPage() {
             />
           </div>
 
-          <div className="grid gap-3 grid-cols-2 xl:grid-cols-5 w-full">
+          <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 w-full">
             <div className="space-y-1.5">
               <Label htmlFor="status-filter" className="text-xs font-medium text-muted-foreground">Status</Label>
               <Select

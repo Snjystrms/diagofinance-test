@@ -91,7 +91,7 @@ export function DataTableSkeleton({
     >
       {withToolbar ? (
         <div
-          className="overflow-hidden rounded-[18px] border"
+          className="overflow-x-auto rounded-[18px] border"
           style={{
             borderColor: "var(--skeleton-stroke)",
             backgroundColor: "var(--skeleton-panel-strong)",
@@ -123,11 +123,11 @@ export function DataTableSkeleton({
         </div>
       ) : null}
       <div
-        className="overflow-hidden rounded-[18px] border"
-        style={{
-          borderColor: "var(--skeleton-stroke)",
-          backgroundColor: "var(--skeleton-panel)",
-        }}
+className="overflow-x-auto rounded-[18px] border"
+          style={{
+            borderColor: "var(--skeleton-stroke)",
+            backgroundColor: "var(--skeleton-panel)",
+          }}
       >
         <Table>
           <TableHeader>

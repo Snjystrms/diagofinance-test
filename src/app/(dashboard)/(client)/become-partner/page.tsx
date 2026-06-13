@@ -317,7 +317,7 @@ export default function BecomePartnerPage() {
           <div className="pointer-events-none absolute -right-20 -top-20 h-64 w-64 rounded-full bg-primary/8 blur-3xl" />
           <div className="pointer-events-none absolute -bottom-16 left-0 h-48 w-48 rounded-full bg-accent/10 blur-2xl" />
 
-          <div className="relative grid gap-8 lg:grid-cols-3 lg:items-center">
+          <div className="relative grid gap-8 sm:grid-cols-2 lg:grid-cols-3 lg:items-center">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">
                 Ready to grow?

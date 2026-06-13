@@ -213,6 +213,7 @@ const columns: ColumnDef<WithdrawalItem>[] = [
   {
     id: 'chain_id',
     accessorKey: 'chain_id',
+    meta: { mobileHidden: true },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Network" />
     ),
@@ -221,6 +222,7 @@ const columns: ColumnDef<WithdrawalItem>[] = [
   {
     id: 'wallet_address',
     accessorKey: 'wallet_address',
+    meta: { mobileHidden: true },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Wallet Address" />
     ),

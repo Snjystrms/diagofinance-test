@@ -1305,7 +1305,7 @@ export function DashboardPageContent() {
           {isCustomDashboard === 'normal' ? (
             <>
               {/* Key Metrics Summary Row */}
-              <div className="grid gap-4 sm:grid-cols-3 mb-6">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6">
                 {/* Total Deposits Card */}
                 <Link href="/funds/my_deposit" aria-label="View deposits" className="block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
                 <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary">

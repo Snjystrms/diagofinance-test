@@ -378,6 +378,7 @@ export default function RaiseTicketPage() {
         id: "enquiry_type",
         header: "Type",
         accessorFn: (row) => row.enquiry_type,
+        meta: { mobileHidden: true },
         cell: ({ row }) => {
           const ticket = row.original;
           return (
@@ -408,6 +409,7 @@ export default function RaiseTicketPage() {
       {
         id: "reply_note",
         header: "Response",
+        meta: { mobileHidden: true },
         cell: ({ row }) => {
           const ticket = row.original;
           if (!ticket.reply_note) {
