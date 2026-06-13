@@ -29,16 +29,15 @@ import {
   type InternalTransferType,
 } from "@/lib/api-admin-transactions";
 import { adminMT5AccountsApi, type AdminMT5Account } from "@/lib/api";
-import { adminUsersApi, type PendingUser } from "@/lib/api-auth-admin";
+import { adminUsersApi, type PendingUser, type AdminWalletBalanceItem } from "@/lib/api-auth-admin";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 const TRANSFER_TYPE_OPTIONS: { value: InternalTransferType; label: string }[] = [
   { value: "mt5_to_mt5", label: "MT5 to MT5" },
   { value: "main_to_mt5", label: "Main Wallet to MT5" },
+  { value: "mt5_to_main", label: "MT5 to Main Wallet" },
   { value: "ib_to_main", label: "IB Wallet to Main Wallet" },
 ];
-
-type SearchMode = "mt5" | "user";
 
 interface InternalTransferDialogProps {
   open: boolean;
@@ -66,202 +65,141 @@ function extractMt5Accounts(res: unknown): AdminMT5Account[] {
 
 export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }: InternalTransferDialogProps) {
   const [transferType, setTransferType] = useState<InternalTransferType>("mt5_to_mt5");
-  const [fromAccount, setFromAccount] = useState("");
-  const [fromAccountId, setFromAccountId] = useState("");
-  const [toAccount, setToAccount] = useState("");
-  const [toAccountId, setToAccountId] = useState("");
+  const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null);
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+  const [userSearchResults, setUserSearchResults] = useState<PendingUser[]>([]);
+  const [searchingUsers, setSearchingUsers] = useState(false);
+  const [showUserResults, setShowUserResults] = useState(false);
+  const [fromMt5Account, setFromMt5Account] = useState("");
+  const [toMt5Account, setToMt5Account] = useState("");
+  const [userMt5Accounts, setUserMt5Accounts] = useState<AdminMT5Account[]>([]);
+  const [loadingMt5Accounts, setLoadingMt5Accounts] = useState(false);
   const [amount, setAmount] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [walletBalances, setWalletBalances] = useState<AdminWalletBalanceItem[]>([]);
+  const [loadingWallets, setLoadingWallets] = useState(false);
+  const userSearchRef = useRef<HTMLDivElement>(null);
+  const userSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const [fromMt5Accounts, setFromMt5Accounts] = useState<AdminMT5Account[]>([]);
-  const [toMt5Accounts, setToMt5Accounts] = useState<AdminMT5Account[]>([]);
-  const [fromUsers, setFromUsers] = useState<PendingUser[]>([]);
-  const [toUsers, setToUsers] = useState<PendingUser[]>([]);
-  const [loadingFrom, setLoadingFrom] = useState(false);
-  const [loadingTo, setLoadingTo] = useState(false);
-  const [showFromResults, setShowFromResults] = useState(false);
-  const [showToResults, setShowToResults] = useState(false);
-  const fromSearchRef = useRef<HTMLDivElement>(null);
-  const toSearchRef = useRef<HTMLDivElement>(null);
-  const fromTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const toTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isMt5ToMt5 = transferType === "mt5_to_mt5";
+  const isUserBasedTransfer = transferType === "main_to_mt5" || transferType === "mt5_to_main" || transferType === "ib_to_main";
 
-  const fromMode: SearchMode = transferType === "mt5_to_mt5" ? "mt5" : "user";
-  const toMode: SearchMode = transferType === "ib_to_main" ? "user" : "mt5";
-
-  const searchFromMt5 = useCallback(async (q: string) => {
+  const searchUsers = useCallback(async (q: string) => {
     const trimmed = q.trim();
-    if (!token || trimmed.length < 3) { setFromMt5Accounts([]); return; }
+    if (!token || trimmed.length < 3) { setUserSearchResults([]); return; }
     try {
-      setLoadingFrom(true);
-      const res = await adminMT5AccountsApi.list({ token, search: trimmed, limit: 10 });
-      setFromMt5Accounts(extractMt5Accounts(res.data ?? res));
-      setShowFromResults(true);
-    } catch { setFromMt5Accounts([]); } finally { setLoadingFrom(false); }
-  }, [token]);
-
-  const searchToMt5 = useCallback(async (q: string) => {
-    const trimmed = q.trim();
-    if (!token || trimmed.length < 3) { setToMt5Accounts([]); return; }
-    try {
-      setLoadingTo(true);
-      const res = await adminMT5AccountsApi.list({ token, search: trimmed, limit: 10 });
-      setToMt5Accounts(extractMt5Accounts(res.data ?? res));
-      setShowToResults(true);
-    } catch { setToMt5Accounts([]); } finally { setLoadingTo(false); }
-  }, [token]);
-
-  const searchFromUser = useCallback(async (q: string) => {
-    const trimmed = q.trim();
-    if (!token || trimmed.length < 3) { setFromUsers([]); return; }
-    try {
-      setLoadingFrom(true);
+      setSearchingUsers(true);
       const res = await adminUsersApi.list({ token, search: trimmed, limit: 10 });
       const list = (res.data as { users?: PendingUser[] })?.users ?? [];
-      setFromUsers(list);
-      setShowFromResults(true);
-    } catch { setFromUsers([]); } finally { setLoadingFrom(false); }
+      setUserSearchResults(list);
+      setShowUserResults(true);
+    } catch { setUserSearchResults([]); } finally { setSearchingUsers(false); }
   }, [token]);
 
-  const searchToUser = useCallback(async (q: string) => {
-    const trimmed = q.trim();
-    if (!token || trimmed.length < 3) { setToUsers([]); return; }
+  const handleUserSearchChange = (value: string) => {
+    setUserSearchQuery(value);
+    setSelectedUser(null);
+    if (userSearchTimerRef.current !== null) clearTimeout(userSearchTimerRef.current);
+    if (value.trim().length >= 3) {
+      userSearchTimerRef.current = setTimeout(() => searchUsers(value), 300);
+    } else {
+      setUserSearchResults([]);
+      setShowUserResults(false);
+    }
+  };
+
+  const handleSelectUser = (user: PendingUser) => {
+    setSelectedUser(user);
+    setUserSearchQuery(user.name || user.first_name || user.email || String(user.id));
+    setShowUserResults(false);
+    setUserSearchResults([]);
+    setFromMt5Account("");
+    setToMt5Account("");
+
+    if (isUserBasedTransfer) {
+      fetchWalletBalances(user.id);
+    } else if (isMt5ToMt5) {
+      fetchUserMt5Accounts(user.id);
+    }
+  };
+
+  const handleClearUser = () => {
+    setSelectedUser(null);
+    setUserSearchQuery("");
+    setUserSearchResults([]);
+    setFromMt5Account("");
+    setToMt5Account("");
+    setUserMt5Accounts([]);
+    setWalletBalances([]);
+  };
+
+  const fetchUserMt5Accounts = useCallback(async (userId: number) => {
     try {
-      setLoadingTo(true);
-      const res = await adminUsersApi.list({ token, search: trimmed, limit: 10 });
-      const list = (res.data as { users?: PendingUser[] })?.users ?? [];
-      setToUsers(list);
-      setShowToResults(true);
-    } catch { setToUsers([]); } finally { setLoadingTo(false); }
+      setLoadingMt5Accounts(true);
+      const res = await adminMT5AccountsApi.list({ token, user_id: userId, limit: 100 });
+      setUserMt5Accounts(extractMt5Accounts(res.data ?? res));
+    } catch { setUserMt5Accounts([]); } finally { setLoadingMt5Accounts(false); }
   }, [token]);
 
-  const handleFromChange = (value: string) => {
-    setFromAccount(value);
-    setFromAccountId("");
-    if (transferType === "ib_to_main") { setToAccount(""); setToAccountId(""); }
-    if (fromTimerRef.current !== null) clearTimeout(fromTimerRef.current);
-    if (value.trim().length >= 3) {
-      const fn = fromMode === "mt5" ? searchFromMt5 : searchFromUser;
-      fromTimerRef.current = setTimeout(() => fn(value), 300);
-    } else {
-      setFromMt5Accounts([]);
-      setFromUsers([]);
-      setShowFromResults(false);
+  const fetchWalletBalances = useCallback(async (userId: number) => {
+    try {
+      setLoadingWallets(true);
+      const res = await adminUsersApi.walletBalances(userId, token);
+      if (res.data?.wallets) {
+        setWalletBalances(res.data.wallets);
+      }
+    } catch {
+      setWalletBalances([]);
+    } finally {
+      setLoadingWallets(false);
     }
-  };
-
-  const handleToChange = (value: string) => {
-    setToAccount(value);
-    setToAccountId("");
-    if (transferType === "ib_to_main") { setFromAccount(""); setFromAccountId(""); }
-    if (toTimerRef.current !== null) clearTimeout(toTimerRef.current);
-    if (value.trim().length >= 3) {
-      const fn = toMode === "mt5" ? searchToMt5 : searchToUser;
-      toTimerRef.current = setTimeout(() => fn(value), 300);
-    } else {
-      setToMt5Accounts([]);
-      setToUsers([]);
-      setShowToResults(false);
-    }
-  };
-
-  const handleFromSelectMt5 = (account: AdminMT5Account) => {
-    const val = String(account.account_id ?? account.id ?? "");
-    setFromAccount(val);
-    setFromAccountId(val);
-    setShowFromResults(false);
-    setFromMt5Accounts([]);
-  };
-
-  const handleFromSelectUser = (user: PendingUser) => {
-    const label = `${user.name || user.first_name || "Unknown"} (${user.email})`;
-    const id = String(user.id);
-    setFromAccount(label);
-    setFromAccountId(id);
-    setShowFromResults(false);
-    setFromUsers([]);
-
-    if (transferType === "ib_to_main") {
-      setToAccount(label);
-      setToAccountId(id);
-    }
-  };
-
-  const handleToSelectMt5 = (account: AdminMT5Account) => {
-    const val = String(account.account_id ?? account.id ?? "");
-    setToAccount(val);
-    setToAccountId(val);
-    setShowToResults(false);
-    setToMt5Accounts([]);
-  };
-
-  const handleToSelectUser = (user: PendingUser) => {
-    const label = `${user.name || user.first_name || "Unknown"} (${user.email})`;
-    const id = String(user.id);
-    setToAccount(label);
-    setToAccountId(id);
-    setShowToResults(false);
-    setToUsers([]);
-
-    if (transferType === "ib_to_main") {
-      setFromAccount(label);
-      setFromAccountId(id);
-    }
-  };
+  }, [token]);
 
   useEffect(() => {
     if (!open) {
       setTransferType("mt5_to_mt5");
-      setFromAccount("");
-      setFromAccountId("");
-      setToAccount("");
-      setToAccountId("");
+      setSelectedUser(null);
+      setUserSearchQuery("");
+      setUserSearchResults([]);
+      setFromMt5Account("");
+      setToMt5Account("");
+      setUserMt5Accounts([]);
       setAmount("");
-      setFromMt5Accounts([]);
-      setToMt5Accounts([]);
-      setFromUsers([]);
-      setToUsers([]);
-      setShowFromResults(false);
-      setShowToResults(false);
       setSubmitting(false);
+      setWalletBalances([]);
     }
   }, [open]);
 
   useEffect(() => {
-    setFromAccount("");
-    setFromAccountId("");
-    setToAccount("");
-    setToAccountId("");
-    setFromMt5Accounts([]);
-    setToMt5Accounts([]);
-    setFromUsers([]);
-    setToUsers([]);
-    setShowFromResults(false);
-    setShowToResults(false);
+    setSelectedUser(null);
+    setUserSearchQuery("");
+    setUserSearchResults([]);
+    setFromMt5Account("");
+    setToMt5Account("");
+    setUserMt5Accounts([]);
+    setShowUserResults(false);
+    setWalletBalances([]);
   }, [transferType]);
 
   useEffect(() => {
-    const handleClick = (e: MouseEvent) => {
-      if (fromSearchRef.current && !fromSearchRef.current.contains(e.target as Node)) {
-        setShowFromResults(false);
+    if (selectedUser) {
+      if (isMt5ToMt5) {
+        fetchUserMt5Accounts(selectedUser.id);
+      } else if (isUserBasedTransfer) {
+        fetchWalletBalances(selectedUser.id);
       }
-      if (toSearchRef.current && !toSearchRef.current.contains(e.target as Node)) {
-        setShowToResults(false);
+    }
+  }, [selectedUser, transferType, isMt5ToMt5, isUserBasedTransfer, fetchUserMt5Accounts, fetchWalletBalances]);
+
+  useEffect(() => {
+    const handleClick = (e: MouseEvent) => {
+      if (userSearchRef.current && !userSearchRef.current.contains(e.target as Node)) {
+        setShowUserResults(false);
       }
     };
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
-
-  const getFromPlaceholder = () => {
-    if (fromMode === "mt5") return "Type at least 3 letters to search MT5 accounts";
-    return "Type at least 3 letters to search users";
-  };
-
-  const getToPlaceholder = () => {
-    if (toMode === "mt5") return "Type at least 3 letters to search MT5 accounts";
-    return "Type at least 3 letters to search users";
-  };
 
   const handleSubmit = async () => {
     const numAmount = parseFloat(amount);
@@ -269,25 +207,26 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
       toast.error("Please enter a valid amount");
       return;
     }
-    if (!fromAccount.trim()) {
-      toast.error("Please enter the from account");
+    if (!selectedUser) {
+      toast.error("Please select a user");
       return;
     }
-    if (!toAccount.trim()) {
-      toast.error("Please enter the to account");
+    if (!fromMt5Account.trim()) {
+      toast.error("Please select the from account");
+      return;
+    }
+    if (!toMt5Account.trim()) {
+      toast.error("Please select the to account");
       return;
     }
 
     try {
       setSubmitting(true);
-      const submitFrom = (fromAccountId || fromAccount).trim();
-      const submitTo = (toAccountId || toAccount).trim();
-
       const res = await adminTransactionsApi.internalTransfer(
         {
           amount: numAmount,
-          from_account: submitFrom,
-          to_account: submitTo,
+          from_account: fromMt5Account.trim(),
+          to_account: toMt5Account.trim(),
           type: transferType,
         },
         token
@@ -301,55 +240,23 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
     }
   };
 
-  const renderFromResults = () => {
-    if (fromMode === "mt5") {
-      if (loadingFrom) {
-        return <div className="flex items-center justify-center gap-2 px-3 py-4 text-sm text-muted-foreground"><Spinner className="h-4 w-4" size="sm" />Searching MT5 accounts...</div>;
-      }
-      if (fromMt5Accounts.length === 0) {
-        return <div className="px-3 py-4 text-center text-sm text-muted-foreground">{fromAccount.trim().length < 3 ? "Type at least 3 letters to search." : "No MT5 accounts found."}</div>;
-      }
-      return (
-        <div className="divide-y divide-border/50">
-          {fromMt5Accounts.map((acc) => {
-            const val = String(acc.account_id ?? acc.id ?? "");
-            return (
-              <button
-                key={val}
-                type="button"
-                className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/50"
-                onMouseDown={(e) => { e.preventDefault(); handleFromSelectMt5(acc); }}
-              >
-                <Check className={cn("h-4 w-4 shrink-0", fromAccount === val ? "text-primary opacity-100" : "opacity-0")} />
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-foreground">{val}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {[acc.name || acc.first_name, acc.email].filter(Boolean).join(" - ") || "No details"}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      );
-    }
-
-    if (loadingFrom) {
+  const renderUserSearchResults = () => {
+    if (searchingUsers) {
       return <div className="flex items-center justify-center gap-2 px-3 py-4 text-sm text-muted-foreground"><Spinner className="h-4 w-4" size="sm" />Searching users...</div>;
     }
-    if (fromUsers.length === 0) {
-      return <div className="px-3 py-4 text-center text-sm text-muted-foreground">{fromAccount.trim().length < 3 ? "Type at least 3 letters to search." : "No users found."}</div>;
+    if (userSearchResults.length === 0) {
+      return <div className="px-3 py-4 text-center text-sm text-muted-foreground">{userSearchQuery.trim().length < 3 ? "Type at least 3 letters to search." : "No users found."}</div>;
     }
     return (
       <div className="divide-y divide-border/50">
-        {fromUsers.map((u) => (
+        {userSearchResults.map((u) => (
           <button
             key={u.id}
             type="button"
             className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/50"
-            onMouseDown={(e) => { e.preventDefault(); handleFromSelectUser(u); }}
+            onMouseDown={(e) => { e.preventDefault(); handleSelectUser(u); }}
           >
-            <Check className={cn("h-4 w-4 shrink-0", fromAccount === String(u.id) ? "text-primary opacity-100" : "opacity-0")} />
+            <Check className={cn("h-4 w-4 shrink-0", selectedUser?.id === u.id ? "text-primary opacity-100" : "opacity-0")} />
             <div className="min-w-0">
               <p className="truncate font-medium text-foreground">{u.name || u.first_name || "Unknown"}</p>
               <p className="truncate text-xs text-muted-foreground">{u.email}</p>
@@ -360,62 +267,42 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
     );
   };
 
-  const renderToResults = () => {
-    if (toMode === "mt5") {
-      if (loadingTo) {
-        return <div className="flex items-center justify-center gap-2 px-3 py-4 text-sm text-muted-foreground"><Spinner className="h-4 w-4" size="sm" />Searching MT5 accounts...</div>;
-      }
-      if (toMt5Accounts.length === 0) {
-        return <div className="px-3 py-4 text-center text-sm text-muted-foreground">{toAccount.trim().length < 3 ? "Type at least 3 letters to search." : "No MT5 accounts found."}</div>;
-      }
+  const renderMt5AccountSelect = (value: string, onChange: (val: string) => void, label: string) => {
+    if (loadingMt5Accounts) {
       return (
-        <div className="divide-y divide-border/50">
-          {toMt5Accounts.map((acc) => {
-            const val = String(acc.account_id ?? acc.id ?? "");
-            return (
-              <button
-                key={val}
-                type="button"
-                className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/50"
-                onMouseDown={(e) => { e.preventDefault(); handleToSelectMt5(acc); }}
-              >
-                <Check className={cn("h-4 w-4 shrink-0", toAccount === val ? "text-primary opacity-100" : "opacity-0")} />
-                <div className="min-w-0">
-                  <p className="truncate font-medium text-foreground">{val}</p>
-                  <p className="truncate text-xs text-muted-foreground">
-                    {[acc.name || acc.first_name, acc.email].filter(Boolean).join(" - ") || "No details"}
-                  </p>
-                </div>
-              </button>
-            );
-          })}
+        <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+          <Spinner className="h-4 w-4" size="sm" />
+          Loading MT5 accounts...
         </div>
       );
     }
 
-    if (loadingTo) {
-      return <div className="flex items-center justify-center gap-2 px-3 py-4 text-sm text-muted-foreground"><Spinner className="h-4 w-4" size="sm" />Searching users...</div>;
+    if (userMt5Accounts.length === 0) {
+      return <p className="text-sm text-muted-foreground py-2">No MT5 accounts found for this user</p>;
     }
-    if (toUsers.length === 0) {
-      return <div className="px-3 py-4 text-center text-sm text-muted-foreground">{toAccount.trim().length < 3 ? "Type at least 3 letters to search." : "No users found."}</div>;
-    }
+
     return (
-      <div className="divide-y divide-border/50">
-        {toUsers.map((u) => (
-          <button
-            key={u.id}
-            type="button"
-            className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/50"
-            onMouseDown={(e) => { e.preventDefault(); handleToSelectUser(u); }}
-          >
-            <Check className={cn("h-4 w-4 shrink-0", toAccount === String(u.id) ? "text-primary opacity-100" : "opacity-0")} />
-            <div className="min-w-0">
-              <p className="truncate font-medium text-foreground">{u.name || u.first_name || "Unknown"}</p>
-              <p className="truncate text-xs text-muted-foreground">{u.email}</p>
-            </div>
-          </button>
-        ))}
-      </div>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger>
+          <SelectValue placeholder={`Select ${label}`} />
+        </SelectTrigger>
+        <SelectContent>
+          {userMt5Accounts.map((acc) => {
+            const accId = String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "");
+            const accBalance = acc.self_wallet ?? 0;
+            return (
+              <SelectItem key={accId} value={accId}>
+                <div className="flex flex-col">
+                  <span>{accId}</span>
+                  <span className="text-xs text-muted-foreground">
+                    Balance: {Number(accBalance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                  </span>
+                </div>
+              </SelectItem>
+            );
+          })}
+        </SelectContent>
+      </Select>
     );
   };
 
@@ -445,28 +332,25 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
           </div>
 
           <div className="space-y-2">
-            <Label>From Account</Label>
-            <div ref={fromSearchRef} className="relative">
+            <Label>Select User</Label>
+            <div ref={userSearchRef} className="relative">
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  value={fromAccount}
-                  placeholder={getFromPlaceholder()}
+                  value={userSearchQuery}
+                  placeholder="Type at least 3 letters to search users"
                   autoComplete="off"
                   className="pl-9 pr-9"
-                  onChange={(e) => handleFromChange(e.target.value)}
-                  onFocus={() => {
-                    if (fromMode === "mt5" && fromMt5Accounts.length > 0) setShowFromResults(true);
-                    if (fromMode === "user" && fromUsers.length > 0) setShowFromResults(true);
-                  }}
+                  onChange={(e) => handleUserSearchChange(e.target.value)}
+                  onFocus={() => { if (userSearchResults.length > 0) setShowUserResults(true); }}
                 />
-                {loadingFrom ? (
+                {searchingUsers ? (
                   <Spinner className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" size="sm" />
-                ) : fromAccount ? (
+                ) : userSearchQuery ? (
                   <button
                     type="button"
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    onClick={() => { setFromAccount(""); setFromAccountId(""); setFromMt5Accounts([]); setFromUsers([]); setShowFromResults(false); if (transferType === "ib_to_main") { setToAccount(""); setToAccountId(""); } }}
+                    onClick={handleClearUser}
                     tabIndex={-1}
                   >
                     <X className="h-4 w-4" />
@@ -474,72 +358,198 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
                 ) : null}
               </div>
 
-              {showFromResults && (
+              {showUserResults && (
                 <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-border/60 bg-popover shadow-lg">
-                  {renderFromResults()}
+                  {renderUserSearchResults()}
                 </div>
               )}
             </div>
+
+            {selectedUser && (
+              <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2 text-sm">
+                <span className="font-medium">{selectedUser.name || selectedUser.first_name}</span>
+                <span className="text-muted-foreground">({selectedUser.email})</span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="ml-auto h-6 w-6"
+                  onClick={handleClearUser}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              </div>
+            )}
           </div>
 
-          <div className="space-y-2">
-            <Label>To Account</Label>
-            <div ref={toSearchRef} className="relative">
-              <div className="relative">
-                <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={toAccount}
-                  placeholder={getToPlaceholder()}
-                  autoComplete="off"
-                  className="pl-9 pr-9"
-                  disabled={transferType === "ib_to_main"}
-                  onChange={(e) => handleToChange(e.target.value)}
-                  onFocus={() => {
-                    if (toMode === "mt5" && toMt5Accounts.length > 0) setShowToResults(true);
-                    if (toMode === "user" && toUsers.length > 0) setShowToResults(true);
-                  }}
-                />
-                {transferType !== "ib_to_main" && loadingTo ? (
-                  <Spinner className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" size="sm" />
-                ) : transferType !== "ib_to_main" && toAccount ? (
-                  <button
-                    type="button"
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    onClick={() => { setToAccount(""); setToAccountId(""); setToMt5Accounts([]); setToUsers([]); setShowToResults(false); }}
-                    tabIndex={-1}
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                ) : null}
+          {selectedUser && isMt5ToMt5 && (
+            <>
+              <div className="space-y-2">
+                <Label>From MT5 Account</Label>
+                {renderMt5AccountSelect(fromMt5Account, (val) => setFromMt5Account(val), "From Account")}
               </div>
 
-              {showToResults && (
-                <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-border/60 bg-popover shadow-lg">
-                  {renderToResults()}
+              <div className="space-y-2">
+                <Label>To MT5 Account</Label>
+                {renderMt5AccountSelect(toMt5Account, (val) => setToMt5Account(val), "To Account")}
+              </div>
+            </>
+          )}
+
+          {selectedUser && transferType === "main_to_mt5" && (
+            <>
+              <div className="space-y-2">
+                <Label>From Wallet</Label>
+                <Select value={fromMt5Account} onValueChange={(val) => setFromMt5Account(val)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select source wallet" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {walletBalances.filter(w => w.wallet_type === "main").map((wallet) => (
+                      <SelectItem key={wallet.id} value={`main`}>
+                        <div className="flex flex-col">
+                          <span>Main Wallet</span>
+                          <span className="text-xs text-muted-foreground">
+                            Balance: {wallet.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {wallet.currency}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>To MT5 Account</Label>
+                {renderMt5AccountSelect(toMt5Account, (val) => setToMt5Account(val), "To Account")}
+              </div>
+            </>
+          )}
+
+          {selectedUser && transferType === "mt5_to_main" && (
+            <>
+              <div className="space-y-2">
+                <Label>From MT5 Account</Label>
+                {renderMt5AccountSelect(fromMt5Account, (val) => setFromMt5Account(val), "From Account")}
+              </div>
+
+              <div className="space-y-2">
+                <Label>To Wallet</Label>
+                <Select value={toMt5Account} onValueChange={(val) => setToMt5Account(val)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select destination wallet" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {walletBalances.filter(w => w.wallet_type === "main").map((wallet) => (
+                      <SelectItem key={wallet.id} value={`main`}>
+                        <div className="flex flex-col">
+                          <span>Main Wallet</span>
+                          <span className="text-xs text-muted-foreground">
+                            Balance: {wallet.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {wallet.currency}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
+
+          {selectedUser && transferType === "ib_to_main" && (
+            <>
+              <div className="space-y-2">
+                <Label>From Wallet</Label>
+                <Select value={fromMt5Account} onValueChange={(val) => setFromMt5Account(val)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select source wallet" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {walletBalances.filter(w => w.wallet_type === "ib").map((wallet) => (
+                      <SelectItem key={wallet.id} value={`ib`}>
+                        <div className="flex flex-col">
+                          <span>IB Wallet</span>
+                          <span className="text-xs text-muted-foreground">
+                            Balance: {wallet.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {wallet.currency}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>To Wallet</Label>
+                <Select value={toMt5Account} onValueChange={(val) => setToMt5Account(val)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select destination wallet" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {walletBalances.filter(w => w.wallet_type === "main").map((wallet) => (
+                      <SelectItem key={wallet.id} value={`main`}>
+                        <div className="flex flex-col">
+                          <span>Main Wallet</span>
+                          <span className="text-xs text-muted-foreground">
+                            Balance: {wallet.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {wallet.currency}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </>
+          )}
+
+          {selectedUser && isUserBasedTransfer && (
+            <div className="space-y-2">
+              <Label>Wallet Balances</Label>
+              {loadingWallets ? (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Spinner className="h-4 w-4" size="sm" />
+                  Loading wallets...
                 </div>
+              ) : walletBalances.length > 0 ? (
+                <div className="space-y-1.5 rounded-md border border-border/60 bg-popover p-3">
+                  {walletBalances.map((wallet) => (
+                    <div key={wallet.id} className="flex items-center justify-between text-sm">
+                      <div className="flex flex-col">
+                        <span className="capitalize text-muted-foreground">{wallet.wallet_type}</span>
+                        {wallet.mt5_id && <span className="text-xs text-muted-foreground">{wallet.mt5_id}</span>}
+                      </div>
+                      <span className="font-medium">
+                        {wallet.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {wallet.currency}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">No wallets found</p>
               )}
             </div>
-          </div>
+          )}
 
-          <div className="space-y-2">
-            <Label htmlFor="transfer-amount">Amount (USD)</Label>
-            <Input
-              id="transfer-amount"
-              type="number"
-              step="0.01"
-              min="0"
-              placeholder="0.00"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
-          </div>
+          {selectedUser && (
+            <div className="space-y-2">
+              <Label htmlFor="transfer-amount">Amount (USD)</Label>
+              <Input
+                id="transfer-amount"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0.00"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </div>
+          )}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting}>
+          <Button onClick={handleSubmit} disabled={submitting || !selectedUser}>
             {submitting ? <><Spinner className="mr-2 h-4 w-4" /> Transferring...</> : "Process Transfer"}
           </Button>
         </DialogFooter>

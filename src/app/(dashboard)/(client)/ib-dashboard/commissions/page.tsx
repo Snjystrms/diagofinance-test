@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ibRequestsApi, type IbPlanCommission, type IbPlanInfo } from "@/lib/api-trading-ib";
+import { ibRequestsApi, type IbPlanCommission } from "@/lib/api-trading-ib";
 import { useAuth } from "@/contexts/auth-context";
 
 const commissionNotes = [
@@ -36,34 +36,19 @@ function getAccountTypeIcon(accountName: string) {
 
 export default function IbCommissionsPage() {
   const { token } = useAuth();
-  const [ibPlan, setIbPlan] = useState<IbPlanInfo | null>(null);
   const [commissions, setCommissions] = useState<IbPlanCommission[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [accountTypeFilter, setAccountTypeFilter] = useState("all");
 
-  const fetchIbPlan = useCallback(async () => {
-    if (!token) return;
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await ibRequestsApi.getPlan(token);
-      if (response.success && response.data?.ib_plan && Array.isArray(response.data.commissions)) {
-        setIbPlan(response.data.ib_plan);
-        setCommissions(response.data.commissions);
-      } else {
-        setError("Unable to load commission plans.");
-      }
-    } catch {
-      setError("Failed to fetch commission plans.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [token]);
+  const fetchCommissions = useCallback(async () => {
+    setError("Commission data is currently unavailable.");
+    setIsLoading(false);
+  }, []);
 
   useEffect(() => {
-    void fetchIbPlan();
-  }, [fetchIbPlan]);
+    void fetchCommissions();
+  }, [fetchCommissions]);
 
   const accountTypes = useMemo(() => {
     const names = Array.from(
@@ -93,7 +78,7 @@ export default function IbCommissionsPage() {
             variant="outline"
             onClick={() => {
               setAccountTypeFilter("all");
-              void fetchIbPlan();
+              void fetchCommissions();
             }}
           >
             <RefreshCw className="mr-2 h-4 w-4" />
@@ -139,7 +124,7 @@ export default function IbCommissionsPage() {
               variant="outline"
               size="sm"
               className="mt-4"
-              onClick={() => void fetchIbPlan()}
+              onClick={() => void fetchCommissions()}
             >
               <RefreshCw className="mr-2 h-4 w-4" />
               Retry

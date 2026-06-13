@@ -4,7 +4,7 @@ export type TransactionType = "deposit" | "withdrawal" | "credit" | "debit" | "t
 export type ReferenceType = "admin_deposit" | "admin_withdrawal" | "usdt_deposit";
 export type TransactionStatus = "pending" | "completed" | "failed" | "cancelled" | "approved" | "rejected";
 
-export type InternalTransferType = "mt5_to_mt5" | "main_to_mt5" | "ib_to_main";
+export type InternalTransferType = "mt5_to_mt5" | "main_to_mt5" | "ib_to_main" | "mt5_to_main";
 
 export interface AdminTransactionUser {
   id: number;

@@ -1078,66 +1078,75 @@ const themeSwatches: ThemeSwatch[] = [
       }
     }
   },
- {
+{
   id: "golden-bull-bright",
   name: "Golden Bull Bright",
-  leftColor: "#F6F1E8",
-  rightColor: "#EDE4D2",
+
+  leftColor: "#FEFEFE",
+  rightColor: "#F7F9FC",
 
   cssVariables: {
-    primary: "#B8860B",          // Deep golden amber
-    secondary: "#A16518",        // Rich burnt orange-gold
-    accent: "#D9A520",           // Vibrant metallic gold
+    primary: "#FFB401",          // Signature bull gold
+    secondary: "#48526B",        // Slate blue-grey
+    accent: "#FFC533",           // Hover/active gold
 
-    background: "#F8F4EC",       // Warm ivory
-    foreground: "#2B2116",       // Dark espresso brown
+    background: "#FEFEFE",       // Clean white
+    foreground: "#1F2937",       // Deep slate text
 
-    border: "#DCCBA8",           // Soft champagne border
+    border: "#E2E8F0",           // Modern subtle border
 
-    muted: "#EFE5D3",            // Warm card/surface color
-    mutedForeground: "#7A6547",  // Warm brown-grey
+    muted: "#F8FAFC",            // Card backgrounds
+    mutedForeground: "#64748B",  // Secondary text
 
     sidebar: {
-      background: "#F2E8D8",         // Slightly darker than page bg
-      foreground: "#2B2116",
+      background: "#FFFFFF",
+      foreground: "#1F2937",
 
-      primary: "#B8860B",
-      primaryForeground: "#FFFFFF",
+      primary: "#FFB401",
+      primaryForeground: "#111827",
 
-      accent: "#E6D3AA",             // Hover state
-      accentForeground: "#A16518",
+      accent: "#EEF2F7",         // Hover state
+      accentForeground: "#48526B",
 
-      border: "#DCCBA8",
-      ring: "#D9A520"
+      border: "#E2E8F0",
+      ring: "#FFC533"
     }
   }
 },
-  {
-    id: "golden-bull-dark",
-    name: "Golden Bull Dark",
-    leftColor: "#0D0B09",
-    rightColor: "#211D17",
-    cssVariables: {
-      primary: "#C9A84C",          // Warm gold — richer than flat #CBB067, leather-toned
-      secondary: "#7D5B20",        // Deep amber-brown — replaces the cold grey secondary
-      accent: "#E8C96A",           // Bright highlight gold — for active states, glow
-      background: "#0D0B09",       // Warm near-black — brown undertone, NOT cold grey-black
-      foreground: "#F2EDE6",       // Warm off-white — soft on eyes, natural with leather bg
-      border: "#2A2218",           // Warm dark border — clearly visible against bg, has depth
-      muted: "#1C1812",            // Warm surface — distinct from bg, not muddy
-      mutedForeground: "#9A8C7A",  // Warm stone — readable without being too bright
-      sidebar: {
-        background: "#100E0C",         // Slightly darker / richer than page bg
-        foreground: "#F2EDE6",
-        primary: "#C9A84C",
-        primaryForeground: "#0D0B09",
-        accent: "#211D17",             // Hover state — clearly distinct from sidebar bg
-        accentForeground: "#E8C96A",
-        border: "#2A2218",
-        ring: "#E8C96A"
-      }
+{
+  id: "golden-bull-dark",
+  name: "Golden Bull Dark",
+  leftColor: "#111722",
+  rightColor: "#1A2230",
+
+  cssVariables: {
+    primary: "#FFB401",          // Main gold
+    secondary: "#48526B",        // Slate blue-grey
+    accent: "#FFC533",           // Brighter gold for hover/active states
+
+    background: "#111722",       // Deep navy-charcoal
+    foreground: "#F4F6F8",       // Soft white
+
+    border: "#2D3748",           // Modern slate border
+
+    muted: "#1A2230",            // Card backgrounds
+    mutedForeground: "#9AA4B5",  // Secondary text
+
+    sidebar: {
+      background: "#0E141F",
+      foreground: "#F4F6F8",
+
+      primary: "#FFB401",
+      primaryForeground: "#111722",
+
+      accent: "#48526B",
+      accentForeground: "#FFB401",
+
+      border: "#2D3748",
+      ring: "#FFC533"
     }
   }
+}
 ]
 
 const swatchById = new Map(themeSwatches.map((swatch) => [swatch.id, swatch]))

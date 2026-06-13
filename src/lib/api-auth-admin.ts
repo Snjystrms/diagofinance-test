@@ -502,6 +502,30 @@ export interface AdminUserWalletHistoryItem {
   [key: string]: unknown;
 }
 
+export interface AdminWalletBalanceItem {
+  id: number;
+  wallet_type: string;
+  balance: number;
+  currency: string;
+  status: string;
+  wallet_address: string;
+  mt5_id?: string | null;
+}
+
+export interface AdminUserWalletBalancesData {
+  user_id: number;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  wallets: AdminWalletBalanceItem[];
+}
+
+export type AdminUserWalletBalancesResponse = ApiResponse<AdminUserWalletBalancesData> & {
+  pagination?: PaginationMeta;
+};
+
 export interface AdminUserReferralItem {
   id?: number | string;
   uuid?: string;
@@ -1336,6 +1360,19 @@ export const adminUsersApi = {
     );
 
     return response as AdminUserWalletHistoryResponse;
+  },
+
+  walletBalances: (userId: number, token: string) => {
+    ensureAdminUserToken(token, "fetch admin user wallet balances");
+
+    return apiCall<AdminUserWalletBalancesData>(`/admin/user-management/users/wallet-balances`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ user_id: userId }),
+    });
   },
 
   referralBy: (uuid: string, token: string, page = 1, limit = 10) => {

@@ -31,7 +31,6 @@ export function IbDashboardSidebar() {
   const isCollapsed = state === "collapsed"
   const [dashboardData, setDashboardData] = useState<IbDashboardResponse | null>(null)
   const [walletData, setWalletData] = useState<IbWalletData | null>(null)
-  const [ibPlanName, setIbPlanName] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
   const fetchData = useCallback(async () => {
@@ -42,18 +41,13 @@ export function IbDashboardSidebar() {
 
     try {
       setIsLoading(true)
-      // Fetch both dashboard and wallet data in parallel
-      const [dashboardResponse, walletResponse, ibPlanResponse] = await Promise.all([
+      const [dashboardResponse, walletResponse] = await Promise.all([
         ibRequestsApi.getDashboard(token).catch((err) => {
           console.error("Failed to fetch IB dashboard:", err)
           return null
         }),
         ibRequestsApi.getIbWallet(token).catch((err) => {
           console.error("Failed to fetch IB wallet:", err)
-          return null
-        }),
-        ibRequestsApi.getPlan(token).catch((err) => {
-          console.error("Failed to fetch IB plan:", err)
           return null
         }),
       ])
@@ -66,10 +60,6 @@ export function IbDashboardSidebar() {
         setWalletData(normalizeIbWalletData(walletResponse.data) ?? getFallbackIbWalletData())
       } else if (!dashboardResponse?.data) {
         setWalletData(getFallbackIbWalletData())
-      }
-
-      if (ibPlanResponse?.success && ibPlanResponse.data?.ib_plan?.name) {
-        setIbPlanName(ibPlanResponse.data.ib_plan.name)
       }
     } catch (err) {
       console.error("Failed to fetch IB data:", err)
@@ -110,7 +100,7 @@ export function IbDashboardSidebar() {
   const clientWallet = walletSnapshot.clientWallet.amount
   const partnerWallet = walletSnapshot.partnerWallet.amount
   const currency = walletSnapshot.currency
-  const ibPlan = ibPlanName || dashboardData?.partner_info?.ib_plan || "GOLD"
+  const ibPlan = dashboardData?.partner_info?.ib_plan || "GOLD"
   const avatarGradient = {
     backgroundImage:
       "linear-gradient(135deg, color-mix(in srgb, var(--sidebar-primary) 86%, white 14%) 0%, color-mix(in srgb, var(--accent) 62%, var(--sidebar-primary) 38%) 100%)",
@@ -179,8 +169,8 @@ export function IbDashboardSidebar() {
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground">
       <div className="ib-sidebar-hero p-6 space-y-5">
         <div className="flex items-center justify-center gap-2">
-          <Gem className="h-4 w-4 text-sidebar-primary" />
-          <span className="text-sidebar-primary font-semibold text-sm uppercase tracking-[0.24em]">{ibPlan}</span>
+          {/* <Gem className="h-4 w-4 text-sidebar-primary" />
+          <span className="text-sidebar-primary font-semibold text-sm uppercase tracking-[0.24em]">{ibPlan}</span> */}
         </div>
 
         <div className="flex justify-center">

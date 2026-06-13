@@ -18,7 +18,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { adminTransactionsApi, type AdminClientDepositData } from "@/lib/api-admin-transactions";
-import { adminUsersApi, type PendingUser } from "@/lib/api-auth-admin";
+import { adminUsersApi, type PendingUser, type AdminWalletBalanceItem } from "@/lib/api-auth-admin";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 interface ClientDepositDialogProps {
@@ -40,6 +40,8 @@ export function ClientDepositDialog({ open, onOpenChange, token, onSuccess }: Cl
   const [transactionProofFile, setTransactionProofFile] = useState<File | null>(null);
   const [transactionProofPreview, setTransactionProofPreview] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [walletBalances, setWalletBalances] = useState<AdminWalletBalanceItem[]>([]);
+  const [loadingWallets, setLoadingWallets] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -80,13 +82,29 @@ export function ClientDepositDialog({ open, onOpenChange, token, onSuccess }: Cl
     setSearchQuery(user.name || user.first_name || user.email || String(user.id));
     setShowResults(false);
     setUsers([]);
+    setWalletBalances([]);
   };
+
+  const fetchWalletBalances = useCallback(async (userId: number) => {
+    try {
+      setLoadingWallets(true);
+      const res = await adminUsersApi.walletBalances(userId, token);
+      if (res.data?.wallets) {
+        setWalletBalances(res.data.wallets);
+      }
+    } catch {
+      setWalletBalances([]);
+    } finally {
+      setLoadingWallets(false);
+    }
+  }, [token]);
 
   const handleClearUser = () => {
     setSelectedUser(null);
     setSearchQuery("");
     setShowResults(false);
     setUsers([]);
+    setWalletBalances([]);
   };
 
   useEffect(() => {
@@ -101,8 +119,15 @@ export function ClientDepositDialog({ open, onOpenChange, token, onSuccess }: Cl
       setUsers([]);
       setShowResults(false);
       setSubmitting(false);
+      setWalletBalances([]);
     }
   }, [open]);
+
+  useEffect(() => {
+    if (selectedUser) {
+      fetchWalletBalances(selectedUser.id);
+    }
+  }, [selectedUser, fetchWalletBalances]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -251,6 +276,34 @@ export function ClientDepositDialog({ open, onOpenChange, token, onSuccess }: Cl
                 >
                   <X className="h-3 w-3" />
                 </Button>
+              </div>
+            )}
+
+            {selectedUser && (
+              <div className="space-y-2">
+                <Label>Wallet Balances</Label>
+                {loadingWallets ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Spinner className="h-4 w-4" size="sm" />
+                    Loading wallets...
+                  </div>
+                ) : walletBalances.length > 0 ? (
+                  <div className="space-y-1.5 rounded-md border border-border/60 bg-popover p-3">
+                    {walletBalances.map((wallet) => (
+                      <div key={wallet.id} className="flex items-center justify-between text-sm">
+                        <div className="flex flex-col">
+                          <span className="capitalize text-muted-foreground">{wallet.wallet_type}</span>
+                          {wallet.mt5_id && <span className="text-xs text-muted-foreground">{wallet.mt5_id}</span>}
+                        </div>
+                        <span className="font-medium">
+                          {wallet.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {wallet.currency}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No wallets found</p>
+                )}
               </div>
             )}
           </div>

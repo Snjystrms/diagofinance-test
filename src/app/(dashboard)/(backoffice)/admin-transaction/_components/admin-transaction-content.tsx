@@ -13,6 +13,7 @@ import {
   ArrowUpFromLine,
   TrendingUp,
   Banknote,
+  Eye,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
