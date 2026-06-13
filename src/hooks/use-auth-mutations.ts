@@ -105,8 +105,6 @@ export const useAuthMutations = () => {
             mobile: rawUserData.mobile,
             status: typeof rawUserData.status === 'number' ? Boolean(rawUserData.status) : rawUserData.status,
             requires_usdt_transaction: rawUserData.requires_usdt_transaction,
-            requires_registration_fee: rawUserData.requires_registration_fee,
-            is_account_active: rawUserData.is_account_active,
             sponsor_id: rawUserData.sponsor_id,
             role: rawUserData.role,
             is_ib_user: typeof rawUserData.is_ib_user === 'number' ? Boolean(rawUserData.is_ib_user) : rawUserData.is_ib_user,
@@ -125,7 +123,7 @@ export const useAuthMutations = () => {
           
           // Check profile completion for regular users only
           let hasIncompleteSections = false;
-          if (userType === 'user' && !response.data.user?.requires_registration_fee) {
+          if (userType === 'user') {
             try {
               const profileResponse = await authApi.getProfileView(response.data.token);
               if (profileResponse.success && profileResponse.data) {
@@ -141,12 +139,8 @@ export const useAuthMutations = () => {
               console.error('Failed to check profile completion:', error);
             }
           }
-          
-          if(response.data.user?.requires_registration_fee){
-            router.push('/test-registration-fee');
-          }else{
-            router.push('/dashboard');
-          }
+
+          router.push('/dashboard');
         }
       }
     },

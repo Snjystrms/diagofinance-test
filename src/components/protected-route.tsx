@@ -40,11 +40,7 @@ export function ProtectedRoute({
     }
 
     if (!requireAuth && isAuthenticated) {
-      if (user?.requires_registration_fee) {
-        router.replace('/test-registration-fee');
-      } else {
-        router.replace('/dashboard');
-      }
+      router.replace('/dashboard');
       return;
     }
 

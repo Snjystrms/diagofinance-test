@@ -36,9 +36,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     });
   }, [user]);
 
-  // Check if user needs to pay registration fee
-  const isAccountInactive = user && user.type === 'user' && user.is_account_active === false;
-
   return (
     <Sidebar
       collapsible="icon"
@@ -63,30 +60,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         />
       </SidebarHeader>
       <SidebarContent className="gap-0 px-1.5 py-3">
-        {isAccountInactive ? (
-          <div className="p-4 text-center">
-            <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center mx-auto mb-2">
-              <svg className="h-5 w-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
-            <p className="text-xs text-muted-foreground mb-2">
-              Account activation required
-            </p>
-            <div className="text-xs text-muted-foreground">
-              Pay registration fee to unlock all features
-            </div>
-          </div>
-        ) : (
-          <>
-            <NavMain
-              items={navItems}
-              variant="enterprise"
-              sectionLabel={getSectionLabelForRole(user?.type)}
-            />
-            {/* <NavProjects projects={crmData.projects} /> */}
-          </>
-        )}
+        <>
+          <NavMain
+            items={navItems}
+            variant="enterprise"
+            sectionLabel={getSectionLabelForRole(user?.type)}
+          />
+          {/* <NavProjects projects={crmData.projects} /> */}
+        </>
       </SidebarContent>
       <SidebarFooter className="p-3 group-data-[collapsible=icon]:pl-2 group-data-[collapsible=icon]:pr-4 group-data-[collapsible=icon]:py-2">
         <SidebarLogoutButton />

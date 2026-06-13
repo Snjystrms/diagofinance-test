@@ -29,15 +29,20 @@ import {
   type InternalTransferType,
 } from "@/lib/api-admin-transactions";
 import { adminMT5AccountsApi, type AdminMT5Account } from "@/lib/api";
-import { adminUsersApi, type PendingUser, type AdminWalletBalanceItem } from "@/lib/api-auth-admin";
+import {
+  adminUsersApi,
+  type PendingUser,
+  type AdminWalletBalanceItem,
+} from "@/lib/api-auth-admin";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
-const TRANSFER_TYPE_OPTIONS: { value: InternalTransferType; label: string }[] = [
-  { value: "mt5_to_mt5", label: "MT5 to MT5" },
-  { value: "main_to_mt5", label: "Main Wallet to MT5" },
-  { value: "mt5_to_main", label: "MT5 to Main Wallet" },
-  { value: "ib_to_main", label: "IB Wallet to Main Wallet" },
-];
+const TRANSFER_TYPE_OPTIONS: { value: InternalTransferType; label: string }[] =
+  [
+    { value: "mt5_to_mt5", label: "MT5 to MT5" },
+    { value: "main_to_mt5", label: "Main Wallet to MT5" },
+    { value: "mt5_to_main", label: "MT5 to Main Wallet" },
+    { value: "ib_to_main", label: "IB Wallet to Main Wallet" },
+  ];
 
 interface InternalTransferDialogProps {
   open: boolean;
@@ -55,16 +60,24 @@ function extractMt5Accounts(res: unknown): AdminMT5Account[] {
     if (Array.isArray(d.accounts)) return d.accounts as AdminMT5Account[];
     if (Array.isArray(d.items)) return d.items as AdminMT5Account[];
     if (Array.isArray(d.data)) return d.data as AdminMT5Account[];
-    if (Array.isArray(d.mt5_accounts)) return d.mt5_accounts as AdminMT5Account[];
+    if (Array.isArray(d.mt5_accounts))
+      return d.mt5_accounts as AdminMT5Account[];
   }
   if (Array.isArray(data.accounts)) return data.accounts as AdminMT5Account[];
   if (Array.isArray(data.items)) return data.items as AdminMT5Account[];
-  if (Array.isArray(data.mt5_accounts)) return data.mt5_accounts as AdminMT5Account[];
+  if (Array.isArray(data.mt5_accounts))
+    return data.mt5_accounts as AdminMT5Account[];
   return [];
 }
 
-export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }: InternalTransferDialogProps) {
-  const [transferType, setTransferType] = useState<InternalTransferType>("mt5_to_mt5");
+export function InternalTransferDialog({
+  open,
+  onOpenChange,
+  token,
+  onSuccess,
+}: InternalTransferDialogProps) {
+  const [transferType, setTransferType] =
+    useState<InternalTransferType>("mt5_to_mt5");
   const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null);
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [userSearchResults, setUserSearchResults] = useState<PendingUser[]>([]);
@@ -76,30 +89,54 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
   const [loadingMt5Accounts, setLoadingMt5Accounts] = useState(false);
   const [amount, setAmount] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [walletBalances, setWalletBalances] = useState<AdminWalletBalanceItem[]>([]);
+  const [walletBalances, setWalletBalances] = useState<
+    AdminWalletBalanceItem[]
+  >([]);
   const [loadingWallets, setLoadingWallets] = useState(false);
   const userSearchRef = useRef<HTMLDivElement>(null);
   const userSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const isMt5ToMt5 = transferType === "mt5_to_mt5";
-  const isUserBasedTransfer = transferType === "main_to_mt5" || transferType === "mt5_to_main" || transferType === "ib_to_main";
+  const needsMt5Accounts =
+    transferType === "mt5_to_mt5" ||
+    transferType === "main_to_mt5" ||
+    transferType === "mt5_to_main";
+  const isUserBasedTransfer =
+    transferType === "main_to_mt5" ||
+    transferType === "mt5_to_main" ||
+    transferType === "ib_to_main";
 
-  const searchUsers = useCallback(async (q: string) => {
-    const trimmed = q.trim();
-    if (!token || trimmed.length < 3) { setUserSearchResults([]); return; }
-    try {
-      setSearchingUsers(true);
-      const res = await adminUsersApi.list({ token, search: trimmed, limit: 10 });
-      const list = (res.data as { users?: PendingUser[] })?.users ?? [];
-      setUserSearchResults(list);
-      setShowUserResults(true);
-    } catch { setUserSearchResults([]); } finally { setSearchingUsers(false); }
-  }, [token]);
+  const searchUsers = useCallback(
+    async (q: string) => {
+      const trimmed = q.trim();
+      if (!token || trimmed.length < 3) {
+        setUserSearchResults([]);
+        return;
+      }
+      try {
+        setSearchingUsers(true);
+        const res = await adminUsersApi.list({
+          token,
+          search: trimmed,
+          limit: 10,
+        });
+        const list = (res.data as { users?: PendingUser[] })?.users ?? [];
+        setUserSearchResults(list);
+        setShowUserResults(true);
+      } catch {
+        setUserSearchResults([]);
+      } finally {
+        setSearchingUsers(false);
+      }
+    },
+    [token],
+  );
 
   const handleUserSearchChange = (value: string) => {
     setUserSearchQuery(value);
     setSelectedUser(null);
-    if (userSearchTimerRef.current !== null) clearTimeout(userSearchTimerRef.current);
+    if (userSearchTimerRef.current !== null)
+      clearTimeout(userSearchTimerRef.current);
     if (value.trim().length >= 3) {
       userSearchTimerRef.current = setTimeout(() => searchUsers(value), 300);
     } else {
@@ -110,7 +147,9 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
 
   const handleSelectUser = (user: PendingUser) => {
     setSelectedUser(user);
-    setUserSearchQuery(user.name || user.first_name || user.email || String(user.id));
+    setUserSearchQuery(
+      user.name || user.first_name || user.email || String(user.id),
+    );
     setShowUserResults(false);
     setUserSearchResults([]);
     setFromMt5Account("");
@@ -118,7 +157,8 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
 
     if (isUserBasedTransfer) {
       fetchWalletBalances(user.id);
-    } else if (isMt5ToMt5) {
+    }
+    if (needsMt5Accounts) {
       fetchUserMt5Accounts(user.id);
     }
   };
@@ -133,27 +173,41 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
     setWalletBalances([]);
   };
 
-  const fetchUserMt5Accounts = useCallback(async (userId: number) => {
-    try {
-      setLoadingMt5Accounts(true);
-      const res = await adminMT5AccountsApi.list({ token, user_id: userId, limit: 100 });
-      setUserMt5Accounts(extractMt5Accounts(res.data ?? res));
-    } catch { setUserMt5Accounts([]); } finally { setLoadingMt5Accounts(false); }
-  }, [token]);
-
-  const fetchWalletBalances = useCallback(async (userId: number) => {
-    try {
-      setLoadingWallets(true);
-      const res = await adminUsersApi.walletBalances(userId, token);
-      if (res.data?.wallets) {
-        setWalletBalances(res.data.wallets);
+  const fetchUserMt5Accounts = useCallback(
+    async (userId: number) => {
+      try {
+        setLoadingMt5Accounts(true);
+        const res = await adminMT5AccountsApi.list({
+          token,
+          user_id: userId,
+          limit: 100,
+        });
+        setUserMt5Accounts(extractMt5Accounts(res.data ?? res));
+      } catch {
+        setUserMt5Accounts([]);
+      } finally {
+        setLoadingMt5Accounts(false);
       }
-    } catch {
-      setWalletBalances([]);
-    } finally {
-      setLoadingWallets(false);
-    }
-  }, [token]);
+    },
+    [token],
+  );
+
+  const fetchWalletBalances = useCallback(
+    async (userId: number) => {
+      try {
+        setLoadingWallets(true);
+        const res = await adminUsersApi.walletBalances(userId, token);
+        if (res.data?.wallets) {
+          setWalletBalances(res.data.wallets);
+        }
+      } catch {
+        setWalletBalances([]);
+      } finally {
+        setLoadingWallets(false);
+      }
+    },
+    [token],
+  );
 
   useEffect(() => {
     if (!open) {
@@ -183,17 +237,28 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
 
   useEffect(() => {
     if (selectedUser) {
-      if (isMt5ToMt5) {
+      if (needsMt5Accounts) {
         fetchUserMt5Accounts(selectedUser.id);
-      } else if (isUserBasedTransfer) {
+      }
+      if (isUserBasedTransfer) {
         fetchWalletBalances(selectedUser.id);
       }
     }
-  }, [selectedUser, transferType, isMt5ToMt5, isUserBasedTransfer, fetchUserMt5Accounts, fetchWalletBalances]);
+  }, [
+    selectedUser,
+    transferType,
+    needsMt5Accounts,
+    isUserBasedTransfer,
+    fetchUserMt5Accounts,
+    fetchWalletBalances,
+  ]);
 
   useEffect(() => {
     const handleClick = (e: MouseEvent) => {
-      if (userSearchRef.current && !userSearchRef.current.contains(e.target as Node)) {
+      if (
+        userSearchRef.current &&
+        !userSearchRef.current.contains(e.target as Node)
+      ) {
         setShowUserResults(false);
       }
     };
@@ -229,12 +294,17 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
           to_account: toMt5Account.trim(),
           type: transferType,
         },
-        token
+        token,
       );
       if (res.data) onSuccess(res.data);
       onOpenChange(false);
     } catch (error: unknown) {
-      toast.error(getAdminFriendlyErrorMessage(error, { resource: "internal transfer", action: "process" }));
+      toast.error(
+        getAdminFriendlyErrorMessage(error, {
+          resource: "internal transfer",
+          action: "process",
+        }),
+      );
     } finally {
       setSubmitting(false);
     }
@@ -242,10 +312,21 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
 
   const renderUserSearchResults = () => {
     if (searchingUsers) {
-      return <div className="flex items-center justify-center gap-2 px-3 py-4 text-sm text-muted-foreground"><Spinner className="h-4 w-4" size="sm" />Searching users...</div>;
+      return (
+        <div className="flex items-center justify-center gap-2 px-3 py-4 text-sm text-muted-foreground">
+          <Spinner className="h-4 w-4" size="sm" />
+          Searching users...
+        </div>
+      );
     }
     if (userSearchResults.length === 0) {
-      return <div className="px-3 py-4 text-center text-sm text-muted-foreground">{userSearchQuery.trim().length < 3 ? "Type at least 3 letters to search." : "No users found."}</div>;
+      return (
+        <div className="px-3 py-4 text-center text-sm text-muted-foreground">
+          {userSearchQuery.trim().length < 3
+            ? "Type at least 3 letters to search."
+            : "No users found."}
+        </div>
+      );
     }
     return (
       <div className="divide-y divide-border/50">
@@ -254,12 +335,26 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
             key={u.id}
             type="button"
             className="flex w-full items-center gap-3 px-3 py-2.5 text-left text-sm transition-colors hover:bg-muted/50"
-            onMouseDown={(e) => { e.preventDefault(); handleSelectUser(u); }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              handleSelectUser(u);
+            }}
           >
-            <Check className={cn("h-4 w-4 shrink-0", selectedUser?.id === u.id ? "text-primary opacity-100" : "opacity-0")} />
+            <Check
+              className={cn(
+                "h-4 w-4 shrink-0",
+                selectedUser?.id === u.id
+                  ? "text-primary opacity-100"
+                  : "opacity-0",
+              )}
+            />
             <div className="min-w-0">
-              <p className="truncate font-medium text-foreground">{u.name || u.first_name || "Unknown"}</p>
-              <p className="truncate text-xs text-muted-foreground">{u.email}</p>
+              <p className="truncate font-medium text-foreground">
+                {u.name || u.first_name || "Unknown"}
+              </p>
+              <p className="truncate text-xs text-muted-foreground">
+                {u.email}
+              </p>
             </div>
           </button>
         ))}
@@ -267,7 +362,11 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
     );
   };
 
-  const renderMt5AccountSelect = (value: string, onChange: (val: string) => void, label: string) => {
+  const renderMt5AccountSelect = (
+    value: string,
+    onChange: (val: string) => void,
+    label: string,
+  ) => {
     if (loadingMt5Accounts) {
       return (
         <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
@@ -278,24 +377,59 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
     }
 
     if (userMt5Accounts.length === 0) {
-      return <p className="text-sm text-muted-foreground py-2">No MT5 accounts found for this user</p>;
+      return (
+        <p className="text-sm text-muted-foreground py-2">
+          No MT5 accounts found for this user
+        </p>
+      );
     }
 
     return (
       <Select value={value} onValueChange={onChange}>
-        <SelectTrigger>
-          <SelectValue placeholder={`Select ${label}`} />
+        <SelectTrigger className="h-auto min-h-9">
+          <SelectValue placeholder={`Select ${label}`}>
+            {value &&
+              (() => {
+                const acc = userMt5Accounts.find(
+                  (a) =>
+                    String(a.account_id ?? a.mt5_id ?? a.id ?? "") === value,
+                );
+                if (!acc) return null;
+                const accId = String(
+                  acc.account_id ?? acc.mt5_id ?? acc.id ?? "",
+                );
+                const accBalance = acc.self_wallet ?? 0;
+                const type = acc.account_mode ?? "-";
+                return (
+                  <span className="flex items-center gap-2 text-sm">
+                    <span className="font-medium">{accId}</span>
+                    <span className="text-muted-foreground">
+                      {Number(accBalance).toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}{" "}
+                      USD · {type}
+                    </span>
+                  </span>
+                );
+              })()}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           {userMt5Accounts.map((acc) => {
             const accId = String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "");
             const accBalance = acc.self_wallet ?? 0;
+            const type = acc.account_mode ?? "-";
             return (
               <SelectItem key={accId} value={accId}>
-                <div className="flex flex-col">
-                  <span>{accId}</span>
+                <div className="flex flex-col gap-0.5 py-0.5">
+                  <span className="font-medium text-sm">{accId}</span>
                   <span className="text-xs text-muted-foreground">
-                    Balance: {Number(accBalance).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                    {Number(accBalance).toLocaleString("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}{" "}
+                    USD · {type}
                   </span>
                 </div>
               </SelectItem>
@@ -317,7 +451,10 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
         <div className="space-y-5 py-2">
           <div className="space-y-2">
             <Label htmlFor="transfer-type">Transfer Type</Label>
-            <Select value={transferType} onValueChange={(v) => setTransferType(v as InternalTransferType)}>
+            <Select
+              value={transferType}
+              onValueChange={(v) => setTransferType(v as InternalTransferType)}
+            >
               <SelectTrigger id="transfer-type">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
@@ -342,10 +479,15 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
                   autoComplete="off"
                   className="pl-9 pr-9"
                   onChange={(e) => handleUserSearchChange(e.target.value)}
-                  onFocus={() => { if (userSearchResults.length > 0) setShowUserResults(true); }}
+                  onFocus={() => {
+                    if (userSearchResults.length > 0) setShowUserResults(true);
+                  }}
                 />
                 {searchingUsers ? (
-                  <Spinner className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" size="sm" />
+                  <Spinner
+                    className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                    size="sm"
+                  />
                 ) : userSearchQuery ? (
                   <button
                     type="button"
@@ -367,8 +509,12 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
 
             {selectedUser && (
               <div className="flex items-center gap-2 rounded-md bg-muted px-3 py-2 text-sm">
-                <span className="font-medium">{selectedUser.name || selectedUser.first_name}</span>
-                <span className="text-muted-foreground">({selectedUser.email})</span>
+                <span className="font-medium">
+                  {selectedUser.name || selectedUser.first_name}
+                </span>
+                <span className="text-muted-foreground">
+                  ({selectedUser.email})
+                </span>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -385,12 +531,20 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
             <>
               <div className="space-y-2">
                 <Label>From MT5 Account</Label>
-                {renderMt5AccountSelect(fromMt5Account, (val) => setFromMt5Account(val), "From Account")}
+                {renderMt5AccountSelect(
+                  fromMt5Account,
+                  (val) => setFromMt5Account(val),
+                  "From Account",
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label>To MT5 Account</Label>
-                {renderMt5AccountSelect(toMt5Account, (val) => setToMt5Account(val), "To Account")}
+                {renderMt5AccountSelect(
+                  toMt5Account,
+                  (val) => setToMt5Account(val),
+                  "To Account",
+                )}
               </div>
             </>
           )}
@@ -399,28 +553,42 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
             <>
               <div className="space-y-2">
                 <Label>From Wallet</Label>
-                <Select value={fromMt5Account} onValueChange={(val) => setFromMt5Account(val)}>
+                <Select
+                  value={fromMt5Account}
+                  onValueChange={(val) => setFromMt5Account(val)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select source wallet" />
                   </SelectTrigger>
                   <SelectContent>
-                    {walletBalances.filter(w => w.wallet_type === "main").map((wallet) => (
-                      <SelectItem key={wallet.id} value={`main`}>
-                        <div className="flex flex-col">
-                          <span>Main Wallet</span>
-                          <span className="text-xs text-muted-foreground">
-                            Balance: {wallet.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {wallet.currency}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {walletBalances
+                      .filter((w) => w.wallet_type === "main")
+                      .map((wallet) => (
+                        <SelectItem key={wallet.id} value={`main`}>
+                          <div className="flex flex-col">
+                            <span>Main Wallet</span>
+                            <span className="text-xs text-muted-foreground">
+                              Balance:{" "}
+                              {wallet.balance.toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}{" "}
+                              {wallet.currency}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <Label>To MT5 Account</Label>
-                {renderMt5AccountSelect(toMt5Account, (val) => setToMt5Account(val), "To Account")}
+                {renderMt5AccountSelect(
+                  toMt5Account,
+                  (val) => setToMt5Account(val),
+                  "To Account",
+                )}
               </div>
             </>
           )}
@@ -429,26 +597,40 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
             <>
               <div className="space-y-2">
                 <Label>From MT5 Account</Label>
-                {renderMt5AccountSelect(fromMt5Account, (val) => setFromMt5Account(val), "From Account")}
+                {renderMt5AccountSelect(
+                  fromMt5Account,
+                  (val) => setFromMt5Account(val),
+                  "From Account",
+                )}
               </div>
 
               <div className="space-y-2">
                 <Label>To Wallet</Label>
-                <Select value={toMt5Account} onValueChange={(val) => setToMt5Account(val)}>
+                <Select
+                  value={toMt5Account}
+                  onValueChange={(val) => setToMt5Account(val)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select destination wallet" />
                   </SelectTrigger>
                   <SelectContent>
-                    {walletBalances.filter(w => w.wallet_type === "main").map((wallet) => (
-                      <SelectItem key={wallet.id} value={`main`}>
-                        <div className="flex flex-col">
-                          <span>Main Wallet</span>
-                          <span className="text-xs text-muted-foreground">
-                            Balance: {wallet.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {wallet.currency}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {walletBalances
+                      .filter((w) => w.wallet_type === "main")
+                      .map((wallet) => (
+                        <SelectItem key={wallet.id} value={`main`}>
+                          <div className="flex flex-col">
+                            <span>Main Wallet</span>
+                            <span className="text-xs text-muted-foreground">
+                              Balance:{" "}
+                              {wallet.balance.toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}{" "}
+                              {wallet.currency}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -459,42 +641,62 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
             <>
               <div className="space-y-2">
                 <Label>From Wallet</Label>
-                <Select value={fromMt5Account} onValueChange={(val) => setFromMt5Account(val)}>
+                <Select
+                  value={fromMt5Account}
+                  onValueChange={(val) => setFromMt5Account(val)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select source wallet" />
                   </SelectTrigger>
                   <SelectContent>
-                    {walletBalances.filter(w => w.wallet_type === "ib").map((wallet) => (
-                      <SelectItem key={wallet.id} value={`ib`}>
-                        <div className="flex flex-col">
-                          <span>IB Wallet</span>
-                          <span className="text-xs text-muted-foreground">
-                            Balance: {wallet.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {wallet.currency}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {walletBalances
+                      .filter((w) => w.wallet_type === "ib")
+                      .map((wallet) => (
+                        <SelectItem key={wallet.id} value={`ib`}>
+                          <div className="flex flex-col">
+                            <span>IB Wallet</span>
+                            <span className="text-xs text-muted-foreground">
+                              Balance:{" "}
+                              {wallet.balance.toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}{" "}
+                              {wallet.currency}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <Label>To Wallet</Label>
-                <Select value={toMt5Account} onValueChange={(val) => setToMt5Account(val)}>
+                <Select
+                  value={toMt5Account}
+                  onValueChange={(val) => setToMt5Account(val)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select destination wallet" />
                   </SelectTrigger>
                   <SelectContent>
-                    {walletBalances.filter(w => w.wallet_type === "main").map((wallet) => (
-                      <SelectItem key={wallet.id} value={`main`}>
-                        <div className="flex flex-col">
-                          <span>Main Wallet</span>
-                          <span className="text-xs text-muted-foreground">
-                            Balance: {wallet.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {wallet.currency}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
+                    {walletBalances
+                      .filter((w) => w.wallet_type === "main")
+                      .map((wallet) => (
+                        <SelectItem key={wallet.id} value={`main`}>
+                          <div className="flex flex-col">
+                            <span>Main Wallet</span>
+                            <span className="text-xs text-muted-foreground">
+                              Balance:{" "}
+                              {wallet.balance.toLocaleString("en-US", {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                              })}{" "}
+                              {wallet.currency}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -512,19 +714,34 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
               ) : walletBalances.length > 0 ? (
                 <div className="space-y-1.5 rounded-md border border-border/60 bg-popover p-3">
                   {walletBalances.map((wallet) => (
-                    <div key={wallet.id} className="flex items-center justify-between text-sm">
+                    <div
+                      key={wallet.id}
+                      className="flex items-center justify-between text-sm"
+                    >
                       <div className="flex flex-col">
-                        <span className="capitalize text-muted-foreground">{wallet.wallet_type}</span>
-                        {wallet.mt5_id && <span className="text-xs text-muted-foreground">{wallet.mt5_id}</span>}
+                        <span className="capitalize text-muted-foreground">
+                          {wallet.wallet_type}
+                        </span>
+                        {wallet.mt5_id && (
+                          <span className="text-xs text-muted-foreground">
+                            {wallet.mt5_id}
+                          </span>
+                        )}
                       </div>
                       <span className="font-medium">
-                        {wallet.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {wallet.currency}
+                        {wallet.balance.toLocaleString("en-US", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}{" "}
+                        {wallet.currency}
                       </span>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-muted-foreground">No wallets found</p>
+                <p className="text-sm text-muted-foreground">
+                  No wallets found
+                </p>
               )}
             </div>
           )}
@@ -546,11 +763,21 @@ export function InternalTransferDialog({ open, onOpenChange, token, onSuccess }:
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={submitting}>
+          <Button
+            variant="outline"
+            onClick={() => onOpenChange(false)}
+            disabled={submitting}
+          >
             Cancel
           </Button>
           <Button onClick={handleSubmit} disabled={submitting || !selectedUser}>
-            {submitting ? <><Spinner className="mr-2 h-4 w-4" /> Transferring...</> : "Process Transfer"}
+            {submitting ? (
+              <>
+                <Spinner className="mr-2 h-4 w-4" /> Transferring...
+              </>
+            ) : (
+              "Process Transfer"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -101,14 +101,14 @@ export function RegisterClient() {
     <ProtectedRoute requireAuth={false}>
       <AuthLayout>
         <div className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-white">
+          <h2 className="mt-6 text-3xl font-extrabold text-foreground">
             Create your account
           </h2>
-          <p className="mt-2 text-sm text-white/40">
+          <p className="mt-2 text-sm text-muted-foreground">
             Already have an account?{' '}
             <Link
               href="/login"
-              className="font-medium text-[#FFB800] hover:text-[#FFB800]/80 transition-colors"
+              className="font-medium text-primary hover:text-primary/80 transition-colors"
             >
               Sign in
             </Link>
@@ -117,15 +117,15 @@ export function RegisterClient() {
 
         {/* Card with gold border accent */}
         <div
-          className="rounded-xl border border-[#FFB800]/20 bg-[#0f0f0f] overflow-hidden"
-          style={{ boxShadow: '0 0 0 1px rgba(255,184,0,0.08), 0 24px 60px rgba(0,0,0,0.6)' }}
+          className="rounded-xl border border-primary/20 bg-card overflow-hidden"
+          style={{ boxShadow: '0 0 0 1px color-mix(in srgb, var(--color-primary) 8%, transparent), 0 24px 60px rgba(0,0,0,0.4)' }}
         >
           {/* Gold top bar accent */}
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-[#FFB800]/60 to-transparent" />
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
 
           <div className="px-8 pt-7 pb-2">
-            <h3 className="text-white font-semibold text-lg">Register</h3>
-            <p className="text-white/40 text-sm mt-0.5">
+            <h3 className="text-foreground font-semibold text-lg">Register</h3>
+            <p className="text-muted-foreground text-sm mt-0.5">
               Enter your details to create your account
             </p>
           </div>
@@ -141,7 +141,7 @@ export function RegisterClient() {
                   name="first_name"
                   label="First Name"
                   transformValue={sanitizePersonText}
-                  inputProps={{ placeholder: 'Enter your first name', className: 'h-10 bg-[#1a1a1a] border-[#FFB800]/20 text-white placeholder:text-white/20 focus:border-[#FFB800]/50 focus:ring-1 focus:ring-[#FFB800]/15' }}
+                  inputProps={{ placeholder: 'Enter your first name', className: 'h-10 bg-input border-primary/20 text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/15' }}
                 />
 
                 <ValidatedTextField
@@ -149,14 +149,14 @@ export function RegisterClient() {
                   name="last_name"
                   label="Last Name"
                   transformValue={sanitizePersonText}
-                  inputProps={{ placeholder: 'Enter your last name', className: 'h-10 bg-[#1a1a1a] border-[#FFB800]/20 text-white placeholder:text-white/20 focus:border-[#FFB800]/50 focus:ring-1 focus:ring-[#FFB800]/15' }}
+                  inputProps={{ placeholder: 'Enter your last name', className: 'h-10 bg-input border-primary/20 text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/15' }}
                 />
 
                 <ValidatedTextField
                   control={form.control}
                   name="email"
                   label="Email"
-                  inputProps={{ type: 'email', placeholder: 'Enter your email', className: 'h-10 bg-[#1a1a1a] border-[#FFB800]/20 text-white placeholder:text-white/20 focus:border-[#FFB800]/50 focus:ring-1 focus:ring-[#FFB800]/15' }}
+                  inputProps={{ type: 'email', placeholder: 'Enter your email', className: 'h-10 bg-input border-primary/20 text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/15' }}
                 />
 
                 <FormField
@@ -164,16 +164,16 @@ export function RegisterClient() {
                   name="country"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-white/70 text-sm">Country</FormLabel>
-                      <Select
-                        onValueChange={(value) => {
-                          handleCountryChange(value);
-                          field.onChange(value);
-                        }}
-                        value={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger className="h-10 w-full bg-[#1a1a1a] border-[#FFB800]/20 text-white focus:ring-[#FFB800]/15">
+<FormLabel className="text-foreground/70 text-sm">Country</FormLabel>
+                       <Select
+                         onValueChange={(value) => {
+                           handleCountryChange(value);
+                           field.onChange(value);
+                         }}
+                         value={field.value}
+                       >
+                         <FormControl>
+                           <SelectTrigger className="h-10 w-full bg-input border-primary/20 text-foreground focus:ring-primary/15">
                             <SelectValue placeholder="Select country" />
                           </SelectTrigger>
                         </FormControl>
@@ -206,8 +206,8 @@ export function RegisterClient() {
                           }
                         }}
                       >
-                        <SelectTrigger className="h-10 w-full bg-[#1a1a1a] border-[#FFB800]/20 text-white focus:ring-[#FFB800]/15">
-                          <SelectValue placeholder="Select country code" />
+<SelectTrigger className="h-10 w-full bg-input border-primary/20 text-foreground focus:ring-primary/15">
+                            <SelectValue placeholder="Select country code" />
                         </SelectTrigger>
                         <SelectContent side="bottom" avoidCollisions={false}>
                           {COUNTRIES.map((country) => (
@@ -229,7 +229,7 @@ export function RegisterClient() {
                         placeholder="Enter 10-digit mobile number"
                         inputMode="numeric"
                         maxLength={10}
-                        className="h-10 bg-[#1a1a1a] border-[#FFB800]/20 text-white placeholder:text-white/20 focus:border-[#FFB800]/50 focus:ring-1 focus:ring-[#FFB800]/15"
+                        className="h-10 bg-input border-primary/20 text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/15"
                         {...field}
                         value={field.value || ''}
                         onChange={(event) => field.onChange(sanitizeDigits(event.target.value, 10))}
@@ -242,21 +242,21 @@ export function RegisterClient() {
                   control={form.control}
                   name="password"
                   label="Password"
-                  inputProps={{ placeholder: 'Enter password', className: 'bg-[#1a1a1a] border-[#FFB800]/20 text-white placeholder:text-white/20 focus:border-[#FFB800]/50 focus:ring-1 focus:ring-[#FFB800]/15' }}
+                  inputProps={{ placeholder: 'Enter password', className: 'bg-input border-primary/20 text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/15' }}
                 />
 
                 <ValidatedPasswordField
                   control={form.control}
                   name="confirm_password"
                   label="Confirm Password"
-                  inputProps={{ placeholder: 'Confirm password', className: 'bg-[#1a1a1a] border-[#FFB800]/20 text-white placeholder:text-white/20 focus:border-[#FFB800]/50 focus:ring-1 focus:ring-[#FFB800]/15' }}
+                  inputProps={{ placeholder: 'Confirm password', className: 'bg-input border-primary/20 text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/15' }}
                 />
 
                 <ValidatedTextField
                   control={form.control}
                   name="referral_code"
                   label="Referral Code"
-                  inputProps={{ placeholder: 'Enter referral code', className: 'h-10 bg-[#1a1a1a] border-[#FFB800]/20 text-white placeholder:text-white/20 focus:border-[#FFB800]/50 focus:ring-1 focus:ring-[#FFB800]/15' }}
+                  inputProps={{ placeholder: 'Enter referral code', className: 'h-10 bg-input border-primary/20 text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/15' }}
                 />
 
                 <button
@@ -264,11 +264,11 @@ export function RegisterClient() {
                   disabled={registerMutation.isPending || isLoading}
                   className="
                     w-full py-3 rounded-lg text-sm font-bold tracking-wide
-                    bg-[#FFB800] text-black
-                    hover:bg-[#FFB800]/90
+                    bg-primary text-primary-foreground
+                    hover:bg-primary/90
                     disabled:opacity-40 disabled:cursor-not-allowed
                     transition-all flex items-center justify-center gap-2
-                    shadow-[0_0_20px_rgba(255,184,0,0.2)]
+                    shadow-[0_0_20px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]
                   "
                 >
                   {registerMutation.isPending || isLoading ? (
@@ -285,7 +285,7 @@ export function RegisterClient() {
           </div>
 
           {/* Gold bottom bar accent */}
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-[#FFB800]/30 to-transparent" />
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
         </div>
       </AuthLayout>
     </ProtectedRoute>

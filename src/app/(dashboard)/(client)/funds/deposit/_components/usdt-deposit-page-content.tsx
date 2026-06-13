@@ -171,9 +171,7 @@ function USDTDepositContent() {
     : "No recent deposits";
   const recentDepositDate = recentDeposit ? formatDateTimeInIST(recentDeposit.created_at) : "-";
   const enabledMethodCount = paymentMethods.length;
-  const needsRegistrationFee = user && user.type === "user" && user.is_account_active === false;
-  const registrationFeeLabel = "$25 equivalent";
-  const minimumAmountLabel = needsRegistrationFee ? "$25 equivalent" : "$10 equivalent";
+  const minimumAmountLabel = "$10 equivalent";
   const settlementLabel = "Supported digital asset";
 
   const selectedCryptoWallet = cryptoWallets.find((w) => w.id === selectedCryptoWalletId) || cryptoWallets[0] || null;
@@ -695,57 +693,6 @@ function USDTDepositContent() {
 
   const isValidHash = transactionHash.trim() === "" || (transactionHash.startsWith("0x") && transactionHash.length >= 10);
   const canSubmit = amount.trim() !== "" && parseFloat(amount) > 0 && transactionHash.trim() !== "" && paymentProof !== null && isValidHash;
-
-  // If user needs registration fee, show different content
-  if (needsRegistrationFee) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
-          <div className="mx-auto max-w-5xl space-y-6">
-            <div className="rounded-[28px] border border-amber-300/40 bg-gradient-to-br from-amber-50 via-background to-background p-6 shadow-sm dark:border-amber-700/40 dark:from-amber-950/20">
-              <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
-                <div className="space-y-4">
-                  <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/30 bg-amber-100/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-amber-700 dark:border-amber-700/40 dark:bg-amber-950/30 dark:text-amber-300">
-                    <Shield className="h-3.5 w-3.5" />
-                    Account Activation
-                  </div>
-                  <div className="space-y-2">
-                    <h1 className="text-3xl font-semibold tracking-tight text-foreground md:text-4xl">
-                      Registration Fee Required
-                    </h1>
-                    <p className="max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
-                      Complete your account activation by paying the one-time registration fee. Once this is done, you can continue with regular deposits and access the full platform.
-                    </p>
-                  </div>
-                </div>
-
-                <Card className="border border-border/60 bg-card/90 shadow-sm">
-                  <CardHeader className="space-y-2">
-                    <CardDescription>One-time activation amount</CardDescription>
-                    <CardTitle className="text-3xl font-bold text-foreground">
-                      {registrationFeeLabel}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 text-sm text-muted-foreground">
-                      This fee unlocks account access and enables future deposits through the payment methods available to your profile.
-                    </div>
-                    <Button
-                      onClick={() => window.location.href = '/test-registration-fee'}
-                      className="h-11 w-full rounded-xl text-base font-semibold"
-                    >
-                      <Shield className="mr-2 h-4 w-4" />
-                      Pay Registration Fee
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen w-full bg-background px-4 py-6 lg:px-6 xl:px-8">
@@ -1747,9 +1694,9 @@ function USDTDepositContent() {
                           <div className="text-xs text-amber-800 dark:text-amber-200 space-y-1">
                             <p className="font-semibold">Before transferring:</p>
                             <ul className="space-y-0.5 list-none">
-                              <li>â€¢ Keep a record of the Transaction / Reference ID</li>
-                              <li>â€¢ Transfers typically reflect within 1â€“2 business days</li>
-                              <li>â€¢ Minimum deposit: <strong>$10 USD</strong> equivalent</li>
+                              <li>Keep a record of the Transaction / Reference ID</li>
+                              <li>Transfers typically reflect within 1-2 business days</li>
+                              <li>Minimum deposit: <strong>$10 USD</strong> equivalent</li>
                             </ul>
                           </div>
                         </div>

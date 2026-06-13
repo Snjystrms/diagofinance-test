@@ -201,23 +201,49 @@ const normalizeCommissions = (
   );
 };
 
-const normalize = (a: AccountTypeItem): AccountTypeRow => ({
-  id: String(a.id),
-  live_id: a.mode === "live" ? String(a.id) : undefined,
-  demo_id: a.mode === "demo" ? String(a.id) : undefined,
-  name: a.name ?? "",
-  maximum_leverage: toStringValue(a.maximum_leverage),
-  leverage_value: toNumericValue(a.leverage_value),
-  live_group_name: a.mode === "live" ? (a.group?.name ?? "") : "",
-  live_mt5_group_name: a.mode === "live" ? (a.group?.mt5_group_name ?? "") : "",
-  demo_group_name: a.mode === "demo" ? (a.group?.name ?? "") : "",
-  demo_mt5_group_name: a.mode === "demo" ? (a.group?.mt5_group_name ?? "") : "",
-  status: coerceBoolean(a.status, true),
-  created_at: a.created_at,
-  updated_at: a.updated_at,
-});
+const normalize = (a: AccountTypeItem): AccountTypeRow => {
+  if (a.groups) {
+    return {
+      id: String(a.id),
+      live_id: a.groups.live ? String(a.groups.live.id) : undefined,
+      demo_id: a.groups.demo ? String(a.groups.demo.id) : undefined,
+      name: a.name ?? "",
+      maximum_leverage: toStringValue(a.maximum_leverage),
+      leverage_value: toNumericValue(a.leverage_value),
+      live_group_name: a.groups.live?.name ?? "",
+      live_mt5_group_name: a.groups.live?.mt5_group_name ?? "",
+      demo_group_name: a.groups.demo?.name ?? "",
+      demo_mt5_group_name: a.groups.demo?.mt5_group_name ?? "",
+      status: coerceBoolean(a.status, true),
+      created_at: a.created_at,
+      updated_at: a.updated_at,
+    };
+  }
+
+  return {
+    id: String(a.id),
+    live_id: a.mode === "live" ? String(a.id) : undefined,
+    demo_id: a.mode === "demo" ? String(a.id) : undefined,
+    name: a.name ?? "",
+    maximum_leverage: toStringValue(a.maximum_leverage),
+    leverage_value: toNumericValue(a.leverage_value),
+    live_group_name: a.mode === "live" ? (a.group?.name ?? "") : "",
+    live_mt5_group_name: a.mode === "live" ? (a.group?.mt5_group_name ?? "") : "",
+    demo_group_name: a.mode === "demo" ? (a.group?.name ?? "") : "",
+    demo_mt5_group_name: a.mode === "demo" ? (a.group?.mt5_group_name ?? "") : "",
+    status: coerceBoolean(a.status, true),
+    created_at: a.created_at,
+    updated_at: a.updated_at,
+  };
+};
 
 const groupAccountTypes = (items: AccountTypeItem[]): AccountTypeRow[] => {
+  const hasNewFormat = items.some((item) => item.groups);
+
+  if (hasNewFormat) {
+    return items.map(normalize);
+  }
+
   const byName = new Map<string, { live?: AccountTypeItem; demo?: AccountTypeItem }>();
 
   for (const item of items) {
@@ -283,6 +309,14 @@ const extractSingleAccountType = (payload: unknown): AccountTypeItem | null => {
     const nestedData = payloadObj.data as Record<string, unknown>;
 
     if (
+      nestedData.groups &&
+      typeof nestedData.groups === "object" &&
+      !Array.isArray(nestedData.groups)
+    ) {
+      return nestedData as unknown as AccountTypeItem;
+    }
+
+    if (
       nestedData.live &&
       typeof nestedData.live === "object" &&
       !Array.isArray(nestedData.live)
@@ -315,10 +349,18 @@ const coerceBoolean = (value: unknown, fallback = false) => {
 
 const serialize = (r: Partial<AccountTypeRow>): AccountTypeUpsertBody => ({
   name: r.name && r.name.trim() !== "" ? r.name.trim() : "",
-  live_group_name: r.live_group_name ?? "",
-  live_mt5_group_name: r.live_mt5_group_name ?? "",
-  demo_group_name: r.demo_group_name ?? "",
-  demo_mt5_group_name: r.demo_mt5_group_name ?? "",
+  groups: [
+    {
+      mode: "live",
+      name: r.live_group_name ?? "",
+      mt5_group_name: r.live_mt5_group_name ?? "",
+    },
+    {
+      mode: "demo",
+      name: r.demo_group_name ?? "",
+      mt5_group_name: r.demo_mt5_group_name ?? "",
+    },
+  ],
   maximum_leverage: toNumericValue(r.maximum_leverage, 0, {
     preferLastMatch: true,
   }),
@@ -389,6 +431,10 @@ export default function AllAccountsPage() {
       const payload = response?.data as Record<string, unknown> | undefined;
 
       if (payload && typeof payload === "object" && !Array.isArray(payload)) {
+        if ("groups" in payload && typeof payload.groups === "object" && payload.groups !== null) {
+          return normalize(payload as unknown as AccountTypeItem);
+        }
+
         if ("live" in payload && typeof payload.live === "object" && payload.live !== null) {
           const liveItem = payload.live as AccountTypeItem;
           const demoItem = (payload.demo as AccountTypeItem | undefined) ?? undefined;

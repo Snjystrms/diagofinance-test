@@ -352,11 +352,6 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "dashboard",
   },
   {
-    path: "/test-registration-fee",
-    audience: "shared",
-    roles: SHARED_ROLES,
-  },
-  {
     path: "/my-wallet/wallet-overview",
     audience: "client",
     roles: CLIENT_ROLES,

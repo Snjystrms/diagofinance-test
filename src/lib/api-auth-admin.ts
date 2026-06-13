@@ -89,8 +89,6 @@ export interface LoginResponse {
     mobile?: string;
     status?: boolean | number;
     requires_usdt_transaction?: boolean;
-    requires_registration_fee?: boolean;
-    is_account_active?: boolean;
     sponsor_id?: string;
     role?: string;
     is_ib_user?: boolean | number;
@@ -902,12 +900,15 @@ export type ManagerUpdateBody = {
   permissions: number[];
 };
 
+export type AccountTypeGroupUpsert = {
+  mode: "live" | "demo";
+  name: string;
+  mt5_group_name: string;
+};
+
 export type AccountTypeUpsertBody = {
   name: string;
-  live_group_name: string;
-  live_mt5_group_name: string;
-  demo_group_name: string;
-  demo_mt5_group_name: string;
+  groups: AccountTypeGroupUpsert[];
   maximum_leverage: string | number;
   leverage_value: number;
   status: boolean;
@@ -949,13 +950,26 @@ export interface AccountTypeItem {
   commission_pool?: number;
   status: boolean | number | string;
   group?: AccountTypeGroupItem;
+  groups?: {
+    live?: AccountTypeGroupItem;
+    demo?: AccountTypeGroupItem;
+  };
   created_at?: string;
   updated_at?: string;
 }
 
 export interface AccountTypeCreateResponseData {
-  live: AccountTypeItem;
-  demo: AccountTypeItem;
+  id: number;
+  name: string;
+  maximum_leverage: string;
+  leverage_value: number;
+  status: boolean;
+  created_at: string;
+  updated_at: string;
+  groups: {
+    live: AccountTypeGroupItem;
+    demo: AccountTypeGroupItem;
+  };
 }
 
 export interface AdminGroupItem {

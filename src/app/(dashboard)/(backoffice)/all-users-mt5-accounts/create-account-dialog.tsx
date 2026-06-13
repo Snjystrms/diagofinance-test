@@ -14,8 +14,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/contexts/auth-context";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
-import { accountTypesApi, adminUsersApi } from "@/lib/api";
-import type { AccountType, CreateMT5AccountRequest, PendingUser } from "@/lib/api";
+import { adminAccountTypesApi, adminUsersApi } from "@/lib/api";
+import type { AccountTypeItem, CreateMT5AccountRequest, PendingUser } from "@/lib/api";
 
 interface CreateAccountDialogProps {
   open: boolean;
@@ -47,7 +47,7 @@ export function CreateAccountDialog({
   const [users, setUsers] = useState<PendingUser[]>([]);
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null);
-  const [accountTypes, setAccountTypes] = useState<AccountType[]>([]);
+  const [accountTypes, setAccountTypes] = useState<AccountTypeItem[]>([]);
   const [loadingAccountTypes, setLoadingAccountTypes] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -63,13 +63,9 @@ export function CreateAccountDialog({
 
     try {
       setLoadingAccountTypes(true);
-      const response = await accountTypesApi.getActive(token);
-      const types = Array.isArray(response)
-        ? response
-        : response?.data && Array.isArray(response.data)
-          ? response.data
-          : [];
-      setAccountTypes(types);
+      const response = await adminAccountTypesApi.list({ token });
+      const items = response?.data?.accountTypes ?? [];
+      setAccountTypes(items);
     } catch (error) {
       console.error("Failed to load account types:", error);
       toast.error(
@@ -273,11 +269,11 @@ export function CreateAccountDialog({
                   </SelectTrigger>
                   <SelectContent>
                     {accountTypes.map((type) => (
-                      <SelectItem key={`${type.id}-${type.mode}`} value={String(type.id)}>
+                      <SelectItem key={type.id} value={String(type.id)}>
                         <div className="flex flex-col">
                           <span>{type.name}</span>
                           <span className="text-xs text-muted-foreground">
-                            Leverage: {type.maximum_leverage} | Mode: {type.mode}
+                            Leverage: {type.maximum_leverage}
                           </span>
                         </div>
                       </SelectItem>

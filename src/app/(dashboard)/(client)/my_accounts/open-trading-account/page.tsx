@@ -460,169 +460,162 @@ export default function OpenTradingAccountPage() {
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
 
-                  <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr),minmax(0,0.8fr)]">
-                    <div className="space-y-6">
-                      <FormField
-                        control={form.control}
-                        name="accountType"
-                        render={({ field }) => {
-                          return (
-                            <FormItem>
-                              <FormLabel className="text-sm font-semibold text-foreground">
-                                Account Type
-                              </FormLabel>
-                              <Select 
-                                onValueChange={field.onChange} 
-                                value={field.value}
-                                disabled={isLoadingAccountTypes || !!accountTypesError}
-                              >
-                                <FormControl>
-                                  <SelectTrigger className="h-14 w-full rounded-2xl border-border/70 bg-background/80 px-4">
-                                    <SelectValue placeholder={
-                                      isLoadingAccountTypes 
-                                        ? "Loading account types..." 
-                                        : accountTypesError 
-                                        ? "Account types unavailable"
-                                        : "Choose account type"
-                                    } />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {isLoadingAccountTypes ? (
-                                    <div className="flex items-center justify-center py-4">
-                                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                                    </div>
-                                  ) : accountTypesError ? (
-                                    <div className="px-2 py-4 text-center text-sm text-destructive">
-                                      Unable to load account types
-                                    </div>
-                                  ) : accountTypes.length === 0 ? (
-                                    <div className="py-4 text-center text-sm text-muted-foreground">
-                                      No account types available
-                                    </div>
-                                  ) : (
-                                    accountTypes.map((accountType) => (
-                                      <SelectItem key={accountType.id} value={accountType.name} className="rounded-lg">
-                                        {accountType.name}
-                                      </SelectItem>
-                                    ))
-                                  )}
-                                </SelectContent>
-                              </Select>
-                              {accountTypesError ? (
-                                <ApiErrorState
-                                  error={accountTypesError}
-                                  audience="client"
-                                  resource="account types"
-                                  action="load"
-                                  variant="inline"
-                                  className="mt-2"
-                                  onRetry={fetchAccountTypes}
-                                />
-                              ) : null}
-                              <FormMessage />
-                            </FormItem>
-                          );
-                        }}
-                      />
+        <div className="grid gap-6 xl:grid-cols-[minmax(0,1.2fr),minmax(0,0.8fr)]">
+  <div className="space-y-6">
 
-                      <div className={cn('grid gap-6', accountMode === 'demo' ? 'md:grid-cols-2' : 'md:grid-cols-1')}>
-                        <FormField
-                          control={form.control}
-                          name="leverage"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-sm font-semibold text-foreground">
-                                Leverage
-                              </FormLabel>
-                              <Select
-                                onValueChange={field.onChange}
-                                value={field.value}
-                                disabled={!selectedAccountType}
-                              >
-                                <FormControl>
-                                  <SelectTrigger className="h-14 w-full rounded-2xl border-border/70 bg-background/80 px-4">
-                                    <SelectValue placeholder={selectedAccountType ? 'Choose leverage' : 'Choose an account type first'} />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {leverageOptions.map((option) => (
-                                    <SelectItem key={option.value} value={String(option.value)} className="rounded-lg">
-                                      {option.label}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+    {/* Account Type + Leverage in one row */}
+    <div className="grid gap-6 md:grid-cols-2">
+      <FormField
+        control={form.control}
+        name="accountType"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-sm font-semibold text-foreground">
+              Account Type
+            </FormLabel>
+            <Select
+              onValueChange={field.onChange}
+              value={field.value}
+              disabled={isLoadingAccountTypes || !!accountTypesError}
+            >
+              <FormControl>
+                <SelectTrigger className="h-14 w-full rounded-2xl border-border/70 bg-background/80 px-4">
+                  <SelectValue placeholder={
+                    isLoadingAccountTypes
+                      ? "Loading account types..."
+                      : accountTypesError
+                      ? "Account types unavailable"
+                      : "Choose account type"
+                  } />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {isLoadingAccountTypes ? (
+                  <div className="flex items-center justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : accountTypesError ? (
+                  <div className="px-2 py-4 text-center text-sm text-destructive">
+                    Unable to load account types
+                  </div>
+                ) : accountTypes.length === 0 ? (
+                  <div className="py-4 text-center text-sm text-muted-foreground">
+                    No account types available
+                  </div>
+                ) : (
+                  accountTypes.map((accountType) => (
+                    <SelectItem key={accountType.id} value={accountType.name} className="rounded-lg">
+                      {accountType.name}
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            {accountTypesError ? (
+              <ApiErrorState
+                error={accountTypesError}
+                audience="client"
+                resource="account types"
+                action="load"
+                variant="inline"
+                className="mt-2"
+                onRetry={fetchAccountTypes}
+              />
+            ) : null}
+            <FormMessage />
+          </FormItem>
+        )}
+      />
 
-                        {accountMode === 'demo' ? (
-                          <FormField
-                            control={form.control}
-                            name="balance"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="text-sm font-semibold text-foreground">
-                                  Initial Demo Balance (USD)
-                                </FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger className="h-14 w-full rounded-2xl border-border/70 bg-background/80 px-4">
-                                      <SelectValue placeholder="Choose deposit amount" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {DEMO_BALANCE_CHOICES.map((amount) => (
-                                      <SelectItem key={amount} value={String(amount)}>
-                                        {`USD ${amount.toLocaleString('en-US')}`}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        ) : null}
-                      </div>
-                    </div>
+      <FormField
+        control={form.control}
+        name="leverage"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-sm font-semibold text-foreground">
+              Leverage
+            </FormLabel>
+            <Select
+              onValueChange={field.onChange}
+              value={field.value}
+              disabled={!selectedAccountType}
+            >
+              <FormControl>
+                <SelectTrigger className="h-14 w-full rounded-2xl border-border/70 bg-background/80 px-4">
+                  <SelectValue placeholder={selectedAccountType ? 'Choose leverage' : 'Choose an account type first'} />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {leverageOptions.map((option) => (
+                  <SelectItem key={option.value} value={String(option.value)} className="rounded-lg">
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    </div>
 
+    {/* Demo balance stays below, full width */}
+    {accountMode === 'demo' ? (
+      <FormField
+        control={form.control}
+        name="balance"
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-sm font-semibold text-foreground">
+              Initial Demo Balance (USD)
+            </FormLabel>
+            <Select onValueChange={field.onChange} value={field.value}>
+              <FormControl>
+                <SelectTrigger className="h-14 w-full rounded-2xl border-border/70 bg-background/80 px-4">
+                  <SelectValue placeholder="Choose deposit amount" />
+                </SelectTrigger>
+              </FormControl>
+              <SelectContent>
+                {DEMO_BALANCE_CHOICES.map((amount) => (
+                  <SelectItem key={amount} value={String(amount)}>
+                    {`USD ${amount.toLocaleString('en-US')}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    ) : null}
+
+  </div>
                     <div className="rounded-3xl border border-border/60 bg-gradient-to-br from-muted/30 to-background p-5">
                       <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-foreground">
                         <Zap className="h-4 w-4 text-primary" />
                         Setup Preview
                       </div>
                       {selectedAccountType ? (
-                        <div className="space-y-3">
-                          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
-                            <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Selected type</div>
-                            <div className="mt-2 text-lg font-semibold text-foreground">{selectedAccountType.name}</div>
-                          </div>
-                          <div className="grid gap-3 grid-cols-3">
-                            <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
-                              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Max leverage</div>
-                              <div className="mt-2 text-sm font-semibold text-foreground">{selectedAccountType.maximum_leverage}</div>
-                            </div>
-                            <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
-                              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Leverage value</div>
-                              <div className="mt-2 text-sm font-semibold text-foreground">{selectedAccountType.leverage_value ?? '-'}</div>
-                            </div>
-                            <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
-                              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Mode</div>
-                              <div className="mt-2 text-sm font-semibold text-foreground">{selectedAccountType.mode}</div>
-                            </div>
-                          </div>
-                          <div className="grid gap-3 grid-cols-2">
-                            <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
-                              <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Account mode</div>
-                              <div className="mt-2 text-sm font-semibold text-foreground">
-                                {accountMode === 'live' ? 'Live trading' : 'Demo trading'}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
+                       <div className="grid grid-cols-3 gap-3">
+  {/* Selected Type Card */}
+  <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+    <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Selected type</div>
+    <div className="mt-2 text-sm font-semibold text-foreground">{selectedAccountType.name}</div>
+  </div>
+  
+  {/* Max Leverage Card */}
+  <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
+    <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Max leverage</div>
+    <div className="mt-2 text-sm font-semibold text-foreground">{selectedAccountType.maximum_leverage}</div>
+  </div>
+  
+  {/* Leverage Value Card */}
+  <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
+    <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Leverage value</div>
+    <div className="mt-2 text-sm font-semibold text-foreground">{selectedAccountType.leverage_value ?? '-'}</div>
+  </div>
+</div>
+
                       ) : (
                         <div className="rounded-2xl border border-dashed border-border bg-background/70 p-5 text-sm leading-6 text-muted-foreground">
                           Choose an account type to preview spread, leverage, and base currency here before submission.

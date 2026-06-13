@@ -12,8 +12,6 @@ interface User {
   mobile?: string;
   status?: boolean;
   requires_usdt_transaction?: boolean;
-  requires_registration_fee?: boolean;
-  is_account_active?: boolean;
   sponsor_id?: string;
   role?: string;
   permissions?: Permission[];
@@ -22,7 +20,6 @@ interface User {
 }
 
 interface AuthContextType {
-  is_account_active: boolean;
   type: string;
   user: User | null;
   token: string | null;
@@ -322,7 +319,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [isAuthenticated, token, performGlobalValidation]);
 
   const value: AuthContextType = {
-    is_account_active: user?.is_account_active ?? false,
     type: user?.type ?? 'user',
     user,
     token,

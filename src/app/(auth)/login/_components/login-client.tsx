@@ -163,8 +163,6 @@ export function LoginClient() {
                 ? Boolean(userData.status)
                 : (userData.status as boolean | undefined),
             requires_usdt_transaction: userData.requires_usdt_transaction as boolean | undefined,
-            requires_registration_fee: userData.requires_registration_fee as boolean | undefined,
-            is_account_active: userData.is_account_active as boolean | undefined,
             sponsor_id: (userData.sponsor_id as string) || undefined,
             role: (userData.role as string) || undefined,
             managerPermissions:
@@ -179,7 +177,7 @@ export function LoginClient() {
           login(finalUserData, token);
           toast.success(response.message || 'Login successful!');
 
-          if (userType === 'user' && !userData.requires_registration_fee) {
+          if (userType === 'user') {
             try {
               const profileResponse = await authApi.getProfileView(token);
               if (profileResponse.success && profileResponse.data) {
@@ -232,11 +230,7 @@ export function LoginClient() {
             }
           }
 
-          if (userData.requires_registration_fee) {
-            router.push('/test-registration-fee');
-          } else {
-            router.push('/dashboard');
-          }
+          router.push('/dashboard');
         } else {
           toast.error('Invalid response from server');
         }
@@ -267,10 +261,10 @@ export function LoginClient() {
     <ProtectedRoute requireAuth={false}>
       <AuthLayout>
         <div className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-white">
+          <h2 className="mt-6 text-3xl font-extrabold text-foreground">
             {showForgotPassword ? 'Reset your password' : 'Sign in to your account'}
           </h2>
-          <p className="mt-2 text-sm text-white/40">
+          <p className="mt-2 text-sm text-muted-foreground">
             {showForgotPassword ? (
               'Enter your email to receive a password reset link'
             ) : (
@@ -278,7 +272,7 @@ export function LoginClient() {
                 Don&apos;t have an account?{' '}
                 <Link
                   href="/register"
-                  className="font-medium text-[#FFB800] hover:text-[#FFB800]/80 transition-colors"
+                  className="font-medium text-primary hover:text-primary/80 transition-colors"
                 >
                   Sign up
                 </Link>
@@ -289,21 +283,21 @@ export function LoginClient() {
 
         {/* Card with gold border accent */}
         <div
-          className="rounded-xl border border-[#FFB800]/20 bg-[#0f0f0f] overflow-hidden"
-          style={{ boxShadow: '0 0 0 1px rgba(255,184,0,0.08), 0 24px 60px rgba(0,0,0,0.6)' }}
+          className="rounded-xl border border-primary/20 bg-card overflow-hidden"
+          style={{ boxShadow: '0 0 0 1px color-mix(in srgb, var(--color-primary) 8%, transparent), 0 24px 60px rgba(0,0,0,0.4)' }}
         >
           {/* Gold top bar accent */}
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-[#FFB800]/60 to-transparent" />
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
 
           <div className="px-8 pt-7 pb-2">
-            <h3 className="text-white font-semibold text-lg">
+            <h3 className="text-foreground font-semibold text-lg">
               {show2FA
                 ? 'Two-Factor Authentication'
                 : showForgotPassword
                 ? 'Forgot Password'
                 : 'Login'}
             </h3>
-            <p className="text-white/40 text-sm mt-0.5">
+            <p className="text-muted-foreground text-sm mt-0.5">
               {show2FA
                 ? 'Enter the 6-digit code from your authenticator app'
                 : showForgotPassword
@@ -317,7 +311,7 @@ export function LoginClient() {
             {/* ── 2FA ── */}
             {show2FA ? (
               <div key="2fa-form" className="space-y-5">
-                <p className="text-sm text-white/40 text-center">
+                <p className="text-sm text-muted-foreground text-center">
                   Enter the 6-digit code from your authenticator app
                 </p>
                 <div className="flex justify-center">
@@ -332,10 +326,10 @@ export function LoginClient() {
                     autoFocus
                     className="
                       w-48 text-center text-2xl tracking-[0.4em] font-bold
-                      bg-[#1a1a1a] border border-[#FFB800]/25 rounded-lg
-                      text-white placeholder:text-white/20
+                      bg-input border border-primary/25 rounded-lg
+                      text-foreground placeholder:text-muted-foreground/50
                       px-4 py-3 outline-none
-                      focus:border-[#FFB800]/60 focus:ring-1 focus:ring-[#FFB800]/20
+                      focus:border-primary/60 focus:ring-1 focus:ring-primary/20
                       transition-all
                     "
                   />
@@ -350,8 +344,8 @@ export function LoginClient() {
                     }}
                     className="
                       px-5 py-2.5 rounded-lg text-sm font-medium
-                      border border-white/10 text-white/60
-                      hover:border-white/20 hover:text-white/90
+                      border border-border text-muted-foreground
+                      hover:border-border hover:text-foreground
                       transition-all
                     "
                   >
@@ -363,8 +357,8 @@ export function LoginClient() {
                     disabled={isVerifying2FA || twoFACode.length !== 6}
                     className="
                       px-5 py-2.5 rounded-lg text-sm font-semibold
-                      bg-[#FFB800] text-black
-                      hover:bg-[#FFB800]/90
+                      bg-primary text-primary-foreground
+                      hover:bg-primary/90
                       disabled:opacity-40 disabled:cursor-not-allowed
                       transition-all flex items-center gap-2
                     "
@@ -396,7 +390,7 @@ export function LoginClient() {
                         name="email"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-white/70">Email</FormLabel>
+                            <FormLabel className="text-foreground/70">Email</FormLabel>
                             <FormControl>
                               <input
                                 type="email"
@@ -404,10 +398,10 @@ export function LoginClient() {
                                 autoFocus
                                 {...field}
                                 className="
-                                  w-full bg-[#1a1a1a] border border-[#FFB800]/20 rounded-lg
-                                  text-white placeholder:text-white/20 text-sm
+                                  w-full bg-input border border-primary/20 rounded-lg
+                                  text-foreground placeholder:text-muted-foreground/50 text-sm
                                   px-4 py-2.5 outline-none
-                                  focus:border-[#FFB800]/50 focus:ring-1 focus:ring-[#FFB800]/15
+                                  focus:border-primary/50 focus:ring-1 focus:ring-primary/15
                                   transition-all
                                 "
                               />
@@ -421,8 +415,8 @@ export function LoginClient() {
                         disabled={isForgotPasswordLoading}
                         className="
                           w-full py-2.5 rounded-lg text-sm font-semibold
-                          bg-[#FFB800] text-black
-                          hover:bg-[#FFB800]/90
+                          bg-primary text-primary-foreground
+                          hover:bg-primary/90
                           disabled:opacity-40 disabled:cursor-not-allowed
                           transition-all flex items-center justify-center gap-2
                         "
@@ -440,7 +434,7 @@ export function LoginClient() {
                         <button
                           type="button"
                           onClick={() => setShowForgotPassword(false)}
-                          className="text-sm text-[#FFB800]/70 hover:text-[#FFB800] transition-colors"
+                          className="text-sm text-primary/70 hover:text-primary transition-colors"
                         >
                           ← Back to Login
                         </button>
@@ -463,17 +457,17 @@ export function LoginClient() {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-white/70 text-sm">Email</FormLabel>
+                          <FormLabel className="text-foreground/70 text-sm">Email</FormLabel>
                           <FormControl>
                             <input
                               type="email"
                               placeholder="Enter your email"
                               {...field}
                               className="
-                                w-full bg-[#1a1a1a] border border-[#FFB800]/20 rounded-lg
-                                text-white placeholder:text-white/20 text-sm
+                                w-full bg-input border border-primary/20 rounded-lg
+                                text-foreground placeholder:text-muted-foreground/50 text-sm
                                 px-4 py-2.5 outline-none
-                                focus:border-[#FFB800]/50 focus:ring-1 focus:ring-[#FFB800]/15
+                                focus:border-primary/50 focus:ring-1 focus:ring-primary/15
                                 transition-all
                               "
                             />
@@ -488,7 +482,7 @@ export function LoginClient() {
                       name="password"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-white/70 text-sm">Password</FormLabel>
+                          <FormLabel className="text-foreground/70 text-sm">Password</FormLabel>
                           <FormControl>
                             <PasswordInput
                               placeholder="Enter your password"
@@ -496,10 +490,10 @@ export function LoginClient() {
                               onChange={field.onChange}
                               value={field.value}
                               inputClassName="
-                                w-full bg-[#1a1a1a] border border-[#FFB800]/20 rounded-lg
-                                text-white placeholder:text-white/20 text-sm
+                                w-full bg-input border border-primary/20 rounded-lg
+                                text-foreground placeholder:text-muted-foreground/50 text-sm
                                 px-4 py-2.5 outline-none
-                                focus:border-[#FFB800]/50 focus:ring-1 focus:ring-[#FFB800]/15
+                                focus:border-primary/50 focus:ring-1 focus:ring-primary/15
                                 transition-all
                               "
                             />
@@ -513,7 +507,7 @@ export function LoginClient() {
                       <button
                         type="button"
                         onClick={() => setShowForgotPassword(true)}
-                        className="text-xs text-[#FFB800]/60 hover:text-[#FFB800] transition-colors"
+                        className="text-xs text-primary/60 hover:text-primary transition-colors"
                       >
                         Forgot your password?
                       </button>
@@ -524,11 +518,11 @@ export function LoginClient() {
                       disabled={isLoading}
                       className="
                         w-full py-3 rounded-lg text-sm font-bold tracking-wide
-                        bg-[#FFB800] text-black
-                        hover:bg-[#FFB800]/90
+                        bg-primary text-primary-foreground
+                        hover:bg-primary/90
                         disabled:opacity-40 disabled:cursor-not-allowed
                         transition-all flex items-center justify-center gap-2
-                        shadow-[0_0_20px_rgba(255,184,0,0.2)]
+                        shadow-[0_0_20px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]
                       "
                     >
                       {isLoading ? (
@@ -547,7 +541,7 @@ export function LoginClient() {
           </div>
 
           {/* Gold bottom bar accent */}
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-[#FFB800]/30 to-transparent" />
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
         </div>
       </AuthLayout>
     </ProtectedRoute>

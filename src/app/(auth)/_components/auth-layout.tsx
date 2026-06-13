@@ -13,7 +13,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
   const logoSrc = themeMode === 'bright' ? '/vinnexia-logo.svg' : '/vinnexia-logo-dark.svg';
 
   return (
-    <div className="min-h-screen flex bg-[#080808]">
+    <div className="min-h-screen flex bg-background">
 
       {/* ─── LEFT PANEL ─── */}
       <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden flex-col">
@@ -23,8 +23,8 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           className="absolute inset-0 opacity-[0.04]"
           style={{
             backgroundImage: `
-              linear-gradient(rgba(255,184,0,0.6) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(255,184,0,0.6) 1px, transparent 1px)
+              linear-gradient(color-mix(in srgb, var(--color-primary) 60%, transparent) 1px, transparent 1px),
+              linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 60%, transparent) 1px, transparent 1px)
             `,
             backgroundSize: '48px 48px',
           }}
@@ -32,13 +32,13 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
         {/* Top-left corner accent lines */}
         <div className="absolute top-0 left-0 w-24 h-24 opacity-40">
-          <div className="absolute top-6 left-6 w-px h-12 bg-[#FFB800]" />
-          <div className="absolute top-6 left-6 w-12 h-px bg-[#FFB800]" />
+          <div className="absolute top-6 left-6 w-px h-12 bg-primary" />
+          <div className="absolute top-6 left-6 w-12 h-px bg-primary" />
         </div>
         {/* Bottom-right corner accent lines */}
         <div className="absolute bottom-0 right-0 w-24 h-24 opacity-40">
-          <div className="absolute bottom-6 right-6 w-px h-12 bg-[#FFB800]" />
-          <div className="absolute bottom-6 right-6 w-12 h-px bg-[#FFB800]" />
+          <div className="absolute bottom-6 right-6 w-px h-12 bg-primary" />
+          <div className="absolute bottom-6 right-6 w-12 h-px bg-primary" />
         </div>
 
         {/* Centered vertical brand stack */}
@@ -51,29 +51,29 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               alt="Vinnexia"
               width={72}
               height={72}
-              className="object-contain drop-shadow-[0_0_18px_rgba(255,184,0,0.5)]"
+              className="object-contain drop-shadow-[0_0_18px_color-mix(in_srgb,var(--color-primary)_50%,transparent)]"
               priority
             />
             <span
-              className="truncate font-cinzel text-[21px] font-bold uppercase tracking-[0.2em] text-transparent [-webkit-text-stroke:0.5px_white] [text-shadow:0_0_4px_rgba(255,255,255,0.25)]"
-              style={{ textShadow: '0 0 20px rgba(255,184,0,0.25)' }}
+              className="truncate font-cinzel text-[21px] font-bold uppercase tracking-[0.2em] text-transparent [-webkit-text-stroke:0.5px_var(--color-foreground)] [text-shadow:0_0_4px_color-mix(in_srgb,var(--color-foreground)_25%,transparent)]"
+              style={{ textShadow: '0 0 20px color-mix(in srgb, var(--color-primary) 25%, transparent)' }}
             >
               VINNEXIA CAPITAL
             </span>
-            <span className="font-arvo text-xs font-semibold tracking-[0.18em] text-[#FFB800] mt-1.5 uppercase">
+            <span className="font-arvo text-xs font-semibold tracking-[0.18em] text-primary mt-1.5 uppercase">
               Trade With Confidence
             </span>
           </div>
 
           {/* Thin gold divider */}
-          <div className="w-16 h-px bg-gradient-to-r from-transparent via-[#FFB800] to-transparent mb-10 opacity-70" />
+          <div className="w-16 h-px bg-gradient-to-r from-transparent via-primary to-transparent mb-10 opacity-70" />
 
           {/* Bull image */}
           <div className="relative w-full flex items-center justify-center">
             {/* Radial glow beneath the bull */}
             <div
               className="absolute bottom-[-20px] left-1/2 -translate-x-1/2 w-[380px] h-[120px] rounded-full opacity-30 blur-2xl"
-              style={{ background: 'radial-gradient(ellipse, #FFB800 0%, transparent 70%)' }}
+              style={{ background: 'radial-gradient(ellipse, var(--color-primary) 0%, transparent 70%)' }}
             />
             <Image
               src="/login-bull1.png"
@@ -81,7 +81,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               width={460}
               height={340}
               className="relative z-10 object-contain w-full max-w-[460px]
-                         drop-shadow-[0_8px_40px_rgba(255,184,0,0.35)]"
+                         drop-shadow-[0_8px_40px_color-mix(in_srgb,var(--color-primary)_35%,transparent)]"
               priority
             />
           </div>
@@ -95,12 +95,12 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             ].map((stat, i) => (
               <div key={i} className="flex flex-col items-center gap-1">
                 <span
-                  className="text-xl font-bold text-[#FFB800] font-cinzel"
-                  style={{ textShadow: '0 0 10px rgba(255,184,0,0.3)' }}
+                  className="text-xl font-bold text-primary font-cinzel"
+                  style={{ textShadow: '0 0 10px color-mix(in srgb, var(--color-primary) 30%, transparent)' }}
                 >
                   {stat.value}
                 </span>
-                <span className="text-[10px] uppercase tracking-[0.2em] text-white/40 font-arvo">
+                <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-arvo">
                   {stat.label}
                 </span>
               </div>
@@ -108,17 +108,17 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           </div>
 
           {/* Bottom tagline */}
-          <p className="mt-10 text-center text-[11px] text-white/25 tracking-widest uppercase font-arvo max-w-[260px] leading-relaxed">
+          <p className="mt-10 text-center text-[11px] text-muted-foreground/60 tracking-widest uppercase font-arvo max-w-[260px] leading-relaxed">
             Institutional-grade execution &nbsp;·&nbsp; Zero compromise
           </p>
         </div>
 
         {/* Right edge fade to separate from form side */}
-        <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-r from-transparent to-[#080808]" />
+        <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-r from-transparent to-background" />
       </div>
 
       {/* ─── RIGHT PANEL (form) ─── */}
-      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-[#080808]">
+      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="max-w-md w-full space-y-8">
 
           {/* Mobile-only logo */}
@@ -131,10 +131,10 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               className="object-contain"
               priority
             />
-            <span className="font-cinzel text-base font-bold uppercase tracking-[0.2em] text-white mt-2">
+            <span className="font-cinzel text-base font-bold uppercase tracking-[0.2em] text-foreground mt-2">
               VINNEXIA
             </span>
-            <span className="font-arvo text-[10px] font-semibold tracking-wide text-[#FFB800] mt-0.5">
+            <span className="font-arvo text-[10px] font-semibold tracking-wide text-primary mt-0.5">
               Trade With Confidence
             </span>
           </div>

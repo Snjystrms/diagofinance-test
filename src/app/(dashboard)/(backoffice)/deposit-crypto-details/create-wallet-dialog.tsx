@@ -24,9 +24,21 @@ import {
 import type { BrokerCryptoWalletCreateBody } from "@/lib/api";
 
 const NETWORK_OPTIONS = [
-  { label: "TRC20", value: "TRC20" },
-  { label: "ERC20", value: "ERC20" },
-  { label: "BEP20", value: "BEP20" },
+{ label: "BNB Smart Chain (BSC / BEP20)", value: "BNB Smart Chain (BSC / BEP20)" },
+{ label: "opBNB (OPBNB)", value: "opBNB (OPBNB)" },
+{ label: "Tron (TRX / TRC20)", value: "Tron (TRX / TRC20)" },
+{ label: "Ethereum (ETH / ERC20)", value: "Ethereum (ETH / ERC20)" },
+{ label: "Aptos (APT)", value: "Aptos (APT)" },
+{ label: "Solana (SOL)", value: "Solana (SOL)" },
+{ label: "Polygon (MATIC)", value: "Polygon (MATIC)" },
+{ label: "Arbitrum One (ARB)", value: "Arbitrum One (ARB)" },
+{ label: "Optimism (OP)", value: "Optimism (OP)" },
+{ label: "Base (BASE)", value: "Base (BASE)" },
+{ label: "Avalanche C-Chain (AVAX)", value: "Avalanche C-Chain (AVAX)" },
+{ label: "Cronos (CRO)", value: "Cronos (CRO)" },
+{ label: "Fantom (FTM)", value: "Fantom (FTM)" },
+{ label: "Near Protocol (NEAR)", value: "Near Protocol (NEAR)" },
+{ label: "Cardano (ADA)", value: "Cardano (ADA)" },
 ];
 
 interface CreateWalletDialogProps {

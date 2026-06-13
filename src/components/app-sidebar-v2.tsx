@@ -263,8 +263,6 @@ export function AppSidebarV2({ ...props }: React.ComponentProps<typeof Sidebar>)
     };
   }, [navItems]);
 
-  const isAccountInactive = user && user.type === 'user' && user.is_account_active === false;
-
   return (
     <div className="flex h-full w-full" style={{ display: 'contents', flexDirection: 'row' }}>
       {/* First sidebar - Icon sidebar */}
@@ -303,19 +301,7 @@ export function AppSidebarV2({ ...props }: React.ComponentProps<typeof Sidebar>)
           <SidebarGroup>
             <SidebarGroupContent className={isCollapsed ? "px-0" : "px-2 md:px-2"}>
               <SidebarMenu>
-                {isAccountInactive ? (
-                  <div className="p-4 text-center">
-                    <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/20 rounded-full flex items-center justify-center mx-auto mb-2">
-                      <svg className="h-5 w-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
-                    </div>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      Account activation required
-                    </p>
-                  </div>
-                ) : (
-                  navItems.map((item) => {
+                {navItems.map((item) => {
                     const hasSubItems = item.items && item.items.length > 0;
                     
                     return (
@@ -352,8 +338,7 @@ export function AppSidebarV2({ ...props }: React.ComponentProps<typeof Sidebar>)
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     );
-                  })
-                )}
+                  })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -364,7 +349,7 @@ export function AppSidebarV2({ ...props }: React.ComponentProps<typeof Sidebar>)
       </Sidebar>
 
       {/* Second sidebar - Content sidebar */}
-      {!isAccountInactive && activeItem && (() => {
+      {activeItem && (() => {
         const activeNavItem = navItems.find((item: { title: string; items?: Array<{ title: string; url: string }> }) => item.title === activeItem);
         
         if (!activeNavItem?.items || activeNavItem.items.length === 0) {
