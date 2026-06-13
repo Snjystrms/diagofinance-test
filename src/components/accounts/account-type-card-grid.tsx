@@ -73,30 +73,34 @@ export function AccountTypeCardGrid({
                   <span className="text-sm text-muted-foreground">Leverage Value:</span>
                   <span className="text-sm font-medium">{accountType.leverage_value ?? '-'}</span>
                 </div>
-
-                <div className="flex items-start justify-between gap-4">
-                  <span className="text-sm text-muted-foreground">Mode:</span>
-                  <span className="text-sm font-medium">{accountType.mode}</span>
-                </div>
               </div>
 
               <div className="mt-auto space-y-2 border-t pt-4">
-                <Button variant="outline" className="w-full" asChild>
-                  <Link
-                    href={`/my_accounts/open-trading-account?mode=demo&type=${encodeURIComponent(accountType.name)}`}
-                  >
-                    Create Demo Account
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-                <Button className="w-full" asChild>
-                  <Link
-                    href={`/my_accounts/open-trading-account?mode=live&type=${encodeURIComponent(accountType.name)}`}
-                  >
-                    Create Live Account
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
+                {accountType.groups?.demo && (
+                  <Button variant="outline" className="w-full" asChild>
+                    <Link
+                      href={`/my_accounts/open-trading-account?mode=demo&type=${encodeURIComponent(accountType.name)}`}
+                    >
+                      Create Demo Account
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                )}
+                {accountType.groups?.live && (
+                  <Button className="w-full" asChild>
+                    <Link
+                      href={`/my_accounts/open-trading-account?mode=live&type=${encodeURIComponent(accountType.name)}`}
+                    >
+                      Create Live Account
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                )}
+                {!accountType.groups?.live && !accountType.groups?.demo && (
+                  <p className="text-center text-sm text-muted-foreground py-2">
+                    No trading groups available
+                  </p>
+                )}
               </div>
             </CardContent>
           </Card>

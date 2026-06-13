@@ -30,6 +30,12 @@ const NETWORK_OPTIONS = [
   { label: "BEP20", value: "BEP20" },
 ];
 
+const CURRENCY_OPTIONS = [
+  { label: "USDT", value: "USDT" },
+  { label: "BTC", value: "BTC" },
+  { label: "ETH", value: "ETH" },
+];
+
 interface EditWalletDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -39,6 +45,7 @@ interface EditWalletDialogProps {
 
 export function EditWalletDialog({ open, onOpenChange, wallet, onSubmit }: EditWalletDialogProps) {
   const [network, setNetwork] = useState("");
+  const [currency, setCurrency] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [walletScreenshot, setWalletScreenshot] = useState<File | null>(null);
   const [label, setLabel] = useState("");
@@ -49,6 +56,7 @@ export function EditWalletDialog({ open, onOpenChange, wallet, onSubmit }: EditW
   useEffect(() => {
     if (open && wallet) {
       setNetwork(wallet.network);
+      setCurrency(wallet.currency || "");
       setWalletAddress(wallet.wallet_address);
       setLabel(wallet.label ?? "");
       setIsIsActive(wallet.is_active === 1);
@@ -86,12 +94,13 @@ export function EditWalletDialog({ open, onOpenChange, wallet, onSubmit }: EditW
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!network || !walletAddress.trim()) return;
+    if (!network || !currency || !walletAddress.trim()) return;
 
     setIsSubmitting(true);
     try {
       await onSubmit({
         network,
+        currency,
         wallet_address: walletAddress.trim(),
         wallet_screenshot: walletScreenshot ?? undefined,
         label: label.trim() || undefined,
@@ -126,6 +135,22 @@ export function EditWalletDialog({ open, onOpenChange, wallet, onSubmit }: EditW
               </SelectTrigger>
               <SelectContent>
                 {NETWORK_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="edit-currency">Currency *</Label>
+            <Select value={currency} onValueChange={setCurrency}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select currency" />
+              </SelectTrigger>
+              <SelectContent>
+                {CURRENCY_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -225,7 +250,7 @@ export function EditWalletDialog({ open, onOpenChange, wallet, onSubmit }: EditW
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || !network || !walletAddress.trim()}>
+            <Button type="submit" disabled={isSubmitting || !network || !currency || !walletAddress.trim()}>
               {isSubmitting ? "Updating..." : "Update Wallet"}
             </Button>
           </DialogFooter>

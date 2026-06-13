@@ -86,6 +86,38 @@ function useAuthImageUrl(url: string | null | undefined, token: string | null): 
   return blobUrl;
 }
 
+const NETWORK_EXPLORER_URLS: Record<string, string> = {
+  "BNB Smart Chain (BSC / BEP20)": "https://bscscan.com",
+  "opBNB (OPBNB)": "https://mainnet.opbnbscan.com",
+  "Tron (TRX / TRC20)": "https://tronscan.org",
+  "Ethereum (ETH / ERC20)": "https://etherscan.io",
+  "Aptos (APT)": "https://explorer.aptoslabs.com",
+  "Solana (SOL)": "https://solscan.io",
+  "Polygon (MATIC)": "https://polygonscan.com",
+  "Arbitrum One (ARB)": "https://arbiscan.io",
+  "Optimism (OP)": "https://optimistic.etherscan.io",
+  "Base (BASE)": "https://basescan.org",
+  "Avalanche C-Chain (AVAX)": "https://snowtrace.io",
+  "Cronos (CRO)": "https://cronoscan.com",
+  "Fantom (FTM)": "https://ftmscan.com",
+  "Near Protocol (NEAR)": "https://explorer.near.org",
+  "Cardano (ADA)": "https://cardanoscan.io",
+};
+
+const NETWORK_EXPLORER_TX_PATH: Record<string, string> = {
+  "Tron (TRX / TRC20)": "/#/transaction",
+  "Aptos (APT)": "/txn",
+  "Near Protocol (NEAR)": "/transactions",
+};
+
+function getExplorerTxUrl(network: string | undefined, txHash: string): string | null {
+  if (!network || !txHash) return null;
+  const baseUrl = NETWORK_EXPLORER_URLS[network];
+  if (!baseUrl) return null;
+  const txPath = NETWORK_EXPLORER_TX_PATH[network] ?? "/tx";
+  return `${baseUrl}${txPath}/${txHash}`;
+}
+
 const isBrokerBankDetailActive = (detail: BrokerBankDetailItem) =>
   detail.is_active === true || detail.is_active === 1;
 
@@ -797,20 +829,24 @@ function USDTDepositContent() {
                       Use the destination address and network below, then submit either the transaction hash or a payment proof screenshot for review.
                     </p>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Network</div>
-                      <div className="mt-2 text-sm font-semibold text-foreground">{selectedCryptoWallet?.network || "—"}</div>
-                    </div>
-                    <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Minimum</div>
-                      <div className="mt-2 text-sm font-semibold text-foreground">{minimumAmountLabel}</div>
-                    </div>
-                    <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Settlement</div>
-                      <div className="mt-2 text-sm font-semibold text-foreground">{settlementLabel}</div>
-                    </div>
-                  </div>
+<div className="grid grid-cols-2 gap-3">
+                     <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                       <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Network</div>
+                       <div className="mt-2 text-sm font-semibold text-foreground">{selectedCryptoWallet?.network || "—"}</div>
+                     </div>
+                     <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                       <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Currency</div>
+                       <div className="mt-2 text-sm font-semibold text-foreground">{selectedCryptoWallet?.currency || "—"}</div>
+                     </div>
+                     <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                       <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Minimum</div>
+                       <div className="mt-2 text-sm font-semibold text-foreground">{minimumAmountLabel}</div>
+                     </div>
+                     <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                       <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Settlement</div>
+                       <div className="mt-2 text-sm font-semibold text-foreground">{settlementLabel}</div>
+                     </div>
+                   </div>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -873,13 +909,13 @@ function USDTDepositContent() {
                     {cryptoWallets.length > 1 && (
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold text-foreground">Select Wallet</Label>
-                        <div className="grid gap-2">
+                        <div className="flex flex-col gap-2">
                           {cryptoWallets.map((wallet) => (
                             <button
                               key={wallet.id}
                               type="button"
                               onClick={() => setSelectedCryptoWalletId(wallet.id)}
-                              className={`flex items-center gap-3 rounded-xl border-2 p-3 text-left transition-all ${
+                              className={`flex items-start gap-3 rounded-xl border-2 p-3 text-left transition-all ${
                                 selectedCryptoWalletId === wallet.id
                                   ? "border-primary bg-primary/5"
                                   : "border-border/60 bg-muted/20 hover:border-primary/40"
@@ -892,15 +928,15 @@ function USDTDepositContent() {
                               }`}>
                                 <QrCode className="h-4 w-4" />
                               </div>
-                              <div className="min-w-0 flex-1">
+                              <div className="min-w-0 flex-1 overflow-hidden">
                                 <div className="text-sm font-semibold text-foreground truncate">
-                                  {wallet.label || wallet.network}
+                                  {wallet.currency ? `${wallet.currency} · ` : ''}{wallet.label || wallet.network}
                                 </div>
                                 <div className="text-xs text-muted-foreground font-mono truncate">
                                   {wallet.wallet_address}
                                 </div>
                               </div>
-                              <Badge variant={selectedCryptoWalletId === wallet.id ? "default" : "secondary"} className="shrink-0">
+                              <Badge variant={selectedCryptoWalletId === wallet.id ? "default" : "secondary"} className="shrink-0 max-w-[140px] truncate">
                                 {wallet.network}
                               </Badge>
                             </button>
@@ -930,16 +966,22 @@ function USDTDepositContent() {
                         )}
 
                         {/* Network Info */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                          <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
                             <div className="text-xs font-medium text-muted-foreground">Network</div>
-                            <Badge variant="secondary" className="mt-2">
+                            <Badge variant="secondary" className="mt-1.5 max-w-full truncate">
                               {selectedCryptoWallet.network}
                             </Badge>
                           </div>
-                          <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                          <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
+                            <div className="text-xs font-medium text-muted-foreground">Currency</div>
+                            <Badge variant="secondary" className="mt-1.5 max-w-full truncate">
+                              {selectedCryptoWallet.currency}
+                            </Badge>
+                          </div>
+                          <div className="col-span-2 rounded-2xl border border-border/60 bg-muted/20 p-3">
                             <div className="text-xs font-medium text-muted-foreground">Minimum</div>
-                            <div className="mt-2 font-semibold text-foreground">{minimumAmountLabel}</div>
+                            <div className="mt-1.5 font-semibold text-foreground">{minimumAmountLabel}</div>
                           </div>
                         </div>
 
@@ -1187,14 +1229,16 @@ function USDTDepositContent() {
                           The admin team is reviewing your deposit and will credit the funds to your wallet once approved.
                         </p>
                       </div>
-                      <Button
-                        variant="outline"
-                        className="w-full border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                        onClick={() => window.open(`https://bscscan.com/tx/${transactionHash}`, '_blank')}
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        View on Explorer
-                      </Button>
+                      {getExplorerTxUrl(selectedCryptoWallet?.network, transactionHash) && (
+                        <Button
+                          variant="outline"
+                          className="w-full border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                          onClick={() => window.open(getExplorerTxUrl(selectedCryptoWallet?.network, transactionHash)!, '_blank')}
+                        >
+                          <ExternalLink className="h-4 w-4 mr-2" />
+                          View on {selectedCryptoWallet?.network?.split(' ')[0] || 'Block'} Explorer
+                        </Button>
+                      )}
                     </div>
                   </div>
                 )}

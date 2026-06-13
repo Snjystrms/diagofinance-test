@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Calendar, Eye, Globe, Hash, Image, Pencil, Tag, Trash2 } from "lucide-react";
+import { Calendar, Eye, Globe, Hash, Image, Pencil, Tag, Trash2, Coins } from "lucide-react";
 
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
@@ -73,6 +73,19 @@ function ScreenshotCell({ imageUrl }: { imageUrl: string }) {
   );
 }
 
+const getCurrencyBadge = (currency: string) => {
+    const colorMap: Record<string, string> = {
+      USDT: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300",
+      BTC: "bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-300",
+      ETH: "bg-violet-100 text-violet-800 dark:bg-violet-950/40 dark:text-violet-300",
+    };
+    return (
+      <Badge className={colorMap[currency] ?? "bg-gray-100 text-gray-800 dark:bg-gray-950/40 dark:text-gray-300"}>
+        {currency}
+      </Badge>
+    );
+  };
+
 export const getColumns = (): ColumnDef<BrokerCryptoWallet>[] => [
   {
     id: "sr_no",
@@ -88,6 +101,17 @@ export const getColumns = (): ColumnDef<BrokerCryptoWallet>[] => [
       <div className="flex items-center gap-2">
         <Globe className="h-4 w-4 text-muted-foreground" />
         {getNetworkBadge(row.original.network)}
+      </div>
+    ),
+  },
+  {
+    id: "currency",
+    accessorKey: "currency",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Currency" />,
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2">
+        <Coins className="h-4 w-4 text-muted-foreground" />
+        {getCurrencyBadge(row.original.currency)}
       </div>
     ),
   },

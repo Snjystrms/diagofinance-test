@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { Landmark, Pencil, RefreshCw } from "lucide-react";
 
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
-import { adminAccountTypesApi, API_BASE_URL, type AdminIbUser } from "@/lib/api";
+import { adminAccountTypesApi, API_BASE_URL, type AdminIbUser, type AccountTypeItem } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
 
 import { Badge } from "@/components/ui/badge";
@@ -44,11 +44,6 @@ interface DirectRatesResponse {
   rates: DirectRate[];
 }
 
-interface AccountTypeOption {
-  id: number;
-  name: string;
-}
-
 interface IbDirectRatesDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -65,7 +60,7 @@ export function IbDirectRatesDialog({
   const [rates, setRates] = useState<DirectRate[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<unknown | null>(null);
-  const [accountTypes, setAccountTypes] = useState<AccountTypeOption[]>([]);
+  const [accountTypes, setAccountTypes] = useState<AccountTypeItem[]>([]);
   const [selectedAccountTypeId, setSelectedAccountTypeId] = useState<string>("");
   const [directRateValue, setDirectRateValue] = useState<string>("");
   const [saving, setSaving] = useState(false);
@@ -75,8 +70,7 @@ export function IbDirectRatesDialog({
     if (!token) return;
     try {
       const response = await adminAccountTypesApi.list({ token, status: "true" });
-      const payload = response as unknown as { accountTypes?: AccountTypeOption[] };
-      const items = payload?.accountTypes ?? [];
+      const items = response?.data?.accountTypes ?? [];
       setAccountTypes(items);
     } catch {
       setAccountTypes([]);

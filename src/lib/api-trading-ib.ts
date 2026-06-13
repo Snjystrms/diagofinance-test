@@ -1,11 +1,32 @@
 import { API_BASE_URL, ApiResponse, PaginationMeta, apiCall } from "./api-core";
 
+export interface AccountTypeGroup {
+  id: number;
+  name: string;
+  mode: string;
+  mt5_group_name: string;
+  platform: string;
+  status: boolean;
+}
+
 export interface AccountType {
   id: number;
   name: string;
   maximum_leverage: string;
-  mode: string;
+  mode?: string;
   leverage_value?: number | string;
+  status?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  groups?: {
+    live?: AccountTypeGroup;
+    demo?: AccountTypeGroup;
+  };
+}
+
+export interface ActiveAccountTypesResponse {
+  accountTypes: AccountType[];
+  pagination: PaginationMeta;
 }
 
 export interface AccountTypesResponse {
@@ -16,7 +37,7 @@ export interface AccountTypesResponse {
 
 export const accountTypesApi = {
   getActive: (token: string) =>
-    apiCall<AccountType[]>(`/admin/account-types/active`, {
+    apiCall<ActiveAccountTypesResponse>(`/admin/account-types/active`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),
@@ -24,11 +45,13 @@ export const accountTypesApi = {
 
 export interface UserMT5AccountCreateRequest {
   account_type_id: number;
-  account_mode: "demo" | "live";
-  balance?: number;
+  mode: "demo" | "live";
   leverage: number;
-  password: string;
+  balance?: number;
+  extra_fields: Record<string, unknown>;
+  main_password: string;
   confirm_password: string;
+  investor_password: string;
 }
 
 export interface UserMT5AccountCreateData {
@@ -224,12 +247,26 @@ export interface AdminMT5RequestProcessRequest {
 }
 
 export const userMT5AccountsApi = {
-  create: (data: UserMT5AccountCreateRequest, token: string) =>
-    apiCall<UserMT5AccountCreateData>(`/user/mt5-account`, {
+  create: (data: UserMT5AccountCreateRequest, token: string) => {
+    const { extra_fields, ...rest } = data;
+    const body: Record<string, unknown> = {
+      account_type_id: rest.account_type_id,
+      mode: rest.mode,
+      leverage: rest.leverage,
+      extra_fields,
+      main_password: rest.main_password,
+      confirm_password: rest.confirm_password,
+      investor_password: rest.investor_password,
+    };
+    if (rest.mode === "demo" && rest.balance !== undefined) {
+      body.balance = rest.balance;
+    }
+    return apiCall<UserMT5AccountCreateData>(`/user/mt5-account`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    }),
+      body: JSON.stringify(body),
+    });
+  },
 
   list: (token: string) =>
     apiCall<{ mt5_accounts: UserMT5AccountListItem[] }>(`/user/mt5-account`, {
@@ -1504,6 +1541,7 @@ export const adminMT5RequestApi = {
 export interface BrokerCryptoWallet {
   id: number;
   network: string;
+  currency: string;
   wallet_address: string;
   wallet_screenshot_url: string;
   label: string | null;
@@ -1529,6 +1567,7 @@ export interface BrokerCryptoWalletResponse {
 
 export interface BrokerCryptoWalletCreateBody {
   network: string;
+  currency: string;
   wallet_address: string;
   wallet_screenshot: File;
   label?: string;
@@ -1537,6 +1576,7 @@ export interface BrokerCryptoWalletCreateBody {
 
 export interface BrokerCryptoWalletUpdateBody {
   network: string;
+  currency: string;
   wallet_address: string;
   wallet_screenshot?: File;
   label?: string;
@@ -1559,6 +1599,7 @@ export const adminBrokerCryptoWalletsApi = {
   create: (data: BrokerCryptoWalletCreateBody, token: string) => {
     const formData = new FormData();
     formData.append("network", data.network);
+    formData.append("currency", data.currency);
     formData.append("wallet_address", data.wallet_address);
     formData.append("wallet_screenshot", data.wallet_screenshot);
     if (data.label !== undefined) formData.append("label", data.label ?? "");
@@ -1574,6 +1615,7 @@ export const adminBrokerCryptoWalletsApi = {
   update: (id: string | number, data: BrokerCryptoWalletUpdateBody, token: string) => {
     const formData = new FormData();
     formData.append("network", data.network);
+    formData.append("currency", data.currency);
     formData.append("wallet_address", data.wallet_address);
     if (data.wallet_screenshot) formData.append("wallet_screenshot", data.wallet_screenshot);
     if (data.label !== undefined) formData.append("label", data.label ?? "");
@@ -1719,9 +1761,11 @@ export interface CreateMT5AccountRequest {
   user_id: number;
   account_type_id: number;
   leverage: number;
-  account_mode: "demo" | "live";
-  password: string;
+  mode: "demo" | "live";
+  main_password: string;
   confirm_password: string;
+  investor_password: string;
+  extra_fields: Record<string, unknown>;
   balance?: number;
 }
 
@@ -1836,10 +1880,24 @@ export const adminMT5AccountsApi = {
       throw new Error("Token is required to create MT5 account");
     }
 
+    const body: Record<string, unknown> = {
+      user_id: data.user_id,
+      account_type_id: data.account_type_id,
+      leverage: data.leverage,
+      mode: data.mode,
+      extra_fields: data.extra_fields,
+      main_password: data.main_password,
+      confirm_password: data.confirm_password,
+      investor_password: data.investor_password,
+    };
+    if (data.mode === "demo" && data.balance !== undefined) {
+      body.balance = data.balance;
+    }
+
     return apiCall<{ success?: boolean; message?: string; data?: AdminMT5Account; account?: AdminMT5Account }>(`/admin/mt5-accounts`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     });
   },
 };

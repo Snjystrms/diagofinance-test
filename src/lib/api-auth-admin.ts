@@ -933,6 +933,7 @@ export interface AccountTypeCommissionItem {
 export interface AccountTypeGroupItem {
   id: number;
   name: string;
+  mode?: string;
   mt5_group_name: string;
   platform: string;
   status: number | boolean;
@@ -2041,6 +2042,7 @@ export const userBrokerBankDetailsApi = {
 export interface BrokerCryptoWalletItem {
   id: number;
   network: string;
+  currency: string;
   wallet_address: string;
   wallet_screenshot_url: string;
   label: string | null;

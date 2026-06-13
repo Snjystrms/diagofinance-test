@@ -41,6 +41,30 @@ const NETWORK_OPTIONS = [
 { label: "Cardano (ADA)", value: "Cardano (ADA)" },
 ];
 
+const CURRENCY_OPTIONS = [
+// Major Cryptocurrencies
+{ label: "Bitcoin (BTC)", value: "Bitcoin (BTC)" },
+{ label: "Ethereum (ETH)", value: "Ethereum (ETH)" },
+{ label: "Solana (SOL)", value: "Solana (SOL)" },
+{ label: "BNB (BNB)", value: "BNB (BNB)" },
+{ label: "Ripple (XRP)", value: "Ripple (XRP)" },
+{ label: "Cardano (ADA)", value: "Cardano (ADA)" },
+{ label: "Avalanche (AVAX)", value: "Avalanche (AVAX)" },
+{ label: "Dogecoin (DOGE)", value: "Dogecoin (DOGE)" },
+{ label: "TRON (TRX)", value: "TRON (TRX)" },
+{ label: "Toncoin (TON)", value: "Toncoin (TON)" },
+{ label: "Polkadot (DOT)", value: "Polkadot (DOT)" },
+{ label: "Litecoin (LTC)", value: "Litecoin (LTC)" },
+
+// Major Stablecoins
+{ label: "Tether (USDT)", value: "Tether (USDT)" },
+{ label: "USD Coin (USDC)", value: "USD Coin (USDC)" },
+{ label: "First Digital USD (FDUSD)", value: "First Digital USD (FDUSD)" },
+{ label: "Dai (DAI)", value: "Dai (DAI)" },
+{ label: "PayPal USD (PYUSD)", value: "PayPal USD (PYUSD)" },
+{ label: "Ethena USDe (USDe)", value: "Ethena USDe (USDe)" },
+];
+
 interface CreateWalletDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -49,6 +73,7 @@ interface CreateWalletDialogProps {
 
 export function CreateWalletDialog({ open, onOpenChange, onSubmit }: CreateWalletDialogProps) {
   const [network, setNetwork] = useState("");
+  const [currency, setCurrency] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [walletScreenshot, setWalletScreenshot] = useState<File | null>(null);
   const [label, setLabel] = useState("");
@@ -59,6 +84,7 @@ export function CreateWalletDialog({ open, onOpenChange, onSubmit }: CreateWalle
   useEffect(() => {
     if (!open) {
       setNetwork("");
+      setCurrency("");
       setWalletAddress("");
       setWalletScreenshot(null);
       setLabel("");
@@ -89,7 +115,7 @@ export function CreateWalletDialog({ open, onOpenChange, onSubmit }: CreateWalle
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!network) {
+    if (!network || !currency) {
       return;
     }
     if (!walletAddress.trim()) {
@@ -103,6 +129,7 @@ export function CreateWalletDialog({ open, onOpenChange, onSubmit }: CreateWalle
     try {
       await onSubmit({
         network,
+        currency,
         wallet_address: walletAddress.trim(),
         wallet_screenshot: walletScreenshot,
         label: label.trim() || undefined,
@@ -135,6 +162,22 @@ export function CreateWalletDialog({ open, onOpenChange, onSubmit }: CreateWalle
               </SelectTrigger>
               <SelectContent>
                 {NETWORK_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="currency">Currency *</Label>
+            <Select value={currency} onValueChange={setCurrency}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select currency" />
+              </SelectTrigger>
+              <SelectContent>
+                {CURRENCY_OPTIONS.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -214,7 +257,7 @@ export function CreateWalletDialog({ open, onOpenChange, onSubmit }: CreateWalle
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isSubmitting || !network || !walletAddress.trim() || !walletScreenshot}>
+            <Button type="submit" disabled={isSubmitting || !network || !currency || !walletAddress.trim() || !walletScreenshot}>
               {isSubmitting ? "Creating..." : "Create Wallet"}
             </Button>
           </DialogFooter>

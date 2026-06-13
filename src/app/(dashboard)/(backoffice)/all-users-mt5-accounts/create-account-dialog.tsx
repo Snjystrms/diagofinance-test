@@ -23,9 +23,7 @@ interface CreateAccountDialogProps {
   onSubmit: (data: CreateMT5AccountRequest) => Promise<void>;
 }
 
-type CreateAccountFormState = CreateMT5AccountRequest & {
-  confirm_password: string;
-};
+type CreateAccountFormState = CreateMT5AccountRequest;
 
 export function CreateAccountDialog({
   open,
@@ -37,9 +35,11 @@ export function CreateAccountDialog({
     user_id: 0,
     account_type_id: 0,
     leverage: 100,
-    account_mode: "demo",
-    password: "",
+    mode: "demo",
+    main_password: "",
     confirm_password: "",
+    investor_password: "",
+    extra_fields: {},
     balance: 10000,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,8 +49,9 @@ export function CreateAccountDialog({
   const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null);
   const [accountTypes, setAccountTypes] = useState<AccountTypeItem[]>([]);
   const [loadingAccountTypes, setLoadingAccountTypes] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [showMainPassword, setShowMainPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showInvestorPassword, setShowInvestorPassword] = useState(false);
 
   useEffect(() => {
     if (open && token) {
@@ -137,9 +138,11 @@ export function CreateAccountDialog({
       user_id: 0,
       account_type_id: 0,
       leverage: 100,
-      account_mode: "demo",
-      password: "",
+      mode: "demo",
+      main_password: "",
       confirm_password: "",
+      investor_password: "",
+      extra_fields: {},
       balance: 10000,
     });
     setSelectedUser(null);
@@ -160,13 +163,18 @@ export function CreateAccountDialog({
       return;
     }
 
-    if (!formData.password || formData.password.length < 6) {
+    if (!formData.main_password || formData.main_password.length < 6) {
       toast.error("Password must be at least 6 characters");
       return;
     }
 
-    if (formData.password !== formData.confirm_password) {
+    if (formData.main_password !== formData.confirm_password) {
       toast.error("Passwords do not match");
+      return;
+    }
+
+    if (!formData.investor_password || formData.investor_password.length < 6) {
+      toast.error("Investor password must be at least 6 characters");
       return;
     }
 
@@ -181,12 +189,14 @@ export function CreateAccountDialog({
         user_id: formData.user_id,
         account_type_id: formData.account_type_id,
         leverage: formData.leverage,
-        account_mode: formData.account_mode,
-        password: formData.password,
+        mode: formData.mode,
+        main_password: formData.main_password,
         confirm_password: formData.confirm_password,
+        investor_password: formData.investor_password,
+        extra_fields: {},
       };
 
-      if (formData.account_mode === "demo") {
+      if (formData.mode === "demo") {
         payload.balance = formData.balance;
       }
 
@@ -285,14 +295,14 @@ export function CreateAccountDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="account_mode">Account Mode *</Label>
+                <Label htmlFor="mode">Account Mode *</Label>
                 <Select
-                  value={formData.account_mode}
+                  value={formData.mode}
                   onValueChange={(value: "demo" | "live") =>
-                    setFormData((prev) => ({ ...prev, account_mode: value }))
+                    setFormData((prev) => ({ ...prev, mode: value }))
                   }
                 >
-                  <SelectTrigger id="account_mode">
+                  <SelectTrigger id="mode">
                     <SelectValue placeholder="Select mode" />
                   </SelectTrigger>
                   <SelectContent>
@@ -320,7 +330,7 @@ export function CreateAccountDialog({
               </div>
             </div>
 
-            {formData.account_mode === "demo" && (
+            {formData.mode === "demo" && (
               <div className="space-y-2">
                 <Label htmlFor="balance">Balance *</Label>
                 <Input
@@ -341,16 +351,16 @@ export function CreateAccountDialog({
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="password">Password *</Label>
+                <Label htmlFor="main_password">Main Password *</Label>
                 <div className="relative">
                   <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={formData.password}
+                    id="main_password"
+                    type={showMainPassword ? "text" : "password"}
+                    value={formData.main_password}
                     onChange={(event) =>
-                      setFormData((prev) => ({ ...prev, password: event.target.value }))
+                      setFormData((prev) => ({ ...prev, main_password: event.target.value }))
                     }
-                    placeholder="Enter password"
+                    placeholder="Enter main password"
                     required
                     minLength={6}
                   />
@@ -359,9 +369,9 @@ export function CreateAccountDialog({
                     variant="ghost"
                     size="icon"
                     className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
-                    onClick={() => setShowPassword((prev) => !prev)}
+                    onClick={() => setShowMainPassword((prev) => !prev)}
                   >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {showMainPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>
@@ -390,6 +400,32 @@ export function CreateAccountDialog({
                     {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="investor_password">Investor Password *</Label>
+              <div className="relative">
+                <Input
+                  id="investor_password"
+                  type={showInvestorPassword ? "text" : "password"}
+                  value={formData.investor_password}
+                  onChange={(event) =>
+                    setFormData((prev) => ({ ...prev, investor_password: event.target.value }))
+                  }
+                  placeholder="Enter investor password"
+                  required
+                  minLength={6}
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                  onClick={() => setShowInvestorPassword((prev) => !prev)}
+                >
+                  {showInvestorPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
               </div>
             </div>
           </div>

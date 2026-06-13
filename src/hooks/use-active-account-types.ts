@@ -26,7 +26,7 @@ export function useActiveAccountTypes({
         throw new Error(response.message || 'Unable to load account types');
       }
 
-      return response.data ?? [];
+      return response.data?.accountTypes ?? [];
     },
     enabled: Boolean(token) && enabled,
     staleTime: 5 * 60 * 1000,

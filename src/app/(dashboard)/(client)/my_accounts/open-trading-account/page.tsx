@@ -112,6 +112,14 @@ export default function OpenTradingAccountPage() {
     },
   });
 
+  const filteredAccountTypes = useMemo(
+    () =>
+      accountTypes.filter((at) =>
+        accountMode === 'live' ? !!at.groups?.live : !!at.groups?.demo
+      ),
+    [accountTypes, accountMode]
+  );
+
   const selectedAccountTypeName = form.watch('accountType');
   const selectedAccountType = useMemo(
     () => accountTypes.find((accountType) => accountType.name === selectedAccountTypeName),
@@ -167,7 +175,17 @@ export default function OpenTradingAccountPage() {
       shouldDirty: false,
       shouldValidate: true,
     });
-  }, [accountMode, form]);
+
+    const currentType = form.getValues('accountType');
+    if (currentType) {
+      const isAvailableInMode = accountTypes.some(
+        (at) => at.name === currentType && (accountMode === 'live' ? !!at.groups?.live : !!at.groups?.demo)
+      );
+      if (!isAvailableInMode) {
+        form.setValue('accountType', '', { shouldDirty: true, shouldValidate: true });
+      }
+    }
+  }, [accountMode, accountTypes, form]);
 
   const fetchAccountTypes = useCallback(async () => {
     if (!token) {
@@ -181,7 +199,7 @@ export default function OpenTradingAccountPage() {
       setAccountTypesError(null);
       const response = await accountTypesApi.getActive(token);
       if (response.success && response.data) {
-        setAccountTypes(response.data);
+        setAccountTypes(response.data.accountTypes ?? []);
       } else {
         setAccountTypesError('Unable to load account types');
       }
@@ -264,11 +282,13 @@ export default function OpenTradingAccountPage() {
       const response = await userMT5AccountsApi.create(
         {
           account_type_id: selectedAccountType.id,
-          account_mode: accountMode,
+          mode: accountMode,
           ...(accountMode === 'demo' ? { balance: demoBalance } : {}),
           leverage,
-          password: data.mainPassword,
+          extra_fields: {},
+          main_password: data.mainPassword,
           confirm_password: data.mainPassword,
+          investor_password: data.investorPassword,
         },
         token
       );
@@ -473,44 +493,44 @@ export default function OpenTradingAccountPage() {
             <FormLabel className="text-sm font-semibold text-foreground">
               Account Type
             </FormLabel>
-            <Select
-              onValueChange={field.onChange}
-              value={field.value}
-              disabled={isLoadingAccountTypes || !!accountTypesError}
-            >
-              <FormControl>
-                <SelectTrigger className="h-14 w-full rounded-2xl border-border/70 bg-background/80 px-4">
-                  <SelectValue placeholder={
-                    isLoadingAccountTypes
-                      ? "Loading account types..."
-                      : accountTypesError
-                      ? "Account types unavailable"
-                      : "Choose account type"
-                  } />
-                </SelectTrigger>
-              </FormControl>
-              <SelectContent>
-                {isLoadingAccountTypes ? (
-                  <div className="flex items-center justify-center py-4">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  </div>
-                ) : accountTypesError ? (
-                  <div className="px-2 py-4 text-center text-sm text-destructive">
-                    Unable to load account types
-                  </div>
-                ) : accountTypes.length === 0 ? (
-                  <div className="py-4 text-center text-sm text-muted-foreground">
-                    No account types available
-                  </div>
-                ) : (
-                  accountTypes.map((accountType) => (
-                    <SelectItem key={accountType.id} value={accountType.name} className="rounded-lg">
-                      {accountType.name}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
+<Select
+                onValueChange={field.onChange}
+                value={field.value}
+                disabled={isLoadingAccountTypes || !!accountTypesError}
+              >
+                <FormControl>
+                  <SelectTrigger className="h-14 w-full rounded-2xl border-border/70 bg-background/80 px-4">
+                    <SelectValue placeholder={
+                      isLoadingAccountTypes
+                        ? "Loading account types..."
+                        : accountTypesError
+                        ? "Account types unavailable"
+                        : "Choose account type"
+                    } />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {isLoadingAccountTypes ? (
+                    <div className="flex items-center justify-center py-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  ) : accountTypesError ? (
+                    <div className="px-2 py-4 text-center text-sm text-destructive">
+                      Unable to load account types
+                    </div>
+                  ) : filteredAccountTypes.length === 0 ? (
+                    <div className="py-4 text-center text-sm text-muted-foreground">
+                      No {accountMode} account types available
+                    </div>
+                  ) : (
+                    filteredAccountTypes.map((accountType) => (
+                      <SelectItem key={accountType.id} value={accountType.name} className="rounded-lg">
+                        {accountType.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
             {accountTypesError ? (
               <ApiErrorState
                 error={accountTypesError}
@@ -604,13 +624,13 @@ export default function OpenTradingAccountPage() {
   </div>
   
   {/* Max Leverage Card */}
-  <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
+  <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
     <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Max leverage</div>
     <div className="mt-2 text-sm font-semibold text-foreground">{selectedAccountType.maximum_leverage}</div>
   </div>
   
   {/* Leverage Value Card */}
-  <div className="rounded-2xl border border-border/60 bg-background/80 p-4">
+  <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
     <div className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Leverage value</div>
     <div className="mt-2 text-sm font-semibold text-foreground">{selectedAccountType.leverage_value ?? '-'}</div>
   </div>

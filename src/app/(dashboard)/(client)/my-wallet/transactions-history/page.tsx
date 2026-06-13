@@ -228,7 +228,7 @@ export default function TransactionsHistoryPage() {
       },
       {
         id: 'reference',
-        header: 'Transaction Hash',
+        header: 'Reference',
         accessorKey: 'reference',
         meta: { mobileHidden: true },
         cell: ({ row }) => {
@@ -237,12 +237,9 @@ export default function TransactionsHistoryPage() {
             return <span className="text-muted-foreground text-sm">—</span>
           }
           return (
-            <div className="flex items-center gap-2 max-w-xs">
-              <code className="text-xs font-mono text-foreground truncate">
-                {transaction.reference}
-              </code>
-              <ExternalLink className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-            </div>
+            <code className="text-xs font-mono text-foreground truncate">
+              {transaction.reference}
+            </code>
           )
         },
       },
@@ -272,9 +269,25 @@ export default function TransactionsHistoryPage() {
             <div className="text-sm">
               <span className="text-green-600 dark:text-green-400 font-medium">$</span>
               <span className="text-foreground font-semibold">
-                {formatAmount(transaction.amount.toFixed(2), transaction.currency)}
+                {formatAmount(transaction.amount, transaction.currency)}
               </span>
             </div>
+          )
+        },
+      },
+      {
+        id: 'deposited_by',
+        header: 'Deposited By',
+        accessorKey: 'deposited_by',
+        meta: { mobileHidden: true },
+        cell: ({ row }) => {
+          const transaction = row.original
+          return transaction.deposited_by ? (
+            <span className="text-sm font-medium text-foreground">
+              {transaction.deposited_by}
+            </span>
+          ) : (
+            <span className="text-muted-foreground text-sm">—</span>
           )
         },
       },

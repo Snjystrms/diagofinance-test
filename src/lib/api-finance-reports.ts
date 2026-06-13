@@ -87,6 +87,7 @@ export interface Transaction {
   from_account: string | null;
   to_account: string | null;
   created_at: string;
+  deposited_by: string | null;
   source_table: string;
 }
 
