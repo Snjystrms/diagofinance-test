@@ -123,7 +123,7 @@ src/
 │   └── validations.ts   # Zod validation schemas
 ```
 
-## Authentication Flow ##
+## Authentication Flow 
 
 1. **Registration**: User fills registration form → OTP sent → Verify OTP → Login
 2. **Login**: User enters credentials → JWT token stored → Dashboard access
