@@ -52,10 +52,9 @@ export function DataTable<TData>({
                     <TableHead
                       key={header.id}
                       colSpan={header.colSpan}
-                      className={cn(
-                        isMobile && isFirstVisCol && "sticky left-0 z-10 bg-background",
-                        mobileHidden && "hidden",
-                      )}
+className={cn(
+                          isMobile && isFirstVisCol && "sticky left-0 z-10 bg-background",
+                        )}
                       style={{
                         ...getCommonPinningStyles({ column: header.column }),
                       }}
@@ -88,7 +87,6 @@ export function DataTable<TData>({
                         key={cell.id}
                         className={cn(
                           isMobile && isFirstVisCol && "sticky left-0 z-10 bg-background",
-                          mobileHidden && "hidden",
                         )}
                         style={{
                           ...getCommonPinningStyles({ column: cell.column }),

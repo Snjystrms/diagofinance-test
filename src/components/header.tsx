@@ -282,7 +282,7 @@ export function Header() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               {user?.type === "user" ? (
-                <div className="hidden xl:flex cursor-pointer">
+                <div className="flex cursor-pointer">
                   <div className="flex items-center gap-2.5 rounded-full border border-border/60 bg-background/80 px-3 py-1.5 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background">
                     <div className="relative flex-shrink-0">
                       <div className="flex h-7 w-7 items-center justify-center rounded-full border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm">

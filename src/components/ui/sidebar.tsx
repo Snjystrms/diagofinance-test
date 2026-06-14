@@ -40,6 +40,8 @@ type SidebarContextProps = {
   setOpenMobile: (open: boolean) => void
   isMobile: boolean
   toggleSidebar: () => void
+  closeMobileSidebar: () => void
+  handleMobileOpenChange: (open: boolean) => void
 }
 
 const SidebarContext = React.createContext<SidebarContextProps | null>(null)
@@ -68,6 +70,7 @@ function SidebarProvider({
 }) {
   const isMobile = useIsMobile()
   const [openMobile, setOpenMobile] = React.useState(false)
+  const closingMobileRef = React.useRef(false)
 
   // This is the internal state of the sidebar.
   // We use openProp and setOpenProp for control from outside the component.
@@ -92,6 +95,23 @@ function SidebarProvider({
   const toggleSidebar = React.useCallback(() => {
     return isMobile ? setOpenMobile((open) => !open) : setOpen((open) => !open)
   }, [isMobile, setOpen, setOpenMobile])
+
+  // Helper to close the mobile sidebar with a guard to prevent re-opening during close animation.
+  const closeMobileSidebar = React.useCallback(() => {
+    if (isMobile) {
+      closingMobileRef.current = true
+      setOpenMobile(false)
+      setTimeout(() => {
+        closingMobileRef.current = false
+      }, 400)
+    }
+  }, [isMobile, setOpenMobile])
+
+  // Custom handler for mobile Sheet onOpenChange that guards against re-opening during close.
+  const handleMobileOpenChange = React.useCallback((open: boolean) => {
+    if (closingMobileRef.current && open) return
+    setOpenMobile(open)
+  }, [setOpenMobile])
 
   // Adds a keyboard shortcut to toggle the sidebar.
   React.useEffect(() => {
@@ -122,8 +142,10 @@ function SidebarProvider({
       openMobile,
       setOpenMobile,
       toggleSidebar,
+      closeMobileSidebar,
+      handleMobileOpenChange,
     }),
-    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
+    [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar, closeMobileSidebar, handleMobileOpenChange]
   )
 
   return (
@@ -163,7 +185,7 @@ function Sidebar({
   variant?: "sidebar" | "floating" | "inset"
   collapsible?: "offcanvas" | "icon" | "none"
 }) {
-  const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
+  const { isMobile, state, openMobile, handleMobileOpenChange } = useSidebar()
 
   if (collapsible === "none") {
     return (
@@ -182,7 +204,7 @@ function Sidebar({
 
   if (isMobile) {
     return (
-      <Sheet open={openMobile} onOpenChange={setOpenMobile} {...props}>
+      <Sheet open={openMobile} onOpenChange={handleMobileOpenChange} {...props}>
         <SheetContent
           data-sidebar="sidebar"
           data-slot="sidebar"

@@ -114,7 +114,7 @@ export default function WalletOverviewPage() {
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount
     return Math.abs(numAmount).toLocaleString('en-US', {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 8
+      maximumFractionDigits: 2
     })
   }
 
@@ -376,7 +376,7 @@ export default function WalletOverviewPage() {
           ) : null}
 
           {/* Recent Transactions */}
-          <Card className="shadow-lg">
+          <Card className="shadow-lg overflow-hidden">
             <CardHeader className="border-b bg-gradient-to-r from-muted/50 to-transparent">
               <CardTitle className="flex items-center gap-3 text-xl">
                 <div className="p-2 bg-primary/10 rounded-lg">
@@ -396,9 +396,9 @@ export default function WalletOverviewPage() {
                       key={transaction.id}
                       className="flex items-center justify-between p-5 border-2 rounded-xl hover:border-primary/30 hover:bg-gradient-to-r hover:from-primary/5 hover:to-transparent transition-all duration-300 group cursor-pointer shadow-sm hover:shadow-md"
                     >
-                      <div className="flex items-center gap-4 flex-1">
+                      <div className="flex items-center gap-4 flex-1 min-w-0">
                         <div
-                          className={`p-3 rounded-xl transition-all duration-300 ${
+                          className={`p-3 rounded-xl transition-all duration-300 flex-shrink-0 ${
                             transaction.type.includes('bonus')
                               ? 'bg-emerald-100 dark:bg-emerald-900/20 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-900/30'
                               : isCreditTransaction(transaction.type)
@@ -412,31 +412,22 @@ export default function WalletOverviewPage() {
                           {getTransactionIcon(transaction.type)}
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1.5">
-                            <p className="font-semibold text-base capitalize">
+                          <div className="flex items-center gap-2 mb-1.5 min-w-0">
+                            <p className="font-semibold text-base capitalize truncate shrink-0 max-w-[40%]">
                               {transaction.type.replace(/_/g, ' ')}
                             </p>
                             <Badge
-                              variant="outline"
-                              className="text-xs border-primary/20 bg-primary/5"
+                              variant="outline" className="text-xs border-primary/20 bg-primary/5 shrink-0"
                             >
                               {transaction.wallet_type}
                             </Badge>
-                            {/* {transaction.mt5_user_id ? (
-                              <Badge
-                                variant="outline"
-                                className="text-xs border-border/60 bg-background"
-                              >
-                                MT5 ID: {transaction.mt5_user_id}
-                              </Badge>
-                            ) : null} */}
                           </div>
                           <p className="text-sm text-muted-foreground truncate mb-1">
                             {transaction.description}
                           </p>
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <Clock className="h-3 w-3" />
-                            <span>
+                            <span className="truncate">
                               {formatDateTimeInIST(transaction.created_at)}
                             </span>
                           </div>
@@ -444,7 +435,7 @@ export default function WalletOverviewPage() {
                       </div>
                       <div className="text-right ml-4">
                         <p
-                          className={`font-bold text-xl mb-1 ${getTransactionColor(
+                          className={`font-bold text-xl mb-1 overflow-hidden ${getTransactionColor(
                             transaction.type
                           )}`}
                         >

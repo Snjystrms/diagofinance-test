@@ -46,8 +46,12 @@ export function NavMain({
 }) {
   const pathname = usePathname()
   const router = useRouter()
-  const { state } = useSidebar()
+  const { state, isMobile, closeMobileSidebar } = useSidebar()
   const isCollapsed = state === "collapsed"
+
+  const handleMobileNav = React.useCallback(() => {
+    if (isMobile) closeMobileSidebar()
+  }, [isMobile, closeMobileSidebar])
   const isEnterprise = variant === "enterprise"
   const { user } = useAuth()
   const unreadCount = useUnreadNotificationCount(
@@ -157,7 +161,7 @@ export function NavMain({
                         )}
                       </>
                     ) : (
-                      <Link href={item.url} className="flex items-center w-full gap-3">
+                      <Link href={item.url} onClick={handleMobileNav} className="flex items-center w-full gap-3">
                         {item.icon &&
                           (React.isValidElement(item.icon) ? (
                             item.icon
@@ -211,7 +215,7 @@ export function NavMain({
                                   "bg-sidebar-primary/20 text-sidebar-primary font-semibold ring-1 ring-inset ring-sidebar-primary/40 shadow-md shadow-sidebar-primary/20 hover:bg-sidebar-primary/25"
                               )}
                             >
-                              <Link href={subItem.url}>
+                              <Link href={subItem.url} onClick={handleMobileNav}>
                                 <span>{subItem.title}</span>
                               </Link>
                             </SidebarMenuSubButton>

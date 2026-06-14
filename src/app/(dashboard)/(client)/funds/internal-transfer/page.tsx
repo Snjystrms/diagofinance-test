@@ -573,7 +573,7 @@ function InternalTransferContent() {
                   <div>
                     <div className="font-medium">{mainWallet.label}</div>
                     <div className="mt-1 text-muted-foreground">
-                      Balance: {mainWallet.balance} USD
+                      Balance: {mainWallet.balance.toFixed(2)} USD
                     </div>
                   </div>
                   <Badge variant="outline">
@@ -688,7 +688,7 @@ function InternalTransferContent() {
                               <SelectContent>
                                 {mainWallet && (
                                   <SelectItem value={mainWallet.value}>
-                                    {mainWallet.label} ({mainWallet.balance}{" "}
+                                    {mainWallet.label} ({mainWallet.balance.toFixed(2)}{" "}
                                     USD)
                                   </SelectItem>
                                 )}
@@ -767,7 +767,7 @@ function InternalTransferContent() {
                             </FormControl>
                             {mainWallet && (
                               <p className="text-xs text-muted-foreground">
-                                Max. {mainWallet.balance} USD
+                                Max. {mainWallet.balance.toFixed(2)} USD
                               </p>
                             )}
                             <FormMessage />
@@ -780,7 +780,7 @@ function InternalTransferContent() {
                             <Wallet className="h-3.5 w-3.5" />
                             Available:{" "}
                             <span className="font-medium text-foreground">
-                              {mainWallet.balance} USD
+                              {mainWallet.balance.toFixed(2)} USD
                             </span>
                           </div>
                         </div>
@@ -891,7 +891,7 @@ function InternalTransferContent() {
                                     key={wallet.value}
                                     value={wallet.value}
                                   >
-                                    {wallet.label} ({wallet.balance}{" "}
+                                    {wallet.label} ({wallet.balance.toFixed(2)}{" "}
                                     USD)
                                   </SelectItem>
                                 ))}

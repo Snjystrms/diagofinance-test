@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { AlertCircle, ArrowRight } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface IncompleteSection {
@@ -95,9 +95,15 @@ export function ProfileCompletionDialog({
             </Button>
           )}
           {incompleteSections.length > 0 && (
-            <Button onClick={() => handleNavigate(incompleteSections[0].route)}>
-              Complete All Sections
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={() => router.back()} className="border-border/80 bg-background/70">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Go Back
+              </Button>
+              <Button onClick={() => handleNavigate(incompleteSections[0].route)}>
+                Complete All Sections
+              </Button>
+            </div>
           )}
         </DialogFooter>
       </DialogContent>

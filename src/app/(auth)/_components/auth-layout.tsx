@@ -131,8 +131,11 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               className="object-contain"
               priority
             />
-            <span className="font-cinzel text-base font-bold uppercase tracking-[0.2em] text-foreground mt-2">
-              VINNEXIA
+             <span
+              className="truncate font-cinzel text-[21px] font-bold uppercase tracking-[0.2em] text-transparent [-webkit-text-stroke:0.5px_var(--color-foreground)] [text-shadow:0_0_4px_color-mix(in_srgb,var(--color-foreground)_25%,transparent)]"
+              style={{ textShadow: '0 0 20px color-mix(in srgb, var(--color-primary) 25%, transparent)' }}
+            >
+              VINNEXIA CAPITAL
             </span>
             <span className="font-arvo text-[10px] font-semibold tracking-wide text-primary mt-0.5">
               Trade With Confidence

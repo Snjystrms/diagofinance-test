@@ -291,31 +291,31 @@ export default function TransactionsHistoryPage() {
           )
         },
       },
-      {
-        id: 'from_to',
-        header: 'From / To',
-        meta: { mobileHidden: true },
-        cell: ({ row }) => {
-          const transaction = row.original
-          return (
-            <div className="text-sm space-y-1">
-              {transaction.from_account && (
-                <p className="text-muted-foreground">
-                  From: {transaction.from_account}
-                </p>
-              )}
-              {transaction.to_account && (
-                <p className="text-muted-foreground">
-                  To: {transaction.to_account}
-                </p>
-              )}
-              {!transaction.from_account && !transaction.to_account && (
-                <span className="text-muted-foreground">—</span>
-              )}
-            </div>
-          )
-        },
-      },
+      // {
+      //   id: 'from_to',
+      //   header: 'From / To',
+      //   meta: { mobileHidden: true },
+      //   cell: ({ row }) => {
+      //     const transaction = row.original
+      //     return (
+      //       <div className="text-sm space-y-1">
+      //         {transaction.from_account && (
+      //           <p className="text-muted-foreground">
+      //             From: {transaction.from_account}
+      //           </p>
+      //         )}
+      //         {transaction.to_account && (
+      //           <p className="text-muted-foreground">
+      //             To: {transaction.to_account}
+      //           </p>
+      //         )}
+      //         {!transaction.from_account && !transaction.to_account && (
+      //           <span className="text-muted-foreground">—</span>
+      //         )}
+      //       </div>
+      //     )
+      //   },
+      // },
       {
         id: 'created_at',
         header: 'Created At',
@@ -392,149 +392,120 @@ export default function TransactionsHistoryPage() {
        {/* Filters */}
 <Card className="border-border/50">
   {/* Combined Header and Content into a single container for perfect horizontal alignment */}
-  <CardContent className="py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-    
-    {/* Left Side: Icon and Title */}
+ {/* // AFTER */}
+<CardContent className="py-3 flex flex-col gap-3">
+
+  {/* Row 1: Icon + Title */}
+  <div className="flex items-center gap-2">
+    <div className="p-1.5 bg-primary/10 rounded-lg">
+      <Filter className="h-4 w-4 text-primary" />
+    </div>
+    <span className="text-base font-semibold text-card-foreground">Filters</span>
+  </div>
+
+  {/* Row 2: All filters — wraps naturally */}
+  <div className="flex flex-wrap gap-x-4 gap-y-3 items-center">
+
+    {/* Transaction Type */}
     <div className="flex items-center gap-2">
-      <div className="p-1.5 bg-primary/10 rounded-lg">
-        <Filter className="h-4 w-4 text-primary" />
-      </div>
-      <span className="text-base font-semibold text-card-foreground">
-        Filters
-      </span>
+      <Label htmlFor="transaction-type" className="text-sm font-medium whitespace-nowrap">
+        Transaction Type
+      </Label>
+      <Select value={transactionType} onValueChange={(value) => { setTransactionType(value); handleFilterChange() }}>
+        <SelectTrigger id="transaction-type" className="h-9 w-40">
+          <SelectValue placeholder="All types" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Types</SelectItem>
+          <SelectItem value="deposit">Deposit</SelectItem>
+          <SelectItem value="withdrawal">Withdrawal</SelectItem>
+          <SelectItem value="internal transfer">Internal Transfer</SelectItem>
+          <SelectItem value="transfer_in">Transfer In</SelectItem>
+          <SelectItem value="transfer_out">Transfer Out</SelectItem>
+        </SelectContent>
+      </Select>
     </div>
 
-    {/* Right Side: Filters Group in a single row */}
-    <div className="flex flex-col min-[450px]:flex-row gap-4 items-end sm:items-center">
-      
-      {/* Transaction Type Filter */}
-      <div className="flex items-center gap-2 w-full min-[450px]:w-auto">
-        <Label htmlFor="transaction-type" className="text-sm font-medium whitespace-nowrap">
-          Transaction Type
-        </Label>
-        <Select
-          value={transactionType}
-          onValueChange={(value) => {
-            setTransactionType(value)
-            handleFilterChange()
-          }}
-        >
-          <SelectTrigger id="transaction-type" className="h-9 w-full min-[450px]:w-40">
-            <SelectValue placeholder="All types" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Types</SelectItem>
-            <SelectItem value="deposit">Deposit</SelectItem>
-            <SelectItem value="withdrawal">Withdrawal</SelectItem>
-            <SelectItem value="internal transfer">Internal Transfer</SelectItem>
-            <SelectItem value="transfer_in">Transfer In</SelectItem>
-            <SelectItem value="transfer_out">Transfer Out</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Status Filter */}
-      <div className="flex items-center gap-2 w-full min-[450px]:w-auto">
-        <Label htmlFor="status-filter" className="text-sm font-medium whitespace-nowrap">
-          Status
-        </Label>
-        <Select
-          value={status}
-          onValueChange={(value) => {
-            setStatus(value)
-            handleFilterChange()
-          }}
-        >
-          <SelectTrigger id="status-filter" className="h-9 w-full min-[450px]:w-40">
-            <SelectValue placeholder="All statuses" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="approved">Approved</SelectItem>
-            <SelectItem value="failed">Failed</SelectItem>
-            <SelectItem value="declined">Declined</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Period Filter */}
-      <div className="flex items-center gap-2 w-full min-[450px]:w-auto">
-        <Label htmlFor="period-filter" className="text-sm font-medium whitespace-nowrap">
-          Period
-        </Label>
-        <Select
-          value={period}
-          onValueChange={(value) => {
-            setPeriod(value)
-            if (value !== 'all') {
-              setStartDate('')
-              setEndDate('')
-            }
-            handleFilterChange()
-          }}
-        >
-          <SelectTrigger id="period-filter" className="h-9 w-full min-[450px]:w-40">
-            <SelectValue placeholder="All time" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Time</SelectItem>
-            <SelectItem value="last7days">Last 7 Days</SelectItem>
-            <SelectItem value="last15days">Last 15 Days</SelectItem>
-            <SelectItem value="lastmonth">Last Month</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {/* Start Date Filter */}
-      <div className="flex items-center gap-2 w-full min-[450px]:w-auto">
-        <Label htmlFor="start-date" className="text-sm font-medium whitespace-nowrap">
-          From
-        </Label>
-        <input
-          id="start-date"
-          type="date"
-          value={startDate}
-          onChange={(e) => {
-            setStartDate(e.target.value)
-            if (e.target.value) setPeriod('all')
-            handleFilterChange()
-          }}
-          className="h-9 w-full min-[450px]:w-36 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-        />
-      </div>
-
-      {/* End Date Filter */}
-      <div className="flex items-center gap-2 w-full min-[450px]:w-auto">
-        <Label htmlFor="end-date" className="text-sm font-medium whitespace-nowrap">
-          To
-        </Label>
-        <input
-          id="end-date"
-          type="date"
-          value={endDate}
-          onChange={(e) => {
-            setEndDate(e.target.value)
-            if (e.target.value) setPeriod('all')
-            handleFilterChange()
-          }}
-          className="h-9 w-full min-[450px]:w-36 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
-        />
-      </div>
-
-      {/* Reset Button */}
-      {hasActiveFilters && (
-        <Button variant="ghost" size="sm" onClick={handleResetFilters} className="h-9 px-3 text-muted-foreground hover:text-foreground">
-          <XCircle className="h-4 w-4 mr-1.5" />
-          Reset
-        </Button>
-      )}
-
+    {/* Status */}
+    <div className="flex items-center gap-2">
+      <Label htmlFor="status-filter" className="text-sm font-medium whitespace-nowrap">
+        Status
+      </Label>
+      <Select value={status} onValueChange={(value) => { setStatus(value); handleFilterChange() }}>
+        <SelectTrigger id="status-filter" className="h-9 w-36">
+          <SelectValue placeholder="All statuses" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Statuses</SelectItem>
+          <SelectItem value="pending">Pending</SelectItem>
+          <SelectItem value="approved">Approved</SelectItem>
+          <SelectItem value="failed">Failed</SelectItem>
+          <SelectItem value="declined">Declined</SelectItem>
+        </SelectContent>
+      </Select>
     </div>
-  </CardContent>
+
+    {/* Period */}
+    <div className="flex items-center gap-2">
+      <Label htmlFor="period-filter" className="text-sm font-medium whitespace-nowrap">
+        Period
+      </Label>
+      <Select value={period} onValueChange={(value) => {
+        setPeriod(value)
+        if (value !== 'all') { setStartDate(''); setEndDate('') }
+        handleFilterChange()
+      }}>
+        <SelectTrigger id="period-filter" className="h-9 w-36">
+          <SelectValue placeholder="All time" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All Time</SelectItem>
+          <SelectItem value="last7days">Last 7 Days</SelectItem>
+          <SelectItem value="last15days">Last 15 Days</SelectItem>
+          <SelectItem value="lastmonth">Last Month</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+
+    {/* From */}
+    <div className="flex items-center gap-2">
+      <Label htmlFor="start-date" className="text-sm font-medium whitespace-nowrap">
+        From
+      </Label>
+      <input
+        id="start-date"
+        type="date"
+        value={startDate}
+        onChange={(e) => { setStartDate(e.target.value); if (e.target.value) setPeriod('all'); handleFilterChange() }}
+        className="h-9 w-36 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+      />
+    </div>
+
+    {/* To */}
+    <div className="flex items-center gap-2">
+      <Label htmlFor="end-date" className="text-sm font-medium whitespace-nowrap">
+        To
+      </Label>
+      <input
+        id="end-date"
+        type="date"
+        value={endDate}
+        onChange={(e) => { setEndDate(e.target.value); if (e.target.value) setPeriod('all'); handleFilterChange() }}
+        className="h-9 w-36 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+      />
+    </div>
+
+    {/* Reset */}
+    {hasActiveFilters && (
+      <Button variant="ghost" size="sm" onClick={handleResetFilters} className="h-9 px-3 text-muted-foreground hover:text-foreground">
+        <XCircle className="h-4 w-4 mr-1.5" />
+        Reset
+      </Button>
+    )}
+
+  </div>
+</CardContent>
 </Card>
-
-
           {/* Transactions Table */}
           <Card>
             <CardHeader>
