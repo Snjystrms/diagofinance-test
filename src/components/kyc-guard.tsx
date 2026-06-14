@@ -126,6 +126,7 @@ export function KyCGuard({ children }: KyCGuardProps) {
         onOpenChange={() => {}}
         hideSkipButton={true}
         showCloseButton={false}
+        showGoBackButton={true}
         incompleteSections={incompleteSections.map((section) => ({
           ...section,
           icon:

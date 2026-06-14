@@ -85,6 +85,46 @@ type LocationMode = "select" | "other";
 
 const LOCATION_OTHER_VALUE = "__other__";
 
+function utcToIST(utcDate: string, utcTime: string): { date: string; time: string } {
+  try {
+    const dateParts = utcDate.trim().split(" ");
+    const day = parseInt(dateParts[0], 10);
+    const monthStr = dateParts[1];
+    const year = parseInt(dateParts[2], 10);
+
+    const monthMap: Record<string, number> = {
+      Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+      Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
+    };
+    const month = monthMap[monthStr];
+    if (month === undefined) return { date: utcDate, time: utcTime };
+
+    const [timePart, period] = utcTime.trim().split(" ");
+    const [hStr, mStr, sStr] = timePart.split(":");
+    let hours = parseInt(hStr, 10);
+    const minutes = parseInt(mStr, 10);
+    const seconds = parseInt(sStr, 10);
+    if (period === "PM" && hours !== 12) hours += 12;
+    if (period === "AM" && hours === 12) hours = 0;
+
+    const utcMs = Date.UTC(year, month, day, hours, minutes, seconds);
+    const istMs = utcMs + 5.5 * 60 * 60 * 1000;
+    const ist = new Date(istMs);
+
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const date = `${ist.getUTCDate()} ${months[ist.getUTCMonth()]} ${ist.getUTCFullYear()}`;
+
+    let h = ist.getUTCHours();
+    const ampm = h >= 12 ? "PM" : "AM";
+    h = h % 12 || 12;
+    const time = `${String(h).padStart(2, "0")}:${String(ist.getUTCMinutes()).padStart(2, "0")}:${String(ist.getUTCSeconds()).padStart(2, "0")} ${ampm}`;
+
+    return { date, time };
+  } catch {
+    return { date: utcDate, time: utcTime };
+  }
+}
+
 type ActivityTabProps = {
   loginHistory: LoginHistoryItem[];
   paginatedHistory: LoginHistoryItem[];
@@ -125,8 +165,8 @@ export function ProfileActivityTab({
                   <TableBody>
                     {paginatedHistory.map((log, index) => (
                       <TableRow key={`${log.date}-${log.time}-${index}`}>
-                        <TableCell className="font-medium">{log.date}</TableCell>
-                        <TableCell>{log.time}</TableCell>
+                        <TableCell className="font-medium">{utcToIST(log.date, log.time).date}</TableCell>
+                        <TableCell>{utcToIST(log.date, log.time).time}</TableCell>
                         <TableCell className="font-mono text-sm">{log.ip_address}</TableCell>
                         <TableCell>{log.browser}</TableCell>
                       </TableRow>

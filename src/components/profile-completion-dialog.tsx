@@ -26,6 +26,7 @@ interface ProfileCompletionDialogProps {
   incompleteSections: IncompleteSection[];
   hideSkipButton?: boolean;
   showCloseButton?: boolean;
+  showGoBackButton?: boolean;
 }
 
 export function ProfileCompletionDialog({
@@ -34,6 +35,7 @@ export function ProfileCompletionDialog({
   incompleteSections,
   hideSkipButton = false,
   showCloseButton = true,
+  showGoBackButton = false,
 }: ProfileCompletionDialogProps) {
   const router = useRouter();
 
@@ -96,10 +98,12 @@ export function ProfileCompletionDialog({
           )}
           {incompleteSections.length > 0 && (
             <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => router.back()} className="border-border/80 bg-background/70">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Go Back
-              </Button>
+              {showGoBackButton && (
+                <Button variant="outline" onClick={() => router.back()} className="border-border/80 bg-background/70">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Go Back
+                </Button>
+              )}
               <Button onClick={() => handleNavigate(incompleteSections[0].route)}>
                 Complete All Sections
               </Button>

@@ -76,7 +76,12 @@ export function TeamSwitcher({
                     </span>
                   )}
                   <span
-                    className="truncate font-cinzel text-[11px] font-bold uppercase tracking-[0.2em] text-transparent [-webkit-text-stroke:0.5px_white] [text-shadow:0_0_4px_rgba(255,255,255,0.25)]"
+                    className={cn(
+                      "truncate font-cinzel text-[11px] font-bold uppercase tracking-[0.2em]",
+                      themeMode === "bright"
+                        ? "text-[#48526b] [-webkit-text-stroke:0.5px_#48526b] [text-shadow:0_0_4px_rgba(72,82,107,0.25)]"
+                        : "text-transparent [-webkit-text-stroke:0.5px_white] [text-shadow:0_0_4px_rgba(255,255,255,0.25)]"
+                    )}
                   >
                     {activeTeam.name}
                   </span>

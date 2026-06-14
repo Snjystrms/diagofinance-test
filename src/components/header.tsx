@@ -283,7 +283,21 @@ export function Header() {
             <DropdownMenuTrigger asChild>
               {user?.type === "user" ? (
                 <div className="flex cursor-pointer">
-                  <div className="flex items-center gap-2.5 rounded-full border border-border/60 bg-background/80 px-3 py-1.5 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background">
+                  {/* Icon only on small screens */}
+                  <div className="flex sm:hidden h-8 w-8 items-center justify-center rounded-full border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md">
+                    <div className="relative flex-shrink-0">
+                      <User className="h-4 w-4 text-foreground" />
+                      {profileStatus && (
+                        <div className={`absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border-2 border-background ${
+                          profileStatus.toLowerCase() === "verified"
+                            ? "bg-green-500"
+                            : "bg-amber-500"
+                        }`} />
+                      )}
+                    </div>
+                  </div>
+                  {/* Full pill on sm+ screens */}
+                  <div className="hidden sm:flex items-center gap-2.5 rounded-full border border-border/60 bg-background/80 px-3 py-1.5 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background">
                     <div className="relative flex-shrink-0">
                       <div className="flex h-7 w-7 items-center justify-center rounded-full border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm">
                         <User className="h-3.5 w-3.5 text-foreground" />

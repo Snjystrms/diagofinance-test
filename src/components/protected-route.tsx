@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
-import { CenteredLoadingSurface } from '@/components/loading/page-loading-skeleton';
 import { useAuth } from '@/contexts/auth-context';
 import { isRouteAllowedForRole } from '@/lib/app-route-registry';
 
@@ -58,21 +58,39 @@ export function ProtectedRoute({
 
   if (requireAuth && !isAuthenticated) {
     return (
-      <CenteredLoadingSurface
-        minHeightClassName="min-h-screen"
-        title="Loading"
-        description="Checking your session and preparing the workspace."
-      />
+      <div className="min-h-screen flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-sm rounded-[26px] border border-border/80 bg-card/96 px-6 py-6 text-center shadow-[0_24px_70px_-36px_rgba(15,23,42,0.85)] backdrop-blur-sm">
+          <Image
+            src="/vinnexia-logo-dark.svg"
+            alt="Vinnexia"
+            width={56}
+            height={56}
+            priority
+            className="mx-auto"
+          />
+          <p className="mt-4 text-sm font-semibold tracking-[0.01em] text-foreground">Loading</p>
+          <p className="mt-1.5 text-sm leading-6 text-foreground/78">Checking your session and preparing the workspace.</p>
+        </div>
+      </div>
     );
   }
 
   if (!requireAuth && isAuthenticated) {
     return (
-      <CenteredLoadingSurface
-        minHeightClassName="min-h-screen"
-        title="Redirecting"
-        description="Taking you to the right dashboard."
-      />
+      <div className="min-h-screen flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-sm rounded-[26px] border border-border/80 bg-card/96 px-6 py-6 text-center shadow-[0_24px_70px_-36px_rgba(15,23,42,0.85)] backdrop-blur-sm">
+          <Image
+            src="/vinnexia-logo-dark.svg"
+            alt="Vinnexia"
+            width={56}
+            height={56}
+            priority
+            className="mx-auto"
+          />
+          <p className="mt-4 text-sm font-semibold tracking-[0.01em] text-foreground">Redirecting</p>
+          <p className="mt-1.5 text-sm leading-6 text-foreground/78">Taking you to the right dashboard.</p>
+        </div>
+      </div>
     );
   }
 

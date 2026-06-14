@@ -11,6 +11,7 @@ import { useEffect } from "react"
 import dynamic from "next/dynamic"
 import { usePathname } from "next/navigation"
 import { useClientCustomization } from "@/contexts/client-customization-context"
+import Image from "next/image"
 
 const AppSidebarV2 = dynamic(() => import("@/components/app-sidebar-v2").then((m) => ({ default: m.AppSidebarV2 })), { ssr: false })
 const AppSidebarV3 = dynamic(() => import("@/components/app-sidebar-v3").then((m) => ({ default: m.AppSidebarV3 })), { ssr: false })
@@ -24,7 +25,7 @@ export default function DashboardLayout({
 }: DashboardLayoutProps) {
   const { user } = useAuth();
   const pathname = usePathname();
-  const { sidebarId: selectedSidebar } = useClientCustomization();
+  const { sidebarId: selectedSidebar, themeMode } = useClientCustomization();
   const isIbPortal =
     user?.type === "user" &&
     Boolean(user?.is_ib_user) &&
@@ -86,10 +87,13 @@ export default function DashboardLayout({
         <SidebarInset>
           <Header />
           <DashboardBreadcrumbs />
-          <main className="flex-1 overflow-y-auto bg-background p-3 sm:p-4 md:p-5 lg:p-6">
-            <div className="w-full max-w-none">
-              {children}
+          <main className="relative flex-1 overflow-y-auto bg-background p-3 sm:p-4 md:p-5 lg:p-6">
+            <div className="pointer-events-none fixed bottom-4 right-4 z-0 h-48 w-48 opacity-[0.8] dark:opacity-[0.8]">
+              <Image src={themeMode === "bright" ? "/vinnexia-logo.svg" : "/vinnexia-logo-dark.svg"} alt="" width={192} height={192} className="object-contain" />
             </div>
+            <div className="relative z-10 w-full max-w-none">
+              {children}
+</div>
           </main>
         </SidebarInset>
       </SidebarProvider>

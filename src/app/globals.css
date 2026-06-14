@@ -194,6 +194,7 @@
   .ib-portal-hero {
     position: relative;
     overflow: hidden;
+    container-type: inline-size;
     background:
       linear-gradient(
         135deg,
@@ -529,6 +530,12 @@
 
   .dark .bull-theme-wallet-overlay {
     background-image: url('/wallet-balance-bull.png');
+  }
+
+  @container (max-width: 880px) {
+    .bull-theme-welcome-overlay {
+      display: none;
+    }
   }
 }
 

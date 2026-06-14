@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams } from "next/navigation";
 import { z } from "zod";
 import toast from "react-hot-toast";
-import { Repeat, Wallet, ArrowLeftRight, ArrowRight } from "lucide-react";
+import { Repeat, Wallet, ArrowLeftRight, ArrowRight, ArrowDown } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Button } from "@/components/ui/button";
@@ -643,11 +643,11 @@ function InternalTransferContent() {
         onValueChange={(value) => setActiveTab(value as TransferTab)}
         className="space-y-4"
       >
-        <TabsList className="grid grid-cols-1 gap-2 md:grid-cols-2 lg:grid-cols-3">
+        <TabsList className="flex flex-wrap gap-1 h-auto p-1">
           {/* <TabsTrigger value="wallet-to-wallet">Wallet to Wallet</TabsTrigger> */}
-          <TabsTrigger value="wallet-to-mt5">Wallet to MT5</TabsTrigger>
-          <TabsTrigger value="mt5-to-wallet">MT5 to Wallet</TabsTrigger>
-          <TabsTrigger value="mt5-to-mt5">MT5 to MT5</TabsTrigger>
+        <TabsTrigger value="wallet-to-mt5" className="flex-1 min-w-fit">Wallet to MT5</TabsTrigger>
+        <TabsTrigger value="mt5-to-wallet" className="flex-1 min-w-fit">MT5 to Wallet</TabsTrigger>
+        <TabsTrigger value="mt5-to-mt5" className="flex-1 min-w-fit">MT5 to MT5</TabsTrigger>
         </TabsList>
         <TabsContent value="wallet-to-mt5">
           <Card>
@@ -670,7 +670,7 @@ function InternalTransferContent() {
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
                       Transfer route
                     </p>
-                   <div className="grid grid-cols-[minmax(0,1fr)_90px_minmax(0,1fr)] items-end gap-2 max-w-lg">
+                   <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_40px_minmax(0,1fr)] items-end gap-2 sm:max-w-lg">
                       <FormField
                         control={walletToMt5Form.control}
                         name="fromWalletType"
@@ -698,8 +698,9 @@ function InternalTransferContent() {
                           </FormItem>
                         )}
                       />
-                       <div className="flex h-10 items-center justify-center">
-                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                       <div className="flex h-8 sm:h-10 items-center justify-center">
+                          <ArrowRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
+                          <ArrowDown className="h-4 w-4 text-muted-foreground sm:hidden" />
                        </div>
                       <FormField
                         control={walletToMt5Form.control}
@@ -742,7 +743,7 @@ function InternalTransferContent() {
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
                       Amount
                     </p>
-                    <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+                    <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,200px)_1fr] gap-4 items-start">
                       <FormField
                         control={walletToMt5Form.control}
                         name="amount"
@@ -829,7 +830,7 @@ function InternalTransferContent() {
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
                       Transfer route
                     </p>
-                    <div className="grid grid-cols-[minmax(0,1fr)_90px_minmax(0,1fr)] items-end gap-2 max-w-lg">
+                    <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_40px_minmax(0,1fr)] items-end gap-2 sm:max-w-lg">
                       <FormField
                         control={mt5ToWalletForm.control}
                         name="fromAccountId"
@@ -862,8 +863,9 @@ function InternalTransferContent() {
                           </FormItem>
                         )}
                       />
-                       <div className="flex h-10 items-center justify-center">
-                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                       <div className="flex h-8 sm:h-10 items-center justify-center">
+                            <ArrowRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
+                            <ArrowDown className="h-4 w-4 text-muted-foreground sm:hidden" />
                        </div>
                       <FormField
                         control={mt5ToWalletForm.control}
@@ -910,7 +912,7 @@ function InternalTransferContent() {
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
                       Amount
                     </p>
-                    <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+                    <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,200px)_1fr] gap-4 items-start">
                       <FormField
                         control={mt5ToWalletForm.control}
                         name="amount"
@@ -976,7 +978,7 @@ function InternalTransferContent() {
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
                       Transfer route
                     </p>
-                    <div className="grid grid-cols-[minmax(0,1fr)_90px_minmax(0,1fr)] items-end gap-2 max-w-lg">
+                    <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_40px_minmax(0,1fr)] items-end gap-2 sm:max-w-lg">
                       <FormField
                         control={mt5ToMt5Form.control}
                         name="fromAccountId"
@@ -1009,8 +1011,9 @@ function InternalTransferContent() {
                           </FormItem>
                         )}
                       />
-                       <div className="flex h-10 items-center justify-center">
-                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                       <div className="flex h-8 sm:h-10 items-center justify-center">
+                        <ArrowRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
+                        <ArrowDown className="h-4 w-4 text-muted-foreground sm:hidden" />
                        </div>
                       <FormField
                         control={mt5ToMt5Form.control}
@@ -1053,7 +1056,7 @@ function InternalTransferContent() {
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
                       Amount
                     </p>
-                    <div className="grid grid-cols-[200px_1fr] gap-4 items-start">
+                    <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,200px)_1fr] gap-4 items-start">
                       <FormField
                         control={mt5ToMt5Form.control}
                         name="amount"
