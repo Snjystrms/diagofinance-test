@@ -32,7 +32,7 @@ interface DirectRate {
   account_type_id: number;
   account_type_name: string;
   direct_rate: number;
-  commission_pool: number;
+  parent_direct_rate: number;
   assigned_by: number;
   status: number;
   updated_at: string;
@@ -354,7 +354,7 @@ export function IbDirectRatesDialog({
                   <tr>
                     <th className="p-3 text-left font-medium">Account Type</th>
                     <th className="p-3 text-right font-medium">Direct Rate</th>
-                    <th className="p-3 text-right font-medium">Commission Pool</th>
+                    <th className="p-3 text-right font-medium">Parent Rate</th>
                     <th className="p-3 text-center font-medium">Status</th>
                     <th className="p-3 text-right font-medium">Updated At</th>
                     <th className="p-3 text-center font-medium">Action</th>
@@ -367,7 +367,7 @@ export function IbDirectRatesDialog({
                         {rate.account_type_name}
                       </td>
                       <td className="p-3 text-right">{rate.direct_rate}</td>
-                      <td className="p-3 text-right">{rate.commission_pool}</td>
+                      <td className="p-3 text-right">{rate.parent_direct_rate}</td>
                       <td className="p-3 text-center">
                         {getStatusBadge(rate.status)}
                       </td>

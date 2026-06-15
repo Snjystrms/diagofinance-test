@@ -180,7 +180,8 @@ export function RegisterClient() {
                         <SelectContent side="bottom" avoidCollisions={false}>
                           {COUNTRIES.map((country) => (
                             <SelectItem key={country.name} value={country.name}>
-                              {country.name} ({country.code})
+                              {country.name}
+                               {/* ({country.code}) */}
                             </SelectItem>
                           ))}
                         </SelectContent>
