@@ -1,10 +1,17 @@
 import type { Edge, Node } from "@xyflow/react";
 
+export type DirectRate = {
+  account_type_id: number;
+  account_type_name: string;
+  direct_rate: number;
+};
+
 export type IbUser = {
   id: number;
   name: string;
   email: string;
   sponsor_id?: string;
+  direct_rates?: DirectRate[];
 };
 
 export type UserByLevel = {
@@ -18,6 +25,7 @@ export type UserByLevel = {
   sponsor_by?: string | null;
   ib_name?: string;
   level: string;
+  direct_rates?: DirectRate[];
   created_at: string;
 };
 
@@ -58,6 +66,7 @@ export interface TeamNodeData extends Record<string, unknown> {
   highlighted?: boolean;
   userId?: string | number;
   isIb?: boolean;
+  direct_rates?: DirectRate[];
 }
 
 export type GraphNode = Node<TeamNodeData, "teamNode">;
@@ -73,4 +82,5 @@ export type NodeRecord = {
   isRoot?: boolean;
   userId?: number;
   isIb?: boolean;
+  direct_rates?: DirectRate[];
 };

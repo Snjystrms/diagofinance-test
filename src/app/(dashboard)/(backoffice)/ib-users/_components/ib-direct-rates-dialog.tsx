@@ -291,7 +291,7 @@ export function IbDirectRatesDialog({
                   min="0"
                   className="h-9"
                   placeholder="Enter rate"
-                  value={directRateValue}
+                  value={directRateValue} 
                   onChange={(e) => setDirectRateValue(e.target.value)}
                 />
               </div>

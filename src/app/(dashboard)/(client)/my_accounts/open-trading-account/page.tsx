@@ -212,9 +212,10 @@ export default function OpenTradingAccountPage() {
   }, [token]);
 
   // Fetch account types for the MT5 account opening flow.
+  // Re-fetch on every mode toggle so fresh data is always displayed.
   useEffect(() => {
     fetchAccountTypes();
-  }, [fetchAccountTypes]);
+  }, [fetchAccountTypes, accountMode]);
 
   useEffect(() => {
     if (!selectedAccountType || leverageOptions.length === 0) {

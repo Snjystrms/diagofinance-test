@@ -1642,6 +1642,7 @@ export interface MT5Account {
   mt5_id: string;
   account_id: string;
   balance: number;
+  account_mode: "demo" | "live";
 }
 
 export interface MT5AccountsResponse {

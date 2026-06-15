@@ -40,9 +40,10 @@ import {
 } from '@/components/ui/table';
 import { ArrowLeft, Edit, Save, X } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
-import { adminIbUserCommissionsApi, type UserCommission, type UserCommissionResponse } from '@/lib/api';
+import { adminIbUserCommissionsApi, type UserCommission, type UserCommissionResponse, type AdminIbUser } from '@/lib/api';
 import { getAdminFriendlyErrorMessage } from '@/lib/admin-friendly-errors';
 import { nodeTypes } from './team-node';
+import { IbDirectRatesDialog } from '@/app/(dashboard)/(backoffice)/ib-users/_components/ib-direct-rates-dialog';
 import { formatDateTimeInIST } from '@/lib/formatters';
 import { fetchUsersByLevel, NODE_H, NODE_W, levelColor, levelToDepth, toastNoDownline, type UserByLevel } from '@/lib/downline-tree';
 import type { GraphEdge, GraphNode, NodeRecord, TeamNodeData } from '../_types';
@@ -106,6 +107,10 @@ export function DownlineTreePageContent({
   const [editedCommissions, setEditedCommissions] = useState<Record<number, Partial<UserCommission>>>({});
   const [savingCommission, setSavingCommission] = useState<number | null>(null);
 
+  // Direct rates dialog state
+  const [directRatesDialogOpen, setDirectRatesDialogOpen] = useState(false);
+  const [selectedDirectRateUser, setSelectedDirectRateUser] = useState<AdminIbUser | null>(null);
+
   const handleBack = useCallback(() => {
     if (onBack) {
       onBack();
@@ -114,6 +119,11 @@ export function DownlineTreePageContent({
 
     router.push(backHref);
   }, [backHref, onBack, router]);
+
+  const handleOpenDirectRates = useCallback((user: AdminIbUser) => {
+    setSelectedDirectRateUser(user);
+    setDirectRatesDialogOpen(true);
+  }, []);
 
   // ============ data fetching ============
   const fetchDownlineUsers = useCallback(
@@ -169,6 +179,7 @@ export function DownlineTreePageContent({
         isRoot: true,
         userId: ibUser.id,
         isIb: true,
+        direct_rates: ibUser.direct_rates,
       };
 
       const nextNodes: Record<string, NodeRecord> = { [rootId]: root };
@@ -214,6 +225,7 @@ export function DownlineTreePageContent({
             isRoot: false,
             userId: user.id,
             isIb: !!user.ib_name,
+            direct_rates: user.direct_rates,
           };
         }
 
@@ -250,6 +262,7 @@ export function DownlineTreePageContent({
                   isRoot: false,
                   userId: parentUser.id,
                   isIb: !!parentUser.ib_name,
+                  direct_rates: parentUser.direct_rates,
                 };
               }
             }
@@ -427,6 +440,7 @@ export function DownlineTreePageContent({
           highlighted: false,
           userId: n.userId,
           isIb: n.isIb,
+          direct_rates: n.direct_rates,
         },
         style: { width: NODE_W, height: NODE_H },
         sourcePosition: Position.Bottom,
@@ -531,6 +545,15 @@ export function DownlineTreePageContent({
           nodesDraggable={false}
           elementsSelectable={false}
           defaultEdgeOptions={defaultEdgeOptions}
+          onNodeClick={(_, node) => {
+            const d = node.data as TeamNodeData;
+            if (d?.userId != null) {
+              handleOpenDirectRates({
+                id: d.userId,
+                name: d.username,
+              } as AdminIbUser);
+            }
+          }}
         >
           <Background
             variant={BackgroundVariant.Dots}
@@ -652,6 +675,13 @@ export function DownlineTreePageContent({
           </div>
         </div>
       </div>
+
+      <IbDirectRatesDialog
+        open={directRatesDialogOpen}
+        onOpenChange={setDirectRatesDialogOpen}
+        user={selectedDirectRateUser}
+        token={token ?? ''}
+      />
        </>
   );
 } 

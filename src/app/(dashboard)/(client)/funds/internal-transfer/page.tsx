@@ -225,7 +225,7 @@ function InternalTransferContent() {
     () =>
       mt5Accounts.map((account) => ({
         id: account.account_id,
-        label: `${account.account_id} • ${formatCurrency(account.balance)}`,
+        label: `${account.account_id} • ${formatCurrency(account.balance)} • ${account.account_mode ?? "—"}`,
       })),
     [mt5Accounts],
   );
@@ -620,7 +620,7 @@ function InternalTransferContent() {
                           MT5 Login: {account.mt5_id}
                         </div>
                       </div>
-                      <Badge variant="outline">MT5</Badge>
+                      <Badge variant="outline">{account.account_mode}</Badge>
                     </div>
                     <div className="mt-1 text-muted-foreground">
                       Balance: {formatCurrency(account.balance)}

@@ -3,13 +3,13 @@
 import { Handle, Position, type NodeProps, type NodeTypes } from "@xyflow/react";
 import clsx from "clsx";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle2, User as UserIcon, XCircle } from "lucide-react";
+import { CheckCircle2, Landmark, User as UserIcon, XCircle } from "lucide-react";
 import { levelColor, levelToDepth } from "@/lib/downline-tree/graph-helpers";
 import { useIsDark } from "../_hooks/use-is-dark";
 import type { GraphNode } from "../_types";
 
 const formatLevelLabel = (level: string) => {
-  if (level === "Level-IB" || level === "IB") return "Partner";
+  if (level === "Level-IB" || level === "IB") return "Level-Partner";
   return level;
 };
 
@@ -39,10 +39,14 @@ const TeamNode = ({ data }: NodeProps<GraphNode>) => {
     return "text-foreground";
   };
 
+  const directRates = data.direct_rates ?? [];
+  const configuredRates = directRates.filter((r) => r.direct_rate > 0).length;
+  const totalRates = directRates.length;
+
   return (
     <div
       className={clsx(
-        "relative rounded-xl border shadow-sm px-3 py-2 w-[220px] h-[90px] flex items-center gap-3 backdrop-blur-sm",
+        "relative rounded-xl border shadow-sm px-3 py-2 w-[220px] h-[100px] flex items-center gap-3 backdrop-blur-sm cursor-pointer",
         "bg-card text-foreground",
         getBorderColor(),
         highlightCls
@@ -102,6 +106,12 @@ const TeamNode = ({ data }: NodeProps<GraphNode>) => {
                 </span>
               ) : null}
             </div>
+          </div>
+        )}
+        {totalRates > 0 && (
+          <div className="mt-0.5 flex items-center gap-1 text-[9px] text-muted-foreground">
+            <Landmark className="h-2.5 w-2.5" />
+            <span>{configuredRates}/{totalRates} rates</span>
           </div>
         )}
       </div>
