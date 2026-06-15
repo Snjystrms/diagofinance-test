@@ -364,10 +364,10 @@ export function IbDirectRatesDialog({
                   {rates.map((rate) => (
                     <tr key={rate.account_type_id} className="border-t">
                       <td className="p-3 font-medium">
-                        {rate.account_type_name}
+                        {rate.account_type_name || "-"}
                       </td>
-                      <td className="p-3 text-right">{rate.direct_rate}</td>
-                      <td className="p-3 text-right">{rate.parent_direct_rate}</td>
+                      <td className="p-3 text-right">{rate.direct_rate ?? "-"}</td>
+                      <td className="p-3 text-right">{rate.parent_direct_rate ?? "-"}</td>
                       <td className="p-3 text-center">
                         {getStatusBadge(rate.status)}
                       </td>

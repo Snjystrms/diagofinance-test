@@ -1971,84 +1971,85 @@ function USDTDepositContent() {
                     </CardContent>
                   </Card>
 
-                  {/* Request history */}
-                  <Card className="border border-border/60 bg-card shadow-sm">
-                    <CardHeader className="flex flex-row items-center justify-between gap-4 pb-3">
-                      <div>
-                        <CardTitle className="text-base font-semibold">Your Requests</CardTitle>
-                        <CardDescription className="text-xs">Recent bank deposit submissions</CardDescription>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <select
-                          value={bankRequestStatusFilter}
-                          onChange={(e) => setBankRequestStatusFilter(e.target.value)}
-                          className="h-8 rounded-lg border border-input bg-background px-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                        >
-                          <option value="all">All statuses</option>
-                          <option value="pending">Pending</option>
-                          <option value="approved">Approved</option>
-                          <option value="rejected">Rejected</option>
-                        </select>
-                        <Button variant="outline" size="sm" onClick={fetchBankRequests} disabled={bankRequestsLoading}>
-                          <RefreshCw className={`h-3.5 w-3.5 ${bankRequestsLoading ? "animate-spin" : ""}`} />
-                        </Button>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="p-0">
-                      {bankRequestsLoading ? (
-                        <div className="space-y-2 p-4">
-                          {[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
-                        </div>
-                      ) : bankRequests.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center gap-2 py-10 text-center text-muted-foreground">
-                          <FileText className="h-8 w-8 opacity-40" />
-                          <p className="text-sm">No bank deposit requests yet</p>
-                        </div>
-                      ) : (
-                        <div className="overflow-x-auto">
-                          <Table>
-                            <TableHeader>
-                              <TableRow className="bg-muted/30">
-                                <TableHead className="text-xs">Sr. No.</TableHead>
-                                <TableHead className="text-xs">Amount</TableHead>
-                                <TableHead className="text-xs">Txn ID</TableHead>
-                                <TableHead className="text-xs">Status</TableHead>
-                                <TableHead className="text-xs">Date</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {bankRequests
-                                .map((req, index) => {
-                                const statusColor =
-                                  req.status === "approved"
-                                    ? "border-emerald-500/40 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20"
-                                    : req.status === "rejected"
-                                    ? "border-red-500/40 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20"
-                                    : "border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20";
-                                return (
-                                  <TableRow key={req.id}>
-                                     <TableCell className="font-medium">{index + 1}</TableCell>
-                                    <TableCell className="text-sm font-semibold">${Number(req.amount).toFixed(2)}</TableCell>
-                                    <TableCell className="font-mono text-xs max-w-[80px] truncate">{req.transaction_id}</TableCell>
-                                    <TableCell>
-                                      <Badge variant="outline" className={`text-xs capitalize ${statusColor}`}>
-                                        {req.status}
-                                      </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                                      {formatDateTimeInIST(req.created_at)}
-                                    </TableCell>
-                                  </TableRow>
-                                );
-                              })}
-                            </TableBody>
-                          </Table>
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
                 </div>
               </div>
+
+              {/* Request history — full width below the grid */}
+              <Card className="border border-border/60 bg-card shadow-sm">
+                <CardHeader className="flex flex-row items-center justify-between gap-4 pb-3">
+                  <div>
+                    <CardTitle className="text-base font-semibold">Your Requests</CardTitle>
+                    <CardDescription className="text-xs">Recent bank deposit submissions</CardDescription>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={bankRequestStatusFilter}
+                      onChange={(e) => setBankRequestStatusFilter(e.target.value)}
+                      className="h-8 rounded-lg border border-input bg-background px-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <option value="all">All statuses</option>
+                      <option value="pending">Pending</option>
+                      <option value="approved">Approved</option>
+                      <option value="rejected">Rejected</option>
+                    </select>
+                    <Button variant="outline" size="sm" onClick={fetchBankRequests} disabled={bankRequestsLoading}>
+                      <RefreshCw className={`h-3.5 w-3.5 ${bankRequestsLoading ? "animate-spin" : ""}`} />
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  {bankRequestsLoading ? (
+                    <div className="space-y-2 p-4">
+                      {[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
+                    </div>
+                  ) : bankRequests.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center gap-2 py-10 text-center text-muted-foreground">
+                      <FileText className="h-8 w-8 opacity-40" />
+                      <p className="text-sm">No bank deposit requests yet</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-muted/30">
+                            <TableHead className="text-xs">Sr. No.</TableHead>
+                            <TableHead className="text-xs">Amount</TableHead>
+                            <TableHead className="text-xs">Txn ID</TableHead>
+                            <TableHead className="text-xs">Status</TableHead>
+                            <TableHead className="text-xs">Date</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {bankRequests
+                            .map((req, index) => {
+                            const statusColor =
+                              req.status === "approved"
+                                ? "border-emerald-500/40 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20"
+                                : req.status === "rejected"
+                                ? "border-red-500/40 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20"
+                                : "border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20";
+                            return (
+                              <TableRow key={req.id}>
+                                 <TableCell className="font-medium">{index + 1}</TableCell>
+                                <TableCell className="text-sm font-semibold">${Number(req.amount).toFixed(2)}</TableCell>
+                                <TableCell className="font-mono text-xs max-w-[80px] truncate">{req.transaction_id}</TableCell>
+                                <TableCell>
+                                  <Badge variant="outline" className={`text-xs capitalize ${statusColor}`}>
+                                    {req.status}
+                                  </Badge>
+                                </TableCell>
+                                <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                                  {formatDateTimeInIST(req.created_at)}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </TabsContent>}
 
             {/* â”€â”€ Coming-soon tabs for unrecognised payment method types â”€â”€ */}
