@@ -606,7 +606,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "transaction-management",
-    navLabel: "Deposit List",
+    navLabel: "Client Deposit List",
     managerCategories: ["Transaction"],
   },
   {
@@ -614,7 +614,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "transaction-management",
-    navLabel: "Withdrawal List",
+    navLabel: "Client Withdrawal List",
     managerCategories: ["Transaction"],
   },
   {

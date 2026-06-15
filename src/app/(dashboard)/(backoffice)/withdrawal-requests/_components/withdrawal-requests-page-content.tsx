@@ -101,7 +101,7 @@ export function WithdrawalRequestsPageContent() {
   const [search, setSearch] = useQueryState("search", parseAsString.withDefault(""));
   const [searchInput, setSearchInput] = useState(search ?? "");
   const [totalPages, setTotalPages] = useState(1);
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [statusFilter, setStatusFilter] = useQueryState("status", parseAsString.withDefault("all"));
 
   // View details dialog state
   const [viewDialogOpen, setViewDialogOpen] = useState(false);

@@ -732,51 +732,55 @@ export default function IbManagementPage() {
                 </div>
               ) : null}
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-foreground">Decision</label>
-                <Tabs
-                  value={selectedDecision}
-                  onValueChange={(value) => {
-                    if (value === "approve" || value === "reject") {
-                      setSelectedDecision(value);
-                    }
-                  }}
-                  className="w-full"
-                >
-                  <TabsList className="grid h-auto w-full grid-cols-2 rounded-2xl bg-muted/50 p-1">
-                    <TabsTrigger value="approve" className="rounded-xl">
-                      <CheckCircle2 className="mr-2 h-4 w-4" />
-                      Approve
-                    </TabsTrigger>
-                    <TabsTrigger value="reject" className="rounded-xl">
-                      <XCircle className="mr-2 h-4 w-4" />
-                      Reject
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </div>
+              {currentStatusCode === 0 ? (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-foreground">Decision</label>
+                  <Tabs
+                    value={selectedDecision}
+                    onValueChange={(value) => {
+                      if (value === "approve" || value === "reject") {
+                        setSelectedDecision(value);
+                      }
+                    }}
+                    className="w-full"
+                  >
+                    <TabsList className="grid h-auto w-full grid-cols-2 rounded-2xl bg-muted/50 p-1">
+                      <TabsTrigger value="approve" className="rounded-xl">
+                        <CheckCircle2 className="mr-2 h-4 w-4" />
+                        Approve
+                      </TabsTrigger>
+                      <TabsTrigger value="reject" className="rounded-xl">
+                        <XCircle className="mr-2 h-4 w-4" />
+                        Reject
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+              ) : null}
 
-              <div className="space-y-2">
-                <label htmlFor="admin-comment" className="text-sm font-medium">
-                  {isApproveDecision ? "Admin Comment (optional)" : "Rejection Comment (optional)"}
-                </label>
-                <Textarea
-                  id="admin-comment"
-                  value={actionComment}
-                  onChange={(event) => setActionComment(event.target.value)}
-                  rows={4}
-                  placeholder={
-                    isApproveDecision
-                      ? "Add any internal notes (optional)"
-                      : "Explain why this request is being rejected (optional)"
-                  }
-                />
-                {!isApproveDecision ? (
-                  <p className="text-xs text-muted-foreground">
-                    Leave this empty if you do not want to send a rejection note.
-                  </p>
-                ) : null}
-              </div>
+              {currentStatusCode === 0 ? (
+                <div className="space-y-2">
+                  <label htmlFor="admin-comment" className="text-sm font-medium">
+                    {isApproveDecision ? "Admin Comment (optional)" : "Rejection Comment (optional)"}
+                  </label>
+                  <Textarea
+                    id="admin-comment"
+                    value={actionComment}
+                    onChange={(event) => setActionComment(event.target.value)}
+                    rows={4}
+                    placeholder={
+                      isApproveDecision
+                        ? "Add any internal notes (optional)"
+                        : "Explain why this request is being rejected (optional)"
+                    }
+                  />
+                  {!isApproveDecision ? (
+                    <p className="text-xs text-muted-foreground">
+                      Leave this empty if you do not want to send a rejection note.
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
 
               </div>
           ) : null}
@@ -785,29 +789,31 @@ export default function IbManagementPage() {
             <Button variant="outline" onClick={closeActionDialog} className="px-5">
               Cancel
             </Button>
-            <Button
-              variant={isApproveDecision ? "default" : "destructive"}
-              onClick={handleActionSubmit}
-              className="px-5"
-              disabled={processingId !== null}
-            >
-              {processingId !== null ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Processing...
-                </>
-              ) : isApproveDecision ? (
-                <>
-                  <CheckCircle2 className="mr-2 h-4 w-4" />
-                  Save as Approved
-                </>
-              ) : (
-                <>
-                  <XCircle className="mr-2 h-4 w-4" />
-                  Save as Rejected
-                </>
-              )}
-            </Button>
+            {currentStatusCode === 0 ? (
+              <Button
+                variant={isApproveDecision ? "default" : "destructive"}
+                onClick={handleActionSubmit}
+                className="px-5"
+                disabled={processingId !== null}
+              >
+                {processingId !== null ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : isApproveDecision ? (
+                  <>
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Save as Approved
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="mr-2 h-4 w-4" />
+                    Save as Rejected
+                  </>
+                )}
+              </Button>
+            ) : null}
           </DialogFooter>
         </DialogContent>
       </Dialog>

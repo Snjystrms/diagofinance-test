@@ -10,6 +10,16 @@ export const fmtDateTime = (s?: string | null) => {
   }
 };
 
+/** API returns processed_at already in IST (no zone suffix). Append IST offset so it is not treated as UTC. */
+export const fmtISTDateTime = (s?: string | null) => {
+  if (!s) return "—";
+  try {
+    return formatDateTimeInIST(`${s}+05:30`);
+  } catch {
+    return s;
+  }
+};
+
 export const formatAmount = (amount?: string | number | null) => {
   if (amount === undefined || amount === null) return "0.00";
   try {

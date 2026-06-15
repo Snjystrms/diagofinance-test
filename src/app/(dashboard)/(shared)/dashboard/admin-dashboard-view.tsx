@@ -117,7 +117,7 @@ const allKpiCards = [
   // Row 2
   { title: "Approved Deposits",      value: kpis?.approved_deposit ?? 0,                description: "Total approved",              icon: CheckCircle2, ibVariant: "ib-portal-surface-emerald", href: "/usdt-transactions?status=approved" },
   { title: "Pending Deposits",       value: kpis?.pending_deposit ?? 0,                 description: "Awaiting approval",           icon: Clock,        ibVariant: "ib-portal-surface-amber",   href: "/usdt-transactions?status=pending" },
-  { title: "Pending Withdrawals",    value: kpis?.pending_withdraw ?? 0,                description: "Awaiting processing",         icon: Clock, ibVariant: "ib-portal-surface-amber",   href: "/withdrawal-requests" },
+  { title: "Pending Withdrawals",    value: kpis?.pending_withdraw ?? 0,                description: "Awaiting processing",         icon: Clock, ibVariant: "ib-portal-surface-amber",   href: "/withdrawal-requests?status=pending" },
   // Row 3
   { title: "Pending Partner Request", value: kpis?.pending_ib_request ?? 0,             description: "Pending Partner requests",      icon: Clock,       ibVariant: "ib-portal-surface-primary", href: "/all-ib?status=0" },
   { title: "Pending KYC Clients",        value: kpis?.pending_kyc_clients ?? 0,             description: "Awaiting approval",           icon: Clock,        ibVariant: "ib-portal-surface-amber",   href: "/user-verification" },

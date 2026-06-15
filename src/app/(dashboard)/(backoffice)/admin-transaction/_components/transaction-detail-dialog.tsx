@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { fmtDateTime, formatAmount, transactionTypeLabel } from "../_lib/transaction-format";
+import { fmtDateTime, fmtISTDateTime, formatAmount, transactionTypeLabel } from "../_lib/transaction-format";
 import type { AdminTransactionItem } from "@/lib/api-admin-transactions";
 
 interface TransactionDetailDialogProps {
@@ -215,7 +215,7 @@ export function TransactionDetailDialog({
               <div>
                 <p className="text-xs text-muted-foreground">Processed At</p>
                 <p className="font-medium">
-                  {transaction.processed_at ? fmtDateTime(transaction.processed_at) : "—"}
+                  {transaction.processed_at ? fmtISTDateTime(transaction.processed_at) : "—"}
                 </p>
               </div>
               <div>

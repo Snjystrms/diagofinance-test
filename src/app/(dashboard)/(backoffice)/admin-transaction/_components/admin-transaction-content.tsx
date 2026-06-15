@@ -41,7 +41,7 @@ import {
   adminTransactionsApi,
   type AdminTransactionItem,
   type AdminTransactionsAllData,
-  type AdminTransactionStatsData,
+  type AdminTransactionStatistics,
   type AdminClientDepositData,
   type AdminClientWithdrawalData,
   type AdminInternalTransferData,
@@ -49,7 +49,7 @@ import {
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
-import { fmtDateTime, formatAmount, statusBadge, transactionTypeLabel } from "../_lib/transaction-format";
+import { fmtDateTime, fmtISTDateTime, formatAmount, statusBadge, transactionTypeLabel } from "../_lib/transaction-format";
 import { ClientDepositDialog } from "./client-deposit-dialog";
 import { ClientWithdrawalDialog } from "./client-withdrawal-dialog";
 import { InternalTransferDialog } from "./internal-transfer-dialog";
@@ -62,7 +62,7 @@ export function AdminTransactionContent() {
   const canView = !isManager || hasFeature("reportManagement", "allTransactionReport");
 
   const [rows, setRows] = useState<AdminTransactionItem[]>([]);
-  const [stats, setStats] = useState<AdminTransactionStatsData | null>(null);
+  const [stats, setStats] = useState<AdminTransactionStatistics | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
   const [totalPages, setTotalPages] = useState(1);
@@ -99,27 +99,23 @@ export function AdminTransactionContent() {
         typeof searchUser === "string" && searchUser.trim().length >= 3
           ? searchUser.trim()
           : undefined;
-      const [txRes, statsRes] = await Promise.all([
-        adminTransactionsApi.all({
-          token,
-          page,
-          limit: perPage,
-          sort_by: "created_at",
-          sort_order: "DESC",
-          search: searchTerm,
-          transaction_type: (typeFilter as AdminTransactionItem["transaction_type"]) || undefined,
-          status: (statusFilter as AdminTransactionItem["status"]) || undefined,
-        }),
-        adminTransactionsApi.stats(token),
-      ]);
+      const txRes = await adminTransactionsApi.all({
+        token,
+        page,
+        limit: perPage,
+        sort_by: "created_at",
+        sort_order: "DESC",
+        search: searchTerm,
+        transaction_type: (typeFilter as AdminTransactionItem["transaction_type"]) || undefined,
+        status: (statusFilter as AdminTransactionItem["status"]) || undefined,
+      });
       if (currentRequestId !== requestIdRef.current) return;
       const txPayload = txRes.data;
       const txItems = Array.isArray(txPayload?.transactions) ? txPayload.transactions : [];
       setRows(txItems);
       setTotalPages(txPayload?.pagination?.total_pages ?? 1);
       setTotalRecords(txPayload?.pagination?.total_records ?? txItems.length);
-      const statsPayload = statsRes.data;
-      setStats(statsPayload ?? null);
+      setStats(txPayload?.statistics ?? null);
     } catch (error: unknown) {
       if (currentRequestId !== requestIdRef.current) return;
       setLoadError(error);
@@ -213,6 +209,17 @@ export function AdminTransactionContent() {
       accessorKey: "status",
       header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
       cell: ({ row }) => statusBadge(row.original.status),
+    },
+       {
+      id: "processed_by",
+      accessorKey: "processed_by",
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Processed By" />,
+      cell: ({ row }) => (
+         <div className="space-y-0.5">
+        <div className="font-normal">{row.original.processed_by || "-"} </div>
+         <div className="font-normal">{fmtISTDateTime(row.original.processed_at)} </div>
+        </div>
+      ),
     },
      {
       id: "transaction_hash",
@@ -316,18 +323,18 @@ export function AdminTransactionContent() {
               <Wallet className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatAmount(stats.total_amounts.wallet_transactions)}</div>
-              <p className="text-xs text-muted-foreground">{stats.total_counts.wallet_transactions} total</p>
+              <div className="text-2xl font-bold">{stats.total_wallet_transactions}</div>
+              <p className="text-xs text-muted-foreground">Total count</p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">USDT Deposits</CardTitle>
+              <CardTitle className="text-sm font-medium text-muted-foreground">USD Deposits</CardTitle>
               <Banknote className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatAmount(stats.total_amounts.usdt_deposits)}</div>
-              <p className="text-xs text-muted-foreground">{stats.total_counts.usdt_deposits} total</p>
+              <div className="text-2xl font-bold">{stats.total_usdt_deposits}</div>
+              <p className="text-xs text-muted-foreground">Total count</p>
             </CardContent>
           </Card>
           <Card>
@@ -336,8 +343,8 @@ export function AdminTransactionContent() {
               <ArrowUpFromLine className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatAmount(stats.total_amounts.withdrawals)}</div>
-              <p className="text-xs text-muted-foreground">{stats.total_counts.withdrawals} total</p>
+              <div className="text-2xl font-bold">{stats.total_withdrawals}</div>
+              <p className="text-xs text-muted-foreground">Total count</p>
             </CardContent>
           </Card>
           <Card>
@@ -346,10 +353,30 @@ export function AdminTransactionContent() {
               <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{formatAmount(stats.total_amounts.total)}</div>
-              <p className="text-xs text-muted-foreground">{stats.total_counts.total} total</p>
+              <div className="text-2xl font-bold">{stats.total_all_transactions}</div>
+              <p className="text-xs text-muted-foreground">Total count</p>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Status Breakdown */}
+      {stats?.status_counts && (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {Object.entries(stats.status_counts).map(([status, count]) => (
+            <Card key={status}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground capitalize">
+                  {status} Transactions
+                </CardTitle>
+                {statusBadge(status)}
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{count}</div>
+                <p className="text-xs text-muted-foreground">Count</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
 
