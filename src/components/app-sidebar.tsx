@@ -60,14 +60,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         />
       </SidebarHeader>
       <SidebarContent className="gap-0 px-1.5 py-3">
-        <>
-          <NavMain
-            items={navItems}
-            variant="enterprise"
-            sectionLabel={getSectionLabelForRole(user?.type)}
-          />
-          {/* <NavProjects projects={crmData.projects} /> */}
-        </>
+        <NavMain
+          items={navItems}
+          variant="enterprise"
+          sectionLabel={getSectionLabelForRole(user?.type)}
+        />
       </SidebarContent>
       <SidebarFooter className="p-3 group-data-[collapsible=icon]:pl-2 group-data-[collapsible=icon]:pr-4 group-data-[collapsible=icon]:py-2">
         <SidebarLogoutButton />

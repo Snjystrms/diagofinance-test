@@ -1082,33 +1082,33 @@ const themeSwatches: ThemeSwatch[] = [
   id: "golden-bull-bright",
   name: "Golden Bull Bright",
 
-  leftColor: "#FEFEFE",
-  rightColor: "#F7F9FC",
+  leftColor: "#F5F0E8",
+  rightColor: "#EDE6D8",
 
   cssVariables: {
-    primary: "#FFB401",          // Signature bull gold
-    secondary: "#48526B",        // Slate blue-grey
-    accent: "#FFC533",           // Hover/active gold
+    primary: "#FFB401",          // Unchanged — gold pops on warm parchment
+    secondary: "#5C4E3A",        // Warm dark brown — replaces cold slate
+    accent: "#FFC533",           // Gold hover
 
-    background: "#FEFEFE",       // Clean white
-    foreground: "#1F2937",       // Deep slate text
+    background: "#F5F0E8",       // Warm parchment — not white, not grey
+    foreground: "#2C2218",       // Deep warm ink — not pure black
 
-    border: "#E2E8F0",           // Modern subtle border
+    border: "#D9CEB8",           // Tan border — visible but not harsh
 
-    muted: "#F8FAFC",            // Card backgrounds
-    mutedForeground: "#64748B",  // Secondary text
+    muted: "#EDE6D8",            // Darker parchment for cards/sidebar
+    mutedForeground: "#8B7355",  // Mid warm brown for secondary text
 
     sidebar: {
-      background: "#FFFFFF",
-      foreground: "#1F2937",
+      background: "#EDE6D8",     // One shade deeper than main bg
+      foreground: "#2C2218",
 
       primary: "#FFB401",
-      primaryForeground: "#111827",
+      primaryForeground: "#1C1610",
 
-      accent: "#EEF2F7",         // Hover state
-      accentForeground: "#48526B",
+      accent: "#D9CEB8",         // Hover — darker tan
+      accentForeground: "#4A3728",
 
-      border: "#E2E8F0",
+      border: "#D9CEB8",
       ring: "#FFC533"
     }
   }

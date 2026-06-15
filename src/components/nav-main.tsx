@@ -99,7 +99,7 @@ export function NavMain({
           const topLevelButtonClass = isEnterprise
             ? cn(
                 "group h-11 rounded-xl px-3.5 text-[15px] font-medium tracking-[-0.01em] text-sidebar-foreground transition-all duration-300 [&>svg]:size-[18px] [&>svg]:shrink-0 [&>svg]:text-sidebar-foreground/55",
-                !isActive && "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground",
+                !isActive && "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                 hasActiveSubItem && !isDirectActive && "bg-sidebar-primary/[0.08] text-sidebar-foreground [&>svg]:text-sidebar-primary/70 hover:bg-sidebar-primary/15",
                 isDirectActive && "bg-sidebar-primary/20 text-sidebar-primary font-semibold ring-1 ring-inset ring-sidebar-primary/50 shadow-lg shadow-sidebar-primary/25 [&>svg]:text-sidebar-primary hover:bg-sidebar-primary/30 hover:text-sidebar-primary",
                 isCollapsed && "justify-center px-0"
@@ -119,11 +119,25 @@ export function NavMain({
                 <CollapsibleTrigger asChild>
                   <SidebarMenuButton 
                     tooltip={item.title}
-                    asChild={!hasSubItems}
+                    asChild={isCollapsed ? true : !hasSubItems}
                     size="default"
                     className={topLevelButtonClass}
                   >
-                    {hasSubItems ? (
+                    {isCollapsed && hasSubItems ? (
+                      <Link href={item.items?.[0]?.url ?? item.url} onClick={handleMobileNav} className="flex items-center justify-center w-full">
+                        {item.icon &&
+                          (React.isValidElement(item.icon) ? (
+                            item.icon
+                          ) : (
+                            <item.icon
+                              className={cn(
+                                "transition-transform duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
+                                isEnterprise ? "size-[18px]" : "size-6"
+                              )}
+                            />
+                          ))}
+                      </Link>
+                    ) : hasSubItems ? (
                       <>
                         {item.icon &&
                           (React.isValidElement(item.icon) ? (

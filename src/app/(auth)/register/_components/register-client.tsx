@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
@@ -35,6 +35,36 @@ import {
 import { ProtectedRoute } from '@/components/protected-route';
 import { Spinner } from '@/components/ui/spinner';
 import { AuthLayout } from '@/app/(auth)/_components/auth-layout';
+import { Check, X } from 'lucide-react';
+
+function PasswordRequirements({ password }: { password: string }) {
+  const requirements = useMemo(() => [
+    { label: 'At least 8 characters', test: (p: string) => p.length >= 8 },
+    { label: 'One uppercase letter', test: (p: string) => /[A-Z]/.test(p) },
+    { label: 'One lowercase letter', test: (p: string) => /[a-z]/.test(p) },
+    { label: 'One number', test: (p: string) => /[0-9]/.test(p) },
+    { label: 'One special character', test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+  ], []);
+
+  return (
+    <ul className="space-y-1 mt-1.5">
+      {requirements.map((req) => {
+        const met = req.test(password);
+        return (
+          <li
+            key={req.label}
+            className={`flex items-center gap-1.5 text-xs transition-colors ${
+              met ? 'text-emerald-500' : 'text-muted-foreground/60'
+            }`}
+          >
+            {met ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
+            {req.label}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
 export function RegisterClient() {
   const { registerMutation } = useAuthMutations();
@@ -245,6 +275,9 @@ export function RegisterClient() {
                   label="Password"
                   inputProps={{ placeholder: 'Enter password', className: 'bg-input border-primary/20 text-foreground placeholder:text-muted-foreground/50 focus:border-primary/50 focus:ring-1 focus:ring-primary/15' }}
                 />
+                {form.watch('password') && (
+                  <PasswordRequirements password={form.watch('password')} />
+                )}
 
                 <ValidatedPasswordField
                   control={form.control}

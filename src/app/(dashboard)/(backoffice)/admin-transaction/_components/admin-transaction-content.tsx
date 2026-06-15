@@ -292,11 +292,11 @@ export function AdminTransactionContent() {
             <ArrowDownToLine className="mr-2 h-4 w-4" />
             Client Deposit
           </Button>
-          <Button variant="secondary" onClick={() => setWithdrawalDialogOpen(true)}>
+          <Button onClick={() => setWithdrawalDialogOpen(true)}>
             <ArrowUpFromLine className="mr-2 h-4 w-4" />
             Client Withdrawal
           </Button>
-          <Button variant="outline" onClick={() => setTransferDialogOpen(true)}>
+          <Button onClick={() => setTransferDialogOpen(true)}>
             <TrendingUp className="mr-2 h-4 w-4" />
             Internal Transfer
           </Button>
