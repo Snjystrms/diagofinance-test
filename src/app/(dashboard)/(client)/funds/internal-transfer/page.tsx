@@ -221,13 +221,18 @@ function InternalTransferContent() {
     void loadTransferResources();
   }, [loadTransferResources]);
 
+  const liveMt5Accounts = useMemo(
+    () => mt5Accounts.filter((a) => a.account_mode === "live"),
+    [mt5Accounts],
+  );
+
   const mt5AccountOptions = useMemo(
     () =>
-      mt5Accounts.map((account) => ({
+      liveMt5Accounts.map((account) => ({
         id: account.account_id,
         label: `${account.account_id} • ${formatCurrency(account.balance)} • ${account.account_mode ?? "—"}`,
       })),
-    [mt5Accounts],
+    [liveMt5Accounts],
   );
 
   const walletOptions = useMemo<WalletOption[]>(() => {
@@ -305,11 +310,11 @@ function InternalTransferContent() {
   }, [requestedTab]);
 
   useEffect(() => {
-    if (!requestedAccountId || mt5Accounts.length === 0) {
+    if (!requestedAccountId || liveMt5Accounts.length === 0) {
       return;
     }
 
-    const matchedAccount = mt5Accounts.find(
+    const matchedAccount = liveMt5Accounts.find(
       (account) => account.account_id === requestedAccountId,
     );
     if (!matchedAccount) {
@@ -320,7 +325,7 @@ function InternalTransferContent() {
       shouldDirty: false,
       shouldValidate: true,
     });
-  }, [mt5Accounts, requestedAccountId, walletToMt5Form]);
+  }, [liveMt5Accounts, requestedAccountId, walletToMt5Form]);
 
   const mainWallet = useMemo(
     () =>
@@ -337,10 +342,10 @@ function InternalTransferContent() {
     }
 
     try {
-      const fromAccount = mt5Accounts.find(
+      const fromAccount = liveMt5Accounts.find(
         (account) => account.account_id === values.fromAccountId,
       );
-      const toAccount = mt5Accounts.find(
+      const toAccount = liveMt5Accounts.find(
         (account) => account.account_id === values.toAccountId,
       );
       const mt5ToMt5Comment = `from MT5-${fromAccount?.mt5_id ?? values.fromAccountId} to MT5-${toAccount?.mt5_id ?? values.toAccountId}`;
@@ -427,7 +432,7 @@ function InternalTransferContent() {
     }
 
     try {
-      const toAccount = mt5Accounts.find(
+      const toAccount = liveMt5Accounts.find(
         (account) => account.account_id === values.toAccountId,
       );
       const walletToMt5Comment = `from wallet to MT5 - ${toAccount?.mt5_id ?? values.toAccountId}`;
@@ -471,7 +476,7 @@ function InternalTransferContent() {
     }
 
     try {
-      const fromAccount = mt5Accounts.find(
+      const fromAccount = liveMt5Accounts.find(
         (account) => account.account_id === values.fromAccountId,
       );
       const mt5ToWalletComment = `from MT5 - ${fromAccount?.mt5_id ?? values.fromAccountId} to Wallet`;
@@ -606,9 +611,9 @@ function InternalTransferContent() {
                 <Repeat className="h-4 w-4 animate-spin" />
                 Loading MT5 accounts...
               </div>
-            ) : mt5Accounts.length > 0 ? (
+            ) : liveMt5Accounts.length > 0 ? (
               <div className="grid gap-3 sm:grid-cols-2">
-                {mt5Accounts.map((account) => (
+                {liveMt5Accounts.map((account) => (
                   <div
                     key={account.account_id}
                     className="rounded-lg border bg-muted/40 p-3 text-sm"
@@ -712,7 +717,7 @@ function InternalTransferContent() {
                               onValueChange={field.onChange}
                               value={field.value}
                               disabled={
-                                isLoadingResources || mt5Accounts.length === 0
+                                isLoadingResources || liveMt5Accounts.length === 0
                               }
                             >
                               <FormControl>
@@ -841,7 +846,7 @@ function InternalTransferContent() {
                               onValueChange={field.onChange}
                               value={field.value}
                               disabled={
-                                isLoadingResources || mt5Accounts.length === 0
+                                isLoadingResources || liveMt5Accounts.length === 0
                               }
                             >
                               <FormControl>
@@ -989,7 +994,7 @@ function InternalTransferContent() {
                               onValueChange={field.onChange}
                               value={field.value}
                               disabled={
-                                isLoadingResources || mt5Accounts.length === 0
+                                isLoadingResources || liveMt5Accounts.length === 0
                               }
                             >
                               <FormControl>
@@ -1025,7 +1030,7 @@ function InternalTransferContent() {
                               onValueChange={field.onChange}
                               value={field.value}
                               disabled={
-                                isLoadingResources || mt5Accounts.length === 0
+                                isLoadingResources || liveMt5Accounts.length === 0
                               }
                             >
                               <FormControl>

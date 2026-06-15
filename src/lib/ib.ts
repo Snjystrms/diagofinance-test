@@ -31,136 +31,91 @@ const emptyEarningSummary = (currency = "USD"): IbWalletEarningSummary => ({
   currency,
 });
 
-const fallbackWalletData: IbWalletData = {
-  wallet_balance: { amount: 4825.5, currency: "USD" },
-  client_wallet: { amount: 2670.25, currency: "USD" },
-  earning_summary: {
-    total_earned: 13840.7,
-    total_internal_transfers: 2940,
-    currency: "USD",
-  },
-  transactions: {
-    data: [
-      {
-        id: 101,
-        type: "Commission Credit",
-        amount: 850.25,
-        currency: "USD",
-        description: "Sample rebate credit from direct client volume.",
-        status: "Completed",
-        created_at: "2026-04-22T09:15:00Z",
-      },
-      {
-        id: 102,
-        type: "Internal Transfer",
-        amount: 420,
-        currency: "USD",
-        description: "Sample transfer from partner wallet to client wallet.",
-        status: "Completed",
-        created_at: "2026-04-21T13:40:00Z",
-      },
-      {
-        id: 103,
-        type: "Withdrawal Request",
-        amount: 150,
-        currency: "USD",
-        description: "Sample payout request awaiting settlement.",
-        status: "Pending",
-        created_at: "2026-04-20T07:05:00Z",
-      },
-    ],
-    pagination: {
-      current_page: 1,
-      per_page: 3,
-      total: 3,
-      total_pages: 1,
-    },
-  },
-};
 
-const fallbackClients: IbClient[] = [
-  {
-    client_id: "CL-10024",
-    client_name: "Aarav Mehta",
-    lots_traded: 18.4,
-    pending_rebates: 145.2,
-    earned_rebates: 982.5,
-    registration_date: "2026-04-08T10:30:00Z",
-  },
-  {
-    client_id: "CL-10025",
-    client_name: "Sara Khan",
-    lots_traded: 12.8,
-    pending_rebates: 96.75,
-    earned_rebates: 640.1,
-    registration_date: "2026-04-10T14:10:00Z",
-  },
-  {
-    client_id: "CL-10026",
-    client_name: "Rahul Sethi",
-    lots_traded: 9.15,
-    pending_rebates: 58.4,
-    earned_rebates: 421.35,
-    registration_date: "2026-04-15T08:45:00Z",
-  },
-];
 
-const fallbackSubIbs: IbSubIb[] = [
-  {
-    client_id: "SIB-20011",
-    client_name: "Neha Arora",
-    level: 1,
-    lots_traded: 34.6,
-    pending_rebates: 240.15,
-    earned_rebates: 1482.2,
-    registration_date: "2026-04-05T11:20:00Z",
-  },
-  {
-    client_id: "SIB-20012",
-    client_name: "Imran Shaikh",
-    level: 2,
-    lots_traded: 21.35,
-    pending_rebates: 175.8,
-    earned_rebates: 995.45,
-    registration_date: "2026-04-11T16:05:00Z",
-  },
-  {
-    client_id: "SIB-20013",
-    client_name: "Priya Nair",
-    level: 1,
-    lots_traded: 15.9,
-    pending_rebates: 118.25,
-    earned_rebates: 760.4,
-    registration_date: "2026-04-18T09:55:00Z",
-  },
-];
+// const fallbackClients: IbClient[] = [
+//   {
+//     client_id: "CL-10024",
+//     client_name: "Aarav Mehta",
+//     lots_traded: 18.4,
+//     pending_rebates: 145.2,
+//     earned_rebates: 982.5,
+//     registration_date: "2026-04-08T10:30:00Z",
+//   },
+//   {
+//     client_id: "CL-10025",
+//     client_name: "Sara Khan",
+//     lots_traded: 12.8,
+//     pending_rebates: 96.75,
+//     earned_rebates: 640.1,
+//     registration_date: "2026-04-10T14:10:00Z",
+//   },
+//   {
+//     client_id: "CL-10026",
+//     client_name: "Rahul Sethi",
+//     lots_traded: 9.15,
+//     pending_rebates: 58.4,
+//     earned_rebates: 421.35,
+//     registration_date: "2026-04-15T08:45:00Z",
+//   },
+// ];
 
-const fallbackRebates: IbRebate[] = [
-  {
-    client_id: "RB-30041",
-    client_name: "Dev Patel",
-    lots_traded: 11.25,
-    pending_rebates: 82.15,
-    earned_rebates: 552.6,
-    registration_date: "2026-04-06T12:00:00Z",
-  },
-  {
-    client_id: "RB-30042",
-    client_name: "Maya Joseph",
-    lots_traded: 17.7,
-    pending_rebates: 133.9,
-    earned_rebates: 889.4,
-    registration_date: "2026-04-13T15:25:00Z",
-  },
-  {
-    client_id: "RB-30043",
-    client_name: "Karan Malhotra",
-    lots_traded: 7.9,
-    pending_rebates: 44.3,
-    earned_rebates: 286.75,
-    registration_date: "2026-04-19T07:35:00Z",
-  },
-];
+// const fallbackSubIbs: IbSubIb[] = [
+//   {
+//     client_id: "SIB-20011",
+//     client_name: "Neha Arora",
+//     level: 1,
+//     lots_traded: 34.6,
+//     pending_rebates: 240.15,
+//     earned_rebates: 1482.2,
+//     registration_date: "2026-04-05T11:20:00Z",
+//   },
+//   {
+//     client_id: "SIB-20012",
+//     client_name: "Imran Shaikh",
+//     level: 2,
+//     lots_traded: 21.35,
+//     pending_rebates: 175.8,
+//     earned_rebates: 995.45,
+//     registration_date: "2026-04-11T16:05:00Z",
+//   },
+//   {
+//     client_id: "SIB-20013",
+//     client_name: "Priya Nair",
+//     level: 1,
+//     lots_traded: 15.9,
+//     pending_rebates: 118.25,
+//     earned_rebates: 760.4,
+//     registration_date: "2026-04-18T09:55:00Z",
+//   },
+// ];
+
+// const fallbackRebates: IbRebate[] = [
+//   {
+//     client_id: "RB-30041",
+//     client_name: "Dev Patel",
+//     lots_traded: 11.25,
+//     pending_rebates: 82.15,
+//     earned_rebates: 552.6,
+//     registration_date: "2026-04-06T12:00:00Z",
+//   },
+//   {
+//     client_id: "RB-30042",
+//     client_name: "Maya Joseph",
+//     lots_traded: 17.7,
+//     pending_rebates: 133.9,
+//     earned_rebates: 889.4,
+//     registration_date: "2026-04-13T15:25:00Z",
+//   },
+//   {
+//     client_id: "RB-30043",
+//     client_name: "Karan Malhotra",
+//     lots_traded: 7.9,
+//     pending_rebates: 44.3,
+//     earned_rebates: 286.75,
+//     registration_date: "2026-04-19T07:35:00Z",
+//   },
+// ];
 
 type IbSummaryPagination = {
   current_page: number;
@@ -313,17 +268,7 @@ export function normalizeIbWalletData(raw: unknown): IbWalletData | null {
   };
 }
 
-export function getFallbackIbWalletData(): IbWalletData {
-  return {
-    wallet_balance: { ...fallbackWalletData.wallet_balance },
-    client_wallet: { ...fallbackWalletData.client_wallet },
-    earning_summary: { ...fallbackWalletData.earning_summary },
-    transactions: {
-      data: fallbackWalletData.transactions.data.map((entry) => ({ ...entry })),
-      pagination: { ...fallbackWalletData.transactions.pagination },
-    },
-  };
-}
+
 
 function filterRowsBySearch<T extends IbClient | IbSubIb | IbRebate>(rows: T[], search?: string) {
   if (!search?.trim()) {
@@ -359,20 +304,20 @@ function paginateRows<T>(rows: T[], page: number, limit: number) {
   };
 }
 
-export function getFallbackIbClients(params?: { page?: number; limit?: number; search?: string }) {
-  const filtered = filterRowsBySearch(fallbackClients, params?.search);
-  return paginateRows(filtered, params?.page ?? 1, params?.limit ?? 10);
-}
+// export function getFallbackIbClients(params?: { page?: number; limit?: number; search?: string }) {
+//   const filtered = filterRowsBySearch(fallbackClients, params?.search);
+//   return paginateRows(filtered, params?.page ?? 1, params?.limit ?? 10);
+// }
 
-export function getFallbackIbSubIbs(params?: { page?: number; limit?: number; search?: string }) {
-  const filtered = filterRowsBySearch(fallbackSubIbs, params?.search);
-  return paginateRows(filtered, params?.page ?? 1, params?.limit ?? 10);
-}
+// export function getFallbackIbSubIbs(params?: { page?: number; limit?: number; search?: string }) {
+//   const filtered = filterRowsBySearch(fallbackSubIbs, params?.search);
+//   return paginateRows(filtered, params?.page ?? 1, params?.limit ?? 10);
+// }
 
-export function getFallbackIbRebates(params?: { page?: number; limit?: number; search?: string }) {
-  const filtered = filterRowsBySearch(fallbackRebates, params?.search);
-  return paginateRows(filtered, params?.page ?? 1, params?.limit ?? 10);
-}
+// export function getFallbackIbRebates(params?: { page?: number; limit?: number; search?: string }) {
+//   const filtered = filterRowsBySearch(fallbackRebates, params?.search);
+//   return paginateRows(filtered, params?.page ?? 1, params?.limit ?? 10);
+// }
 
 export function getIbWalletSnapshot(
   walletData?: IbWalletData | null,

@@ -267,7 +267,7 @@ const columns: ColumnDef<DepositListItem>[] = [
     ),
     cell: ({ row }) => {
       const pmType = row.original.paymentMethod?.type
-      const currencyLabel = pmType === 'usdt_transfer' ? 'USDT' : 'USD'
+      const currencyLabel = pmType === 'usdt_transfer' ? 'USD' : 'USD'
       return (
         <div className="flex items-center gap-2 font-semibold">
           <DollarSign className="h-4 w-4 text-green-600" />
@@ -623,7 +623,7 @@ export default function MyDepositPage() {
                   <SelectItem value="all">All Sources</SelectItem>
                   <SelectItem value="deposit">Deposit</SelectItem>
                   <SelectItem value="bank_deposit">Bank Deposit</SelectItem>
-                  <SelectItem value="usdt_deposit">USDT Deposit</SelectItem>
+                  <SelectItem value="usdt_deposit">USD Deposit</SelectItem>
                 </SelectContent>
               </Select>
             </div>

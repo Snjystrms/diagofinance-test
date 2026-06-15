@@ -192,13 +192,13 @@ function PaginationControls({
 
 /* ─── Clients table ────────────────────────────────────────────────────────── */
 
-function ClientsTable({ rows }: { rows: ClientRow[] }) {
+function ClientsTable({ rows, startIndex }: { rows: ClientRow[]; startIndex: number }) {
   return (
     <div className="overflow-x-auto rounded-[24px] border border-border/60">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/30">
-            <TableHead>Client ID</TableHead>
+            <TableHead className="w-[60px]">Sr. No.</TableHead>
             <TableHead>Name</TableHead>
             <TableHead className="text-right hidden md:table-cell">Lots Traded</TableHead>
             <TableHead className="text-right hidden md:table-cell">Pending Rebates</TableHead>
@@ -207,9 +207,9 @@ function ClientsTable({ rows }: { rows: ClientRow[] }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((row) => (
+          {rows.map((row, index) => (
             <TableRow key={`${row.client_id}`}>
-              <TableCell className="font-mono text-xs sm:text-sm">{row.client_id}</TableCell>
+              <TableCell className="font-medium text-sm">{startIndex + index}</TableCell>
               <TableCell className="font-medium">{row.client_name}</TableCell>
               <TableCell className="text-right hidden md:table-cell">
                 {toNum(row.lots_traded).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -229,13 +229,13 @@ function ClientsTable({ rows }: { rows: ClientRow[] }) {
 
 /* ─── Sub-IBs table ────────────────────────────────────────────────────────── */
 
-function SubIbsTable({ rows }: { rows: SubIbRow[] }) {
+function SubIbsTable({ rows, startIndex }: { rows: SubIbRow[]; startIndex: number }) {
   return (
     <div className="overflow-x-auto rounded-[24px] border border-border/60">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/30">
-            <TableHead>Partner ID</TableHead>
+            <TableHead className="w-[60px]">Sr. No.</TableHead>
             <TableHead>Name</TableHead>
             <TableHead className="hidden md:table-cell">Level</TableHead>
             <TableHead className="text-right hidden md:table-cell">Lots Traded</TableHead>
@@ -245,9 +245,9 @@ function SubIbsTable({ rows }: { rows: SubIbRow[] }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((row) => (
+          {rows.map((row, index) => (
             <TableRow key={`${row.sub_ib_user_id}`}>
-              <TableCell className="font-mono text-xs">{row.sub_ib_id || row.sub_ib_user_id}</TableCell>
+              <TableCell className="font-medium text-sm">{startIndex + index}</TableCell>
               <TableCell className="font-medium">{row.name}</TableCell>
               <TableCell className="hidden md:table-cell">
                 <span className="inline-flex rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-xs font-medium">
@@ -279,13 +279,13 @@ const STATUS_STYLE: Record<string, string> = {
   rejected: "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300",
 };
 
-function RebatesTable({ rows }: { rows: RebateDeal[] }) {
+function RebatesTable({ rows, startIndex }: { rows: RebateDeal[]; startIndex: number }) {
   return (
     <div className="overflow-x-auto rounded-[24px] border border-border/60">
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/30">
-            <TableHead>MT5 ID</TableHead>
+            <TableHead className="w-[60px]">Sr. No.</TableHead>
             <TableHead>Client</TableHead>
             <TableHead className="hidden md:table-cell">Account</TableHead>
             <TableHead>Symbol</TableHead>
@@ -297,17 +297,15 @@ function RebatesTable({ rows }: { rows: RebateDeal[] }) {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((row) => {
+          {rows.map((row, index) => {
             const statusKey = toStr(row.rebate_status).toLowerCase();
             const statusClass = STATUS_STYLE[statusKey] ?? "bg-muted/40 text-muted-foreground";
             return (
               <TableRow key={`${row.deal}`}>
-                <TableCell className="font-mono text-xs">{row.deal}</TableCell>
-                
+                <TableCell className="font-medium text-sm">{startIndex + index}</TableCell>
                 <TableCell>
                   <div className="space-y-0.5">
                     <div className="font-medium text-sm">{row.client_name}</div>
-                    <div className="text-xs text-muted-foreground">ID: {row.client_id}</div>
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
@@ -631,7 +629,7 @@ export default function IbClientsPage() {
             {clientsLoading && clients.length === 0 ? <TableSkeleton /> :
              clients.length > 0 ? (
               <>
-                <ClientsTable rows={clients} />
+                <ClientsTable rows={clients} startIndex={(clientsPagination.current_page - 1) * clientsPagination.per_page + 1} />
                 <PaginationControls pagination={clientsPagination} isLoading={isLoading} onPageChange={setPage} />
               </>
             ) : !clientsError ? (
@@ -648,7 +646,7 @@ export default function IbClientsPage() {
             {subIbsLoading && subIbs.length === 0 ? <TableSkeleton /> :
              subIbs.length > 0 ? (
               <>
-                <SubIbsTable rows={subIbs} />
+                <SubIbsTable rows={subIbs} startIndex={(subIbsPagination.current_page - 1) * subIbsPagination.per_page + 1} />
                 <PaginationControls pagination={subIbsPagination} isLoading={isLoading} onPageChange={setPage} />
               </>
             ) : !subIbsError ? (
@@ -665,7 +663,7 @@ export default function IbClientsPage() {
             {rebatesLoading && rebates.length === 0 ? <TableSkeleton /> :
              rebates.length > 0 ? (
               <>
-                <RebatesTable rows={rebates} />
+                <RebatesTable rows={rebates} startIndex={(rebatesPagination.current_page - 1) * rebatesPagination.per_page + 1} />
                 <PaginationControls pagination={rebatesPagination} isLoading={isLoading} onPageChange={setPage} />
               </>
             ) : !rebatesError ? (

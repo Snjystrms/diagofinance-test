@@ -182,7 +182,7 @@ export function AdminTransactionContent() {
       accessorKey: "amount",
       cell: ({ row }) => (
         <span className="font-medium tabular-nums">
-          {formatAmount(row.original.amount)} {row.original.currency}
+          {formatAmount(row.original.amount)} USD
         </span>
       ),
     },
@@ -314,69 +314,64 @@ export function AdminTransactionContent() {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats Section */}
       {stats && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Wallet Transactions</CardTitle>
-              <Wallet className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total_wallet_transactions}</div>
-              <p className="text-xs text-muted-foreground">Total count</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">USD Deposits</CardTitle>
-              <Banknote className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total_usdt_deposits}</div>
-              <p className="text-xs text-muted-foreground">Total count</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Withdrawals</CardTitle>
-              <ArrowUpFromLine className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total_withdrawals}</div>
-              <p className="text-xs text-muted-foreground">Total count</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">All Transactions</CardTitle>
-              <CircleDollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total_all_transactions}</div>
-              <p className="text-xs text-muted-foreground">Total count</p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* Status Breakdown */}
-      {stats?.status_counts && (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {Object.entries(stats.status_counts).map(([status, count]) => (
-            <Card key={status}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground capitalize">
-                  {status} Transactions
-                </CardTitle>
-                {statusBadge(status)}
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{count}</div>
-                <p className="text-xs text-muted-foreground">Count</p>
+        <div className="space-y-4">
+          {/* Main Stats Cards */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Card className="rounded-2xl border-border/60 shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Wallet Transactions</p>
+                    <div className="text-3xl font-bold tracking-tight">{stats.total_wallet_transactions}</div>
+                  </div>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm">
+                    <Wallet className="h-4 w-4 text-foreground" />
+                  </div>
+                </div>
               </CardContent>
             </Card>
-          ))}
+            <Card className="rounded-2xl border-border/60 shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">USD Deposits</p>
+                    <div className="text-3xl font-bold tracking-tight">{stats.total_usdt_deposits}</div>
+                  </div>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm">
+                    <Banknote className="h-4 w-4 text-foreground" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="rounded-2xl border-border/60 shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Withdrawals</p>
+                    <div className="text-3xl font-bold tracking-tight">{stats.total_withdrawals}</div>
+                  </div>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm">
+                    <ArrowUpFromLine className="h-4 w-4 text-foreground" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="rounded-2xl border-border/60 shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">All Transactions</p>
+                    <div className="text-3xl font-bold tracking-tight">{stats.total_all_transactions}</div>
+                  </div>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm">
+                    <CircleDollarSign className="h-4 w-4 text-foreground" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       )}
 

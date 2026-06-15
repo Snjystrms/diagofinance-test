@@ -19,7 +19,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { type IbWalletData, ibRequestsApi } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
 import { formatDateTimeInIST } from "@/lib/formatters";
-import { getFallbackIbWalletData, getIbWalletSnapshot, normalizeIbWalletData } from "@/lib/ib";
+import { getIbWalletSnapshot, normalizeIbWalletData } from "@/lib/ib";
 
 function WalletLoadingState() {
   return (
@@ -96,7 +96,6 @@ export default function IbWalletPage() {
   const [walletData, setWalletData] = useState<IbWalletData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<unknown | null>(null);
-  const [usingFallbackData, setUsingFallbackData] = useState(false);
 
   const fetchWalletData = useCallback(async () => {
     if (!token) {
@@ -111,13 +110,16 @@ export default function IbWalletPage() {
       const response = await ibRequestsApi.getIbWallet(token);
       const normalized = normalizeIbWalletData(response?.data);
 
-      setWalletData(normalized ?? getFallbackIbWalletData());
-      setUsingFallbackData(!normalized);
+      if (normalized) {
+        setWalletData(normalized);
+      } else {
+        setWalletData(null);
+        setError("Unable to load wallet data");
+      }
     } catch (fetchError) {
       console.error("Failed to fetch IB wallet:", fetchError);
-      setWalletData(getFallbackIbWalletData());
-      setUsingFallbackData(true);
-      setError(null);
+      setWalletData(null);
+      setError(fetchError);
     } finally {
       setIsLoading(false);
     }
@@ -164,12 +166,6 @@ export default function IbWalletPage() {
           </>
         }
       />
-
-      {usingFallbackData ? (
-        <div className="rounded-[24px] border border-amber-300/60 bg-amber-50/80 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
-          Showing sample Partner wallet data until the live wallet API payload is ready.
-        </div>
-      ) : null}
 
       <div className="grid gap-4 md:grid-cols-3">
         <IbMetricCard
