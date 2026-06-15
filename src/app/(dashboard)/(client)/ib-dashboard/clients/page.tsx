@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type KeyboardEvent, type ReactNode } from "react";
-import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useQueryState, parseAsInteger } from "nuqs";
 import { ArrowLeftRight, DollarSign, RefreshCw, Search, Users } from "lucide-react";
 
 import { ApiErrorState } from "@/components/errors/api-error-state";
@@ -238,6 +238,7 @@ function SubIbsTable({ rows, startIndex }: { rows: SubIbRow[]; startIndex: numbe
             <TableHead className="w-[60px]">Sr. No.</TableHead>
             <TableHead>Name</TableHead>
             <TableHead className="hidden md:table-cell">Level</TableHead>
+            <TableHead className="hidden md:table-cell">Partner ID</TableHead>
             <TableHead className="text-right hidden md:table-cell">Lots Traded</TableHead>
             <TableHead className="text-right hidden md:table-cell">Pending Rebates</TableHead>
             <TableHead className="text-right">Earned Rebates</TableHead>
@@ -252,6 +253,11 @@ function SubIbsTable({ rows, startIndex }: { rows: SubIbRow[]; startIndex: numbe
               <TableCell className="hidden md:table-cell">
                 <span className="inline-flex rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-xs font-medium">
                   {row.level}
+                </span>
+              </TableCell>
+              <TableCell className="hidden md:table-cell">
+                <span className="inline-flex rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-xs font-medium">
+                  {row.sub_ib_id}
                 </span>
               </TableCell>
               <TableCell className="text-right hidden md:table-cell">
@@ -347,6 +353,43 @@ function RebatesTable({ rows, startIndex }: { rows: RebateDeal[]; startIndex: nu
   );
 }
 
+/* ─── Search bar for each tab ──────────────────────────────────────────────── */
+
+function TabSearchBar({
+  inputValue,
+  onInputChange,
+  onSearch,
+  onClear,
+  isLoading,
+}: {
+  inputValue: string;
+  onInputChange: (v: string) => void;
+  onSearch: () => void;
+  onClear: () => void;
+  isLoading: boolean;
+}) {
+  return (
+    <div className="flex flex-col gap-3 lg:flex-row">
+      <div className="relative flex-1">
+        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={inputValue}
+          onChange={(e) => onInputChange(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter") onSearch(); }}
+          placeholder="Search by name or ID"
+          className="pl-10"
+        />
+      </div>
+      <div className="flex flex-wrap gap-3">
+        <Button onClick={onSearch} disabled={isLoading}>Search</Button>
+        {inputValue && (
+          <Button variant="outline" onClick={onClear}>Clear</Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ─── Loading skeleton ───────────────────────────────────────────────────── */
 
 function ClientsLoadingState() {
@@ -392,8 +435,10 @@ export default function IbClientsPage() {
   });
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [limit] = useQueryState("limit", parseAsInteger.withDefault(10));
-  const [search, setSearch] = useQueryState("search", parseAsString);
-  const [searchInput, setSearchInput] = useState(search || "");
+
+  const [clientsSearch, setClientsSearch] = useState({ query: "", input: "" });
+  const [subIbsSearch, setSubIbsSearch] = useState({ query: "", input: "" });
+  const [rebatesSearch, setRebatesSearch] = useState({ query: "", input: "" });
 
   // ── Clients state ──
   const [clients, setClients] = useState<ClientRow[]>([]);
@@ -419,7 +464,7 @@ export default function IbClientsPage() {
     try {
       setClientsLoading(true);
       setClientsError(null);
-      const res = await ibRequestsApi.getClients(token, { page, limit, search: search || undefined });
+      const res = await ibRequestsApi.getClients(token, { page, limit, search: clientsSearch.query || undefined });
       // apiCall returns raw JSON → { success, message, data: [...], pagination: {...} }
       const raw = res as unknown as { data: ClientRow[]; pagination: unknown };
       const rows: ClientRow[] = Array.isArray(raw.data) ? raw.data : [];
@@ -432,7 +477,7 @@ export default function IbClientsPage() {
     } finally {
       setClientsLoading(false);
     }
-  }, [token, page, limit, search]);
+  }, [token, page, limit, clientsSearch.query]);
 
   /* ── Fetch sub-IBs ─────────────────────────────────────────────────────── */
   const fetchSubIbs = useCallback(async () => {
@@ -440,7 +485,7 @@ export default function IbClientsPage() {
     try {
       setSubIbsLoading(true);
       setSubIbsError(null);
-      const res = await ibRequestsApi.getSubIbs(token, { page, limit, search: search || undefined });
+      const res = await ibRequestsApi.getSubIbs(token, { page, limit, search: subIbsSearch.query || undefined });
       // apiCall returns raw JSON → { success, message, data: [...], pagination: {...} }
       const raw = res as unknown as { data: SubIbRow[]; pagination: unknown };
       const rows: SubIbRow[] = Array.isArray(raw.data) ? raw.data : [];
@@ -453,15 +498,14 @@ export default function IbClientsPage() {
     } finally {
       setSubIbsLoading(false);
     }
-  }, [token, page, limit, search]);
+  }, [token, page, limit, subIbsSearch.query]);
 
-  /* ── Fetch rebates ─────────────────────────────────────────────────────── */
   const fetchRebates = useCallback(async () => {
     if (!token) { setRebatesError("Authentication required"); return; }
     try {
       setRebatesLoading(true);
       setRebatesError(null);
-      const res = await ibRequestsApi.getRebates(token, { page, limit, search: search || undefined });
+      const res = await ibRequestsApi.getRebates(token, { page, limit, search: rebatesSearch.query || undefined });
       // apiCall returns raw JSON → { success, message, data: { summary: [...], total, pagination: {...} } }
       const raw = res as unknown as { data: { summary: RebateDeal[]; total: number; pagination: unknown } };
       const dataBlock = raw.data ?? {};
@@ -479,7 +523,7 @@ export default function IbClientsPage() {
     } finally {
       setRebatesLoading(false);
     }
-  }, [token, page, limit, search]);
+  }, [token, page, limit, rebatesSearch.query]);
 
   useEffect(() => {
     if (activeTab === "clients") void fetchClients();
@@ -489,15 +533,19 @@ export default function IbClientsPage() {
 
   useEffect(() => { setPage(1); }, [activeTab, setPage]);
 
-  const handleSearch = useCallback(() => {
-    setSearch(searchInput || null);
+  const handleSearchForTab = useCallback((tab: TabType) => {
+    if (tab === "clients") setClientsSearch((s) => ({ ...s, query: s.input }));
+    else if (tab === "sub-ibs") setSubIbsSearch((s) => ({ ...s, query: s.input }));
+    else setRebatesSearch((s) => ({ ...s, query: s.input }));
     setPage(1);
-  }, [searchInput, setPage, setSearch]);
+  }, [setPage]);
 
-  const handleSearchKeyPress = useCallback(
-    (e: KeyboardEvent<HTMLInputElement>) => { if (e.key === "Enter") handleSearch(); },
-    [handleSearch],
-  );
+  const handleClearSearchForTab = useCallback((tab: TabType) => {
+    if (tab === "clients") setClientsSearch({ query: "", input: "" });
+    else if (tab === "sub-ibs") setSubIbsSearch({ query: "", input: "" });
+    else setRebatesSearch({ query: "", input: "" });
+    setPage(1);
+  }, [setPage]);
 
   const handleRefresh = useCallback(() => {
     if (activeTab === "clients") void fetchClients();
@@ -590,28 +638,6 @@ export default function IbClientsPage() {
             <TabsTrigger value="rebates">Rebates</TabsTrigger>
           </TabsList>
 
-          {/* Search bar */}
-          <div className="flex flex-col gap-3 lg:flex-row">
-            <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                value={searchInput}
-                onChange={(e) => setSearchInput(e.target.value)}
-                onKeyDown={handleSearchKeyPress}
-                placeholder="Search by name or ID"
-                className="pl-10"
-              />
-            </div>
-            <div className="flex flex-wrap gap-3">
-              <Button onClick={handleSearch} disabled={isLoading}>Search</Button>
-              {search && (
-                <Button variant="outline" onClick={() => { setSearchInput(""); setSearch(null); setPage(1); }}>
-                  Clear
-                </Button>
-              )}
-            </div>
-          </div>
-
           {/* Error state */}
           {!!currentError && (
             <ApiErrorState
@@ -626,6 +652,13 @@ export default function IbClientsPage() {
 
           {/* ── Clients ── */}
           <TabsContent value="clients" className="space-y-5">
+            <TabSearchBar
+              inputValue={clientsSearch.input}
+              onInputChange={(v) => setClientsSearch((s) => ({ ...s, input: v }))}
+              onSearch={() => handleSearchForTab("clients")}
+              onClear={() => handleClearSearchForTab("clients")}
+              isLoading={clientsLoading}
+            />
             {clientsLoading && clients.length === 0 ? <TableSkeleton /> :
              clients.length > 0 ? (
               <>
@@ -635,7 +668,7 @@ export default function IbClientsPage() {
             ) : !clientsError ? (
               <EmptyState
                 title="No clients found"
-                description={search ? "No direct clients match your search." : "Direct client registrations will appear here when activity starts."}
+                description={clientsSearch.query ? "No direct clients match your search." : "Direct client registrations will appear here when activity starts."}
                 icon={<Users className="h-5 w-5" />}
               />
             ) : null}
@@ -643,6 +676,13 @@ export default function IbClientsPage() {
 
           {/* ── Sub IBs ── */}
           <TabsContent value="sub-ibs" className="space-y-5">
+            <TabSearchBar
+              inputValue={subIbsSearch.input}
+              onInputChange={(v) => setSubIbsSearch((s) => ({ ...s, input: v }))}
+              onSearch={() => handleSearchForTab("sub-ibs")}
+              onClear={() => handleClearSearchForTab("sub-ibs")}
+              isLoading={subIbsLoading}
+            />
             {subIbsLoading && subIbs.length === 0 ? <TableSkeleton /> :
              subIbs.length > 0 ? (
               <>
@@ -652,7 +692,7 @@ export default function IbClientsPage() {
             ) : !subIbsError ? (
               <EmptyState
                 title="No sub Partners records found"
-                description={search ? "No sub Partners records match your search." : "Sub Partners relationships will appear here after registrations are linked."}
+                description={subIbsSearch.query ? "No sub Partners records match your search." : "Sub Partners relationships will appear here after registrations are linked."}
                 icon={<Users className="h-5 w-5" />}
               />
             ) : null}
@@ -660,6 +700,13 @@ export default function IbClientsPage() {
 
           {/* ── Rebates ── */}
           <TabsContent value="rebates" className="space-y-5">
+            <TabSearchBar
+              inputValue={rebatesSearch.input}
+              onInputChange={(v) => setRebatesSearch((s) => ({ ...s, input: v }))}
+              onSearch={() => handleSearchForTab("rebates")}
+              onClear={() => handleClearSearchForTab("rebates")}
+              isLoading={rebatesLoading}
+            />
             {rebatesLoading && rebates.length === 0 ? <TableSkeleton /> :
              rebates.length > 0 ? (
               <>
@@ -669,7 +716,7 @@ export default function IbClientsPage() {
             ) : !rebatesError ? (
               <EmptyState
                 title="No rebate entries found"
-                description={search ? "No rebate entries match your search." : "Rebate activity will appear here once clients begin trading."}
+                description={rebatesSearch.query ? "No rebate entries match your search." : "Rebate activity will appear here once clients begin trading."}
                 icon={<DollarSign className="h-5 w-5" />}
               />
             ) : null}

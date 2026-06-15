@@ -18,37 +18,75 @@ import {
 } from "lucide-react";
 
 import { ApiErrorState } from "@/components/errors/api-error-state";
-import { IbMetricCard, IbPageHeader, IbPageShell, IbSectionCard } from "@/components/ib/ib-page-primitives";
+import {
+  IbMetricCard,
+  IbPageHeader,
+  IbPageShell,
+  IbSectionCard,
+} from "@/components/ib/ib-page-primitives";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/auth-context";
-import { type IbDashboardResponse, type IbInternalTransferRequest, ibRequestsApi } from "@/lib/api";
+import {
+  type IbDashboardResponse,
+  type IbInternalTransferRequest,
+  ibRequestsApi,
+} from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 
 import type { ChartConfig } from "@/components/ui/chart";
 
 const ChartContainer = dynamic(
-  () => import("@/components/ui/chart").then((m) => ({ default: m.ChartContainer })),
+  () =>
+    import("@/components/ui/chart").then((m) => ({
+      default: m.ChartContainer,
+    })),
   { ssr: false },
 );
 const ChartTooltip = dynamic(
-  () => import("@/components/ui/chart").then((m) => ({ default: m.ChartTooltip })),
+  () =>
+    import("@/components/ui/chart").then((m) => ({ default: m.ChartTooltip })),
   { ssr: false },
 );
 const ChartTooltipContent = dynamic(
-  () => import("@/components/ui/chart").then((m) => ({ default: m.ChartTooltipContent })),
+  () =>
+    import("@/components/ui/chart").then((m) => ({
+      default: m.ChartTooltipContent,
+    })),
   { ssr: false },
 );
-const LineChart = dynamic(() => import("recharts").then((m) => ({ default: m.LineChart })), { ssr: false });
-const Line = dynamic(() => import("recharts").then((m) => ({ default: m.Line })), { ssr: false });
-const CartesianGrid = dynamic(() => import("recharts").then((m) => ({ default: m.CartesianGrid })), { ssr: false });
-const XAxis = dynamic(() => import("recharts").then((m) => ({ default: m.XAxis })), { ssr: false });
-const YAxis = dynamic(() => import("recharts").then((m) => ({ default: m.YAxis })), { ssr: false });
+const LineChart = dynamic(
+  () => import("recharts").then((m) => ({ default: m.LineChart })),
+  { ssr: false },
+);
+const Line = dynamic(
+  () => import("recharts").then((m) => ({ default: m.Line })),
+  { ssr: false },
+);
+const CartesianGrid = dynamic(
+  () => import("recharts").then((m) => ({ default: m.CartesianGrid })),
+  { ssr: false },
+);
+const XAxis = dynamic(
+  () => import("recharts").then((m) => ({ default: m.XAxis })),
+  { ssr: false },
+);
+const YAxis = dynamic(
+  () => import("recharts").then((m) => ({ default: m.YAxis })),
+  { ssr: false },
+);
 
 function formatCycleDate(value?: string) {
   if (!value) {
@@ -78,7 +116,8 @@ function formatRemainingTime(remainingTime?: {
     return "Cycle information unavailable";
   }
 
-  const days = Math.floor((remainingTime.days_decimal ?? remainingTime.days) * 10) / 10;
+  const days =
+    Math.floor((remainingTime.days_decimal ?? remainingTime.days) * 10) / 10;
   const hours = String(remainingTime.hours ?? 0).padStart(2, "0");
   const minutes = String(remainingTime.minutes ?? 0).padStart(2, "0");
 
@@ -96,39 +135,42 @@ function buildPublicReferralLink(referralLink?: string) {
     parsed.host = "crminhouse-mocha.vercel.app";
     return parsed.toString();
   } catch {
-    return referralLink.replace("https://api.graybulls.com", "https://crminhouse-mocha.vercel.app");
+    return referralLink.replace(
+      "https://api.graybulls.com",
+      "https://crminhouse-mocha.vercel.app",
+    );
   }
 }
 
 function DashboardLoadingState() {
   return (
     <IbPageShell>
-      <section className="rounded-[28px] border border-border/60 bg-card p-6 shadow-sm">
+      <section className="rounded-[20px] sm:rounded-[28px] border border-border/60 bg-card p-4 sm:p-6 shadow-sm">
         <div className="space-y-3">
           <Skeleton className="h-3 w-28 rounded-full" />
-          <Skeleton className="h-10 w-72 rounded-full" />
-          <Skeleton className="h-4 w-full max-w-2xl rounded-full" />
+          <Skeleton className="h-10 w-56 sm:w-72 rounded-full" />
+          <Skeleton className="h-4 w-full max-w-xl rounded-full" />
         </div>
       </section>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
         {Array.from({ length: 4 }).map((_, index) => (
-          <div key={index} className="rounded-[28px] border border-border/60 bg-card p-6 shadow-sm">
+          <div key={index} className="rounded-[20px] sm:rounded-[28px] border border-border/60 bg-card p-4 sm:p-6 shadow-sm">
             <div className="space-y-4">
               <Skeleton className="h-3 w-24 rounded-full" />
-              <Skeleton className="h-8 w-36 rounded-full" />
+              <Skeleton className="h-8 w-32 sm:w-36 rounded-full" />
               <Skeleton className="h-4 w-full rounded-full" />
             </div>
           </div>
         ))}
       </div>
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
-        <div className="rounded-[28px] border border-border/60 bg-card p-6 shadow-sm">
-          <Skeleton className="h-[360px] w-full rounded-[24px]" />
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
+        <div className="rounded-[20px] sm:rounded-[28px] border border-border/60 bg-card p-4 sm:p-6 shadow-sm">
+          <Skeleton className="h-[240px] sm:h-[340px] w-full rounded-2xl" />
         </div>
-        <div className="rounded-[28px] border border-border/60 bg-card p-6 shadow-sm">
-          <div className="space-y-4">
+        <div className="rounded-[20px] sm:rounded-[28px] border border-border/60 bg-card p-4 sm:p-6 shadow-sm">
+          <div className="space-y-3 sm:space-y-4">
             {Array.from({ length: 5 }).map((_, index) => (
-              <Skeleton key={index} className="h-16 w-full rounded-2xl" />
+              <Skeleton key={index} className="h-14 sm:h-16 w-full rounded-2xl" />
             ))}
           </div>
         </div>
@@ -139,7 +181,8 @@ function DashboardLoadingState() {
 
 export default function IbDashboardPage() {
   const { token } = useAuth();
-  const [dashboardData, setDashboardData] = useState<IbDashboardResponse | null>(null);
+  const [dashboardData, setDashboardData] =
+    useState<IbDashboardResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<unknown | null>(null);
   const [isTransferDialogOpen, setIsTransferDialogOpen] = useState(false);
@@ -199,7 +242,10 @@ export default function IbDashboardPage() {
   }, [chartData]);
 
   const cycleProgress = useMemo(() => {
-    if (!dashboardData?.pending_rebates?.cycle_start || !dashboardData.pending_rebates.cycle_end) {
+    if (
+      !dashboardData?.pending_rebates?.cycle_start ||
+      !dashboardData.pending_rebates.cycle_end
+    ) {
       return 0;
     }
 
@@ -215,7 +261,9 @@ export default function IbDashboardPage() {
   }, [dashboardData?.pending_rebates]);
 
   const copyReferralLink = useCallback(() => {
-    const referralLink = buildPublicReferralLink(dashboardData?.partner_info?.referral_link);
+    const referralLink = buildPublicReferralLink(
+      dashboardData?.partner_info?.referral_link,
+    );
     if (!referralLink) {
       return;
     }
@@ -308,7 +356,9 @@ export default function IbDashboardPage() {
     partner_info,
     user,
   } = dashboardData;
-  const publicReferralLink = buildPublicReferralLink(partner_info.referral_link);
+  const publicReferralLink = buildPublicReferralLink(
+    partner_info.referral_link,
+  );
 
   return (
     <IbPageShell>
@@ -333,10 +383,13 @@ export default function IbDashboardPage() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
         <IbMetricCard
           title="Partner Wallet"
-          value={formatCurrency(partner_wallet.balance, partner_wallet.currency)}
+          value={formatCurrency(
+            partner_wallet.balance,
+            partner_wallet.currency,
+          )}
           description="Funds available for partner-level withdrawals and transfers."
           icon={<Wallet className="h-5 w-5" />}
           accent="primary"
@@ -350,7 +403,10 @@ export default function IbDashboardPage() {
         />
         <IbMetricCard
           title="Pending Rebates"
-          value={formatCurrency(pending_rebates.amount, pending_rebates.currency)}
+          value={formatCurrency(
+            pending_rebates.amount,
+            pending_rebates.currency,
+          )}
           description={formatRemainingTime(pending_rebates.remaining_time)}
           icon={<CalendarClock className="h-5 w-5" />}
           accent="amber"
@@ -371,29 +427,43 @@ export default function IbDashboardPage() {
         />
         <IbMetricCard
           title="Total Earned"
-          value={formatCurrency(earning_summary.total_earned, earning_summary.currency)}
+          value={formatCurrency(
+            earning_summary.total_earned,
+            earning_summary.currency,
+          )}
           description={`Today: ${formatCurrency(today_earning.balance, today_earning.currency)}`}
           icon={<DollarSign className="h-5 w-5" />}
           accent="slate"
         />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
         <IbSectionCard
           title="Rebate trend"
           description="Recent rebate activity for your IB account."
           actions={
-            <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-3 py-1.5 text-sm text-muted-foreground">
-              <LineChartIcon className="h-4 w-4" />
-              Today earning {formatCurrency(today_earning.balance, today_earning.currency)}
+            <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground">
+              <LineChartIcon className="h-3.5 w-3.5 shrink-0" />
+              Today{" "}
+              {formatCurrency(today_earning.balance, today_earning.currency)}
             </div>
           }
           contentClassName="pt-2"
         >
           {chartData.length > 0 ? (
-            <ChartContainer config={chartConfig} className="h-[340px] w-full">
-              <LineChart data={chartData} margin={{ top: 18, right: 8, left: 8, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="4 4" stroke="hsl(var(--border))" vertical={false} />
+            <ChartContainer
+              config={chartConfig}
+              className="h-[240px] sm:h-[300px] lg:h-[340px] w-full"
+            >
+              <LineChart
+                data={chartData}
+                margin={{ top: 18, right: 8, left: 8, bottom: 0 }}
+              >
+                <CartesianGrid
+                  strokeDasharray="4 4"
+                  stroke="hsl(var(--border))"
+                  vertical={false}
+                />
                 <XAxis
                   dataKey="date"
                   tickLine={false}
@@ -418,71 +488,92 @@ export default function IbDashboardPage() {
               </LineChart>
             </ChartContainer>
           ) : (
-            <div className="flex h-[340px] items-center justify-center rounded-[24px] border border-dashed border-border/60 bg-muted/20 text-sm text-muted-foreground">
+            <div className="flex h-[240px] sm:h-[300px] lg:h-[340px] items-center justify-center rounded-[24px] border border-dashed border-border/60 bg-muted/20 text-sm text-muted-foreground">
               No rebate data available yet.
             </div>
           )}
         </IbSectionCard>
 
-        <IbSectionCard title="Partner profile" description="Core Partner program details and referral assets.">
-          <div className="space-y-4">
-            <div className="ib-portal-note rounded-3xl border p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Partner User</p>
-                  <p className="mt-2 text-2xl font-semibold text-foreground">{partner_info.ib_plan || "N/A"}</p>
+        <IbSectionCard
+          title="Partner profile"
+          description="Core Partner program details and referral assets."
+        >
+          <div className="space-y-3 sm:space-y-4">
+            <div className="ib-portal-note rounded-2xl sm:rounded-3xl border p-3 sm:p-5">
+              <div className="flex items-start justify-between gap-2 sm:gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Partner User
+                  </p>
+                  <p className="mt-1 text-lg font-semibold text-foreground sm:mt-2 sm:text-2xl">
+                    {user.name || "N/A"}
+                  </p>
                 </div>
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-background/70 bg-background/80">
-                  <Gem className="h-5 w-5" />
+                <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl border border-background/70 bg-background/80">
+                  <Gem className="h-4 w-4 sm:h-5 sm:w-5" />
                 </div>
               </div>
             </div>
 
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="min-w-0 rounded-3xl border border-border/60 bg-muted/20 p-5">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Partner ID</p>
-                <p className="mt-2 break-all text-lg font-semibold leading-snug text-foreground sm:text-xl">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
+              <div className="min-w-0 rounded-2xl sm:rounded-3xl border border-border/60 bg-muted/20 p-3 sm:p-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Partner ID
+                </p>
+                <p className="mt-1 break-all text-base font-semibold leading-snug text-foreground sm:mt-2 sm:text-lg">
                   {partner_info.partner_id}
                 </p>
               </div>
-              <div className="min-w-0 rounded-3xl border border-border/60 bg-muted/20 p-5">
+              <div className="min-w-0 rounded-2xl sm:rounded-3xl border border-border/60 bg-muted/20 p-3 sm:p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                   Internal Transfers
                 </p>
-                <p className="mt-2 text-xl font-semibold text-foreground">
-                  {formatCurrency(earning_summary.total_internal_transfers, earning_summary.currency)}
+                <p className="mt-1 text-lg font-semibold text-foreground sm:mt-2">
+                  {formatCurrency(
+                    earning_summary.total_internal_transfers,
+                    earning_summary.currency,
+                  )}
                 </p>
               </div>
             </div>
 
-            <div className="min-w-0 rounded-3xl border border-border/60 bg-muted/20 p-5">
-      <div className="flex items-start justify-between gap-3">
-  <div className="min-w-0 flex-1">
-    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-      Referral Link
-    </p>
-    <p className="mt-2 break-all text-sm leading-6">
-      <a 
-        href={publicReferralLink} 
-        target="_blank" 
-        rel="noopener noreferrer" 
-        className="text-foreground underline hover:text-primary transition-colors"
-      >
-        {publicReferralLink}
-      </a>
-    </p>
-  </div>
-  <Button variant="outline" size="icon" className="shrink-0" onClick={copyReferralLink}>
-    <Copy className="h-4 w-4" />
-  </Button>
-</div>
+            <div className="min-w-0 rounded-2xl sm:rounded-3xl border border-border/60 bg-muted/20 p-3 sm:p-5">
+              <div className="flex items-start justify-between gap-2 sm:gap-3">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Referral Link
+                  </p>
+                  <p className="mt-1 break-all text-sm leading-6">
+                    <a
+                      href={publicReferralLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-foreground underline hover:text-primary transition-colors break-all"
+                    >
+                      {publicReferralLink}
+                    </a>
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0 h-8 w-8 sm:h-9 sm:w-9"
+                  onClick={copyReferralLink}
+                >
+                  <Copy className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                </Button>
+              </div>
 
-              <div className="mt-4 flex flex-wrap gap-3">
-                <Button variant="outline" onClick={copyReferralLink}>
+              <div className="mt-3 flex flex-col gap-2 sm:mt-4 sm:flex-row sm:gap-3">
+                <Button
+                  variant="outline"
+                  className="w-full sm:w-auto"
+                  onClick={copyReferralLink}
+                >
                   <Link2 className="mr-2 h-4 w-4" />
                   Copy link
                 </Button>
-                <Button asChild>
+                <Button asChild className="w-full sm:w-auto">
                   <Link href="/ib-dashboard/clients">Client summary</Link>
                 </Button>
               </div>
@@ -491,12 +582,16 @@ export default function IbDashboardPage() {
         </IbSectionCard>
       </div>
 
-      <Dialog open={isTransferDialogOpen} onOpenChange={setIsTransferDialogOpen}>
+      <Dialog
+        open={isTransferDialogOpen}
+        onOpenChange={setIsTransferDialogOpen}
+      >
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Transfer to client wallet</DialogTitle>
             <DialogDescription>
-              Move balance from the partner wallet into the client wallet without leaving the dashboard.
+              Move balance from the partner wallet into the client wallet
+              without leaving the dashboard.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-5 py-2">
@@ -506,7 +601,10 @@ export default function IbDashboardPage() {
                   Partner Wallet
                 </p>
                 <p className="mt-2 text-lg font-semibold text-foreground">
-                  {formatCurrency(partner_wallet.balance, partner_wallet.currency)}
+                  {formatCurrency(
+                    partner_wallet.balance,
+                    partner_wallet.currency,
+                  )}
                 </p>
               </div>
               <div>
@@ -514,7 +612,10 @@ export default function IbDashboardPage() {
                   Client Wallet
                 </p>
                 <p className="mt-2 text-lg font-semibold text-foreground">
-                  {formatCurrency(client_wallet.balance, client_wallet.currency)}
+                  {formatCurrency(
+                    client_wallet.balance,
+                    client_wallet.currency,
+                  )}
                 </p>
               </div>
             </div>

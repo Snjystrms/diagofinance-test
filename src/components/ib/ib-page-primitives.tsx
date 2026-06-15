@@ -48,7 +48,7 @@ const accentStyles: Record<NonNullable<IbMetricCardProps["accent"]>, string> = {
 export function IbPageShell({ children, className }: IbPageShellProps) {
   return (
     <div className={cn("ib-portal-shell min-h-full w-full bg-background", className)}>
-      <div className="mx-auto flex w-full max-w-none flex-col gap-6 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-none flex-col gap-4 sm:gap-6 px-3 py-5 sm:px-6 sm:py-8 lg:px-8">
         {children}
       </div>
     </div>
@@ -62,7 +62,7 @@ export function IbPageHeader({
   actions,
 }: IbPageHeaderProps) {
   return (
-    <section className="ib-portal-hero rounded-[28px] border px-6 py-6 sm:px-7">
+    <section className="ib-portal-hero rounded-[20px] sm:rounded-[28px] border px-4 py-5 sm:px-7 sm:py-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <div className="ib-portal-kicker inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.22em]">
@@ -96,21 +96,21 @@ export function IbMetricCard({
   className,
 }: IbMetricCardProps) {
   return (
-    <Card className={cn("overflow-hidden rounded-[28px] border shadow-sm", accentStyles[accent], className)}>
-      <CardContent className="flex h-full flex-col gap-5 p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div className="space-y-2">
+    <Card className={cn("overflow-hidden rounded-[20px] sm:rounded-[28px] border shadow-sm", accentStyles[accent], className)}>
+      <CardContent className="flex h-full flex-col gap-4 p-4 sm:gap-5 sm:p-6">
+        <div className="flex items-start justify-between gap-3 sm:gap-4">
+          <div className="space-y-1.5 sm:space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">{title}</p>
-            <div className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">{value}</div>
+            <div className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl lg:text-3xl">{value}</div>
           </div>
           {icon ? (
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/80 text-foreground shadow-sm backdrop-blur-sm">
+            <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl border border-border/60 bg-background/80 text-foreground shadow-sm backdrop-blur-sm">
               {icon}
             </div>
           ) : null}
         </div>
         {description ? <div className="text-sm text-muted-foreground">{description}</div> : null}
-        {footer ? <div className="mt-auto border-t border-border/50 pt-4 text-sm">{footer}</div> : null}
+        {footer ? <div className="mt-auto border-t border-border/50 pt-3 sm:pt-4 text-sm">{footer}</div> : null}
       </CardContent>
     </Card>
   );
@@ -125,15 +125,15 @@ export function IbSectionCard({
   contentClassName,
 }: IbSectionCardProps) {
   return (
-    <Card className={cn("ib-portal-surface rounded-[28px] border shadow-sm", className)}>
-      <CardHeader className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <Card className={cn("ib-portal-surface rounded-[20px] sm:rounded-[28px] border shadow-sm", className)}>
+      <CardHeader className="flex flex-col gap-3 p-4 sm:flex-row sm:items-start sm:justify-between sm:p-6">
         <div className="space-y-1">
-          <CardTitle className="text-xl font-semibold text-foreground">{title}</CardTitle>
+          <CardTitle className="text-lg font-semibold text-foreground sm:text-xl">{title}</CardTitle>
           {description ? <CardDescription className="text-sm">{description}</CardDescription> : null}
         </div>
-        {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+        {actions ? <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto shrink-0">{actions}</div> : null}
       </CardHeader>
-      <CardContent className={cn("pt-0", contentClassName)}>{children}</CardContent>
+      <CardContent className={cn("p-4 pt-0 sm:p-6 sm:pt-0", contentClassName)}>{children}</CardContent>
     </Card>
   );
 }

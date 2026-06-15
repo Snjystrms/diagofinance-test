@@ -545,7 +545,7 @@ export interface IbDashboardPartnerInfo {
   ib_plan: string;
   partner_id: string;
   referral_link: string;
-  ib_name: string;
+  name: string;
 }
 
 export interface IbDashboardResponse {

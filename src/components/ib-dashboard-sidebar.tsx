@@ -28,9 +28,13 @@ export function IbDashboardSidebar() {
   const { themeMode } = useClientCustomization()
   const pathname = usePathname()
   const router = useRouter()
-  const { state } = useSidebar()
+  const { state, isMobile, closeMobileSidebar } = useSidebar()
   const sessionLogout = useSessionLogout()
   const isCollapsed = state === "collapsed"
+
+  const handleMobileNav = useCallback(() => {
+    if (isMobile) closeMobileSidebar()
+  }, [isMobile, closeMobileSidebar])
   const [dashboardData, setDashboardData] = useState<IbDashboardResponse | null>(null)
   const [walletData, setWalletData] = useState<IbWalletData | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -127,7 +131,7 @@ export function IbDashboardSidebar() {
             return (
               <button
                 key={item.path}
-                onClick={() => router.push(item.path)}
+                onClick={() => { handleMobileNav(); router.push(item.path) }}
                 className={cn(
                   "w-full flex items-center justify-center rounded-2xl border p-2.5 transition-all duration-200",
                   active
@@ -144,14 +148,14 @@ export function IbDashboardSidebar() {
 
         <div className="mt-auto flex flex-col items-center gap-2 w-full">
           <button
-            onClick={() => router.push("/dashboard")}
+            onClick={() => { handleMobileNav(); router.push("/dashboard") }}
             className="w-full flex items-center justify-center rounded-2xl border border-transparent bg-sidebar-accent/40 p-2.5 text-sidebar-foreground/60 transition-all duration-200 hover:border-destructive/25 hover:bg-destructive/8 hover:text-destructive"
             title="Client Portal"
           >
             <ArrowLeft className="h-4 w-4" />
           </button>
           <button
-            onClick={() => void sessionLogout()}
+            onClick={() => { handleMobileNav(); void sessionLogout() }}
             className="w-full flex items-center justify-center rounded-2xl border border-transparent bg-sidebar-accent/40 p-2.5 text-sidebar-foreground/60 transition-all duration-200 hover:border-destructive/25 hover:bg-destructive/8 hover:text-destructive"
             title="Log out"
           >
@@ -252,7 +256,7 @@ export function IbDashboardSidebar() {
             return (
               <button
                 key={item.path}
-                onClick={() => router.push(item.path)}
+                onClick={() => { handleMobileNav(); router.push(item.path) }}
                 className={cn(
                   "ib-sidebar-nav-card group relative flex flex-col items-center justify-center gap-2.5 rounded-[20px] px-3 py-5 transition-all duration-200 text-center",
                   isLastOdd && "col-span-2 flex-row gap-3 py-3.5 justify-start px-5",
@@ -291,14 +295,14 @@ export function IbDashboardSidebar() {
       <div className="shrink-0 px-4 pb-5 pt-2 space-y-2">
         <div className="h-px bg-sidebar-border/40 mb-3" />
         <button
-          onClick={() => router.push("/dashboard")}
+          onClick={() => { handleMobileNav(); router.push("/dashboard") }}
           className="group flex w-full items-center gap-3 rounded-2xl border border-sidebar-border/50 px-4 py-2.5 text-[12.5px] font-medium text-sidebar-foreground/60 transition-all duration-200 hover:border-destructive/30 hover:bg-destructive/8 hover:text-destructive"
         >
           <ArrowLeft className="h-3.5 w-3.5 transition-transform duration-200 group-hover:-translate-x-0.5" />
           Client Portal
         </button>
         <button
-          onClick={() => void sessionLogout()}
+          onClick={() => { handleMobileNav(); void sessionLogout() }}
           className="group flex w-full items-center gap-3 rounded-2xl border border-sidebar-border/50 px-4 py-2.5 text-[12.5px] font-medium text-sidebar-foreground/60 transition-all duration-200 hover:border-destructive/30 hover:bg-destructive/8 hover:text-destructive"
         >
           <LogOut className="h-3.5 w-3.5" />
