@@ -87,11 +87,11 @@ export default function DashboardLayout({
         <SidebarInset>
           <Header />
           <DashboardBreadcrumbs />
-          <main className="relative flex-1 overflow-y-auto bg-background p-3 sm:p-4 md:p-5 lg:p-6">
+          <main className="relative flex-1 overflow-y-auto overflow-x-hidden bg-background p-3 sm:p-4 md:p-5 lg:p-6">
             <div className="pointer-events-none fixed bottom-4 right-4 z-0 h-48 w-48 opacity-[0.8] dark:opacity-[0.8]">
               <Image src={themeMode === "bright" ? "/vinnexia-logo.svg" : "/vinnexia-logo-dark.svg"} alt="" width={192} height={192} className="object-contain" />
             </div>
-            <div className="relative z-10 w-full max-w-none">
+            <div className="relative z-1 w-full max-w-none">
               {children}
 </div>
           </main>
