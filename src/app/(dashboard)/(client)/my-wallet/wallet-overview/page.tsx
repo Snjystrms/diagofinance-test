@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/auth-context'
 import { walletApi, type WalletSummaryData } from '@/lib/api'
+import { userBrokerCryptoWalletsApi, type BrokerCryptoWalletItem } from '@/lib/api-auth-admin'
 import { CLIENT_WALLET_REFRESH_EVENT } from '@/lib/client-events'
 import { ApiErrorState } from '@/components/errors/api-error-state'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -37,6 +38,7 @@ export default function WalletOverviewPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<unknown | null>(null)
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null)
+  const [brokerCryptoWallet, setBrokerCryptoWallet] = useState<BrokerCryptoWalletItem | null>(null)
 
   const fetchWalletSummary = async () => {
     if (!token) {
@@ -65,6 +67,16 @@ export default function WalletOverviewPage() {
 
   useEffect(() => {
     fetchWalletSummary()
+  }, [token])
+
+  useEffect(() => {
+    if (!token) return
+    userBrokerCryptoWalletsApi.list(token)
+      .then(res => {
+        const wallets = res.data ?? []
+        setBrokerCryptoWallet(wallets[0] ?? null)
+      })
+      .catch(() => setBrokerCryptoWallet(null))
   }, [token])
 
   useEffect(() => {
@@ -259,23 +271,23 @@ export default function WalletOverviewPage() {
               <CardContent className="space-y-3 flex-1 flex flex-col">
                 <div className="p-3 bg-muted/50 rounded-lg border border-border/50 mb-4">
                   <p className="text-xs font-medium text-muted-foreground mb-1">
-                    Wallet Address
+                    Broker Wallet Address
                   </p>
                   <div className="flex items-center gap-2">
                     <code className="text-xs font-mono text-foreground/80 truncate flex-1">
-                      {mainWallet?.address || 'N/A'}
+                      {brokerCryptoWallet?.wallet_address || 'N/A'}
                     </code>
-                    {mainWallet?.address && (
+                    {brokerCryptoWallet?.wallet_address && (
                       <Button
                         variant="ghost"
                         size="sm"
                         className="h-7 w-7 p-0"
                         onClick={() => {
-                          copyToClipboard(mainWallet.address)
+                          copyToClipboard(brokerCryptoWallet.wallet_address)
                           toast.success('Address copied!')
                         }}
                       >
-                        {copiedAddress === mainWallet.address ? (
+                        {copiedAddress === brokerCryptoWallet.wallet_address ? (
                           <CheckCircle className="h-3.5 w-3.5 text-green-600" />
                         ) : (
                           <Copy className="h-3.5 w-3.5" />
@@ -283,6 +295,25 @@ export default function WalletOverviewPage() {
                       </Button>
                     )}
                   </div>
+                  {brokerCryptoWallet && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <Badge variant="outline" className="text-[10px] uppercase">
+                        {brokerCryptoWallet.network}
+                      </Badge>
+                      <Badge variant="outline" className="text-[10px] uppercase">
+                        {brokerCryptoWallet.currency}
+                      </Badge>
+                      {brokerCryptoWallet.is_active ? (
+                        <Badge className="text-[10px] bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                          Active
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="text-[10px]">
+                          Inactive
+                        </Badge>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-2 mt-auto">

@@ -1,6 +1,5 @@
 import { Permission, SubadminPermissionsResponse } from '@/types/permissions';
-// import { API_BASE_URL } from '@/utils/operations';
-import { API_BASE_URL } from './api';
+import { API_BASE_URL, handle401Redirect } from './api';
 import { useAuth } from '@/contexts/auth-context';
 
 export const fetchSubadminPermissions = async (token: string): Promise<SubadminPermissionsResponse> => {
@@ -11,6 +10,10 @@ export const fetchSubadminPermissions = async (token: string): Promise<SubadminP
       'Content-Type': 'application/json',
     },
   });
+
+  if (handle401Redirect(response, !!token)) {
+    return { success: false, message: "Session expired", data: { subadmin_id: "", permissions: [], total: 0 } } as unknown as SubadminPermissionsResponse;
+  }
 
   if (!response.ok) {
     throw new Error('Failed to fetch subadmin permissions');

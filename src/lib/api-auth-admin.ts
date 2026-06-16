@@ -1,4 +1,4 @@
-import { API_BASE_URL, type ApiResponse, PaginationMeta, apiCall, ApiRequestError } from "./api-core";
+import { API_BASE_URL, type ApiResponse, PaginationMeta, apiCall, ApiRequestError, handle401Redirect } from "./api-core";
 
 export interface RegisterRequest {
   first_name: string;
@@ -1750,6 +1750,7 @@ export const authApi = {
       headers: { Authorization: `Bearer ${token}` } as Record<string, string>,
       body: formData,
     });
+    if (handle401Redirect(response, !!token)) return new Promise<KycUploadResponse>(() => {});
     const json = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(json?.message || `Upload failed (${response.status})`);
     return json as KycUploadResponse;
@@ -1760,6 +1761,7 @@ export const authApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` } as Record<string, string>,
     });
+    if (handle401Redirect(response, !!token)) return new Promise<KycStatusResponse>(() => {});
     const json = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(json?.message || `Fetch failed (${response.status})`);
     return json as KycStatusResponse;

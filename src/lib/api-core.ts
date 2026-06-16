@@ -14,6 +14,18 @@ export interface ApiResponse<T = unknown> {
   error?: string;
 }
 
+export function handle401Redirect(response: Response, hasAuth: boolean): boolean {
+  if (response.status === 401 && hasAuth) {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_user");
+      window.location.replace("/login");
+    }
+    return true;
+  }
+  return false;
+}
+
 export class ApiRequestError extends Error {
   status: number;
   statusText: string;
@@ -140,6 +152,10 @@ export async function apiCall<T>(
 
   if (endpoint.includes("ib-requests/status")) {
     console.log("[apiCall] Response status:", response.status, response.statusText);
+  }
+
+  if (handle401Redirect(response, !!finalHeaders["Authorization"])) {
+    return new Promise<ApiResponse<T>>(() => {});
   }
 
   const json = await response.json().catch(() => ({}));

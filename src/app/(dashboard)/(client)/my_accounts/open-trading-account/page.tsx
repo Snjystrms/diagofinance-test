@@ -62,12 +62,12 @@ import { useAuth } from '@/contexts/auth-context';
 import { cn } from '@/lib/utils';
 
 const LEVERAGE_CHOICES = [
-  { value: 50, label: '1:50 - Lower exposure' },
-  { value: 100, label: '1:100 - Standard' },
-  { value: 200, label: '1:200 - Flexible' },
-  { value: 500, label: '1:500 - Higher flexibility' },
-  { value: 1000, label: '1:1000 - Very high flexibility' },
-  { value: 2000, label: '1:2000 - Maximum available' },
+  { value: 50, label: '1:50' },
+  { value: 100, label: '1:100' },
+  { value: 200, label: '1:200' },
+  { value: 500, label: '1:500' },
+  { value: 1000, label: '1:1000' },
+  { value: 2000, label: '1:2000' },
 ] as const;
 const DEMO_BALANCE_CHOICES = [1000, 2500, 5000, 10000, 100000] as const;
 

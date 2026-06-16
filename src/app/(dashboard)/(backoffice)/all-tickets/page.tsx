@@ -541,6 +541,20 @@ export default function AdminTicketsPage() {
           </div>
         ),
       },
+         {
+        id: "Note",
+        header: "Note by Admin",
+        accessorFn: (row) => row.reply_note,
+        cell: ({ row }) => {
+          const ticket = row.original;
+          return (
+            <div className="space-y-1 text-sm">
+              <div className="font-normal">{ticket.reply_note}</div>
+              {/* <div className="text-xs text-muted-foreground line-clamp-2">{ticket.reply_note}</div> */}
+            </div>
+          );
+        },
+      },
       {
         id: "actions",
         header: "Actions",

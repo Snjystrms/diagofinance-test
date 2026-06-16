@@ -133,8 +133,14 @@ export function ResetPasswordTokenClient() {
                           placeholder="Enter your new password"
                           autoComplete="new-password"
                           {...field}
-                          className="w-full bg-[#1a1a1a] border border-[#FFB800]/20 rounded-lg text-white placeholder:text-white/20 text-sm px-4 py-2.5 outline-none focus:border-[#FFB800]/50 focus:ring-1 focus:ring-[#FFB800]/15 transition-all"
-                        />
+                           inputClassName="
+                                w-full bg-input border border-primary/20 rounded-lg
+                                text-foreground placeholder:text-muted-foreground/50 text-sm
+                                px-4 py-2.5 outline-none
+                                focus:border-primary/50 focus:ring-1 focus:ring-primary/15
+                                transition-all
+                              "
+                            />
                       </FormControl>
                       <FormMessage className="text-red-400 text-xs" />
                     </FormItem>
@@ -152,8 +158,14 @@ export function ResetPasswordTokenClient() {
                           placeholder="Confirm your new password"
                           autoComplete="new-password"
                           {...field}
-                          className="w-full bg-[#1a1a1a] border border-[#FFB800]/20 rounded-lg text-white placeholder:text-white/20 text-sm px-4 py-2.5 outline-none focus:border-[#FFB800]/50 focus:ring-1 focus:ring-[#FFB800]/15 transition-all"
-                        />
+                           inputClassName="
+                                w-full bg-input border border-primary/20 rounded-lg
+                                text-foreground placeholder:text-muted-foreground/50 text-sm
+                                px-4 py-2.5 outline-none
+                                focus:border-primary/50 focus:ring-1 focus:ring-primary/15
+                                transition-all
+                              "
+                            />
                       </FormControl>
                       <FormMessage className="text-red-400 text-xs" />
                     </FormItem>

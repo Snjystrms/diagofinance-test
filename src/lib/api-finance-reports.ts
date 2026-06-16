@@ -1,4 +1,4 @@
-import { API_BASE_URL, ApiRequestError, PaginationMeta, apiCall } from "./api-core";
+import { API_BASE_URL, ApiRequestError, PaginationMeta, apiCall, handle401Redirect } from "./api-core";
 
 export interface Mt5ToMt5TransferRequest {
   from_mt5_account_id: string;
@@ -1003,6 +1003,10 @@ export const adminIbCommissionListReportApi = {
       headers: { Authorization: `Bearer ${token}` },
     });
 
+    if (handle401Redirect(response, !!token)) {
+      return { blob: new Blob(), filename: "" };
+    }
+
     if (!response.ok) {
       const payload = await response.json().catch(() => null);
       throw new ApiRequestError({
@@ -1147,6 +1151,10 @@ export const adminTransactionReportApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
+
+    if (handle401Redirect(response, !!token)) {
+      return { blob: new Blob(), filename: "" };
+    }
 
     if (!response.ok) {
       const payload = await response.json().catch(() => null);
@@ -1329,6 +1337,10 @@ export const adminTradingHistoryReportApi = {
       headers: { Authorization: `Bearer ${token}` },
     });
 
+    if (handle401Redirect(response, !!token)) {
+      return { blob: new Blob(), filename: "" };
+    }
+
     if (!response.ok) {
       const payload = await response.json().catch(() => null);
       throw new ApiRequestError({
@@ -1392,6 +1404,10 @@ export const adminAllUsersReportApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
+
+    if (handle401Redirect(response, !!token)) {
+      return { blob: new Blob(), filename: "" };
+    }
 
     if (!response.ok) {
       const payload = await response.json().catch(() => null);
@@ -1472,6 +1488,10 @@ export const adminMt5UsersReportApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
+
+    if (handle401Redirect(response, !!token)) {
+      return { blob: new Blob(), filename: "" };
+    }
 
     if (!response.ok) {
       const payload = await response.json().catch(() => null);

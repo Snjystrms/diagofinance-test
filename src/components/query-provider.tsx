@@ -1,5 +1,6 @@
 'use client';
 
+import { ApiRequestError } from '@/lib/api-core'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 
@@ -10,11 +11,17 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
         defaultOptions: {
           queries: {
             staleTime: 60 * 1000,
-            retry: 1,
+            retry: (failureCount, error) => {
+              if (error instanceof ApiRequestError && error.status === 401) return false;
+              return failureCount < 1;
+            },
             refetchOnWindowFocus: false,
           },
           mutations: {
-            retry: 1,
+            retry: (failureCount, error) => {
+              if (error instanceof ApiRequestError && error.status === 401) return false;
+              return failureCount < 1;
+            },
           },
         },
       })

@@ -1,5 +1,5 @@
 import toast from "react-hot-toast";
-import { API_BASE_URL } from "../api";
+import { API_BASE_URL, handle401Redirect } from "../api";
 import { getAdminFriendlyErrorMessage } from "../admin-friendly-errors";
 import type { UsersByLevelResponse } from "./types";
 
@@ -15,6 +15,7 @@ export const fetchUsersByLevel = async (
       headers: { Authorization: `Bearer ${token}` },
       cache: "no-store",
     });
+    if (handle401Redirect(res, !!token)) return null;
     const json: UsersByLevelResponse = await res.json();
     if (!json.success || !json.data) {
       toast.error(

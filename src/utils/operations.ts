@@ -1,5 +1,5 @@
 // API Operations for Personal Information
-import { ApiResponse, DepositListResponse } from '@/lib/api'
+import { ApiResponse, DepositListResponse, handle401Redirect } from '@/lib/api'
 import { formatInIST } from '@/lib/date-time'
 
 // Base API configuration (from .env only)
@@ -28,6 +28,11 @@ async function apiCall<T>(
 
   try {
     const response = await fetch(url, config)
+    
+    if (handle401Redirect(response, !!token)) {
+      return new Promise<T>(() => {})
+    }
+    
     const data = await response.json()
     
     if (!response.ok) {
@@ -148,6 +153,11 @@ export async function submitUSDTDeposit(
 
   try {
     const response = await fetch(url, config)
+    
+    if (handle401Redirect(response, !!token)) {
+      return new Promise<never>(() => {})
+    }
+    
     const responseData = await response.json()
     
     if (!response.ok) {
