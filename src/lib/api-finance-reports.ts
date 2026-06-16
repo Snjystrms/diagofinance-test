@@ -387,8 +387,8 @@ export const adminNotificationApi = {
     }
   ) => {
     const qs = new URLSearchParams();
-    if (params?.page) qs.set("page", String(params.page));
-    if (params?.limit) qs.set("limit", String(params.limit));
+    qs.set("page", String(params?.page ?? 1));
+    qs.set("limit", String(params?.limit ?? 20));
     if (params?.status) qs.set("status", params.status);
     if (params?.search) qs.set("search", params.search);
 

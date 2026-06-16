@@ -149,7 +149,7 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
    {
      id: "self_wallet",
      accessorKey: "self_wallet",
-     header: ({ column }) => <DataTableColumnHeader column={column} title="Wallet Balance" />,
+     header: ({ column }) => <DataTableColumnHeader column={column} title="Wallet Balance (USD)" />,
      cell: ({ row }) => {
        const balance = row.original.self_wallet;
        if (balance == null) return <span className="text-muted-foreground">{emptyValue}</span>;

@@ -299,7 +299,7 @@ export function BankDetailFormDialog({
             />
             <Field
               id="iban-number"
-              label="IBAN number"
+              label="IBAN number (optional)"
               value={values.iban_number}
               onChange={(iban_number) => {
                 markTouched("iban_number");

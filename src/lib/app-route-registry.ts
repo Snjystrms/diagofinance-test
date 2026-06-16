@@ -802,14 +802,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     navLabel: "User 2FA",
     managerCategories: ["Settings", "Setting Management"],
   },
-  {
-    path: "/manager-2fa",
-    audience: "backoffice",
-    roles: BACKOFFICE_ROLES,
-    sidebarSection: "settings",
-    navLabel: "Manager 2FA",
-    managerCategories: ["Settings", "Manager 2fa", "Setting Management"],
-  },
+  // {
+  //   path: "/manager-2fa",
+  //   audience: "backoffice",
+  //   roles: BACKOFFICE_ROLES,
+  //   sidebarSection: "settings",
+  //   navLabel: "Manager 2FA",
+  //   managerCategories: ["Settings", "Manager 2fa", "Setting Management"],
+  // },
   {
     path: "/psp-setting",
     audience: "backoffice",

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import toast from "react-hot-toast";
+import { parseAsInteger, useQueryState } from "nuqs";
 import {
   CheckCircle2,
   Copy,
@@ -44,6 +45,7 @@ import {
   type AdminManagedTwoFactorSetupResponse,
   type AdminUsersListApiData,
   type ManagerItem,
+  type PaginationMeta,
   type PendingUser,
 } from "@/lib/api";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
@@ -329,9 +331,13 @@ export function TwoFactorManagementPageContent({
   const [actionLoadingKey, setActionLoadingKey] = useState<string | null>(null);
   const [setupResult, setSetupResult] = useState<SetupResult | null>(null);
   const [disableTarget, setDisableTarget] = useState<TwoFactorRow | null>(null);
+  const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
+  const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(20));
+  const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null);
 
   const debouncedSetSearch = useDebouncedCallback((value: string) => {
     setSearchQuery(value.trim());
+    void setPage(1);
   }, 400);
 
   const loadRows = useCallback(async () => {
@@ -362,15 +368,22 @@ export function TwoFactorManagementPageContent({
             return haystack.includes(searchQuery.toLowerCase());
           });
         setRows(normalizedManagers);
+        setPaginationMeta(null);
       } else {
         const response = await adminUsersApi.list({
           token,
-          page: 1,
-          limit: searchQuery ? 100 : 250,
+          page,
+          limit: perPage,
           search: searchQuery || undefined,
         });
-        const users = extractUsers(response?.data ?? null).map(normalizeUserRow);
+        const payload = response?.data ?? null;
+        const users = extractUsers(payload).map(normalizeUserRow);
         setRows(users);
+        const pag = payload?.pagination
+          ?? (payload?.data && typeof payload.data === "object" && !Array.isArray(payload.data) ? (payload.data as Record<string, unknown>)?.pagination : undefined)
+          ?? (payload?.meta?.pagination)
+          ?? null;
+        setPaginationMeta(pag as PaginationMeta | null);
       }
     } catch (error) {
       console.error(`Failed to load ${mode} 2FA records:`, error);
@@ -385,7 +398,7 @@ export function TwoFactorManagementPageContent({
     } finally {
       setLoading(false);
     }
-  }, [canViewList, isManager, mode, searchQuery, token]);
+  }, [canViewList, isManager, mode, searchQuery, token, page, perPage]);
 
   useEffect(() => {
     void loadRows();
@@ -643,6 +656,7 @@ export function TwoFactorManagementPageContent({
                   data={rows}
                   columns={columns}
                   getRowId={(row) => String(row.id)}
+                  pageCount={Math.max(1, paginationMeta?.total_pages ?? paginationMeta?.last_page ?? 1)}
                 />
               )}
             </div>

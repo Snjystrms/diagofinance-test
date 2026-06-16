@@ -1069,7 +1069,7 @@ export default function NewUserDetailPage() {
                             <TableHeader>
                               <TableRow>
                                 <TableHead>Sr. No.</TableHead>
-                                <TableHead>Amount</TableHead>
+                                <TableHead>Amount (USD)</TableHead>
                                 <TableHead>Transaction Hash</TableHead>
                                 <TableHead>Deposit Type</TableHead>
                                 <TableHead>Status</TableHead>
@@ -1116,7 +1116,7 @@ export default function NewUserDetailPage() {
                             <TableHeader>
                               <TableRow>
                                 <TableHead>Sr. No.</TableHead>
-                                <TableHead>Amount</TableHead>
+                                <TableHead>Amount (USD)</TableHead>
                                 <TableHead>Payment Method</TableHead>
                                 <TableHead>Payment Details</TableHead>
                                 <TableHead>User Comment</TableHead>
@@ -1381,7 +1381,7 @@ export default function NewUserDetailPage() {
                               <TableRow>
                                 <TableHead>Sr. No.</TableHead>
                                 <TableHead>Payment Type</TableHead>
-                                <TableHead>Amount</TableHead>
+                                <TableHead>Amount (USD)</TableHead>
                                 <TableHead>Wallet</TableHead>
                                 <TableHead>Before</TableHead>
                                 <TableHead>After</TableHead>

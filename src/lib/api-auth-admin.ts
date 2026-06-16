@@ -2390,9 +2390,11 @@ export const adminManagedManager2FAApi = {
 };
 
 export const adminKycApi = {
-  listPending: (status: string | number, token: string, search?: string) => {
+  listPending: (status: string | number, token: string, search?: string, page = 1, limit = 10) => {
     const qs = new URLSearchParams();
     qs.set("status", encodeURIComponent(String(status)));
+    qs.set("page", String(page));
+    qs.set("limit", String(limit));
     if (search && search.trim()) {
       qs.set("search", search.trim());
     }

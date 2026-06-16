@@ -258,7 +258,7 @@ export const getColumnsWithActions = (
   {
     id: "main_wallet_balance",
     accessorKey: "main_wallet_balance",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Wallet Balance" />,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Wallet Balance (USD)" />,
     cell: ({ row }) => (
       <div className="flex items-center gap-1 text-sm">
         <Wallet className="h-4 w-4 text-muted-foreground" />

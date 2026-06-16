@@ -178,11 +178,11 @@ export function AdminTransactionContent() {
     },
     {
       id: "amount",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Amount" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Amount (USD)" />,
       accessorKey: "amount",
       cell: ({ row }) => (
         <span className="font-medium tabular-nums">
-          {formatAmount(row.original.amount)} USD
+          {formatAmount(row.original.amount)}
         </span>
       ),
     },

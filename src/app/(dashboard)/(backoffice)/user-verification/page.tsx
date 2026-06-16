@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback, useRef, type ChangeEvent } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { parseAsInteger, useQueryState } from "nuqs";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
 
@@ -502,6 +503,9 @@ export default function UserVerificationPage() {
   const [statusFilter, setStatusFilter] = useState<string>("1");
   const [search, setSearch] = useState<string>("");
   const [searchInput, setSearchInput] = useState<string>("");
+  const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
+  const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
+  const [paginationMeta, setPaginationMeta] = useState<{ current_page: number; per_page: number; total: number; total_pages: number } | null>(null);
 
   // modal
   const [open, setOpen] = useState(false);
@@ -624,10 +628,11 @@ export default function UserVerificationPage() {
       setLoading(true);
       setLoadError(null);
       const searchTerm = search && search.length >= 3 ? search : undefined;
-      const res = await adminKycApi.listPending(Number(statusFilter), token, searchTerm);
-      const data = res?.data as { items?: ListRow[] } | undefined;
+      const res = await adminKycApi.listPending(Number(statusFilter), token, searchTerm, page, perPage);
+      const data = res?.data as { items?: ListRow[]; pagination?: { current_page: number; per_page: number; total: number; total_pages: number } } | undefined;
       const items = data?.items ?? [];
       setRows(items);
+      setPaginationMeta(data?.pagination ?? null);
     } catch (e: unknown) {
       console.error(e);
       setLoadError(e);
@@ -638,7 +643,7 @@ export default function UserVerificationPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, statusFilter, search]);
+  }, [token, statusFilter, search, page, perPage]);
 
   useEffect(() => {
     loadList();
@@ -992,6 +997,7 @@ const buildReviewPayload = () => {
   // Handle status filter change
   const handleStatusFilterChange = (newStatus: string) => {
     setStatusFilter(newStatus);
+    void setPage(1);
   };
 
   const submitKycUpload = async () => {
@@ -1133,6 +1139,7 @@ const buildReviewPayload = () => {
             onChange={setSearchInput}
             onSearch={(value) => {
               setSearch(value || "");
+              void setPage(1);
             }}
             placeholder="Search by name, email, or user details"
             minimumLength={3}
@@ -1163,7 +1170,7 @@ const buildReviewPayload = () => {
           </div>
         </div>
         
-        <AppDataTable<ListRow> data={filteredRows} columns={columns} pageCount={1} advanced />
+        <AppDataTable<ListRow> data={filteredRows} columns={columns} pageCount={Math.max(1, paginationMeta?.total_pages ?? 1)} advanced />
       </div>
 
       {/* Detail / Review Modal */}

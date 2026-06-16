@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
+import { parseAsInteger, useQueryState } from "nuqs";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
 
@@ -71,8 +72,8 @@ export default function AllNotificationsPage() {
   const [notifications, setNotifications] = useState<AdminNotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
-  const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
+  const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
+  const [perPage, setPerPage] = useQueryState("perPage", parseAsInteger.withDefault(20));
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [pagination, setPagination] = useState({
@@ -122,15 +123,15 @@ export default function AllNotificationsPage() {
     return false;
   }, [isAdmin, isManager, hasFeature]);
 
-  const loadNotifications = useCallback(async (search?: string, pageNum?: number) => {
+  const loadNotifications = useCallback(async (search?: string) => {
     if (!token || !canViewNotifications) return;
 
     try {
       setLoading(true);
       setLoadError(null);
       const response = await adminNotificationApi.getNotifications(token, {
-        page: pageNum ?? page,
-        limit,
+        page,
+        limit: perPage,
         status: statusFilter,
         search: (search ?? searchTermRef.current) || undefined,
       });
@@ -170,11 +171,11 @@ export default function AllNotificationsPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, page, limit, statusFilter, canViewNotifications]);
+  }, [token, page, perPage, statusFilter, canViewNotifications]);
 
   // Reset to page 1 when status filter changes
   useEffect(() => {
-    setPage(1);
+    void setPage(1);
   }, [statusFilter]);
 
   useEffect(() => {
@@ -187,10 +188,10 @@ export default function AllNotificationsPage() {
 
   const handleSearch = useCallback((value: string) => {
     setSearchTerm(value);
-    setPage(1);
+    void setPage(1);
     skipNextEffectRef.current = true;
-    loadNotifications(value, 1);
-  }, [loadNotifications]);
+    loadNotifications(value);
+  }, [loadNotifications, setPage]);
 
   const handleMarkAsRead = useCallback(
     async (notificationId: number) => {
