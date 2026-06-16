@@ -738,6 +738,22 @@ export interface IbPlanResponseData {
   commissions: IbPlanCommission[];
 }
 
+export interface IbDirectRate {
+  account_type_id: number;
+  account_type_name: string;
+  direct_rate: number;
+  parent_direct_rate: number;
+  assigned_by: number;
+  status: number;
+  updated_at: string;
+}
+
+export interface IbDirectRatesResponse {
+  success: boolean;
+  user_id: number;
+  rates: IbDirectRate[];
+}
+
 export const ibRequestsApi = {
   overview: (token: string) =>
     apiCall<IbRequestStatusResponse>(`/user/ib-requests/status`, {
@@ -824,6 +840,12 @@ export const ibRequestsApi = {
 
   getPlan: (token: string) =>
     apiCall<IbPlanResponseData>(`/user/ib-plan`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  getDirectRates: (token: string) =>
+    apiCall<IbDirectRatesResponse>(`/user/ib/direct-rates`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),

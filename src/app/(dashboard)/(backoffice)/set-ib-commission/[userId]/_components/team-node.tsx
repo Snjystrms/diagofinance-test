@@ -48,6 +48,7 @@ const TeamNode = ({ data }: NodeProps<GraphNode>) => {
       className={clsx(
         "relative rounded-xl border shadow-sm px-3 py-2 w-[220px] h-[100px] flex items-center gap-3 backdrop-blur-sm cursor-pointer",
         "bg-card text-foreground",
+        "transition-shadow duration-150 hover:shadow-md hover:scale-[1.02]",
         getBorderColor(),
         highlightCls
       )}

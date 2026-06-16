@@ -1,113 +1,127 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronDown, Circle, Diamond, Layers, Plus, RefreshCw, SquareStack } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { CircleDollarSign, RefreshCw, ShieldCheck } from "lucide-react";
 
 import { IbPageHeader, IbPageShell, IbSectionCard } from "@/components/ib/ib-page-primitives";
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ibRequestsApi, type IbPlanCommission } from "@/lib/api-trading-ib";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
+import { ibRequestsApi, type IbDirectRate } from "@/lib/api-trading-ib";
+import { formatDateTimeInIST } from "@/lib/formatters";
+import toast from "react-hot-toast";
 
-const commissionNotes = [
-  "Commissions are calculated only for round-trip trades that remain open for at least three minutes.",
-  "No commissions are paid for trades closed within three minutes of opening or trades executed as internal hedges.",
+const directRateNotes = [
+  "Direct rates are assigned by admin based on your discussion with your upline partner and determine your commission per trade.",
+  "Parent rate indicates the maximum rate available from your upline — your direct rate cannot exceed it.",
+  "Rates are applied per account type and may differ across Standard, Cent, Copy Trading, and other account types.",
 ];
 
-function formatRate(value: number | string | null | undefined): string {
+const formatRate = (value: number | string | null | undefined): string => {
   if (value === null || value === undefined || value === "") return "-";
   const num = Number(value);
-  if (isNaN(num) || num === 0) return "-";
+  if (!Number.isFinite(num)) return "-";
   return `$${num}`;
-}
+};
 
-function getAccountTypeIcon(accountName: string) {
-  const name = accountName.toLowerCase();
-  if (name.includes("exclusive")) return Diamond;
-  if (name.includes("cent")) return Circle;
-  if (name.includes("shares")) return Layers;
-  if (name.includes("plus")) return Plus;
-  return SquareStack;
-}
+const formatDateTime = (value?: string | null) => {
+  if (!value) return "-";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return formatDateTimeInIST(value);
+};
+
+const getStatusBadge = (status: number) =>
+  status === 1 ? (
+    <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
+      Active
+    </Badge>
+  ) : (
+    <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-950/40 dark:text-gray-300">
+      Inactive
+    </Badge>
+  );
 
 export default function IbCommissionsPage() {
   const { token } = useAuth();
-  const [commissions, setCommissions] = useState<IbPlanCommission[]>([]);
+  const [rates, setRates] = useState<IbDirectRate[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [accountTypeFilter, setAccountTypeFilter] = useState("all");
 
-  const fetchCommissions = useCallback(async () => {
-    setError("Commission data is currently unavailable.");
-    setIsLoading(false);
-  }, []);
+  const fetchDirectRates = useCallback(async () => {
+    if (!token) {
+      setRates([]);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const response = await ibRequestsApi.getDirectRates(token);
+
+      if (!response.success) {
+        throw new Error("Failed to load direct rates");
+      }
+
+      const ratesData = (response as unknown as { rates?: IbDirectRate[] }).rates;
+      setRates(ratesData ?? []);
+    } catch (err: unknown) {
+      console.error("Failed to load direct rates:", err);
+      const msg = getAdminFriendlyErrorMessage(err, { resource: "direct rates", action: "load" });
+      setError(msg);
+      toast.error(msg);
+      setRates([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [token]);
 
   useEffect(() => {
-    void fetchCommissions();
-  }, [fetchCommissions]);
+    void fetchDirectRates();
+  }, [fetchDirectRates]);
 
-  const accountTypes = useMemo(() => {
-    const names = Array.from(
-      new Set(
-        commissions
-          .map((commission) => commission.account_type_name)
-          .filter((name): name is string => Boolean(name))
-      )
-    );
-
-    return names.map((name) => ({ id: name, name }));
-  }, [commissions]);
-
-  const filteredAccountTypes = useMemo(() => {
-    if (accountTypeFilter === "all") return accountTypes;
-    return accountTypes.filter((at) => at.id === accountTypeFilter);
-  }, [accountTypes, accountTypeFilter]);
+  const activeCount = rates.filter((r) => r.status === 1).length;
 
   return (
     <IbPageShell>
       <IbPageHeader
-        eyebrow="Partner Commissions"
-        title="Commission table"
-        description="Review the live payout matrix for each account type available in the Partner portal."
+        eyebrow="Partner Direct Rates"
+        title="Direct Rates"
+        description="View the direct commission rates assigned to you across each account type. Parent rates are set by your upline partner."
         actions={
-          <Button
-            variant="outline"
-            onClick={() => {
-              setAccountTypeFilter("all");
-              void fetchCommissions();
-            }}
-          >
-            <RefreshCw className="mr-2 h-4 w-4" />
+          <Button variant="outline" onClick={() => void fetchDirectRates()} disabled={isLoading}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
             Refresh
           </Button>
         }
       />
 
       <IbSectionCard
-        title="Commission Rates"
-        description="Live commission rates by account type. Each level shows the payout for the Partner and up to 5 sub-Partner tiers."
+        title="Your Direct Rates"
+        description="Commission rates per account type assigned directly to your partner account."
         actions={
-          <div className="min-w-[190px] space-y-1.5">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-              Account Type
-            </p>
-            <Select value={accountTypeFilter} onValueChange={setAccountTypeFilter}>
-              <SelectTrigger className="w-full rounded-2xl">
-                <SelectValue placeholder="Show all account types" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Show all</SelectItem>
-                {accountTypes.map((at) => (
-                  <SelectItem key={at.id} value={at.id}>
-                    {at.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="rounded-full">
+              {rates.length} account {rates.length === 1 ? "type" : "types"}
+            </Badge>
+            {activeCount > 0 ? (
+              <Badge className="rounded-full bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                <ShieldCheck className="mr-1 h-3 w-3" />
+                {activeCount} active
+              </Badge>
+            ) : null}
           </div>
         }
       >
@@ -119,110 +133,57 @@ export default function IbCommissionsPage() {
           </div>
         ) : error ? (
           <div className="flex min-h-[260px] flex-col items-center justify-center rounded-[24px] border border-dashed border-border/60 bg-muted/10 px-6 text-center">
-            <p className="text-sm text-muted-foreground">{error}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-4"
-              onClick={() => void fetchCommissions()}
-            >
+            <CircleDollarSign className="mb-4 h-10 w-10 text-muted-foreground" />
+            <h3 className="text-lg font-semibold text-foreground">Failed to load direct rates</h3>
+            <p className="mt-2 max-w-lg text-sm text-muted-foreground">{error}</p>
+            <Button variant="outline" size="sm" className="mt-4" onClick={() => void fetchDirectRates()}>
               <RefreshCw className="mr-2 h-4 w-4" />
               Retry
             </Button>
           </div>
-        ) : filteredAccountTypes.length > 0 ? (
-          <Accordion
-            type="multiple"
-            defaultValue={filteredAccountTypes.map((at) => String(at.id))}
-            className="rounded-[24px] border border-border/60 bg-muted/10"
-          >
-            {filteredAccountTypes.map((at) => {
-              const accountTypeCommissions = commissions.filter(
-                (commission) => commission.account_type_name === at.name
-              );
-              const AccountTypeIcon = getAccountTypeIcon(at.name);
-
-              return (
-                <AccordionItem
-                  key={at.id}
-                  value={at.id}
-                  className="border-border/60 px-5"
-                >
-                  <AccordionTrigger className="py-5 text-left text-lg font-semibold hover:no-underline">
-                    <div className="flex flex-1 flex-wrap items-center gap-3">
-                      <span>{at.name}</span>
-                      <Badge variant="outline" className="rounded-full">
-                        {accountTypeCommissions.length}{" "}
-                        {accountTypeCommissions.length === 1 ? "level" : "levels"}
-                      </Badge>
-                    </div>
-                  </AccordionTrigger>
-
-                  <AccordionContent className="pb-5">
-                    {accountTypeCommissions.length > 0 ? (
-                      <div className="overflow-x-auto rounded-[24px] border border-border/60 bg-card shadow-sm">
-                        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border/60 bg-muted/25 px-5 py-4">
-                          <div>
-                            {/* <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                              Commission Rates
-                            </p> */}
-                            <p className="flex items-center gap-2 text-lg font-semibold text-foreground">
-                              <span className="flex h-7 w-7 items-center justify-center rounded-md bg-primary/10 text-primary">
-                                <AccountTypeIcon className="h-4 w-4" />
-                              </span>
-                              {at.name}
-                            </p>
-                            {/* {ibPlan?.name ? (
-                              <p className="mt-1 text-xs text-muted-foreground">{ibPlan.name}</p>
-                            ) : null} */}
-                          </div>
-                        </div>
-
-                        <div className="overflow-x-auto">
-                          <Table>
-                            <TableHeader>
-                              <TableRow className="bg-muted/20">
-                                <TableHead className="min-w-[120px]">Level</TableHead>
-                                <TableHead>Partner</TableHead>
-                                <TableHead>Sub-Partner 1</TableHead>
-                                <TableHead>Sub-Partner 2</TableHead>
-                                <TableHead>Sub-Partner 3</TableHead>
-                                <TableHead>Sub-Partner 4</TableHead>
-                                <TableHead>Sub-Partner 5</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {accountTypeCommissions.map((c, index) => (
-                                <TableRow key={`${at.id}-${c.level}-${index}`}>
-                                  <TableCell className="font-medium">{c.level}</TableCell>
-                                  <TableCell>{formatRate(c.rate_ib)}</TableCell>
-                                  <TableCell>{formatRate(c.rate_sub_ib_1)}</TableCell>
-                                  <TableCell>{formatRate(c.rate_sub_ib_2)}</TableCell>
-                                  <TableCell>{formatRate(c.rate_sub_ib_3)}</TableCell>
-                                  <TableCell>{formatRate(c.rate_sub_ib_4)}</TableCell>
-                                  <TableCell>{formatRate(c.rate_sub_ib_5)}</TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex min-h-[120px] items-center justify-center rounded-[24px] border border-dashed border-border/60 bg-muted/10 text-sm text-muted-foreground">
-                        No commission levels configured for this account type.
-                      </div>
-                    )}
-                  </AccordionContent>
-                </AccordionItem>
-              );
-            })}
-          </Accordion>
+        ) : rates.length > 0 ? (
+          <div className="overflow-hidden rounded-[24px] border border-border/60 bg-card shadow-sm">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/20">
+                    <TableHead className="min-w-[140px]">Account Type</TableHead>
+                    <TableHead className="text-right">Direct Rate</TableHead>
+                    <TableHead className="text-right">Parent Rate</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-right">Updated</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rates.map((rate) => (
+                    <TableRow key={rate.account_type_id}>
+                      <TableCell className="font-medium">
+                        {rate.account_type_name || "-"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatRate(rate.direct_rate)}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {formatRate(rate.parent_direct_rate)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {getStatusBadge(rate.status)}
+                      </TableCell>
+                      <TableCell className="text-right text-sm text-muted-foreground">
+                        {formatDateTime(rate.updated_at)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
         ) : (
           <div className="flex min-h-[260px] flex-col items-center justify-center rounded-[24px] border border-dashed border-border/60 bg-muted/10 px-6 text-center">
-            <ChevronDown className="mb-4 h-10 w-10 text-muted-foreground" />
-            <h3 className="text-lg font-semibold text-foreground">No commission plans found</h3>
+            <CircleDollarSign className="mb-4 h-10 w-10 text-muted-foreground" />
+            <h3 className="text-lg font-semibold text-foreground">No direct rates assigned</h3>
             <p className="mt-2 max-w-lg text-sm text-muted-foreground">
-              No commission data is currently available for your IB plan.
+              No direct commission rates have been assigned to your account yet. Contact your upline partner for more details.
             </p>
           </div>
         )}
@@ -230,7 +191,7 @@ export default function IbCommissionsPage() {
         <div className="mt-6 rounded-[24px] border border-border/60 bg-muted/15 p-5">
           <p className="text-sm font-semibold text-foreground">Notes</p>
           <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
-            {commissionNotes.map((note) => (
+            {directRateNotes.map((note) => (
               <li key={note} className="flex items-start gap-2">
                 <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
                 <span>{note}</span>

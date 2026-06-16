@@ -597,6 +597,16 @@ export function DownlineTreePageContent({
                 Go
               </button>
             </div>
+            <div className="flex items-center gap-3 text-[10px] text-muted-foreground pt-1">
+              <span className="inline-flex items-center gap-1">
+                <span className="inline-block h-2 w-2 rounded-full bg-amber-400 dark:bg-amber-500 ring-1 ring-amber-400/40" />
+                Partner
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="inline-block h-2 w-2 rounded-full bg-muted-foreground/40" />
+                Client
+              </span>
+            </div>
           </Panel>
         </ReactFlow>
       </div>

@@ -15,6 +15,7 @@ import {
   Loader2,
   RefreshCw,
   Wallet,
+  UserStar
 } from "lucide-react";
 
 import { ApiErrorState } from "@/components/errors/api-error-state";
@@ -510,7 +511,7 @@ export default function IbDashboardPage() {
                   </p>
                 </div>
                 <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl border border-background/70 bg-background/80">
-                  <Gem className="h-4 w-4 sm:h-5 sm:w-5" />
+                   <UserStar className="h-5 w-5" />
                 </div>
               </div>
             </div>

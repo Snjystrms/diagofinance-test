@@ -1323,11 +1323,15 @@ export function applyThemePairMode(pairId: string, mode: ThemeMode) {
     root.classList.remove("dark")
   }
 
-  clearVariables(root)
-  if (darkContainer) clearVariables(darkContainer)
-
   const target = dark ? (darkContainer || root) : root
+
   writeVariables(target, theme.cssVariables)
+  if (target !== root) {
+    clearVariables(root)
+  }
+  if (darkContainer && darkContainer !== target) {
+    clearVariables(darkContainer)
+  }
 }
 
 export function applyThemeById(themeId: string) {

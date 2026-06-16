@@ -97,6 +97,7 @@ const TeamNode: React.FC<NodeProps<GraphNode>> = ({ data }) => {
       className={clsx(
         'relative rounded-xl border shadow-sm px-3 py-2 w-[220px] h-[90px] flex items-center gap-3 backdrop-blur-sm cursor-pointer',
         'bg-card text-foreground',
+        'transition-shadow duration-150 hover:shadow-md hover:scale-[1.02]',
         data.isRoot
           ? 'border-sky-500 dark:border-sky-400 shadow-lg shadow-sky-500/20'
           : 'border-border',
@@ -620,7 +621,7 @@ export function DownlineTreeDialog({ open, onOpenChange, userId, userName }: Dow
             </div>
           </Panel>
 
-          <Panel position="top-right" className="rounded-lg bg-card/90 border border-border backdrop-blur px-3 py-2 shadow space-y-2 text-foreground">
+<Panel position="top-right" className="rounded-lg bg-card/90 border border-border backdrop-blur px-3 py-2 shadow space-y-2 text-foreground">
             <div className="flex items-center gap-2">
               <input
                 className="h-8 w-44 rounded border border-input bg-background px-2 text-sm text-foreground placeholder:text-muted-foreground"
@@ -635,6 +636,16 @@ export function DownlineTreeDialog({ open, onOpenChange, userId, userName }: Dow
               >
                 Go
               </button>
+            </div>
+            <div className="flex items-center gap-3 text-[10px] text-muted-foreground pt-1">
+              <span className="inline-flex items-center gap-1">
+                <span className="inline-block h-2 w-2 rounded-full bg-sky-500 ring-1 ring-sky-400/40" />
+                Partner
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <span className="inline-block h-2 w-2 rounded-full bg-muted-foreground/40" />
+                Client
+              </span>
             </div>
           </Panel>
         </ReactFlow>

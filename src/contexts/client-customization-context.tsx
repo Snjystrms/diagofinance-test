@@ -4,7 +4,6 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useLayoutEffect,
   useMemo,
   useState,
@@ -76,9 +75,18 @@ export function ClientCustomizationProvider({ children }: { children: ReactNode 
       : resolvedFromThemeId.mode,
   };
 
-  const [themePairId, setThemePairIdState] = useState<string>(() => {
+const [themePairId, setThemePairIdState] = useState<string>(() => {
     if (typeof window !== "undefined" && allowThemeCustomization) {
-      return window.localStorage.getItem(THEME_PAIR_STORAGE_KEY) || defaultTheme.pairId;
+      const storedPairId = window.localStorage.getItem(THEME_PAIR_STORAGE_KEY);
+      if (storedPairId && themePairs.some((entry) => entry.id === storedPairId)) {
+        return storedPairId;
+      }
+      const legacyThemeId = window.localStorage.getItem(THEME_STORAGE_KEY);
+      if (legacyThemeId) {
+        const resolved = resolveThemePairMode(legacyThemeId);
+        window.localStorage.setItem(THEME_PAIR_STORAGE_KEY, resolved.pairId);
+        return resolved.pairId;
+      }
     }
 
     return defaultTheme.pairId;
@@ -88,6 +96,16 @@ export function ClientCustomizationProvider({ children }: { children: ReactNode 
       const storedMode = window.localStorage.getItem(THEME_MODE_STORAGE_KEY);
       if (storedMode === "bright" || storedMode === "dark") {
         return storedMode;
+      }
+      const storedPairId = window.localStorage.getItem(THEME_PAIR_STORAGE_KEY);
+      if (storedPairId && themePairs.some((entry) => entry.id === storedPairId)) {
+        return defaultTheme.mode;
+      }
+      const legacyThemeId = window.localStorage.getItem(THEME_STORAGE_KEY);
+      if (legacyThemeId) {
+        const resolved = resolveThemePairMode(legacyThemeId);
+        window.localStorage.setItem(THEME_MODE_STORAGE_KEY, resolved.mode);
+        return resolved.mode;
       }
     }
 
@@ -99,7 +117,7 @@ export function ClientCustomizationProvider({ children }: { children: ReactNode 
     }
 
     return activePreset.sidebarId;
-  });
+});
   const [dashboardModes, setDashboardModes] = useState<Record<DashboardArea, DashboardMode>>(() => {
     const nextModes: Record<DashboardArea, DashboardMode> = {
       admin: activePreset.dashboards.admin?.mode ?? "normal",
@@ -117,58 +135,6 @@ export function ClientCustomizationProvider({ children }: { children: ReactNode 
 
     return nextModes;
   });
-
-  useEffect(() => {
-    const resolvedPresetTheme = resolveThemePairMode(activePreset.themeId);
-    let nextThemePairId = resolvedPresetTheme.pairId;
-    let nextThemeMode: ThemeMode = resolvedPresetTheme.mode;
-    let nextSidebarId = activePreset.sidebarId;
-    const nextModes: Record<DashboardArea, DashboardMode> = {
-      admin: activePreset.dashboards.admin?.mode ?? "normal",
-      client: activePreset.dashboards.client?.mode ?? "normal",
-    };
-
-    if (typeof window !== "undefined") {
-      if (allowThemeCustomization) {
-        const storedPairId = window.localStorage.getItem(THEME_PAIR_STORAGE_KEY);
-        const storedMode = window.localStorage.getItem(THEME_MODE_STORAGE_KEY);
-        if (storedPairId && themePairs.some((entry) => entry.id === storedPairId)) {
-          nextThemePairId = storedPairId;
-        } else {
-          const legacyThemeId = window.localStorage.getItem(THEME_STORAGE_KEY);
-          if (legacyThemeId) {
-            const resolvedLegacy = resolveThemePairMode(legacyThemeId);
-            nextThemePairId = resolvedLegacy.pairId;
-            nextThemeMode = resolvedLegacy.mode;
-            window.localStorage.setItem(THEME_PAIR_STORAGE_KEY, nextThemePairId);
-            window.localStorage.setItem(THEME_MODE_STORAGE_KEY, nextThemeMode);
-          }
-        }
-        if (storedMode === "bright" || storedMode === "dark") {
-          nextThemeMode = storedMode;
-        }
-      }
-
-      if (allowSidebarCustomization) {
-        nextSidebarId =
-          (window.localStorage.getItem(SIDEBAR_STORAGE_KEY) as SidebarId | null) || nextSidebarId;
-      }
-
-      if (allowDashboardCustomization) {
-        (["admin", "client"] as DashboardArea[]).forEach((area) => {
-          const storedMode = window.localStorage.getItem(getDashboardModeStorageKey(area));
-          if (storedMode === "normal" || storedMode === "custom") {
-            nextModes[area] = storedMode;
-          }
-        });
-      }
-    }
-
-    setThemePairIdState(nextThemePairId);
-    setThemeModeState(nextThemeMode);
-    setSidebarIdState(nextSidebarId);
-    setDashboardModes(nextModes);
-  }, [activePreset, allowDashboardCustomization, allowSidebarCustomization, allowThemeCustomization]);
 
   useLayoutEffect(() => {
     applyThemePairMode(themePairId, themeMode);

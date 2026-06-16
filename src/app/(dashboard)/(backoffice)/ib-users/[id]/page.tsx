@@ -448,6 +448,7 @@ function WalletTab({
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Sr. No.</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
@@ -456,9 +457,10 @@ function WalletTab({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.map((tx) => (
+                {transactions.map((tx, index) => (
                   <TableRow key={tx.id}>
-                    <TableCell className="capitalize">{tx.type}</TableCell>
+                    <TableCell className="capitalize">{index + 1}</TableCell>
+                     <TableCell className="capitalize">{tx.type}</TableCell>
                     <TableCell className="font-medium tabular-nums">
                       {formatCurrency(tx.net_amount ?? tx.amount)}
                     </TableCell>
@@ -624,6 +626,7 @@ function NetworkTab({
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>Sr. No.</TableHead>  
                     <TableHead>Client</TableHead>
                     <TableHead className="text-right">Lots</TableHead>
                     {/* <TableHead className="text-right">Volume</TableHead> */}
@@ -633,8 +636,9 @@ function NetworkTab({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {clientsData!.data.map((client) => (
+                  {clientsData!.data.map((client, index) => (
                     <TableRow key={client.id}>
+                      <TableCell>{index + 1}</TableCell>
                       <TableCell>
                         <div>
                           <p className="font-medium">{client.name}</p>
@@ -672,7 +676,8 @@ function NetworkTab({
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Sub-Partner</TableHead>
+<TableHead>Sr. No.</TableHead>
+                     <TableHead>Sub-Partner</TableHead>
                     <TableHead>Level</TableHead>
                     <TableHead className="text-right">Lots</TableHead>
                     {/* <TableHead className="text-right">Volume</TableHead> */}
@@ -681,10 +686,11 @@ function NetworkTab({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {subIbsData!.data.map((sub) => (
-                    <TableRow key={sub.id}>
-                      <TableCell>
-                        <div>
+{subIbsData!.data.map((sub, index) => (
+                     <TableRow key={sub.id}>
+                       <TableCell>{index + 1}</TableCell>
+                       <TableCell>
+                         <div>
                           <p className="font-medium">{sub.name}</p>
                           <p className="text-xs text-muted-foreground">{sub.email}</p>
                         </div>
@@ -926,6 +932,7 @@ function CommissionTab({
                   <Table>
                     <TableHeader>
                       <TableRow>
+                        <TableHead>Sr. No.</TableHead>
                         <TableHead>User</TableHead>
                         <TableHead>Sponsor ID</TableHead>
                         <TableHead className="text-right">Volume</TableHead>
@@ -937,15 +944,16 @@ function CommissionTab({
                     <TableBody>
                       {level.users.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={6} className="text-center text-muted-foreground py-6">
+                          <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
                             No users at this level.
                           </TableCell>
                         </TableRow>
                       ) : (
-                        level.users.map((u) => (
-                          <TableRow key={u.user_id}>
-                            <TableCell>
-                              <div className="font-medium">{u.name}</div>
+level.users.map((u, index) => (
+                           <TableRow key={u.user_id}>
+                             <TableCell>{index + 1}</TableCell>
+                             <TableCell>
+                               <div className="font-medium">{u.name}</div>
                               <div className="text-xs text-muted-foreground">{u.email}</div>
                             </TableCell>
                             <TableCell>{u.sponsor_id || "\u2014"}</TableCell>
