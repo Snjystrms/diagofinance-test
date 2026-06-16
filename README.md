@@ -130,7 +130,7 @@ src/
 3. **Password Reset**: User requests reset → Token sent → Reset password → Login
 4. **Logout**: User logs out → Token cleared → Redirect to login
 
-## Form Validation
+## Form Validation ##
 
 All forms use Zod schemas for validation:
 
