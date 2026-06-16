@@ -343,7 +343,7 @@ export default function PspSettingPage() {
                           >
                             <Pencil className="h-3.5 w-3.5 text-foreground/70" />
                           </Button>
-                          <Button
+                          {/* <Button
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive"
@@ -351,7 +351,7 @@ export default function PspSettingPage() {
                             onClick={() => setDeleteTarget(pm)}
                           >
                             <Trash2 className="h-3.5 w-3.5" />
-                          </Button>
+                          </Button> */}
                         </div>
                       </TableCell>
                     </TableRow>

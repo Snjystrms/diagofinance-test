@@ -830,6 +830,7 @@ export interface AdminBonusMt5UserOption {
   name: string;
   email: string;
   current_balance: number;
+  mode: string;
 }
 
 export interface AdminBonusMutateBody {
@@ -2179,12 +2180,17 @@ export const adminBonusApi = {
     });
   },
 
-  listMt5Users: (token: string) => {
+  listMt5Users: (token: string, search?: string) => {
     if (!token) {
       throw new Error("Token is required to fetch MT5 users");
     }
 
-    return apiCall<AdminBonusMt5UserOption[]>(`/admin/bonus/mt5-users`, {
+    let endpoint = `/admin/bonus/mt5-users`;
+    if (search && search.trim().length >= 3) {
+      endpoint += `?search=${encodeURIComponent(search.trim())}`;
+    }
+
+    return apiCall<AdminBonusMt5UserOption[]>(endpoint, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
@@ -2389,6 +2395,37 @@ export const adminManagedManager2FAApi = {
   },
 };
 
+export interface AdminKycExportParams {
+  token: string;
+  format?: "xlsx" | "csv";
+  search?: string;
+  status?: string | number;
+}
+
+const parseKycExportContentDispositionFilename = (contentDisposition: string | null, fallback: string) => {
+  if (!contentDisposition) {
+    return fallback;
+  }
+
+  const utf8Match = contentDisposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1]);
+    } catch {
+      return utf8Match[1];
+    }
+  }
+
+  const filenameMatch = contentDisposition.match(/filename\s*=\s*"([^"]+)"|filename\s*=\s*([^;]+)/i);
+  const filename = filenameMatch?.[1] ?? filenameMatch?.[2];
+
+  if (!filename) {
+    return fallback;
+  }
+
+  return filename.trim();
+};
+
 export const adminKycApi = {
   listPending: (status: string | number, token: string, search?: string, page = 1, limit = 10) => {
     const qs = new URLSearchParams();
@@ -2447,6 +2484,60 @@ export const adminKycApi = {
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
+  },
+
+  export: async ({ token, format = "xlsx", search, status }: AdminKycExportParams) => {
+    if (!token) {
+      throw new Error("Token is required to export KYC submissions");
+    }
+
+    if (!API_BASE_URL) {
+      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("format", format);
+    if (search && search.trim()) qs.set("search", search.trim());
+    if (status !== undefined && status !== null && `${status}` !== "" && `${status}` !== "none") {
+      qs.set("status", String(status));
+    }
+
+    const endpoint = `/admin/reports/all_users_kyc/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (handle401Redirect(response, !!token)) {
+      return { blob: new Blob(), filename: "" };
+    }
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message:
+          (payload &&
+          typeof payload === "object" &&
+          "message" in payload &&
+          typeof payload.message === "string"
+            ? payload.message
+            : null) ||
+          `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+
+    const blob = await response.blob();
+    return {
+      blob,
+      filename: parseKycExportContentDispositionFilename(
+        response.headers.get("content-disposition"),
+        `all_users_kyc.${format === "csv" ? "csv" : "xlsx"}`
+      ),
+    };
   },
 };
 

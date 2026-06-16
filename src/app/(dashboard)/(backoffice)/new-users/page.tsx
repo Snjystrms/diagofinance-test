@@ -957,9 +957,9 @@ export default function NewUsersPage() {
         >
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>Manage Sponsor</DialogTitle>
+              <DialogTitle>Manage Parent</DialogTitle>
               <DialogDescription>
-                Update or remove sponsor for {manageSponsorTargetUser?.name || "this client"}.
+                Update or remove parent for {manageSponsorTargetUser?.name || "this client"}.
               </DialogDescription>
             </DialogHeader>
 
@@ -969,8 +969,8 @@ export default function NewUsersPage() {
               className="space-y-4"
             >
               <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="transfer">Update Sponsor</TabsTrigger>
-                <TabsTrigger value="remove">Remove Sponsor</TabsTrigger>
+                <TabsTrigger value="transfer">Update Parent</TabsTrigger>
+                <TabsTrigger value="remove">Remove Parent</TabsTrigger>
               </TabsList>
 
               <TabsContent value="transfer" className="space-y-3">
@@ -982,7 +982,7 @@ export default function NewUsersPage() {
                     onSearch={(value) => {
                       void handleSponsorSearch(value || "");
                     }}
-                    placeholder="Search sponsor by name, email, or mobile"
+                    placeholder="Search parent by name, email, or mobile"
                     minimumLength={3}
                     delay={300}
                   />
@@ -990,7 +990,7 @@ export default function NewUsersPage() {
                     <p className="text-xs text-muted-foreground">Searching...</p>
                   ) : null}
                   {!sponsorSearching && sponsorSearchQuery.length >= 3 && sponsorSearchResults.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">No sponsor users found.</p>
+                    <p className="text-xs text-muted-foreground">No parent users found.</p>
                   ) : null}
                   {sponsorSearchResults.length > 0 ? (
                     <div className="max-h-48 overflow-auto rounded-md border">
@@ -1018,7 +1018,7 @@ export default function NewUsersPage() {
 
               <TabsContent value="remove" className="space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  This will remove the current sponsor and keep this client out of sponsor tree structure.
+                  This will remove the current parent and keep this client out of partner tree structure.
                 </p>
               </TabsContent>
             </Tabs>

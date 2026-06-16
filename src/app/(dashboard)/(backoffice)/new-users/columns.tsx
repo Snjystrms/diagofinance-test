@@ -128,7 +128,7 @@ function RowActions({
             size="icon"
             className="h-8 w-8"
             onClick={() => onManageSponsor(row.original)}
-            title={`Manage sponsor for ${row.original.name || "user"}`}
+            title={`Manage parent for ${row.original.name || "user"}`}
           >
             <RefreshCw className="h-4 w-4" />
           </Button>

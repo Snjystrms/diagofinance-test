@@ -1,14 +1,26 @@
-'use client';
+"use client";
 
-import { Search } from 'lucide-react';
+import { Search } from "lucide-react";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import type { UserMT5AccountListItem } from '@/lib/api';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { UserMT5AccountListItem } from "@/lib/api";
 
-import { DatePickerButton } from './date-picker-button';
+import { DatePickerButton } from "./date-picker-button";
 
 type TradeHistoryFiltersProps = {
   accounts: UserMT5AccountListItem[];
@@ -44,21 +56,33 @@ export function TradeHistoryFilters({
           <Search className="h-5 w-5" />
           Filters
         </CardTitle>
-        <CardDescription>Choose account, date range, and page size.</CardDescription>
+        <CardDescription>
+          Choose account, date range, and page size.
+        </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           {accounts.length > 0 ? (
             <div className="space-y-2">
               <Label htmlFor="linked-mt5-login">Linked Account</Label>
-              <Select value={login} onValueChange={onLoginChange} disabled={isLoadingAccounts || isLoadingTrades}>
-                <SelectTrigger id="linked-mt5-login" className="w-full">
+
+              <Select
+                value={login ? String(login) : undefined}
+                onValueChange={onLoginChange}
+                disabled={isLoadingAccounts || isLoadingTrades}
+              >
+                <SelectTrigger
+                  id="linked-mt5-login"
+                  className="w-full max-w-[260px]"
+                >
                   <SelectValue placeholder="Select MT5 login" />
                 </SelectTrigger>
+
                 <SelectContent>
                   {accounts.map((account) => (
                     <SelectItem key={account.id} value={String(account.mt5_id)}>
-                      {account.mt5_id} - {account.account_id}
+                      {account.mt5_id} - {account.account_id} -{" "}
+                      {account.account_mode}
                     </SelectItem>
                   ))}
                 </SelectContent>

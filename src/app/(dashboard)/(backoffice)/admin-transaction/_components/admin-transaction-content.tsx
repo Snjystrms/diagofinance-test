@@ -14,6 +14,8 @@ import {
   TrendingUp,
   Banknote,
   Eye,
+  Download,
+  ChevronDown,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -33,6 +35,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { useAuth } from "@/contexts/auth-context";
@@ -146,6 +154,52 @@ export function AdminTransactionContent() {
     toast.success(`Transfer of $${formatAmount(res.amount)} from ${res.from_account} to ${res.to_account}`);
     void loadData();
   }, [loadData]);
+
+  const handleExport = useCallback(async (formatType: "xlsx" | "csv") => {
+    if (!canView) {
+      toast.error("You do not have permission to export transactions");
+      return;
+    }
+    if (!token) {
+      toast.error("Authentication required to export data");
+      return;
+    }
+
+    const exportToastId = `transactions-export-${formatType}`;
+    try {
+      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
+
+      const { blob, filename } = await adminTransactionsApi.export({
+        token,
+        format: formatType,
+        search: typeof searchUser === "string" && searchUser.trim().length >= 3 ? searchUser.trim() : null,
+        transaction_type: (typeFilter as AdminTransactionItem["transaction_type"]) || null,
+        status: (statusFilter as AdminTransactionItem["status"]) || null,
+      });
+
+      if (!blob.size) {
+        toast.error("No data returned for export", { id: exportToastId });
+        return;
+      }
+
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
+
+      toast.success(`Downloaded ${filename}`, { id: exportToastId });
+    } catch (err) {
+      console.error(`Failed to export ${formatType}:`, err);
+      toast.error(
+        getAdminFriendlyErrorMessage(err, { resource: "transactions", action: "export" }),
+        { id: exportToastId },
+      );
+    }
+  }, [canView, token, searchUser, typeFilter, statusFilter]);
 
   const columns: ColumnDef<AdminTransactionItem>[] = useMemo(() => [
     {
@@ -295,6 +349,23 @@ export function AdminTransactionContent() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <Download className="h-4 w-4" />
+                Export
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => void handleExport("xlsx")}>
+                Export Excel (.xlsx)
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => void handleExport("csv")}>
+                Export CSV (.csv)
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button onClick={() => setDepositDialogOpen(true)}>
             <ArrowDownToLine className="mr-2 h-4 w-4" />
             Client Deposit

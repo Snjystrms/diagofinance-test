@@ -1,4 +1,4 @@
-import { ApiResponse, PaginationMeta, apiCall } from "./api-core";
+import { API_BASE_URL, ApiRequestError, ApiResponse, PaginationMeta, apiCall, handle401Redirect } from "./api-core";
 
 export type TransactionType = "deposit" | "withdrawal" | "credit" | "debit" | "transfer_in" | "transfer_out" | "bonus" | "referral" | "bonus_removal";
 export type ReferenceType = "admin_deposit" | "admin_withdrawal" | "usdt_deposit";
@@ -170,6 +170,38 @@ export interface AdminInternalTransferData {
   amount: number;
 }
 
+export interface AdminTransactionExportParams {
+  token: string;
+  format?: "xlsx" | "csv";
+  search?: string | null;
+  transaction_type?: string | null;
+  status?: string | null;
+}
+
+const parseContentDispositionFilename = (contentDisposition: string | null, fallback: string) => {
+  if (!contentDisposition) {
+    return fallback;
+  }
+
+  const utf8Match = contentDisposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1]);
+    } catch {
+      return utf8Match[1];
+    }
+  }
+
+  const filenameMatch = contentDisposition.match(/filename\s*=\s*"([^"]+)"|filename\s*=\s*([^;]+)/i);
+  const filename = filenameMatch?.[1] ?? filenameMatch?.[2];
+
+  if (!filename) {
+    return fallback;
+  }
+
+  return filename.trim();
+};
+
 export const adminTransactionsApi = {
   all: (params: AdminTransactionsAllParams) => {
     const { token, ...queryParams } = params;
@@ -274,5 +306,58 @@ export const adminTransactionsApi = {
       },
       body: JSON.stringify(body),
     });
+  },
+
+  export: async ({ token, format = "xlsx", search, transaction_type, status }: AdminTransactionExportParams) => {
+    if (!token) {
+      throw new Error("Token is required to export transactions");
+    }
+
+    if (!API_BASE_URL) {
+      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("format", format);
+    if (search && search.trim()) qs.set("search", search.trim());
+    if (transaction_type) qs.set("transaction_type", transaction_type);
+    if (status) qs.set("status", status);
+
+    const endpoint = `/admin/transactions/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (handle401Redirect(response, !!token)) {
+      return { blob: new Blob(), filename: "" };
+    }
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message:
+          (payload &&
+          typeof payload === "object" &&
+          "message" in payload &&
+          typeof payload.message === "string"
+            ? payload.message
+            : null) ||
+          `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+
+    const blob = await response.blob();
+    return {
+      blob,
+      filename: parseContentDispositionFilename(
+        response.headers.get("content-disposition"),
+        `transactions.${format === "csv" ? "csv" : "xlsx"}`
+      ),
+    };
   },
 };

@@ -71,6 +71,7 @@ export interface UserMT5AccountListItem {
   mt5_id: string;
   account_id: string;
   balance: number;
+  account_mode: string;
 }
 
 export interface UserMT5AccountDetail {

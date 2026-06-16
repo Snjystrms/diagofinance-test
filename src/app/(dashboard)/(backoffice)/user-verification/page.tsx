@@ -35,7 +35,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import {   Eye, CheckCircle2, XCircle, Calendar, FileText, User, Mail, Hash, Clock, AlertCircle, Shield, Image as ImageIcon, Plus, Upload, Download, ChevronDown, RefreshCw } from "lucide-react";
-import * as XLSX from "xlsx";
 
 import { adminKycApi, adminUsersApi, kycFileUrl, type AdminUsersListApiData, type PendingUser } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
@@ -219,19 +218,6 @@ const docFileKeyByStatusKey: Record<DocKey, DocFileKey> = {
   other_file_status: "other_file",
 };
 
-const getExportTimestamp = () => {
-  const date = new Date();
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return [
-    date.getFullYear(),
-    pad(date.getMonth() + 1),
-    pad(date.getDate()),
-    "-",
-    pad(date.getHours()),
-    pad(date.getMinutes()),
-    pad(date.getSeconds()),
-  ].join("");
-};
 const primaryDocKeys: DocKey[] = [
   "poi_front_file_status",
   "poa_front_file_status",
@@ -727,52 +713,43 @@ export default function UserVerificationPage() {
   const statusSelectDisabled = isManager && !statusFeatureOptions.length;
   const statusSelectValue = statusFilter === "none" ? undefined : statusFilter;
 
-  const handleExport = useCallback((formatType: "xlsx" | "csv") => {
+  const handleExport = useCallback(async (formatType: "xlsx" | "csv") => {
     if (!canReview) {
       toast.error("You do not have permission to export KYC submissions");
+      return;
+    }
+    if (!token) {
+      toast.error("Authentication required to export data");
       return;
     }
 
     const exportToastId = `kyc-submissions-export-${formatType}`;
     try {
-      if (filteredRows.length === 0) {
-        toast.error("No data to export", { id: exportToastId });
+      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
+
+      const searchTerm = search && search.length >= 3 ? search : undefined;
+      const { blob, filename } = await adminKycApi.export({
+        token,
+        format: formatType,
+        search: searchTerm,
+        status: statusFilter !== "none" ? statusFilter : undefined,
+      });
+
+      if (!blob.size) {
+        toast.error("No data returned for export", { id: exportToastId });
         return;
       }
 
-      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
-      const exportData = filteredRows.map((row, index) => ({
-        "Sr. No.": index + 1,
-        Name: row.name || "-",
-        Email: row.email || "-",
-        "KYC Status": formatStatusLabel(String(row.kyc_status)),
-        Submitted: fmtDateTime(row.submitted_at),
-      }));
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
 
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const filenameBase = `kyc-submissions-${getExportTimestamp()}`;
-      let filename = `${filenameBase}.xlsx`;
-
-      if (formatType === "xlsx") {
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "KYC Submissions");
-        XLSX.writeFile(workbook, filename);
-      } else {
-        const csv = XLSX.utils.sheet_to_csv(worksheet);
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        filename = `${filenameBase}.csv`;
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(link.href);
-      }
-
-      toast.success(`Exported ${filteredRows.length} KYC submissions to ${filename}`, {
-        id: exportToastId,
-      });
+      toast.success(`Downloaded ${filename}`, { id: exportToastId });
     } catch (error: unknown) {
       console.error(`Failed to export ${formatType}:`, error);
       toast.error(
@@ -780,7 +757,7 @@ export default function UserVerificationPage() {
         { id: exportToastId },
       );
     }
-  }, [canReview, filteredRows]);
+  }, [canReview, token, search, statusFilter]);
 
   const closeUploadDialog = useCallback(() => {
     setUploadOpen(false);
@@ -1108,10 +1085,10 @@ const buildReviewPayload = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => handleExport("xlsx")}>
+                <DropdownMenuItem onClick={() => void handleExport("xlsx")}>
                   Export Excel (.xlsx)
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleExport("csv")}>
+                <DropdownMenuItem onClick={() => void handleExport("csv")}>
                   Export CSV (.csv)
                 </DropdownMenuItem>
               </DropdownMenuContent>

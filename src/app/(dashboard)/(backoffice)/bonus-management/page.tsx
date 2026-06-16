@@ -24,7 +24,7 @@ import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ProtectedRoute } from "@/components/protected-route";
-import { SearchSelectFieldEnhanced } from "@/components/ui/search-select-field-enhanced";
+import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -145,7 +145,10 @@ export default function BonusManagementPage() {
     () => ["admin-bonus-list", token, urlPage, urlPerPage, searchTerm, typeFilter] as const,
     [token, urlPage, urlPerPage, searchTerm, typeFilter]
   );
-  const bonusUsersQueryKey = useMemo(() => ["admin-bonus-mt5-users", token] as const, [token]);
+  const bonusUsersQueryKey = useMemo(
+    () => ["admin-bonus-mt5-users", token, userSearch.trim().length >= 3 ? userSearch.trim() : ""] as const,
+    [token, userSearch]
+  );
 
   const {
     data: bonusListData,
@@ -187,10 +190,10 @@ export default function BonusManagementPage() {
   } = useQuery({
     queryKey: bonusUsersQueryKey,
     queryFn: async () => {
-      const response = await adminBonusApi.listMt5Users(token!);
+      const response = await adminBonusApi.listMt5Users(token!, userSearch.trim());
       return response.data ?? [];
     },
-    enabled: Boolean(token) && canMutate,
+    enabled: Boolean(token) && canMutate && userSearch.trim().length >= 3,
     staleTime: 60 * 1000,
   });
 
@@ -234,16 +237,6 @@ export default function BonusManagementPage() {
       );
     },
   });
-
-  const filteredMt5Users = useMemo(() => {
-    const trimmedSearch = userSearch.trim().toLowerCase();
-    if (trimmedSearch.length < 3) return [];
-
-    return mt5Users.filter((item) => {
-      const haystack = `${item.account_id} ${item.name} ${item.email}`.toLowerCase();
-      return haystack.includes(trimmedSearch);
-    }).slice(0, 50);
-  }, [userSearch, mt5Users]);
 
   const selectedMt5User = useMemo(
     () => mt5Users.find((item) => item.account_id === form.mt5_id) ?? null,
@@ -594,30 +587,57 @@ export default function BonusManagementPage() {
 
             <div className="space-y-5">
               <div className="space-y-2">
-                <SearchSelectFieldEnhanced
-                  id="bonus-user-search"
-                  label="Find MT5 Account"
-                  options={filteredMt5Users}
-                  searchValue={userSearch}
-                  selectedValue={form.mt5_id}
-                  placeholder="Type at least 3 letters to search MT5 accounts"
-                  loading={userSearch.trim().length >= 3 ? isLoadingMt5Users : false}
-                  loadingMessage="Loading MT5 accounts..."
-                  idleMessage="Type at least 3 letters to search MT5 accounts."
-                  emptyMessage="No MT5 accounts found."
-                  minimumSearchLength={3}
-                  onSearchValueChange={(value: string) => {
+                <Label>Find MT5 Account</Label>
+                <ApiSearchBar
+                  value={userSearch}
+                  onChange={(value) => {
                     setUserSearch(value);
-                    setForm((current) => ({ ...current, mt5_id: "" }));
+                    if (form.mt5_id) {
+                      setForm((current) => ({ ...current, mt5_id: "" }));
+                    }
                   }}
-                  onOptionSelect={(item: { account_id: string; name: string; email?: string }) => {
-                    setUserSearch(item.account_id);
-                    setForm((current) => ({ ...current, mt5_id: item.account_id }));
+                  onSearch={() => {
+                    void queryClient.invalidateQueries({ queryKey: bonusUsersQueryKey });
                   }}
-                  getOptionValue={(item: { account_id: string }) => item.account_id}
-                  getOptionLabel={(item: { account_id: string }) => item.account_id}
-                  getOptionDescription={(item: { name: string; email?: string }) => `${item.name} | ${item.email}`}
+                  placeholder="Type at least 3 letters to search MT5 accounts"
+                  minimumLength={3}
+                  delay={300}
                 />
+                {userSearch.trim().length >= 3 && !form.mt5_id && (
+                  <Command className="max-h-60 rounded-lg border">
+                    <CommandList>
+                      {isFetchingMt5Users ? (
+                        <div className="flex items-center justify-center py-6 text-sm text-muted-foreground">
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Loading MT5 accounts...
+                        </div>
+                      ) : mt5Users.length === 0 ? (
+                        <CommandEmpty>No MT5 accounts found.</CommandEmpty>
+                      ) : (
+                        <CommandGroup>
+                          {mt5Users.slice(0, 50).map((item) => (
+                            <CommandItem
+                              key={item.account_id}
+                              value={item.account_id}
+                              onSelect={() => {
+                                setUserSearch(item.account_id);
+                                setForm((current) => ({ ...current, mt5_id: item.account_id }));
+                              }}
+                            >
+                              <div className="flex flex-col">
+                                <span className="font-medium">{item.account_id}</span>
+                                <span className="text-xs text-muted-foreground">{item.name} | {item.email} | {item.mode}</span>
+                              </div>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      )}
+                    </CommandList>
+                  </Command>
+                )}
+                {userSearch.trim().length < 3 && !form.mt5_id && (
+                  <p className="text-xs text-muted-foreground">Type at least 3 letters to search MT5 accounts.</p>
+                )}
                 {isMt5UsersError ? (
                   <p className="text-xs text-destructive">
                     {getAdminFriendlyErrorMessage(mt5UsersError, { resource: "MT5 users", action: "load" })}
@@ -634,9 +654,22 @@ export default function BonusManagementPage() {
                         {selectedMt5User.email}
                       </p>
                     </div>
-                    <Badge variant="outline" className="w-fit font-mono">
-                      {selectedMt5User.account_id}
-                    </Badge>
+                    <div className="flex items-center gap-2">
+                      <Badge
+                        variant="outline"
+                        className={cn(
+                          "w-fit font-mono",
+                          selectedMt5User.mode?.toLowerCase() === "live"
+                            ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                            : "border-amber-200 bg-amber-50 text-amber-700"
+                        )}
+                      >
+                        {selectedMt5User.mode?.toUpperCase() ?? "DEMO"}
+                      </Badge>
+                      <Badge variant="outline" className="w-fit font-mono">
+                        {selectedMt5User.account_id}
+                      </Badge>
+                    </div>
                   </div>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <div>
