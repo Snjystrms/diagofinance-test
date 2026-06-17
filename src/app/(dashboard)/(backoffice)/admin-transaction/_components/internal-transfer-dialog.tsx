@@ -182,7 +182,12 @@ export function InternalTransferDialog({
           user_id: userId,
           limit: 100,
         });
-        setUserMt5Accounts(extractMt5Accounts(res.data ?? res));
+        const allAccounts = extractMt5Accounts(res.data ?? res);
+        // Filter to show only live accounts
+        const liveAccounts = allAccounts.filter(
+          (acc) => (acc.account_mode ?? "").toLowerCase() === "live"
+        );
+        setUserMt5Accounts(liveAccounts);
       } catch {
         setUserMt5Accounts([]);
       } finally {
@@ -701,49 +706,6 @@ export function InternalTransferDialog({
                 </Select>
               </div>
             </>
-          )}
-
-          {selectedUser && isUserBasedTransfer && (
-            <div className="space-y-2">
-              <Label>Wallet Balances</Label>
-              {loadingWallets ? (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Spinner className="h-4 w-4" size="sm" />
-                  Loading wallets...
-                </div>
-              ) : walletBalances.length > 0 ? (
-                <div className="space-y-1.5 rounded-md border border-border/60 bg-popover p-3">
-                  {walletBalances.map((wallet) => (
-                    <div
-                      key={wallet.id}
-                      className="flex items-center justify-between text-sm"
-                    >
-                      <div className="flex flex-col">
-                        <span className="capitalize text-muted-foreground">
-                          {wallet.wallet_type}
-                        </span>
-                        {wallet.mt5_id && (
-                          <span className="text-xs text-muted-foreground">
-                            {wallet.mt5_id}
-                          </span>
-                        )}
-                      </div>
-                      <span className="font-medium">
-                        {wallet.balance.toLocaleString("en-US", {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}{" "}
-                        {wallet.currency}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No wallets found
-                </p>
-              )}
-            </div>
           )}
 
           {selectedUser && (

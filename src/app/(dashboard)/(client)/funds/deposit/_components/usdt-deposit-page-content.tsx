@@ -11,7 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import { submitUSDTDeposit } from "@/utils/operations";
-import { walletApi, binanceDepositApi, coinsbuyDepositApi, bankDepositApi, userBrokerBankDetailsApi, type WalletSummaryData, type BinanceDepositCreateResponse, type CoinsBuyDepositCreateResponse, type BankDepositRecord, type BrokerBankDetailItem } from "@/lib/api";
+import { walletApi, binanceDepositApi, coinsbuyDepositApi, cregisDepositApi, bankDepositApi, userBrokerBankDetailsApi, type WalletSummaryData, type BinanceDepositCreateResponse, type CoinsBuyDepositCreateResponse, type CregisDepositCreateResponse, type BankDepositRecord, type BrokerBankDetailItem } from "@/lib/api";
 import { userPaymentMethodsApi, userCurrencyRatesApi, userBrokerCryptoWalletsApi, type UserPaymentMethod, type CurrencyRateItem, type BrokerCryptoWalletItem } from "@/lib/api-auth-admin";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { CLIENT_WALLET_REFRESH_EVENT, notifyWalletRefresh } from "@/lib/client-events";
@@ -158,6 +158,10 @@ function USDTDepositContent() {
   const [coinsbuyAmount, setCoinsbuyAmount] = useState("");
   const [isSubmittingCoinsbuy, setIsSubmittingCoinsbuy] = useState(false);
 
+  // Cregis deposit state
+  const [cregisAmount, setCregisAmount] = useState("");
+  const [isSubmittingCregis, setIsSubmittingCregis] = useState(false);
+
   // Bank deposit state
   const [bankAmount, setBankAmount] = useState("");
   const [bankTxId, setBankTxId] = useState("");
@@ -246,8 +250,9 @@ function USDTDepositContent() {
   const hasLocal    = paymentMethods.some(p => p.type === "local");
   const hasBinance  = paymentMethods.some(p => p.type === "binance_pay");
   const hasCoinsbuy = paymentMethods.some(p => p.type === "coinsbuy");
+  const hasCregis   = paymentMethods.some(p => p.type === "cregis");
   const hasBank     = paymentMethods.some(p => p.type === "bank_transfer");
-  const KNOWN_TYPES = ["local", "binance_pay", "coinsbuy", "bank_transfer"];
+  const KNOWN_TYPES = ["local", "binance_pay", "coinsbuy", "cregis", "bank_transfer"];
   const comingSoonMethods = paymentMethods.filter(p => !KNOWN_TYPES.includes(p.type));
 
   // Fetch active payment methods
@@ -452,6 +457,62 @@ function USDTDepositContent() {
         action: "create",
       }));
       setIsSubmittingCoinsbuy(false);
+    }
+  };
+
+  const handleCregisSubmit = async () => {
+    setError(null);
+
+    if (!cregisAmount.trim()) {
+      setError("Amount is required");
+      return;
+    }
+
+    const amountNum = parseFloat(cregisAmount);
+    if (isNaN(amountNum) || amountNum <= 0) {
+      setError("Amount must be a valid positive number");
+      return;
+    }
+
+    if (!token) {
+      setError("Authentication required");
+      return;
+    }
+
+    setIsSubmittingCregis(true);
+
+    try {
+      const response = await cregisDepositApi.create(
+        {
+          amount: amountNum,
+          currency: "USDT",
+        },
+        token
+      );
+
+      if (!response.success || !response.data) {
+        throw new Error(response.message || "Failed to create Cregis deposit");
+      }
+
+      const depositData = (response.data as unknown) as CregisDepositCreateResponse['data'];
+      const checkoutUrl = depositData?.checkout_url;
+      
+      if (checkoutUrl) {
+        notifyWalletRefresh();
+        window.location.href = checkoutUrl;
+      } else {
+        console.error("Cregis deposit response data:", JSON.stringify(depositData, null, 2));
+        toast.error("Payment link is not available right now. Please try again.");
+        setIsSubmittingCregis(false);
+      }
+    } catch (err) {
+      console.error("Error creating Cregis deposit:", err);
+      setError(getFriendlyErrorMessage(err, {
+        audience: "client",
+        resource: "Cregis deposit",
+        action: "create",
+      }));
+      setIsSubmittingCregis(false);
     }
   };
 
@@ -758,7 +819,7 @@ function USDTDepositContent() {
             </div>
             <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Method</p>
-              <p className="text-sm font-semibold text-foreground">{activeTab === "bank" ? "Bank" : activeTab === "binance_pay" ? "Binance" : activeTab === "coinsbuy" ? "CoinsBuy" : activeTab === "local" ? "On-Chain" : "Not selected"}</p>
+              <p className="text-sm font-semibold text-foreground">{activeTab === "bank" ? "Bank" : activeTab === "binance_pay" ? "Binance" : activeTab === "coinsbuy" ? "CoinsBuy" : activeTab === "cregis" ? "Cregis" : activeTab === "local" ? "On-Chain" : "Not selected"}</p>
             </div>
           </div>
         </div>
@@ -776,6 +837,7 @@ function USDTDepositContent() {
               {hasLocal    && <TabsTrigger className="min-w-[132px] rounded-xl px-4 py-2.5" value="local">On-Chain</TabsTrigger>}
               {hasBinance  && <TabsTrigger className="min-w-[132px] rounded-xl px-4 py-2.5" value="binance_pay">Binance Pay</TabsTrigger>}
               {hasCoinsbuy && <TabsTrigger className="min-w-[132px] rounded-xl px-4 py-2.5" value="coinsbuy">CoinsBuy</TabsTrigger>}
+              {hasCregis   && <TabsTrigger className="min-w-[132px] rounded-xl px-4 py-2.5" value="cregis">Cregis</TabsTrigger>}
               {hasBank     && <TabsTrigger className="min-w-[132px] rounded-xl px-4 py-2.5" value="bank">Bank Deposit</TabsTrigger>}
               {comingSoonMethods.map(p => (
                 <TabsTrigger className="min-w-[132px] rounded-xl px-4 py-2.5" key={p.type} value={p.type}>{p.name}</TabsTrigger>
@@ -806,6 +868,7 @@ function USDTDepositContent() {
                     {hasLocal && <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">On-Chain</Badge>}
                     {hasBinance && <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">Binance Pay</Badge>}
                     {hasCoinsbuy && <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">CoinsBuy</Badge>}
+                    {hasCregis && <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">Cregis</Badge>}
                     {hasBank && <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">Bank Deposit</Badge>}
                     {comingSoonMethods.length > 0 && <Badge variant="outline" className="rounded-full">More options</Badge>}
                   </div>
@@ -1550,6 +1613,213 @@ function USDTDepositContent() {
                 </Card>
               </div>
               )}
+            </TabsContent>}
+             {/* Cregis tab */}
+            {hasCregis && <TabsContent value="cregis" className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Left Column - Cregis Info */}
+                <Card className="border border-border/60 bg-card shadow-sm">
+                  <CardHeader className="text-center pb-6 relative z-10">
+                    <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-500/10 to-teal-600/10 border border-emerald-500/20">
+                        <Shield className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      Cregis Payment
+                    </CardTitle>
+                    <CardDescription>
+                      Secure crypto payment gateway supporting multiple networks
+                    </CardDescription>
+                  </CardHeader>
+                  
+                  <CardContent className="space-y-6 relative z-10">
+                    <div className="flex justify-center">
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl blur opacity-30 dark:opacity-20"></div>
+                        <div className="relative bg-card rounded-2xl p-6 shadow-lg">
+                          <div className="w-32 h-32 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex flex-col items-center justify-center gap-2">
+                            <Shield className="h-10 w-10 text-white" />
+                            <span className="text-lg font-semibold text-white">Cregis</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                        <div className="mb-2 text-xs font-medium text-muted-foreground">Exchange Rate</div>
+                        <div className="font-semibold text-foreground">1 USD = 1 USDT</div>
+                      </div>
+
+                      <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                        <div className="mb-2 text-xs font-medium text-muted-foreground">Processing Time</div>
+                        <div className="font-semibold text-foreground">Instant</div>
+                      </div>
+
+                      <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                        <div className="mb-2 text-xs font-medium text-muted-foreground">Supported Networks</div>
+                        <div className="flex flex-wrap gap-1.5 mt-2">
+                          <Badge variant="secondary" className="text-xs">Bitcoin</Badge>
+                          <Badge variant="secondary" className="text-xs">Ethereum</Badge>
+                          <Badge variant="secondary" className="text-xs">BSC</Badge>
+                          <Badge variant="secondary" className="text-xs">TRON</Badge>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="rounded-2xl border border-emerald-300/40 bg-emerald-50/70 p-4 dark:border-emerald-800/50 dark:bg-emerald-950/20">
+                      <div className="flex items-start gap-3">
+                        <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
+                        <div className="text-sm text-emerald-900 dark:text-emerald-100">
+                          <p className="font-medium mb-1">Secure & Fast:</p>
+                          <ul className="space-y-1 text-xs text-emerald-800/90 dark:text-emerald-200/90 list-disc list-inside">
+                            <li>Multiple blockchain support</li>
+                            <li>Real-time conversion rates</li>
+                            <li>Secure payment gateway</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Right Column - Cregis Deposit Form */}
+                <Card className="border border-border/60 bg-card shadow-sm">
+                  <CardHeader className="relative z-10">
+                    <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-emerald-500/10 to-teal-600/10 border border-emerald-500/20">
+                        <DollarSign className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      Create Deposit
+                    </CardTitle>
+                    <CardDescription>
+                      Enter the amount to deposit via Cregis payment gateway
+                    </CardDescription>
+                  </CardHeader>
+
+                  <CardContent className="space-y-6 relative z-10">
+                    {error && (
+                      <ApiErrorState
+                        message={error}
+                        audience="client"
+                        resource="Cregis deposit"
+                        action="submit"
+                        variant="inline"
+                      />
+                    )}
+
+                    {/* Currency Display (Fixed USDT) */}
+                    <div className="space-y-3">
+                      <Label className="text-sm font-semibold text-foreground">
+                        Currency
+                      </Label>
+                      <div className="relative">
+                        <div className="flex items-center gap-3 rounded-xl border-2 border-border bg-muted/50 px-4 py-3">
+                          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10">
+                            <span className="text-sm font-bold text-emerald-600 dark:text-emerald-400">₮</span>
+                          </div>
+                          <div className="flex-1">
+                            <div className="text-sm font-semibold text-foreground">USDT</div>
+                            <div className="text-xs text-muted-foreground">Tether USD</div>
+                          </div>
+                          <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+                            1:1
+                          </Badge>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        Fixed exchange rate: 1 USD = 1 USDT
+                      </p>
+                    </div>
+
+                    {/* Amount Input */}
+                    <div className="space-y-3">
+                      <Label htmlFor="cregis-amount" className="text-sm font-semibold text-foreground">
+                        Deposit Amount (USD) <span className="text-destructive">*</span>
+                      </Label>
+                      <div className="relative">
+                        <DollarSign className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                        <Input
+                          id="cregis-amount"
+                          type="number"
+                          step="1"
+                          min="1"
+                          value={cregisAmount}
+                          onChange={(e) => setCregisAmount(e.target.value)}
+                          onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                          className="pl-10 h-12 border-2 border-border focus:border-primary rounded-xl"
+                          placeholder="100.00"
+                        />
+                      </div>
+                      {cregisAmount && parseFloat(cregisAmount) > 0 && (
+                        <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 p-3">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-emerald-700 dark:text-emerald-300 font-medium">You will pay:</span>
+                            <span className="text-emerald-900 dark:text-emerald-100 font-semibold">
+                              {parseFloat(cregisAmount).toFixed(2)} USDT
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground">
+                        Enter the amount you want to deposit
+                      </p>
+                    </div>
+
+                    {/* Submit Button */}
+                    <Button
+                      onClick={handleCregisSubmit}
+                      disabled={!cregisAmount.trim() || parseFloat(cregisAmount) <= 0 || isSubmittingCregis}
+                      className="h-12 w-full rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-lg font-semibold text-white shadow-sm transition-all duration-200 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {isSubmittingCregis ? (
+                        <>
+                          <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                          Processing...
+                        </>
+                      ) : (
+                        <>
+                          <Shield className="h-5 w-5 mr-2" />
+                          Proceed to Cregis Payment
+                        </>
+                      )}
+                    </Button>
+
+                    {/* How it Works */}
+                    <div className="bg-muted/50 rounded-xl p-4 border border-border/50">
+                      <h4 className="font-semibold text-foreground mb-3 text-sm flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                        How it works:
+                      </h4>
+                      <div className="space-y-2 text-xs text-muted-foreground">
+                        <div className="flex items-start gap-2">
+                          <div className="w-5 h-5 bg-emerald-500/10 rounded-full flex items-center justify-center mt-0.5">
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs">1</span>
+                          </div>
+                          <span>Enter your deposit amount in USD</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <div className="w-5 h-5 bg-emerald-500/10 rounded-full flex items-center justify-center mt-0.5">
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs">2</span>
+                          </div>
+                          <span>Get redirected to Cregis secure payment page</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <div className="w-5 h-5 bg-emerald-500/10 rounded-full flex items-center justify-center mt-0.5">
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs">3</span>
+                          </div>
+                          <span>Choose your preferred blockchain network</span>
+                        </div>
+                        <div className="flex items-start gap-2">
+                          <div className="w-5 h-5 bg-emerald-500/10 rounded-full flex items-center justify-center mt-0.5">
+                            <span className="text-emerald-600 dark:text-emerald-400 font-bold text-xs">4</span>
+                          </div>
+                          <span>Complete payment and funds are credited instantly</span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>}
 
             {/* â”€â”€ Bank Transfer tab â”€â”€ */}

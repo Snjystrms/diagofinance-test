@@ -84,9 +84,22 @@ const themeBootstrapScript = `
     }
     var isDark = mode === "dark" || darkSet.has(themeId);
     document.documentElement.classList.toggle("dark", isDark);
-    // Mark theme as loaded after a frame to ensure styles are applied
+    
+    // Prevent blue text flash on sidebar items
+    var style = document.createElement('style');
+    style.id = 'theme-preload-style';
+    style.textContent = 'body:not(.theme-loaded) [data-sidebar="menu-button"] *, body:not(.theme-loaded) [data-sidebar="menu-sub-button"] *, body:not(.theme-loaded) [data-sidebar="menu-button"], body:not(.theme-loaded) [data-sidebar="menu-sub-button"] { color: inherit !important; } body:not(.theme-loaded) a:not([class*="text-"]) { color: inherit !important; }';
+    document.head.appendChild(style);
+    
+    // Remove preload style and mark as loaded
     requestAnimationFrame(function() {
-      document.body.classList.add("theme-loaded");
+      requestAnimationFrame(function() {
+        var preloadStyle = document.getElementById('theme-preload-style');
+        if (preloadStyle) {
+          preloadStyle.remove();
+        }
+        document.body.classList.add("theme-loaded");
+      });
     });
   } catch (_error) {}
 })();

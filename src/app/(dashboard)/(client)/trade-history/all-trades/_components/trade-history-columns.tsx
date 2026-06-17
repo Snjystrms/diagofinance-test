@@ -80,7 +80,7 @@ export const tradeHistoryColumns: ColumnDef<TradeRow>[] = [
   },
   {
     id: 'volume',
-    header: 'Volume/Lots',
+    header: 'Lots',
     cell: ({ row }) => formatTradeNumber(row.original.volume, 2),
   },
   {
@@ -91,13 +91,6 @@ export const tradeHistoryColumns: ColumnDef<TradeRow>[] = [
         {formatTradeNumber(row.original.profit, 2)}
       </span>
     ),
-  },
-{
-    id: 'comment',
-    header: 'Comment',
-    accessorKey: 'comment',
-    meta: { mobileHidden: true },
-    cell: ({ row }) => row.original.comment || '-',
   },
   {
     id: 'mt5_ticket',

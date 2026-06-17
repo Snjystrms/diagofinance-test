@@ -3198,6 +3198,56 @@ export const coinsbuyDepositApi = {
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }),
+};
+
+// Cregis Deposit Types
+export interface CregisDepositCreateRequest {
+  amount: number;
+  currency: string;
+}
+
+export interface CregisPaymentInfo {
+  payment_address: string;
+  token_symbol: string;
+  blockchain: string;
+  token_name: string;
+  logo_url: string;
+  token_decimals: number;
+  receive_amount: string;
+  receive_currency: string;
+  exchange_rate: string;
+  asset_logo: string;
+  consolidated_qrcodes: string | null;
+}
+
+export interface CregisDepositCreateResponse {
+  success: boolean;
+  message: string;
+  test_mode: boolean;
+  data: {
+    deposit_uuid: string;
+    out_trade_no: string;
+    cregis_id: string;
+    checkout_url: string;
+    merchant_name: string;
+    merchant_logo_url: string;
+    order_amount: string;
+    order_currency: string;
+    created_time: number;
+    expire_time: number;
+    payment_info: CregisPaymentInfo[];
+    amount: number;
+    currency: string;
+  };
+}
+
+export const cregisDepositApi = {
+  create: (data: CregisDepositCreateRequest, token: string) =>
+    apiCall<CregisDepositCreateResponse>(`/user/deposit/cregis/create`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
 
   getStatus: (coinsbuyDepositId: string, token: string) =>
     apiCall<CoinsBuyDepositStatusResponse>(`/user/deposit/coinsbuy/status/${coinsbuyDepositId}`, {
