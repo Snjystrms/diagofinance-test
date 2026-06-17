@@ -121,11 +121,12 @@ const TransactionHashCell = ({ hash, chainId }: { hash: string | null, chainId: 
 
 // Wallet address cell
 const WalletAddressCell = ({ address }: { address?: string | null }) => {
+  const [copied, setCopied] = React.useState(false)
+
   if (!address) {
     return <span className="text-muted-foreground text-sm">N/A</span>
   }
   const truncatedAddress = `${address.slice(0, 8)}...${address.slice(-8)}`
-  const [copied, setCopied] = React.useState(false)
   
   return (
     <div className="flex items-center gap-2">

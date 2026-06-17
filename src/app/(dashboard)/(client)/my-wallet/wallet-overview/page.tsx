@@ -210,11 +210,11 @@ export default function WalletOverviewPage() {
               </div>
               <CardHeader className="relative z-10 pb-0 px-0">
                 <p className="uppercase tracking-[0.2em] text-[11px] font-semibold text-primary-foreground/80">
-                  Total Balance
+                  Main Wallet Balance
                 </p>
                 <div className="flex items-baseline gap-2 mt-2">
                   <span className="text-4xl font-black leading-tight">
-                    {walletData ? formatAmount(walletData.total_balance.toFixed(2)) : '0.00'}
+                    {walletData ? formatAmount(mainWallet?.balance?.toFixed(2) ?? '0.00') : '-'}
                   </span>
                   <span className="text-base font-semibold text-primary-foreground/80">
                     USD
@@ -224,9 +224,6 @@ export default function WalletOverviewPage() {
               <CardContent className="relative z-10 pt-6 pb-4 px-0">
                 <div className="flex items-start justify-between gap-6">
                   <div className="flex-1">
-                    <p className="text-primary-foreground/85 text-base font-medium mb-1">
-                      Main Wallet + MT5 Accounts
-                    </p>
                     <p className="text-primary-foreground/75 text-sm leading-relaxed">
                       Securely store and manage balances across deposits, withdrawals, and transfers in one place.
                     </p>
@@ -445,7 +442,7 @@ export default function WalletOverviewPage() {
                             <Badge
                               variant="outline" className="text-xs border-primary/20 bg-primary/5 shrink-0"
                             >
-                              {transaction.wallet_type}
+                              {transaction.wallet_type === 'ib' ? 'partner' : transaction.wallet_type}
                             </Badge>
                           </div>
                           <p className="text-sm text-muted-foreground truncate mb-1">
@@ -470,9 +467,6 @@ export default function WalletOverviewPage() {
                             : '-'}
                           ${formatAmount(transaction.amount)}
                         </p>
-                        <Badge variant="secondary" className="text-xs">
-                          {mainWallet?.currency || 'USD'}
-                        </Badge>
                       </div>
                     </div>
                   ))}

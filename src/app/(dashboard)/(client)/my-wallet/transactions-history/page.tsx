@@ -201,6 +201,24 @@ export default function TransactionsHistoryPage() {
           )
         },
       },
+       {
+        id: 'amount',
+        header: 'Amount (USD)',
+        accessorKey: 'amount',
+        meta: { mobileHidden: true },
+        cell: ({ row }) => {
+          const transaction = row.original
+         return transaction.amount ? (
+           <div className="text-sm">
+              <span className="text-foreground font-semibold">
+                {formatAmount(transaction.amount.toFixed(2))}
+              </span>
+            </div>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          )
+        },
+      },
       {
         id: 'status',
         header: 'Status',
