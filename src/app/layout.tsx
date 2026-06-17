@@ -84,6 +84,10 @@ const themeBootstrapScript = `
     }
     var isDark = mode === "dark" || darkSet.has(themeId);
     document.documentElement.classList.toggle("dark", isDark);
+    // Mark theme as loaded after a frame to ensure styles are applied
+    requestAnimationFrame(function() {
+      document.body.classList.add("theme-loaded");
+    });
   } catch (_error) {}
 })();
 `;

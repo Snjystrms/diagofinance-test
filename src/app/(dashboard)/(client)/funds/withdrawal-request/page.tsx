@@ -499,15 +499,7 @@ function WithdrawalRequestContent() {
         </div>
 
         <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                Total Balance
-              </p>
-              <p className="text-sm font-semibold text-foreground">
-                {walletLoading ? "--" : `${formatAmount(totalBalance)} USD`}
-              </p>
-            </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
                 Main Wallet
@@ -528,7 +520,7 @@ function WithdrawalRequestContent() {
             </div>
             <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
               <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                Destination
+                Network
               </p>
               <p className="truncate text-sm font-semibold text-foreground">
                 {isCryptoWithdrawal

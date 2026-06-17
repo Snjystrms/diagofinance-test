@@ -559,6 +559,14 @@
 }
 
 /* Smooth transitions for theme switching */
-* {
+/* Disable transitions on page load to prevent FOUC */
+body:not(.theme-loaded) *,
+body:not(.theme-loaded) *::before,
+body:not(.theme-loaded) *::after {
+  transition: none !important;
+}
+
+/* Enable transitions after theme is loaded */
+body.theme-loaded * {
   transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
 }

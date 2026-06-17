@@ -97,11 +97,11 @@ export default function WalletOverviewPage() {
   }
 
   const isCreditTransaction = (type: string) => {
-    return type.includes('deposit') || type.includes('transfer_in') || type.includes('bonus')
+    return type.includes('deposit') || type.includes('transfer_in') || type.includes('bonus')  || type.includes('bonus') || type.includes('credit')
   }
 
   const getTransactionIcon = (type: string) => {
-    if (type.includes('bonus')) {
+    if (type.includes('bonus') || type.includes('credit')) {
       return <Sparkles className="h-4 w-4 text-emerald-600" />
     } else if (isCreditTransaction(type)) {
       return <ArrowDownRight className="h-4 w-4 text-green-600" />
@@ -112,7 +112,7 @@ export default function WalletOverviewPage() {
   }
 
   const getTransactionColor = (type: string) => {
-    if (type.includes('bonus')) {
+    if (type.includes('bonus') || type.includes('credit')) {
       return 'text-emerald-600 dark:text-emerald-400'
     } else if (isCreditTransaction(type)) {
       return 'text-green-600 dark:text-green-400'

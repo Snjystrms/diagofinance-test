@@ -278,22 +278,6 @@ export default function TransactionsHistoryPage() {
         },
       },
       {
-        id: 'amount',
-        header: 'Amount (USD)',
-        accessorKey: 'amount',
-        cell: ({ row }) => {
-          const transaction = row.original
-          return (
-            <div className="text-sm">
-              <span className="text-green-600 dark:text-green-400 font-medium">$</span>
-              <span className="text-foreground font-semibold">
-                {formatAmount(transaction.amount)}
-              </span>
-            </div>
-          )
-        },
-      },
-      {
         id: 'deposited_by',
         header: 'Deposited By',
         accessorKey: 'deposited_by',
@@ -309,31 +293,6 @@ export default function TransactionsHistoryPage() {
           )
         },
       },
-      // {
-      //   id: 'from_to',
-      //   header: 'From / To',
-      //   meta: { mobileHidden: true },
-      //   cell: ({ row }) => {
-      //     const transaction = row.original
-      //     return (
-      //       <div className="text-sm space-y-1">
-      //         {transaction.from_account && (
-      //           <p className="text-muted-foreground">
-      //             From: {transaction.from_account}
-      //           </p>
-      //         )}
-      //         {transaction.to_account && (
-      //           <p className="text-muted-foreground">
-      //             To: {transaction.to_account}
-      //           </p>
-      //         )}
-      //         {!transaction.from_account && !transaction.to_account && (
-      //           <span className="text-muted-foreground">—</span>
-      //         )}
-      //       </div>
-      //     )
-      //   },
-      // },
       {
         id: 'created_at',
         header: 'Created At',
