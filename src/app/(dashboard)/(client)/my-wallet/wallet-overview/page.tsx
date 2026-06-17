@@ -369,7 +369,7 @@ export default function WalletOverviewPage() {
                           </p>
                         </div>
                         <Badge variant="outline" className="capitalize">
-                          {wallet.wallet_type}
+                          {wallet.account_mode}
                         </Badge>
                       </div>
 
@@ -379,7 +379,7 @@ export default function WalletOverviewPage() {
                             Balance
                           </p>
                           <p className="mt-1 text-lg font-semibold text-foreground">
-                            ${formatAmount(wallet.balance)} USD
+                            ${formatAmount(wallet.balance)}
                           </p>
                         </div>
 

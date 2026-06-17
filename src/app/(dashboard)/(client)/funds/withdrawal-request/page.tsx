@@ -1,4 +1,5 @@
 ﻿"use client";
+import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Card, CardContent } from "@/components/ui/card";
@@ -91,18 +92,6 @@ const getCurrencyFromCountry = (country?: string | null): string | null => {
   return COUNTRY_CURRENCY_MAP[normalizedCountry] ?? null;
 };
 
-const getExplorerUrl = (chainId: string, transactionHash: string): string => {
-  if (chainId === "TRC20") {
-    return `https://tronscan.org/#/transaction/${transactionHash}`;
-  }
-  if (chainId === "ERC20" || chainId === "ETH") {
-    return `https://etherscan.io/tx/${transactionHash}`;
-  }
-  if (chainId === "BEP20" || chainId === "BSC") {
-    return `https://bscscan.com/tx/${transactionHash}`;
-  }
-  return `https://bscscan.com/tx/${transactionHash}`;
-};
 
 function WithdrawalRequestContent() {
   const { token } = useAuth();
@@ -968,24 +957,13 @@ function WithdrawalRequestContent() {
                     ) : (
                       <Button
                         variant="outline"
-                        onClick={() => {
-                          const transactionHash = withdrawalData?.transaction_hash;
-                          if (!transactionHash) {
-                            setError(
-                              "Transaction hash is not available yet. Please check again later.",
-                            );
-                            return;
-                          }
-                          const explorerUrl = getExplorerUrl(
-                            withdrawalData?.chain_id || chainId,
-                            transactionHash,
-                          );
-                          window.open(explorerUrl, "_blank", "noopener,noreferrer");
-                        }}
+                        asChild
                         className="border-emerald-200 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-900/20"
                       >
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        View Withdrawal Status
+                        <Link href="/funds/withdraw">
+                          <ExternalLink className="mr-2 h-4 w-4" />
+                          View Withdrawal Status
+                        </Link>
                       </Button>
                     )}
                     <Button

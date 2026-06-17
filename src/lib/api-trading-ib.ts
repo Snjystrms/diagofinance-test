@@ -62,6 +62,7 @@ export interface UserMT5AccountCreateData {
   leverage: number | string;
   main_password: string;
   investor_password: string;
+  account_mode: string;
 }
 
 export interface UserMT5AccountListItem {

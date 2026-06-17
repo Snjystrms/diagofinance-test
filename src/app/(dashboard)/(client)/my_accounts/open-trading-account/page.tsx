@@ -599,7 +599,7 @@ export default function OpenTradingAccountPage() {
               <SelectContent>
                 {DEMO_BALANCE_CHOICES.map((amount) => (
                   <SelectItem key={amount} value={String(amount)}>
-                    {`USD ${amount.toLocaleString('en-US')}`}
+                    {`${amount.toLocaleString('en-US')}`}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -867,7 +867,7 @@ export default function OpenTradingAccountPage() {
                       </Button>
                     </div>
                   </div>
-                  <div className="min-w-0 p-4 bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl border border-border sm:col-span-2">
+                  <div className="min-w-0 p-4 bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl border border-border">
                     <span className="text-sm font-medium text-muted-foreground">Main Password</span>
                     <div className="mt-1 flex items-start justify-between gap-2">
                       <span className="min-w-0 flex-1 break-words text-sm font-mono font-semibold text-foreground">
@@ -884,6 +884,14 @@ export default function OpenTradingAccountPage() {
                       >
                         <Copy className="h-3.5 w-3.5" />
                       </Button>
+                    </div>
+                  </div>
+                   <div className="min-w-0 p-4 bg-gradient-to-br from-muted/30 to-muted/10 rounded-xl border border-border">
+                    <span className="text-sm font-medium text-muted-foreground">Account Mode</span>
+                    <div className="mt-1 flex items-start justify-between gap-2">
+                      <span className="min-w-0 flex-1 break-words text-sm font-mono font-semibold text-foreground">
+                        {mt5RequestData.account_mode}
+                      </span>
                     </div>
                   </div>
                 </div>

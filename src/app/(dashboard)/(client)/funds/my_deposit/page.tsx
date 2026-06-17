@@ -263,7 +263,7 @@ const columns: ColumnDef<DepositListItem>[] = [
     id: 'amount',
     accessorKey: 'amount',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Amount" />
+      <DataTableColumnHeader column={column} title="Amount (USD)" />
     ),
     cell: ({ row }) => {
       const pmType = row.original.paymentMethod?.type
@@ -274,7 +274,7 @@ const columns: ColumnDef<DepositListItem>[] = [
           <span>{row.original.amount.toLocaleString('en-US', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2
-          })} {currencyLabel}</span>
+          })} </span>
         </div>
       )
     },

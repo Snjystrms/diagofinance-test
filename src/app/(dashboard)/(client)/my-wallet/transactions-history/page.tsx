@@ -142,12 +142,12 @@ export default function TransactionsHistoryPage() {
     }
   }
 
-  const formatAmount = (amount: number | string, currency: string) => {
+  const formatAmount = (amount: number | string) => {
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount
     return `${numAmount.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 8
-    })} ${currency}`
+    })}`
   }
 
   const handleFilterChange = () => {
@@ -261,7 +261,7 @@ export default function TransactionsHistoryPage() {
       },
       {
         id: 'amount',
-        header: 'Amount',
+        header: 'Amount (USD)',
         accessorKey: 'amount',
         cell: ({ row }) => {
           const transaction = row.original
@@ -269,7 +269,7 @@ export default function TransactionsHistoryPage() {
             <div className="text-sm">
               <span className="text-green-600 dark:text-green-400 font-medium">$</span>
               <span className="text-foreground font-semibold">
-                {formatAmount(transaction.amount, transaction.currency)}
+                {formatAmount(transaction.amount)}
               </span>
             </div>
           )

@@ -27,7 +27,9 @@ import {
   ArrowUpRight,
   RefreshCw,
   Plus,
-  AlertCircle
+  AlertCircle,
+  Copy,
+  Check
 } from 'lucide-react'
 import { formatDateTimeInIST } from '@/lib/formatters'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -123,6 +125,7 @@ const WalletAddressCell = ({ address }: { address?: string | null }) => {
     return <span className="text-muted-foreground text-sm">N/A</span>
   }
   const truncatedAddress = `${address.slice(0, 8)}...${address.slice(-8)}`
+  const [copied, setCopied] = React.useState(false)
   
   return (
     <div className="flex items-center gap-2">
@@ -136,10 +139,16 @@ const WalletAddressCell = ({ address }: { address?: string | null }) => {
         className="h-6 w-6 p-0"
         onClick={() => {
           navigator.clipboard.writeText(address)
+          setCopied(true)
+          setTimeout(() => setCopied(false), 2000)
         }}
         title="Copy full address"
       >
-        {/* <Hash className="h-3 w-3" /> */}
+        {copied ? (
+          <Check className="h-3 w-3 text-emerald-600" />
+        ) : (
+          <Copy className="h-3 w-3" />
+        )}
       </Button>
     </div>
   )
@@ -187,7 +196,7 @@ const columns: ColumnDef<WithdrawalItem>[] = [
     id: 'amount',
     accessorKey: 'amount',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Amount" />
+      <DataTableColumnHeader column={column} title="Amount (USD)" />
     ),
     cell: ({ row }) => (
       <div className="flex items-center gap-2 font-semibold">
@@ -195,7 +204,7 @@ const columns: ColumnDef<WithdrawalItem>[] = [
         <span>{row.original.amount.toLocaleString('en-US', { 
           minimumFractionDigits: 2, 
           maximumFractionDigits: 8 
-        })} USDT</span>
+        })}</span>
       </div>
     ),
   },
@@ -284,6 +293,7 @@ export default function WithdrawPage() {
   const [withdrawalWallet, setWithdrawalWallet] = useState('')
   const [withdrawalChainId, setWithdrawalChainId] = useState('TRC20')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [copiedWallet, setCopiedWallet] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitSuccess, setSubmitSuccess] = useState(false)
 
@@ -669,14 +679,33 @@ export default function WithdrawPage() {
                     Wallet Address <span className="text-destructive">*</span>
                   </Label>
                   <div className="relative">
-                    <Wallet className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    {/* <Wallet className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /> */}
                     <Input
                       id="wallet_address"
                       value={withdrawalWallet}
                       onChange={(e) => setWithdrawalWallet(e.target.value)}
-                      className="pl-10 font-mono text-sm"
+                      className="pl-10 pr-10 font-mono text-sm"
                       placeholder={withdrawalChainId === 'TRC20' ? 'T...' : '0x...'}
                     />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7 p-0"
+                      disabled={!withdrawalWallet.trim()}
+                      onClick={() => {
+                        navigator.clipboard.writeText(withdrawalWallet.trim())
+                        setCopiedWallet(true)
+                        setTimeout(() => setCopiedWallet(false), 2000)
+                      }}
+                      title="Copy wallet address"
+                    >
+                      {copiedWallet ? (
+                        <Check className="h-3.5 w-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="h-3.5 w-3.5" />
+                      )}
+                    </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {withdrawalChainId === 'TRC20'

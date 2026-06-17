@@ -2013,7 +2013,7 @@ function USDTDepositContent() {
                         <TableHeader>
                           <TableRow className="bg-muted/30">
                             <TableHead className="text-xs">Sr. No.</TableHead>
-                            <TableHead className="text-xs">Amount</TableHead>
+                            <TableHead className="text-xs">Amount (USD)</TableHead>
                             <TableHead className="text-xs">Txn ID</TableHead>
                             <TableHead className="text-xs">Status</TableHead>
                             <TableHead className="text-xs">Date</TableHead>
