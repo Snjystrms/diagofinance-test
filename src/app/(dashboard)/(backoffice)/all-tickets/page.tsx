@@ -32,7 +32,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -43,7 +42,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -60,6 +58,8 @@ import {
   type AdminTicketItem,
   type AdminTicketCloseRequest,
   type AdminTicketReplyRequest,
+  type AdminTicketDetailPayload,
+  type AdminTicketMessage,
 } from "@/lib/api";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
@@ -247,14 +247,23 @@ export default function AdminTicketsPage() {
   const [searchInput, setSearchInput] = useState(searchQuery ?? "");
 
   const [selectedTicket, setSelectedTicket] = useState<AdminTicketItem | null>(null);
+  const [ticketDetail, setTicketDetail] = useState<AdminTicketDetailPayload | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [replyNote, setReplyNote] = useState("");
   const [replyAdminNotes, setReplyAdminNotes] = useState("");
   const [resolutionNote, setResolutionNote] = useState("");
   const [closeAdminNotes, setCloseAdminNotes] = useState("");
   const [isReplying, setIsReplying] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
-  const [isChangingStatus, setIsChangingStatus] = useState(false);
+  const [actionMode, setActionMode] = useState<"reply" | "close">("reply");
+
+  // Ref for scrolling to bottom of messages
+  const messagesEndRef = useCallback((node: HTMLDivElement | null) => {
+    if (node) {
+      node.scrollIntoView({ behavior: "smooth" });
+    }
+  }, []);
 
   const loadStats = useCallback(async () => {
     if (!token) return;
@@ -341,18 +350,36 @@ export default function AdminTicketsPage() {
     void loadStats();
   }, [loadStats]);
 
-  const openDetail = useCallback((ticket: AdminTicketItem) => {
+  const openDetail = useCallback(async (ticket: AdminTicketItem) => {
     setSelectedTicket(ticket);
-    setReplyNote(ticket.reply_note ?? "");
+    setIsDetailOpen(true);
+    setIsLoadingDetail(true);
+    setReplyNote("");
     setReplyAdminNotes("");
     setResolutionNote("");
     setCloseAdminNotes("");
-    setIsDetailOpen(true);
-  }, []);
+    setActionMode("reply");
+    
+    try {
+      if (!token) return;
+      const response = await adminTicketApi.getDetail(ticket.uuid, token);
+      if (response.success && response.data) {
+        setTicketDetail(response.data);
+      }
+    } catch (error: unknown) {
+      console.error("Failed to load ticket details:", error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "ticket details", action: "load" })
+      );
+    } finally {
+      setIsLoadingDetail(false);
+    }
+  }, [token]);
 
   const closeDetail = useCallback(() => {
     setIsDetailOpen(false);
     setSelectedTicket(null);
+    setTicketDetail(null);
     setReplyNote("");
     setReplyAdminNotes("");
     setResolutionNote("");
@@ -362,9 +389,9 @@ export default function AdminTicketsPage() {
   }, []);
 
   const handleReplySubmit = useCallback(async () => {
-    if (!token || !selectedTicket) return;
+    if (!token || !selectedTicket || !ticketDetail) return;
     if (!replyNote.trim()) {
-      toast.error("Reply note is required");
+      toast.error("Reply message is required");
       return;
     }
 
@@ -374,10 +401,18 @@ export default function AdminTicketsPage() {
         message: replyNote.trim(),
         admin_notes: replyAdminNotes.trim() || undefined,
       };
-      await adminTicketApi.reply(selectedTicket.id ?? selectedTicket.uuid, payload, token);
-      toast.success("Reply submitted successfully");
+      await adminTicketApi.reply(selectedTicket.uuid, payload, token);
+      toast.success("Reply sent successfully");
+      
+      // Reload ticket detail to get updated messages
+      const response = await adminTicketApi.getDetail(selectedTicket.uuid, token);
+      if (response.success && response.data) {
+        setTicketDetail(response.data);
+      }
+      
+      setReplyNote("");
+      setReplyAdminNotes("");
       await loadTickets();
-      closeDetail();
     } catch (error: unknown) {
       console.error("Failed to submit reply:", error);
       toast.error(
@@ -386,10 +421,10 @@ export default function AdminTicketsPage() {
     } finally {
       setIsReplying(false);
     }
-  }, [token, selectedTicket, replyNote, replyAdminNotes, loadTickets, closeDetail]);
+  }, [token, selectedTicket, ticketDetail, replyNote, replyAdminNotes, loadTickets]);
 
   const handleCloseSubmit = useCallback(async () => {
-    if (!token || !selectedTicket) return;
+    if (!token || !selectedTicket || !ticketDetail) return;
     if (!resolutionNote.trim()) {
       toast.error("Resolution note is required");
       return;
@@ -401,7 +436,7 @@ export default function AdminTicketsPage() {
         resolution_note: resolutionNote.trim(),
         admin_notes: closeAdminNotes.trim() || undefined,
       };
-      await adminTicketApi.close(selectedTicket.id ?? selectedTicket.uuid, payload, token);
+      await adminTicketApi.close(selectedTicket.uuid, payload, token);
       toast.success("Ticket closed successfully");
       await loadTickets();
       await loadStats();
@@ -414,51 +449,7 @@ export default function AdminTicketsPage() {
     } finally {
       setIsClosing(false);
     }
-  }, [token, selectedTicket, resolutionNote, closeAdminNotes, loadTickets, loadStats, closeDetail]);
-
-  const handleStatusChange = useCallback(async (newStatus: 1 | 3) => {
-    if (!token || !selectedTicket) return;
-
-    try {
-      setIsChangingStatus(true);
-      
-      if (newStatus === 1) {
-        // Change to In Progress - use reply endpoint
-        // The API automatically changes status to 1 when replying
-        const payload: AdminTicketReplyRequest = {
-          message: "Status changed to In Progress",
-          admin_notes: `Status changed to In Progress by admin`,
-        };
-        await adminTicketApi.reply(selectedTicket.id ?? selectedTicket.uuid, payload, token);
-        toast.success("Ticket status changed to In Progress");
-        await loadTickets();
-        await loadStats();
-        closeDetail();
-      } else if (newStatus === 3) {
-        // For closing, we need resolution note
-        if (!resolutionNote.trim()) {
-          toast.error("Please enter a resolution note before closing the ticket");
-          setIsChangingStatus(false);
-          return;
-        }
-        const payload: AdminTicketCloseRequest = {
-          resolution_note: resolutionNote.trim(),
-          admin_notes: closeAdminNotes.trim() || "Ticket closed by admin",
-        };
-        await adminTicketApi.close(selectedTicket.id ?? selectedTicket.uuid, payload, token);
-        toast.success("Ticket closed successfully");
-        await loadTickets();
-        await loadStats();
-        closeDetail();
-      }
-    } catch (error: unknown) {
-      console.error("Failed to change status:", error);
-      toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "ticket status", action: "update" })
-      );
-      setIsChangingStatus(false);
-    }
-  }, [token, selectedTicket, resolutionNote, closeAdminNotes, loadTickets, loadStats, closeDetail]);
+  }, [token, selectedTicket, ticketDetail, resolutionNote, closeAdminNotes, loadTickets, loadStats, closeDetail]);
 
   const columns: ColumnDef<AdminTicketItem>[] = useMemo(
     () => [
@@ -831,174 +822,250 @@ export default function AdminTicketsPage() {
       </div>
 
       <Dialog open={isDetailOpen} onOpenChange={(open) => (open ? null : closeDetail())}>
-        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader className="pb-4">
+        <DialogContent 
+          showCloseButton={false}
+          className="max-w-4xl h-[85vh] max-h-[85vh] p-0 gap-0 !overflow-hidden flex flex-col"
+        >
+          {/* Fixed Header */}
+          <DialogHeader className="px-6 py-4 border-b shrink-0">
             <DialogTitle className="flex items-center gap-2 text-lg">
-              <Ticket className="h-4 w-4 text-primary" />
-              Ticket - {selectedTicket?.enquiry_type_label}
+              <Ticket className="h-5 w-5 text-primary" />
+              {ticketDetail ? ticketDetail.title : "Loading..."}
             </DialogTitle>
+            {ticketDetail && (
+              <DialogDescription className="flex items-center gap-2 flex-wrap pt-1">
+                {statusBadge(ticketDetail.status)}
+                {priorityBadge(ticketDetail.priority_label ?? ticketDetail.priority)}
+                <Badge variant="outline">
+                  {ticketDetail.enquiry_type_label || formatEnquiryType(Number(ticketDetail.enquiry_type))}
+                </Badge>
+              </DialogDescription>
+            )}
           </DialogHeader>
 
-          {selectedTicket ? (
-            <div className="space-y-4">
-              {/* Compact Ticket & User Info */}
-              <div className="grid gap-3 grid-cols-2">
-                <div className="space-y-2">
-                  <div className="text-sm font-semibold">{selectedTicket.title}</div>
-                  <div className="text-xs text-muted-foreground line-clamp-2">{selectedTicket.description}</div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    {statusBadge(selectedTicket.status)}
-                    {priorityBadge(selectedTicket.priority)}
-                  </div>
-                </div>
-                <div className="space-y-1.5 text-xs">
-                  <div>
-                    <span className="text-muted-foreground">User: </span>
-                    <span className="font-medium">
-                      {selectedTicket.user
-                        ? `${selectedTicket.user.first_name ?? ""} ${selectedTicket.user.last_name ?? ""}`.trim() ||
-                          selectedTicket.user.email
-                        : "—"}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Email: </span>
-                    <span className="font-medium break-all">{selectedTicket.user?.email ?? "—"}</span>
-                  </div>
-                  <div className="flex items-center gap-1 text-muted-foreground">
-                    <Calendar className="h-3 w-3" />
-                    {formatDateTime(selectedTicket.created_at)}
-                  </div>
-                </div>
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            {isLoadingDetail ? (
+              <div className="flex h-full items-center justify-center">
+                <Spinner className="h-8 w-8" />
               </div>
+            ) : ticketDetail ? (
+              <div className="space-y-4">
+                {/* User Info - Compact */}
+                <div className="grid gap-3 grid-cols-2 text-sm p-3 rounded-lg bg-muted/30">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <User className="h-3.5 w-3.5" />
+                      <span className="text-xs font-medium">Customer</span>
+                    </div>
+                    <div className="font-medium">
+                      {ticketDetail.first_name || ticketDetail.last_name
+                        ? `${ticketDetail.first_name ?? ""} ${ticketDetail.last_name ?? ""}`.trim()
+                        : ticketDetail.email}
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Mail className="h-3 w-3" />
+                      {ticketDetail.email}
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Calendar className="h-3.5 w-3.5" />
+                      <span className="text-xs font-medium">Created</span>
+                    </div>
+                    <div className="text-xs">{formatDateTime(ticketDetail.created_at)}</div>
+                    {ticketDetail.sponsor_id && (
+                      <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                        <Hash className="h-3 w-3" />
+                        {ticketDetail.sponsor_id}
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-              {/* Status Change - Simplified */}
-              {/* {selectedTicket.status === 0 && (
-                <div className="flex items-center justify-between p-3 rounded-lg border-2 border-amber-500/20 bg-amber-500/5">
-                  <div className="text-sm font-medium">Change Status</div>
-                  <Button
-                    onClick={() => handleStatusChange(1)}
-                    disabled={isChangingStatus}
-                    variant="outline"
-                    size="sm"
-                    className="border-amber-500 text-amber-700 hover:bg-amber-50 dark:border-amber-400 dark:text-amber-300 dark:hover:bg-amber-950/20"
-                  >
-                    {isChangingStatus ? (
+                {/* Chat Messages */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <MessageSquare className="h-4 w-4" />
+                    Conversation
+                  </div>
+                  <div className="border rounded-lg p-4 space-y-3 bg-muted/10 min-h-[300px]">
+                    {ticketDetail.messages && ticketDetail.messages.length > 0 ? (
                       <>
-                        <Spinner className="mr-2 h-3.5 w-3.5" />
-                        Changing...
+                        {ticketDetail.messages.map((msg, idx) => (
+                          <div
+                            key={msg.id ?? idx}
+                            className={`flex ${msg.sender_type === "admin" ? "justify-end" : "justify-start"}`}
+                          >
+                            <div
+                              className={`max-w-[75%] rounded-lg px-4 py-2.5 shadow-sm ${
+                                msg.sender_type === "admin"
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-card border"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-semibold">
+                                  {msg.sender_type === "admin" ? "Admin" : "Customer"}
+                                </span>
+                                <span className="text-xs opacity-70">
+                                  {formatDateTime(msg.created_at)}
+                                </span>
+                              </div>
+                              <div className="text-sm whitespace-pre-wrap break-words">{msg.message}</div>
+                            </div>
+                          </div>
+                        ))}
+                        <div ref={messagesEndRef} />
                       </>
                     ) : (
-                      <>
-                        <MessageSquare className="mr-2 h-3.5 w-3.5" />
-                        Mark as In Progress
-                      </>
+                      <div className="flex h-[200px] items-center justify-center text-muted-foreground text-sm">
+                        No messages yet
+                      </div>
                     )}
-                  </Button>
-                </div>
-              )} */}
-
-              {/* Admin Note Display - Only show if status is 1 (In Progress) or 3 (Closed) */}
-              {(selectedTicket.status === 1 || selectedTicket.status === 3) && selectedTicket.reply_note && (
-                <div className="space-y-2 p-3 rounded-lg border bg-muted/30">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <MessageSquare className="h-4 w-4" />
-                    Admin Note
-                  </div>
-                  <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {selectedTicket.reply_note}
                   </div>
                 </div>
-              )}
 
-              {/* Close Ticket Section - Only show if status is 1 (In Progress) */}
-              {selectedTicket.status === 1 && (
-                <div className="space-y-3 p-3 rounded-lg border-2 border-destructive/20 bg-destructive/5">
-                  <div className="flex items-center gap-2 text-sm font-medium">
+                {/* Show message if ticket is closed */}
+                {ticketDetail.status === 3 && (
+                  <div className="p-4 rounded-lg border bg-emerald-50 dark:bg-emerald-950/20 text-center">
+                    <CheckCircle2 className="h-6 w-6 mx-auto mb-2 text-emerald-600 dark:text-emerald-400" />
+                    <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
+                      This ticket has been closed
+                    </p>
+                    {ticketDetail.resolved_at && (
+                      <p className="text-xs mt-1 text-emerald-700 dark:text-emerald-300">
+                        Closed on {formatDateTime(ticketDetail.resolved_at)}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
+                Failed to load ticket details.
+              </div>
+            )}
+          </div>
+
+          {/* Fixed Footer with Actions */}
+          {ticketDetail && ticketDetail.status !== 3 && (
+            <div className="border-t bg-background px-6 py-4 shrink-0">
+              {/* Toggle Buttons - Chrome-style tabs */}
+              <div className="flex gap-1 mb-4">
+                <button
+                  type="button"
+                  onClick={() => setActionMode("reply")}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-medium transition-colors ${
+                    actionMode === "reply"
+                      ? "bg-muted text-foreground border-b-2 border-primary"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                  }`}
+                >
+                  <MessageSquare className="h-4 w-4" />
+                  Send Reply
+                </button>
+                
+                {(ticketDetail.status === 0 || ticketDetail.status === 1) && (
+                  <button
+                    type="button"
+                    onClick={() => setActionMode("close")}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-t-lg text-sm font-medium transition-colors ${
+                      actionMode === "close"
+                        ? "bg-muted text-foreground border-b-2 border-destructive"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    }`}
+                  >
                     <XCircle className="h-4 w-4" />
                     Close Ticket
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="resolution-note" className="text-xs">Resolution Note (required)</Label>
-                    <Textarea
-                      id="resolution-note"
-                      placeholder="Enter resolution message..."
-                      value={resolutionNote}
-                      onChange={(e) => setResolutionNote(e.target.value)}
-                      rows={3}
-                      className="resize-none text-sm"
-                    />
-                    <Button
-                      onClick={handleCloseSubmit}
-                      disabled={isClosing || !resolutionNote.trim()}
-                      variant="destructive"
-                      size="sm"
-                      className="w-full"
-                    >
-                      {isClosing ? (
-                        <>
-                          <Spinner className="mr-2 h-3.5 w-3.5" />
-                          Closing...
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="mr-2 h-3.5 w-3.5" />
-                          Close Ticket
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              )}
+                  </button>
+                )}
+              </div>
 
-              {/* Reply Section - Only show if status is 0 (Open) */}
-              {selectedTicket.status === 0 && (
-                <div className="space-y-3 p-3 rounded-lg border">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <MessageSquare className="h-4 w-4" />
-                    Respond to Ticket
-                  </div>
+              {/* Content based on selected mode */}
+              <div className="space-y-3">
+                {actionMode === "reply" ? (
+                  // Reply Mode
                   <div className="space-y-2">
-                    <Textarea
-                      placeholder="Reply note (visible to user)..."
-                      value={replyNote}
-                      onChange={(e) => setReplyNote(e.target.value)}
-                      rows={3}
-                      className="resize-none text-sm"
-                    />
-                    <Button
-                      onClick={handleReplySubmit}
-                      disabled={isReplying || !replyNote.trim()}
-                      size="sm"
-                      className="w-full"
-                    >
-                      {isReplying ? (
-                        <>
-                          <Spinner className="mr-2 h-3.5 w-3.5" />
-                          Sending...
-                        </>
-                      ) : (
-                        <>
-                          <MessageSquare className="mr-2 h-3.5 w-3.5" />
-                          Send Reply
-                        </>
-                      )}
-                    </Button>
+                    <div className="flex gap-2 items-end">
+                      <div className="flex-1 space-y-2">
+                        <Textarea
+                          placeholder="Type your message to the user..."
+                          value={replyNote}
+                          onChange={(e) => setReplyNote(e.target.value)}
+                          rows={3}
+                          className="resize-none text-sm"
+                          disabled={isReplying}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && e.ctrlKey && replyNote.trim()) {
+                              e.preventDefault();
+                              void handleReplySubmit();
+                            }
+                          }}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Press Ctrl+Enter to send
+                        </p>
+                      </div>
+                      <Button
+                        onClick={handleReplySubmit}
+                        disabled={isReplying || !replyNote.trim()}
+                        size="lg"
+                        className="h-[88px]"
+                      >
+                        {isReplying ? (
+                          <Spinner className="h-5 w-5" />
+                        ) : (
+                          <MessageSquare className="h-5 w-5" />
+                        )}
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="flex h-40 items-center justify-center text-muted-foreground text-sm">
-              Select a ticket to view details.
+                ) : (
+                  // Close Ticket Mode
+                  <div className="space-y-2">
+                    <div className="flex gap-2 items-end">
+                      <div className="flex-1 space-y-2">
+                        <Textarea
+                          placeholder="Enter resolution details (required)..."
+                          value={resolutionNote}
+                          onChange={(e) => setResolutionNote(e.target.value)}
+                          rows={3}
+                          className="resize-none text-sm border-destructive/50 focus-visible:ring-destructive"
+                          disabled={isClosing}
+                        />
+                        <p className="text-xs text-destructive">
+                          This will close the ticket and prevent further replies
+                        </p>
+                      </div>
+                      <Button
+                        onClick={handleCloseSubmit}
+                        disabled={isClosing || !resolutionNote.trim()}
+                        variant="destructive"
+                        size="lg"
+                        className="h-[88px]"
+                      >
+                        {isClosing ? (
+                          <Spinner className="h-5 w-5" />
+                        ) : (
+                          <XCircle className="h-5 w-5" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
-          <DialogFooter className="pt-4 border-t">
-            <Button variant="outline" size="sm" onClick={closeDetail}>
-              Close
-            </Button>
-          </DialogFooter>
+          {/* Close Dialog Button - Custom positioned */}
+          <button
+            onClick={closeDetail}
+            className="absolute top-4 right-4 z-10 p-1.5 rounded-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            aria-label="Close dialog"
+          >
+            <XCircle className="h-4 w-4" />
+          </button>
         </DialogContent>
       </Dialog>
     </>

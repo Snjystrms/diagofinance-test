@@ -432,6 +432,7 @@ export interface TicketItem {
   priority: number;
   created_at: string;
   enquiry_type_label?: string;
+  priority_label?: string;
 }
 
 export interface TicketListResponse {
@@ -459,6 +460,38 @@ export interface CreateTicketResponse {
   data: TicketItem;
 }
 
+export interface TicketMessage {
+  id: number | null;
+  sender_type: "user" | "admin";
+  sender_id: string | number;
+  message: string;
+  created_at: string;
+}
+
+export interface TicketDetailPayload {
+  id: number;
+  uuid: string;
+  user_id: number;
+  title: string;
+  enquiry_type: string | number;
+  description: string;
+  reply_note: string | null;
+  priority: string | number;
+  status: number;
+  created_at: string;
+  updated_at: string;
+  resolved_by: string | number | null;
+  resolved_at: string | null;
+  admin_notes: string | null;
+  messages: TicketMessage[];
+  enquiry_type_label?: string;
+  priority_label?: string;
+}
+
+export interface TicketReplyRequest {
+  message: string;
+}
+
 export const ticketApi = {
   list: (token: string, page: number = 1, perPage: number = 10) =>
     apiCall<TicketListResponse>(`/user/ticket/list?page=${page}&per_page=${perPage}`, {
@@ -468,6 +501,19 @@ export const ticketApi = {
 
   create: (data: CreateTicketRequest, token: string) =>
     apiCall<CreateTicketResponse>(`/user/ticket/store`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    }),
+
+  getDetail: (ticketId: string, token: string) =>
+    apiCall<TicketDetailPayload>(`/user/ticket/${ticketId}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  reply: (ticketId: string, data: TicketReplyRequest, token: string) =>
+    apiCall(`/user/ticket/${ticketId}/reply`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -538,6 +584,40 @@ export interface AdminTicketCloseRequest {
   admin_notes?: string;
 }
 
+export interface AdminTicketMessage {
+  id: number | null;
+  sender_type: "user" | "admin";
+  sender_id: string | number;
+  message: string;
+  created_at: string;
+}
+
+export interface AdminTicketDetailPayload {
+  id: number;
+  uuid: string;
+  user_id: number;
+  title: string;
+  enquiry_type: string | number;
+  description: string;
+  reply_note: string | null;
+  priority: string | number;
+  status: number;
+  created_at: string;
+  updated_at: string;
+  resolved_by: string | number | null;
+  resolved_at: string | null;
+  admin_notes: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  email: string;
+  sponsor_id: string | null;
+  mobile: string | null;
+  user: AdminTicketUser;
+  messages: AdminTicketMessage[];
+  enquiry_type_label?: string;
+  priority_label?: string;
+}
+
 export const adminTicketApi = {
   list: (
     token: string,
@@ -570,6 +650,12 @@ export const adminTicketApi = {
 
   stats: (token: string) =>
     apiCall<AdminTicketStatsPayload>(`/admin/tickets/statistics`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  getDetail: (ticketId: string | number, token: string) =>
+    apiCall<AdminTicketDetailPayload>(`/admin/tickets/${ticketId}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),

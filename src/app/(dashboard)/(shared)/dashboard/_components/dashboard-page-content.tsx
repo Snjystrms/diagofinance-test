@@ -1513,7 +1513,7 @@ export function DashboardPageContent() {
                           </div>
                           <div className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg backdrop-blur-sm border text-muted-foreground bg-muted/70 border-border/50">
                             <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-                            <span className="font-medium">IB Commission Tracking</span>
+                            <span className="font-medium">Partner Commission Tracking</span>
                           </div>
                           <div className="space-y-2 pt-2 border-t border-border/50">
                             <div className="flex items-center justify-between text-xs">

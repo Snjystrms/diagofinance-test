@@ -3241,6 +3241,22 @@ export interface CregisDepositCreateResponse {
   };
 }
 
+export interface CregisDepositStatusData {
+  deposit_uuid: string;
+  out_trade_no: string;
+  deposit_status: number; // 0 - pending, 1 - approved/successful, 2 - failed
+  cregis_status: string; // "new", "processing", "completed", "failed", etc.
+  trade_no: string;
+  amount: number;
+  currency: string;
+}
+
+export interface CregisDepositStatusResponse {
+  success: boolean;
+  message: string;
+  data: CregisDepositStatusData;
+}
+
 export const cregisDepositApi = {
   create: (data: CregisDepositCreateRequest, token: string) =>
     apiCall<CregisDepositCreateResponse>(`/user/deposit/cregis/create`, {
@@ -3249,8 +3265,8 @@ export const cregisDepositApi = {
       body: JSON.stringify(data),
     }),
 
-  getStatus: (coinsbuyDepositId: string, token: string) =>
-    apiCall<CoinsBuyDepositStatusResponse>(`/user/deposit/coinsbuy/status/${coinsbuyDepositId}`, {
+  getStatus: (outTradeNo: string, token: string) =>
+    apiCall<CregisDepositStatusData>(`/user/deposit/cregis/status/${outTradeNo}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),

@@ -14,6 +14,12 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
+  Eye,
+  Send,
+  Calendar,
+  Hash,
+  User,
+  Mail,
 } from "lucide-react";
 
 import { AppDataTable } from "@/components/app-data-table";
@@ -25,7 +31,6 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -35,7 +40,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/auth-context";
-import { ticketApi, type TicketItem, type CreateTicketRequest } from "@/lib/api";
+import { ticketApi, type TicketItem, type CreateTicketRequest, type TicketDetailPayload, type TicketMessage } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { useDebouncedCallback } from "@/hooks/use-debounced-callback";
@@ -173,13 +178,26 @@ export default function RaiseTicketPage() {
   });
 
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState<TicketItem | null>(null);
+  const [ticketDetail, setTicketDetail] = useState<TicketDetailPayload | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isReplying, setIsReplying] = useState(false);
+  const [replyMessage, setReplyMessage] = useState("");
   const [createForm, setCreateForm] = useState<CreateTicketRequest>({
     title: "",
     enquiry_type: 1,
     description: "",
     priority: 1,
   });
+
+  // Ref for scrolling to bottom of messages
+  const messagesEndRef = useCallback((node: HTMLDivElement | null) => {
+    if (node) {
+      node.scrollIntoView({ behavior: "smooth" });
+    }
+  }, []);
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
@@ -350,6 +368,74 @@ export default function RaiseTicketPage() {
     }
   }, [token, createForm, loadTickets]);
 
+  const handleViewTicket = useCallback(async (ticket: TicketItem) => {
+    setSelectedTicket(ticket);
+    setIsViewDialogOpen(true);
+    setIsLoadingDetail(true);
+    setReplyMessage("");
+    
+    try {
+      if (!token) return;
+      const response = await ticketApi.getDetail(ticket.uuid, token);
+      if (response.success && response.data) {
+        setTicketDetail(response.data);
+      }
+    } catch (error: unknown) {
+      console.error("Failed to load ticket details:", error);
+      toast.error(
+        getFriendlyErrorMessage(error, { 
+          audience: "client",
+          resource: "ticket details", 
+          action: "load" 
+        })
+      );
+    } finally {
+      setIsLoadingDetail(false);
+    }
+  }, [token]);
+
+  const handleCloseViewDialog = useCallback(() => {
+    setIsViewDialogOpen(false);
+    setSelectedTicket(null);
+    setTicketDetail(null);
+    setReplyMessage("");
+    setIsReplying(false);
+  }, []);
+
+  const handleReplySubmit = useCallback(async () => {
+    if (!token || !selectedTicket || !ticketDetail) return;
+    if (!replyMessage.trim()) {
+      toast.error("Reply message is required");
+      return;
+    }
+
+    try {
+      setIsReplying(true);
+      await ticketApi.reply(selectedTicket.uuid, { message: replyMessage.trim() }, token);
+      toast.success("Reply sent successfully");
+      
+      // Reload ticket detail to get updated messages
+      const response = await ticketApi.getDetail(selectedTicket.uuid, token);
+      if (response.success && response.data) {
+        setTicketDetail(response.data);
+      }
+      
+      setReplyMessage("");
+      await loadTickets();
+    } catch (error: unknown) {
+      console.error("Failed to submit reply:", error);
+      toast.error(
+        getFriendlyErrorMessage(error, { 
+          audience: "client",
+          resource: "ticket reply", 
+          action: "submit" 
+        })
+      );
+    } finally {
+      setIsReplying(false);
+    }
+  }, [token, selectedTicket, ticketDetail, replyMessage, loadTickets]);
+
   const columns: ColumnDef<TicketItem>[] = useMemo(
     () => [
         {
@@ -434,8 +520,23 @@ export default function RaiseTicketPage() {
           );
         },
       },
+      {
+        id: "actions",
+        header: "Actions",
+        enableSorting: false,
+        cell: ({ row }) => (
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => handleViewTicket(row.original)} 
+            aria-label="View ticket details"
+          >
+            <Eye className="h-4 w-4" />
+          </Button>
+        ),
+      },
     ],
-    [],
+    [handleViewTicket],
   );
 
   const renderTableSection = () => {
@@ -681,7 +782,7 @@ export default function RaiseTicketPage() {
             </div>
           </div>
 
-          <DialogFooter className="gap-4 sm:gap-4">
+          <div className="flex justify-end gap-3 pt-4">
             <Button
               variant="outline"
               onClick={() => {
@@ -717,7 +818,176 @@ export default function RaiseTicketPage() {
                 </>
               )}
             </Button>
-          </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Ticket Dialog */}
+      <Dialog open={isViewDialogOpen} onOpenChange={(open) => (open ? null : handleCloseViewDialog())}>
+        <DialogContent className="max-w-4xl h-[85vh] p-0 gap-0 overflow-hidden flex flex-col">
+          {/* Fixed Header */}
+          <DialogHeader className="px-6 py-4 border-b shrink-0">
+            <DialogTitle className="flex items-center gap-2 text-lg">
+              <Ticket className="h-5 w-5 text-primary" />
+              {ticketDetail ? ticketDetail.title : "Loading..."}
+            </DialogTitle>
+            {ticketDetail && (
+              <DialogDescription className="flex items-center gap-2 flex-wrap pt-1">
+                {getStatusBadge(ticketDetail.status)}
+                {getPriorityBadge(ticketDetail.priority_label ?? ticketDetail.priority)}
+                <Badge variant="outline">
+                  {ticketDetail.enquiry_type_label || getEnquiryTypeLabel(Number(ticketDetail.enquiry_type))}
+                </Badge>
+              </DialogDescription>
+            )}
+          </DialogHeader>
+
+          {/* Scrollable Content Area */}
+          <div className="flex-1 overflow-y-auto px-6 py-4">
+            {isLoadingDetail ? (
+              <div className="flex h-full items-center justify-center">
+                <Spinner className="h-8 w-8" />
+              </div>
+            ) : ticketDetail ? (
+              <div className="space-y-4">
+                {/* Ticket Info */}
+                <div className="grid gap-3 text-sm p-3 rounded-lg bg-muted/30">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Calendar className="h-3.5 w-3.5" />
+                      <span className="text-xs font-medium">Created</span>
+                    </div>
+                    <div className="text-xs">{formatDateTime(ticketDetail.created_at)}</div>
+                  </div>
+                  {ticketDetail.updated_at && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Clock className="h-3.5 w-3.5" />
+                        <span className="text-xs font-medium">Last Updated</span>
+                      </div>
+                      <div className="text-xs">{formatDateTime(ticketDetail.updated_at)}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Chat Messages */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                    <MessageSquare className="h-4 w-4" />
+                    Conversation
+                  </div>
+                  <div className="border rounded-lg p-4 space-y-3 bg-muted/10 min-h-[300px]">
+                    {ticketDetail.messages && ticketDetail.messages.length > 0 ? (
+                      <>
+                        {ticketDetail.messages.map((msg, idx) => (
+                          <div
+                            key={msg.id ?? idx}
+                            className={`flex ${msg.sender_type === "user" ? "justify-end" : "justify-start"}`}
+                          >
+                            <div
+                              className={`max-w-[75%] rounded-lg px-4 py-2.5 shadow-sm ${
+                                msg.sender_type === "user"
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-card border"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-xs font-semibold">
+                                  {msg.sender_type === "user" ? "You" : "Support"}
+                                </span>
+                                <span className="text-xs opacity-70">
+                                  {formatDateTime(msg.created_at)}
+                                </span>
+                              </div>
+                              <div className="text-sm whitespace-pre-wrap break-words">{msg.message}</div>
+                            </div>
+                          </div>
+                        ))}
+                        <div ref={messagesEndRef} />
+                      </>
+                    ) : (
+                      <div className="flex h-[200px] items-center justify-center text-muted-foreground text-sm">
+                        No messages yet
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Show message if ticket is closed */}
+                {ticketDetail.status === 3 && (
+                  <div className="p-4 rounded-lg border bg-emerald-50 dark:bg-emerald-950/20 text-center">
+                    <CheckCircle2 className="h-6 w-6 mx-auto mb-2 text-emerald-600 dark:text-emerald-400" />
+                    <p className="text-sm font-medium text-emerald-900 dark:text-emerald-100">
+                      This ticket has been closed
+                    </p>
+                    {ticketDetail.resolved_at && (
+                      <p className="text-xs mt-1 text-emerald-700 dark:text-emerald-300">
+                        Closed on {formatDateTime(ticketDetail.resolved_at)}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
+                Failed to load ticket details.
+              </div>
+            )}
+          </div>
+
+          {/* Fixed Footer with Reply - Only show if not closed */}
+          {ticketDetail && ticketDetail.status !== 3 && (
+            <div className="border-t bg-muted/30 px-6 py-4 shrink-0">
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <label htmlFor="reply-input" className="text-sm font-medium flex items-center gap-2">
+                    <MessageSquare className="h-4 w-4 text-primary" />
+                    Send Message to Support
+                  </label>
+                  
+                  <div className="flex gap-2">
+                    <Textarea
+                      id="reply-input"
+                      placeholder="Type your message..."
+                      value={replyMessage}
+                      onChange={(e) => setReplyMessage(e.target.value)}
+                      rows={2}
+                      className="resize-none text-sm flex-1"
+                      disabled={isReplying}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey && replyMessage.trim()) {
+                          e.preventDefault();
+                          void handleReplySubmit();
+                        }
+                      }}
+                    />
+                    <Button
+                      onClick={handleReplySubmit}
+                      disabled={isReplying || !replyMessage.trim()}
+                      size="sm"
+                      className="self-end"
+                    >
+                      {isReplying ? (
+                        <Spinner className="h-4 w-4" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Press Enter to send • Shift+Enter for new line
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Close Dialog Button */}
+          <div className="border-t px-6 py-3 shrink-0 bg-background">
+            <Button variant="outline" size="sm" onClick={handleCloseViewDialog} className="w-full">
+              Close Dialog
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>
