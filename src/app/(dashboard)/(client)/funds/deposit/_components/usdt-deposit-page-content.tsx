@@ -1876,7 +1876,7 @@ function USDTDepositContent() {
                       {cregisAmount && parseFloat(cregisAmount) > 0 && (
                         <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">You'll pay (USDT)</span>
+                            <span className="text-muted-foreground">You&apos;ll pay (USDT)</span>
                             <span className="text-foreground font-semibold">
                               {parseFloat(cregisAmount).toFixed(2)}
                             </span>

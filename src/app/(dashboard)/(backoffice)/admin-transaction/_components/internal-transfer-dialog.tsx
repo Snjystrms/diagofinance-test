@@ -202,11 +202,12 @@ export function InternalTransferDialog({
               const detailRes = await adminMT5AccountsApi.getById(acc.id, token);
               const detailData = detailRes.data ?? detailRes;
               const mt5Account =
-                (detailData as any).mt5_account ||
-                (detailData as any).account ||
+                (detailData as Record<string, unknown>).mt5_account ||
+                (detailData as Record<string, unknown>).account ||
                 detailData;
-              if (mt5Account?.mt5_wallet_id) {
-                walletIdMap.set(accId, Number(mt5Account.mt5_wallet_id));
+              const accountData = mt5Account as Record<string, unknown>;
+              if (accountData?.mt5_wallet_id) {
+                walletIdMap.set(accId, Number(accountData.mt5_wallet_id));
               }
             } catch (error) {
               console.error(
