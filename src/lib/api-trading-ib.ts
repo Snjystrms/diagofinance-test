@@ -1752,6 +1752,7 @@ export interface AdminMT5Account {
   swap_free_option?: string | number;
   base_currency?: string;
   created_at?: string;
+  mt5_wallet_id?: number | string;
   updated_at?: string;
   user?: AdminMT5AccountUser;
   User?: AdminMT5AccountUser;

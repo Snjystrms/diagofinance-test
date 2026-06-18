@@ -128,21 +128,30 @@ const priorityBadge = (priority: string | number | null | undefined) => {
     case 1:
     case "low":
       return (
-        <Badge variant="outline" className="border-green-200 text-green-700 dark:border-green-800 dark:text-green-300">
+        <Badge
+          variant="outline"
+          className="border-green-200 text-green-700 dark:border-green-800 dark:text-green-300"
+        >
           Low
         </Badge>
       );
     case 2:
     case "medium":
       return (
-        <Badge variant="outline" className="border-yellow-200 text-yellow-700 dark:border-yellow-800 dark:text-yellow-300">
+        <Badge
+          variant="outline"
+          className="border-yellow-200 text-yellow-700 dark:border-yellow-800 dark:text-yellow-300"
+        >
           Medium
         </Badge>
       );
     case 3:
     case "high":
       return (
-        <Badge variant="outline" className="border-red-200 text-red-700 dark:border-red-800 dark:text-red-300">
+        <Badge
+          variant="outline"
+          className="border-red-200 text-red-700 dark:border-red-800 dark:text-red-300"
+        >
           High
         </Badge>
       );
@@ -237,17 +246,35 @@ export default function AdminTicketsPage() {
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
-  const [statusFilter, setStatusFilter] = useQueryState("status", parseAsString.withDefault("all"));
-  const [priorityFilter, setPriorityFilter] = useQueryState("priority", parseAsString.withDefault("all"));
-  const [enquiryFilter, setEnquiryFilter] = useQueryState("type", parseAsString.withDefault("all"));
-  const [userIdFilter, setUserIdFilter] = useQueryState("user", parseAsString.withDefault(""));
-  const [searchQuery, setSearchQuery] = useQueryState("search", parseAsString.withDefault(""));
+  const [statusFilter, setStatusFilter] = useQueryState(
+    "status",
+    parseAsString.withDefault("all"),
+  );
+  const [priorityFilter, setPriorityFilter] = useQueryState(
+    "priority",
+    parseAsString.withDefault("all"),
+  );
+  const [enquiryFilter, setEnquiryFilter] = useQueryState(
+    "type",
+    parseAsString.withDefault("all"),
+  );
+  const [userIdFilter, setUserIdFilter] = useQueryState(
+    "user",
+    parseAsString.withDefault(""),
+  );
+  const [searchQuery, setSearchQuery] = useQueryState(
+    "search",
+    parseAsString.withDefault(""),
+  );
 
   // Local search state for immediate UI updates
   const [searchInput, setSearchInput] = useState(searchQuery ?? "");
 
-  const [selectedTicket, setSelectedTicket] = useState<AdminTicketItem | null>(null);
-  const [ticketDetail, setTicketDetail] = useState<AdminTicketDetailPayload | null>(null);
+  const [selectedTicket, setSelectedTicket] = useState<AdminTicketItem | null>(
+    null,
+  );
+  const [ticketDetail, setTicketDetail] =
+    useState<AdminTicketDetailPayload | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
   const [replyNote, setReplyNote] = useState("");
@@ -285,7 +312,7 @@ export default function AdminTicketsPage() {
         getAdminFriendlyErrorMessage(error, {
           resource: "ticket statistics",
           action: "load",
-        })
+        }),
       );
     } finally {
       setStatsLoading(false);
@@ -299,7 +326,17 @@ export default function AdminTicketsPage() {
     error,
     refetch,
   } = useQuery({
-    queryKey: ["adminTickets", token, page, perPage, statusFilter, priorityFilter, enquiryFilter, userIdFilter, searchQuery],
+    queryKey: [
+      "adminTickets",
+      token,
+      page,
+      perPage,
+      statusFilter,
+      priorityFilter,
+      enquiryFilter,
+      userIdFilter,
+      searchQuery,
+    ],
     queryFn: async () => {
       const trimmedSearch = searchQuery?.trim() || "";
       const validSearch = trimmedSearch.length >= 3 ? trimmedSearch : undefined;
@@ -307,9 +344,14 @@ export default function AdminTicketsPage() {
       const response = await adminTicketApi.list(token!, {
         page,
         limit: perPage,
-        status: statusFilter && statusFilter !== "all" ? statusFilter : undefined,
-        priority: priorityFilter && priorityFilter !== "all" ? priorityFilter : undefined,
-        enquiry_type: enquiryFilter && enquiryFilter !== "all" ? enquiryFilter : undefined,
+        status:
+          statusFilter && statusFilter !== "all" ? statusFilter : undefined,
+        priority:
+          priorityFilter && priorityFilter !== "all"
+            ? priorityFilter
+            : undefined,
+        enquiry_type:
+          enquiryFilter && enquiryFilter !== "all" ? enquiryFilter : undefined,
         user_id: userIdFilter?.trim() ? userIdFilter.trim() : undefined,
         search: validSearch,
       });
@@ -328,7 +370,12 @@ export default function AdminTicketsPage() {
         total_pages: ticketsQueryResult.pagination.last_page ?? 1,
         total: ticketsQueryResult.pagination.total ?? tickets.length,
       }
-    : { current_page: page, per_page: perPage, total_pages: 1, total: tickets.length };
+    : {
+        current_page: page,
+        per_page: perPage,
+        total_pages: 1,
+        total: tickets.length,
+      };
 
   const loadTickets = useCallback(() => {
     setLoadError(null);
@@ -341,7 +388,10 @@ export default function AdminTicketsPage() {
     if (isError) {
       setLoadError(error);
       toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "tickets", action: "load" })
+        getAdminFriendlyErrorMessage(error, {
+          resource: "tickets",
+          action: "load",
+        }),
       );
     }
   }, [isError, error]);
@@ -350,31 +400,37 @@ export default function AdminTicketsPage() {
     void loadStats();
   }, [loadStats]);
 
-  const openDetail = useCallback(async (ticket: AdminTicketItem) => {
-    setSelectedTicket(ticket);
-    setIsDetailOpen(true);
-    setIsLoadingDetail(true);
-    setReplyNote("");
-    setReplyAdminNotes("");
-    setResolutionNote("");
-    setCloseAdminNotes("");
-    setActionMode("reply");
-    
-    try {
-      if (!token) return;
-      const response = await adminTicketApi.getDetail(ticket.uuid, token);
-      if (response.success && response.data) {
-        setTicketDetail(response.data);
+  const openDetail = useCallback(
+    async (ticket: AdminTicketItem) => {
+      setSelectedTicket(ticket);
+      setIsDetailOpen(true);
+      setIsLoadingDetail(true);
+      setReplyNote("");
+      setReplyAdminNotes("");
+      setResolutionNote("");
+      setCloseAdminNotes("");
+      setActionMode("reply");
+
+      try {
+        if (!token) return;
+        const response = await adminTicketApi.getDetail(ticket.uuid, token);
+        if (response.success && response.data) {
+          setTicketDetail(response.data);
+        }
+      } catch (error: unknown) {
+        console.error("Failed to load ticket details:", error);
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "ticket details",
+            action: "load",
+          }),
+        );
+      } finally {
+        setIsLoadingDetail(false);
       }
-    } catch (error: unknown) {
-      console.error("Failed to load ticket details:", error);
-      toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "ticket details", action: "load" })
-      );
-    } finally {
-      setIsLoadingDetail(false);
-    }
-  }, [token]);
+    },
+    [token],
+  );
 
   const closeDetail = useCallback(() => {
     setIsDetailOpen(false);
@@ -403,25 +459,38 @@ export default function AdminTicketsPage() {
       };
       await adminTicketApi.reply(selectedTicket.uuid, payload, token);
       toast.success("Reply sent successfully");
-      
+
       // Reload ticket detail to get updated messages
-      const response = await adminTicketApi.getDetail(selectedTicket.uuid, token);
+      const response = await adminTicketApi.getDetail(
+        selectedTicket.uuid,
+        token,
+      );
       if (response.success && response.data) {
         setTicketDetail(response.data);
       }
-      
+
       setReplyNote("");
       setReplyAdminNotes("");
       await loadTickets();
     } catch (error: unknown) {
       console.error("Failed to submit reply:", error);
       toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "ticket replies", action: "submit" })
+        getAdminFriendlyErrorMessage(error, {
+          resource: "ticket replies",
+          action: "submit",
+        }),
       );
     } finally {
       setIsReplying(false);
     }
-  }, [token, selectedTicket, ticketDetail, replyNote, replyAdminNotes, loadTickets]);
+  }, [
+    token,
+    selectedTicket,
+    ticketDetail,
+    replyNote,
+    replyAdminNotes,
+    loadTickets,
+  ]);
 
   const handleCloseSubmit = useCallback(async () => {
     if (!token || !selectedTicket || !ticketDetail) return;
@@ -444,12 +513,24 @@ export default function AdminTicketsPage() {
     } catch (error: unknown) {
       console.error("Failed to close ticket:", error);
       toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "tickets", action: "update" })
+        getAdminFriendlyErrorMessage(error, {
+          resource: "tickets",
+          action: "update",
+        }),
       );
     } finally {
       setIsClosing(false);
     }
-  }, [token, selectedTicket, ticketDetail, resolutionNote, closeAdminNotes, loadTickets, loadStats, closeDetail]);
+  }, [
+    token,
+    selectedTicket,
+    ticketDetail,
+    resolutionNote,
+    closeAdminNotes,
+    loadTickets,
+    loadStats,
+    closeDetail,
+  ]);
 
   const columns: ColumnDef<AdminTicketItem>[] = useMemo(
     () => [
@@ -476,9 +557,14 @@ export default function AdminTicketsPage() {
           return (
             <div className="space-y-1 text-sm">
               <div className="font-medium">
-                {user ? `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() || user.email : "—"}
+                {user
+                  ? `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() ||
+                    user.email
+                  : "—"}
               </div>
-              <div className="text-xs text-muted-foreground">{user?.email ?? "—"}</div>
+              <div className="text-xs text-muted-foreground">
+                {user?.email ?? "—"}
+              </div>
             </div>
           );
         },
@@ -492,7 +578,9 @@ export default function AdminTicketsPage() {
           return (
             <div className="space-y-1 text-sm">
               <div className="font-medium">{ticket.title}</div>
-              <div className="text-xs text-muted-foreground line-clamp-2">{ticket.description}</div>
+              <div className="text-xs text-muted-foreground line-clamp-2">
+                {ticket.description}
+              </div>
             </div>
           );
         },
@@ -505,7 +593,8 @@ export default function AdminTicketsPage() {
           const ticket = row.original;
           return (
             <Badge variant="outline">
-              {ticket.enquiry_type_label || formatEnquiryType(ticket.enquiry_type)}
+              {ticket.enquiry_type_label ||
+                formatEnquiryType(ticket.enquiry_type)}
             </Badge>
           );
         },
@@ -514,7 +603,8 @@ export default function AdminTicketsPage() {
         id: "priority",
         header: "Priority",
         accessorFn: (row) => row.priority,
-        cell: ({ row }) => priorityBadge(row.original.priority_label ?? row.original.priority),
+        cell: ({ row }) =>
+          priorityBadge(row.original.priority_label ?? row.original.priority),
       },
       {
         id: "status",
@@ -532,7 +622,7 @@ export default function AdminTicketsPage() {
           </div>
         ),
       },
-         {
+      {
         id: "Note",
         header: "Note by Admin",
         accessorFn: (row) => row.reply_note,
@@ -551,7 +641,12 @@ export default function AdminTicketsPage() {
         header: "Actions",
         enableSorting: false,
         cell: ({ row }) => (
-          <Button variant="ghost" size="icon" onClick={() => openDetail(row.original)} aria-label="View ticket">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => openDetail(row.original)}
+            aria-label="View ticket"
+          >
             <Eye className="h-4 w-4" />
           </Button>
         ),
@@ -585,10 +680,13 @@ export default function AdminTicketsPage() {
             No Tickets
           </div>
           <p className="max-w-md text-sm text-muted-foreground">
-            There are no tickets that match your filters. Adjust the filters or refresh to check for new submissions.
+            There are no tickets that match your filters. Adjust the filters or
+            refresh to check for new submissions.
           </p>
           <Button variant="outline" onClick={loadTickets}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
+            />
             Refresh
           </Button>
         </div>
@@ -605,65 +703,77 @@ export default function AdminTicketsPage() {
     );
   };
 
-  const handleExport = useCallback((formatType: "xlsx" | "csv") => {
-    const exportToastId = `tickets-export-${formatType}`;
-    try {
-      if (tickets.length === 0) {
-        toast.error("No data to export", { id: exportToastId });
-        return;
+  const handleExport = useCallback(
+    (formatType: "xlsx" | "csv") => {
+      const exportToastId = `tickets-export-${formatType}`;
+      try {
+        if (tickets.length === 0) {
+          toast.error("No data to export", { id: exportToastId });
+          return;
+        }
+
+        toast.loading(`Preparing ${formatType.toUpperCase()} export...`, {
+          id: exportToastId,
+        });
+        const exportData = tickets.map((ticket, index) => ({
+          "Sr. No.": index + 1,
+          "Ticket ID": ticket.id,
+          UUID: ticket.uuid,
+          User: ticket.user
+            ? `${ticket.user.first_name ?? ""} ${ticket.user.last_name ?? ""}`.trim() ||
+              ticket.user.email
+            : "-",
+          Email: ticket.user?.email ?? "-",
+          Title: ticket.title || "-",
+          Description: ticket.description || "-",
+          Type:
+            ticket.enquiry_type_label || formatEnquiryType(ticket.enquiry_type),
+          Priority: getPriorityLabel(ticket.priority_label ?? ticket.priority),
+          Status: getStatusLabel(ticket.status),
+          "Reply Note": ticket.reply_note || "-",
+          "Admin Notes": ticket.admin_notes || "-",
+          "Resolved At": formatExportDateTime(ticket.resolved_at),
+          Created: formatExportDateTime(ticket.created_at),
+          Updated: formatExportDateTime(ticket.updated_at),
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const filenameBase = `support-tickets-${getExportTimestamp()}`;
+        let filename = `${filenameBase}.xlsx`;
+
+        if (formatType === "xlsx") {
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, worksheet, "Support Tickets");
+          XLSX.writeFile(workbook, filename);
+        } else {
+          const csv = XLSX.utils.sheet_to_csv(worksheet);
+          const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+          const link = document.createElement("a");
+          filename = `${filenameBase}.csv`;
+          link.href = URL.createObjectURL(blob);
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(link.href);
+        }
+
+        toast.success(`Exported ${tickets.length} tickets to ${filename}`, {
+          id: exportToastId,
+        });
+      } catch (error: unknown) {
+        console.error(`Failed to export ${formatType}:`, error);
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "tickets",
+            action: "export",
+          }),
+          { id: exportToastId },
+        );
       }
-
-      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
-      const exportData = tickets.map((ticket, index) => ({
-        "Sr. No.": index + 1,
-        "Ticket ID": ticket.id,
-        UUID: ticket.uuid,
-        User: ticket.user
-          ? `${ticket.user.first_name ?? ""} ${ticket.user.last_name ?? ""}`.trim() || ticket.user.email
-          : "-",
-        Email: ticket.user?.email ?? "-",
-        Title: ticket.title || "-",
-        Description: ticket.description || "-",
-        Type: ticket.enquiry_type_label || formatEnquiryType(ticket.enquiry_type),
-        Priority: getPriorityLabel(ticket.priority_label ?? ticket.priority),
-        Status: getStatusLabel(ticket.status),
-        "Reply Note": ticket.reply_note || "-",
-        "Admin Notes": ticket.admin_notes || "-",
-        "Resolved At": formatExportDateTime(ticket.resolved_at),
-        Created: formatExportDateTime(ticket.created_at),
-        Updated: formatExportDateTime(ticket.updated_at),
-      }));
-
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const filenameBase = `support-tickets-${getExportTimestamp()}`;
-      let filename = `${filenameBase}.xlsx`;
-
-      if (formatType === "xlsx") {
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Support Tickets");
-        XLSX.writeFile(workbook, filename);
-      } else {
-        const csv = XLSX.utils.sheet_to_csv(worksheet);
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        filename = `${filenameBase}.csv`;
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(link.href);
-      }
-
-      toast.success(`Exported ${tickets.length} tickets to ${filename}`, { id: exportToastId });
-    } catch (error: unknown) {
-      console.error(`Failed to export ${formatType}:`, error);
-      toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "tickets", action: "export" }),
-        { id: exportToastId },
-      );
-    }
-  }, [tickets]);
+    },
+    [tickets],
+  );
 
   return (
     <>
@@ -676,7 +786,8 @@ export default function AdminTicketsPage() {
                 Support Tickets
               </h1>
               <p className="text-sm text-muted-foreground">
-                Monitor and respond to user support tickets. Use the filters to narrow down specific tickets.
+                Monitor and respond to user support tickets. Use the filters to
+                narrow down specific tickets.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -697,8 +808,16 @@ export default function AdminTicketsPage() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button variant="outline" onClick={() => { void loadTickets(); void loadStats(); }}>
-                <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              <Button
+                variant="outline"
+                onClick={() => {
+                  void loadTickets();
+                  void loadStats();
+                }}
+              >
+                <RefreshCw
+                  className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
+                />
                 Refresh
               </Button>
             </div>
@@ -707,18 +826,42 @@ export default function AdminTicketsPage() {
           {/* Stats cards */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             {[
-              { label: "Total Tickets", value: stats.total, icon: Ticket, color: "text-primary" },
-              { label: "Open", value: stats.open, icon: AlertCircle, color: "text-blue-500" },
-              { label: "In Progress", value: stats.in_progress, icon: MessageSquare, color: "text-amber-500" },
-              { label: "Closed", value: stats.closed, icon: CheckCircle2, color: "text-green-500" },
+              {
+                label: "Total Tickets",
+                value: stats.total,
+                icon: Ticket,
+                color: "text-primary",
+              },
+              {
+                label: "Open",
+                value: stats.open,
+                icon: AlertCircle,
+                color: "text-blue-500",
+              },
+              {
+                label: "In Progress",
+                value: stats.in_progress,
+                icon: MessageSquare,
+                color: "text-amber-500",
+              },
+              {
+                label: "Closed",
+                value: stats.closed,
+                icon: CheckCircle2,
+                color: "text-green-500",
+              },
             ].map((card) => (
               <Card key={card.label} className="border-muted bg-card">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">{card.label}</CardTitle>
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {card.label}
+                  </CardTitle>
                   <card.icon className={`h-4 w-4 ${card.color}`} />
                 </CardHeader>
                 <CardContent>
-                  <p className="text-3xl font-semibold">{statsLoading ? "—" : card.value}</p>
+                  <p className="text-3xl font-semibold">
+                    {statsLoading ? "—" : card.value}
+                  </p>
                 </CardContent>
               </Card>
             ))}
@@ -734,7 +877,11 @@ export default function AdminTicketsPage() {
                   void setPage(1);
                   const trimmed = value.trim();
                   // Only update query state if 3+ chars or empty (to clear)
-                  void setSearchQuery(trimmed.length === 0 || trimmed.length >= 3 ? trimmed || null : searchQuery);
+                  void setSearchQuery(
+                    trimmed.length === 0 || trimmed.length >= 3
+                      ? trimmed || null
+                      : searchQuery,
+                  );
                 }}
                 placeholder="Search tickets"
                 minimumLength={3}
@@ -821,8 +968,11 @@ export default function AdminTicketsPage() {
         </div>
       </div>
 
-      <Dialog open={isDetailOpen} onOpenChange={(open) => (open ? null : closeDetail())}>
-        <DialogContent 
+      <Dialog
+        open={isDetailOpen}
+        onOpenChange={(open) => (open ? null : closeDetail())}
+      >
+        <DialogContent
           showCloseButton={false}
           className="max-w-4xl h-[85vh] max-h-[85vh] p-0 gap-0 !overflow-hidden flex flex-col"
         >
@@ -835,9 +985,12 @@ export default function AdminTicketsPage() {
             {ticketDetail && (
               <DialogDescription className="flex items-center gap-2 flex-wrap pt-1">
                 {statusBadge(ticketDetail.status)}
-                {priorityBadge(ticketDetail.priority_label ?? ticketDetail.priority)}
+                {priorityBadge(
+                  ticketDetail.priority_label ?? ticketDetail.priority,
+                )}
                 <Badge variant="outline">
-                  {ticketDetail.enquiry_type_label || formatEnquiryType(Number(ticketDetail.enquiry_type))}
+                  {ticketDetail.enquiry_type_label ||
+                    formatEnquiryType(Number(ticketDetail.enquiry_type))}
                 </Badge>
               </DialogDescription>
             )}
@@ -873,7 +1026,9 @@ export default function AdminTicketsPage() {
                       <Calendar className="h-3.5 w-3.5" />
                       <span className="text-xs font-medium">Created</span>
                     </div>
-                    <div className="text-xs">{formatDateTime(ticketDetail.created_at)}</div>
+                    <div className="text-xs">
+                      {formatDateTime(ticketDetail.created_at)}
+                    </div>
                     {ticketDetail.sponsor_id && (
                       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                         <Hash className="h-3 w-3" />
@@ -890,7 +1045,8 @@ export default function AdminTicketsPage() {
                     Conversation
                   </div>
                   <div className="border rounded-lg p-4 space-y-3 bg-muted/10 min-h-[300px]">
-                    {ticketDetail.messages && ticketDetail.messages.length > 0 ? (
+                    {ticketDetail.messages &&
+                    ticketDetail.messages.length > 0 ? (
                       <>
                         {ticketDetail.messages.map((msg, idx) => (
                           <div
@@ -906,13 +1062,17 @@ export default function AdminTicketsPage() {
                             >
                               <div className="flex items-center gap-2 mb-1">
                                 <span className="text-xs font-semibold">
-                                  {msg.sender_type === "admin" ? "Admin" : "Customer"}
+                                  {msg.sender_type === "admin"
+                                    ? "Admin"
+                                    : "Customer"}
                                 </span>
                                 <span className="text-xs opacity-70">
                                   {formatDateTime(msg.created_at)}
                                 </span>
                               </div>
-                              <div className="text-sm whitespace-pre-wrap break-words">{msg.message}</div>
+                              <div className="text-sm whitespace-pre-wrap break-words">
+                                {msg.message}
+                              </div>
                             </div>
                           </div>
                         ))}
@@ -965,7 +1125,7 @@ export default function AdminTicketsPage() {
                   <MessageSquare className="h-4 w-4" />
                   Send Reply
                 </button>
-                
+
                 {(ticketDetail.status === 0 || ticketDetail.status === 1) && (
                   <button
                     type="button"
@@ -987,31 +1147,19 @@ export default function AdminTicketsPage() {
                 {actionMode === "reply" ? (
                   // Reply Mode
                   <div className="space-y-2">
-                    <div className="flex gap-2 items-end">
-                      <div className="flex-1 space-y-2">
-                        <Textarea
-                          placeholder="Type your message to the user..."
-                          value={replyNote}
-                          onChange={(e) => setReplyNote(e.target.value)}
-                          rows={3}
-                          className="resize-none text-sm"
-                          disabled={isReplying}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && e.ctrlKey && replyNote.trim()) {
-                              e.preventDefault();
-                              void handleReplySubmit();
-                            }
-                          }}
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          Press Ctrl+Enter to send
-                        </p>
-                      </div>
+                    <div className="flex gap-2 items-stretch">
+                      <Textarea
+                        placeholder="Type your message to the user..."
+                        value={replyNote}
+                        onChange={(e) => setReplyNote(e.target.value)}
+                        rows={3}
+                        className="resize-none text-sm flex-1 min-h-[40px]"
+                      />
+
                       <Button
                         onClick={handleReplySubmit}
                         disabled={isReplying || !replyNote.trim()}
-                        size="lg"
-                        className="h-[88px]"
+                        className="self-stretch px-4"
                       >
                         {isReplying ? (
                           <Spinner className="h-5 w-5" />
@@ -1020,18 +1168,22 @@ export default function AdminTicketsPage() {
                         )}
                       </Button>
                     </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      Press Ctrl+Enter to send
+                    </p>
                   </div>
                 ) : (
                   // Close Ticket Mode
                   <div className="space-y-2">
-                    <div className="flex gap-2 items-end">
+                    <div className="flex gap-2 items-stretch">
                       <div className="flex-1 space-y-2">
                         <Textarea
                           placeholder="Enter resolution details (required)..."
                           value={resolutionNote}
                           onChange={(e) => setResolutionNote(e.target.value)}
                           rows={3}
-                          className="resize-none text-sm border-destructive/50 focus-visible:ring-destructive"
+                          className="resize-none text-sm border-destructive/50 focus-visible:ring-destructive min-h-[40px]"
                           disabled={isClosing}
                         />
                         <p className="text-xs text-destructive">
@@ -1042,8 +1194,8 @@ export default function AdminTicketsPage() {
                         onClick={handleCloseSubmit}
                         disabled={isClosing || !resolutionNote.trim()}
                         variant="destructive"
-                        size="lg"
-                        className="h-[88px]"
+                        // size="lg"
+                        className="self-stretch px-4" 
                       >
                         {isClosing ? (
                           <Spinner className="h-5 w-5" />

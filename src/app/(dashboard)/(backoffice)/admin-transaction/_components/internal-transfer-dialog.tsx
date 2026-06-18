@@ -93,6 +93,9 @@ export function InternalTransferDialog({
     AdminWalletBalanceItem[]
   >([]);
   const [loadingWallets, setLoadingWallets] = useState(false);
+  const [mt5AccountsWithWalletIds, setMt5AccountsWithWalletIds] = useState<
+    Map<string, number>
+  >(new Map());
   const userSearchRef = useRef<HTMLDivElement>(null);
   const userSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -171,6 +174,7 @@ export function InternalTransferDialog({
     setToMt5Account("");
     setUserMt5Accounts([]);
     setWalletBalances([]);
+    setMt5AccountsWithWalletIds(new Map());
   };
 
   const fetchUserMt5Accounts = useCallback(
@@ -188,13 +192,39 @@ export function InternalTransferDialog({
           (acc) => (acc.account_mode ?? "").toLowerCase() === "live"
         );
         setUserMt5Accounts(liveAccounts);
+
+        // Fetch wallet IDs for each MT5 account
+        const walletIdMap = new Map<string, number>();
+        for (const acc of liveAccounts) {
+          const accId = String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "");
+          if (accId && acc.id) {
+            try {
+              const detailRes = await adminMT5AccountsApi.getById(acc.id, token);
+              const detailData = detailRes.data ?? detailRes;
+              const mt5Account =
+                (detailData as any).mt5_account ||
+                (detailData as any).account ||
+                detailData;
+              if (mt5Account?.mt5_wallet_id) {
+                walletIdMap.set(accId, Number(mt5Account.mt5_wallet_id));
+              }
+            } catch (error) {
+              console.error(
+                `Failed to fetch wallet ID for MT5 account ${accId}:`,
+                error
+              );
+            }
+          }
+        }
+        setMt5AccountsWithWalletIds(walletIdMap);
       } catch {
         setUserMt5Accounts([]);
+        setMt5AccountsWithWalletIds(new Map());
       } finally {
         setLoadingMt5Accounts(false);
       }
     },
-    [token],
+    [token]
   );
 
   const fetchWalletBalances = useCallback(
@@ -226,6 +256,7 @@ export function InternalTransferDialog({
       setAmount("");
       setSubmitting(false);
       setWalletBalances([]);
+      setMt5AccountsWithWalletIds(new Map());
     }
   }, [open]);
 
@@ -238,6 +269,7 @@ export function InternalTransferDialog({
     setUserMt5Accounts([]);
     setShowUserResults(false);
     setWalletBalances([]);
+    setMt5AccountsWithWalletIds(new Map());
   }, [transferType]);
 
   useEffect(() => {
@@ -292,14 +324,71 @@ export function InternalTransferDialog({
 
     try {
       setSubmitting(true);
+
+      let fromAccountId: string | number = fromMt5Account.trim();
+      let toAccountId: string | number = toMt5Account.trim();
+
+      // For MT5 to MT5 transfer, use mt5_wallet_id
+      if (transferType === "mt5_to_mt5") {
+        const fromWalletId = mt5AccountsWithWalletIds.get(fromMt5Account);
+        const toWalletId = mt5AccountsWithWalletIds.get(toMt5Account);
+
+        if (!fromWalletId || !toWalletId) {
+          toast.error("Unable to retrieve wallet IDs for MT5 accounts");
+          return;
+        }
+
+        fromAccountId = fromWalletId;
+        toAccountId = toWalletId;
+      }
+      // For main_to_mt5: from = main wallet id, to = mt5 wallet id
+      else if (transferType === "main_to_mt5") {
+        const mainWallet = walletBalances.find((w) => w.wallet_type === "main");
+        const toWalletId = mt5AccountsWithWalletIds.get(toMt5Account);
+
+        if (!mainWallet?.id || !toWalletId) {
+          toast.error("Unable to retrieve wallet IDs");
+          return;
+        }
+
+        fromAccountId = mainWallet.id;
+        toAccountId = toWalletId;
+      }
+      // For mt5_to_main: from = mt5 wallet id, to = main wallet id
+      else if (transferType === "mt5_to_main") {
+        const fromWalletId = mt5AccountsWithWalletIds.get(fromMt5Account);
+        const mainWallet = walletBalances.find((w) => w.wallet_type === "main");
+
+        if (!fromWalletId || !mainWallet?.id) {
+          toast.error("Unable to retrieve wallet IDs");
+          return;
+        }
+
+        fromAccountId = fromWalletId;
+        toAccountId = mainWallet.id;
+      }
+      // For ib_to_main: from = ib wallet id, to = main wallet id
+      else if (transferType === "ib_to_main") {
+        const ibWallet = walletBalances.find((w) => w.wallet_type === "ib");
+        const mainWallet = walletBalances.find((w) => w.wallet_type === "main");
+
+        if (!ibWallet?.id || !mainWallet?.id) {
+          toast.error("Unable to retrieve wallet IDs");
+          return;
+        }
+
+        fromAccountId = ibWallet.id;
+        toAccountId = mainWallet.id;
+      }
+
       const res = await adminTransactionsApi.internalTransfer(
         {
           amount: numAmount,
-          from_account: fromMt5Account.trim(),
-          to_account: toMt5Account.trim(),
+          from_account: String(fromAccountId),
+          to_account: String(toAccountId),
           type: transferType,
         },
-        token,
+        token
       );
       if (res.data) onSuccess(res.data);
       onOpenChange(false);
@@ -308,7 +397,7 @@ export function InternalTransferDialog({
         getAdminFriendlyErrorMessage(error, {
           resource: "internal transfer",
           action: "process",
-        }),
+        })
       );
     } finally {
       setSubmitting(false);
