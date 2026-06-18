@@ -33,7 +33,7 @@ export function HomeRedirectClient() {
           className="mx-auto"
         />
         <p className="mt-4 text-sm font-semibold tracking-[0.01em] text-foreground">Loading</p>
-        <p className="mt-1.5 text-sm leading-6 text-foreground/78">Preparing your CRM workspace.</p>
+        <p className="mt-1.5 text-sm leading-6 text-foreground/78">Preparing your Vinnexia workspace.</p>
       </div>
     </div>
   );

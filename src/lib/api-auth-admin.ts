@@ -214,6 +214,7 @@ export interface PendingUser {
   sponsor_by: string | number | null;
   sponsor_by_email?: string | null;
   main_wallet_balance?: number | null;
+  password?: string;
 }
 
 export type AdminUsersListApiData = {

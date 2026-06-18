@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Calendar, Eye, Globe, Mail, Pencil, Phone, Trash2, User, Plus, RefreshCw, Wallet } from "lucide-react";
+import { Calendar, Eye, Globe, Mail, Pencil, Phone, Trash2, User, Plus, RefreshCw, Wallet, KeyRound } from "lucide-react";
 import toast from "react-hot-toast";
+import { useState, useEffect } from "react";
 
 import type { PendingUser } from "@/lib/api";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
@@ -12,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { formatDateTimeInIST } from "@/lib/formatters";
+import { safeDecryptPassword } from "@/lib/crypto-utils";
 
 const formatDateTime = (value?: string) => {
   if (!value) return "-";
@@ -143,6 +145,76 @@ function RowActions({
   );
 }
 
+/**
+ * Component to display decrypted password
+ */
+function DecryptedPassword({ encryptedPassword }: { encryptedPassword: string | null | undefined }) {
+  const [decrypted, setDecrypted] = useState<string>("Decrypting...");
+  const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const decrypt = async () => {
+      setIsLoading(true);
+      const key = process.env.NEXT_PUBLIC_ENCRYPTION_KEY;
+      
+      if (!key) {
+        console.error("❌ NEXT_PUBLIC_ENCRYPTION_KEY not found in environment");
+        setDecrypted("Key not configured");
+        setIsLoading(false);
+        return;
+      }
+
+      if (!encryptedPassword) {
+        setDecrypted("-");
+        setIsLoading(false);
+        return;
+      }
+
+      console.log("🔐 Attempting to decrypt password:", encryptedPassword);
+      const result = await safeDecryptPassword(encryptedPassword, key);
+      setDecrypted(result);
+      setIsLoading(false);
+    };
+
+    void decrypt();
+  }, [encryptedPassword]);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center gap-2">
+        <KeyRound className="h-4 w-4 text-muted-foreground animate-pulse" />
+        <span className="text-sm text-muted-foreground">Decrypting...</span>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+      <KeyRound className="h-4 w-4 text-muted-foreground" />
+      <div className="flex items-center gap-2">
+        <span className="font-mono text-sm">
+          {showPassword ? decrypted : "••••••••"}
+        </span>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="h-6 w-6 p-0"
+          onClick={() => setShowPassword(!showPassword)}
+          title={showPassword ? "Hide password" : "Show password"}
+        >
+          {showPassword ? (
+            <Eye className="h-3 w-3" />
+          ) : (
+            <Eye className="h-3 w-3 opacity-50" />
+          )}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export const getColumnsWithActions = (
   onEdit: (user: PendingUser) => void,
   onDelete: (user: PendingUser) => void,
@@ -265,6 +337,12 @@ export const getColumnsWithActions = (
         <span>{row.original.main_wallet_balance?.toFixed(2) || "0.00"}</span>
       </div>
     ),
+  },
+ {
+    id: "password",
+    accessorKey: "password",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="User Password" />,
+    cell: ({ row }) => <DecryptedPassword encryptedPassword={row.original.password} />,
   },
   {
     id: "ib_status",

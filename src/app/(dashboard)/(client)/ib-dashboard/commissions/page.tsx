@@ -147,25 +147,29 @@ export default function IbCommissionsPage() {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/20">
+                    <TableHead className="text-left">Sr. No.</TableHead>
                     <TableHead className="min-w-[140px]">Account Type</TableHead>
                     <TableHead className="text-right">Direct Rate</TableHead>
-                    <TableHead className="text-right">Parent Rate</TableHead>
+                    {/* <TableHead className="text-right">Parent Rate</TableHead> */}
                     <TableHead className="text-center">Status</TableHead>
                     <TableHead className="text-right">Updated</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rates.map((rate) => (
+                  {rates.map((rate, index) => (
                     <TableRow key={rate.account_type_id}>
+                       <TableCell className="font-medium">
+                        {index + 1}
+                      </TableCell>
                       <TableCell className="font-medium">
                         {rate.account_type_name || "-"}
                       </TableCell>
                       <TableCell className="text-right">
                         {formatRate(rate.direct_rate)}
                       </TableCell>
-                      <TableCell className="text-right">
+                      {/* <TableCell className="text-right">
                         {formatRate(rate.parent_direct_rate)}
-                      </TableCell>
+                      </TableCell> */}
                       <TableCell className="text-center">
                         {getStatusBadge(rate.status)}
                       </TableCell>
