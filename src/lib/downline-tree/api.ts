@@ -5,11 +5,28 @@ import type { UsersByLevelResponse } from "./types";
 
 export const fetchUsersByLevel = async (
   userId: number,
-  token: string
+  token: string,
+  options?: {
+    page?: number;
+    page_size?: number;
+    search?: string;
+    level?: string;
+  }
 ): Promise<UsersByLevelResponse["data"] | null> => {
   if (!token) return null;
 
-  const url = `${API_BASE_URL}/admin/ib-management/users-by-level?user_id=${userId}`;
+  const params = new URLSearchParams();
+  params.append("user_id", String(userId));
+  params.append("page", String(options?.page ?? 1));
+  params.append("page_size", String(options?.page_size ?? 20));
+  if (options?.search) {
+    params.append("search", options.search);
+  }
+  if (options?.level) {
+    params.append("level", options.level);
+  }
+
+  const url = `${API_BASE_URL}/admin/ib-management/users-by-level?${params.toString()}`;
   try {
     const res = await fetch(url, {
       headers: { Authorization: `Bearer ${token}` },

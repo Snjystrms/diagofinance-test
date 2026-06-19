@@ -90,7 +90,7 @@ const TeamNode = ({ data }: NodeProps<GraphNode>) => {
                 Partner
               </Badge>
             ) : (
-              <Badge variant="secondary" className="text-[9px] h-4 px-1 py-0">
+              <Badge variant="outline" className="text-[9px] h-4 px-1 py-0">
                 Client
               </Badge>
             )}

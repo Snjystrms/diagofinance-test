@@ -31,7 +31,7 @@ import {
 } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
 
-import { DownlineTreePageContent } from "../set-ib-commission/[userId]/_components/downline-tree-page-content";
+import { PaginatedDownlineTree } from "./_components/paginated-downline-tree";
 import { IbCommissionDialog } from "./_components/ib-commission-dialog";
 import { IbDirectRatesDialog } from "./_components/ib-direct-rates-dialog";
 
@@ -125,12 +125,6 @@ const resolveNumericUserId = (user: AdminIbUser) => {
 };
 
 type RowActionType = "tree";
-
-type UsersByLevelPreviewResponse = {
-  success?: boolean;
-  message?: string;
-  data?: unknown;
-};
 
 const deriveReferralLink = (user: AdminIbUser): string => {
   if (user.referral_link) {
@@ -426,43 +420,8 @@ export default function IbUsersPage() {
         return;
       }
 
-      setRowActionState({
-        action: "tree",
-        userKey: getUserActionKey(user),
-      });
-
-      try {
-        const response = await fetch(
-          `${API_BASE_URL}/admin/ib-management/users-by-level?user_id=${userId}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-            cache: "no-store",
-          },
-        );
-
-        const payload = (await response.json()) as UsersByLevelPreviewResponse;
-
-        if (!response.ok || !payload.success || !payload.data) {
-          throw new Error(payload.message || "Failed to load downline users");
-        }
-
-        setSelectedTreeUserId(userId);
-      } catch (error: unknown) {
-        console.error("Failed to open tree chart:", error);
-        toast.error(
-          getAdminFriendlyErrorMessage(error, {
-            resource: "downline users",
-            action: "load",
-          }),
-        );
-      } finally {
-        setRowActionState({
-          action: null,
-          userKey: null,
-        });
-      }
+      // Directly open tree view - validation happens in tree component
+      setSelectedTreeUserId(userId);
     },
     [token],
   );
@@ -720,6 +679,8 @@ export default function IbUsersPage() {
                   void handleOpenTreeChart(user);
                 }}
                 disabled={loadingTree}
+                aria-label={`View Teams for ${deriveFullName(user)}`}
+                title="View Teams"
                 className="h-8 rounded-md border-slate-200 bg-background px-2.5 text-xs text-slate-600 shadow-sm transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-300"
               >
                 {loadingTree ? (
@@ -736,6 +697,8 @@ export default function IbUsersPage() {
                   setDirectRatesTargetUser(user);
                   setDirectRatesDialogOpen(true);
                 }}
+                aria-label={`View Commissions for ${deriveFullName(user)}`}
+                title="View Commissions"
                 className="h-8 rounded-md border-slate-200 bg-background px-2.5 text-xs text-slate-600 shadow-sm transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-300"
               >
                 <Landmark className="mr-1 h-3 w-3" />
@@ -751,7 +714,7 @@ export default function IbUsersPage() {
 
   if (selectedTreeUserId !== null) {
     return (
-      <DownlineTreePageContent
+      <PaginatedDownlineTree
         userId={selectedTreeUserId}
         onBack={() => {
           setSelectedTreeUserId(null);

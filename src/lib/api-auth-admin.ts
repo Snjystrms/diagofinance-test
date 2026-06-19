@@ -1709,6 +1709,12 @@ export const authApi = {
   login: (data: LoginRequest) =>
     apiCall<LoginResponse>("/auth/login", { method: "POST", body: JSON.stringify(data) }),
 
+  refreshToken: (token: string) =>
+    apiCall<{ token: string }>("/auth/refresh", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
   resendOtp: (data: ResendOtpRequest) =>
     apiCall("/user/resend-otp", { method: "POST", body: JSON.stringify(data) }),
 

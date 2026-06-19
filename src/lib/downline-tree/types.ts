@@ -33,7 +33,12 @@ export type UsersByLevelResponse = {
   success: boolean;
   data?: {
     ib_user?: IbUser;
-    specified_user?: IbUser;
+    specified_user?: {
+      id: number;
+      name: string;
+      email: string;
+      is_ib: boolean;
+    };
     users_by_level?: {
       IB?: UserByLevel[];
       "Level-1"?: UserByLevel[];
@@ -50,6 +55,13 @@ export type UsersByLevelResponse = {
       "Level-4"?: number;
       "Level-5"?: number;
       total?: number;
+    };
+    pagination?: {
+      page: number;
+      page_size: number;
+      total: number;
+      total_pages: number;
+      level_filter?: string | null;
     };
   };
   message?: string;

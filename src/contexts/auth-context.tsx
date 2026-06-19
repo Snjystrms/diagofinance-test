@@ -1,8 +1,9 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { GroupedPermissions, API_BASE_URL } from '@/lib/api';
+import { GroupedPermissions, API_BASE_URL, authApi } from '@/lib/api';
 import { Permission } from '@/types/permissions';
+import toast from 'react-hot-toast';
 
 interface User {
   id: string | number;
@@ -50,7 +51,52 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true); // Add loading state
   const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
+  const refreshIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
   const isValidatingRef = React.useRef(false);
+  const isRefreshingRef = React.useRef(false);
+
+  // Refresh token function
+  const refreshAuthToken = useCallback(async () => {
+    // Prevent concurrent refresh calls
+    if (isRefreshingRef.current || !token || !isAuthenticated) {
+      return;
+    }
+
+    try {
+      isRefreshingRef.current = true;
+      console.log('🔄 Refreshing auth token...');
+      
+      const response = await authApi.refreshToken(token);
+      
+      if (response.success && response.data?.token) {
+        const newToken = response.data.token;
+        
+        // Update token in state and localStorage
+        setToken(newToken);
+        localStorage.setItem('auth_token', newToken);
+        
+        console.log('✅ Token refreshed successfully');
+        return true;
+      } else {
+        console.error('❌ Token refresh failed: Invalid response');
+        return false;
+      }
+    } catch (error) {
+      console.error('❌ Token refresh error:', error);
+      
+      // If refresh fails with 401, logout user
+      if (error && typeof error === 'object' && 'status' in error && error.status === 401) {
+        console.log('Token refresh returned 401 - logging out');
+        toast.error('Session expired. Please login again.');
+        logout();
+        window.location.href = '/login';
+      }
+      
+      return false;
+    } finally {
+      isRefreshingRef.current = false;
+    }
+  }, [token, isAuthenticated]);
 
   // Validate token with server (role-based endpoints)
   /*
@@ -236,6 +282,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
+    // Clear refresh interval
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+      refreshIntervalRef.current = null;
+    }
+    
     setUser(null);
     setToken(null);
     setIsAuthenticated(false);
@@ -317,6 +369,53 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       window.removeEventListener('focus', handleFocus);
     };
   }, [isAuthenticated, token, performGlobalValidation]);
+
+  // Set up token auto-refresh every 10 minutes
+  useEffect(() => {
+    if (!isAuthenticated || !token) {
+      // Clear any existing refresh interval
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
+      }
+      return;
+    }
+
+    console.log('🔐 Setting up token auto-refresh (every 10 minutes)');
+    
+    // Refresh token every 10 minutes (600000ms)
+    refreshIntervalRef.current = setInterval(() => {
+      refreshAuthToken();
+    }, 600000);
+
+    // Also refresh on window focus if it's been more than 8 minutes since last refresh
+    let lastRefreshTime = Date.now();
+    
+    const handleFocusRefresh = () => {
+      const timeSinceLastRefresh = Date.now() - lastRefreshTime;
+      // If more than 8 minutes (480000ms) since last refresh, refresh now
+      if (timeSinceLastRefresh > 480000) {
+        refreshAuthToken().then(success => {
+          if (success) {
+            lastRefreshTime = Date.now();
+          }
+        });
+      }
+    };
+
+    window.addEventListener('focus', handleFocusRefresh);
+
+    // Update last refresh time when token changes
+    lastRefreshTime = Date.now();
+
+    return () => {
+      if (refreshIntervalRef.current) {
+        clearInterval(refreshIntervalRef.current);
+        refreshIntervalRef.current = null;
+      }
+      window.removeEventListener('focus', handleFocusRefresh);
+    };
+  }, [isAuthenticated, token, refreshAuthToken]);
 
   const value: AuthContextType = {
     type: user?.type ?? 'user',
