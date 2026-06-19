@@ -436,6 +436,7 @@ export default function NewUserDetailPage() {
   const [referrer, setReferrer] = useState<AdminUserReferralItem | null>(null);
   const [referralLoading, setReferralLoading] = useState(false);
   const [referralError, setReferralError] = useState<unknown | null>(null);
+  const [referralLoaded, setReferralLoaded] = useState(false);
   const [walletHistoryState, setWalletHistoryState] = useState(() => createPaginatedState<AdminUserWalletHistoryItem>());
   const [mt5AccountsState, setMt5AccountsState] = useState(() => createCollectionState<AdminUserMt5AccountItem>());
 
@@ -537,6 +538,7 @@ export default function NewUserDetailPage() {
       toast.error(getAdminFriendlyErrorMessage(error, { resource: "referral details", action: "load" }));
     } finally {
       setReferralLoading(false);
+      setReferralLoaded(true);
     }
   }, [token, userUuid, id]);
 
@@ -591,6 +593,7 @@ export default function NewUserDetailPage() {
     setReferrer(null);
     setReferralError(null);
     setReferralLoading(false);
+    setReferralLoaded(false);
     setWalletHistoryState(createPaginatedState<AdminUserWalletHistoryItem>());
     setMt5AccountsState(createCollectionState<AdminUserMt5AccountItem>());
 
@@ -706,7 +709,7 @@ export default function NewUserDetailPage() {
         }
         break;
       case "referralBy":
-        if (referrer === null && !referralLoading && !referralError) {
+        if (!referralLoaded && !referralLoading) {
           void loadReferral();
         }
         break;
@@ -734,8 +737,7 @@ export default function NewUserDetailPage() {
     loadWithdrawalsPage,
     loadingProfile,
     referralLoading,
-    referralError,
-    referrer,
+    referralLoaded,
     token,
     userUuid,
     walletHistoryState.loaded,
@@ -1270,8 +1272,8 @@ export default function NewUserDetailPage() {
                                 <TableHead>MT5 Login</TableHead>
                                 <TableHead>Group</TableHead>
                                 <TableHead>Balance</TableHead>
-                                <TableHead>Investor Password</TableHead>
-                                <TableHead>Main Password</TableHead>
+                                {/* <TableHead>Investor Password</TableHead>
+                                <TableHead>Main Password</TableHead> */}
                                 <TableHead>Created</TableHead>
                               </TableRow>
                             </TableHeader>
@@ -1285,8 +1287,8 @@ export default function NewUserDetailPage() {
                                   <TableCell>{item.mt5_id || "-"}</TableCell>
                                   <TableCell className="max-w-[220px] truncate">{item.group_name || "-"}</TableCell>
                                   <TableCell className="font-mono text-xs">{item.balance || "-"}</TableCell>
-                                  <TableCell className="font-mono text-xs">{item.investor_password || "-"}</TableCell>
-                                  <TableCell className="font-mono text-xs">{item.main_password || "-"}</TableCell>
+                                  {/* <TableCell className="font-mono text-xs">{item.investor_password || "-"}</TableCell>
+                                  <TableCell className="font-mono text-xs">{item.main_password || "-"}</TableCell> */}
                                   <TableCell>{formatDateTime(item.date)}</TableCell>
                                 </TableRow>
                               ))}

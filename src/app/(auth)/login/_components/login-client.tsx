@@ -12,6 +12,7 @@ import {
 import { useAuthMutations } from '@/hooks/use-auth-mutations';
 import { useAuth } from '@/contexts/auth-context';
 import { PasswordInput } from '@/components/password-input';
+import { Input } from '@/components/ui/input';
 import { admin2FAApi, authApi, manager2FAApi, type GroupedPermissions } from '@/lib/api';
 import {
   Form,
@@ -459,12 +460,12 @@ export function LoginClient() {
                         <FormItem>
                           <FormLabel className="text-foreground/70 text-sm">Email</FormLabel>
                           <FormControl>
-                            <input
+                            <Input
                               type="email"
                               placeholder="Enter your email"
                               {...field}
                               className="
-                                w-full bg-input border border-primary/20 rounded-lg
+                                w-full !bg-input border border-primary/20 rounded-lg
                                 text-foreground placeholder:text-muted-foreground/50 text-sm
                                 px-4 py-2.5 outline-none
                                 focus:border-primary/50 focus:ring-1 focus:ring-primary/15
@@ -490,7 +491,7 @@ export function LoginClient() {
                               onChange={field.onChange}
                               value={field.value}
                               inputClassName="
-                                w-full bg-input border border-primary/20 rounded-lg
+                                w-full !bg-input border border-primary/20 rounded-lg
                                 text-foreground placeholder:text-muted-foreground/50 text-sm
                                 px-4 py-2.5 outline-none
                                 focus:border-primary/50 focus:ring-1 focus:ring-primary/15

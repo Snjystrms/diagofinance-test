@@ -338,12 +338,12 @@ export const getColumnsWithActions = (
       </div>
     ),
   },
- {
-    id: "password",
-    accessorKey: "password",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="User Password" />,
-    cell: ({ row }) => <DecryptedPassword encryptedPassword={row.original.password} />,
-  },
+//  {
+//     id: "password",
+//     accessorKey: "password",
+//     header: ({ column }) => <DataTableColumnHeader column={column} title="User Password" />,
+//     cell: ({ row }) => <DecryptedPassword encryptedPassword={row.original.password} />,
+//   },
   {
     id: "ib_status",
     header: ({ column }) => <DataTableColumnHeader column={column} title="IB Status" />,

@@ -71,6 +71,8 @@ import {
 import { useAuth } from "@/contexts/auth-context"
 import { ProfileCompletionDialog } from "@/components/profile-completion-dialog"
 import { Mt5AccountCreationDialog } from "@/components/mt5-account-creation-dialog"
+import { NewsDialog } from "@/components/news-dialog"
+import { PromotionDialog } from "@/components/promotion-dialog"
 import {
   authApi,
   ibRequestsApi,
@@ -155,6 +157,8 @@ export function DashboardPageContent() {
   const queryClient = useQueryClient();
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showMt5Dialog, setShowMt5Dialog] = useState(false);
+  const [showNewsDialog, setShowNewsDialog] = useState(false);
+  const [showPromotionDialog, setShowPromotionDialog] = useState(false);
   const [incompleteSections, setIncompleteSections] = useState<Array<{
     key: "personal_information" | "legal_information" | "documents_verification";
     title: string;
@@ -214,6 +218,24 @@ export function DashboardPageContent() {
 
   const dashboardNewsItems = (userNewsData ?? []).filter((i) => i.type === "news");
   const dashboardPromoItems = (userNewsData ?? []).filter((i) => i.type === "promotion");
+  
+  // Filter items updated within last 24 hours
+  const isWithin24Hours = (dateString?: string | null) => {
+    if (!dateString) return false;
+    const itemDate = new Date(dateString);
+    const now = new Date();
+    const diffInHours = (now.getTime() - itemDate.getTime()) / (1000 * 60 * 60);
+    return diffInHours <= 24;
+  };
+
+  const recentNews = dashboardNewsItems.filter((item) => 
+    isWithin24Hours(item.updated_at || item.created_at)
+  );
+  
+  const recentPromotions = dashboardPromoItems.filter((item) => 
+    isWithin24Hours(item.updated_at || item.created_at)
+  );
+
   const dashboardNewsPromotionItems = useMemo(
     () =>
       [...dashboardNewsItems, ...dashboardPromoItems].sort((a, b) => {
@@ -332,6 +354,34 @@ export function DashboardPageContent() {
     
     return () => clearTimeout(timer);
   }, []);
+
+  // Show news and promotion dialogs for recent items (within 24 hours)
+  useEffect(() => {
+    if (!isUser) return;
+
+    // Only show dialogs after profile and MT5 dialogs are handled
+    if (showProfileDialog || showMt5Dialog) return;
+
+    // Check if we've already shown these dialogs in this session
+    const newsShownKey = 'news_dialog_shown_session';
+    const promoShownKey = 'promo_dialog_shown_session';
+    
+    const newsShown = sessionStorage.getItem(newsShownKey);
+    const promoShown = sessionStorage.getItem(promoShownKey);
+
+    // Show news dialog if there are recent news and not shown yet
+    if (recentNews.length > 0 && !newsShown) {
+      setShowNewsDialog(true);
+      sessionStorage.setItem(newsShownKey, 'true');
+      return;
+    }
+
+    // Show promotion dialog if there are recent promotions and not shown yet
+    if (recentPromotions.length > 0 && !promoShown) {
+      setShowPromotionDialog(true);
+      sessionStorage.setItem(promoShownKey, 'true');
+    }
+  }, [isUser, showProfileDialog, showMt5Dialog, recentNews.length, recentPromotions.length]);
 
   // Sync userDashboard React Query data into local state used by widgets.
   useEffect(() => {
@@ -2115,6 +2165,24 @@ export function DashboardPageContent() {
         <Mt5AccountCreationDialog
           open={showMt5Dialog}
           onOpenChange={setShowMt5Dialog}
+        />
+      )}
+
+      {/* News Dialog */}
+      {isUser && recentNews.length > 0 && (
+        <NewsDialog
+          open={showNewsDialog}
+          onOpenChange={setShowNewsDialog}
+          newsItems={recentNews}
+        />
+      )}
+
+      {/* Promotion Dialog */}
+      {isUser && recentPromotions.length > 0 && (
+        <PromotionDialog
+          open={showPromotionDialog}
+          onOpenChange={setShowPromotionDialog}
+          promotions={recentPromotions}
         />
       )}
     </ProtectedRoute>
