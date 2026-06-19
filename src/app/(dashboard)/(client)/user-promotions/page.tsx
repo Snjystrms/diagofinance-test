@@ -183,7 +183,7 @@ function PromotionCard({ item, onView }: { item: NewsItem; onView: () => void })
       {item.image_url || item.image ? (
         <div className="relative h-44 w-full overflow-hidden bg-muted">
           <Image
-            src={item.image_url || item.image}
+            src={item.image_url || item.image || ""}
             alt={item.title}
             fill
             className="object-cover group-hover:scale-105 transition-transform duration-300"

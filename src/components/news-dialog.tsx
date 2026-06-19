@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -95,17 +96,22 @@ export function NewsDialog({ open, onOpenChange, newsItems }: NewsDialogProps) {
 
               {/* Thumbnail or fallback */}
               {item.image_url || item.image ? (
-                <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-border/60">
-                  <img
-                    src={item.image_url || item.image}
+                <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-border/60 relative">
+                  <Image
+                    src={item.image_url || item.image || ""}
                     alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    fill
+                    className="object-cover group-hover:scale-105 transition-transform duration-300"
+                    sizes="64px"
+                    unoptimized
                     onError={(e) => {
-                      const parent = e.currentTarget.parentElement!;
-                      e.currentTarget.remove();
-                      parent.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-[#FFB401]/10 text-[#FFB401]">
+                      const img = e.currentTarget;
+                      img.style.display = 'none';
+                      if (img.parentElement) {
+                        img.parentElement.innerHTML = `<div class="absolute inset-0 flex items-center justify-center bg-[#FFB401]/10 text-[#FFB401]">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
                       </div>`;
+                      }
                     }}
                   />
                 </div>
@@ -122,7 +128,7 @@ export function NewsDialog({ open, onOpenChange, newsItems }: NewsDialogProps) {
                 <div className="flex items-center gap-1.5 mb-1">
                   <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#FFB401]" />
                   <span className="text-[10px] font-semibold uppercase tracking-wider text-[#FFB401]">
-                    {(item as any).category || "Update"}
+                    {(item as NewsItem & { category?: string }).category || "Update"}
                   </span>
                 </div>
                 <h4 className="text-sm font-semibold text-foreground leading-snug mb-1 line-clamp-1">

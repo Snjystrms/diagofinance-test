@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -127,17 +128,22 @@ export function PromotionDialog({ open, onOpenChange, promotions }: PromotionDia
               <div className="flex items-start gap-3 p-3.5 pl-5 w-full">
                 {/* Thumbnail or fallback */}
                 {item.image_url || item.image ? (
-                  <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-purple-500/20">
-                    <img
-                      src={item.image_url || item.image}
+                  <div className="flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border border-purple-500/20 relative">
+                    <Image
+                      src={item.image_url || item.image || ""}
                       alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-300"
+                      sizes="64px"
+                      unoptimized
                       onError={(e) => {
-                        const parent = e.currentTarget.parentElement!;
-                        e.currentTarget.remove();
-                        parent.innerHTML = `<div class="w-full h-full flex items-center justify-center bg-purple-500/10 text-purple-400">
+                        const img = e.currentTarget;
+                        img.style.display = 'none';
+                        if (img.parentElement) {
+                          img.parentElement.innerHTML = `<div class="absolute inset-0 flex items-center justify-center bg-purple-500/10 text-purple-400">
                           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/></svg>
                         </div>`;
+                        }
                       }}
                     />
                   </div>
