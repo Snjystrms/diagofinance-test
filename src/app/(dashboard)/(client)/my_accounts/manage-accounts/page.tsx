@@ -300,6 +300,7 @@ export default function ManageAccountsPage() {
         mt5Login={account.mt5_id}
         balance={Number(account.balance ?? 0)}
         balanceCurrency={detail?.base_currency ?? 'USD'}
+        accountTypeName={detail?.accountType?.name}
         leverage={detail?.leverage}
         spread={detail?.spread_from ?? detail?.accountType?.spread_from ?? 'N/A'}
         server={detail?.server}

@@ -71,6 +71,17 @@ const LEVERAGE_CHOICES = [
 ] as const;
 const DEMO_BALANCE_CHOICES = [1000, 2500, 5000, 10000, 100000] as const;
 
+const isCentAccountType = (accountType?: AccountType) => {
+  if (!accountType) {
+    return false;
+  }
+
+  return [accountType.name, accountType.groups?.live?.name, accountType.groups?.demo?.name].some((name) => {
+    const normalizedName = name?.trim().toUpperCase();
+    return normalizedName === 'CENT' || normalizedName === 'DEMO CENT';
+  });
+};
+
 const getMaximumLeverageValue = (accountType?: AccountType) => {
   if (!accountType) {
     return null;
@@ -125,6 +136,7 @@ export default function OpenTradingAccountPage() {
     () => accountTypes.find((accountType) => accountType.name === selectedAccountTypeName),
     [accountTypes, selectedAccountTypeName]
   );
+  const demoBalanceCurrency = isCentAccountType(selectedAccountType) ? 'USC' : 'USD';
   const leverageOptions = useMemo(() => {
     const maxLeverage = getMaximumLeverageValue(selectedAccountType);
     if (!maxLeverage) {
@@ -588,7 +600,7 @@ export default function OpenTradingAccountPage() {
         render={({ field }) => (
           <FormItem>
             <FormLabel className="text-sm font-semibold text-foreground">
-              Initial Demo Balance (USD)
+              Initial Demo Balance ({demoBalanceCurrency})
             </FormLabel>
             <Select onValueChange={field.onChange} value={field.value}>
               <FormControl>

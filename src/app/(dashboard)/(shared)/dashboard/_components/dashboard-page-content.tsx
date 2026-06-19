@@ -1994,6 +1994,7 @@ export function DashboardPageContent() {
                         mt5Login={account.mt5_id}
                         balance={account.balance}
                         balanceCurrency={account.accountType?.currency || 'USD'}
+                        accountTypeName={account.accountType?.account_type_name}
                         leverage={account.leverage}
                         spread={account.accountType?.spread_from ?? 'N/A'}
                         server={accountServersById[account.id] ?? account.server ?? null}

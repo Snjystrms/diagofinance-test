@@ -1710,9 +1710,10 @@ export const authApi = {
     apiCall<LoginResponse>("/auth/login", { method: "POST", body: JSON.stringify(data) }),
 
   refreshToken: (token: string) =>
-    apiCall<{ token: string }>("/auth/refresh", {
+    apiCall<{ token?: string; access_token?: string }>("/auth/refresh", {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
+      skipAuthRedirect: true,
     }),
 
   resendOtp: (data: ResendOtpRequest) =>

@@ -381,7 +381,7 @@ export default function WalletOverviewPage() {
                         </div>
 
                         <div className="flex flex-wrap items-center gap-2">
-                          <Badge variant="secondary" className="capitalize">
+                          <Badge variant="default" className="capitalize">
                             {wallet.status}
                           </Badge>
                           {wallet.is_primary ? (

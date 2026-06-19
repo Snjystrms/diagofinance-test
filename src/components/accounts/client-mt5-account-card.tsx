@@ -31,6 +31,7 @@ export type ClientMt5AccountCardProps = {
   mt5Login?: string | null;
   balance: number | string | null | undefined;
   balanceCurrency?: string;
+  accountTypeName?: string | null;
   leverage?: number | string | null;
   spread?: number | string | null;
   server?: string | null;
@@ -164,6 +165,7 @@ export function ClientMt5AccountCard({
   mt5Login,
   balance,
   balanceCurrency,
+  accountTypeName,
   leverage,
   spread,
   server,
@@ -172,7 +174,8 @@ export function ClientMt5AccountCard({
   menuActions = [],
   className,
 }: ClientMt5AccountCardProps) {
-  const normalizedCurrency = normalizeCurrencyCode(balanceCurrency ?? currency);
+  const isCentAccount = accountTypeName?.trim().toUpperCase() === "CENT";
+  const normalizedCurrency = isCentAccount ? "USC" : normalizeCurrencyCode(balanceCurrency ?? currency);
   const accountMode = formatMode(mode);
 
   return (
