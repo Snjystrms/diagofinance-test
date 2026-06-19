@@ -1,5 +1,6 @@
 ﻿'use client'
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -134,10 +135,42 @@ function ComingSoonTab({ name, description }: { name: string; description?: stri
 
 function USDTDepositContent() {
   const { user, token } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  
+  // Map between internal tab values and URL-friendly names
+  const tabToUrl = (tab: string): string => {
+    const mapping: Record<string, string> = {
+      'local': 'on-chain',
+      'binance_pay': 'binance-pay',
+      'coinsbuy': 'coinsbuy',
+      'cregis': 'cryptocurrency',
+      'bank': 'bank-deposit',
+    };
+    return mapping[tab] || tab;
+  };
+  
+  const urlToTab = (urlTab: string): string => {
+    const mapping: Record<string, string> = {
+      'on-chain': 'local',
+      'binance-pay': 'binance_pay',
+      'coinsbuy': 'coinsbuy',
+      'cryptocurrency': 'cregis',
+      'bank-deposit': 'bank',
+    };
+    return mapping[urlTab] || urlTab;
+  };
   
   // Check for pending Cregis deposit on initialization to set the correct tab
   const [activeTab, setActiveTab] = useState<string>(() => {
     if (typeof window !== 'undefined') {
+      // First check URL parameter
+      const urlTabParam = new URLSearchParams(window.location.search).get('tab');
+      if (urlTabParam) {
+        return urlToTab(urlTabParam);
+      }
+      
+      // Then check for pending Cregis deposit
       const pendingOutTradeNo = localStorage.getItem('cregis_pending_deposit');
       if (pendingOutTradeNo) {
         return "cregis";
@@ -145,6 +178,25 @@ function USDTDepositContent() {
     }
     return "";
   });
+
+  // Handle tab change and update URL
+  const handleTabChange = (newTab: string) => {
+    setActiveTab(newTab);
+    
+    // Update URL with the new tab parameter
+    if (newTab) {
+      const urlFriendlyTab = tabToUrl(newTab);
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('tab', urlFriendlyTab);
+      router.push(`?${params.toString()}`, { scroll: false });
+    } else {
+      // Remove tab parameter if no tab is selected
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('tab');
+      const queryString = params.toString();
+      router.push(queryString ? `?${queryString}` : window.location.pathname, { scroll: false });
+    }
+  };
 
   // Helper function to get status display info based on cregis_status
   const getCregisStatusInfo = (cregisStatus: string) => {
@@ -354,7 +406,9 @@ function USDTDepositContent() {
       .then(res => {
         const methods = (res as unknown as { data?: UserPaymentMethod[] })?.data ?? [];
         setPaymentMethods(methods);
-        setActiveTab("");
+        // Don't reset activeTab if it was already set from URL or localStorage
+        // Only reset to empty string if no tab was selected
+        setActiveTab(prev => prev || "");
       })
       .catch(() => {})
       .finally(() => setPmLoading(false));
@@ -577,7 +631,7 @@ function USDTDepositContent() {
       const response = await cregisDepositApi.create(
         {
           amount: amountNum,
-          currency: "USDT",
+          currency: "USD",
         },
         token
       );
@@ -593,8 +647,17 @@ function USDTDepositContent() {
       if (checkoutUrl && outTradeNo) {
         // Store the out_trade_no in localStorage to check status when user returns
         localStorage.setItem('cregis_pending_deposit', outTradeNo);
+        
+        // Build return URL with the cryptocurrency tab
+        const returnUrl = `${window.location.origin}/funds/deposit?tab=cryptocurrency`;
+        
+        // Append return URL to checkout if the provider supports it
+        const finalCheckoutUrl = checkoutUrl.includes('?') 
+          ? `${checkoutUrl}&return_url=${encodeURIComponent(returnUrl)}`
+          : `${checkoutUrl}?return_url=${encodeURIComponent(returnUrl)}`;
+        
         notifyWalletRefresh();
-        window.location.href = checkoutUrl;
+        window.location.href = finalCheckoutUrl;
       } else {
         console.error("Cregis deposit response data:", JSON.stringify(depositData, null, 2));
         toast.error("Payment link is not available right now. Please try again.");
@@ -962,7 +1025,7 @@ function USDTDepositContent() {
         </div>
 
         {/* Deposit type toggle */}
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v)} className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           {pmLoading ? (
             <div className="flex gap-2">
               <Skeleton className="h-9 w-24 rounded-lg" />

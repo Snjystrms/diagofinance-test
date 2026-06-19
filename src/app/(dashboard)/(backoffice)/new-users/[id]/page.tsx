@@ -7,6 +7,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
   ArrowLeft,
+  Eye,
+  EyeOff,
   Globe,
   Mail,
   MapPin,
@@ -423,6 +425,10 @@ export default function NewUserDetailPage() {
   const [profileError, setProfileError] = useState<unknown | null>(null);
   const [profileReloadToken, setProfileReloadToken] = useState(0);
 
+  const [decryptedPassword, setDecryptedPassword] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [loadingPassword, setLoadingPassword] = useState(false);
+
   const [depositsState, setDepositsState] = useState(() => createPaginatedState<AdminUserTransactionItem>());
   const [withdrawalsState, setWithdrawalsState] = useState(() => createPaginatedState<AdminUserTransactionItem>());
   const [bankDetailsState, setBankDetailsState] = useState(() => createPaginatedState<AdminUserBankDetailItem>());
@@ -553,6 +559,23 @@ export default function NewUserDetailPage() {
       toast.error(getAdminFriendlyErrorMessage(error, { resource: "wallet history", action: "load" }));
     }
   }, [token, userUuid, id]);
+
+  const handleDecryptPassword = useCallback(async () => {
+    if (!token || !id) return;
+    
+    try {
+      setLoadingPassword(true);
+      const response = await adminUsersApi.decryptPassword(id, token);
+      setDecryptedPassword(response.data?.password || null);
+      setShowPassword(true);
+      toast.success("Password decrypted successfully");
+    } catch (error) {
+      console.error(`Failed to decrypt password for user ${id}:`, error);
+      toast.error(getAdminFriendlyErrorMessage(error, { resource: "user password", action: "decrypt" }));
+    } finally {
+      setLoadingPassword(false);
+    }
+  }, [token, id]);
 
   useEffect(() => {
     setActiveTab("deposits");
@@ -900,6 +923,54 @@ export default function NewUserDetailPage() {
                           value={crudUser?.sponsor_id ?? "Client"}
                         />
                         <DetailItem label="Registered" value={formatDateTime(crudUser?.created_at)} />
+                        <div className="rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm sm:col-span-2">
+                          <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                            Password
+                          </div>
+                          <div className="mt-2 flex items-center gap-2">
+                            {decryptedPassword ? (
+                              <>
+                                <div className="flex-1 text-sm font-medium text-foreground">
+                                  {showPassword ? decryptedPassword : "••••••••"}
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setShowPassword(!showPassword)}
+                                  className="h-8 w-8 p-0"
+                                >
+                                  {showPassword ? (
+                                    <EyeOff className="h-4 w-4" />
+                                  ) : (
+                                    <Eye className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              </>
+                            ) : (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={handleDecryptPassword}
+                                disabled={loadingPassword}
+                                className="h-8"
+                              >
+                                {loadingPassword ? (
+                                  <>
+                                    <RefreshCw className="mr-2 h-3 w-3 animate-spin" />
+                                    Decrypting...
+                                  </>
+                                ) : (
+                                  <>
+                                    <Eye className="mr-2 h-3 w-3" />
+                                    Show Password
+                                  </>
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
 

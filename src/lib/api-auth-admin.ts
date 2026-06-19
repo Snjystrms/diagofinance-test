@@ -1419,6 +1419,16 @@ export const adminUsersApi = {
       }
     );
   },
+
+  decryptPassword: (id: number | string, token: string) => {
+    ensureAdminUserToken(token, "decrypt user password");
+    ensureAdminUserIdentifier(id, "decrypt user password");
+
+    return apiCall<{ password: string }>(`/admin/user-management/crud/users/${id}/decrypt-password`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
 };
 
 export interface NewsCreateBody {
