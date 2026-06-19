@@ -24,9 +24,11 @@ import {
   ImageIcon,
   RefreshCw,
   Inbox,
-  Eye,
   Loader2,
   Clock,
+  Radio,
+  Calendar,
+  ArrowRight,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -168,65 +170,61 @@ function NewsDetailDialog({
 /* ─── Card ───────────────────────────────────────────────────────────────── */
 function NewsCard({ item, onView }: { item: NewsItem; onView: () => void }) {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-lg">
-      {/* Image */}
-      {item.image_url ? (
+    <div 
+      onClick={onView}
+      className="group relative flex flex-col rounded-xl border border-border/60 bg-card cursor-pointer overflow-hidden
+        hover:border-[#FFB401]/40 hover:bg-[#FFB401]/[0.03] transition-all duration-200 shadow-sm hover:shadow-lg"
+    >
+      {/* Thumbnail or fallback */}
+      {item.image_url || item.image ? (
         <div className="relative h-44 w-full overflow-hidden bg-muted">
           <Image
-            src={item.image_url}
+            src={(item.image_url || item.image) as string}
             alt={item.title}
             fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             unoptimized
+            onError={(e) => {
+              const img = e.currentTarget;
+              img.style.display = 'none';
+            }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
         </div>
       ) : (
-        <div className="flex h-44 w-full items-center justify-center bg-muted/50 border-b border-border/40">
-          <ImageIcon className="h-10 w-10 text-muted-foreground/30" />
+        <div className="flex h-44 w-full items-center justify-center bg-[#FFB401]/8 border-b border-[#FFB401]/20">
+          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FFB401" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-70">
+            <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/>
+          </svg>
         </div>
       )}
 
       {/* Body */}
-      <div className="p-4 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <Badge
-            variant="outline"
-            className="text-[10px] font-semibold px-2 py-0.5 bg-primary/5 text-primary border-primary/30 dark:bg-primary/10 dark:text-primary dark:border-primary/30"
-          >
-            News
-          </Badge>
-          {item.created_at && (
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <CalendarDays className="h-3 w-3" />
-              {fmtDate(item.created_at)}
-            </div>
-          )}
+      <div className="p-4 space-y-3 flex-1 flex flex-col">
+        {/* Category pill */}
+        <div className="flex items-center gap-1.5">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#FFB401]" />
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-[#FFB401]">
+            News Update
+          </span>
         </div>
 
-        <div>
-          <h3 className="font-bold text-sm leading-snug line-clamp-2 text-foreground">
+        <div className="flex-1">
+          <h4 className="text-sm font-semibold text-foreground leading-snug mb-1 line-clamp-2">
             {item.title}
-          </h3>
-          {item.short_description && (
-            <p className="mt-1 text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-              {item.short_description}
-            </p>
-          )}
+          </h4>
+          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+            {item.short_description || item.description || "Click to read the full story..."}
+          </p>
         </div>
 
-        {/* View button */}
-        <div className="pt-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 w-full gap-2 text-xs font-semibold border-primary/20 text-primary hover:bg-primary/5 hover:border-primary/40 dark:border-primary/30 dark:text-primary dark:hover:bg-primary/10"
-            onClick={onView}
-          >
-            <Eye className="h-3.5 w-3.5" />
-            View Article
-          </Button>
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60">
+            <Calendar className="h-2.5 w-2.5" />
+            <span className="font-mono">{fmtDate(item.updated_at || item.created_at)}</span>
+          </div>
+          <ArrowRight className="h-3.5 w-3.5 text-[#FFB401] opacity-0 group-hover:opacity-100 translate-x-[-4px] group-hover:translate-x-0 transition-all duration-200" />
         </div>
       </div>
     </div>
@@ -287,14 +285,41 @@ export default function UserNewsPage() {
     <ProtectedRoute>
       <div className="container mx-auto px-4 md:px-6 lg:px-8 py-10">
         {/* Header */}
-        <div className="mb-6 space-y-1">
-          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-            <Newspaper className="h-5 w-5 text-primary" />
-            News
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Stay up to date with the latest news and updates.
-          </p>
+        <div className="mb-8 relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0B1220] via-[#0B1220] to-[#1a1f2e] p-6 border border-[#FFB401]/20">
+          {/* Decorative elements */}
+          <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-[#FFB401] to-transparent opacity-80" />
+          <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+            <svg className="absolute inset-0 w-full h-full opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <pattern id="news-grid-page" width="40" height="40" patternUnits="userSpaceOnUse">
+                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="1"/>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#news-grid-page)" />
+            </svg>
+            <div className="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-[#FFB401]/10 blur-2xl" />
+          </div>
+
+          <div className="relative flex items-start gap-4">
+            <div className="flex-shrink-0">
+              <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-[#FFB401]/15 border border-[#FFB401]/30">
+                <Radio className="h-6 w-6 text-[#FFB401]" />
+                <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FFB401] opacity-60" />
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-[#FFB401]" />
+                </span>
+              </div>
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#FFB401]">Breaking</span>
+                <span className="w-1 h-1 rounded-full bg-[#FFB401]/50" />
+                <span className="text-[10px] tracking-widest uppercase text-white/40">Vinnexia Capital</span>
+              </div>
+              <h1 className="text-2xl font-bold text-white tracking-tight">Latest News</h1>
+              <p className="text-sm text-white/50 mt-0.5">Stay ahead with real-time updates &amp; announcements.</p>
+            </div>
+          </div>
         </div>
 
         {/* Search */}

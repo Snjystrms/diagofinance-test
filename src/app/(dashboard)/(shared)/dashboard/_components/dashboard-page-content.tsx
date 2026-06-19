@@ -79,7 +79,6 @@ import {
   adminDashboardApi,
   managerDashboardApi,
   adminNotificationApi,
-  userNewsApi,
   userMT5AccountsApi,
   type TradingAccountSummaryItem,
   type TradingAccountsSummaryResponse,
@@ -202,27 +201,41 @@ export function DashboardPageContent() {
     refetchOnMount: "always",
   });
 
-  const { data: userNewsData } = useQuery({
-    queryKey: ["userNews", token, "all"],
-    queryFn: async () => {
-      const res = await userNewsApi.list({ token: token!, per_page: 100 });
-      const all: NewsItem[] = Array.isArray(res?.data)
-        ? (res.data as unknown as NewsItem[])
-        : (res?.data?.data ?? []);
-      return all;
-    },
-    enabled: Boolean(token) && isUser,
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
+  const [dashboardData, setDashboardData] = useState<UserDashboardData | null>(null);
+  const [adminDashboardData, setAdminDashboardData] = useState<AdminDashboardData | null>(null);
+  const [managerDashboardData, setManagerDashboardData] = useState<ManagerDashboardData | null>(null);
+  const [tradingSummary, setTradingSummary] = useState<TradingAccountsSummaryResponse | null>(null);
+  const [ibWalletData, setIbWalletData] = useState<IbWalletData | null>(null);
+  const [depositsStatistics, setDepositsStatistics] = useState<Array<{ day: string; date: string; amount: number }>>([]);
+  const [withdrawalsStatistics, setWithdrawalsStatistics] = useState<Array<{ day: string; date: string; amount: number }>>([]);
+  const [isDashboardLoading, setIsDashboardLoading] = useState(isUser || isAdmin);
+  const [isDepositsStatisticsLoading, setIsDepositsStatisticsLoading] = useState(false);
+  const [isWithdrawalsStatisticsLoading, setIsWithdrawalsStatisticsLoading] = useState(false);
+  const [dashboardError, setDashboardError] = useState<unknown | null>(null);
+  const [tradingSummaryError, setTradingSummaryError] = useState<unknown | null>(null);
+  const [depositStatisticsPeriod, setDepositStatisticsPeriod] = useState<7 | 30>(30);
+  const [withdrawalStatisticsPeriod, setWithdrawalStatisticsPeriod] = useState<7 | 30>(30);
 
-  const dashboardNewsItems = (userNewsData ?? []).filter((i) => i.type === "news");
-  const dashboardPromoItems = (userNewsData ?? []).filter((i) => i.type === "promotion");
+  // Get news and promotions from userDashboard data
+  const dashboardNewsItems = useMemo(() => {
+    if (!dashboardData?.latest_news) return [];
+    return (dashboardData.latest_news as unknown as NewsItem[]).filter((i) => i.type === "news");
+  }, [dashboardData?.latest_news]);
+
+  const dashboardPromoItems = useMemo(() => {
+    if (!dashboardData?.latest_news) return [];
+    return (dashboardData.latest_news as unknown as NewsItem[]).filter((i) => i.type === "promotion");
+  }, [dashboardData?.latest_news]);
   
   // Filter items updated within last 24 hours
+  // API returns UTC time like "2026-06-19T07:37:14" (without Z)
   const isWithin24Hours = (dateString?: string | null) => {
     if (!dateString) return false;
-    const itemDate = new Date(dateString);
+    // Treat the date string as UTC by appending 'Z' if it doesn't have timezone info
+    const dateStr = dateString.includes('Z') || dateString.includes('+') || dateString.includes('-', 10)
+      ? dateString 
+      : dateString + 'Z';
+    const itemDate = new Date(dateStr);
     const now = new Date();
     const diffInHours = (now.getTime() - itemDate.getTime()) / (1000 * 60 * 60);
     return diffInHours <= 24;
@@ -245,21 +258,6 @@ export function DashboardPageContent() {
       }),
     [dashboardNewsItems, dashboardPromoItems]
   );
-
-  const [dashboardData, setDashboardData] = useState<UserDashboardData | null>(null);
-  const [adminDashboardData, setAdminDashboardData] = useState<AdminDashboardData | null>(null);
-  const [managerDashboardData, setManagerDashboardData] = useState<ManagerDashboardData | null>(null);
-  const [tradingSummary, setTradingSummary] = useState<TradingAccountsSummaryResponse | null>(null);
-  const [ibWalletData, setIbWalletData] = useState<IbWalletData | null>(null);
-  const [depositsStatistics, setDepositsStatistics] = useState<Array<{ day: string; date: string; amount: number }>>([]);
-  const [withdrawalsStatistics, setWithdrawalsStatistics] = useState<Array<{ day: string; date: string; amount: number }>>([]);
-  const [isDashboardLoading, setIsDashboardLoading] = useState(isUser || isAdmin);
-  const [isDepositsStatisticsLoading, setIsDepositsStatisticsLoading] = useState(false);
-  const [isWithdrawalsStatisticsLoading, setIsWithdrawalsStatisticsLoading] = useState(false);
-  const [dashboardError, setDashboardError] = useState<unknown | null>(null);
-  const [tradingSummaryError, setTradingSummaryError] = useState<unknown | null>(null);
-  const [depositStatisticsPeriod, setDepositStatisticsPeriod] = useState<7 | 30>(30);
-  const [withdrawalStatisticsPeriod, setWithdrawalStatisticsPeriod] = useState<7 | 30>(30);
   // MT4 dashboard tabs are intentionally hidden for now. Restore the original union when MT4 UI returns.
   // const [activeTab, setActiveTab] = useState<'mt5-live' | 'mt5-demo' | 'mt4-live' | 'mt4-demo'>('mt5-live');
   const [activeTab, setActiveTab] = useState<'mt5-live' | 'mt5-demo'>('mt5-live');
@@ -362,26 +360,40 @@ export function DashboardPageContent() {
     // Only show dialogs after profile and MT5 dialogs are handled
     if (showProfileDialog || showMt5Dialog) return;
 
-    // Check if we've already shown these dialogs in this session
-    const newsShownKey = 'news_dialog_shown_session';
-    const promoShownKey = 'promo_dialog_shown_session';
-    
-    const newsShown = sessionStorage.getItem(newsShownKey);
-    const promoShown = sessionStorage.getItem(promoShownKey);
+    // Get list of seen item IDs from localStorage
+    const getSeenIds = (key: string): Set<string> => {
+      const stored = localStorage.getItem(key);
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    };
 
-    // Show news dialog if there are recent news and not shown yet
-    if (recentNews.length > 0 && !newsShown) {
+    const setSeenIds = (key: string, ids: Set<string>) => {
+      localStorage.setItem(key, JSON.stringify([...ids]));
+    };
+
+    const seenNewsIds = getSeenIds('seen_news_ids');
+    const seenPromoIds = getSeenIds('seen_promo_ids');
+
+    // Filter out news/promotions that haven't been seen
+    const unseenNews = recentNews.filter(item => !seenNewsIds.has(String(item.id)));
+    const unseenPromos = recentPromotions.filter(item => !seenPromoIds.has(String(item.id)));
+
+    // Show news dialog if there are unseen recent news
+    if (unseenNews.length > 0 && !showNewsDialog) {
       setShowNewsDialog(true);
-      sessionStorage.setItem(newsShownKey, 'true');
+      // Mark these as seen
+      unseenNews.forEach(item => seenNewsIds.add(String(item.id)));
+      setSeenIds('seen_news_ids', seenNewsIds);
       return;
     }
 
-    // Show promotion dialog if there are recent promotions and not shown yet
-    if (recentPromotions.length > 0 && !promoShown) {
+    // Show promotion dialog if there are unseen recent promotions
+    if (unseenPromos.length > 0 && !showPromotionDialog) {
       setShowPromotionDialog(true);
-      sessionStorage.setItem(promoShownKey, 'true');
+      // Mark these as seen
+      unseenPromos.forEach(item => seenPromoIds.add(String(item.id)));
+      setSeenIds('seen_promo_ids', seenPromoIds);
     }
-  }, [isUser, showProfileDialog, showMt5Dialog, recentNews.length, recentPromotions.length]);
+  }, [isUser, showProfileDialog, showMt5Dialog, recentNews, recentPromotions, showNewsDialog, showPromotionDialog]);
 
   // Sync userDashboard React Query data into local state used by widgets.
   useEffect(() => {
@@ -1950,7 +1962,7 @@ export function DashboardPageContent() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
                   {currentAccounts.map((account) => {
                     const isDemo = account.account_mode?.toLowerCase().includes('demo');
                     const menuActions = [

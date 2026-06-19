@@ -1261,5 +1261,9 @@ export function getSectionLabelForRole(role?: UserType) {
     return "Administration";
   }
 
+  if (role === "user" || role === "client") {
+    return "Client Portal";
+  }
+
   return "Platform";
 }

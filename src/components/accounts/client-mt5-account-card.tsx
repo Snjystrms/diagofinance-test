@@ -231,7 +231,7 @@ export function ClientMt5AccountCard({
         </div>
 
         <div className="mb-5 space-y-3">
-          <AccountValue icon={Wallet} label="Account ID" value={accountId} copyLabel="Account ID" />
+          {/* <AccountValue icon={Wallet} label="Account ID" value={accountId} copyLabel="Account ID" /> */}
           {mt5Login ? <AccountValue icon={Zap} label="MT5 Login" value={mt5Login} copyLabel="MT5 login" /> : null}
           {server ? <AccountValue icon={Zap} label="Server" value={server} copyLabel="Server" /> : null}
         </div>
@@ -244,24 +244,24 @@ export function ClientMt5AccountCard({
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-2.5">
-            <div className="rounded-xl border border-border/30 bg-muted/20 p-3">
-              <div className="space-y-1">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/30 p-3.5">
+              {/* <div className="space-y-1"> */}
                 <span className="text-xs text-muted-foreground">Leverage</span>
                 <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
                   <Zap className="h-3 w-3 text-primary" />
                   {formatLeverage(leverage)}
-                </div>
+                {/* </div> */}
               </div>
             </div>
-            <div className="rounded-xl border border-border/30 bg-muted/20 p-3">
+            {/* <div className="rounded-xl border border-border/30 bg-muted/20 p-3">
               <div className="space-y-1">
                 <span className="text-xs text-muted-foreground">Spread</span>
                 <div className="text-sm font-semibold text-foreground">
                   {spread ?? "N/A"}
                 </div>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
 

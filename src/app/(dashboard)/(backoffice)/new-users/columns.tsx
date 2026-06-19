@@ -4,16 +4,16 @@ import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Calendar, Eye, Globe, Mail, Pencil, Phone, Trash2, User, Plus, RefreshCw, Wallet, KeyRound } from "lucide-react";
 import toast from "react-hot-toast";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 import type { PendingUser } from "@/lib/api";
+import { adminUsersApi } from "@/lib/api-auth-admin";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { formatDateTimeInIST } from "@/lib/formatters";
-import { safeDecryptPassword } from "@/lib/crypto-utils";
 
 const formatDateTime = (value?: string) => {
   if (!value) return "-";
@@ -146,46 +146,87 @@ function RowActions({
 }
 
 /**
- * Component to display decrypted password
+ * Component to display decrypted password with on-demand API call
  */
-function DecryptedPassword({ encryptedPassword }: { encryptedPassword: string | null | undefined }) {
-  const [decrypted, setDecrypted] = useState<string>("Decrypting...");
+function DecryptedPassword({ 
+  userId, 
+  token 
+}: { 
+  userId: number; 
+  token?: string | null;
+}) {
+  const [decrypted, setDecrypted] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const decrypt = async () => {
-      setIsLoading(true);
-      const key = process.env.NEXT_PUBLIC_ENCRYPTION_KEY;
+  const handleDecryptPassword = async () => {
+    if (decrypted) {
+      // If already decrypted, just toggle visibility
+      setShowPassword(!showPassword);
+      return;
+    }
+
+    if (!token) {
+      toast.error("Authentication required");
+      return;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      console.log("🔐 Fetching decrypted password for user:", userId);
+      const response = await adminUsersApi.decryptPassword(userId, token);
       
-      if (!key) {
-        console.error("❌ NEXT_PUBLIC_ENCRYPTION_KEY not found in environment");
-        setDecrypted("Key not configured");
-        setIsLoading(false);
-        return;
+      if (response.success && response.data?.password) {
+        setDecrypted(response.data.password);
+        setShowPassword(true);
+        toast.success("Password retrieved successfully");
+      } else {
+        throw new Error("Failed to decrypt password");
       }
-
-      if (!encryptedPassword) {
-        setDecrypted("-");
-        setIsLoading(false);
-        return;
-      }
-
-      console.log("🔐 Attempting to decrypt password:", encryptedPassword);
-      const result = await safeDecryptPassword(encryptedPassword, key);
-      setDecrypted(result);
+    } catch (err) {
+      console.error("❌ Password decryption error:", err);
+      const errorMessage = err instanceof Error ? err.message : "Failed to decrypt password";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
       setIsLoading(false);
-    };
+    }
+  };
 
-    void decrypt();
-  }, [encryptedPassword]);
-
-  if (isLoading) {
+  if (error) {
     return (
       <div className="flex items-center gap-2">
-        <KeyRound className="h-4 w-4 text-muted-foreground animate-pulse" />
-        <span className="text-sm text-muted-foreground">Decrypting...</span>
+        <KeyRound className="h-4 w-4 text-destructive" />
+        <span className="text-sm text-destructive">Failed to decrypt</span>
       </div>
+    );
+  }
+
+  if (!decrypted) {
+    return (
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={handleDecryptPassword}
+        disabled={isLoading}
+        className="h-8"
+      >
+        {isLoading ? (
+          <>
+            <KeyRound className="mr-2 h-3 w-3 animate-spin" />
+            Decrypting...
+          </>
+        ) : (
+          <>
+            <Eye className="mr-2 h-3 w-3" />
+            Show Password
+          </>
+        )}
+      </Button>
     );
   }
 
@@ -231,6 +272,7 @@ export const getColumnsWithActions = (
     canViewUser: boolean;
     showActionsColumn: boolean;
   },
+  token?: string | null,
 ): ColumnDef<PendingUser>[] => [
   {
     id: "sr_no",
@@ -338,12 +380,12 @@ export const getColumnsWithActions = (
       </div>
     ),
   },
-//  {
-//     id: "password",
-//     accessorKey: "password",
-//     header: ({ column }) => <DataTableColumnHeader column={column} title="User Password" />,
-//     cell: ({ row }) => <DecryptedPassword encryptedPassword={row.original.password} />,
-//   },
+ {
+    id: "password",
+    accessorKey: "password",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="User Password" />,
+    cell: ({ row }) => <DecryptedPassword userId={row.original.id} token={token} />,
+  },
   {
     id: "ib_status",
     header: ({ column }) => <DataTableColumnHeader column={column} title="IB Status" />,

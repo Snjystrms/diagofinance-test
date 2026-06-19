@@ -708,8 +708,9 @@ export default function NewUsersPage() {
           canViewUser,
           showActionsColumn: showActionsColumn || canViewUser,
         },
+        token,
       ),
-    [handleEdit, handleDelete, handleToggleStatus, handlePromoteDialogOpen, handleManageSponsorOpen, promotingUserIds, canEditUser, canDeleteUser, canPromoteToIb, canViewUser, showActionsColumn],
+    [handleEdit, handleDelete, handleToggleStatus, handlePromoteDialogOpen, handleManageSponsorOpen, promotingUserIds, canEditUser, canDeleteUser, canPromoteToIb, canViewUser, showActionsColumn, token],
   );
 
   if (!canViewUserList && !canAddUser) {

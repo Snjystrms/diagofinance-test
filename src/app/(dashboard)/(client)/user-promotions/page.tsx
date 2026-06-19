@@ -24,9 +24,11 @@ import {
   ImageIcon,
   RefreshCw,
   Inbox,
-  Eye,
   Loader2,
   Clock,
+  Sparkles,
+  Calendar,
+  ArrowRight,
 } from "lucide-react";
 import Image from "next/image";
 
@@ -59,7 +61,7 @@ function PromotionDetailDialog({
       <DialogContent className="max-w-lg p-0 overflow-hidden rounded-2xl">
         {isLoading ? (
           <div className="flex flex-col items-center justify-center py-16 px-6 gap-3">
-            <Loader2 className="h-7 w-7 animate-spin text-accent" />
+            <Loader2 className="h-7 w-7 animate-spin text-primary" />
             <p className="text-sm text-muted-foreground">Loading promotion…</p>
           </div>
         ) : isError || !item ? (
@@ -81,7 +83,7 @@ function PromotionDetailDialog({
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
                 <div className="absolute bottom-4 left-5 right-5">
-                  <Badge className="bg-accent/90 text-accent-foreground border-0 text-[10px] font-semibold mb-2">
+                  <Badge className="bg-primary/90 text-primary-foreground border-0 text-[10px] font-semibold mb-2">
                     Promotion
                   </Badge>
                   <DialogHeader>
@@ -92,8 +94,8 @@ function PromotionDetailDialog({
                 </div>
               </div>
             ) : (
-              <div className="flex h-24 w-full items-center justify-center bg-accent/5 dark:bg-accent/10 border-b border-border/40">
-                <Megaphone className="h-8 w-8 text-accent/50" />
+              <div className="flex h-24 w-full items-center justify-center bg-primary/5 dark:bg-primary/10 border-b border-border/40">
+                <Megaphone className="h-8 w-8 text-primary/50" />
               </div>
             )}
 
@@ -105,7 +107,7 @@ function PromotionDetailDialog({
                   <div className="flex items-start gap-3">
                     <Badge
                       variant="outline"
-                      className="mt-0.5 text-[10px] font-semibold px-2 py-0.5 bg-accent/5 text-accent border-accent/30 dark:bg-accent/10 dark:text-accent dark:border-accent/30 shrink-0"
+                      className="mt-0.5 text-[10px] font-semibold px-2 py-0.5 bg-primary/5 text-primary border-primary/30 dark:bg-primary/10 dark:text-primary dark:border-primary/30 shrink-0"
                     >
                       Promotion
                     </Badge>
@@ -168,65 +170,64 @@ function PromotionDetailDialog({
 /* ─── Card ───────────────────────────────────────────────────────────────── */
 function PromotionCard({ item, onView }: { item: NewsItem; onView: () => void }) {
   return (
-    <div className="group relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-accent/40 hover:shadow-lg">
-      {/* Image */}
-      {item.image_url ? (
+    <div
+      onClick={onView}
+      className="group relative flex flex-col rounded-xl cursor-pointer overflow-hidden
+        border border-primary/20 bg-card shadow-sm
+        hover:border-primary/40 hover:shadow-lg transition-all duration-200"
+    >
+      {/* Gradient side accent bar */}
+      <div className="absolute left-0 inset-y-0 w-[3px] bg-gradient-to-b from-primary via-primary/70 to-accent opacity-70 group-hover:opacity-100 transition-opacity" />
+
+      {/* Thumbnail or fallback */}
+      {item.image_url || item.image ? (
         <div className="relative h-44 w-full overflow-hidden bg-muted">
           <Image
-            src={item.image_url}
+            src={item.image_url || item.image}
             alt={item.title}
             fill
-            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             unoptimized
+            onError={(e) => {
+              const img = e.currentTarget;
+              img.style.display = 'none';
+            }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
         </div>
       ) : (
-        <div className="flex h-44 w-full items-center justify-center bg-muted/50 border-b border-border/40">
-          <ImageIcon className="h-10 w-10 text-muted-foreground/30" />
+        <div className="flex h-44 w-full items-center justify-center border-b border-primary/20 bg-gradient-to-br from-primary/10 to-accent/10">
+          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-80 text-primary">
+            <path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+          </svg>
         </div>
       )}
 
       {/* Body */}
-      <div className="p-4 space-y-3">
-        <div className="flex items-center justify-between gap-2">
-          <Badge
-            variant="outline"
-            className="text-[10px] font-semibold px-2 py-0.5 bg-accent/5 text-accent border-accent/30 dark:bg-accent/10 dark:text-accent dark:border-accent/30"
-          >
-            Promotion
-          </Badge>
-          {item.created_at && (
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-              <CalendarDays className="h-3 w-3" />
-              {fmtDate(item.created_at)}
-            </div>
-          )}
+      <div className="p-4 pl-5 space-y-3 flex-1 flex flex-col">
+        {/* Hot badge */}
+        <div className="flex items-center gap-1.5">
+          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md text-[9px] font-bold uppercase tracking-wider bg-gradient-to-r from-primary/20 to-accent/20 text-primary border border-primary/20">
+            🎁 Special Offer
+          </span>
         </div>
 
-        <div>
-          <h3 className="font-bold text-sm leading-snug line-clamp-2 text-foreground">
+        <div className="flex-1">
+          <h4 className="text-sm font-semibold text-foreground leading-snug mb-1 line-clamp-2">
             {item.title}
-          </h3>
-          {item.short_description && (
-            <p className="mt-1 text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-              {item.short_description}
-            </p>
-          )}
+          </h4>
+          <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+            {item.short_description || item.description || "Tap to explore this exclusive offer..."}
+          </p>
         </div>
 
-        {/* View button */}
-        <div className="pt-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-8 w-full gap-2 text-xs font-semibold border-accent/20 text-accent hover:bg-accent/5 hover:border-accent/40 dark:border-accent/30 dark:text-accent dark:hover:bg-accent/10"
-            onClick={onView}
-          >
-            <Eye className="h-3.5 w-3.5" />
-            View Promotion
-          </Button>
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60">
+            <Calendar className="h-2.5 w-2.5" />
+            <span className="font-mono">{fmtDate(item.updated_at || item.created_at)}</span>
+          </div>
+          <ArrowRight className="h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-100 translate-x-[-4px] group-hover:translate-x-0 transition-all duration-200" />
         </div>
       </div>
     </div>
@@ -287,14 +288,36 @@ export default function UserPromotionsPage() {
     <ProtectedRoute>
       <div className="container mx-auto px-4 md:px-6 lg:px-8 py-10">
         {/* Header */}
-        <div className="mb-6 space-y-1">
-          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-            <Megaphone className="h-5 w-5 text-primary" />
-            Promotions
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Explore current promotions and special offers.
-          </p>
+        <div className="mb-8 relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/[0.15] via-primary/[0.08] to-primary/[0.15] dark:from-primary/[0.12] dark:via-primary/[0.06] dark:to-primary/[0.12] p-6 border border-primary/20">
+          {/* Glow orbs */}
+          <div className="absolute -left-8 top-0 w-40 h-40 rounded-full bg-primary/15 blur-3xl pointer-events-none" />
+          <div className="absolute right-4 -top-6 w-32 h-32 rounded-full bg-primary/10 blur-2xl pointer-events-none" />
+          <div className="absolute right-20 bottom-0 w-24 h-24 rounded-full bg-accent/10 blur-2xl pointer-events-none" />
+          
+          {/* Bottom shimmer bar */}
+          <div className="absolute inset-x-0 bottom-0 h-[1px] bg-gradient-to-r from-transparent via-primary/40 via-50% to-transparent" />
+
+          <div className="relative flex items-start gap-4">
+            <div className="flex-shrink-0 relative">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-lg shadow-primary/30">
+                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-primary-foreground">
+                  <path d="M20 12V22H4V12"/><path d="M22 7H2v5h20V7z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/>
+                </svg>
+              </div>
+              {/* Sparkle dots */}
+              <span className="absolute -top-1 -right-1 text-primary text-xs animate-spin" style={{ animationDuration: "4s" }}>✦</span>
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold tracking-widest uppercase bg-primary/20 text-primary border border-primary/30">
+                  <Sparkles className="h-2.5 w-2.5" />
+                  Limited Time
+                </span>
+              </div>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">Special Promotions</h1>
+              <p className="text-sm text-muted-foreground mt-0.5">Exclusive offers just for you — don&apos;t miss out!</p>
+            </div>
+          </div>
         </div>
 
         {/* Search */}
