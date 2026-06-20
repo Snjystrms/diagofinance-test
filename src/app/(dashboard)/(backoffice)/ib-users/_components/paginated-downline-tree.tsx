@@ -25,7 +25,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import type { AdminIbUser } from '@/lib/api';
-import { fetchUsersByLevel, NODE_H, NODE_W, levelColor, levelToDepth, type UserByLevel } from '@/lib/downline-tree';
+import { fetchUsersByLevel, NODE_H, NODE_W, levelColor, levelToDepth, type UserByLevel, type DirectRate } from '@/lib/downline-tree';
 import { paginatedNodeTypes, type PaginatedTeamNodeData } from './paginated-team-node';
 import { IbDirectRatesDialog } from './ib-direct-rates-dialog';
 
@@ -39,7 +39,7 @@ type NodeRecord = {
   isRoot?: boolean;
   userId?: number;
   isIb?: boolean;
-  direct_rates?: any[];
+  direct_rates?: DirectRate[];
   currentPage?: number;
   totalPages?: number;
   hasMoreChildren?: boolean;

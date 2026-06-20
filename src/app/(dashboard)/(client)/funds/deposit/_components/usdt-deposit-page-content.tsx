@@ -720,6 +720,22 @@ function USDTDepositContent() {
     }
   }, [token, checkCregisStatus]);
 
+  // Re-check Cregis status when returning from callback URL
+  useEffect(() => {
+    const urlTabParam = searchParams.get('tab');
+    
+    // If coming back to cryptocurrency tab with a pending deposit, refresh status
+    if (urlTabParam === 'cryptocurrency' && token) {
+      const pendingOutTradeNo = localStorage.getItem('cregis_pending_deposit');
+      
+      if (pendingOutTradeNo) {
+        setCregisOutTradeNo(pendingOutTradeNo);
+        // Re-check status when tab is accessed via URL (callback scenario)
+        checkCregisStatus(pendingOutTradeNo);
+      }
+    }
+  }, [searchParams, token, checkCregisStatus]);
+
   const handleBankPaymentProofChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {

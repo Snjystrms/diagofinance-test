@@ -78,24 +78,36 @@ export async function refreshCurrentAuthToken(tokenOverride?: string | null) {
   }
 
   refreshTokenPromise = (async () => {
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-    });
+    try {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      });
 
-    const json = await response.json().catch(() => ({}));
-    const newToken = response.ok ? getTokenFromRefreshResponse(json) : null;
+      // If refresh endpoint returns 401, silently fail without redirect
+      // This allows the user to stay on the page
+      if (response.status === 401) {
+        return null;
+      }
 
-    if (!newToken) {
-      const currentStoredToken = getStoredAuthToken();
-      return currentStoredToken && currentStoredToken !== token ? currentStoredToken : null;
+      const json = await response.json().catch(() => ({}));
+      const newToken = response.ok ? getTokenFromRefreshResponse(json) : null;
+
+      if (!newToken) {
+        const currentStoredToken = getStoredAuthToken();
+        return currentStoredToken && currentStoredToken !== token ? currentStoredToken : null;
+      }
+
+      localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, newToken);
+      window.dispatchEvent(
+        new CustomEvent(AUTH_TOKEN_REFRESHED_EVENT, { detail: { token: newToken } })
+      );
+      return newToken;
+    } catch (error) {
+      // Catch any network errors and return null without redirect
+      console.error("Token refresh error:", error);
+      return null;
     }
-
-    localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, newToken);
-    window.dispatchEvent(
-      new CustomEvent(AUTH_TOKEN_REFRESHED_EVENT, { detail: { token: newToken } })
-    );
-    return newToken;
   })().finally(() => {
     refreshTokenPromise = null;
   });
@@ -252,7 +264,10 @@ export async function apiCall<T>(
   const authorizationHeader = getAuthorizationHeader(finalHeaders);
   const hasAuth = !!authorizationHeader;
 
+  let didAttemptRefresh = false;
+
   if (!skipAuthRedirect && response.status === 401 && hasAuth) {
+    didAttemptRefresh = true;
     const requestToken = extractBearerToken(authorizationHeader);
     const storedToken = getStoredAuthToken();
     const retryToken =
@@ -266,8 +281,15 @@ export async function apiCall<T>(
     }
   }
 
-  if (!skipAuthRedirect && handle401Redirect(response, hasAuth)) {
-    return new Promise<ApiResponse<T>>(() => {});
+  // Only redirect to login if:
+  // 1. We haven't attempted a token refresh (skipAuthRedirect=false check), OR
+  // 2. We attempted refresh and retry, but the retry also failed with 401
+  // If refresh attempt failed (didAttemptRefresh=true but retryToken=null), don't redirect
+  // This allows users to stay on their page even when refresh token expires
+  if (!skipAuthRedirect && response.status === 401 && hasAuth && !didAttemptRefresh) {
+    if (handle401Redirect(response, hasAuth)) {
+      return new Promise<ApiResponse<T>>(() => {});
+    }
   }
 
   const json = await response.json().catch(() => ({}));
