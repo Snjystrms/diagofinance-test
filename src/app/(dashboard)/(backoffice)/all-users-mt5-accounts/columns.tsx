@@ -35,8 +35,12 @@ const deriveUserEmail = (account: AdminMT5Account) => {
 };
 
 const deriveAccountType = (account: AdminMT5Account) => {
-  return account.accountType?.name ?? account.account_type ?? emptyValue;
+  return account.accountType?.name ?? account.AdminMT5AccountType?.name ?? account.account_type ?? emptyValue;
 };
+
+const isCentAccount = (account: AdminMT5Account) => deriveAccountType(account).trim().toLowerCase() === "cent";
+
+const getMt5BalanceCurrency = (account: AdminMT5Account) => (isCentAccount(account) ? "USC" : "USD");
 
 const deriveGroupName = (account: AdminMT5Account) => {
   return account.mt5_group_name ?? emptyValue;
@@ -63,11 +67,11 @@ const getModeBadge = (mode: AdminMT5Account["account_mode"]) => {
   const value = typeof mode === "string" ? mode.toLowerCase() : "";
 
   if (value === "live") {
-    return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300">Live</Badge>;
+    return <Badge variant="default">Live</Badge>;
   }
 
   if (value === "demo") {
-    return <Badge variant="secondary">Demo</Badge>;
+    return <Badge variant="default">Demo</Badge>;
   }
 
   return <Badge variant="outline">{emptyValue}</Badge>;
@@ -149,14 +153,14 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
    {
      id: "self_wallet",
      accessorKey: "self_wallet",
-     header: ({ column }) => <DataTableColumnHeader column={column} title="Wallet Balance (USD)" />,
+     header: ({ column }) => <DataTableColumnHeader column={column} title="Wallet Balance" />,
      cell: ({ row }) => {
        const balance = row.original.self_wallet;
        if (balance == null) return <span className="text-muted-foreground">{emptyValue}</span>;
        return (
          <div className="flex items-center gap-2">
            <Wallet className="h-4 w-4 text-muted-foreground" />
-           <span className="font-medium">{balance?.toFixed(2)}</span>
+           <span className="font-medium">{balance?.toFixed(2)} {getMt5BalanceCurrency(row.original)}</span>
          </div>
        );
      },

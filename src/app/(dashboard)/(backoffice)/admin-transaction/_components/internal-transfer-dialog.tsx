@@ -70,6 +70,16 @@ function extractMt5Accounts(res: unknown): AdminMT5Account[] {
   return [];
 }
 
+const getAccountTypeName = (account?: AdminMT5Account) =>
+  account?.accountType?.name ?? account?.AdminMT5AccountType?.name ?? account?.account_type ?? "";
+
+const isCentMt5Account = (account?: AdminMT5Account) =>
+  getAccountTypeName(account).trim().toLowerCase() === "cent";
+
+const getMt5AccountCurrency = (account?: AdminMT5Account) => (isCentMt5Account(account) ? "usc" : "usd");
+
+const formatCurrencyCode = (value: unknown) => String(value ?? "USD").trim().toLowerCase();
+
 export function InternalTransferDialog({
   open,
   onOpenChange,
@@ -108,6 +118,18 @@ export function InternalTransferDialog({
     transferType === "main_to_mt5" ||
     transferType === "mt5_to_main" ||
     transferType === "ib_to_main";
+  const selectedFromMt5Account = userMt5Accounts.find(
+    (acc) => String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "") === fromMt5Account,
+  );
+  const selectedToMt5Account = userMt5Accounts.find(
+    (acc) => String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "") === toMt5Account,
+  );
+  const amountCurrency =
+    transferType === "main_to_mt5"
+      ? getMt5AccountCurrency(selectedToMt5Account)
+      : transferType === "mt5_to_mt5" || transferType === "mt5_to_main"
+        ? getMt5AccountCurrency(selectedFromMt5Account)
+        : "usd";
 
   const searchUsers = useCallback(
     async (q: string) => {
@@ -495,6 +517,7 @@ export function InternalTransferDialog({
                 );
                 const accBalance = acc.self_wallet ?? 0;
                 const type = acc.account_mode ?? "-";
+                const currency = getMt5AccountCurrency(acc);
                 return (
                   <span className="flex items-center gap-2 text-sm">
                     <span className="font-medium">{accId}</span>
@@ -503,7 +526,7 @@ export function InternalTransferDialog({
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,
                       })}{" "}
-                      USD · {type}
+                      {currency} · {type}
                     </span>
                   </span>
                 );
@@ -515,6 +538,7 @@ export function InternalTransferDialog({
             const accId = String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "");
             const accBalance = acc.self_wallet ?? 0;
             const type = acc.account_mode ?? "-";
+            const currency = getMt5AccountCurrency(acc);
             return (
               <SelectItem key={accId} value={accId}>
                 <div className="flex flex-col gap-0.5 py-0.5">
@@ -524,7 +548,7 @@ export function InternalTransferDialog({
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}{" "}
-                    USD · {type}
+                    {currency} · {type}
                   </span>
                 </div>
               </SelectItem>
@@ -668,7 +692,7 @@ export function InternalTransferDialog({
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
                               })}{" "}
-                              {wallet.currency}
+                              {amountCurrency === "usc" ? "usc" : formatCurrencyCode(wallet.currency)}
                             </span>
                           </div>
                         </SelectItem>
@@ -721,7 +745,7 @@ export function InternalTransferDialog({
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
                               })}{" "}
-                              {wallet.currency}
+                              {amountCurrency === "usc" ? "usc" : formatCurrencyCode(wallet.currency)}
                             </span>
                           </div>
                         </SelectItem>
@@ -756,7 +780,7 @@ export function InternalTransferDialog({
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
                               })}{" "}
-                              {wallet.currency}
+                              {formatCurrencyCode(wallet.currency)}
                             </span>
                           </div>
                         </SelectItem>
@@ -787,7 +811,7 @@ export function InternalTransferDialog({
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
                               })}{" "}
-                              {wallet.currency}
+                              {formatCurrencyCode(wallet.currency)}
                             </span>
                           </div>
                         </SelectItem>
@@ -800,7 +824,7 @@ export function InternalTransferDialog({
 
           {selectedUser && (
             <div className="space-y-2">
-              <Label htmlFor="transfer-amount">Amount (USD)</Label>
+              <Label htmlFor="transfer-amount">Amount ({amountCurrency})</Label>
               <Input
                 id="transfer-amount"
                 type="number"

@@ -123,6 +123,24 @@ function formatWalletLabel(walletKey: string) {
     .join(" ");
 }
 
+const isCentMt5Account = (account?: MT5Account | null) =>
+  String(account?.account_type_name ?? "").trim().toLowerCase() === "cent";
+
+const formatMt5Balance = (account: MT5Account) => {
+  const amount = Number(account.balance ?? 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+
+  return isCentMt5Account(account) ? `¢${amount}` : formatCurrency(account.balance);
+};
+
+const getMt5TransferCurrency = (account?: MT5Account | null) =>
+  isCentMt5Account(account) ? "USC" : "USD";
+
+const findMt5AccountById = (accounts: MT5Account[], accountId?: string) =>
+  accounts.find((account) => account.account_id === accountId) ?? null;
+
 function InternalTransferContent() {
   const { token, user } = useAuth();
   const searchParams = useSearchParams();
@@ -230,7 +248,7 @@ function InternalTransferContent() {
     () =>
       liveMt5Accounts.map((account) => ({
         id: account.account_id,
-        label: `${account.account_id} • ${formatCurrency(account.balance)} • ${account.account_mode ?? "—"}`,
+        label: `${account.account_id} • ${formatMt5Balance(account)} • ${account.account_mode ?? "—"}`,
       })),
     [liveMt5Accounts],
   );
@@ -334,6 +352,27 @@ function InternalTransferContent() {
       null,
     [defaultWalletValue, walletOptions],
   );
+
+  useEffect(() => {
+    if (!mainWallet) return;
+    if (mt5ToWalletForm.getValues("toWalletType") !== mainWallet.value) {
+      mt5ToWalletForm.setValue("toWalletType", mainWallet.value, {
+        shouldDirty: false,
+        shouldValidate: true,
+      });
+    }
+  }, [mainWallet, mt5ToWalletForm]);
+
+  const selectedMt5ToWalletAccount = findMt5AccountById(
+    liveMt5Accounts,
+    mt5ToWalletForm.watch("fromAccountId"),
+  );
+  const selectedMt5ToMt5FromAccount = findMt5AccountById(
+    liveMt5Accounts,
+    mt5ToMt5Form.watch("fromAccountId"),
+  );
+  const mt5ToWalletCurrency = getMt5TransferCurrency(selectedMt5ToWalletAccount);
+  const mt5ToMt5Currency = getMt5TransferCurrency(selectedMt5ToMt5FromAccount);
 
   const handleMt5ToMt5Submit = async (values: Mt5ToMt5FormValues) => {
     if (!token || !user?.id) {
@@ -628,7 +667,7 @@ function InternalTransferContent() {
                       <Badge variant="outline">{account.account_mode}</Badge>
                     </div>
                     <div className="mt-1 text-muted-foreground">
-                      Balance: {formatCurrency(account.balance)}
+                      Balance: {formatMt5Balance(account)}
                     </div>
                   </div>
                 ))}
@@ -879,11 +918,8 @@ function InternalTransferContent() {
                           <FormItem>
                             <FormLabel>To wallet</FormLabel>
                             <Select
-                              onValueChange={field.onChange}
                               value={field.value}
-                              disabled={
-                                isLoadingResources || walletOptions.length === 0
-                              }
+                              disabled
                             >
                               <FormControl>
                                 <SelectTrigger>
@@ -893,15 +929,12 @@ function InternalTransferContent() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {walletOptions.map((wallet) => (
-                                  <SelectItem
-                                    key={wallet.value}
-                                    value={wallet.value}
-                                  >
-                                    {wallet.label} ({wallet.balance.toFixed(2)}{" "}
+                                {mainWallet && (
+                                  <SelectItem value={mainWallet.value}>
+                                    {mainWallet.label} ({mainWallet.balance.toFixed(2)}{" "}
                                     USD)
                                   </SelectItem>
-                                ))}
+                                )}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -936,7 +969,7 @@ function InternalTransferContent() {
                                   {...field}
                                 />
                                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium pointer-events-none">
-                                  USD
+                                  {mt5ToWalletCurrency}
                                 </span>
                               </div>
                             </FormControl>
@@ -1080,7 +1113,7 @@ function InternalTransferContent() {
                                   {...field}
                                 />
                                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium pointer-events-none">
-                                  USD
+                                  {mt5ToMt5Currency}
                                 </span>
                               </div>
                             </FormControl>

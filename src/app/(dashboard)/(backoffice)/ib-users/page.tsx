@@ -470,7 +470,7 @@ export default function IbUsersPage() {
       },
       {
         id: "ib_info",
-        header: "Total Commission",
+        header: "Total Commission (USD)",
         cell: ({ row }) => {
           const user = row.original;
           const ibName = deriveIbName(user);

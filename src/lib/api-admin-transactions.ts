@@ -40,6 +40,7 @@ export interface AdminTransactionItem {
   transaction_label: string;
   original_model: string;
   admin_notes: string | null;
+  wallet_currency: string;
 }
 
 export interface AdminTransactionPagination {

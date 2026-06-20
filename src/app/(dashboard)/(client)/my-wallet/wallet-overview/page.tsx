@@ -376,7 +376,8 @@ export default function WalletOverviewPage() {
                             Balance
                           </p>
                           <p className="mt-1 text-lg font-semibold text-foreground">
-                            ${formatAmount(wallet.balance)}
+                            {wallet.currency === 'USC' ? '¢' : '$'} 
+                            {formatAmount(wallet.balance)}
                           </p>
                         </div>
 

@@ -232,11 +232,11 @@ export function AdminTransactionContent() {
     },
     {
       id: "amount",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Amount (USD)" />,
+      header: ({ column }) => <DataTableColumnHeader column={column} title="Amount" />,
       accessorKey: "amount",
       cell: ({ row }) => (
         <span className="font-medium tabular-nums">
-          {formatAmount(row.original.amount)}
+          {formatAmount(row.original.amount)} {row.original.wallet_currency}
         </span>
       ),
     },

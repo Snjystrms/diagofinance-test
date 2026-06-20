@@ -152,6 +152,18 @@ const formatSignedValue = (value: unknown) => {
   return `${sign}${formatNumericValue(numeric)}`;
 };
 
+const isCentAccountTypeName = (value: unknown) => String(value ?? "").trim().toLowerCase() === "cent";
+
+const formatValueWithCurrency = (value: unknown, currency?: unknown) => {
+  const formatted = formatNumericValue(value);
+  if (formatted === "-") return formatted;
+  const suffix = String(currency ?? "").trim();
+  return suffix ? `${formatted} ${suffix}` : formatted;
+};
+
+const getUserMt5BalanceCurrency = (account: AdminUserMt5AccountItem) =>
+  isCentAccountTypeName(account.account_type_name) ? "USC" : "USD";
+
 const normalizeBooleanLabel = (value: unknown, positive = "Yes", negative = "No") => {
   if (value === null || value === undefined || value === "") return "-";
   const normalized = typeof value === "boolean" ? value : `${value}` === "1" || `${value}`.toLowerCase() === "true";
@@ -1286,7 +1298,9 @@ export default function NewUserDetailPage() {
                                   
                                   <TableCell>{item.mt5_id || "-"}</TableCell>
                                   <TableCell className="max-w-[220px] truncate">{item.group_name || "-"}</TableCell>
-                                  <TableCell className="font-mono text-xs">{item.balance || "-"}</TableCell>
+                                  <TableCell className="font-mono text-xs">
+                                    {formatValueWithCurrency(item.balance, getUserMt5BalanceCurrency(item))}
+                                  </TableCell>
                                   {/* <TableCell className="font-mono text-xs">{item.investor_password || "-"}</TableCell>
                                   <TableCell className="font-mono text-xs">{item.main_password || "-"}</TableCell> */}
                                   <TableCell>{formatDateTime(item.date)}</TableCell>
@@ -1454,7 +1468,7 @@ export default function NewUserDetailPage() {
                               <TableRow>
                                 <TableHead>Sr. No.</TableHead>
                                 <TableHead>Payment Type</TableHead>
-                                <TableHead>Amount (USD)</TableHead>
+                                <TableHead>Amount</TableHead>
                                 <TableHead>Wallet</TableHead>
                                 <TableHead>Before</TableHead>
                                 <TableHead>After</TableHead>
@@ -1471,7 +1485,10 @@ export default function NewUserDetailPage() {
                                   </TableCell>
                                   <TableCell className="font-medium">{item.payment_type || "-"}</TableCell>
                                   <TableCell className={["withdrawal", "transfer_out"].includes(String(item.payment_type ?? "").toLowerCase()) || Number(item.amount ?? 0) < 0 ? "text-rose-600" : "text-emerald-700 dark:text-emerald-300"}>
-                                    {formatSignedValue(["withdrawal", "transfer_out"].includes(String(item.payment_type ?? "").toLowerCase()) ? -Math.abs(Number(item.amount ?? 0)) : item.amount)}
+                                    {[
+                                      formatSignedValue(["withdrawal", "transfer_out"].includes(String(item.payment_type ?? "").toLowerCase()) ? -Math.abs(Number(item.amount ?? 0)) : item.amount),
+                                      item.currency,
+                                    ].filter(Boolean).join(" ")}
                                   </TableCell>
                                   <TableCell>{item.wallet_type || "-"}</TableCell>
                                   <TableCell>{formatNumericValue(item.balance_before)}</TableCell>

@@ -46,7 +46,17 @@ const getName = (account: AdminMT5Account) => {
 };
 
 const getAccountTypeName = (account: AdminMT5Account) => {
-  return account.accountType?.name ?? account.account_type ?? emptyValue;
+  return account.accountType?.name ?? account.AdminMT5AccountType?.name ?? account.account_type ?? emptyValue;
+};
+
+const getMt5BalanceCurrency = (account: AdminMT5Account) =>
+  getAccountTypeName(account).trim().toLowerCase() === "cent" ? "USC" : "USD";
+
+const formatWalletBalance = (account: AdminMT5Account) => {
+  if (account.self_wallet === undefined || account.self_wallet === null) {
+    return emptyValue;
+  }
+  return `${displayValue(account.self_wallet)} ${getMt5BalanceCurrency(account)}`;
 };
 
 const DetailItem = ({ label, value }: { label: string; value: unknown }) => (
@@ -111,7 +121,7 @@ export function AccountDetailsDialog({
                 <DetailItem label="Server" value={account.server} />
                 <DetailItem label="Account Type" value={getAccountTypeName(account)} />
                 <DetailItem label="Leverage" value={account.leverage ? `1:${account.leverage}` : emptyValue} />
-                <DetailItem label="Wallet Balance" value={account.self_wallet} />
+                <DetailItem label="Wallet Balance" value={formatWalletBalance(account)} />
                 <DetailItem label="Main Password" value={account.main_password} />
                 <DetailItem label="Investor Password" value={account.investor_password} />
                 <DetailItem label="Created" value={formatDate(account.created_at)} />

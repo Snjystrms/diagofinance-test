@@ -1665,6 +1665,7 @@ export interface MT5Account {
   email: string;
   mt5_id: string;
   account_id: string;
+  account_type_name: string;
   balance: number;
   account_mode: "demo" | "live";
 }
@@ -1760,6 +1761,7 @@ export interface AdminMT5Account {
   manager?: AdminMT5AccountManager | null;
   Manager?: AdminMT5AccountManager | null;
   accountType?: AdminMT5AccountType;
+  AdminMT5AccountType?: AdminMT5AccountType;
   [key: string]: unknown;
 }
 

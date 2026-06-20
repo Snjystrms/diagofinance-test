@@ -386,10 +386,12 @@ export interface AdminUserMt5AccountItem {
   account_id: string;
   mt5_id?: string | null;
   group_name?: string | null;
+  account_type_id?: number | string | null;
+  account_type_name?: string | null;
   investor_password?: string | null;
   main_password?: string | null;
   date?: string | null;
-  balance?: string | null;
+  balance?: string | number | null;
   [key: string]: unknown;
 }
 
@@ -491,6 +493,7 @@ export interface AdminUserWalletHistoryItem {
   id: number;
   payment_type?: string | null;
   amount?: number | string;
+  currency?: string | null;
   mode?: number | string | null;
   remark?: string | null;
   status?: number | string | null;
