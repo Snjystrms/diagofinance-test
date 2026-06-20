@@ -168,7 +168,7 @@ export function DownlineTreePageContent({
       setUserName(ibUser.name);
 
       // Build root node
-      const rootId = ibUser.sponsor_id || `user_${ibUser.id}`;
+      const rootId = ('sponsor_id' in ibUser ? ibUser.sponsor_id : undefined) || `user_${ibUser.id}`;
       const root: NodeRecord = {
         sponsorId: rootId,
         username: ibUser.name,
@@ -179,7 +179,7 @@ export function DownlineTreePageContent({
         isRoot: true,
         userId: ibUser.id,
         isIb: true,
-        direct_rates: ibUser.direct_rates,
+        direct_rates: 'direct_rates' in ibUser ? ibUser.direct_rates : undefined,
       };
 
       const nextNodes: Record<string, NodeRecord> = { [rootId]: root };
@@ -242,7 +242,7 @@ export function DownlineTreePageContent({
                 break;
               }
             }
-            if (!parentId && user.sponsor_by === ibUser.sponsor_id) {
+            if (!parentId && user.sponsor_by === ('sponsor_id' in ibUser ? ibUser.sponsor_id : undefined)) {
               parentId = rootId;
             }
           }

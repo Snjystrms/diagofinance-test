@@ -231,7 +231,7 @@ export function DownlineTreeDialog({ open, onOpenChange, userId, userName }: Dow
       }
 
       // Build root node
-      const rootId = ibUser.sponsor_id || `user_${ibUser.id}`;
+      const rootId = ('sponsor_id' in ibUser ? ibUser.sponsor_id : undefined) || `user_${ibUser.id}`;
       const root: NodeRecord = {
         sponsorId: rootId,
         username: ibUser.name,
@@ -303,7 +303,7 @@ export function DownlineTreeDialog({ open, onOpenChange, userId, userName }: Dow
               }
             }
             // If parent not found in users, it might be the root
-            if (!parentId && user.sponsor_by === ibUser.sponsor_id) {
+            if (!parentId && user.sponsor_by === ('sponsor_id' in ibUser ? ibUser.sponsor_id : undefined)) {
               parentId = rootId;
             }
           }
