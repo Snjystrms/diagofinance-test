@@ -292,13 +292,10 @@ export function ClientDepositDialog({ open, onOpenChange, token, onSuccess }: Cl
                     {walletBalances.map((wallet) => (
                       <div key={wallet.id} className="flex items-center justify-between text-sm">
                         <div className="flex flex-col">
-                          {wallet.wallet_type === "mt5" ? (
+                          {wallet.wallet_type === "mt5" && wallet.mt5_id ? (
                             <span className="text-muted-foreground">{wallet.mt5_id}</span>
                           ) : (
-                            <>
-                              <span className="capitalize text-muted-foreground">{wallet.wallet_type}</span>
-                              {wallet.mt5_id && <span className="text-xs text-muted-foreground">{wallet.mt5_id}</span>}
-                            </>
+                            <span className="capitalize text-muted-foreground">{wallet.wallet_type}</span>
                           )}
                         </div>
                         <span className="font-medium">

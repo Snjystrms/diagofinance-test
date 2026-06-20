@@ -166,8 +166,8 @@ export interface AdminInternalTransferBody {
 
 export interface AdminInternalTransferData {
   type: InternalTransferType;
-  from_account: string;
-  to_account: string;
+  from_wallet_id: string | number;
+  to_wallet_id: string | number;
   amount: number;
 }
 

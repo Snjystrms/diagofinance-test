@@ -152,7 +152,7 @@ export function AdminTransactionContent() {
   }, [loadData]);
 
   const handleTransferSuccess = useCallback((res: AdminInternalTransferData) => {
-    toast.success(`Transfer of $${formatAmount(res.amount)} from ${res.from_account} to ${res.to_account}`);
+    toast.success(`Transfer of $${formatAmount(res.amount)} from ${res.from_wallet_id} to ${res.to_wallet_id} completed successfully`);
     void loadData();
   }, [loadData]);
 
@@ -251,7 +251,7 @@ export function AdminTransactionContent() {
       header: "Balance Before",
       cell: ({ row }) => (
         <span className="tabular-nums text-sm text-muted-foreground">
-          {formatAmount(row.original.balance_before)}
+          {formatAmount(row.original.balance_before)} {row.original.wallet_currency}
         </span>
       ),
     },
@@ -260,7 +260,7 @@ export function AdminTransactionContent() {
       header: "Balance After",
       cell: ({ row }) => (
         <span className="tabular-nums text-sm text-muted-foreground">
-          {formatAmount(row.original.balance_after)}
+          {formatAmount(row.original.balance_after)} {row.original.wallet_currency}
         </span>
       ),
     },

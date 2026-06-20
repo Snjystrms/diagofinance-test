@@ -215,28 +215,12 @@ export function InternalTransferDialog({
         );
         setUserMt5Accounts(liveAccounts);
 
-        // Fetch wallet IDs for each MT5 account
+        // Extract wallet IDs directly from the account list response
         const walletIdMap = new Map<string, number>();
         for (const acc of liveAccounts) {
           const accId = String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "");
-          if (accId && acc.id) {
-            try {
-              const detailRes = await adminMT5AccountsApi.getById(acc.id, token);
-              const detailData = detailRes.data ?? detailRes;
-              const mt5Account =
-                (detailData as Record<string, unknown>).mt5_account ||
-                (detailData as Record<string, unknown>).account ||
-                detailData;
-              const accountData = mt5Account as Record<string, unknown>;
-              if (accountData?.mt5_wallet_id) {
-                walletIdMap.set(accId, Number(accountData.mt5_wallet_id));
-              }
-            } catch (error) {
-              console.error(
-                `Failed to fetch wallet ID for MT5 account ${accId}:`,
-                error
-              );
-            }
+          if (accId && acc.mt5_wallet_id) {
+            walletIdMap.set(accId, Number(acc.mt5_wallet_id));
           }
         }
         setMt5AccountsWithWalletIds(walletIdMap);
@@ -426,7 +410,12 @@ export function InternalTransferDialog({
         },
         token
       );
-      if (res.data) onSuccess(res.data);
+      
+      if (res.data) {
+        // Show success message from API response
+        toast.success(res.message || "Internal transfer processed successfully");
+        onSuccess(res.data);
+      }
       onOpenChange(false);
     } catch (error: unknown) {
       toast.error(
