@@ -834,6 +834,37 @@ export function InternalTransferDialog({
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
+              {amount && Number(amount) > 0 && (
+                <>
+                  {/* Main to MT5: Show USD to USC if target is CENT */}
+                  {transferType === "main_to_mt5" && isCentMt5Account(selectedToMt5Account) && (
+                    <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+                      <p className="text-xs text-muted-foreground">Conversion</p>
+                      <p className="text-sm font-semibold text-foreground mt-0.5">
+                        {Number(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD = {(Number(amount) * 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC
+                      </p>
+                    </div>
+                  )}
+                  {/* MT5 to MT5: Show USD to USC if both are CENT */}
+                  {transferType === "mt5_to_mt5" && isCentMt5Account(selectedFromMt5Account) && isCentMt5Account(selectedToMt5Account) && (
+                    <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+                      <p className="text-xs text-muted-foreground">Conversion</p>
+                      <p className="text-sm font-semibold text-foreground mt-0.5">
+                        {Number(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD = {(Number(amount) * 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC
+                      </p>
+                    </div>
+                  )}
+                  {/* MT5 to Main: Show USC to USD if source is CENT */}
+                  {transferType === "mt5_to_main" && isCentMt5Account(selectedFromMt5Account) && (
+                    <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+                      <p className="text-xs text-muted-foreground">Conversion</p>
+                      <p className="text-sm font-semibold text-foreground mt-0.5">
+                        {Number(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC = {(Number(amount) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           )}
         </div>

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState, useCallback } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
@@ -311,11 +312,14 @@ export function WithdrawalRequestsPageContent() {
           if (!userInfo) return <span className="text-muted-foreground">—</span>;
           return (
             <div className="space-y-0.5">
-              <div className="font-medium">
+              <Link
+                href={`/new-users/${userInfo.id ?? ""}`}
+                className="font-medium hover:underline"
+              >
                 {userInfo.first_name || userInfo.last_name
                   ? `${userInfo.first_name || ""} ${userInfo.last_name || ""}`.trim()
                   : "—"}
-              </div>
+              </Link>
               <div className="text-xs text-muted-foreground">{userInfo.email}</div>
             </div>
           );

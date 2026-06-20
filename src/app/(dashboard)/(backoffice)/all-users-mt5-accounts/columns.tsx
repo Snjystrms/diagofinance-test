@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Calendar, CreditCard, Eye, Pencil, Server, Trash2, User, Wallet } from "lucide-react";
 
@@ -117,7 +118,12 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
         <div className="space-y-1">
           <div className="flex items-center gap-1">
             <User className="h-3 w-3 text-muted-foreground" />
-            <span className="font-medium">{deriveUserName(account)}</span>
+            <Link
+              href={`/new-users/${(account.user ?? account.User)?.id ?? account.user_id ?? account.userId ?? ""}`}
+              className="font-medium hover:underline"
+            >
+              {deriveUserName(account)}
+            </Link>
           </div>
           <div className="text-xs text-muted-foreground">{deriveUserEmail(account)}</div>
         </div>

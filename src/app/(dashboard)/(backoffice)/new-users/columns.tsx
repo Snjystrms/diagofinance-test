@@ -291,7 +291,12 @@ export const getColumnsWithActions = (
         <div className="space-y-1">
           <div className="flex items-center gap-1">
             <User className="h-3 w-3 text-muted-foreground" />
-            <span className="font-medium">{user.name || "-"}</span>
+            <Link
+              href={`/new-users/${user.id}`}
+              className="font-medium hover:underline"
+            >
+              {user.name || "-"}
+            </Link>
           </div>
           <div className="text-xs text-muted-foreground">@{user.username || "-"}</div>
           <div className="text-xs text-muted-foreground">

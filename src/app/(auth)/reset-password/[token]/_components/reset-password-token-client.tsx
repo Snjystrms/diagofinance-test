@@ -57,14 +57,13 @@ export function ResetPasswordTokenClient() {
       <ProtectedRoute requireAuth={false}>
         <AuthLayout>
           <div className="text-center">
-            <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-full mb-6"
-              style={{ background: 'rgba(34,197,94,0.15)' }}>
-              <CheckCircle className="h-8 w-8 text-green-400" />
+            <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-full mb-6 bg-green-500/15">
+              <CheckCircle className="h-8 w-8 text-green-500" />
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
               Password Reset Successful!
             </h1>
-            <p className="text-white/40 text-lg">
+            <p className="text-muted-foreground text-lg">
               Your password has been successfully reset. You can now log in with your new password.
             </p>
             <div className="mt-6">
@@ -73,10 +72,10 @@ export function ResetPasswordTokenClient() {
                 className="
                   inline-flex items-center gap-2
                   px-6 py-2.5 rounded-lg text-sm font-semibold
-                  bg-[#FFB800] text-black
-                  hover:bg-[#FFB800]/90
+                  bg-primary text-primary-foreground
+                  hover:bg-primary/90
                   transition-all
-                  shadow-[0_0_20px_rgba(255,184,0,0.2)]
+                  shadow-lg shadow-primary/20
                 "
               >
                 <ArrowLeft className="h-4 w-4" />
@@ -93,28 +92,25 @@ export function ResetPasswordTokenClient() {
     <ProtectedRoute requireAuth={false}>
       <AuthLayout>
         <div className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-white">
+          <h2 className="mt-6 text-3xl font-extrabold text-foreground">
             Reset your password
           </h2>
-          <p className="mt-2 text-sm text-white/40">
+          <p className="mt-2 text-sm text-muted-foreground">
             Enter your new password below
           </p>
         </div>
 
-        {/* Card with gold border accent */}
-        <div
-          className="rounded-xl border border-[#FFB800]/20 bg-[#0f0f0f] overflow-hidden"
-          style={{ boxShadow: '0 0 0 1px rgba(255,184,0,0.08), 0 24px 60px rgba(0,0,0,0.6)' }}
-        >
-          {/* Gold top bar accent */}
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-[#FFB800]/60 to-transparent" />
+        {/* Card with primary border accent */}
+        <div className="rounded-xl border border-primary/20 bg-card overflow-hidden shadow-2xl shadow-primary/5">
+          {/* Primary top bar accent */}
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
 
           <div className="px-8 pt-7 pb-2">
             <div className="flex items-center gap-2 mb-1">
-              <Key className="h-5 w-5 text-[#FFB800]" />
-              <h3 className="text-white font-semibold text-lg">Reset Password</h3>
+              <Key className="h-5 w-5 text-primary" />
+              <h3 className="text-foreground font-semibold text-lg">Reset Password</h3>
             </div>
-            <p className="text-white/40 text-sm mt-0.5">
+            <p className="text-muted-foreground text-sm mt-0.5">
               Please enter your new password
             </p>
           </div>
@@ -127,7 +123,7 @@ export function ResetPasswordTokenClient() {
                   name="password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-white/70 text-sm">New Password</FormLabel>
+                      <FormLabel className="text-foreground/70 text-sm">New Password</FormLabel>
                       <FormControl>
                         <PasswordInput
                           placeholder="Enter your new password"
@@ -142,7 +138,7 @@ export function ResetPasswordTokenClient() {
                               "
                             />
                       </FormControl>
-                      <FormMessage className="text-red-400 text-xs" />
+                      <FormMessage className="text-destructive text-xs" />
                     </FormItem>
                   )}
                 />
@@ -152,7 +148,7 @@ export function ResetPasswordTokenClient() {
                   name="confirm_password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-white/70 text-sm">Confirm New Password</FormLabel>
+                      <FormLabel className="text-foreground/70 text-sm">Confirm New Password</FormLabel>
                       <FormControl>
                         <PasswordInput
                           placeholder="Confirm your new password"
@@ -167,7 +163,7 @@ export function ResetPasswordTokenClient() {
                               "
                             />
                       </FormControl>
-                      <FormMessage className="text-red-400 text-xs" />
+                      <FormMessage className="text-destructive text-xs" />
                     </FormItem>
                   )}
                 />
@@ -177,16 +173,16 @@ export function ResetPasswordTokenClient() {
                   disabled={isLoading}
                   className="
                     w-full py-3 rounded-lg text-sm font-bold tracking-wide
-                    bg-[#FFB800] text-black
-                    hover:bg-[#FFB800]/90
+                    bg-primary text-primary-foreground
+                    hover:bg-primary/90
                     disabled:opacity-40 disabled:cursor-not-allowed
                     transition-all flex items-center justify-center gap-2
-                    shadow-[0_0_20px_rgba(255,184,0,0.2)]
+                    shadow-lg shadow-primary/20
                   "
                 >
                   {isLoading ? (
                     <>
-                      <Spinner size="sm" className="border-black/40" />
+                      <Spinner size="sm" className="border-primary-foreground/40" />
                       Resetting Password...
                     </>
                   ) : (
@@ -197,8 +193,8 @@ export function ResetPasswordTokenClient() {
             </Form>
           </div>
 
-          {/* Gold bottom bar accent */}
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-[#FFB800]/30 to-transparent" />
+          {/* Primary bottom bar accent */}
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
         </div>
       </AuthLayout>
     </ProtectedRoute>

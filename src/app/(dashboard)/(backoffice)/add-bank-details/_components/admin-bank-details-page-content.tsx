@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useDeferredValue, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -345,7 +346,12 @@ export function AdminBankDetailsPageContent() {
         header: "User",
         cell: ({ row }) => (
           <div className="space-y-0.5">
-            <div className="font-medium">{row.original.user?.name || "-"}</div>
+            <Link
+              href={`/new-users/${row.original.user?.id ?? ""}`}
+              className="font-medium hover:underline"
+            >
+              {row.original.user?.name || "-"}
+            </Link>
             <div className="text-xs text-muted-foreground">{row.original.user?.email || "-"}</div>
           </div>
         ),

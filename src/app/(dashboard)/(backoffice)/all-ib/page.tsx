@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import toast from "react-hot-toast";
@@ -468,7 +469,12 @@ export default function IbManagementPage() {
 
           return (
             <div className="space-y-1 text-sm">
-              <div className="font-medium">{fullName}</div>
+              <Link
+                href={`/new-users/${request.user_id ?? request.userId ?? request.id ?? ""}`}
+                className="font-medium hover:underline"
+              >
+                {fullName}
+              </Link>
               <div className="text-xs text-muted-foreground">{email}</div>
               <div className="text-xs text-muted-foreground">{phone}</div>
             </div>

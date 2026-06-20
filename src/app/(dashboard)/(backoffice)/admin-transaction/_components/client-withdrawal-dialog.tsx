@@ -261,12 +261,18 @@ export function ClientWithdrawalDialog({ open, onOpenChange, token, onSuccess }:
                     Loading wallets...
                   </div>
                 ) : walletBalances.length > 0 ? (
-                  <div className="space-y-1.5 rounded-md border border-border/60 bg-popover p-3">
+                  <div className="max-h-40 space-y-1.5 overflow-y-auto rounded-md border border-border/60 bg-popover p-3">
                     {walletBalances.map((wallet) => (
                       <div key={wallet.id} className="flex items-center justify-between text-sm">
                         <div className="flex flex-col">
-                          <span className="capitalize text-muted-foreground">{wallet.wallet_type}</span>
-                          {wallet.mt5_id && <span className="text-xs text-muted-foreground">{wallet.mt5_id}</span>}
+                          {wallet.wallet_type === "mt5" ? (
+                            <span className="text-muted-foreground">{wallet.mt5_id}</span>
+                          ) : (
+                            <>
+                              <span className="capitalize text-muted-foreground">{wallet.wallet_type}</span>
+                              {wallet.mt5_id && <span className="text-xs text-muted-foreground">{wallet.mt5_id}</span>}
+                            </>
+                          )}
                         </div>
                         <span className="font-medium">
                           {wallet.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {wallet.currency}

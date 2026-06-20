@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
@@ -216,7 +217,12 @@ export function AdminTransactionContent() {
         const user = row.original.user;
         return (
           <div className="space-y-0.5">
-            <div className="font-medium">{user?.name || "—"}</div>
+            <Link
+              href={`/new-users/${user?.id ?? ""}`}
+              className="font-medium hover:underline"
+            >
+              {user?.name || "—"}
+            </Link>
             <div className="text-xs text-muted-foreground">{user?.email || user?.username || "—"}</div>
           </div>
         );

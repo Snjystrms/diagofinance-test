@@ -654,7 +654,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "ib-management",
-    navLabel: "Partner Users",
+    navLabel: "Partner List",
     managerCategories: ["IB Management"],
   },
   // {

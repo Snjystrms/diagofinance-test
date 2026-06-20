@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -284,7 +285,12 @@ export default function BonusManagementPage() {
         cell: ({ row }) => (
           <div className="space-y-0.5">
             <div className="font-medium">{row.original.mt5User?.account_id ?? "-"}</div>
-            <div className="text-xs text-muted-foreground">{row.original.mt5User?.name ?? "-"}</div>
+            <Link
+              href={`/new-users/${row.original.user_id ?? ""}`}
+              className="text-xs text-muted-foreground hover:underline"
+            >
+              {row.original.mt5User?.name ?? "-"}
+            </Link>
           </div>
         ),
       },
@@ -711,6 +717,14 @@ export default function BonusManagementPage() {
                   onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
                   onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 />
+                {selectedMt5User?.account_type_name === "CENT" && form.amount && Number(form.amount) > 0 && (
+                  <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+                    <p className="text-xs text-muted-foreground">Conversion</p>
+                    <p className="text-sm font-semibold text-foreground mt-0.5">
+                      {formatMoney(Number(form.amount))} USD = {formatMoney(Number(form.amount) * 100)} USC
+                    </p>
+                  </div>
+                )}
               </div>
 
               <div className="space-y-2">
