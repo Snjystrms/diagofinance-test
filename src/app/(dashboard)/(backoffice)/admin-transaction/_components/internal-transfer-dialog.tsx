@@ -326,6 +326,19 @@ export function InternalTransferDialog({
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
+  // Clear "To" account when "From" account changes in MT5 to MT5 transfers
+  useEffect(() => {
+    if (isMt5ToMt5 && fromMt5Account && toMt5Account) {
+      const fromIsCent = isCentMt5Account(selectedFromMt5Account);
+      const toIsCent = isCentMt5Account(selectedToMt5Account);
+      
+      // If currency types don't match, clear the "To" account
+      if (fromIsCent !== toIsCent) {
+        setToMt5Account("");
+      }
+    }
+  }, [fromMt5Account, isMt5ToMt5, selectedFromMt5Account, selectedToMt5Account, toMt5Account]);
+
   const handleSubmit = async () => {
     const numAmount = parseFloat(amount);
     if (!amount || isNaN(numAmount) || numAmount <= 0) {
@@ -483,6 +496,7 @@ export function InternalTransferDialog({
     value: string,
     onChange: (val: string) => void,
     label: string,
+    isToAccount = false,
   ) => {
     if (loadingMt5Accounts) {
       return (
@@ -493,10 +507,22 @@ export function InternalTransferDialog({
       );
     }
 
-    if (userMt5Accounts.length === 0) {
+    // Filter accounts based on currency type for MT5 to MT5 transfers
+    let filteredAccounts = userMt5Accounts;
+    if (isMt5ToMt5 && isToAccount && fromMt5Account) {
+      const fromIsCent = isCentMt5Account(selectedFromMt5Account);
+      filteredAccounts = userMt5Accounts.filter((acc) => {
+        const accIsCent = isCentMt5Account(acc);
+        return fromIsCent === accIsCent;
+      });
+    }
+
+    if (filteredAccounts.length === 0) {
       return (
         <p className="text-sm text-muted-foreground py-2">
-          No MT5 accounts found for this user
+          {isToAccount && fromMt5Account 
+            ? `No matching ${isCentMt5Account(selectedFromMt5Account) ? 'CENT' : 'USD'} accounts found`
+            : "No MT5 accounts found for this user"}
         </p>
       );
     }
@@ -507,7 +533,7 @@ export function InternalTransferDialog({
           <SelectValue placeholder={`Select ${label}`}>
             {value &&
               (() => {
-                const acc = userMt5Accounts.find(
+                const acc = filteredAccounts.find(
                   (a) =>
                     String(a.account_id ?? a.mt5_id ?? a.id ?? "") === value,
                 );
@@ -534,7 +560,7 @@ export function InternalTransferDialog({
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {userMt5Accounts.map((acc) => {
+          {filteredAccounts.map((acc) => {
             const accId = String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "");
             const accBalance = acc.self_wallet ?? 0;
             const type = acc.account_mode ?? "-";
@@ -654,6 +680,7 @@ export function InternalTransferDialog({
                   fromMt5Account,
                   (val) => setFromMt5Account(val),
                   "From Account",
+                  false,
                 )}
               </div>
 
@@ -663,6 +690,7 @@ export function InternalTransferDialog({
                   toMt5Account,
                   (val) => setToMt5Account(val),
                   "To Account",
+                  true,
                 )}
               </div>
             </>
@@ -845,12 +873,12 @@ export function InternalTransferDialog({
                       </p>
                     </div>
                   )}
-                  {/* MT5 to MT5: Show USD to USC if both are CENT */}
+                  {/* MT5 to MT5: Show USC to USD if both are CENT */}
                   {transferType === "mt5_to_mt5" && isCentMt5Account(selectedFromMt5Account) && isCentMt5Account(selectedToMt5Account) && (
                     <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
                       <p className="text-xs text-muted-foreground">Conversion</p>
                       <p className="text-sm font-semibold text-foreground mt-0.5">
-                        {Number(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD = {(Number(amount) * 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC
+                        {Number(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC = {(Number(amount) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
                       </p>
                     </div>
                   )}

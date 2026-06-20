@@ -54,7 +54,7 @@ export function CreateAccountDialog({
   const [showInvestorPassword, setShowInvestorPassword] = useState(false);
 
   const selectedAccountType = accountTypes.find((type) => String(type.id) === String(formData.account_type_id));
-  const balanceCurrency = selectedAccountType?.name?.trim().toLowerCase() === "cent" ? "USC" : "USD";
+  const balanceCurrency = selectedAccountType?.name?.trim().toLowerCase() === "cent" ? "USD" : "USD";
 
   useEffect(() => {
     if (open && token) {
