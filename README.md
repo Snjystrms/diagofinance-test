@@ -187,7 +187,7 @@ interface LoginResponse {
 2. Add route protection if needed
 3. Update navigation if required
 
-### Adding New API Endpoints ###
+### Adding New API Endpoints
 
 1. Add function to `src/lib/api.ts`
 2. Create mutation in `src/hooks/use-auth-mutations.ts`
