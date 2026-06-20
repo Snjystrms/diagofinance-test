@@ -126,7 +126,7 @@ export function InternalTransferDialog({
   );
   const amountCurrency =
     transferType === "main_to_mt5"
-      ? getMt5AccountCurrency(selectedToMt5Account)
+      ? "usd"
       : transferType === "mt5_to_mt5" || transferType === "mt5_to_main"
         ? getMt5AccountCurrency(selectedFromMt5Account)
         : "usd";
@@ -561,7 +561,7 @@ export function InternalTransferDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
+      <DialogContent className="!max-h-[calc(100vh-2rem)] sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>Internal Transfer</DialogTitle>
           <DialogDescription>Transfer funds between accounts</DialogDescription>
@@ -620,7 +620,7 @@ export function InternalTransferDialog({
               </div>
 
               {showUserResults && (
-                <div className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-border/60 bg-popover shadow-lg">
+                <div className="mt-1 max-h-72 w-full overflow-auto rounded-lg border border-border/60 bg-popover shadow-lg">
                   {renderUserSearchResults()}
                 </div>
               )}
@@ -692,7 +692,7 @@ export function InternalTransferDialog({
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
                               })}{" "}
-                              {amountCurrency === "usc" ? "usc" : formatCurrencyCode(wallet.currency)}
+                              {formatCurrencyCode(wallet.currency)}
                             </span>
                           </div>
                         </SelectItem>
@@ -745,7 +745,7 @@ export function InternalTransferDialog({
                                 minimumFractionDigits: 2,
                                 maximumFractionDigits: 2,
                               })}{" "}
-                              {amountCurrency === "usc" ? "usc" : formatCurrencyCode(wallet.currency)}
+                              {formatCurrencyCode(wallet.currency)}
                             </span>
                           </div>
                         </SelectItem>

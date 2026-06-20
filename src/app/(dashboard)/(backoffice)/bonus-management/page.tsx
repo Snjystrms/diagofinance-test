@@ -626,7 +626,7 @@ export default function BonusManagementPage() {
                             >
                               <div className="flex flex-col">
                                 <span className="font-medium">{item.account_id}</span>
-                                <span className="text-xs text-muted-foreground">{item.name} | {item.email} | {item.mode}</span>
+                                <span className="text-xs text-muted-foreground">{item.name} | {item.email} | {item.mode} | {item.account_type_name}</span>
                               </div>
                             </CommandItem>
                           ))}
@@ -669,6 +669,11 @@ export default function BonusManagementPage() {
                       <Badge variant="outline" className="w-fit font-mono">
                         {selectedMt5User.account_id}
                       </Badge>
+                      {selectedMt5User.account_type_name && (
+                        <Badge variant="outline" className="w-fit font-mono">
+                          {selectedMt5User.account_type_name}
+                        </Badge>
+                      )}
                     </div>
                   </div>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -686,7 +691,7 @@ export default function BonusManagementPage() {
                     <div>
                       <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Current Balance</p>
                       <p className="mt-1 text-xl font-semibold text-foreground">
-                        {formatMoney(selectedMt5User.current_balance)}
+                       {formatMoney(selectedMt5User.current_balance)} {selectedMt5User.account_type_name === "CENT" ? "USC" : "USD"}
                       </p>
                     </div>
                   </div>
@@ -694,7 +699,7 @@ export default function BonusManagementPage() {
               ) : null}
 
               <div className="space-y-2">
-                <Label htmlFor="bonus-amount">Amount</Label>
+                <Label htmlFor="bonus-amount">Amount (USD)</Label>
                 <Input
                   id="bonus-amount"
                   type="number"

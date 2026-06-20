@@ -835,6 +835,7 @@ export interface AdminBonusMt5UserOption {
   email: string;
   current_balance: number;
   mode: string;
+  account_type_name?: string;
 }
 
 export interface AdminBonusMutateBody {

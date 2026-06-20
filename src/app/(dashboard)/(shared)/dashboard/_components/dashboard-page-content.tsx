@@ -353,6 +353,26 @@ export function DashboardPageContent() {
     return () => clearTimeout(timer);
   }, []);
 
+  // Check if MT5 dialog should be shown (only if user has no MT5 accounts and profile is complete)
+  useEffect(() => {
+    if (!isUser || !dashboardData) return;
+    
+    // Don't show MT5 dialog if profile dialog is showing
+    if (showProfileDialog) return;
+    
+    // Check if user has any MT5 accounts
+    const hasMt5Accounts = Boolean(dashboardData.mt5_users && dashboardData.mt5_users.length > 0);
+    
+    // Only show MT5 dialog if user has no accounts and hasn't seen it this session
+    if (!hasMt5Accounts && !showMt5Dialog) {
+      const hasSeenMt5Dialog = sessionStorage.getItem('mt5_dialog_shown');
+      if (!hasSeenMt5Dialog) {
+        setShowMt5Dialog(true);
+        sessionStorage.setItem('mt5_dialog_shown', 'true');
+      }
+    }
+  }, [isUser, dashboardData, showProfileDialog, showMt5Dialog]);
+
   // Show news and promotion dialogs for recent items (within 24 hours)
   useEffect(() => {
     if (!isUser) return;
@@ -2157,7 +2177,13 @@ export function DashboardPageContent() {
           onOpenChange={(open) => {
             setShowProfileDialog(open);
             if (open === false) {
-              setShowMt5Dialog(true);
+              // Only show MT5 dialog if user has no MT5 accounts
+              const hasMt5Accounts = Boolean(dashboardData?.mt5_users && dashboardData.mt5_users.length > 0);
+              const hasSeenMt5Dialog = sessionStorage.getItem('mt5_dialog_shown');
+              if (!hasMt5Accounts && !hasSeenMt5Dialog) {
+                setShowMt5Dialog(true);
+                sessionStorage.setItem('mt5_dialog_shown', 'true');
+              }
             }
           }}
           incompleteSections={incompleteSections.map(section => ({

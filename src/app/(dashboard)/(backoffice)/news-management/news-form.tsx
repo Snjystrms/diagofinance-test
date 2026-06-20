@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { NewsRow } from "./page";
 import {
   Dialog,
@@ -55,6 +55,7 @@ export function NewsForm({
     type: newsType,
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (initialData) {
@@ -192,6 +193,7 @@ export function NewsForm({
                   </TabsList>
                   <TabsContent value="file" className="space-y-3 pt-2">
                     <Input
+                      ref={fileInputRef}
                       type="file"
                       accept="image/*"
                       onChange={handleFileChange}
@@ -221,7 +223,10 @@ export function NewsForm({
                         </p>
                       </div>
                     ) : (
-                      <div className="flex h-28 w-full items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25">
+                      <div 
+                        className="flex h-28 w-full items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/25 cursor-pointer hover:border-muted-foreground/40 transition-colors"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
                         <div className="text-center">
                           <FileImage className="mx-auto h-8 w-8 text-muted-foreground" />
                           <p className="mt-1 text-xs text-muted-foreground">

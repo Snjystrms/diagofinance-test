@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   UserRound,
 } from "lucide-react";
+import { AuthenticatedImage } from "@/components/authenticated-image";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
@@ -1036,7 +1037,7 @@ export default function NewUserDetailPage() {
                               <div className="flex items-center justify-between gap-3">
                                 <span className="text-muted-foreground">POI (Front)</span>
                                 <a href={kycData.document_urls.poi_front_file} target="_blank" rel="noopener noreferrer">
-                                  <img
+                                  <AuthenticatedImage
                                     src={kycData.document_urls.poi_front_file}
                                     alt="POI Front"
                                     className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
@@ -1048,7 +1049,7 @@ export default function NewUserDetailPage() {
                               <div className="flex items-center justify-between gap-3">
                                 <span className="text-muted-foreground">POA (Front)</span>
                                 <a href={kycData.document_urls.poa_front_file} target="_blank" rel="noopener noreferrer">
-                                  <img
+                                  <AuthenticatedImage
                                     src={kycData.document_urls.poa_front_file}
                                     alt="POA Front"
                                     className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
@@ -1060,7 +1061,7 @@ export default function NewUserDetailPage() {
                               <div className="flex items-center justify-between gap-3">
                                 <span className="text-muted-foreground">POA (Back)</span>
                                 <a href={kycData.document_urls.poa_back_file} target="_blank" rel="noopener noreferrer">
-                                  <img
+                                  <AuthenticatedImage
                                     src={kycData.document_urls.poa_back_file}
                                     alt="POA Back"
                                     className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
@@ -1072,7 +1073,7 @@ export default function NewUserDetailPage() {
                               <div className="flex items-center justify-between gap-3">
                                 <span className="text-muted-foreground">Other</span>
                                 <a href={kycData.document_urls.other_file} target="_blank" rel="noopener noreferrer">
-                                  <img
+                                  <AuthenticatedImage
                                     src={kycData.document_urls.other_file}
                                     alt="Other Document"
                                     className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
