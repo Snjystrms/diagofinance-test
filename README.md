@@ -93,7 +93,7 @@ The application integrates with the following backend APIs:
 5. **Open your browser
    Navigate to [http://localhost:3000](http://localhost:3000)
 
-## Project Structure
+## Project Structure ##
 
 ```
 src/
