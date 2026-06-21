@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Calendar, Eye, Globe, Mail, Pencil, Phone, Trash2, User, Plus, RefreshCw, Wallet, KeyRound } from "lucide-react";
+import { Calendar, Eye, Globe, Mail, Pencil, Phone, Trash2, User, Plus, RefreshCw, Wallet, KeyRound, UserPlus } from "lucide-react";
 import toast from "react-hot-toast";
 import { useState } from "react";
 
@@ -132,7 +132,7 @@ function RowActions({
             onClick={() => onManageSponsor(row.original)}
             title={`Manage parent for ${row.original.name || "user"}`}
           >
-            <RefreshCw className="h-4 w-4" />
+            <UserPlus className="h-4 w-4" />
           </Button>
         ) : null}
       </div>

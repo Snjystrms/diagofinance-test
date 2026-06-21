@@ -48,6 +48,11 @@ export function NavMain({
   const router = useRouter()
   const { state, isMobile, closeMobileSidebar } = useSidebar()
   const isCollapsed = state === "collapsed"
+  const [isHydrated, setIsHydrated] = React.useState(false)
+
+  React.useEffect(() => {
+    setIsHydrated(true)
+  }, [])
 
   const handleMobileNav = React.useCallback(() => {
     if (isMobile) closeMobileSidebar()
@@ -90,11 +95,11 @@ export function NavMain({
       </SidebarGroupLabel>
       <SidebarMenu className={cn(isEnterprise && "gap-1.5")}>
         {items.map((item) => {
-          const isDirectActive = pathname === item.url || pathname.startsWith(item.url + '/')
+          const isDirectActive = isHydrated && (pathname === item.url || pathname.startsWith(item.url + '/'))
           const hasSubItems = item.items && item.items.length > 0
-          const hasActiveSubItem = item.items?.some(
+          const hasActiveSubItem = isHydrated && (item.items?.some(
             (subItem) => pathname === subItem.url || pathname.startsWith(subItem.url + "/")
-          ) ?? false
+          ) ?? false)
           const isActive = isDirectActive || hasActiveSubItem
           const topLevelButtonClass = isEnterprise
             ? cn(
@@ -112,7 +117,7 @@ export function NavMain({
             <Collapsible
               key={item.title}
               asChild
-              defaultOpen={isActive || (item.items?.some(subItem => pathname === subItem.url) ?? false)}
+              defaultOpen={isHydrated && (isActive || (item.items?.some(subItem => pathname === subItem.url) ?? false))}
               className="group/collapsible"
             >
               <SidebarMenuItem>
@@ -210,8 +215,8 @@ export function NavMain({
                       )}
                     >
                       {item.items?.map((subItem) => {
-                        const isSubActive =
-                          pathname === subItem.url || pathname.startsWith(subItem.url + "/")
+                        const isSubActive = isHydrated &&
+                          (pathname === subItem.url || pathname.startsWith(subItem.url + "/"))
                         return (
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton 

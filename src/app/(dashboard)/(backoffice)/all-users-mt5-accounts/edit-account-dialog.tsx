@@ -21,7 +21,8 @@ interface EditAccountDialogProps {
 }
 
 interface EditAccountFormState {
-  name: string;
+  first_name: string;
+  last_name: string;
   account_type_id: string;
   mode: string;
   leverage: string;
@@ -29,9 +30,12 @@ interface EditAccountFormState {
   investor_password: string;
 }
 
-const getAccountName = (account: AdminMT5Account) => {
-  if (account.name) return account.name;
-  return [account.first_name, account.last_name].filter(Boolean).join(" ").trim();
+const getAccountUser = (account: AdminMT5Account) => {
+  const user = account.user ?? account.User;
+  return {
+    first_name: user?.first_name ?? account.first_name ?? "",
+    last_name: user?.last_name ?? account.last_name ?? "",
+  };
 };
 
 export function EditAccountDialog({
@@ -42,7 +46,8 @@ export function EditAccountDialog({
 }: EditAccountDialogProps) {
   const { token } = useAuth();
   const [formData, setFormData] = useState<EditAccountFormState>({
-    name: "",
+    first_name: "",
+    last_name: "",
     account_type_id: "",
     mode: "",
     leverage: "",
@@ -79,23 +84,45 @@ export function EditAccountDialog({
     };
 
     void loadAccountTypes();
+
+    // Cleanup when dialog closes
+    return () => {
+      if (!open) {
+        setShowPassword(false);
+        setShowInvestorPassword(false);
+      }
+    };
   }, [open, token]);
 
   useEffect(() => {
-    if (!account) return;
+    if (!account) {
+      // Reset form when no account selected
+      setFormData({
+        first_name: "",
+        last_name: "",
+        account_type_id: "",
+        mode: "",
+        leverage: "",
+        password: "",
+        investor_password: "",
+      });
+      return;
+    }
 
     const accountTypeId = account.account_type_id ?? account.accountType?.id ?? account.AdminMT5AccountType?.id;
     const mode = account.account_mode ?? "live";
+    const userInfo = getAccountUser(account);
 
     setFormData({
-      name: getAccountName(account),
+      first_name: userInfo.first_name,
+      last_name: userInfo.last_name,
       account_type_id: accountTypeId !== undefined && accountTypeId !== null ? String(accountTypeId) : "",
       mode: typeof mode === "string" ? mode : "",
       leverage: account.leverage !== undefined && account.leverage !== null ? String(account.leverage) : "",
       password: "",
       investor_password: "",
     });
-  }, [account]);
+  }, [account, open]);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -119,18 +146,19 @@ export function EditAccountDialog({
       return;
     }
 
-    if (!formData.name.trim()) {
-      toast.error("Please enter account holder name");
+    if (!formData.first_name.trim() || !formData.last_name.trim()) {
+      toast.error("Please enter first name and last name");
       return;
     }
 
     setIsSubmitting(true);
     try {
+      const fullName = `${formData.first_name.trim()} ${formData.last_name.trim()}`;
       const submitData: UpdateMT5AccountRequest = {
         account_type_id: accountTypeId,
         mode: formData.mode as "demo" | "live",
         leverage,
-        name: formData.name.trim(),
+        name: fullName,
       };
 
       const password = formData.password.trim();
@@ -161,15 +189,27 @@ export function EditAccountDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Account holder name</Label>
-              <Input
-                id="name"
-                value={formData.name}
-                onChange={(event) => setFormData({ ...formData, name: event.target.value })}
-                placeholder="Enter account holder name"
-                required
-              />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="first_name">First name</Label>
+                <Input
+                  id="first_name"
+                  value={formData.first_name}
+                  onChange={(event) => setFormData({ ...formData, first_name: event.target.value })}
+                  placeholder="Enter first name"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="last_name">Last name</Label>
+                <Input
+                  id="last_name"
+                  value={formData.last_name}
+                  onChange={(event) => setFormData({ ...formData, last_name: event.target.value })}
+                  placeholder="Enter last name"
+                  required
+                />
+              </div>
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">

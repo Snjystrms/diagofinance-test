@@ -174,9 +174,15 @@ export function AppSidebarV2({ ...props }: React.ComponentProps<typeof Sidebar>)
   const [activeItem, setActiveItem] = React.useState<string | null>(null);
   const lastActiveItemRef = React.useRef<string | null>(null);
   const isCollapsed = state === "collapsed";
+  const [isHydrated, setIsHydrated] = React.useState(false);
   const unreadCount = useUnreadNotificationCount(
     user?.type === "user" ? "user" : "admin"
   );
+
+  // Track hydration state
+  React.useEffect(() => {
+    setIsHydrated(true);
+  }, []);
 
   // Ensure sidebar starts collapsed on mount
   React.useEffect(() => {
@@ -378,7 +384,7 @@ export function AppSidebarV2({ ...props }: React.ComponentProps<typeof Sidebar>)
                   <SidebarMenu>
                     {activeNavItem.items.map((subItem: { title: string; url: string }, index: number) => {
                       const SubIcon = getSubItemIcon(subItem.title);
-                      const isSubActive = pathname === subItem.url || pathname.startsWith(subItem.url + '/');
+                      const isSubActive = isHydrated && (pathname === subItem.url || pathname.startsWith(subItem.url + '/'));
                       
                       return (
                         <SidebarMenuItem key={`${subItem.title}-${index}`}>
