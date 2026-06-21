@@ -740,9 +740,9 @@ function InternalTransferContent() {
         className="space-y-4"
       >
         <TabsList className="ib-portal-surface inline-flex h-auto w-full flex-wrap gap-1 rounded-2xl border p-1.5">
-        <TabsTrigger value="wallet-to-mt5" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">Wallet to MT5</TabsTrigger>
-        <TabsTrigger value="mt5-to-wallet" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">MT5 to Wallet</TabsTrigger>
-        <TabsTrigger value="mt5-to-mt5" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">MT5 to MT5</TabsTrigger>
+        <TabsTrigger value="wallet-to-mt5" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 transition-colors">Wallet to MT5</TabsTrigger>
+        <TabsTrigger value="mt5-to-wallet" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 transition-colors">MT5 to Wallet</TabsTrigger>
+        <TabsTrigger value="mt5-to-mt5" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 transition-colors">MT5 to MT5</TabsTrigger>
         </TabsList>
         <TabsContent value="wallet-to-mt5">
           <IbSectionCard
@@ -819,11 +819,17 @@ function InternalTransferContent() {
                                 avoidCollisions={false}
                                 className="max-h-[300px] overflow-y-auto"
                               >
-                                {mt5AccountOptions.map((option) => (
-                                  <SelectItem key={option.id} value={option.id}>
-                                    {option.label}
+                                {mt5AccountOptions.length > 0 ? (
+                                  mt5AccountOptions.map((option) => (
+                                    <SelectItem key={option.id} value={option.id}>
+                                      {option.label}
+                                    </SelectItem>
+                                  ))
+                                ) : (
+                                  <SelectItem value="no-accounts" disabled>
+                                    No accounts available
                                   </SelectItem>
-                                ))}
+                                )}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -964,11 +970,17 @@ function InternalTransferContent() {
                                 avoidCollisions={false}
                                 className="max-h-[300px] overflow-y-auto"
                               >
-                                {mt5AccountOptions.map((option) => (
-                                  <SelectItem key={option.id} value={option.id}>
-                                    {option.label}
+                                {mt5AccountOptions.length > 0 ? (
+                                  mt5AccountOptions.map((option) => (
+                                    <SelectItem key={option.id} value={option.id}>
+                                      {option.label}
+                                    </SelectItem>
+                                  ))
+                                ) : (
+                                  <SelectItem value="no-accounts" disabled>
+                                    No accounts available
                                   </SelectItem>
-                                ))}
+                                )}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -1010,14 +1022,7 @@ function InternalTransferContent() {
                         )}
                       />
                     </div>
-                    {mt5ToWalletForm.watch("amount") && Number(mt5ToWalletForm.watch("amount")) > 0 && selectedMt5ToWalletAccount && isCentMt5Account(selectedMt5ToWalletAccount) && (
-                      <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 mt-3 max-w-xs">
-                        <p className="text-xs text-muted-foreground">Conversion</p>
-                        <p className="text-sm font-semibold text-foreground mt-0.5">
-                          {Number(mt5ToWalletForm.watch("amount")).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC = {(Number(mt5ToWalletForm.watch("amount")) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
-                        </p>
-                      </div>
-                    )}
+                  
                   </div>
 
                   <Separator />
@@ -1032,7 +1037,7 @@ function InternalTransferContent() {
                         name="amount"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Amount to withdraw</FormLabel>
+                            <FormLabel>Amount to transfer</FormLabel>
                             <FormControl>
                               <div className="relative">
                                 <Input
@@ -1045,7 +1050,7 @@ function InternalTransferContent() {
                                   {...field}
                                 />
                                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium pointer-events-none">
-                                  {mt5ToWalletCurrency}
+                                  USD
                                 </span>
                               </div>
                             </FormControl>
@@ -1053,6 +1058,14 @@ function InternalTransferContent() {
                           </FormItem>
                         )}
                       />
+                      {mt5ToWalletForm.watch("amount") && Number(mt5ToWalletForm.watch("amount")) > 0 && selectedMt5ToWalletAccount && isCentMt5Account(selectedMt5ToWalletAccount) && (
+                        <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 mt-3 max-w-xs">
+                          <p className="text-xs text-muted-foreground">Conversion</p>
+                          <p className="text-sm font-semibold text-foreground mt-0.5">
+                            {Number(mt5ToWalletForm.watch("amount")).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD = {(Number(mt5ToWalletForm.watch("amount")) * 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t">
@@ -1122,11 +1135,17 @@ function InternalTransferContent() {
                                 avoidCollisions={false}
                                 className="max-h-[300px] overflow-y-auto"
                               >
-                                {mt5AccountOptions.map((option) => (
-                                  <SelectItem key={option.id} value={option.id}>
-                                    {option.label}
+                                {mt5AccountOptions.length > 0 ? (
+                                  mt5AccountOptions.map((option) => (
+                                    <SelectItem key={option.id} value={option.id}>
+                                      {option.label}
+                                    </SelectItem>
+                                  ))
+                                ) : (
+                                  <SelectItem value="no-accounts" disabled>
+                                    No accounts available
                                   </SelectItem>
-                                ))}
+                                )}
                               </SelectContent>
                             </Select>
                             <FormMessage />
@@ -1164,11 +1183,17 @@ function InternalTransferContent() {
                                 avoidCollisions={false}
                                 className="max-h-[300px] overflow-y-auto"
                               >
-                                {filteredMt5ToMt5ToAccounts.map((option) => (
-                                  <SelectItem key={option.id} value={option.id}>
-                                    {option.label}
+                                {filteredMt5ToMt5ToAccounts.length > 0 ? (
+                                  filteredMt5ToMt5ToAccounts.map((option) => (
+                                    <SelectItem key={option.id} value={option.id}>
+                                      {option.label}
+                                    </SelectItem>
+                                  ))
+                                ) : (
+                                  <SelectItem value="no-accounts" disabled>
+                                    No accounts available
                                   </SelectItem>
-                                ))}
+                                )}
                               </SelectContent>
                             </Select>
                             <FormMessage />

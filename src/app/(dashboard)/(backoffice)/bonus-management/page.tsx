@@ -325,7 +325,7 @@ export default function BonusManagementPage() {
       },
       {
         id: "amount",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Amount" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Amount (USD)" />,
         accessorFn: (row) => row.amount,
         cell: ({ row }) => (
           <span className="font-semibold">{formatMoney(row.original.amount)}</span>
@@ -569,7 +569,7 @@ export default function BonusManagementPage() {
       </div>
 
       <Dialog open={isActionDialogOpen} onOpenChange={handleDialogOpenChange}>
-        <DialogContent className="max-w-2xl overflow-hidden">
+        <DialogContent className="max-w-2xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>Manage Bonus</DialogTitle>
             <DialogDescription>
@@ -577,7 +577,7 @@ export default function BonusManagementPage() {
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-5">
+          <div className="space-y-5 overflow-y-auto flex-1 pr-2">
             <Tabs
               value={actionMode}
               onValueChange={(value) => setActionMode(value as BonusActionMode)}

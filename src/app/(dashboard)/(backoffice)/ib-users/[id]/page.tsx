@@ -407,7 +407,15 @@ function OverviewTab({
 function WalletTab({
   loading,
   data,
-}: TabShellProps & { data: AdminIbWalletData | null }) {
+  onPageChange,
+  currentPage,
+  totalPages,
+}: TabShellProps & { 
+  data: AdminIbWalletData | null;
+  onPageChange: (page: number) => void;
+  currentPage: number;
+  totalPages: number;
+}) {
   const partnerWallet = data?.partner_wallet;
   const clientWallet = data?.client_wallet;
   const transactions = data?.recent_transactions ?? [];
@@ -444,47 +452,74 @@ function WalletTab({
         {loading ? (
           <TabSkeleton rows={5} />
         ) : transactions.length > 0 ? (
-          <div className="overflow-hidden rounded-2xl border border-border/60">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Sr. No.</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Description</TableHead>
-                  <TableHead>Date</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transactions.map((tx, index) => (
-                  <TableRow key={tx.id}>
-                    <TableCell className="capitalize">{index + 1}</TableCell>
-                     <TableCell className="capitalize">{tx.type}</TableCell>
-                    <TableCell className="font-medium tabular-nums">
-                      {formatCurrency(tx.net_amount ?? tx.amount)}
-                    </TableCell>
-                    <TableCell>
-                      <span className={cn(
-                        "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                        tx.status === "completed"
-                          ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
-                          : "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300",
-                      )}>
-                        {tx.status}
-                      </span>
-                    </TableCell>
-                    <TableCell className="max-w-[200px] truncate text-muted-foreground">
-                      {tx.description}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {tx.date ? formatDateTimeInIST(tx.date, "\u2014") : "\u2014"}
-                    </TableCell>
+          <>
+            <div className="overflow-hidden rounded-2xl border border-border/60">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Sr. No.</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Date</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {transactions.map((tx, index) => (
+                    <TableRow key={tx.id}>
+                      <TableCell className="capitalize">{(currentPage - 1) * 20 + index + 1}</TableCell>
+                      <TableCell className="capitalize">{tx.type}</TableCell>
+                      <TableCell className="font-medium tabular-nums">
+                        {formatCurrency(tx.net_amount ?? tx.amount)}
+                      </TableCell>
+                      <TableCell>
+                        <span className={cn(
+                          "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
+                          tx.status === "completed"
+                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+                            : "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300",
+                        )}>
+                          {tx.status}
+                        </span>
+                      </TableCell>
+                      <TableCell className="max-w-[200px] truncate text-muted-foreground">
+                        {tx.description}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {tx.date ? formatDateTimeInIST(tx.date, "\u2014") : "\u2014"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between gap-2 pt-4">
+                <p className="text-sm text-muted-foreground">
+                  Page {currentPage} of {totalPages}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onPageChange(currentPage - 1)}
+                    disabled={currentPage <= 1}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onPageChange(currentPage + 1)}
+                    disabled={currentPage >= totalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
             <Wallet className="h-6 w-6" />
@@ -1004,6 +1039,7 @@ export default function IbUserDetailPage() {
   const [walletData, setWalletData] = useState<AdminIbWalletData | null>(null);
   const [walletLoading, setWalletLoading] = useState(false);
   const [walletLoaded, setWalletLoaded] = useState(false);
+  const [walletPage, setWalletPage] = useState(1);
 
   const [networkData, setNetworkData] = useState<AdminIbNetworkData | null>(null);
   const [networkLoading, setNetworkLoading] = useState(false);
@@ -1127,7 +1163,7 @@ export default function IbUserDetailPage() {
         case "wallet": {
           if (walletLoaded) return;
           setWalletLoading(true);
-          const res = await adminIbUsersApi.wallet(userId, token);
+          const res = await adminIbUsersApi.wallet(userId, token, walletPage, 20);
           setWalletData(res.data ?? null);
           setWalletLoaded(true);
           break;
@@ -1170,7 +1206,7 @@ export default function IbUserDetailPage() {
         default: break;
       }
     }
-  }, [token, userId, workspaceLoaded, walletLoaded, networkLoaded]);
+  }, [token, userId, workspaceLoaded, walletLoaded, networkLoaded, walletPage]);
 
   useEffect(() => {
     if (activeTab !== "profile") {
@@ -1416,7 +1452,17 @@ export default function IbUserDetailPage() {
               </TabsContent>
 
               <TabsContent value="wallet" className="space-y-6">
-                <WalletTab user={previewData} loading={walletLoading} data={walletData} />
+                <WalletTab 
+                  user={previewData} 
+                  loading={walletLoading} 
+                  data={walletData}
+                  currentPage={walletPage}
+                  totalPages={walletData?.pagination?.last_page ?? 1}
+                  onPageChange={(page) => {
+                    setWalletPage(page);
+                    setWalletLoaded(false); // Trigger reload
+                  }}
+                />
               </TabsContent>
 
               <TabsContent value="network" className="space-y-6">
