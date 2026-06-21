@@ -390,6 +390,11 @@ function InternalTransferContent() {
   );
   const mt5ToWalletCurrency = getMt5TransferCurrency(selectedMt5ToWalletAccount);
   
+  // Check if "from" accounts have zero balance
+  const mainWalletHasBalance = mainWallet ? mainWallet.balance > 0 : false;
+  const mt5ToWalletAccountHasBalance = selectedMt5ToWalletAccount ? selectedMt5ToWalletAccount.balance > 0 : false;
+  const mt5ToMt5FromAccountHasBalance = selectedMt5ToMt5FromAccount ? selectedMt5ToMt5FromAccount.balance > 0 : false;
+  
   // MT5 to MT5: Always use USD when both accounts are CENT
   const mt5ToMt5Currency = useMemo(() => {
     const fromIsCent = isCentMt5Account(selectedMt5ToMt5FromAccount);
@@ -404,15 +409,19 @@ function InternalTransferContent() {
 
   // Filter "To" accounts in MT5 to MT5 based on "From" account currency type
   const filteredMt5ToMt5ToAccounts = useMemo(() => {
+    const fromAccountId = mt5ToMt5Form.watch("fromAccountId");
     if (!selectedMt5ToMt5FromAccount) return mt5AccountOptions;
     
     const fromIsCent = isCentMt5Account(selectedMt5ToMt5FromAccount);
     return mt5AccountOptions.filter((option) => {
+      // Exclude the "from" account
+      if (option.id === fromAccountId) return false;
+      
       const account = findMt5AccountById(liveMt5Accounts, option.id);
       const accountIsCent = isCentMt5Account(account);
       return fromIsCent === accountIsCent;
     });
-  }, [selectedMt5ToMt5FromAccount, mt5AccountOptions, liveMt5Accounts]);
+  }, [selectedMt5ToMt5FromAccount, mt5AccountOptions, liveMt5Accounts, mt5ToMt5Form]);
 
   // Clear "To" account if it doesn't match the filtered list
   useEffect(() => {
@@ -689,7 +698,7 @@ function InternalTransferContent() {
                     <div key={account.account_id} className="flex items-center justify-between text-xs border-t border-border/50 pt-1.5 first:border-t-0 first:pt-0">
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{account.account_id}</span>
-                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
                           {account.account_mode}
                         </Badge>
                       </div>
@@ -803,7 +812,13 @@ function InternalTransferContent() {
                                   />
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent>
+                              <SelectContent 
+                                side="bottom" 
+                                align="start" 
+                                sideOffset={4}
+                                avoidCollisions={false}
+                                className="max-h-[300px] overflow-y-auto"
+                              >
                                 {mt5AccountOptions.map((option) => (
                                   <SelectItem key={option.id} value={option.id}>
                                     {option.label}
@@ -836,8 +851,8 @@ function InternalTransferContent() {
                               <div className="relative">
                                 <Input
                                   type="number"
-                                  min="1"
-                                  step="1"
+                                  min="0.01"
+                                  step="0.01"
                                   placeholder="0.00"
                                   onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                   className="pr-14"
@@ -879,13 +894,20 @@ function InternalTransferContent() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t">
-                    <p className="text-xs text-muted-foreground">
-                      Funds arrive instantly
-                    </p>
+                    <div className="flex flex-col gap-1">
+                      <p className="text-xs text-muted-foreground">
+                        Funds arrive instantly
+                      </p>
+                      {!mainWalletHasBalance && mainWallet && (
+                        <p className="text-xs text-destructive font-medium">
+                          Insufficient balance in wallet
+                        </p>
+                      )}
+                    </div>
                     <Button
                       type="submit"
                       disabled={
-                        walletToMt5Form.formState.isSubmitting || !mainWallet
+                        walletToMt5Form.formState.isSubmitting || !mainWallet || !mainWalletHasBalance
                       }
                     >
                       {walletToMt5Form.formState.isSubmitting
@@ -935,7 +957,13 @@ function InternalTransferContent() {
                                   />
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent>
+                              <SelectContent 
+                                side="bottom" 
+                                align="start" 
+                                sideOffset={4}
+                                avoidCollisions={false}
+                                className="max-h-[300px] overflow-y-auto"
+                              >
                                 {mt5AccountOptions.map((option) => (
                                   <SelectItem key={option.id} value={option.id}>
                                     {option.label}
@@ -1009,8 +1037,8 @@ function InternalTransferContent() {
                               <div className="relative">
                                 <Input
                                   type="number"
-                                  min="1"
-                                  step="1"
+                                  min="0.01"
+                                  step="0.01"
                                   placeholder="0.00"
                                   onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                   className="pr-14"
@@ -1028,12 +1056,19 @@ function InternalTransferContent() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t">
-                    <p className="text-xs text-muted-foreground">
-                      Funds arrive instantly
-                    </p>
+                    <div className="flex flex-col gap-1">
+                      <p className="text-xs text-muted-foreground">
+                        Funds arrive instantly
+                      </p>
+                      {selectedMt5ToWalletAccount && !mt5ToWalletAccountHasBalance && (
+                        <p className="text-xs text-destructive font-medium">
+                          Insufficient balance in MT5 account
+                        </p>
+                      )}
+                    </div>
                     <Button
                       type="submit"
-                      disabled={mt5ToWalletForm.formState.isSubmitting}
+                      disabled={mt5ToWalletForm.formState.isSubmitting || !selectedMt5ToWalletAccount || !mt5ToWalletAccountHasBalance}
                     >
                       {mt5ToWalletForm.formState.isSubmitting
                         ? "Processing…"
@@ -1080,7 +1115,13 @@ function InternalTransferContent() {
                                   />
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent>
+                              <SelectContent 
+                                side="bottom" 
+                                align="start" 
+                                sideOffset={4}
+                                avoidCollisions={false}
+                                className="max-h-[300px] overflow-y-auto"
+                              >
                                 {mt5AccountOptions.map((option) => (
                                   <SelectItem key={option.id} value={option.id}>
                                     {option.label}
@@ -1116,7 +1157,13 @@ function InternalTransferContent() {
                                   />
                                 </SelectTrigger>
                               </FormControl>
-                              <SelectContent>
+                              <SelectContent 
+                                side="bottom" 
+                                align="start" 
+                                sideOffset={4}
+                                avoidCollisions={false}
+                                className="max-h-[300px] overflow-y-auto"
+                              >
                                 {filteredMt5ToMt5ToAccounts.map((option) => (
                                   <SelectItem key={option.id} value={option.id}>
                                     {option.label}
@@ -1148,8 +1195,8 @@ function InternalTransferContent() {
                               <div className="relative">
                                 <Input
                                   type="number"
-                                  min="1"
-                                  step="1"
+                                  min="0.01"
+                                  step="0.01"
                                   placeholder="0.00"
                                   onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                   className="pr-14"
@@ -1175,12 +1222,19 @@ function InternalTransferContent() {
                     </div>
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t">
-                    <p className="text-xs text-muted-foreground">
-                      Funds arrive instantly
-                    </p>
+                    <div className="flex flex-col gap-1">
+                      <p className="text-xs text-muted-foreground">
+                        Funds arrive instantly
+                      </p>
+                      {selectedMt5ToMt5FromAccount && !mt5ToMt5FromAccountHasBalance && (
+                        <p className="text-xs text-destructive font-medium">
+                          Insufficient balance in source MT5 account
+                        </p>
+                      )}
+                    </div>
                     <Button
                       type="submit"
-                      disabled={mt5ToMt5Form.formState.isSubmitting}
+                      disabled={mt5ToMt5Form.formState.isSubmitting || !selectedMt5ToMt5FromAccount || !mt5ToMt5FromAccountHasBalance}
                     >
                       {mt5ToMt5Form.formState.isSubmitting
                         ? "Processing…"
