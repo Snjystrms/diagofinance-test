@@ -8,10 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuth } from "@/contexts/auth-context";
-import { adminGroupsApi } from "@/lib/api";
+import { adminAccountTypesApi, type AccountTypeItem } from "@/lib/api";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import toast from "react-hot-toast";
-import type { AdminGroupItem, AdminMT5Account, UpdateMT5AccountRequest } from "@/lib/api";
+import type { AdminMT5Account, UpdateMT5AccountRequest } from "@/lib/api";
 
 interface EditAccountDialogProps {
   open: boolean;
@@ -22,7 +22,8 @@ interface EditAccountDialogProps {
 
 interface EditAccountFormState {
   name: string;
-  group_id: string;
+  account_type_id: string;
+  mode: string;
   leverage: string;
   password: string;
   investor_password: string;
@@ -42,48 +43,54 @@ export function EditAccountDialog({
   const { token } = useAuth();
   const [formData, setFormData] = useState<EditAccountFormState>({
     name: "",
-    group_id: "",
+    account_type_id: "",
+    mode: "",
     leverage: "",
     password: "",
     investor_password: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [groups, setGroups] = useState<AdminGroupItem[]>([]);
-  const [loadingGroups, setLoadingGroups] = useState(false);
+  const [accountTypes, setAccountTypes] = useState<AccountTypeItem[]>([]);
+  const [loadingAccountTypes, setLoadingAccountTypes] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showInvestorPassword, setShowInvestorPassword] = useState(false);
 
   useEffect(() => {
     if (!open || !token) return;
 
-    const loadGroups = async () => {
+    const loadAccountTypes = async () => {
       try {
-        setLoadingGroups(true);
-        const response = await adminGroupsApi.list(token);
-        const groupsList = Array.isArray(response?.data) ? response.data : [];
-        setGroups(groupsList);
+        setLoadingAccountTypes(true);
+        const response = await adminAccountTypesApi.list({ token });
+        const data = response?.data as { accountTypes?: AccountTypeItem[] } | undefined;
+        const typesList = Array.isArray(data?.accountTypes) ? data.accountTypes : [];
+        setAccountTypes(typesList);
       } catch (error) {
-        console.error("Failed to load groups:", error);
+        console.error("Failed to load account types:", error);
         toast.error(
           getAdminFriendlyErrorMessage(error, {
-            resource: "groups",
+            resource: "account types",
             action: "load",
           })
         );
       } finally {
-        setLoadingGroups(false);
+        setLoadingAccountTypes(false);
       }
     };
 
-    void loadGroups();
+    void loadAccountTypes();
   }, [open, token]);
 
   useEffect(() => {
     if (!account) return;
 
+    const accountTypeId = account.account_type_id ?? account.accountType?.id ?? account.AdminMT5AccountType?.id;
+    const mode = account.account_mode ?? "live";
+
     setFormData({
       name: getAccountName(account),
-      group_id: account.group_id !== undefined && account.group_id !== null ? String(account.group_id) : "",
+      account_type_id: accountTypeId !== undefined && accountTypeId !== null ? String(accountTypeId) : "",
+      mode: typeof mode === "string" ? mode : "",
       leverage: account.leverage !== undefined && account.leverage !== null ? String(account.leverage) : "",
       password: "",
       investor_password: "",
@@ -94,23 +101,36 @@ export function EditAccountDialog({
     event.preventDefault();
     if (!account) return;
 
-    const groupId = Number(formData.group_id);
+    const accountTypeId = Number(formData.account_type_id);
     const leverage = Number(formData.leverage);
 
-    if (!Number.isFinite(groupId) || groupId <= 0) {
+    if (!Number.isFinite(accountTypeId) || accountTypeId <= 0) {
+      toast.error("Please select a valid account type");
+      return;
+    }
+
+    if (!formData.mode || (formData.mode !== "demo" && formData.mode !== "live")) {
+      toast.error("Please select a valid mode (demo or live)");
       return;
     }
 
     if (!Number.isFinite(leverage) || leverage <= 0) {
+      toast.error("Please enter a valid leverage");
+      return;
+    }
+
+    if (!formData.name.trim()) {
+      toast.error("Please enter account holder name");
       return;
     }
 
     setIsSubmitting(true);
     try {
       const submitData: UpdateMT5AccountRequest = {
-        name: formData.name.trim(),
-        group_id: groupId,
+        account_type_id: accountTypeId,
+        mode: formData.mode as "demo" | "live",
         leverage,
+        name: formData.name.trim(),
       };
 
       const password = formData.password.trim();
@@ -154,39 +174,54 @@ export function EditAccountDialog({
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="group_id">Group ID</Label>
+                <Label htmlFor="account_type_id">Account Type</Label>
                 <Select
-                  value={formData.group_id}
-                  onValueChange={(value) => setFormData({ ...formData, group_id: value })}
-                  disabled={loadingGroups || groups.length === 0}
+                  value={formData.account_type_id}
+                  onValueChange={(value) => setFormData({ ...formData, account_type_id: value })}
+                  disabled={loadingAccountTypes || accountTypes.length === 0}
                 >
-                  <SelectTrigger id="group_id" className="w-full">
+                  <SelectTrigger id="account_type_id" className="w-full">
                     <SelectValue
-                      placeholder={loadingGroups ? "Loading groups..." : "Select group..."}
+                      placeholder={loadingAccountTypes ? "Loading types..." : "Select account type..."}
                     />
                   </SelectTrigger>
                   <SelectContent>
-                    {groups.map((group) => (
-                      <SelectItem key={group.id} value={String(group.id)}>
-                        {group.name}
-                         {/* (ID: {group.id}) */}
+                    {accountTypes.map((type) => (
+                      <SelectItem key={type.id} value={String(type.id)}>
+                        {type.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="leverage">Leverage</Label>
-                <Input
-                  id="leverage"
-                  type="number"
-                  min="1"
-                  value={formData.leverage}
-                  onChange={(event) => setFormData({ ...formData, leverage: event.target.value })}
-                  placeholder="Enter leverage"
-                  required
-                />
+                <Label htmlFor="mode">Mode</Label>
+                <Select
+                  value={formData.mode}
+                  onValueChange={(value) => setFormData({ ...formData, mode: value })}
+                >
+                  <SelectTrigger id="mode" className="w-full">
+                    <SelectValue placeholder="Select mode..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="live">Live</SelectItem>
+                    <SelectItem value="demo">Demo</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="leverage">Leverage</Label>
+              <Input
+                id="leverage"
+                type="number"
+                min="1"
+                value={formData.leverage}
+                onChange={(event) => setFormData({ ...formData, leverage: event.target.value })}
+                placeholder="Enter leverage"
+                required
+              />
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">

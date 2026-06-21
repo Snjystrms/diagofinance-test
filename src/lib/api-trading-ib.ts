@@ -1781,11 +1781,12 @@ export interface AdminMT5AccountsListParams {
 }
 
 export interface UpdateMT5AccountRequest {
-  name?: string;
-  group_id?: number;
-  investor_password?: string;
-  leverage?: number;
+  account_type_id: number;
+  mode: "demo" | "live";
+  leverage: number;
+  name: string;
   password?: string;
+  investor_password?: string;
 }
 
 export interface CreateMT5AccountRequest {

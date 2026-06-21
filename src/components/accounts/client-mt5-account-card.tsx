@@ -56,11 +56,15 @@ function normalizeCurrencyCode(value?: string) {
   return "USD";
 }
 
-function formatBalance(value: number | string | null | undefined, currency: string) {
+function formatBalance(value: number | string | null | undefined, currency: string, accountTypeName?: string | null) {
   const normalizedValue =
     value === undefined || value === null || Number.isNaN(Number(value)) ? 0 : Number(value);
 
-  return `${normalizedValue.toLocaleString("en-US", {
+  // Multiply by 100 for cent accounts
+  const isCent = accountTypeName?.trim().toUpperCase() === "CENT";
+  const displayValue = isCent ? normalizedValue * 100 : normalizedValue;
+
+  return `${displayValue.toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })} ${currency}`;
@@ -243,7 +247,7 @@ export function ClientMt5AccountCard({
           <div className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/30 p-3.5">
             <span className="text-sm font-medium text-foreground">Balance</span>
             <span className="truncate text-right font-bold text-primary">
-              {formatBalance(balance, normalizedCurrency)}
+              {formatBalance(balance, normalizedCurrency, accountTypeName)}
             </span>
           </div>
 

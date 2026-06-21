@@ -165,6 +165,12 @@ const formatValueWithCurrency = (value: unknown, currency?: unknown) => {
 const getUserMt5BalanceCurrency = (account: AdminUserMt5AccountItem) =>
   isCentAccountTypeName(account.account_type_name) ? "USC" : "USD";
 
+const getMt5DisplayBalance = (account: AdminUserMt5AccountItem) => {
+  const rawBalance = typeof account.balance === "number" ? account.balance : Number(account.balance ?? 0);
+  if (!Number.isFinite(rawBalance)) return 0;
+  return isCentAccountTypeName(account.account_type_name) ? rawBalance * 100 : rawBalance;
+};
+
 const normalizeBooleanLabel = (value: unknown, positive = "Yes", negative = "No") => {
   if (value === null || value === undefined || value === "") return "-";
   const normalized = typeof value === "boolean" ? value : `${value}` === "1" || `${value}`.toLowerCase() === "true";
@@ -1300,7 +1306,7 @@ export default function NewUserDetailPage() {
                                   <TableCell>{item.mt5_id || "-"}</TableCell>
                                   <TableCell className="max-w-[220px] truncate">{item.group_name || "-"}</TableCell>
                                   <TableCell className="font-mono text-xs">
-                                    {formatValueWithCurrency(item.balance, getUserMt5BalanceCurrency(item))}
+                                    {formatValueWithCurrency(getMt5DisplayBalance(item), getUserMt5BalanceCurrency(item))}
                                   </TableCell>
                                   {/* <TableCell className="font-mono text-xs">{item.investor_password || "-"}</TableCell>
                                   <TableCell className="font-mono text-xs">{item.main_password || "-"}</TableCell> */}

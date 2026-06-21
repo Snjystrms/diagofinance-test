@@ -124,7 +124,7 @@ export default function WalletOverviewPage() {
 
   const formatAmount = (amount: string | number) => {
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount
-    return Math.abs(numAmount).toLocaleString('en-US', {
+    return numAmount.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     })
@@ -377,7 +377,7 @@ export default function WalletOverviewPage() {
                           </p>
                           <p className="mt-1 text-lg font-semibold text-foreground">
                             {wallet.currency === 'USC' ? '¢' : '$'} 
-                            {formatAmount(wallet.balance)}
+                            {formatAmount(wallet.currency === 'USC' ? wallet.balance * 100 : wallet.balance)}
                           </p>
                         </div>
 

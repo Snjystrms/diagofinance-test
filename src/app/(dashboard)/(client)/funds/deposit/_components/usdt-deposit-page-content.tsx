@@ -352,6 +352,7 @@ function USDTDepositContent() {
   const recentDepositDate = recentDeposit ? formatDateTimeInIST(recentDeposit.created_at) : "-";
   const enabledMethodCount = paymentMethods.length;
   const minimumAmountLabel = "$10 equivalent";
+  const MINIMUM_DEPOSIT_AMOUNT = 10; // $10 minimum deposit
   const settlementLabel = "Supported digital asset";
 
   const selectedCryptoWallet = cryptoWallets.find((w) => w.id === selectedCryptoWalletId) || cryptoWallets[0] || null;
@@ -1451,7 +1452,7 @@ function USDTDepositContent() {
                     {/* Submit Button */}
                     <Button
                       onClick={handleSubmitHash}
-                      disabled={!canSubmit || isSubmitting}
+                      disabled={!canSubmit || isSubmitting || parseFloat(amount) < MINIMUM_DEPOSIT_AMOUNT}
                       className="h-12 w-full rounded-xl bg-primary text-lg font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isSubmitting ? (
@@ -1466,6 +1467,11 @@ function USDTDepositContent() {
                           </>
                         )}
                     </Button>
+                    {amount && parseFloat(amount) > 0 && parseFloat(amount) < MINIMUM_DEPOSIT_AMOUNT && (
+                      <p className="text-xs text-destructive font-medium">
+                        Minimum deposit amount is ${MINIMUM_DEPOSIT_AMOUNT} USD
+                      </p>
+                    )}
                   </>
                 )}
 
@@ -1681,7 +1687,7 @@ function USDTDepositContent() {
                     {/* Submit Button */}
                     <Button
                       onClick={handleBinanceSubmit}
-                      disabled={!binanceAmount.trim() || parseFloat(binanceAmount) <= 0 || isSubmittingBinance}
+                      disabled={!binanceAmount.trim() || parseFloat(binanceAmount) < MINIMUM_DEPOSIT_AMOUNT || isSubmittingBinance}
                       className="h-12 w-full rounded-xl bg-primary text-lg font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isSubmittingBinance ? (
@@ -1696,6 +1702,11 @@ function USDTDepositContent() {
                         </>
                       )}
                     </Button>
+                    {binanceAmount && parseFloat(binanceAmount) > 0 && parseFloat(binanceAmount) < MINIMUM_DEPOSIT_AMOUNT && (
+                      <p className="text-xs text-destructive font-medium">
+                        Minimum deposit amount is ${MINIMUM_DEPOSIT_AMOUNT} USD
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -1810,7 +1821,7 @@ function USDTDepositContent() {
                     {/* Submit Button */}
                     <Button
                       onClick={handleCoinsbuySubmit}
-                      disabled={!coinsbuyAmount.trim() || parseFloat(coinsbuyAmount) <= 0 || isSubmittingCoinsbuy}
+                      disabled={!coinsbuyAmount.trim() || parseFloat(coinsbuyAmount) < MINIMUM_DEPOSIT_AMOUNT || isSubmittingCoinsbuy}
                       className="h-12 w-full rounded-xl bg-primary text-lg font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isSubmittingCoinsbuy ? (
@@ -1825,6 +1836,11 @@ function USDTDepositContent() {
                         </>
                       )}
                     </Button>
+                    {coinsbuyAmount && parseFloat(coinsbuyAmount) > 0 && parseFloat(coinsbuyAmount) < MINIMUM_DEPOSIT_AMOUNT && (
+                      <p className="text-xs text-destructive font-medium">
+                        Minimum deposit amount is ${MINIMUM_DEPOSIT_AMOUNT} USD
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -1967,7 +1983,7 @@ function USDTDepositContent() {
                     {/* Submit Button */}
                     <Button
                       onClick={handleCregisSubmit}
-                      disabled={!cregisAmount.trim() || parseFloat(cregisAmount) <= 0 || isSubmittingCregis}
+                      disabled={!cregisAmount.trim() || parseFloat(cregisAmount) < MINIMUM_DEPOSIT_AMOUNT || isSubmittingCregis}
                       className="h-12 w-full rounded-xl bg-primary text-lg font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isSubmittingCregis ? (
@@ -1982,6 +1998,11 @@ function USDTDepositContent() {
                         </>
                       )}
                     </Button>
+                    {cregisAmount && parseFloat(cregisAmount) > 0 && parseFloat(cregisAmount) < MINIMUM_DEPOSIT_AMOUNT && (
+                      <p className="text-xs text-destructive font-medium">
+                        Minimum deposit amount is ${MINIMUM_DEPOSIT_AMOUNT} USD
+                      </p>
+                    )}
 
                     {/* How it Works */}
                     <div className="bg-muted/50 rounded-xl p-4 border border-border/50">
@@ -2573,7 +2594,9 @@ function USDTDepositContent() {
                           !bankAmount.trim() ||
                           !bankTxId.trim() ||
                           !bankPaymentProof ||
-                          visibleBrokerBankDetails.length === 0
+                          visibleBrokerBankDetails.length === 0 ||
+                          !convertedUsdAmount ||
+                          convertedUsdAmount < MINIMUM_DEPOSIT_AMOUNT
                         }
                         className="h-11 w-full rounded-xl text-base font-semibold"
                       >
@@ -2589,6 +2612,11 @@ function USDTDepositContent() {
                           </>
                         )}
                       </Button>
+                      {convertedUsdAmount !== null && convertedUsdAmount > 0 && convertedUsdAmount < MINIMUM_DEPOSIT_AMOUNT && (
+                        <p className="text-xs text-destructive font-medium">
+                          Minimum deposit amount is ${MINIMUM_DEPOSIT_AMOUNT} USD (equivalent: {(MINIMUM_DEPOSIT_AMOUNT * selectedDepositRate).toFixed(2)} {bankCurrency.toUpperCase()})
+                        </p>
+                      )}
                         </>
                       )}
                     </CardContent>

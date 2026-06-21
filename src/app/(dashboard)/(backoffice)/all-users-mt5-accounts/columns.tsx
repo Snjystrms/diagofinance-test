@@ -43,6 +43,12 @@ const isCentAccount = (account: AdminMT5Account) => deriveAccountType(account).t
 
 const getMt5BalanceCurrency = (account: AdminMT5Account) => (isCentAccount(account) ? "USC" : "USD");
 
+const getMt5DisplayBalance = (account: AdminMT5Account, rawBalance: number | null | undefined) => {
+  const balance = typeof rawBalance === "number" ? rawBalance : Number(rawBalance ?? 0);
+  if (!Number.isFinite(balance)) return 0;
+  return isCentAccount(account) ? balance * 100 : balance;
+};
+
 const deriveGroupName = (account: AdminMT5Account) => {
   return account.mt5_group_name ?? emptyValue;
 };
@@ -163,10 +169,11 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
      cell: ({ row }) => {
        const balance = row.original.self_wallet;
        if (balance == null) return <span className="text-muted-foreground">{emptyValue}</span>;
+       const displayBalance = getMt5DisplayBalance(row.original, balance);
        return (
          <div className="flex items-center gap-2">
            <Wallet className="h-4 w-4 text-muted-foreground" />
-           <span className="font-medium">{balance?.toFixed(2)} {getMt5BalanceCurrency(row.original)}</span>
+           <span className="font-medium">{displayBalance.toFixed(2)} {getMt5BalanceCurrency(row.original)}</span>
          </div>
        );
      },

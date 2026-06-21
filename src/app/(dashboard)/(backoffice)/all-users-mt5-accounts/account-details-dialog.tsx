@@ -56,7 +56,9 @@ const formatWalletBalance = (account: AdminMT5Account) => {
   if (account.self_wallet === undefined || account.self_wallet === null) {
     return emptyValue;
   }
-  return `${displayValue(account.self_wallet)} ${getMt5BalanceCurrency(account)}`;
+  const isCent = getAccountTypeName(account).trim().toLowerCase() === "cent";
+  const balance = isCent ? account.self_wallet * 100 : account.self_wallet;
+  return `${displayValue(balance)} ${getMt5BalanceCurrency(account)}`;
 };
 
 const DetailItem = ({ label, value }: { label: string; value: unknown }) => (
