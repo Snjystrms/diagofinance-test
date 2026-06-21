@@ -11,9 +11,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { 
   Wallet, 
-  DollarSign, 
-  TrendingUp, 
-  TrendingDown,
   Copy,
   CheckCircle,
   Clock,
@@ -40,7 +37,7 @@ export default function WalletOverviewPage() {
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null)
   const [brokerCryptoWallet, setBrokerCryptoWallet] = useState<BrokerCryptoWalletItem | null>(null)
 
-  const fetchWalletSummary = async () => {
+  const fetchWalletSummary = React.useCallback(async () => {
     if (!token) {
       setError('Authentication required')
       setLoading(false)
@@ -63,11 +60,11 @@ export default function WalletOverviewPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [token])
 
   useEffect(() => {
-    fetchWalletSummary()
-  }, [token])
+    void fetchWalletSummary()
+  }, [fetchWalletSummary])
 
   useEffect(() => {
     if (!token) return
@@ -88,7 +85,7 @@ export default function WalletOverviewPage() {
     return () => {
       window.removeEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh)
     }
-  }, [token])
+  }, [fetchWalletSummary])
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -130,7 +127,7 @@ export default function WalletOverviewPage() {
     })
   }
 
-  const getTransactionCurrency = (transaction: any) => {
+  const getTransactionCurrency = (transaction: { mt5_user_id?: string | number | null }) => {
     // Try to find matching MT5 wallet by mt5_user_id
     if (transaction.mt5_user_id && walletData?.mt5_wallets) {
       const matchingWallet = walletData.mt5_wallets.find(
@@ -144,7 +141,7 @@ export default function WalletOverviewPage() {
     return 'USD'
   }
 
-  const getTransactionDisplayAmount = (transaction: any) => {
+  const getTransactionDisplayAmount = (transaction: { amount: string | number; mt5_user_id?: string | number | null }) => {
     const currency = getTransactionCurrency(transaction)
     const amount = typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount
     // Multiply by 100 for USC (cent) accounts
@@ -152,7 +149,7 @@ export default function WalletOverviewPage() {
     return formatAmount(displayAmount)
   }
 
-  const getTransactionCurrencySymbol = (transaction: any) => {
+  const getTransactionCurrencySymbol = (transaction: { mt5_user_id?: string | number | null }) => {
     const currency = getTransactionCurrency(transaction)
     return currency === 'USC' ? '¢' : '$'
   }
