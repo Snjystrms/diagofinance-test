@@ -283,7 +283,7 @@ export default function UserNewsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="container mx-auto px-4 md:px-6 lg:px-8 py-10">
+      <div className="px-4 md:px-6 lg:px-8 py-10">
         {/* Header */}
         <div className="mb-8 relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0B1220] via-[#0B1220] to-[#1a1f2e] p-6 border border-[#FFB401]/20">
           {/* Decorative elements */}

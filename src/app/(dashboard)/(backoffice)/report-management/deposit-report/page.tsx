@@ -424,7 +424,7 @@ export default function ReportManagementPage() {
         header: "Amount (USD)",
         accessorKey: "amount",
         cell: ({ row }) => (
-          <span className="font-medium">{formatAmount(row.original.amount)}</span>
+          <span className="font-medium whitespace-nowrap">{formatAmount(row.original.amount)}</span>
         ),
       },
        {
@@ -481,8 +481,8 @@ export default function ReportManagementPage() {
         header: "Created",
         accessorKey: "created_at",
         cell: ({ row }) => (
-          <div className="flex items-center gap-1 text-sm">
-            <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center gap-1 text-sm whitespace-nowrap">
+            <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <span>{fmtDateTime(row.original.created_at)}</span>
           </div>
         ),

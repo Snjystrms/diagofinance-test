@@ -285,7 +285,7 @@ const getColumns = (
     accessorKey: "created_at",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Created" />,
     cell: ({ row }) => (
-      <span className="text-sm text-muted-foreground">
+      <span className="text-sm text-muted-foreground whitespace-nowrap">
         {formatDateTime(row.original.created_at)}
       </span>
     ),

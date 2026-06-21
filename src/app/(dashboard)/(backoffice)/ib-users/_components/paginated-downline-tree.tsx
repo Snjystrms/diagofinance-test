@@ -623,7 +623,7 @@ export function PaginatedDownlineTree({
 
   if (loadError && Object.keys(nodesById).length === 0) {
     return (
-      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+      <div className="px-4 py-10 md:px-6 lg:px-8">
         <ApiErrorState
           error={loadError}
           audience="admin"
@@ -652,7 +652,7 @@ export function PaginatedDownlineTree({
   return (
     <>
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto space-y-6 p-6">
+        <div className="space-y-6">
           <div className="flex items-center gap-4">
             <Button variant="outline" onClick={handleBack}>
               <ArrowLeft className="mr-2 h-4 w-4" />

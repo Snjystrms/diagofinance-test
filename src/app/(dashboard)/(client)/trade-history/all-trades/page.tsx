@@ -39,7 +39,7 @@ export default function AllTradesPage() {
 
   return (
     <ProtectedRoute>
-      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+      <div className="px-4 py-10 md:px-6 lg:px-8">
         <div className="space-y-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
             <div className="space-y-2">

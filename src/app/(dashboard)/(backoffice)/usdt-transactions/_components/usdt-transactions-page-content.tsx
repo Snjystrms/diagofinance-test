@@ -390,7 +390,7 @@ export function USDTTransactionsPageContent() {
         header: "Amount (USD)",
         accessorKey: "amount",
         cell: ({ row }) => (
-          <span className="font-medium">{formatAmount(row.original.amount.toFixed(2))}</span>
+          <span className="font-medium whitespace-nowrap">{formatAmount(row.original.amount.toFixed(2))}</span>
         ),
       },
       {
@@ -426,8 +426,8 @@ export function USDTTransactionsPageContent() {
         header: "Created",
         accessorKey: "created_at",
         cell: ({ row }) => (
-          <div className="flex items-center gap-1 text-sm">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+          <div className="flex items-center gap-1 text-sm whitespace-nowrap">
+            <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <span>{fmtDateTime(row.original.created_at)}</span>
           </div>
         ),
@@ -482,7 +482,7 @@ export function USDTTransactionsPageContent() {
 
   if (loadError && depositRows.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+      <div className="px-4 py-10 md:px-6 lg:px-8">
         <ApiErrorState
           error={loadError}
           audience="admin"
@@ -499,7 +499,7 @@ export function USDTTransactionsPageContent() {
 
   return (
 
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">

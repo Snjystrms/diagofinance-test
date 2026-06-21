@@ -616,8 +616,8 @@ export default function AdminTicketsPage() {
         id: "created_at",
         header: "Created",
         cell: ({ row }) => (
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Calendar className="h-3.5 w-3.5" />
+          <div className="flex items-center gap-1 text-xs text-muted-foreground whitespace-nowrap">
+            <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
             {formatDateTime(row.original.created_at)}
           </div>
         ),

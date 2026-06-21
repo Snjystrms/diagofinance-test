@@ -789,7 +789,7 @@ export default function NewUserDetailPage() {
 
     return (
       <ProtectedRoute>
-        <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+        <div className="px-4 py-10 md:px-6 lg:px-8">
           <ApiErrorState
             error={profileError}
             audience="admin"
@@ -856,7 +856,7 @@ export default function NewUserDetailPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto space-y-6 px-4 py-6 md:px-6 lg:px-8">
+        <div className="space-y-6 px-4 py-6 md:px-6 lg:px-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-2">
               <Button asChild variant="ghost" className="w-fit px-0 text-muted-foreground hover:bg-transparent hover:text-foreground">

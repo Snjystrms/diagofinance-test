@@ -488,7 +488,7 @@ export default function CurrencyManagementPage() {
 
   return (
     <ProtectedRoute>
-      <div className="container mx-auto px-4 md:px-6 lg:px-8 py-10">
+      <div className="px-4 md:px-6 lg:px-8 py-10">
         <div className="mb-6 flex items-start justify-between">
           <div className="space-y-1">
             <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">

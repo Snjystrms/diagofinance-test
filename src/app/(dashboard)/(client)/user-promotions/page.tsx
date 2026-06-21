@@ -286,7 +286,7 @@ export default function UserPromotionsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="container mx-auto px-4 md:px-6 lg:px-8 py-10">
+      <div className="px-4 md:px-6 lg:px-8 py-10">
         {/* Header */}
         <div className="mb-8 relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary/[0.15] via-primary/[0.08] to-primary/[0.15] dark:from-primary/[0.12] dark:via-primary/[0.06] dark:to-primary/[0.12] p-6 border border-primary/20">
           {/* Glow orbs */}

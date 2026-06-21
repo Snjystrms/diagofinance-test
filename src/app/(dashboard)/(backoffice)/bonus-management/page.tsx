@@ -351,7 +351,9 @@ export default function BonusManagementPage() {
         id: "created_at",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Created" />,
         accessorFn: (row) => row.created_at,
-        cell: ({ row }) => formatDateTimeInIST(row.original.created_at),
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap">{formatDateTimeInIST(row.original.created_at)}</span>
+        ),
       },
     ],
     []
@@ -447,7 +449,7 @@ export default function BonusManagementPage() {
 
   return (
     <ProtectedRoute>
-      <div className="container mx-auto px-4 py-8 md:px-6">
+      <div className="px-4 py-8 md:px-6">
         <div className="space-y-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="space-y-2">

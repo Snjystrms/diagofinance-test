@@ -316,7 +316,7 @@ export default function TransactionsHistoryPage() {
   if (loading && !transactionsData) {
     return (
       
-        <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+        <div className="px-4 py-10 md:px-6 lg:px-8">
           <div className="space-y-6">
             <div>
               <Skeleton className="h-10 w-64 mb-2" />
@@ -343,7 +343,7 @@ export default function TransactionsHistoryPage() {
 
   return (
     
-      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+      <div className="px-4 py-10 md:px-6 lg:px-8">
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">

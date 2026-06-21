@@ -330,7 +330,7 @@ export function WithdrawalRequestsPageContent() {
         header: "Amount (USD)",
         accessorKey: "amount",
         cell: ({ row }) => (
-          <span className="font-medium">{formatAmount(row.original.amount)}</span>
+          <span className="font-medium whitespace-nowrap">{formatAmount(row.original.amount)}</span>
         ),
       },
          {

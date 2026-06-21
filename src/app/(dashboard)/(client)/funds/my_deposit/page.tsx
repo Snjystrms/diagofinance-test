@@ -347,8 +347,8 @@ const columns: ColumnDef<DepositListItem>[] = [
       <DataTableColumnHeader column={column} title="Created At" />
     ),
     cell: ({ row }) => (
-      <div className="flex items-center gap-2 text-sm">
-        <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+      <div className="flex items-center gap-2 text-sm whitespace-nowrap">
+        <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
         <span>
           {formatDateTimeInIST(row.original.created_at)}
         </span>
@@ -525,7 +525,7 @@ export default function MyDepositPage() {
 
   if (error && deposits.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+      <div className="px-4 py-10 md:px-6 lg:px-8">
         <ApiErrorState
           error={error}
           audience="client"
@@ -541,7 +541,7 @@ export default function MyDepositPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+    <div className="px-4 py-10 md:px-6 lg:px-8">
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div className="space-y-2">

@@ -307,8 +307,8 @@ export default function LoginActivityReportPage() {
         cell: ({ row }) => {
           const loginAt = row.original.login_at || row.original.created_at;
           return (
-            <div className="flex items-center gap-1 text-sm">
-              <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+            <div className="flex items-center gap-1 text-sm whitespace-nowrap">
+              <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <span>{fmtDateTime(loginAt)}</span>
             </div>
           );

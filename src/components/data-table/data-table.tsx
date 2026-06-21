@@ -36,10 +36,7 @@ export function DataTable<TData>({
       {...props}
     >
       {children}
-      <div className={cn(
-        "rounded-md border",
-        isMobile ? "overflow-x-auto" : "overflow-hidden",
-      )}>
+      <div className="rounded-md border overflow-x-auto">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

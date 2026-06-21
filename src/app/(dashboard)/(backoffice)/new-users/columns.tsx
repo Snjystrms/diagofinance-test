@@ -449,8 +449,8 @@ export const getColumnsWithActions = (
     accessorKey: "created_at",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Registration Date" />,
     cell: ({ row }) => (
-      <div className="flex items-center gap-1 text-sm">
-        <Calendar className="h-4 w-4 text-muted-foreground" />
+      <div className="flex items-center gap-1 text-sm whitespace-nowrap">
+        <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
         <span>{formatDateTime(row.original.created_at)}</span>
       </div>
     ),

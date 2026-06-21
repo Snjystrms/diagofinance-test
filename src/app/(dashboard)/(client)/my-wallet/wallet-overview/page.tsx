@@ -132,7 +132,7 @@ export default function WalletOverviewPage() {
 
   if (loading && !walletData) {
     return (
-      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+      <div className="px-4 py-10 md:px-6 lg:px-8">
         <div className="space-y-6">
           <div>
             <Skeleton className="h-10 w-64 mb-2" />
@@ -158,7 +158,7 @@ export default function WalletOverviewPage() {
 
   if (error && !walletData) {
     return (
-      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+      <div className="px-4 py-10 md:px-6 lg:px-8">
         <ApiErrorState
           error={error}
           audience="client"
@@ -176,7 +176,7 @@ export default function WalletOverviewPage() {
   const mt5Wallets = walletData?.mt5_wallets ?? []
 
   return (
-    <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+    <div className="px-4 py-10 md:px-6 lg:px-8">
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">

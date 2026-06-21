@@ -194,8 +194,8 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
     accessorKey: "created_at",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Created" />,
     cell: ({ row }) => (
-      <div className="flex items-center gap-1">
-        <Calendar className="h-4 w-4 text-muted-foreground" />
+      <div className="flex items-center gap-1 whitespace-nowrap">
+        <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
         <span className="text-sm">{fmtDate(row.original.created_at)}</span>
       </div>
     ),

@@ -1020,7 +1020,7 @@ const buildReviewPayload = () => {
 
   if (!isAdmin && isManager && !statusFeatureOptions.length) {
     return (
-      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+      <div className="px-4 py-10 md:px-6 lg:px-8">
         <ApiErrorState
           audience="admin"
           variant="panel"
@@ -1033,7 +1033,7 @@ const buildReviewPayload = () => {
 
   if (loadError && rows.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+      <div className="px-4 py-10 md:px-6 lg:px-8">
         <ApiErrorState
           error={loadError}
           audience="admin"
@@ -1063,7 +1063,7 @@ const buildReviewPayload = () => {
 
   return (
     
-    <div className="container mx-auto p-6 space-y-6">
+    <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">

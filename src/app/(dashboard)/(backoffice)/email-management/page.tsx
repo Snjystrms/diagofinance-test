@@ -346,7 +346,7 @@ export default function EmailManagementPage() {
   const showDropdown = !isBroadcastAll && canSearchUsers && filteredUsers.length > 0;
 
   return (
-    <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8 space-y-6">
+    <div className="px-4 py-10 md:px-6 lg:px-8 space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="space-y-1">

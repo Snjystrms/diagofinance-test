@@ -266,7 +266,9 @@ export default function TradingHistoryReportPage() {
         id: "created_at",
         header: "Created",
         accessorKey: "created_at",
-        cell: ({ row }) => fmtDateTime(row.original.created_at),
+        cell: ({ row }) => (
+          <span className="whitespace-nowrap">{fmtDateTime(row.original.created_at)}</span>
+        ),
       },
     ],
     []

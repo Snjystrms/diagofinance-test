@@ -576,7 +576,7 @@ export default function IbUsersPage() {
         header: "Created",
         cell: ({ row }) => {
           return (
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-muted-foreground whitespace-nowrap">
               {formatDateTime(row.original.created_at)}
             </div>
           );
@@ -803,7 +803,7 @@ export default function IbUsersPage() {
 
   return (
       <div className="min-h-screen bg-background">
-        <div className="container mx-auto space-y-6 p-6">
+        <div className="space-y-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">

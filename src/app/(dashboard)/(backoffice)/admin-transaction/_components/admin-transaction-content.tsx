@@ -241,7 +241,7 @@ export function AdminTransactionContent() {
       header: ({ column }) => <DataTableColumnHeader column={column} title="Amount" />,
       accessorKey: "amount",
       cell: ({ row }) => (
-        <span className="font-medium tabular-nums">
+        <span className="font-medium tabular-nums whitespace-nowrap">
           {formatAmount(row.original.amount)} {row.original.wallet_currency}
         </span>
       ),
@@ -250,7 +250,7 @@ export function AdminTransactionContent() {
       id: "balance_before",
       header: "Balance Before",
       cell: ({ row }) => (
-        <span className="tabular-nums text-sm text-muted-foreground">
+        <span className="tabular-nums text-sm text-muted-foreground whitespace-nowrap">
           {formatAmount(row.original.balance_before)} {row.original.wallet_currency}
         </span>
       ),
@@ -259,7 +259,7 @@ export function AdminTransactionContent() {
       id: "balance_after",
       header: "Balance After",
       cell: ({ row }) => (
-        <span className="tabular-nums text-sm text-muted-foreground">
+        <span className="tabular-nums text-sm text-muted-foreground whitespace-nowrap">
           {formatAmount(row.original.balance_after)} {row.original.wallet_currency}
         </span>
       ),
@@ -314,7 +314,7 @@ export function AdminTransactionContent() {
 
   if (!canView) {
     return (
-      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+      <div className="px-4 py-10 md:px-6 lg:px-8">
         <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
           You do not have permission to view admin transactions.
         </div>
@@ -328,7 +328,7 @@ export function AdminTransactionContent() {
 
   if (loadError && rows.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+      <div className="px-4 py-10 md:px-6 lg:px-8">
         <ApiErrorState
           error={loadError}
           audience="admin"
@@ -342,7 +342,7 @@ export function AdminTransactionContent() {
   }
 
   return (
-    <div className="container mx-auto space-y-6 p-6">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

@@ -399,9 +399,9 @@ function IbCommissionTraderRow({ trader }: { trader: IbLevelTrader }) {
     <TableRow>
       <TableCell className="font-medium">{trader.trader_name || "-"}</TableCell>
       <TableCell className="text-muted-foreground">{trader.trader_email || "-"}</TableCell>
-      <TableCell className="text-right">{formatAmount(trader.total_volume)}</TableCell>
-      <TableCell className="text-right">{formatAmount(trader.commission_amount)}</TableCell>
-      <TableCell className="text-right">{formatAmount(trader.pending_commission)}</TableCell>
+      <TableCell className="text-right whitespace-nowrap">{formatAmount(trader.total_volume)}</TableCell>
+      <TableCell className="text-right whitespace-nowrap">{formatAmount(trader.commission_amount)}</TableCell>
+      <TableCell className="text-right whitespace-nowrap">{formatAmount(trader.pending_commission)}</TableCell>
     </TableRow>
   );
 }

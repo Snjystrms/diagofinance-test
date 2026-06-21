@@ -339,7 +339,7 @@ export default function AllNotificationsPage() {
 
   if (!canViewNotifications) {
     return (
-      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+      <div className="px-4 py-10 md:px-6 lg:px-8">
         <ApiErrorState
           audience="admin"
           variant="panel"
@@ -352,7 +352,7 @@ export default function AllNotificationsPage() {
 
   if (loadError && notifications.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+      <div className="px-4 py-10 md:px-6 lg:px-8">
         <ApiErrorState
           error={loadError}
           audience="admin"
@@ -383,7 +383,7 @@ export default function AllNotificationsPage() {
 
   return (
     
-      <div className="container mx-auto p-6 space-y-6">
+      <div className="p-6 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="space-y-2">

@@ -319,7 +319,7 @@ export function AdminBrokerBankDetailsPageContent() {
         id: "updated_at",
         header: "Updated",
         cell: ({ row }) => (
-          <span className="text-xs text-muted-foreground">
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
             {formatDateTimeInIST(row.original.updated_at)}
           </span>
         ),
