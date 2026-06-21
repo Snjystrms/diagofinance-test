@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { ProtectedRoute } from '@/components/protected-route';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
@@ -138,14 +137,13 @@ export function CheckEmailClient() {
       <ProtectedRoute requireAuth={false}>
         <AuthLayout>
           <div className="text-center">
-            <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-full mb-6"
-              style={{ background: 'rgba(34,197,94,0.15)' }}>
-              <CheckCircle className="h-8 w-8 text-green-400" />
+            <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-full mb-6 bg-green-500/10">
+              <CheckCircle className="h-8 w-8 text-green-500" />
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
               You&apos;re all set!
             </h1>
-            <p className="text-white/40 text-lg">
+            <p className="text-muted-foreground text-lg">
               Your email has been verified successfully. Welcome aboard! Redirecting to login...
             </p>
           </div>
@@ -159,24 +157,23 @@ export function CheckEmailClient() {
       <AuthLayout>
         <div className="text-center">
           {/* Email Icon */}
-          <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-full mb-6"
-            style={{ background: 'rgba(255,184,0,0.1)' }}>
+          <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-full mb-6 bg-primary/10">
             <Mail className="h-6 w-6 text-primary" />
           </div>
 
-          <h1 className="text-3xl font-bold text-white mb-2">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
             Check your email
           </h1>
 
-          <p className="text-white/40 text-lg">
+          <p className="text-muted-foreground text-lg">
             {email
               ? "We've sent a verification OTP to"
               : "We've sent a verification OTP to your inbox"}
           </p>
 
           {email && (
-            <div className="mt-3 p-3 bg-[#1a1a1a] rounded-lg border border-[#FFB800]/20">
-              <p className="text-sm font-medium text-white break-all">
+            <div className="mt-3 p-3 bg-muted rounded-lg border border-primary/20">
+              <p className="text-sm font-medium text-foreground break-all">
                 {email}
               </p>
             </div>
@@ -185,19 +182,17 @@ export function CheckEmailClient() {
 
         {/* Card with gold border accent */}
         <div
-          className="rounded-xl border border-[#FFB800]/20 bg-[#0f0f0f] overflow-hidden"
-          style={{ boxShadow: '0 0 0 1px rgba(255,184,0,0.08), 0 24px 60px rgba(0,0,0,0.6)' }}
+          className="rounded-xl border border-primary/20 bg-card overflow-hidden shadow-lg"
         >
           {/* Gold top bar accent */}
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-[#FFB800]/60 to-transparent" />
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
 
           <div className="px-8 pt-7 pb-2 text-center">
-            <div className="mx-auto flex items-center justify-center w-12 h-12 rounded-full mb-3"
-              style={{ background: 'rgba(59,130,246,0.15)' }}>
+            <div className="mx-auto flex items-center justify-center w-12 h-12 rounded-full mb-3 bg-primary/10">
               <Key className="h-6 w-6 text-primary" />
             </div>
-            <h3 className="text-white font-semibold text-lg">Enter Verification OTP</h3>
-            <p className="text-white/40 text-sm mt-0.5">
+            <h3 className="text-foreground font-semibold text-lg">Enter Verification OTP</h3>
+            <p className="text-muted-foreground text-sm mt-0.5">
               Please enter the 6-digit OTP sent to your email
             </p>
           </div>
@@ -205,7 +200,7 @@ export function CheckEmailClient() {
           <div className="px-8 pb-8 pt-4 space-y-6">
             {/* OTP Input */}
             <div className="space-y-3">
-              <Label htmlFor="otp" className="text-sm font-medium text-white/70">
+              <Label htmlFor="otp" className="text-sm font-medium text-muted-foreground">
                 OTP Code
               </Label>
               <Input
@@ -215,11 +210,11 @@ export function CheckEmailClient() {
                 value={otp}
                 onChange={handleOtpChange}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleVerifyOtp(); }}
-                className="text-center text-lg font-mono tracking-widest bg-[#1a1a1a] border-[#FFB800]/20 text-white placeholder:text-white/20 focus:border-[#FFB800]/50 focus:ring-1 focus:ring-[#FFB800]/15"
+                className="text-center text-lg font-mono tracking-widest"
                 maxLength={6}
               />
               {error && (
-                <div className="flex items-center space-x-2 text-red-400 text-sm">
+                <div className="flex items-center space-x-2 text-destructive text-sm">
                   <AlertCircle className="h-4 w-4" />
                   <span>{error}</span>
                 </div>
@@ -229,28 +224,28 @@ export function CheckEmailClient() {
             {/* Instructions */}
             <div className="space-y-3">
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-[#FFB800] rounded-full mt-2 flex-shrink-0" />
-                <p className="text-sm text-white/40">
+                <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+                <p className="text-sm text-muted-foreground">
                   Open your email application or inbox
                 </p>
               </div>
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-[#FFB800] rounded-full mt-2 flex-shrink-0" />
-                <p className="text-sm text-white/40">
+                <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+                <p className="text-sm text-muted-foreground">
                   Look for an email with the subject &quot;Your OTP for Registration&quot;
                 </p>
               </div>
               <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-[#FFB800] rounded-full mt-2 flex-shrink-0" />
-                <p className="text-sm text-white/40">
+                <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
+                <p className="text-sm text-muted-foreground">
                   Enter the 6-digit OTP code above
                 </p>
               </div>
             </div>
 
             {/* Spam folder notice */}
-            <div className="p-3 bg-[#FFB800]/10 border border-[#FFB800]/20 rounded-lg">
-              <p className="text-sm text-[#FFB800]">
+            <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
+              <p className="text-sm text-primary">
                 <strong>Tip:</strong> If you don&apos;t see the email, check your spam or junk folder.
               </p>
             </div>
@@ -263,11 +258,11 @@ export function CheckEmailClient() {
                 disabled={isVerifying || otp.length !== 6}
                 className="
                   w-full py-3 rounded-lg text-sm font-bold tracking-wide
-                  bg-[#FFB800] text-black
-                  hover:bg-[#FFB800]/90
+                  bg-primary text-primary-foreground
+                  hover:bg-primary/90
                   disabled:opacity-40 disabled:cursor-not-allowed
                   transition-all flex items-center justify-center gap-2
-                  shadow-[0_0_20px_rgba(255,184,0,0.2)]
+                  shadow-lg
                 "
               >
                 {isVerifying ? (
@@ -286,8 +281,8 @@ export function CheckEmailClient() {
                 disabled={resendCountdown > 0 || isResending}
                 className="
                   w-full py-2.5 rounded-lg text-sm font-medium
-                  border border-white/10 text-white/60
-                  hover:border-white/20 hover:text-white/90
+                  border border-border text-muted-foreground
+                  hover:border-primary/50 hover:text-foreground
                   transition-all flex items-center justify-center gap-2
                 "
               >
@@ -304,7 +299,7 @@ export function CheckEmailClient() {
                 href="/login"
                 className="
                   block w-full py-2.5 rounded-lg text-sm font-medium text-center
-                  text-white/40 hover:text-white/70 transition-colors
+                  text-muted-foreground hover:text-foreground transition-colors
                 "
               >
                 <ArrowLeft className="h-4 w-4 inline mr-2" />
@@ -314,14 +309,14 @@ export function CheckEmailClient() {
 
             {/* Additional help */}
             <div className="text-center">
-              <p className="text-xs text-white/25">
+              <p className="text-xs text-muted-foreground/60">
                 Having trouble? Contact our support team for assistance.
               </p>
             </div>
           </div>
 
           {/* Gold bottom bar accent */}
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-[#FFB800]/30 to-transparent" />
+          <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
         </div>
       </AuthLayout>
     </ProtectedRoute>
