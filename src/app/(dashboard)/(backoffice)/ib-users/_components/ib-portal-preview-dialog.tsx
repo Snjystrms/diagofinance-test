@@ -304,12 +304,12 @@ export function IbPortalPreviewDialog({
                   onValueChange={(value) => setActiveTab(value as TabKey)}
                   className="space-y-6"
                 >
-                  <TabsList className="inline-flex h-auto w-full flex-wrap justify-start gap-2 rounded-2xl bg-muted/40 p-1.5">
+                  <TabsList className="ib-portal-surface inline-flex h-auto w-full flex-wrap gap-1 rounded-2xl border p-1.5">
                     {(Object.keys(TAB_LABELS) as TabKey[]).map((key) => (
                       <TabsTrigger
                         key={key}
                         value={key}
-                        className="rounded-xl px-4 py-2 text-sm"
+                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20"
                       >
                         {TAB_LABELS[key]}
                       </TabsTrigger>
@@ -791,7 +791,7 @@ function NetworkTab({
                 {networkData!.business_breakdown.map((b) => (
                   <TableRow key={b.level}>
                     <TableCell className="font-medium">{b.level_label}</TableCell>
-                    <TableCell className="text-muted-foreground">{b.source}</TableCell>
+                    <TableCell className="text-muted-foreground">{b.source === "Sub-IBs" ? "Sub-Partner" : b.source}</TableCell>
                     {/* <TableCell className="text-right tabular-nums">{b.volume}</TableCell> */}
                     <TableCell className="text-right tabular-nums">{b.lots}</TableCell>
                     <TableCell className="text-right tabular-nums">{formatCurrency(b.commission_earned)}</TableCell>
@@ -896,7 +896,7 @@ function NetworkTab({
                       </TableCell>
                       <TableCell>
                         <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
-                          {sub.level_label}
+                          {sub.level_label === "IB" ? "Partner" : sub.level_label}
                         </span>
                       </TableCell>
                       <TableCell className="text-right tabular-nums">{sub.lots}</TableCell>

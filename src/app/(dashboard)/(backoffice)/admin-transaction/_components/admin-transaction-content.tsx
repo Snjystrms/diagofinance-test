@@ -397,11 +397,11 @@ export function AdminTransactionContent() {
           </DropdownMenu>
           <Button onClick={() => setDepositDialogOpen(true)}>
             <ArrowDownToLine className="mr-2 h-4 w-4" />
-            Client Deposit
+            Wallet Deposit
           </Button>
           <Button onClick={() => setWithdrawalDialogOpen(true)}>
             <ArrowUpFromLine className="mr-2 h-4 w-4" />
-            Client Withdrawal
+            Wallet Withdrawal
           </Button>
           <Button onClick={() => setTransferDialogOpen(true)}>
             <TrendingUp className="mr-2 h-4 w-4" />

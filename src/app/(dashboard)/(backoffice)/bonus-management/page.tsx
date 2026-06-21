@@ -699,7 +699,7 @@ export default function BonusManagementPage() {
                     <div>
                       <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Current Balance</p>
                       <p className="mt-1 text-xl font-semibold text-foreground">
-                       {formatMoney(selectedMt5User.current_balance)} {selectedMt5User.account_type_name === "CENT" ? "USC" : "USD"}
+                       {formatMoney(selectedMt5User.account_type_name === "CENT" ? selectedMt5User.current_balance * 100 : selectedMt5User.current_balance)} {selectedMt5User.account_type_name === "CENT" ? "USC" : "USD"}
                       </p>
                     </div>
                   </div>

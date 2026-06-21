@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams } from "next/navigation";
 import { z } from "zod";
 import toast from "react-hot-toast";
-import { Repeat, Wallet, ArrowLeftRight, ArrowRight, ArrowDown } from "lucide-react";
+import { Repeat, Wallet, ArrowLeftRight, ArrowRight, ArrowDown, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Button } from "@/components/ui/button";
@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { IbMetricCard, IbPageHeader, IbPageShell, IbSectionCard } from "@/components/ib/ib-page-primitives";
 
 import {
   internalTransferApi,
@@ -159,6 +160,7 @@ function InternalTransferContent() {
   const [walletError, setWalletError] = useState<unknown | null>(null);
   const [accountsError, setAccountsError] = useState<unknown | null>(null);
   const [activeTab, setActiveTab] = useState<TransferTab>("wallet-to-mt5");
+  const [showAllAccounts, setShowAllAccounts] = useState(false);
 
   const mt5ToMt5Form = useForm<Mt5ToMt5FormValues>({
     resolver: zodResolver(mt5ToMt5Schema),
@@ -387,7 +389,18 @@ function InternalTransferContent() {
     walletToMt5Form.watch("toAccountId"),
   );
   const mt5ToWalletCurrency = getMt5TransferCurrency(selectedMt5ToWalletAccount);
-  const mt5ToMt5Currency = getMt5TransferCurrency(selectedMt5ToMt5FromAccount);
+  
+  // MT5 to MT5: Always use USD when both accounts are CENT
+  const mt5ToMt5Currency = useMemo(() => {
+    const fromIsCent = isCentMt5Account(selectedMt5ToMt5FromAccount);
+    const toIsCent = isCentMt5Account(selectedMt5ToMt5ToAccount);
+    
+    // If both are CENT, use USD (backend will handle conversion)
+    if (fromIsCent && toIsCent) return "USD";
+    
+    // Otherwise use the "from" account currency
+    return getMt5TransferCurrency(selectedMt5ToMt5FromAccount);
+  }, [selectedMt5ToMt5FromAccount, selectedMt5ToMt5ToAccount]);
 
   // Filter "To" accounts in MT5 to MT5 based on "From" account currency type
   const filteredMt5ToMt5ToAccounts = useMemo(() => {
@@ -600,124 +613,116 @@ function InternalTransferContent() {
   const canTransferBetweenWallets = walletOptions.length > 1;
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <div>
-          <h1 className="mb-1 flex items-center gap-2 text-3xl font-semibold text-foreground">
-            <ArrowLeftRight className="h-6 w-6 text-primary" />
-            Internal Transfers
-          </h1>
-          <p className="text-base text-muted-foreground max-w-2xl">
-            Move funds between your CRM wallets and linked MT5 trading accounts.
-          </p>
-        </div>
-        {walletError ? (
-          <ApiErrorState
-            error={walletError}
-            audience="client"
-            resource="wallet summary"
-            action="load"
-            variant="inline"
-          />
-        ) : null}
-        {accountsError ? (
-          <ApiErrorState
-            error={accountsError}
-            audience="client"
-            resource="MT5 accounts"
-            action="load"
-            variant="inline"
-          />
-        ) : null}
-      </div>
+    <IbPageShell>
+      <IbPageHeader
+        eyebrow="Funds Management"
+        title="Internal Transfers"
+        description="Move funds seamlessly between your CRM wallets and linked MT5 trading accounts."
+      />
+      
+      {walletError ? (
+        <ApiErrorState
+          error={walletError}
+          audience="client"
+          resource="wallet summary"
+          action="load"
+          variant="inline"
+        />
+      ) : null}
+      {accountsError ? (
+        <ApiErrorState
+          error={accountsError}
+          audience="client"
+          resource="MT5 accounts"
+          action="load"
+          variant="inline"
+        />
+      ) : null}
 
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.3fr)]">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <Wallet className="h-5 w-5" />
-              CRM Wallet
-            </CardTitle>
-            <CardDescription>
-              The primary CRM wallet is used by default for wallet to MT5
-              transfers.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoadingResources ? (
+      <div className="grid gap-4 lg:grid-cols-2">
+        <IbMetricCard
+          title="Main Wallet"
+          value={
+            isLoadingResources ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Repeat className="h-4 w-4 animate-spin" />
-                Loading wallet balances...
+                Loading...
               </div>
             ) : mainWallet ? (
-              <div className="rounded-lg border bg-muted/40 p-4 text-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <div className="font-medium">{mainWallet.label}</div>
-                    <div className="mt-1 text-muted-foreground">
-                      Balance: {mainWallet.balance.toFixed(2)} USD
-                    </div>
-                  </div>
-                  <Badge variant="outline">
-                    {mainWallet.isPrimary ? "Primary" : "Wallet"}
-                  </Badge>
-                </div>
+              <span>{mainWallet.balance.toFixed(2)} USD</span>
+            ) : (
+              <span className="text-base">No data</span>
+            )
+          }
+          description={
+            mainWallet ? (
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs">
+                  Active
+                </Badge>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                No CRM wallet data is available right now.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+              "The primary CRM wallet is used by default for wallet to MT5 transfers."
+            )
+          }
+          icon={<Wallet className="h-5 w-5" />}
+          accent="primary"
+        />
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold">
-              <Wallet className="h-5 w-5" />
-              Linked MT5 Accounts
-            </CardTitle>
-            <CardDescription>
-              Choose from your linked MT5 accounts when moving funds to or
-              between trading accounts.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isLoadingResources ? (
+        <IbMetricCard
+          title="Linked MT5 Accounts"
+          value={
+            isLoadingResources ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Repeat className="h-4 w-4 animate-spin" />
-                Loading MT5 accounts...
-              </div>
-            ) : liveMt5Accounts.length > 0 ? (
-              <div className="grid gap-3 sm:grid-cols-2">
-                {liveMt5Accounts.map((account) => (
-                  <div
-                    key={account.account_id}
-                    className="rounded-lg border bg-muted/40 p-3 text-sm"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <div className="font-medium">{account.account_id}</div>
-                        <div className="mt-1 text-xs text-muted-foreground">
-                          MT5 Login: {account.mt5_id}
-                        </div>
-                      </div>
-                      <Badge variant="outline">{account.account_mode}</Badge>
-                    </div>
-                    <div className="mt-1 text-muted-foreground">
-                      Balance: {formatMt5Balance(account)}
-                    </div>
-                  </div>
-                ))}
+                Loading...
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground">
-                No MT5 accounts found. Create an MT5 account before initiating
-                transfers involving trading accounts.
-              </p>
-            )}
-          </CardContent>
-        </Card>
+              <span>{liveMt5Accounts.length}</span>
+            )
+          }
+          description={
+            liveMt5Accounts.length > 0 ? (
+              <div className="space-y-2 mt-2">
+                <div className="space-y-1.5">
+                  {(showAllAccounts ? liveMt5Accounts : liveMt5Accounts.slice(0, 2)).map((account) => (
+                    <div key={account.account_id} className="flex items-center justify-between text-xs border-t border-border/50 pt-1.5 first:border-t-0 first:pt-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{account.account_id}</span>
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">
+                          {account.account_mode}
+                        </Badge>
+                      </div>
+                      <span className="text-muted-foreground tabular-nums">{formatMt5Balance(account)}</span>
+                    </div>
+                  ))}
+                </div>
+                {liveMt5Accounts.length > 3 && (
+                  <button
+                    onClick={() => setShowAllAccounts(!showAllAccounts)}
+                    className="flex items-center gap-1.5 text-xs text-primary hover:text-primary/80 transition-colors font-medium w-full justify-center pt-1.5 border-t border-border/50"
+                  >
+                    {showAllAccounts ? (
+                      <>
+                        <ChevronUp className="h-3.5 w-3.5" />
+                        Show less
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-3.5 w-3.5" />
+                        Show {liveMt5Accounts.length - 3} more account{liveMt5Accounts.length - 3 !== 1 ? 's' : ''}
+                      </>
+                    )}
+                  </button>
+                )}
+              </div>
+            ) : (
+              "No MT5 accounts found. Create an MT5 account before initiating transfers."
+            )
+          }
+          icon={<ArrowLeftRight className="h-5 w-5" />}
+          accent="emerald"
+        />
       </div>
 
       <Tabs
@@ -725,29 +730,23 @@ function InternalTransferContent() {
         onValueChange={(value) => setActiveTab(value as TransferTab)}
         className="space-y-4"
       >
-        <TabsList className="flex flex-wrap gap-1 h-auto p-1">
-          {/* <TabsTrigger value="wallet-to-wallet">Wallet to Wallet</TabsTrigger> */}
-        <TabsTrigger value="wallet-to-mt5" className="flex-1 min-w-fit">Wallet to MT5</TabsTrigger>
-        <TabsTrigger value="mt5-to-wallet" className="flex-1 min-w-fit">MT5 to Wallet</TabsTrigger>
-        <TabsTrigger value="mt5-to-mt5" className="flex-1 min-w-fit">MT5 to MT5</TabsTrigger>
+        <TabsList className="ib-portal-surface inline-flex h-auto w-full flex-wrap gap-1 rounded-2xl border p-1.5">
+        <TabsTrigger value="wallet-to-mt5" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">Wallet to MT5</TabsTrigger>
+        <TabsTrigger value="mt5-to-wallet" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">MT5 to Wallet</TabsTrigger>
+        <TabsTrigger value="mt5-to-mt5" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">MT5 to MT5</TabsTrigger>
         </TabsList>
         <TabsContent value="wallet-to-mt5">
-          <Card>
-            <CardHeader>
-              <CardTitle>Wallet to MT5</CardTitle>
-              <CardDescription>
-                Deposit funds from your primary CRM wallet into a linked MT5
-                account.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...walletToMt5Form}>
-                <form
-                  onSubmit={walletToMt5Form.handleSubmit(
-                    handleWalletToMt5Submit,
-                  )}
-                  className="space-y-6"
-                >
+          <IbSectionCard
+            title="Wallet to MT5"
+            description="Deposit funds from your primary CRM wallet into a linked MT5 account."
+          >
+            <Form {...walletToMt5Form}>
+              <form
+                onSubmit={walletToMt5Form.handleSubmit(
+                  handleWalletToMt5Submit,
+                )}
+                className="space-y-6"
+              >
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
                       Transfer route
@@ -896,27 +895,21 @@ function InternalTransferContent() {
                   </div>
                 </form>
               </Form>
-            </CardContent>
-          </Card>
+          </IbSectionCard>
         </TabsContent>
 
         <TabsContent value="mt5-to-wallet">
-          <Card>
-            <CardHeader>
-              <CardTitle>MT5 to wallet</CardTitle>
-              <CardDescription>
-                Withdraw balances from an MT5 account back into one of your CRM
-                wallets.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...mt5ToWalletForm}>
-                <form
-                  onSubmit={mt5ToWalletForm.handleSubmit(
-                    handleMt5ToWalletSubmit,
-                  )}
-                  className="space-y-6"
-                >
+          <IbSectionCard
+            title="MT5 to Wallet"
+            description="Withdraw balances from an MT5 account back into one of your CRM wallets."
+          >
+            <Form {...mt5ToWalletForm}>
+              <form
+                onSubmit={mt5ToWalletForm.handleSubmit(
+                  handleMt5ToWalletSubmit,
+                )}
+                className="space-y-6"
+              >
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
                       Transfer route
@@ -1049,24 +1042,19 @@ function InternalTransferContent() {
                   </div>
                 </form>
               </Form>
-            </CardContent>
-          </Card>
+          </IbSectionCard>
         </TabsContent>
 
         <TabsContent value="mt5-to-mt5">
-          <Card>
-            <CardHeader>
-              <CardTitle>MT5 to MT5</CardTitle>
-              <CardDescription>
-                Move funds directly between your linked MT5 accounts.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...mt5ToMt5Form}>
-                <form
-                  onSubmit={mt5ToMt5Form.handleSubmit(handleMt5ToMt5Submit)}
-                  className="space-y-6"
-                >
+          <IbSectionCard
+            title="MT5 to MT5"
+            description="Move funds directly between your linked MT5 accounts."
+          >
+            <Form {...mt5ToMt5Form}>
+              <form
+                onSubmit={mt5ToMt5Form.handleSubmit(handleMt5ToMt5Submit)}
+                className="space-y-6"
+              >
                   <div>
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
                       Transfer route
@@ -1141,14 +1129,6 @@ function InternalTransferContent() {
                         )}
                       />
                     </div>
-                    {mt5ToMt5Form.watch("amount") && Number(mt5ToMt5Form.watch("amount")) > 0 && (selectedMt5ToMt5FromAccount || selectedMt5ToMt5ToAccount) && (isCentMt5Account(selectedMt5ToMt5FromAccount) || isCentMt5Account(selectedMt5ToMt5ToAccount)) && (
-                      <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 mt-3 max-w-xs">
-                        <p className="text-xs text-muted-foreground">Conversion</p>
-                        <p className="text-sm font-semibold text-foreground mt-0.5">
-                          {Number(mt5ToMt5Form.watch("amount")).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {mt5ToMt5Currency} = {(Number(mt5ToMt5Form.watch("amount")) * (isCentMt5Account(selectedMt5ToMt5FromAccount) ? 1 : 100)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {isCentMt5Account(selectedMt5ToMt5FromAccount) ? "USC" : "USC"}
-                        </p>
-                      </div>
-                    )}
                   </div>
 
                   <Separator />
@@ -1184,6 +1164,14 @@ function InternalTransferContent() {
                           </FormItem>
                         )}
                       />
+                       {mt5ToMt5Form.watch("amount") && Number(mt5ToMt5Form.watch("amount")) > 0 && selectedMt5ToMt5FromAccount && selectedMt5ToMt5ToAccount && isCentMt5Account(selectedMt5ToMt5FromAccount) && isCentMt5Account(selectedMt5ToMt5ToAccount) && (
+                      <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 mt-3 max-w-xs">
+                        <p className="text-xs text-muted-foreground">Conversion</p>
+                        <p className="text-sm font-semibold text-foreground mt-0.5">
+                          {Number(mt5ToMt5Form.watch("amount")).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD = {(Number(mt5ToMt5Form.watch("amount")) * 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC
+                        </p>
+                      </div>
+                    )}
                     </div>
                   </div>
                   <div className="flex items-center justify-between pt-2 border-t">
@@ -1201,19 +1189,14 @@ function InternalTransferContent() {
                   </div>
                 </form>
               </Form>
-            </CardContent>
-          </Card>
+          </IbSectionCard>
         </TabsContent>
       </Tabs>
-    </div>
+    </IbPageShell>
   );
 }
 
 export default function InternalTransferPage() {
-  return (
-    <div className="px-4 py-10 md:px-6 lg:px-8">
-      <InternalTransferContent />
-    </div>
-  );
+  return <InternalTransferContent />;
 }
 

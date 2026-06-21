@@ -622,7 +622,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "bonus-management",
-    navLabel: "Bonus",
+    navLabel: "Manage Bonus",
     managerCategories: ["Bonus"],
   },
   {
@@ -638,7 +638,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "email-management",
-    navLabel: "E-Mail Management",
+    navLabel: "Manage E-Mail",
     managerCategories: ["E-Mail Management", "Email Management"],
   },
   {
@@ -783,7 +783,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "news-management",
-    navLabel: "News Management",
+    navLabel: "Manage News",
     managerCategories: ["News Management"],
   },
   {
@@ -791,7 +791,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "promotion-management",
-    navLabel: "Promotion Management",
+    navLabel: "Manage Promotion",
     managerCategories: ["Promotion Management"],
   },
   {

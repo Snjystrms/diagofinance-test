@@ -1131,14 +1131,14 @@ export default function NewUserDetailPage() {
                     </CardDescription>
                   </div>
                   <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabKey)} className="space-y-5">
-                    <TabsList className="grid h-auto w-full grid-cols-2 gap-2 rounded-2xl bg-muted/40 p-1 md:grid-cols-4 xl:grid-cols-7">
-                      <TabsTrigger value="deposits">Deposits</TabsTrigger>
-                      <TabsTrigger value="withdrawals">Withdrawals</TabsTrigger>
-                      <TabsTrigger value="mt5Accounts">MT5 Accounts</TabsTrigger>
-                      <TabsTrigger value="bankDetails">Bank Details</TabsTrigger>
-                      <TabsTrigger value="activityLog">Login Activity</TabsTrigger>
-                      <TabsTrigger value="referralBy">Referral By</TabsTrigger>
-                      <TabsTrigger value="walletHistory">Wallet History</TabsTrigger>
+                    <TabsList className="ib-portal-surface inline-flex h-auto w-full flex-wrap gap-1 rounded-2xl border p-1.5">
+                      <TabsTrigger value="deposits" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">Deposits</TabsTrigger>
+                      <TabsTrigger value="withdrawals" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">Withdrawals</TabsTrigger>
+                      <TabsTrigger value="mt5Accounts" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">MT5 Accounts</TabsTrigger>
+                      <TabsTrigger value="bankDetails" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">Bank Details</TabsTrigger>
+                      <TabsTrigger value="activityLog" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">Login Activity</TabsTrigger>
+                      <TabsTrigger value="referralBy" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">Referral By</TabsTrigger>
+                      <TabsTrigger value="walletHistory" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">Wallet History</TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="deposits" className="space-y-4">

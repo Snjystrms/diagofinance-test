@@ -1049,14 +1049,14 @@ function USDTDepositContent() {
               <Skeleton className="h-9 w-28 rounded-lg" />
             </div>
           ) : (
-            <TabsList className="flex h-auto w-full flex-wrap justify-start gap-2 rounded-2xl border border-border/60 bg-card p-2 shadow-sm">
-              {hasLocal    && <TabsTrigger className="min-w-[132px] rounded-xl px-4 py-2.5" value="local"><QrCode className="h-4 w-4 mr-2" />On-Chain</TabsTrigger>}
-              {hasBinance  && <TabsTrigger className="min-w-[132px] rounded-xl px-4 py-2.5" value="binance_pay"><WalletMinimal className="h-4 w-4 mr-2" />Binance Pay</TabsTrigger>}
-              {hasCoinsbuy && <TabsTrigger className="min-w-[132px] rounded-xl px-4 py-2.5" value="coinsbuy"><Wallet className="h-4 w-4 mr-2" />CoinsBuy</TabsTrigger>}
-              {hasCregis   && <TabsTrigger className="min-w-[132px] rounded-xl px-4 py-2.5" value="cregis"><Shield className="h-4 w-4 mr-2" />Crypto Currency</TabsTrigger>}
-              {hasBank     && <TabsTrigger className="min-w-[132px] rounded-xl px-4 py-2.5" value="bank"><Building2 className="h-4 w-4 mr-2" />Bank Deposit</TabsTrigger>}
+            <TabsList className="ib-portal-surface inline-flex h-auto w-full flex-wrap gap-1 rounded-2xl border p-1.5">
+              {hasLocal    && <TabsTrigger className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20" value="local"><QrCode className="h-4 w-4 mr-2" />On-Chain</TabsTrigger>}
+              {hasBinance  && <TabsTrigger className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20" value="binance_pay"><WalletMinimal className="h-4 w-4 mr-2" />Binance Pay</TabsTrigger>}
+              {hasCoinsbuy && <TabsTrigger className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20" value="coinsbuy"><Wallet className="h-4 w-4 mr-2" />CoinsBuy</TabsTrigger>}
+              {hasCregis   && <TabsTrigger className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20" value="cregis"><Shield className="h-4 w-4 mr-2" />Crypto Currency</TabsTrigger>}
+              {hasBank     && <TabsTrigger className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20" value="bank"><Building2 className="h-4 w-4 mr-2" />Bank Deposit</TabsTrigger>}
               {comingSoonMethods.map(p => (
-                <TabsTrigger className="min-w-[132px] rounded-xl px-4 py-2.5" key={p.type} value={p.type}><Clock className="h-4 w-4 mr-2" />{p.name}</TabsTrigger>
+                <TabsTrigger className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20" key={p.type} value={p.type}><Clock className="h-4 w-4 mr-2" />{p.name}</TabsTrigger>
               ))}
             </TabsList>
           )}
