@@ -130,9 +130,9 @@ const isCentMt5Account = (account?: MT5Account | null) =>
 const formatMt5Balance = (account: MT5Account) => {
   const isCent = isCentMt5Account(account);
   
-  // For CENT accounts, use balance_in_cent if available, otherwise convert balance * 100
+  // For CENT accounts, prioritize balance field and multiply by 100
   const amount = isCent 
-    ? (account.balance_in_cent ?? account.balance * 100)
+    ? account.balance * 100
     : account.balance;
   
   const formatted = Number(amount).toLocaleString("en-US", {

@@ -80,10 +80,10 @@ const getMt5AccountCurrency = (account?: AdminMT5Account) => (isCentMt5Account(a
 
 const getMt5AccountBalance = (account?: AdminMT5Account) => {
   if (!account) return 0;
-  // For CENT accounts, use balance_in_cent if available
-  // If balance_in_cent not present, convert self_wallet (USD) to USC by multiplying by 100
+  // For CENT accounts, prioritize balance field and multiply by 100
   if (isCentMt5Account(account)) {
-    return account.balance_in_cent ?? (account.self_wallet ? account.self_wallet * 100 : 0);
+    const rawBalance = account.balance ?? account.self_wallet ?? 0;
+    return typeof rawBalance === 'number' ? rawBalance * 100 : Number(rawBalance) * 100;
   }
   // For non-CENT accounts, use self_wallet
   return account.self_wallet ?? 0;

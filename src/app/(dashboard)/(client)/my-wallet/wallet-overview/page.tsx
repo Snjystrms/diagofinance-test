@@ -130,6 +130,33 @@ export default function WalletOverviewPage() {
     })
   }
 
+  const getTransactionCurrency = (transaction: any) => {
+    // Try to find matching MT5 wallet by mt5_user_id
+    if (transaction.mt5_user_id && walletData?.mt5_wallets) {
+      const matchingWallet = walletData.mt5_wallets.find(
+        (w) => w.mt5_user_id === transaction.mt5_user_id
+      )
+      if (matchingWallet) {
+        return matchingWallet.currency || 'USD'
+      }
+    }
+    // Default to USD for main wallet transactions
+    return 'USD'
+  }
+
+  const getTransactionDisplayAmount = (transaction: any) => {
+    const currency = getTransactionCurrency(transaction)
+    const amount = typeof transaction.amount === 'string' ? parseFloat(transaction.amount) : transaction.amount
+    // Multiply by 100 for USC (cent) accounts
+    const displayAmount = currency === 'USC' ? amount * 100 : amount
+    return formatAmount(displayAmount)
+  }
+
+  const getTransactionCurrencySymbol = (transaction: any) => {
+    const currency = getTransactionCurrency(transaction)
+    return currency === 'USC' ? '¢' : '$'
+  }
+
   if (loading && !walletData) {
     return (
       <div className="px-4 py-10 md:px-6 lg:px-8">
@@ -466,7 +493,7 @@ export default function WalletOverviewPage() {
                           {isCreditTransaction(transaction.type)
                             ? '+'
                             : '-'}
-                          ${formatAmount(transaction.amount)}
+                          {getTransactionCurrencySymbol(transaction)}{getTransactionDisplayAmount(transaction)}
                         </p>
                       </div>
                     </div>
