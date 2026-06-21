@@ -78,6 +78,17 @@ const isCentMt5Account = (account?: AdminMT5Account) =>
 
 const getMt5AccountCurrency = (account?: AdminMT5Account) => (isCentMt5Account(account) ? "usc" : "usd");
 
+const getMt5AccountBalance = (account?: AdminMT5Account) => {
+  if (!account) return 0;
+  // For CENT accounts, use balance_in_cent if available
+  // If balance_in_cent not present, convert self_wallet (USD) to USC by multiplying by 100
+  if (isCentMt5Account(account)) {
+    return account.balance_in_cent ?? (account.self_wallet ? account.self_wallet * 100 : 0);
+  }
+  // For non-CENT accounts, use self_wallet
+  return account.self_wallet ?? 0;
+};
+
 const formatCurrencyCode = (value: unknown) => String(value ?? "USD").trim().toLowerCase();
 
 export function InternalTransferDialog({
@@ -125,11 +136,13 @@ export function InternalTransferDialog({
     (acc) => String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "") === toMt5Account,
   );
   const amountCurrency =
-    transferType === "main_to_mt5"
-      ? "usd"
-      : transferType === "mt5_to_mt5" || transferType === "mt5_to_main"
-        ? getMt5AccountCurrency(selectedFromMt5Account)
-        : "usd";
+    transferType === "mt5_to_mt5"
+      ? "usd" // Always USD for MT5 to MT5 transfers
+      : transferType === "main_to_mt5"
+        ? "usd"
+        : transferType === "mt5_to_main"
+          ? "usd" // Always USD for MT5 to Main transfers
+          : "usd";
 
   const searchUsers = useCallback(
     async (q: string) => {
@@ -530,7 +543,7 @@ export function InternalTransferDialog({
                 const accId = String(
                   acc.account_id ?? acc.mt5_id ?? acc.id ?? "",
                 );
-                const accBalance = acc.self_wallet ?? 0;
+                const accBalance = getMt5AccountBalance(acc);
                 const type = acc.account_mode ?? "-";
                 const currency = getMt5AccountCurrency(acc);
                 return (
@@ -551,7 +564,7 @@ export function InternalTransferDialog({
         <SelectContent>
           {filteredAccounts.map((acc) => {
             const accId = String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "");
-            const accBalance = acc.self_wallet ?? 0;
+            const accBalance = getMt5AccountBalance(acc);
             const type = acc.account_mode ?? "-";
             const currency = getMt5AccountCurrency(acc);
             return (
@@ -862,21 +875,21 @@ export function InternalTransferDialog({
                       </p>
                     </div>
                   )}
-                  {/* MT5 to MT5: Show USC to USD if both are CENT */}
-                  {transferType === "mt5_to_mt5" && isCentMt5Account(selectedFromMt5Account) && isCentMt5Account(selectedToMt5Account) && (
+                  {/* MT5 to MT5: Show USD to USC conversion if CENT accounts */}
+                  {transferType === "mt5_to_mt5" && (isCentMt5Account(selectedFromMt5Account) || isCentMt5Account(selectedToMt5Account)) && (
                     <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
                       <p className="text-xs text-muted-foreground">Conversion</p>
                       <p className="text-sm font-semibold text-foreground mt-0.5">
-                        {Number(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC = {(Number(amount) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                        {Number(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD = {(Number(amount) * 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC
                       </p>
                     </div>
                   )}
-                  {/* MT5 to Main: Show USC to USD if source is CENT */}
+                  {/* MT5 to Main: Show USD to USC conversion if source is CENT */}
                   {transferType === "mt5_to_main" && isCentMt5Account(selectedFromMt5Account) && (
                     <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
                       <p className="text-xs text-muted-foreground">Conversion</p>
                       <p className="text-sm font-semibold text-foreground mt-0.5">
-                        {Number(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC = {(Number(amount) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                        {Number(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD = {(Number(amount) * 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC
                       </p>
                     </div>
                   )}

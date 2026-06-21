@@ -512,6 +512,7 @@ export interface AdminWalletBalanceItem {
   status: string;
   wallet_address: string;
   mt5_id?: string | null;
+  mode: string;
 }
 
 export interface AdminUserWalletBalancesData {

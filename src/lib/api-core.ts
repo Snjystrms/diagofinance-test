@@ -84,10 +84,11 @@ export async function refreshCurrentAuthToken(tokenOverride?: string | null) {
         headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
       });
 
-      // If refresh endpoint returns 401, silently fail without redirect
-      // This allows the user to stay on the page
+      // If refresh endpoint returns 401, return the old token to keep user logged in
+      // The old token will continue to be used until other API calls get 401
       if (response.status === 401) {
-        return null;
+        console.warn("Token refresh returned 401 - continuing with existing token");
+        return token; // Return the old token instead of null
       }
 
       const json = await response.json().catch(() => ({}));
@@ -95,7 +96,7 @@ export async function refreshCurrentAuthToken(tokenOverride?: string | null) {
 
       if (!newToken) {
         const currentStoredToken = getStoredAuthToken();
-        return currentStoredToken && currentStoredToken !== token ? currentStoredToken : null;
+        return currentStoredToken && currentStoredToken !== token ? currentStoredToken : token;
       }
 
       localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, newToken);
@@ -104,9 +105,9 @@ export async function refreshCurrentAuthToken(tokenOverride?: string | null) {
       );
       return newToken;
     } catch (error) {
-      // Catch any network errors and return null without redirect
+      // Catch any network errors and return old token without redirect
       console.error("Token refresh error:", error);
-      return null;
+      return token; // Return the old token instead of null
     }
   })().finally(() => {
     refreshTokenPromise = null;
@@ -265,6 +266,7 @@ export async function apiCall<T>(
   const hasAuth = !!authorizationHeader;
 
   let didAttemptRefresh = false;
+  let refreshReturnedToken = false;
 
   if (!skipAuthRedirect && response.status === 401 && hasAuth) {
     didAttemptRefresh = true;
@@ -276,17 +278,17 @@ export async function apiCall<T>(
         : await refreshCurrentAuthToken(requestToken);
 
     if (retryToken) {
+      refreshReturnedToken = true;
       setAuthorizationHeader(finalHeaders, retryToken);
       response = await fetchWithConfig(url, { ...config, headers: finalHeaders }, endpoint);
     }
   }
 
-  // Only redirect to login if:
-  // 1. We haven't attempted a token refresh (skipAuthRedirect=false check), OR
-  // 2. We attempted refresh and retry, but the retry also failed with 401
-  // If refresh attempt failed (didAttemptRefresh=true but retryToken=null), don't redirect
-  // This allows users to stay on their page even when refresh token expires
-  if (!skipAuthRedirect && response.status === 401 && hasAuth && !didAttemptRefresh) {
+  // Redirect to login ONLY if:
+  // 1. We got a retry token from refresh (either new or old), AND
+  // 2. The retry with that token STILL returned 401
+  // This means: if refresh gave us ANY token (new or old) and the API still rejects it, the session is truly invalid
+  if (!skipAuthRedirect && response.status === 401 && hasAuth && didAttemptRefresh && refreshReturnedToken) {
     if (handle401Redirect(response, hasAuth)) {
       return new Promise<ApiResponse<T>>(() => {});
     }

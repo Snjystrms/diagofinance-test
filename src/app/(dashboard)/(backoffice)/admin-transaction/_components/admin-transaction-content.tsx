@@ -62,6 +62,7 @@ import { fmtDateTime, fmtISTDateTime, formatAmount, statusBadge, transactionType
 import { ClientDepositDialog } from "./client-deposit-dialog";
 import { ClientWithdrawalDialog } from "./client-withdrawal-dialog";
 import { InternalTransferDialog } from "./internal-transfer-dialog";
+import { TransactionDetailsDialog } from "./transaction-details-dialog";
 
 export function AdminTransactionContent() {
   const authCtx = useAuth?.();
@@ -87,6 +88,8 @@ export function AdminTransactionContent() {
   const [depositDialogOpen, setDepositDialogOpen] = useState(false);
   const [withdrawalDialogOpen, setWithdrawalDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedTransaction, setSelectedTransaction] = useState<AdminTransactionItem | null>(null);
 
   const requestIdRef = useRef(0);
 
@@ -202,6 +205,11 @@ export function AdminTransactionContent() {
     }
   }, [canView, token, searchUser, typeFilter, statusFilter]);
 
+  const handleViewDetails = useCallback((transaction: AdminTransactionItem) => {
+    setSelectedTransaction(transaction);
+    setDetailsDialogOpen(true);
+  }, []);
+
   const columns: ColumnDef<AdminTransactionItem>[] = useMemo(() => [
     {
       id: "id",
@@ -310,7 +318,22 @@ export function AdminTransactionContent() {
         </div>
       ),
     },
-  ], []);
+    {
+      id: "actions",
+      header: "Actions",
+      cell: ({ row }) => (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => handleViewDetails(row.original)}
+          className="h-8 w-8 p-0"
+        >
+          <Eye className="h-4 w-4" />
+          <span className="sr-only">View details</span>
+        </Button>
+      ),
+    },
+  ], [handleViewDetails]);
 
   if (!canView) {
     return (
@@ -536,6 +559,11 @@ export function AdminTransactionContent() {
         onOpenChange={setTransferDialogOpen}
         token={token}
         onSuccess={handleTransferSuccess}
+      />
+      <TransactionDetailsDialog
+        open={detailsDialogOpen}
+        onOpenChange={setDetailsDialogOpen}
+        transaction={selectedTransaction}
       />
     </div>
   );

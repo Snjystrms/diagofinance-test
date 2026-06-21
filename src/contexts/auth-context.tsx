@@ -68,28 +68,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       const newToken = await refreshCurrentAuthToken(token);
       
-      if (newToken) {
-        // Update token in state and localStorage
+      if (newToken && newToken !== token) {
+        // Update token in state and localStorage only if we got a NEW token
         setToken(newToken);
         localStorage.setItem('auth_token', newToken);
         
-        console.log('✅ Token refreshed successfully');
+        console.log('✅ Token refreshed successfully with new token');
         return true;
+      } else if (newToken === token) {
+        // Refresh returned the same token (refresh endpoint returned 401)
+        // Keep using the old token - don't logout yet
+        console.warn('⚠️ Token refresh returned 401 - continuing with existing token');
+        return false;
       } else {
         console.error('❌ Token refresh failed: Invalid response');
         return false;
       }
     } catch (error) {
       console.error('❌ Token refresh error:', error);
-      
-      // If refresh fails with 401, logout user
-      if (error && typeof error === 'object' && 'status' in error && error.status === 401) {
-        console.log('Token refresh returned 401 - logging out');
-        toast.error('Session expired. Please login again.');
-        logout();
-        window.location.href = '/login';
-      }
-      
       return false;
     } finally {
       isRefreshingRef.current = false;

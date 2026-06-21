@@ -293,7 +293,7 @@ export function ClientDepositDialog({ open, onOpenChange, token, onSuccess }: Cl
                       <div key={wallet.id} className="flex items-center justify-between text-sm">
                         <div className="flex flex-col">
                           {wallet.wallet_type === "mt5" && wallet.mt5_id ? (
-                            <span className="text-muted-foreground">{wallet.mt5_id}</span>
+                            <span className="text-muted-foreground">{wallet.mt5_id}-{wallet.mode}</span>
                           ) : (
                             <span className="capitalize text-muted-foreground">{wallet.wallet_type}</span>
                           )}

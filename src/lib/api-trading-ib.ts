@@ -1667,6 +1667,8 @@ export interface MT5Account {
   account_id: string;
   account_type_name: string;
   balance: number;
+  balance_in_cent?: number;
+  wallet_currency?: string;
   account_mode: "demo" | "live";
 }
 
@@ -1752,6 +1754,7 @@ export interface AdminMT5Account {
   hedge_margin?: string | number;
   swap_free_option?: string | number;
   base_currency?: string;
+  balance_in_cent?: number;
   created_at?: string;
   mt5_wallet_id?: number | string;
   updated_at?: string;

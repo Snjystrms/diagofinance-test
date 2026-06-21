@@ -127,12 +127,19 @@ const isCentMt5Account = (account?: MT5Account | null) =>
   String(account?.account_type_name ?? "").trim().toLowerCase() === "cent";
 
 const formatMt5Balance = (account: MT5Account) => {
-  const amount = Number(account.balance ?? 0).toLocaleString("en-US", {
+  const isCent = isCentMt5Account(account);
+  
+  // For CENT accounts, use balance_in_cent if available, otherwise convert balance * 100
+  const amount = isCent 
+    ? (account.balance_in_cent ?? account.balance * 100)
+    : account.balance;
+  
+  const formatted = Number(amount).toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
 
-  return isCentMt5Account(account) ? `¢${amount}` : formatCurrency(account.balance);
+  return isCent ? `¢${formatted}` : formatCurrency(amount);
 };
 
 const getMt5TransferCurrency = (account?: MT5Account | null) =>
@@ -371,8 +378,39 @@ function InternalTransferContent() {
     liveMt5Accounts,
     mt5ToMt5Form.watch("fromAccountId"),
   );
+  const selectedMt5ToMt5ToAccount = findMt5AccountById(
+    liveMt5Accounts,
+    mt5ToMt5Form.watch("toAccountId"),
+  );
+  const selectedWalletToMt5Account = findMt5AccountById(
+    liveMt5Accounts,
+    walletToMt5Form.watch("toAccountId"),
+  );
   const mt5ToWalletCurrency = getMt5TransferCurrency(selectedMt5ToWalletAccount);
   const mt5ToMt5Currency = getMt5TransferCurrency(selectedMt5ToMt5FromAccount);
+
+  // Filter "To" accounts in MT5 to MT5 based on "From" account currency type
+  const filteredMt5ToMt5ToAccounts = useMemo(() => {
+    if (!selectedMt5ToMt5FromAccount) return mt5AccountOptions;
+    
+    const fromIsCent = isCentMt5Account(selectedMt5ToMt5FromAccount);
+    return mt5AccountOptions.filter((option) => {
+      const account = findMt5AccountById(liveMt5Accounts, option.id);
+      const accountIsCent = isCentMt5Account(account);
+      return fromIsCent === accountIsCent;
+    });
+  }, [selectedMt5ToMt5FromAccount, mt5AccountOptions, liveMt5Accounts]);
+
+  // Clear "To" account if it doesn't match the filtered list
+  useEffect(() => {
+    const toAccountId = mt5ToMt5Form.watch("toAccountId");
+    if (!toAccountId || !selectedMt5ToMt5FromAccount) return;
+    
+    const isValidToAccount = filteredMt5ToMt5ToAccounts.some((opt) => opt.id === toAccountId);
+    if (!isValidToAccount) {
+      mt5ToMt5Form.setValue("toAccountId", "", { shouldValidate: false });
+    }
+  }, [selectedMt5ToMt5FromAccount, filteredMt5ToMt5ToAccounts, mt5ToMt5Form]);
 
   const handleMt5ToMt5Submit = async (values: Mt5ToMt5FormValues) => {
     if (!token || !user?.id) {
@@ -779,6 +817,7 @@ function InternalTransferContent() {
                         )}
                       />
                     </div>
+                  
                   </div>
 
                   <Separator />
@@ -810,6 +849,14 @@ function InternalTransferContent() {
                                 </span>
                               </div>
                             </FormControl>
+                              {walletToMt5Form.watch("amount") && Number(walletToMt5Form.watch("amount")) > 0 && selectedWalletToMt5Account && isCentMt5Account(selectedWalletToMt5Account) && (
+                      <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 mt-3 max-w-xs">
+                        <p className="text-xs text-muted-foreground">Conversion</p>
+                        <p className="text-sm font-semibold text-foreground mt-0.5">
+                          {Number(walletToMt5Form.watch("amount")).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD = {(Number(walletToMt5Form.watch("amount")) * 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC
+                        </p>
+                      </div>
+                    )}
                             {mainWallet && (
                               <p className="text-xs text-muted-foreground">
                                 Max. {mainWallet.balance.toFixed(2)} USD
@@ -942,6 +989,14 @@ function InternalTransferContent() {
                         )}
                       />
                     </div>
+                    {mt5ToWalletForm.watch("amount") && Number(mt5ToWalletForm.watch("amount")) > 0 && selectedMt5ToWalletAccount && isCentMt5Account(selectedMt5ToWalletAccount) && (
+                      <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 mt-3 max-w-xs">
+                        <p className="text-xs text-muted-foreground">Conversion</p>
+                        <p className="text-sm font-semibold text-foreground mt-0.5">
+                          {Number(mt5ToWalletForm.watch("amount")).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC = {(Number(mt5ToWalletForm.watch("amount")) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <Separator />
@@ -1074,7 +1129,7 @@ function InternalTransferContent() {
                                 </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                {mt5AccountOptions.map((option) => (
+                                {filteredMt5ToMt5ToAccounts.map((option) => (
                                   <SelectItem key={option.id} value={option.id}>
                                     {option.label}
                                   </SelectItem>
@@ -1086,6 +1141,14 @@ function InternalTransferContent() {
                         )}
                       />
                     </div>
+                    {mt5ToMt5Form.watch("amount") && Number(mt5ToMt5Form.watch("amount")) > 0 && (selectedMt5ToMt5FromAccount || selectedMt5ToMt5ToAccount) && (isCentMt5Account(selectedMt5ToMt5FromAccount) || isCentMt5Account(selectedMt5ToMt5ToAccount)) && (
+                      <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 mt-3 max-w-xs">
+                        <p className="text-xs text-muted-foreground">Conversion</p>
+                        <p className="text-sm font-semibold text-foreground mt-0.5">
+                          {Number(mt5ToMt5Form.watch("amount")).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {mt5ToMt5Currency} = {(Number(mt5ToMt5Form.watch("amount")) * (isCentMt5Account(selectedMt5ToMt5FromAccount) ? 1 : 100)).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {isCentMt5Account(selectedMt5ToMt5FromAccount) ? "USC" : "USC"}
+                        </p>
+                      </div>
+                    )}
                   </div>
 
                   <Separator />
