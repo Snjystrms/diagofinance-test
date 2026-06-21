@@ -514,8 +514,16 @@ export function InternalTransferDialog({
     if (isMt5ToMt5 && isToAccount && fromMt5Account) {
       const fromIsCent = isCentMt5Account(selectedFromMt5Account);
       filteredAccounts = userMt5Accounts.filter((acc) => {
+        const accId = String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "");
         const accIsCent = isCentMt5Account(acc);
-        return fromIsCent === accIsCent;
+        // Exclude the "from" account and only show matching currency type
+        return accId !== fromMt5Account && fromIsCent === accIsCent;
+      });
+    } else if (isToAccount && fromMt5Account) {
+      // For non-MT5-to-MT5 transfers, just exclude the "from" account
+      filteredAccounts = userMt5Accounts.filter((acc) => {
+        const accId = String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "");
+        return accId !== fromMt5Account;
       });
     }
 
@@ -561,7 +569,13 @@ export function InternalTransferDialog({
               })()}
           </SelectValue>
         </SelectTrigger>
-        <SelectContent>
+        <SelectContent 
+          side="bottom" 
+          align="start" 
+          sideOffset={4}
+          avoidCollisions={false}
+          className="max-h-[300px] overflow-y-auto"
+        >
           {filteredAccounts.map((acc) => {
             const accId = String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "");
             const accBalance = getMt5AccountBalance(acc);
@@ -605,7 +619,12 @@ export function InternalTransferDialog({
               <SelectTrigger id="transfer-type">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent 
+                side="bottom" 
+                align="start" 
+                sideOffset={4}
+                avoidCollisions={false}
+              >
                 {TRANSFER_TYPE_OPTIONS.map((opt) => (
                   <SelectItem key={opt.value} value={opt.value}>
                     {opt.label}
@@ -709,7 +728,12 @@ export function InternalTransferDialog({
                   <SelectTrigger>
                     <SelectValue placeholder="Select source wallet" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent 
+                    side="bottom" 
+                    align="start" 
+                    sideOffset={4}
+                    avoidCollisions={false}
+                  >
                     {walletBalances
                       .filter((w) => w.wallet_type === "main")
                       .map((wallet) => (
@@ -762,7 +786,12 @@ export function InternalTransferDialog({
                   <SelectTrigger>
                     <SelectValue placeholder="Select destination wallet" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent 
+                    side="bottom" 
+                    align="start" 
+                    sideOffset={4}
+                    avoidCollisions={false}
+                  >
                     {walletBalances
                       .filter((w) => w.wallet_type === "main")
                       .map((wallet) => (
@@ -797,7 +826,12 @@ export function InternalTransferDialog({
                   <SelectTrigger>
                     <SelectValue placeholder="Select source wallet" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent 
+                    side="bottom" 
+                    align="start" 
+                    sideOffset={4}
+                    avoidCollisions={false}
+                  >
                     {walletBalances
                       .filter((w) => w.wallet_type === "ib")
                       .map((wallet) => (
@@ -828,7 +862,12 @@ export function InternalTransferDialog({
                   <SelectTrigger>
                     <SelectValue placeholder="Select destination wallet" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent 
+                    side="bottom" 
+                    align="start" 
+                    sideOffset={4}
+                    avoidCollisions={false}
+                  >
                     {walletBalances
                       .filter((w) => w.wallet_type === "main")
                       .map((wallet) => (

@@ -192,7 +192,7 @@ export function ClientDepositDialog({ open, onOpenChange, token, onSuccess }: Cl
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Client Deposit</DialogTitle>
+          <DialogTitle>Wallet Deposit</DialogTitle>
           <DialogDescription>Process a deposit on behalf of a client</DialogDescription>
         </DialogHeader>
 

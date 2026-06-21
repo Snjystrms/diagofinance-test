@@ -165,7 +165,7 @@ export function ClientWithdrawalDialog({ open, onOpenChange, token, onSuccess }:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Client Withdrawal</DialogTitle>
+          <DialogTitle>Wallet Withdrawal</DialogTitle>
           <DialogDescription>Process a withdrawal on behalf of a client</DialogDescription>
         </DialogHeader>
 

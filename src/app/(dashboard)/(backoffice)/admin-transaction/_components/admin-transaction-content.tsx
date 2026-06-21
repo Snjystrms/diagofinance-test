@@ -302,7 +302,7 @@ export function AdminTransactionContent() {
       header: "Admin Notes",
       accessorKey: "admin_notes",
       cell: ({ row }) => (
-        <span className="max-w-[200px] truncate text-sm text-muted-foreground">
+        <span className="max-w-[200px] break-words text-sm text-muted-foreground">
           {row.original.admin_notes || "-"}
         </span>
       ),
@@ -312,9 +312,9 @@ export function AdminTransactionContent() {
       header: ({ column }) => <DataTableColumnHeader column={column} title="Date" />,
       accessorKey: "created_at",
       cell: ({ row }) => (
-        <div className="flex items-center gap-1 text-sm">
-          <CalendarIcon className="h-3.5 w-3.5 text-muted-foreground" />
-          <span>{fmtDateTime(row.original.created_at)}</span>
+        <div className="flex items-center gap-2 text-sm">
+          <CalendarIcon className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+          <span className="whitespace-nowrap">{fmtDateTime(row.original.created_at)}</span>
         </div>
       ),
     },

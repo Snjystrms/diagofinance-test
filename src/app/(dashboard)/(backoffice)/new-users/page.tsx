@@ -751,7 +751,7 @@ export default function NewUsersPage() {
     <ProtectedRoute>
       <>
         <div className="min-h-screen bg-background">
-          <div className="space-y-6">
+          <div className="container mx-auto space-y-6 p-6">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
