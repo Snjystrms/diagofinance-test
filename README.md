@@ -166,7 +166,7 @@ interface LoginResponse {
 }
 ```
 
-## Environment Variables ##
+## Environment Variables
 
 | Variable | Description | Default |
 |----------|-------------|---------|
