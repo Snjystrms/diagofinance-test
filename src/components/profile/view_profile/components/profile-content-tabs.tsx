@@ -376,6 +376,16 @@ export function ProfileBankDetailsTab({
   const [newFilePreview, setNewFilePreview] = useState<string | null>(null);
   const [imageZoom, setImageZoom] = useState(100);
 
+  // Cleanup blob URLs when dialog closes or component unmounts
+  useEffect(() => {
+    return () => {
+      // Clean up blob URLs to prevent memory leaks
+      if (previewImageUrl && previewImageUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(previewImageUrl);
+      }
+    };
+  }, [previewImageUrl]);
+
   // Cleanup preview URL on unmount or when file changes
   useEffect(() => {
     return () => {
@@ -386,12 +396,17 @@ export function ProfileBankDetailsTab({
     };
   }, [newFilePreview]);
 
-  // Reset zoom when dialog closes
+  // Reset zoom when dialog closes and cleanup blob URL
   useEffect(() => {
     if (!imageViewerOpen) {
       setImageZoom(100);
+      // Clean up blob URL when dialog closes
+      if (previewImageUrl && previewImageUrl.startsWith("blob:")) {
+        URL.revokeObjectURL(previewImageUrl);
+        setPreviewImageUrl(null);
+      }
     }
-  }, [imageViewerOpen]);
+  }, [imageViewerOpen, previewImageUrl]);
 
   // Generate preview URL for newly selected file
   const handleFileChange = (file: File | null) => {
@@ -407,19 +422,41 @@ export function ProfileBankDetailsTab({
     onPassbookPhotoFileChange(file);
   };
 
-  const handleViewImage = (isNewFile = false) => {
+  const handleViewImage = async (isNewFile = false) => {
     if (isNewFile && newFilePreview) {
       setPreviewImageUrl(newFilePreview);
       setImageViewerOpen(true);
     } else if (bankDetails.bookBankFileName) {
-      // If it's already a URL (existing file from server)
+      // For server images that require authentication
       if (bankDetails.bookBankFileName.startsWith("http")) {
-        setPreviewImageUrl(bankDetails.bookBankFileName);
+        try {
+          // Fetch the image with auth token
+          const token = localStorage.getItem("auth_token");
+          const response = await fetch(bankDetails.bookBankFileName, {
+            method: "GET",
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          });
+
+          if (!response.ok) {
+            throw new Error(`Failed to load image: ${response.statusText}`);
+          }
+
+          // Convert to blob URL
+          const blob = await response.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          setPreviewImageUrl(blobUrl);
+          setImageViewerOpen(true);
+        } catch (error) {
+          console.error("Error loading image:", error);
+          // Fallback to direct URL
+          setPreviewImageUrl(bankDetails.bookBankFileName);
+          setImageViewerOpen(true);
+        }
       } else {
-        // If it's just a filename, construct the URL (adjust this based on your server setup)
+        // If it's just a filename or local preview
         setPreviewImageUrl(bankDetails.bookBankFileName);
+        setImageViewerOpen(true);
       }
-      setImageViewerOpen(true);
     }
   };
 

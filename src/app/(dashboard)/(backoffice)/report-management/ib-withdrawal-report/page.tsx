@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/popover";
 import { CalendarIcon, Search, Landmark } from "lucide-react";
 import { cn } from "@/lib/utils";
-import * as XLSX from "xlsx";
 
 import {
   adminIbWithdrawalReportApi,
@@ -224,83 +223,39 @@ export default function IbWithdrawalReportPage() {
       toast.error("Authentication required to export data");
       return;
     }
-
+    const exportToastId = `export-${formatType}`;
     try {
-      const exportToastId = `export-${formatType}`;
       toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
-
-      // Fetch all data for export (use a large per_page to get all records)
-      const response = await adminIbWithdrawalReportApi.list({
+      
+      const { blob, filename } = await adminIbWithdrawalReportApi.export({
         token,
+        format: formatType,
         from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
         to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
         search: searchQuery || undefined,
-        page: 1,
-        per_page: 10000, // Large number to get all records
       });
 
-      const payload = (response as unknown) as IbWithdrawalReportListPayload;
-      const reportItems = Array.isArray(payload?.data) ? payload.data : [];
-
-      if (reportItems.length === 0) {
+      if (blob.size === 0) {
         toast.error("No data to export", { id: exportToastId });
         return;
       }
 
-      const exportData = reportItems.map((item) => ({
-        ID: item.id,
-        "IB Name": item.ib_name || "—",
-        "Partner ID": item.partner_id || "—",
-        "User Name": item.name || "—",
-        "User Email": item.email || "—",
-        "Amount (USD)": formatAmount(item.amount),
-        "Payment Method": item.payment_method || "—",
-        "Wallet Address": item.withdraw_to || "—",
-        "Chain ID": item.chain_id || "—",
-        "Transaction Hash": item.transaction_hash || "—",
-        Status:
-          item.status === 1 || item.status === "approved"
-            ? "Approved"
-            : item.status === 2 || item.status === "rejected"
-              ? "Rejected"
-              : "Pending",
-        "Created At": fmtDateTime(item.created_at),
-        "Updated At": fmtDateTime(item.updated_at),
-        Remarks: item.remarks || "—",
-        "Approved By": item.approved_by || "—",
-        "Approved At": fmtDateTime(item.approved_at),
-      }));
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
 
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const filenameBase = `ib-withdrawal-report-${format(new Date(), "yyyy-MM-dd-HHmmss")}`;
-      let filename = `${filenameBase}.xlsx`;
-      if (formatType === "xlsx") {
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "IB Withdrawal Report");
-        XLSX.writeFile(workbook, filename);
-      } else {
-        const csv = XLSX.utils.sheet_to_csv(worksheet);
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        filename = `${filenameBase}.csv`;
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-      }
-
-      toast.success(`Exported ${reportItems.length} records to ${filename}`, {
-        id: exportToastId,
-      });
+      toast.success(`Successfully exported to ${filename}`, { id: exportToastId });
     } catch (error: unknown) {
-      console.error(`Failed to export ${formatType}:`, error);
       toast.error(
         getAdminFriendlyErrorMessage(error, {
           resource: "IB withdrawal report",
           action: "export",
         }),
-        { id: `export-${formatType}` }
+        { id: exportToastId }
       );
     }
   }, [

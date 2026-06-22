@@ -35,7 +35,6 @@ import {
 } from "@/components/ui/popover";
 import { CalendarIcon, RefreshCw, Download, ChevronDown, BarChart3, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
-import * as XLSX from "xlsx";
 
 import {
   adminDepositReportApi,
@@ -312,8 +311,10 @@ export default function ReportManagementPage() {
     const exportToastId = `export-${formatType}`;
     try {
       toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
-      const response = await adminDepositReportApi.list({
+      
+      const { blob, filename } = await adminDepositReportApi.export({
         token,
+        format: formatType,
         status: statusFilter && statusFilter !== "all" ? Number(statusFilter) : undefined,
         payment_method_id:
           paymentMethodFilter && paymentMethodFilter !== "all"
@@ -323,52 +324,23 @@ export default function ReportManagementPage() {
               : undefined,
         from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
         to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
-        page: 1,
-        per_page: 10000,
         search: searchQuery || undefined,
-        sort_column: sortColumn || undefined,
-        sort_order: sortOrder || undefined,
       });
-      const payload = response as unknown as DepositReportListPayload;
-      const reportItems = Array.isArray(payload?.data) ? payload.data : [];
-      if (reportItems.length === 0) {
+
+      if (blob.size === 0) {
         toast.error("No data to export", { id: exportToastId });
         return;
       }
-      const exportData = reportItems.map((item) => ({
-        ID: item.id,
-        "User Name": item.name || "-",
-        "User Email": item.email || "-",
-        "Amount (USD)": formatAmount(item.amount),
-        "Payment Method": item.payment_method || "-",
-        "Transaction Hash": item.transaction_hash || "-",
-        Status:
-          item.status === 1
-            ? "Approved"
-            : item.status === 2
-              ? "Rejected"
-              : "Pending",
-        "Created At": fmtDateTime(item.created_at),
-      }));
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const filenameBase = `deposit-report-${format(new Date(), "yyyy-MM-dd-HHmmss")}`;
-      let filename = `${filenameBase}.xlsx`;
-      if (formatType === "xlsx") {
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Deposit Report");
-        XLSX.writeFile(workbook, filename);
-      } else {
-        const csv = XLSX.utils.sheet_to_csv(worksheet);
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        filename = `${filenameBase}.csv`;
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-      }
-      toast.success(`Exported ${reportItems.length} records to ${filename}`, { id: exportToastId });
+
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
+
+      toast.success(`Successfully exported to ${filename}`, { id: exportToastId });
     } catch (error: unknown) {
       toast.error(
         getAdminFriendlyErrorMessage(error, {
@@ -378,7 +350,7 @@ export default function ReportManagementPage() {
         { id: exportToastId }
       );
     }
-  }, [canViewReport, token, statusFilter, paymentMethodFilter, fromDate, toDate, sortColumn, sortOrder, searchQuery]);
+  }, [canViewReport, token, statusFilter, paymentMethodFilter, fromDate, toDate, searchQuery]);
 
   // Count active filters
   const activeFilterCount = useMemo(() => {

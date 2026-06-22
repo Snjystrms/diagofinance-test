@@ -10,7 +10,6 @@ import { format } from "date-fns";
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { CalendarIcon } from "lucide-react";
-import * as XLSX from "xlsx";
 
 import {
   adminLoginActivityReportApi,
@@ -119,75 +118,37 @@ export default function LoginActivityReportPage() {
       toast.error("Authentication required to export data");
       return;
     }
-
+    const exportToastId = `export-${formatType}`;
     try {
-      const exportToastId = `export-${formatType}`;
       toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
-
-      // Fetch all data for export (use a large per_page to get all records)
-      const response = await adminLoginActivityReportApi.list({
+      
+      const { blob, filename } = await adminLoginActivityReportApi.export({
         token,
+        format: formatType,
         search: searchQuery || undefined,
-        page: 1,
-        per_page: 10000, // Large number to get all records
       });
 
-      const payload = (response as unknown) as LoginActivityReportListPayload;
-      const reportItems = Array.isArray(payload?.data) ? payload.data : [];
-
-      if (reportItems.length === 0) {
+      if (blob.size === 0) {
         toast.error("No data to export", { id: exportToastId });
         return;
       }
 
-      const exportData = reportItems.map((item) => ({
-        ID: item.id,
-        "User ID": item.user_id || "—",
-        "User Name": item.user?.name || item.name || "—",
-        "User Email": item.user?.email || item.email || "—",
-        "IP Address": item.ip_address || "—",
-        "Browser": item.browser || "—",
-        "Device": item.device || "—",
-        "Platform": item.platform || "—",
-        "User Agent": item.user_agent || "—",
-        "Location": item.location || "—",
-        "Country": item.country || "—",
-        "City": item.city || "—",
-        "Status": item.status ? String(item.status) : "—",
-        "Login At": fmtDateTime(item.login_at || item.created_at),
-        "Created At": fmtDateTime(item.created_at),
-      }));
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
 
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const filenameBase = `login-activity-report-${format(new Date(), "yyyy-MM-dd-HHmmss")}`;
-      let filename = `${filenameBase}.xlsx`;
-      if (formatType === "xlsx") {
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Login Activity Report");
-        XLSX.writeFile(workbook, filename);
-      } else {
-        const csv = XLSX.utils.sheet_to_csv(worksheet);
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        filename = `${filenameBase}.csv`;
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-      }
-
-      toast.success(`Exported ${reportItems.length} records to ${filename}`, {
-        id: exportToastId,
-      });
+      toast.success(`Successfully exported to ${filename}`, { id: exportToastId });
     } catch (error: unknown) {
-      console.error(`Failed to export ${formatType}:`, error);
       toast.error(
         getAdminFriendlyErrorMessage(error, {
           resource: "login activity report",
           action: "export",
         }),
-        { id: `export-${formatType}` }
+        { id: exportToastId }
       );
     }
   }, [

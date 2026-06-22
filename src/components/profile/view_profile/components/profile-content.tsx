@@ -166,6 +166,7 @@ export default function ProfileContent() {
   const [bankDetailsSaving, setBankDetailsSaving] = useState(false);
   const [bankValidationErrors, setBankValidationErrors] = useState<Partial<Record<BankDetailsField, string>>>({});
   const [locationHydrated, setLocationHydrated] = useState(false);
+  const [selectedDocumentType, setSelectedDocumentType] = useState<string>("");
   const [bankDetails, setBankDetails] = useState<BankDetailsFormState>({
     client: "primary-client",
     accountName: "",
@@ -933,6 +934,19 @@ export default function ProfileContent() {
           setProfileData(normalizedProfile);
           setIs2FAEnabled(Boolean(normalizedProfile.user?.google_2FA_status));
           
+          // Initialize document type based on existing data
+          if (normalizedProfile.personal_information?.passport_id_number) {
+            setSelectedDocumentType("passport");
+          } else if (normalizedProfile.personal_information?.tax_number) {
+            // Check if it looks like a specific document type
+            const taxValue = normalizedProfile.personal_information.tax_number;
+            if (taxValue === "aadhaar_card" || taxValue === "driving_licence" || taxValue === "pan_card" || taxValue === "voter_id") {
+              setSelectedDocumentType(taxValue);
+            } else {
+              setSelectedDocumentType("aadhaar_card"); // Default
+            }
+          }
+          
           // Initialize DOB date state
           if (normalizedProfile.personal_information?.dob) {
             try {
@@ -1690,53 +1704,144 @@ export default function ProfileContent() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="nationality">Nationality</Label>
-                      <Input
-                        id="nationality"
+                      <Select
                         value={profileData.personal_information.nationality || ""}
-                        onChange={(e) => handlePersonalInfoChange("nationality", sanitizeUppercase(e.target.value, 3) || null)}
-                        className={getFieldError("nationality") ? "w-full border-destructive" : "w-full"}
-                        placeholder="e.g. IN"
-                      />
+                        onValueChange={(value) => handlePersonalInfoChange("nationality", value || null)}
+                      >
+                        <SelectTrigger
+                          id="nationality"
+                          className={getFieldError("nationality") ? "w-full border-destructive" : "w-full"}
+                        >
+                          <SelectValue placeholder="Select nationality" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="IN">Indian</SelectItem>
+                          <SelectItem value="US">American</SelectItem>
+                          <SelectItem value="GB">British</SelectItem>
+                          <SelectItem value="CA">Canadian</SelectItem>
+                          <SelectItem value="AU">Australian</SelectItem>
+                          <SelectItem value="AE">Emirati</SelectItem>
+                          <SelectItem value="SA">Saudi Arabian</SelectItem>
+                          <SelectItem value="SG">Singaporean</SelectItem>
+                          <SelectItem value="MY">Malaysian</SelectItem>
+                          <SelectItem value="PH">Filipino</SelectItem>
+                          <SelectItem value="ID">Indonesian</SelectItem>
+                          <SelectItem value="TH">Thai</SelectItem>
+                          <SelectItem value="VN">Vietnamese</SelectItem>
+                          <SelectItem value="BD">Bangladeshi</SelectItem>
+                          <SelectItem value="PK">Pakistani</SelectItem>
+                          <SelectItem value="NP">Nepalese</SelectItem>
+                          <SelectItem value="LK">Sri Lankan</SelectItem>
+                          <SelectItem value="CN">Chinese</SelectItem>
+                          <SelectItem value="JP">Japanese</SelectItem>
+                          <SelectItem value="KR">South Korean</SelectItem>
+                          <SelectItem value="DE">German</SelectItem>
+                          <SelectItem value="FR">French</SelectItem>
+                          <SelectItem value="IT">Italian</SelectItem>
+                          <SelectItem value="ES">Spanish</SelectItem>
+                          <SelectItem value="NL">Dutch</SelectItem>
+                          <SelectItem value="BE">Belgian</SelectItem>
+                          <SelectItem value="CH">Swiss</SelectItem>
+                          <SelectItem value="AT">Austrian</SelectItem>
+                          <SelectItem value="SE">Swedish</SelectItem>
+                          <SelectItem value="NO">Norwegian</SelectItem>
+                          <SelectItem value="DK">Danish</SelectItem>
+                          <SelectItem value="FI">Finnish</SelectItem>
+                          <SelectItem value="PL">Polish</SelectItem>
+                          <SelectItem value="RO">Romanian</SelectItem>
+                          <SelectItem value="GR">Greek</SelectItem>
+                          <SelectItem value="PT">Portuguese</SelectItem>
+                          <SelectItem value="BR">Brazilian</SelectItem>
+                          <SelectItem value="MX">Mexican</SelectItem>
+                          <SelectItem value="AR">Argentine</SelectItem>
+                          <SelectItem value="CL">Chilean</SelectItem>
+                          <SelectItem value="CO">Colombian</SelectItem>
+                          <SelectItem value="ZA">South African</SelectItem>
+                          <SelectItem value="NG">Nigerian</SelectItem>
+                          <SelectItem value="EG">Egyptian</SelectItem>
+                          <SelectItem value="KE">Kenyan</SelectItem>
+                          <SelectItem value="GH">Ghanaian</SelectItem>
+                          <SelectItem value="NZ">New Zealander</SelectItem>
+                          <SelectItem value="RU">Russian</SelectItem>
+                          <SelectItem value="TR">Turkish</SelectItem>
+                          <SelectItem value="IL">Israeli</SelectItem>
+                          <SelectItem value="OTHER">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
                       {getFieldError("nationality") ? (
                         <p className="text-sm text-destructive">{getFieldError("nationality")}</p>
                       ) : null}
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="passport_id_number">Passport ID Number</Label>
-                      <Input
-                        id="passport_id_number"
-                        value={profileData.personal_information.passport_id_number || ""}
-                        onChange={(e) => handlePersonalInfoChange("passport_id_number", sanitizeIdentifierInput(e.target.value, 20) || null)}
-                        className={getFieldError("passport_id_number") ? "w-full border-destructive" : "w-full"}
-                        placeholder="Enter passport ID number"
-                      />
-                      {getFieldError("passport_id_number") ? (
-                        <p className="text-sm text-destructive">{getFieldError("passport_id_number")}</p>
-                      ) : null}
+                      <Label htmlFor="document_type">Document Type</Label>
+                      <Select
+                        value={selectedDocumentType}
+                        onValueChange={(value) => {
+                          setSelectedDocumentType(value);
+                          // Clear both document fields
+                          handlePersonalInfoChange("passport_id_number", null);
+                          handlePersonalInfoChange("tax_number", null);
+                          // Set the tax_number to the document type identifier (except for passport)
+                          if (value !== "passport") {
+                            handlePersonalInfoChange("tax_number", value);
+                          }
+                        }}
+                      >
+                        <SelectTrigger
+                          id="document_type"
+                          className="w-full"
+                        >
+                          <SelectValue placeholder="Select document type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="aadhaar_card">Aadhaar Card</SelectItem>
+                          <SelectItem value="driving_licence">Driving Licence</SelectItem>
+                          <SelectItem value="passport">Passport</SelectItem>
+                          <SelectItem value="pan_card">PAN Card</SelectItem>
+                          <SelectItem value="voter_id">Voter ID</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="tax_number">Tax Number</Label>
-                      <Input
-                        id="tax_number"
-                        value={profileData.personal_information.tax_number || ""}
-                        onChange={(e) => handlePersonalInfoChange("tax_number", sanitizeIdentifierInput(e.target.value, 20) || null)}
-                        className={getFieldError("tax_number") ? "w-full border-destructive" : "w-full"}
-                        placeholder="Enter tax number"
-                      />
-                      {getFieldError("tax_number") ? (
-                        <p className="text-sm text-destructive">{getFieldError("tax_number")}</p>
-                      ) : null}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="other_id_number">Other ID Number</Label>
-                      <Input
-                        id="other_id_number"
-                        value={profileData.personal_information.other_id_number || ""}
-                        onChange={(e) => handlePersonalInfoChange("other_id_number", sanitizeIdentifierInput(e.target.value, 24) || null)}
-                        className="w-full"
-                        placeholder="Enter other ID number"
-                      />
-                    </div>
+                    {selectedDocumentType && (
+                      <div className="space-y-2">
+                        <Label htmlFor="document_number">
+                          {selectedDocumentType === "aadhaar_card" && "Aadhaar Card Number"}
+                          {selectedDocumentType === "driving_licence" && "Driving Licence Number"}
+                          {selectedDocumentType === "passport" && "Passport Number"}
+                          {selectedDocumentType === "pan_card" && "PAN Card Number"}
+                          {selectedDocumentType === "voter_id" && "Voter ID Number"}
+                        </Label>
+                        <Input
+                          id="document_number"
+                          value={
+                            selectedDocumentType === "passport"
+                              ? (profileData.personal_information.passport_id_number || "")
+                              : (profileData.personal_information.tax_number && profileData.personal_information.tax_number !== selectedDocumentType 
+                                  ? profileData.personal_information.tax_number 
+                                  : "")
+                          }
+                          onChange={(e) => {
+                            const value = sanitizeIdentifierInput(e.target.value, 24) || null;
+                            if (selectedDocumentType === "passport") {
+                              handlePersonalInfoChange("passport_id_number", value);
+                            } else {
+                              handlePersonalInfoChange("tax_number", value || selectedDocumentType);
+                            }
+                          }}
+                          className={getFieldError("passport_id_number") || getFieldError("tax_number") ? "w-full border-destructive" : "w-full"}
+                          placeholder={`Enter ${
+                            selectedDocumentType === "aadhaar_card" ? "Aadhaar card" :
+                            selectedDocumentType === "driving_licence" ? "driving licence" :
+                            selectedDocumentType === "passport" ? "passport" :
+                            selectedDocumentType === "pan_card" ? "PAN card" :
+                            "voter ID"
+                          } number`}
+                        />
+                        {(getFieldError("passport_id_number") || getFieldError("tax_number")) ? (
+                          <p className="text-sm text-destructive">{getFieldError("passport_id_number") || getFieldError("tax_number")}</p>
+                        ) : null}
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <Label htmlFor="pin_code">PIN Code</Label>
                       <Input

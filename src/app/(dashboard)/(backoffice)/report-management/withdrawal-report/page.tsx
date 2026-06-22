@@ -27,7 +27,6 @@ import {
 import { CalendarIcon, Search, TrendingDown } from "lucide-react";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { cn } from "@/lib/utils";
-import * as XLSX from "xlsx";
 
 import {
   adminWithdrawalReportApi,
@@ -276,14 +275,13 @@ export default function WithdrawalReportPage() {
       toast.error("Authentication required to export data");
       return;
     }
-
+    const exportToastId = `export-${formatType}`;
     try {
-      const exportToastId = `export-${formatType}`;
       toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
-
-      // Fetch all data for export (use a large per_page to get all records)
-      const response = await adminWithdrawalReportApi.list({
+      
+      const { blob, filename } = await adminWithdrawalReportApi.export({
         token,
+        format: formatType,
         status:
           statusFilter && statusFilter !== "all"
             ? statusFilter
@@ -296,74 +294,30 @@ export default function WithdrawalReportPage() {
               : undefined,
         from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
         to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
-        page: 1,
-        per_page: 10000, // Large number to get all records
         search: searchQuery || undefined,
-        sort_column: sortColumn || undefined,
-        sort_order: sortOrder || undefined,
       });
 
-      const payload = (response as unknown) as WithdrawalReportListPayload;
-      const reportItems = Array.isArray(payload?.data) ? payload.data : [];
-
-      if (reportItems.length === 0) {
+      if (blob.size === 0) {
         toast.error("No data to export", { id: exportToastId });
         return;
       }
 
-      const exportData = reportItems.map((item) => ({
-        ID: item.id,
-        "User Name": item.name || "—",
-        "User Email": item.email || "—",
-        "Amount (USD)": formatAmount(item.amount),
-        "Payment Method": item.payment_method || "—",
-        "Wallet Address": item.wallet_address || "—",
-        "Chain ID": item.chain_id || "—",
-        "Transaction Hash": item.transaction_hash || "—",
-        Status:
-          item.status === 1 || item.status === "approved"
-            ? "Approved"
-            : item.status === 2 || item.status === "rejected"
-              ? "Rejected"
-              : "Pending",
-        "Created At": fmtDateTime(item.created_at),
-        "Updated At": fmtDateTime(item.updated_at),
-        "MT5 ID": item.mt5_id || "—",
-        Remarks: item.remarks || "—",
-        "Approved By": item.approved_by || "—",
-        "Approved At": fmtDateTime(item.approved_at),
-      }));
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
 
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const filenameBase = `withdrawal-report-${format(new Date(), "yyyy-MM-dd-HHmmss")}`;
-      let filename = `${filenameBase}.xlsx`;
-      if (formatType === "xlsx") {
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Withdrawal Report");
-        XLSX.writeFile(workbook, filename);
-      } else {
-        const csv = XLSX.utils.sheet_to_csv(worksheet);
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        filename = `${filenameBase}.csv`;
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-      }
-
-      toast.success(`Exported ${reportItems.length} records to ${filename}`, {
-        id: exportToastId,
-      });
+      toast.success(`Successfully exported to ${filename}`, { id: exportToastId });
     } catch (error: unknown) {
-      console.error(`Failed to export ${formatType}:`, error);
       toast.error(
         getAdminFriendlyErrorMessage(error, {
           resource: "withdrawal report",
           action: "export",
         }),
-        { id: `export-${formatType}` }
+        { id: exportToastId }
       );
     }
   }, [
@@ -373,8 +327,6 @@ export default function WithdrawalReportPage() {
     paymentMethodFilter,
     fromDate,
     toDate,
-    sortColumn,
-    sortOrder,
     searchQuery,
   ]);
 

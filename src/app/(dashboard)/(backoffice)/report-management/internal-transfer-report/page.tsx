@@ -10,7 +10,6 @@ import { format } from "date-fns";
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { CalendarIcon, ArrowLeftRight } from "lucide-react";
-import * as XLSX from "xlsx";
 
 import {
   adminInternalTransferReportApi,
@@ -123,71 +122,37 @@ export default function InternalTransferReportPage() {
       toast.error("Authentication required to export data");
       return;
     }
-
+    const exportToastId = `export-${formatType}`;
     try {
-      const exportToastId = `export-${formatType}`;
       toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
-
-      // Fetch all data for export (use a large per_page to get all records)
-      const response = await adminInternalTransferReportApi.list({
+      
+      const { blob, filename } = await adminInternalTransferReportApi.export({
         token,
+        format: formatType,
         search: searchQuery || undefined,
-        page: 1,
-        per_page: 10000, // Large number to get all records
       });
 
-      const payload = (response as unknown) as InternalTransferReportListPayload;
-      const reportItems = Array.isArray(payload?.data) ? payload.data : [];
-
-      if (reportItems.length === 0) {
+      if (blob.size === 0) {
         toast.error("No data to export", { id: exportToastId });
         return;
       }
 
-      const exportData = reportItems.map((item) => ({
-        ID: item.id,
-        "User Name": item.name || "—",
-        "User Email": item.email || "—",
-        "From Account": item.from_account || "—",
-        "To Account": item.to_account || "—",
-        "Amount (USD)": formatAmount(item.amount),
-        "Comment": item.comment || "—",
-        "Marketing Name": item.marketing_name || "—",
-        "Type": item.type ?? "—",
-        "Status": item.status === 1 || item.status === "completed" ? "Success" : item.status != null ? "Pending" : "—",
-        "Created At": fmtDateTime(item.created_at),
-      }));
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
 
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const filenameBase = `internal-transfer-report-${format(new Date(), "yyyy-MM-dd-HHmmss")}`;
-      let filename = `${filenameBase}.xlsx`;
-      if (formatType === "xlsx") {
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Internal Transfer Report");
-        XLSX.writeFile(workbook, filename);
-      } else {
-        const csv = XLSX.utils.sheet_to_csv(worksheet);
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        filename = `${filenameBase}.csv`;
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-      }
-
-      toast.success(`Exported ${reportItems.length} records to ${filename}`, {
-        id: exportToastId,
-      });
+      toast.success(`Successfully exported to ${filename}`, { id: exportToastId });
     } catch (error: unknown) {
-      console.error(`Failed to export ${formatType}:`, error);
       toast.error(
         getAdminFriendlyErrorMessage(error, {
           resource: "internal transfer report",
           action: "export",
         }),
-        { id: `export-${formatType}` }
+        { id: exportToastId }
       );
     }
   }, [

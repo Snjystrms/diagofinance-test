@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, Download } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -197,14 +197,32 @@ export function BankDetailViewDialog({
               <div className="mb-3 flex items-center justify-between">
                 <h3 className="text-sm font-semibold">Passbook Photo</h3>
                 {resolvedPassbookUrl && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowPassbook(true)}
-                  >
-                    View Full Size
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = resolvedPassbookUrl;
+                        link.download = `passbook-${detail?.id || 'document'}.jpg`;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                      }}
+                    >
+                      <Download className="mr-2 h-4 w-4" />
+                      Download
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowPassbook(true)}
+                    >
+                      View Full Size
+                    </Button>
+                  </div>
                 )}
               </div>
               {passbookUrl ? (

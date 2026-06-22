@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { GetCountries } from "react-country-state-city";
 
 import {
@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 
 import type { AdminBankDetailItem } from "@/lib/api";
+import { useAuth } from "@/contexts/auth-context";
 
 import type { AdminUserOption, BankDetailFormValues } from "../_lib/bank-details";
 
@@ -138,10 +139,13 @@ export function BankDetailFormDialog({
   values,
   onValuesChange,
 }: BankDetailFormDialogProps) {
+  const { token } = useAuth();
   const [countryOptions, setCountryOptions] = useState<CountryOption[]>([]);
   const [touchedFields, setTouchedFields] = useState<Partial<Record<keyof BankDetailFormValues, boolean>>>({});
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [passbookPreview, setPassbookPreview] = useState<string | null>(null);
+  const [authorizedFileUrls, setAuthorizedFileUrls] = useState<Record<string, string>>({});
+  const createdObjectUrlsRef = useRef<string[]>([]);
   const isCreateMode = mode === "create";
   const title = isCreateMode ? "Add bank details" : "Edit bank details";
   const description = isCreateMode
@@ -185,17 +189,66 @@ export function BankDetailFormDialog({
       setTouchedFields({});
       setSubmitAttempted(false);
       setPassbookPreview(null);
+      // Clean up created object URLs
+      createdObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
+      createdObjectUrlsRef.current = [];
     }
   }, [open]);
 
+  // Fetch protected image with auth token for passbook_photo_url
+  useEffect(() => {
+    const passbookUrl = values.passbook_photo_url;
+    if (!token || !passbookUrl || !open) return;
+    if (authorizedFileUrls[passbookUrl]) {
+      setPassbookPreview(authorizedFileUrls[passbookUrl]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadAuthorizedImage = async () => {
+      try {
+        const response = await fetch(passbookUrl, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        
+        if (!response.ok) {
+          console.error("Failed to fetch protected passbook image:", response.status);
+          return;
+        }
+        
+        const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        
+        if (cancelled) {
+          URL.revokeObjectURL(objectUrl);
+          return;
+        }
+        
+        createdObjectUrlsRef.current.push(objectUrl);
+        setAuthorizedFileUrls((prev) => ({ ...prev, [passbookUrl]: objectUrl }));
+        setPassbookPreview(objectUrl);
+      } catch (error) {
+        console.error("Failed to load authorized passbook image:", error);
+      }
+    };
+
+    void loadAuthorizedImage();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [token, values.passbook_photo_url, open, authorizedFileUrls]);
+
+  // Handle local file upload preview
   useEffect(() => {
     if (values.passbook_photo && values.passbook_photo.type.startsWith("image/")) {
       const url = URL.createObjectURL(values.passbook_photo);
       setPassbookPreview(url);
       return () => URL.revokeObjectURL(url);
-    } else if (values.passbook_photo_url) {
-      setPassbookPreview(values.passbook_photo_url);
-    } else {
+    } else if (!values.passbook_photo_url) {
       setPassbookPreview(null);
     }
   }, [values.passbook_photo, values.passbook_photo_url]);

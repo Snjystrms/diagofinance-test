@@ -1303,6 +1303,28 @@ const buildReviewPayload = () => {
                               </div>
                             </div>
                           </div>
+                          {(() => {
+                            const sourceUrl = doc?.url || url || "";
+                            const resolvedUrl = token ? authorizedFileUrls[sourceUrl] : sourceUrl;
+                            return resolvedUrl ? (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => {
+                                  const link = document.createElement('a');
+                                  link.href = resolvedUrl;
+                                  link.download = `${docLabel[k]}-${detail?.user?.uuid || 'document'}.jpg`;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }}
+                              >
+                                <Download className="mr-2 h-4 w-4" />
+                                Download
+                              </Button>
+                            ) : null;
+                          })()}
                         </div>
 
                         <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 p-4 flex items-center justify-center min-h-[200px]">

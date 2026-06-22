@@ -735,6 +735,16 @@ export interface DepositReportListPayload {
   };
 }
 
+export interface DepositReportExportParams {
+  token: string;
+  format?: "xlsx" | "csv";
+  status?: number | string;
+  payment_method_id?: number | string | "all";
+  from_date?: string;
+  to_date?: string;
+  search?: string;
+}
+
 export const adminDepositReportApi = {
   list: (params: DepositReportListParams) => {
     const { token, ...queryParams } = params;
@@ -765,6 +775,68 @@ export const adminDepositReportApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
+  },
+
+  export: async (params: DepositReportExportParams) => {
+    const { token, format = "xlsx", ...queryParams } = params;
+    if (!token) {
+      throw new Error("Token is required to export deposit report");
+    }
+
+    if (!API_BASE_URL) {
+      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("format", format);
+    if (queryParams.status !== undefined && queryParams.status !== null) {
+      qs.set("status", String(queryParams.status));
+    }
+    if (queryParams.payment_method_id && queryParams.payment_method_id !== "all") {
+      qs.set("payment_method_id", String(queryParams.payment_method_id));
+    } else if (queryParams.payment_method_id === "all") {
+      qs.set("payment_method_id", "all");
+    }
+    if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
+    if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
+    if (queryParams.search) qs.set("search", queryParams.search);
+
+    const endpoint = `/admin/reports/deposit-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (handle401Redirect(response, !!token)) {
+      return { blob: new Blob(), filename: "" };
+    }
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message:
+          (payload &&
+          typeof payload === "object" &&
+          "message" in payload &&
+          typeof payload.message === "string"
+            ? payload.message
+            : null) ||
+          `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+
+    const blob = await response.blob();
+    return {
+      blob,
+      filename: parseContentDispositionFilename(
+        response.headers.get("content-disposition"),
+        `deposit-report.${format === "csv" ? "csv" : "xlsx"}`
+      ),
+    };
   },
 };
 
@@ -826,6 +898,16 @@ export interface WithdrawalReportListPayload {
   };
 }
 
+export interface WithdrawalReportExportParams {
+  token: string;
+  format?: "xlsx" | "csv";
+  status?: number | string | "pending" | "approved" | "rejected";
+  payment_method_id?: number | string | "all";
+  from_date?: string;
+  to_date?: string;
+  search?: string;
+}
+
 export const adminWithdrawalReportApi = {
   list: (params: WithdrawalReportListParams) => {
     const { token, ...queryParams } = params;
@@ -856,6 +938,68 @@ export const adminWithdrawalReportApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
+  },
+
+  export: async (params: WithdrawalReportExportParams) => {
+    const { token, format = "xlsx", ...queryParams } = params;
+    if (!token) {
+      throw new Error("Token is required to export withdrawal report");
+    }
+
+    if (!API_BASE_URL) {
+      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("format", format);
+    if (queryParams.status !== undefined && queryParams.status !== null) {
+      qs.set("status", String(queryParams.status));
+    }
+    if (queryParams.payment_method_id && queryParams.payment_method_id !== "all") {
+      qs.set("payment_method_id", String(queryParams.payment_method_id));
+    } else if (queryParams.payment_method_id === "all") {
+      qs.set("payment_method_id", "all");
+    }
+    if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
+    if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
+    if (queryParams.search) qs.set("search", queryParams.search);
+
+    const endpoint = `/admin/reports/withdrawal-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (handle401Redirect(response, !!token)) {
+      return { blob: new Blob(), filename: "" };
+    }
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message:
+          (payload &&
+          typeof payload === "object" &&
+          "message" in payload &&
+          typeof payload.message === "string"
+            ? payload.message
+            : null) ||
+          `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+
+    const blob = await response.blob();
+    return {
+      blob,
+      filename: parseContentDispositionFilename(
+        response.headers.get("content-disposition"),
+        `withdrawal-report.${format === "csv" ? "csv" : "xlsx"}`
+      ),
+    };
   },
 };
 
@@ -911,6 +1055,14 @@ export interface IbWithdrawalReportListPayload {
   };
 }
 
+export interface IbWithdrawalReportExportParams {
+  token: string;
+  format?: "xlsx" | "csv";
+  from_date?: string;
+  to_date?: string;
+  search?: string;
+}
+
 export const adminIbWithdrawalReportApi = {
   list: (params: IbWithdrawalReportListParams) => {
     const { token, ...queryParams } = params;
@@ -931,6 +1083,60 @@ export const adminIbWithdrawalReportApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
+  },
+
+  export: async (params: IbWithdrawalReportExportParams) => {
+    const { token, format = "xlsx", ...queryParams } = params;
+    if (!token) {
+      throw new Error("Token is required to export IB withdrawal report");
+    }
+
+    if (!API_BASE_URL) {
+      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("format", format);
+    if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
+    if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
+    if (queryParams.search) qs.set("search", queryParams.search);
+
+    const endpoint = `/admin/reports/ib-withdrawal-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (handle401Redirect(response, !!token)) {
+      return { blob: new Blob(), filename: "" };
+    }
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message:
+          (payload &&
+          typeof payload === "object" &&
+          "message" in payload &&
+          typeof payload.message === "string"
+            ? payload.message
+            : null) ||
+          `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+
+    const blob = await response.blob();
+    return {
+      blob,
+      filename: parseContentDispositionFilename(
+        response.headers.get("content-disposition"),
+        `ib-withdrawal-report.${format === "csv" ? "csv" : "xlsx"}`
+      ),
+    };
   },
 };
 
@@ -974,6 +1180,12 @@ export interface InternalTransferReportListPayload {
   };
 }
 
+export interface InternalTransferReportExportParams {
+  token: string;
+  format?: "xlsx" | "csv";
+  search?: string;
+}
+
 export const adminInternalTransferReportApi = {
   list: (params: InternalTransferReportListParams) => {
     const { token, ...queryParams } = params;
@@ -994,6 +1206,60 @@ export const adminInternalTransferReportApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
+  },
+
+  export: async (params: InternalTransferReportExportParams) => {
+    const { token, format = "xlsx", search } = params;
+    if (!token) {
+      throw new Error("Token is required to export internal transfer report");
+    }
+
+    if (!API_BASE_URL) {
+      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("format", format);
+    if (search && search.trim()) {
+      qs.set("search", search.trim());
+    }
+
+    const endpoint = `/admin/reports/internal-transfer-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (handle401Redirect(response, !!token)) {
+      return { blob: new Blob(), filename: "" };
+    }
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message:
+          (payload &&
+          typeof payload === "object" &&
+          "message" in payload &&
+          typeof payload.message === "string"
+            ? payload.message
+            : null) ||
+          `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+
+    const blob = await response.blob();
+    return {
+      blob,
+      filename: parseContentDispositionFilename(
+        response.headers.get("content-disposition"),
+        `internal-transfer-report.${format === "csv" ? "csv" : "xlsx"}`
+      ),
+    };
   },
 };
 
@@ -1296,6 +1562,12 @@ export interface LoginActivityReportListPayload {
   };
 }
 
+export interface LoginActivityReportExportParams {
+  token: string;
+  format?: "xlsx" | "csv";
+  search?: string;
+}
+
 export const adminLoginActivityReportApi = {
   list: (params: LoginActivityReportListParams) => {
     const { token, ...queryParams } = params;
@@ -1316,6 +1588,60 @@ export const adminLoginActivityReportApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
+  },
+
+  export: async (params: LoginActivityReportExportParams) => {
+    const { token, format = "xlsx", search } = params;
+    if (!token) {
+      throw new Error("Token is required to export login activity report");
+    }
+
+    if (!API_BASE_URL) {
+      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("format", format);
+    if (search && search.trim()) {
+      qs.set("search", search.trim());
+    }
+
+    const endpoint = `/admin/reports/login-activity-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (handle401Redirect(response, !!token)) {
+      return { blob: new Blob(), filename: "" };
+    }
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message:
+          (payload &&
+          typeof payload === "object" &&
+          "message" in payload &&
+          typeof payload.message === "string"
+            ? payload.message
+            : null) ||
+          `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+
+    const blob = await response.blob();
+    return {
+      blob,
+      filename: parseContentDispositionFilename(
+        response.headers.get("content-disposition"),
+        `login-activity-report.${format === "csv" ? "csv" : "xlsx"}`
+      ),
+    };
   },
 };
 
