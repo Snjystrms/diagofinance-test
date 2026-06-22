@@ -125,24 +125,6 @@ function formatRemainingTime(remainingTime?: {
   return `${days}d ${hours}h ${minutes}m remaining`;
 }
 
-function buildPublicReferralLink(referralLink?: string) {
-  if (!referralLink) {
-    return "";
-  }
-
-  try {
-    const parsed = new URL(referralLink);
-    parsed.protocol = "https:";
-    parsed.host = "crminhouse-mocha.vercel.app";
-    return parsed.toString();
-  } catch {
-    return referralLink.replace(
-      "https://api.graybulls.com",
-      "https://crminhouse-mocha.vercel.app",
-    );
-  }
-}
-
 function DashboardLoadingState() {
   return (
     <IbPageShell>
@@ -262,9 +244,7 @@ export default function IbDashboardPage() {
   }, [dashboardData?.pending_rebates]);
 
   const copyReferralLink = useCallback(() => {
-    const referralLink = buildPublicReferralLink(
-      dashboardData?.partner_info?.referral_link,
-    );
+    const referralLink = dashboardData?.partner_info?.referral_link;
     if (!referralLink) {
       return;
     }
@@ -357,9 +337,7 @@ export default function IbDashboardPage() {
     partner_info,
     user,
   } = dashboardData;
-  const publicReferralLink = buildPublicReferralLink(
-    partner_info.referral_link,
-  );
+  const publicReferralLink = partner_info.referral_link;
 
   return (
     <IbPageShell>

@@ -148,18 +148,6 @@ const deriveStatusLabel = (user: PreviewUser) => {
 const isActive = (user: PreviewUser) =>
   deriveStatusLabel(user) === "Active";
 
-const buildPublicReferralLink = (raw?: string | null) => {
-  if (!raw) return "";
-  try {
-    const parsed = new URL(raw);
-    parsed.protocol = "https:";
-    parsed.host = "crminhouse-mocha.vercel.app";
-    return parsed.toString();
-  } catch {
-    return raw.replace("https://api.graybulls.com", "https://crminhouse-mocha.vercel.app");
-  }
-};
-
 const deriveReferralLinkFallback = (user: PreviewUser): string => {
   if (typeof window === "undefined") return "";
   const base = window.location.origin;
@@ -1253,9 +1241,7 @@ export default function IbUserDetailPage() {
   const previewData = useMemo(() => {
     if (!user) return null;
 
-    const referralLink = buildPublicReferralLink(
-      user.referral_link ?? deriveReferralLinkFallback(user),
-    );
+    const referralLink = user.referral_link || deriveReferralLinkFallback(user);
 
     return {
       user,
