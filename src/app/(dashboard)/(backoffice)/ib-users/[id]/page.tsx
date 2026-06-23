@@ -530,6 +530,16 @@ function NetworkTab({
   onClientsPageChange,
   subIbsPage,
   onSubIbsPageChange,
+  clientsDateFrom,
+  clientsDateTo,
+  onClientsDateFromChange,
+  onClientsDateToChange,
+  onResetClientsFilters,
+  subIbsDateFrom,
+  subIbsDateTo,
+  onSubIbsDateFromChange,
+  onSubIbsDateToChange,
+  onResetSubIbsFilters,
 }: TabShellProps & {
   networkData: AdminIbNetworkData | null;
   clientsData: AdminIbClientsResponse | null;
@@ -540,6 +550,16 @@ function NetworkTab({
   onClientsPageChange: (page: number) => void;
   subIbsPage: number;
   onSubIbsPageChange: (page: number) => void;
+  clientsDateFrom: Date | undefined;
+  clientsDateTo: Date | undefined;
+  onClientsDateFromChange: (date: Date | undefined) => void;
+  onClientsDateToChange: (date: Date | undefined) => void;
+  onResetClientsFilters: () => void;
+  subIbsDateFrom: Date | undefined;
+  subIbsDateTo: Date | undefined;
+  onSubIbsDateFromChange: (date: Date | undefined) => void;
+  onSubIbsDateToChange: (date: Date | undefined) => void;
+  onResetSubIbsFilters: () => void;
 }) {
   const ITEMS_PER_PAGE = 10;
   
@@ -560,6 +580,10 @@ function NetworkTab({
     subIbsPage * ITEMS_PER_PAGE
   ) ?? [];
   const subIbsTotalPages = Math.ceil((subIbsData?.data?.length ?? 0) / ITEMS_PER_PAGE);
+  
+  const clientsActiveFilterCount = (clientsDateFrom ? 1 : 0) + (clientsDateTo ? 1 : 0);
+  const subIbsActiveFilterCount = (subIbsDateFrom ? 1 : 0) + (subIbsDateTo ? 1 : 0);
+  
   return (
     <>
       <IbPageHeader
@@ -701,7 +725,56 @@ function NetworkTab({
         <IbSectionCard
           title="Direct clients"
           description="Clients registered via the partner's referral link."
+          actions={
+            clientsActiveFilterCount > 0 ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onResetClientsFilters}
+              >
+                Reset Filters
+              </Button>
+            ) : null
+          }
         >
+          {/* Clients Date Filters */}
+          <div className="mb-4 grid gap-4 md:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("h-9 w-full justify-start text-left font-normal", !clientsDateFrom && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {clientsDateFrom ? format(clientsDateFrom, "MMM dd, yyyy") : <span>Select date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={clientsDateFrom} onSelect={onClientsDateFromChange} initialFocus captionLayout="dropdown" />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">To Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("h-9 w-full justify-start text-left font-normal", !clientsDateTo && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {clientsDateTo ? format(clientsDateTo, "MMM dd, yyyy") : <span>Select date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={clientsDateTo} onSelect={onClientsDateToChange} initialFocus captionLayout="dropdown" />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          
           {loading ? (
             <TabSkeleton rows={4} />
           ) : (clientsData?.data?.length ?? 0) > 0 ? (
@@ -778,7 +851,56 @@ function NetworkTab({
         <IbSectionCard
           title="Sub-Partners"
           description="Sub-partners attached to this partner at any level."
+          actions={
+            subIbsActiveFilterCount > 0 ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onResetSubIbsFilters}
+              >
+                Reset Filters
+              </Button>
+            ) : null
+          }
         >
+          {/* Sub-IBs Date Filters */}
+          <div className="mb-4 grid gap-4 md:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("h-9 w-full justify-start text-left font-normal", !subIbsDateFrom && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {subIbsDateFrom ? format(subIbsDateFrom, "MMM dd, yyyy") : <span>Select date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={subIbsDateFrom} onSelect={onSubIbsDateFromChange} initialFocus captionLayout="dropdown" />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-muted-foreground">To Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("h-9 w-full justify-start text-left font-normal", !subIbsDateTo && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
+                    {subIbsDateTo ? format(subIbsDateTo, "MMM dd, yyyy") : <span>Select date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={subIbsDateTo} onSelect={onSubIbsDateToChange} initialFocus captionLayout="dropdown" />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          
           {loading ? (
             <TabSkeleton rows={4} />
           ) : (subIbsData?.data?.length ?? 0) > 0 ? (
@@ -1190,16 +1312,23 @@ export default function IbUserDetailPage() {
   const [clientsData, setClientsData] = useState<AdminIbClientsResponse | null>(null);
   const [clientsLoading, setClientsLoading] = useState(false);
   const [clientsLoaded, setClientsLoaded] = useState(false);
+  const [clientsPage, setClientsPage] = useState(1);
 
   const [subIbsData, setSubIbsData] = useState<AdminIbSubIbsResponse | null>(null);
   const [subIbsLoading, setSubIbsLoading] = useState(false);
   const [subIbsLoaded, setSubIbsLoaded] = useState(false);
-
-  // Pagination states
-  const [businessPage, setBusinessPage] = useState(1);
-  const [clientsPage, setClientsPage] = useState(1);
   const [subIbsPage, setSubIbsPage] = useState(1);
+
+  const [businessPage, setBusinessPage] = useState(1);
   const [commissionPages, setCommissionPages] = useState<Record<number, number>>({});
+
+  // Date filter states for clients
+  const [clientsDateFrom, setClientsDateFrom] = useState<Date | undefined>(undefined);
+  const [clientsDateTo, setClientsDateTo] = useState<Date | undefined>(undefined);
+
+  // Date filter states for sub-IBs
+  const [subIbsDateFrom, setSubIbsDateFrom] = useState<Date | undefined>(undefined);
+  const [subIbsDateTo, setSubIbsDateTo] = useState<Date | undefined>(undefined);
 
   const userId = useMemo(() => {
     const n = Number(id);
@@ -1317,10 +1446,15 @@ export default function IbUserDetailPage() {
           break;
         }
         case "network": {
+          const clientsDateFromStr = clientsDateFrom ? format(clientsDateFrom, "yyyy-MM-dd") : undefined;
+          const clientsDateToStr = clientsDateTo ? format(clientsDateTo, "yyyy-MM-dd") : undefined;
+          const subIbsDateFromStr = subIbsDateFrom ? format(subIbsDateFrom, "yyyy-MM-dd") : undefined;
+          const subIbsDateToStr = subIbsDateTo ? format(subIbsDateTo, "yyyy-MM-dd") : undefined;
+          
           const [netRes, cliRes, subRes] = await Promise.all([
             networkLoaded ? null : adminIbUsersApi.network(userId, token),
-            clientsLoaded ? null : adminIbUsersApi.clients(userId, token),
-            subIbsLoaded ? null : adminIbUsersApi.subIbs(userId, token),
+            clientsLoaded ? null : adminIbUsersApi.clients(userId, token, 1, 100, clientsDateFromStr, clientsDateToStr),
+            subIbsLoaded ? null : adminIbUsersApi.subIbs(userId, token, 1, 100, subIbsDateFromStr, subIbsDateToStr),
           ]);
           if (netRes) { setNetworkData(netRes.data ?? null); setNetworkLoaded(true); }
           if (cliRes) {
@@ -1354,13 +1488,29 @@ export default function IbUserDetailPage() {
         default: break;
       }
     }
-  }, [token, userId, workspaceLoaded, walletLoaded, networkLoaded, walletPage]);
+  }, [token, userId, workspaceLoaded, walletLoaded, networkLoaded, clientsLoaded, subIbsLoaded, walletPage, clientsDateFrom, clientsDateTo, subIbsDateFrom, subIbsDateTo]);
 
   useEffect(() => {
     if (activeTab !== "profile") {
       void loadTabData(activeTab);
     }
   }, [activeTab, loadTabData]);
+
+  // Reload clients data when clients date filters change
+  useEffect(() => {
+    if (activeTab === "network" && (clientsDateFrom || clientsDateTo)) {
+      setClientsLoaded(false);
+      void loadTabData("network");
+    }
+  }, [activeTab, clientsDateFrom, clientsDateTo]);
+
+  // Reload sub-IBs data when sub-IBs date filters change
+  useEffect(() => {
+    if (activeTab === "network" && (subIbsDateFrom || subIbsDateTo)) {
+      setSubIbsLoaded(false);
+      void loadTabData("network");
+    }
+  }, [activeTab, subIbsDateFrom, subIbsDateTo]);
 
   // const handleUpdatePlan = useCallback(async () => {
   //   if (!token || !user || !selectedIbPlanId) return;
@@ -1624,6 +1774,22 @@ export default function IbUserDetailPage() {
                   onClientsPageChange={setClientsPage}
                   subIbsPage={subIbsPage}
                   onSubIbsPageChange={setSubIbsPage}
+                  clientsDateFrom={clientsDateFrom}
+                  clientsDateTo={clientsDateTo}
+                  onClientsDateFromChange={setClientsDateFrom}
+                  onClientsDateToChange={setClientsDateTo}
+                  onResetClientsFilters={() => {
+                    setClientsDateFrom(undefined);
+                    setClientsDateTo(undefined);
+                  }}
+                  subIbsDateFrom={subIbsDateFrom}
+                  subIbsDateTo={subIbsDateTo}
+                  onSubIbsDateFromChange={setSubIbsDateFrom}
+                  onSubIbsDateToChange={setSubIbsDateTo}
+                  onResetSubIbsFilters={() => {
+                    setSubIbsDateFrom(undefined);
+                    setSubIbsDateTo(undefined);
+                  }}
                 />
               </TabsContent>
 

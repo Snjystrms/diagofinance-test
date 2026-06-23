@@ -1344,22 +1344,26 @@ export const adminIbUsersApi = {
     );
   },
 
-  clients: (id: number | string, token: string, page = 1, perPage = 20) => {
+  clients: (id: number | string, token: string, page = 1, perPage = 20, dateFrom?: string, dateTo?: string) => {
     if (!token) throw new Error("Token is required to fetch IB clients");
     if (id === null || id === undefined || `${id}`.trim() === "")
       throw new Error("IB user ID is required");
     const qs = new URLSearchParams({ page: String(page), per_page: String(perPage) });
+    if (dateFrom) qs.append("date_from", dateFrom);
+    if (dateTo) qs.append("date_to", dateTo);
     return apiCall<AdminIbClientsResponse>(
       `/admin/ib-management/ib-users/${encodeURIComponent(String(id))}/clients?${qs.toString()}`,
       { method: "GET", headers: { Authorization: `Bearer ${token}` } },
     );
   },
 
-  subIbs: (id: number | string, token: string, page = 1, perPage = 20) => {
+  subIbs: (id: number | string, token: string, page = 1, perPage = 20, dateFrom?: string, dateTo?: string) => {
     if (!token) throw new Error("Token is required to fetch IB sub-IBs");
     if (id === null || id === undefined || `${id}`.trim() === "")
       throw new Error("IB user ID is required");
     const qs = new URLSearchParams({ page: String(page), per_page: String(perPage) });
+    if (dateFrom) qs.append("date_from", dateFrom);
+    if (dateTo) qs.append("date_to", dateTo);
     return apiCall<AdminIbSubIbsResponse>(
       `/admin/ib-management/ib-users/${encodeURIComponent(String(id))}/sub-ibs?${qs.toString()}`,
       { method: "GET", headers: { Authorization: `Bearer ${token}` } },
