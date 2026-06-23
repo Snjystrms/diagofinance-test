@@ -204,7 +204,7 @@ The application can be deployed to any platform that supports Next.js:
 
 Make sure to set the `NEXT_PUBLIC_API_URL` environment variable in your deployment platform.
 
-## Contributing
+## Contributing ##
 
 1. Fork the repository
 2. Create a feature branch
