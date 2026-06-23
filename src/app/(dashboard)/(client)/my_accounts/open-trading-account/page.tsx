@@ -12,12 +12,8 @@ import {
   Loader2,
   CheckCircle2,
   Copy,
-  Shield,
   Zap,
-  TrendingUp,
   Lock,
-  CheckCircle,
-  Star,
   Hash
 } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -422,7 +418,6 @@ export default function OpenTradingAccountPage() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   {(['live', 'demo'] as const).map((mode) => {
                     const isActive = accountMode === mode;
-                    const Icon = mode === 'live' ? TrendingUp : Shield;
 
                     return (
                       <button
@@ -440,10 +435,18 @@ export default function OpenTradingAccountPage() {
                           <div
                             className={cn(
                               'flex h-10 w-10 items-center justify-center rounded-xl',
-                              isActive ? 'bg-white/15' : 'bg-primary/10 text-primary'
+                              isActive ? 'bg-white/15' : 'bg-primary/10'
                             )}
                           >
-                            <Icon className="h-4 w-4" />
+                            <Image 
+                              src="/metatrader-5.svg" 
+                              alt="MT5" 
+                              width={16} 
+                              height={16}
+                              className={cn(
+                                isActive ? 'brightness-0 invert' : ''
+                              )}
+                            />
                           </div>
                           <div>
                             <div className="text-sm font-semibold">

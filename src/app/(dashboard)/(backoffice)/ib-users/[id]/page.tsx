@@ -524,11 +524,42 @@ function NetworkTab({
   networkData,
   clientsData,
   subIbsData,
+  businessPage,
+  onBusinessPageChange,
+  clientsPage,
+  onClientsPageChange,
+  subIbsPage,
+  onSubIbsPageChange,
 }: TabShellProps & {
   networkData: AdminIbNetworkData | null;
   clientsData: AdminIbClientsResponse | null;
   subIbsData: AdminIbSubIbsResponse | null;
+  businessPage: number;
+  onBusinessPageChange: (page: number) => void;
+  clientsPage: number;
+  onClientsPageChange: (page: number) => void;
+  subIbsPage: number;
+  onSubIbsPageChange: (page: number) => void;
 }) {
+  const ITEMS_PER_PAGE = 10;
+  
+  const paginatedBusinessBreakdown = networkData?.business_breakdown?.slice(
+    (businessPage - 1) * ITEMS_PER_PAGE,
+    businessPage * ITEMS_PER_PAGE
+  ) ?? [];
+  const businessTotalPages = Math.ceil((networkData?.business_breakdown?.length ?? 0) / ITEMS_PER_PAGE);
+  
+  const paginatedClients = clientsData?.data?.slice(
+    (clientsPage - 1) * ITEMS_PER_PAGE,
+    clientsPage * ITEMS_PER_PAGE
+  ) ?? [];
+  const clientsTotalPages = Math.ceil((clientsData?.data?.length ?? 0) / ITEMS_PER_PAGE);
+  
+  const paginatedSubIbs = subIbsData?.data?.slice(
+    (subIbsPage - 1) * ITEMS_PER_PAGE,
+    subIbsPage * ITEMS_PER_PAGE
+  ) ?? [];
+  const subIbsTotalPages = Math.ceil((subIbsData?.data?.length ?? 0) / ITEMS_PER_PAGE);
   return (
     <>
       <IbPageHeader
@@ -585,7 +616,7 @@ function NetworkTab({
         />
         <IbMetricCard
           title="Total Lots"
-          value={loading ? <Skeleton className="h-7 w-20" /> : String(networkData?.overview.total_lots ?? 0)}
+          value={loading ? <Skeleton className="h-7 w-20" /> : String(networkData?.overview.total_lots.toFixed(2) ?? 0)}
           description="Round lots traded across your network"
           icon={<BarChart3 className="h-5 w-5" />}
           accent="slate"
@@ -599,36 +630,65 @@ function NetworkTab({
         {loading ? (
           <TabSkeleton rows={5} />
         ) : (networkData?.business_breakdown?.length ?? 0) > 0 ? (
-          <div className="overflow-hidden rounded-2xl border border-border/60">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Level</TableHead>
-                  <TableHead>Source</TableHead>
-                  {/* <TableHead className="text-right">Volume</TableHead> */}
-                  <TableHead className="text-right">Lots</TableHead>
-                  <TableHead className="text-right">Commission Earned</TableHead>
-                  <TableHead className="text-right">Clients / Sub-Partners</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {networkData!.business_breakdown.map((b) => (
-                  <TableRow key={b.level}>
-                    <TableCell className="font-medium">{b.level_label === "IB" ? "Partner" : b.level_label}</TableCell>
-                    <TableCell className="text-muted-foreground">{b.source === "Sub-IBs" ? "Sub-Partner" : b.source}</TableCell>
-                    {/* <TableCell className="text-right tabular-nums">{b.volume}</TableCell> */}
-                    <TableCell className="text-right tabular-nums">{b.lots}</TableCell>
-                    <TableCell className="text-right tabular-nums">{formatCurrency(b.commission_earned)}</TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {b.clients > 0 ? `${b.clients} clients` : ""}
-                      {b.sub_ibs > 0 ? `${b.clients > 0 ? " / " : ""}${b.sub_ibs} sub-partners` : ""}
-                      {b.clients === 0 && b.sub_ibs === 0 ? "\u2014" : ""}
-                    </TableCell>
+          <>
+            <div className="overflow-hidden rounded-2xl border border-border/60">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Sr. No.</TableHead>
+                    <TableHead>Level</TableHead>
+                    <TableHead>Source</TableHead>
+                    {/* <TableHead className="text-right">Volume</TableHead> */}
+                    <TableHead className="text-right">Lots</TableHead>
+                    <TableHead className="text-right">Commission Earned</TableHead>
+                    <TableHead className="text-right">Clients / Sub-Partners</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {paginatedBusinessBreakdown.map((b, index) => (
+                    <TableRow key={b.level}>
+                      <TableCell>{(businessPage - 1) * ITEMS_PER_PAGE + index + 1}</TableCell>
+                      <TableCell className="font-medium">{b.level_label === "IB" ? "Partner" : b.level_label}</TableCell>
+                      <TableCell className="text-muted-foreground">{b.source === "Sub-IBs" ? "Sub-Partner" : b.source}</TableCell>
+                      {/* <TableCell className="text-right tabular-nums">{b.volume}</TableCell> */}
+                      <TableCell className="text-right tabular-nums">{b.lots}</TableCell>
+                      <TableCell className="text-right tabular-nums">{formatCurrency(b.commission_earned)}</TableCell>
+                      <TableCell className="text-right tabular-nums">
+                        {b.clients > 0 ? `${b.clients} clients` : ""}
+                        {b.sub_ibs > 0 ? `${b.clients > 0 ? " / " : ""}${b.sub_ibs} sub-partners` : ""}
+                        {b.clients === 0 && b.sub_ibs === 0 ? "\u2014" : ""}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+            {businessTotalPages > 1 && (
+              <div className="flex items-center justify-between gap-2 pt-4">
+                <p className="text-sm text-muted-foreground">
+                  Page {businessPage} of {businessTotalPages}
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onBusinessPageChange(businessPage - 1)}
+                    disabled={businessPage <= 1}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => onBusinessPageChange(businessPage + 1)}
+                    disabled={businessPage >= businessTotalPages}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
         ) : (
           <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
             <BarChart3 className="h-6 w-6" />
@@ -645,41 +705,68 @@ function NetworkTab({
           {loading ? (
             <TabSkeleton rows={4} />
           ) : (clientsData?.data?.length ?? 0) > 0 ? (
-            <div className="overflow-hidden rounded-2xl border border-border/60">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Sr. No.</TableHead>  
-                    <TableHead>Client</TableHead>
-                    <TableHead className="text-right">Lots</TableHead>
-                    {/* <TableHead className="text-right">Volume</TableHead> */}
-                    <TableHead className="text-right">Earned</TableHead>
-                    <TableHead className="text-right">Pending</TableHead>
-                    <TableHead>Registered</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {clientsData!.data.map((client, index) => (
-                    <TableRow key={client.id}>
-                      <TableCell>{index + 1}</TableCell>
-                      <TableCell>
-                        <div>
-                          <p className="font-medium">{client.name}</p>
-                          <p className="text-xs text-muted-foreground">{client.email}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">{client.lots}</TableCell>
-                      {/* <TableCell className="text-right tabular-nums">{client.volume}</TableCell> */}
-                      <TableCell className="text-right tabular-nums">{formatCurrency(client.earned)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatCurrency(client.pending)}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {client.registered ? formatDateTimeInIST(client.registered, "\u2014") : "\u2014"}
-                      </TableCell>
+            <>
+              <div className="overflow-hidden rounded-2xl border border-border/60">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Sr. No.</TableHead>  
+                      <TableHead>Client</TableHead>
+                      <TableHead className="text-right">Lots</TableHead>
+                      {/* <TableHead className="text-right">Volume</TableHead> */}
+                      <TableHead className="text-right">Earned</TableHead>
+                      <TableHead className="text-right">Pending</TableHead>
+                      <TableHead>Registered</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedClients.map((client, index) => (
+                      <TableRow key={client.id}>
+                        <TableCell>{(clientsPage - 1) * ITEMS_PER_PAGE + index + 1}</TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{client.name}</p>
+                            <p className="text-xs text-muted-foreground">{client.email}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{client.lots}</TableCell>
+                        {/* <TableCell className="text-right tabular-nums">{client.volume}</TableCell> */}
+                        <TableCell className="text-right tabular-nums">{formatCurrency(client.earned)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatCurrency(client.pending)}</TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {client.registered ? formatDateTimeInIST(client.registered, "\u2014") : "\u2014"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {clientsTotalPages > 1 && (
+                <div className="flex items-center justify-between gap-2 pt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Page {clientsPage} of {clientsTotalPages}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onClientsPageChange(clientsPage - 1)}
+                      disabled={clientsPage <= 1}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onClientsPageChange(clientsPage + 1)}
+                      disabled={clientsPage >= clientsTotalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
               <Users className="h-6 w-6" />
@@ -695,43 +782,70 @@ function NetworkTab({
           {loading ? (
             <TabSkeleton rows={4} />
           ) : (subIbsData?.data?.length ?? 0) > 0 ? (
-            <div className="overflow-hidden rounded-2xl border border-border/60">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-<TableHead>Sr. No.</TableHead>
-                     <TableHead>Sub-Partner</TableHead>
-                    <TableHead>Level</TableHead>
-                    <TableHead className="text-right">Lots</TableHead>
-                    {/* <TableHead className="text-right">Volume</TableHead> */}
-                    <TableHead className="text-right">Earned</TableHead>
-                    <TableHead className="text-right">Pending</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-{subIbsData!.data.map((sub, index) => (
-                     <TableRow key={sub.id}>
-                       <TableCell>{index + 1}</TableCell>
-                       <TableCell>
-                         <div>
-                          <p className="font-medium">{sub.name}</p>
-                          <p className="text-xs text-muted-foreground">{sub.email}</p>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
-                          {sub.level_label}
-                        </span>
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">{sub.lots}</TableCell>
-                      {/* <TableCell className="text-right tabular-nums">{sub.volume}</TableCell> */}
-                      <TableCell className="text-right tabular-nums">{formatCurrency(sub.earned)}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatCurrency(sub.pending)}</TableCell>
+            <>
+              <div className="overflow-hidden rounded-2xl border border-border/60">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Sr. No.</TableHead>
+                      <TableHead>Sub-Partner</TableHead>
+                      <TableHead>Level</TableHead>
+                      <TableHead className="text-right">Lots</TableHead>
+                      {/* <TableHead className="text-right">Volume</TableHead> */}
+                      <TableHead className="text-right">Earned</TableHead>
+                      <TableHead className="text-right">Pending</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody>
+                    {paginatedSubIbs.map((sub, index) => (
+                      <TableRow key={sub.id}>
+                        <TableCell>{(subIbsPage - 1) * ITEMS_PER_PAGE + index + 1}</TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{sub.name}</p>
+                            <p className="text-xs text-muted-foreground">{sub.email}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
+                            {sub.level_label}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right tabular-nums">{sub.lots}</TableCell>
+                        {/* <TableCell className="text-right tabular-nums">{sub.volume}</TableCell> */}
+                        <TableCell className="text-right tabular-nums">{formatCurrency(sub.earned)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{formatCurrency(sub.pending)}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+              {subIbsTotalPages > 1 && (
+                <div className="flex items-center justify-between gap-2 pt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Page {subIbsPage} of {subIbsTotalPages}
+                  </p>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onSubIbsPageChange(subIbsPage - 1)}
+                      disabled={subIbsPage <= 1}
+                    >
+                      Previous
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onSubIbsPageChange(subIbsPage + 1)}
+                      disabled={subIbsPage >= subIbsTotalPages}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </>
           ) : (
             <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
               <Network className="h-6 w-6" />
@@ -804,13 +918,20 @@ function ProfileTab({ user, loading }: TabShellProps) {
 function CommissionTab({
   user,
   loading,
-}: TabShellProps) {
+  commissionPages,
+  onCommissionPageChange,
+}: TabShellProps & {
+  commissionPages: Record<number, number>;
+  onCommissionPageChange: (level: number, page: number) => void;
+}) {
   const { token } = useAuth();
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [report, setReport] = useState<IbCommissionReportPayload | null>(null);
   const [reportLoading, setReportLoading] = useState(false);
   const [loadError, setLoadError] = useState<unknown | null>(null);
+
+  const ITEMS_PER_PAGE = 10;
 
   const userId = user.user.id ?? user.user.uuid;
   const activeFilterCount = (fromDate ? 1 : 0) + (toDate ? 1 : 0);
@@ -940,7 +1061,15 @@ function CommissionTab({
               />
             </div>
 
-            {report.levels.map((level) => (
+            {report.levels.map((level) => {
+              const currentPage = commissionPages[level.level] ?? 1;
+              const paginatedUsers = level.users.slice(
+                (currentPage - 1) * ITEMS_PER_PAGE,
+                currentPage * ITEMS_PER_PAGE
+              );
+              const totalPages = Math.ceil(level.users.length / ITEMS_PER_PAGE);
+              
+              return (
               <IbSectionCard
                 key={level.level}
                 title={level.level_label}
@@ -972,11 +1101,11 @@ function CommissionTab({
                           </TableCell>
                         </TableRow>
                       ) : (
-level.users.map((u, index) => (
-                           <TableRow key={u.user_id}>
-                             <TableCell>{index + 1}</TableCell>
-                             <TableCell>
-                               <div className="font-medium">{u.name}</div>
+                        paginatedUsers.map((u, index) => (
+                          <TableRow key={u.user_id}>
+                            <TableCell>{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</TableCell>
+                            <TableCell>
+                              <div className="font-medium">{u.name}</div>
                               <div className="text-xs text-muted-foreground">{u.email}</div>
                             </TableCell>
                             <TableCell>{u.sponsor_id || "\u2014"}</TableCell>
@@ -990,8 +1119,33 @@ level.users.map((u, index) => (
                     </TableBody>
                   </Table>
                 </div>
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between gap-2 pt-4">
+                    <p className="text-sm text-muted-foreground">
+                      Page {currentPage} of {totalPages}
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onCommissionPageChange(level.level, currentPage - 1)}
+                        disabled={currentPage <= 1}
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onCommissionPageChange(level.level, currentPage + 1)}
+                        disabled={currentPage >= totalPages}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </IbSectionCard>
-            ))}
+            )})}
           </>
         ) : (
           <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
@@ -1040,6 +1194,12 @@ export default function IbUserDetailPage() {
   const [subIbsData, setSubIbsData] = useState<AdminIbSubIbsResponse | null>(null);
   const [subIbsLoading, setSubIbsLoading] = useState(false);
   const [subIbsLoaded, setSubIbsLoaded] = useState(false);
+
+  // Pagination states
+  const [businessPage, setBusinessPage] = useState(1);
+  const [clientsPage, setClientsPage] = useState(1);
+  const [subIbsPage, setSubIbsPage] = useState(1);
+  const [commissionPages, setCommissionPages] = useState<Record<number, number>>({});
 
   const userId = useMemo(() => {
     const n = Number(id);
@@ -1458,6 +1618,12 @@ export default function IbUserDetailPage() {
                   networkData={networkData}
                   clientsData={clientsData}
                   subIbsData={subIbsData}
+                  businessPage={businessPage}
+                  onBusinessPageChange={setBusinessPage}
+                  clientsPage={clientsPage}
+                  onClientsPageChange={setClientsPage}
+                  subIbsPage={subIbsPage}
+                  onSubIbsPageChange={setSubIbsPage}
                 />
               </TabsContent>
 
@@ -1467,7 +1633,14 @@ export default function IbUserDetailPage() {
 
               <TabsContent value="commission" className="space-y-6">
                 {previewData ? (
-                  <CommissionTab user={previewData} loading={loading} />
+                  <CommissionTab 
+                    user={previewData} 
+                    loading={loading}
+                    commissionPages={commissionPages}
+                    onCommissionPageChange={(level, page) => {
+                      setCommissionPages(prev => ({ ...prev, [level]: page }));
+                    }}
+                  />
                 ) : null}
               </TabsContent>
             </Tabs>

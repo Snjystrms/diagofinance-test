@@ -1,6 +1,6 @@
 "use client";
 
-import { Scale, Settings, FileText, Loader2, CalendarIcon, Pencil, X } from "lucide-react";
+import { Scale, Settings, FileText, Loader2, CalendarIcon, Pencil, X, User, FileCheck, Activity, Shield, Building2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { GetCity, GetCountries, GetState } from "react-country-state-city";
@@ -1550,12 +1550,42 @@ export default function ProfileContent() {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid h-auto w-full grid-cols-2 gap-1 rounded-xl bg-muted/40 p-1 md:grid-cols-5">
-          <TabsTrigger value="personal" className="rounded-lg px-3 py-2 data-[state=active]:shadow-sm">Personal</TabsTrigger>
-          <TabsTrigger value="account" className="rounded-lg px-3 py-2 data-[state=active]:shadow-sm">Legal Information</TabsTrigger>
-          <TabsTrigger value="activity" className="rounded-lg px-3 py-2 data-[state=active]:shadow-sm">Account Activity</TabsTrigger>
-          <TabsTrigger value="security" className="rounded-lg px-3 py-2 data-[state=active]:shadow-sm">Security</TabsTrigger>
-          <TabsTrigger value="bank" className="rounded-lg px-3 py-2 data-[state=active]:shadow-sm">Bank Details</TabsTrigger>
+        <TabsList className="ib-portal-surface inline-flex h-auto w-full flex-wrap gap-1 rounded-2xl border p-1.5">
+          <TabsTrigger 
+            value="personal" 
+            className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
+          >
+            <User className="h-4 w-4 mr-2" />
+            Personal
+          </TabsTrigger>
+          <TabsTrigger 
+            value="account" 
+            className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
+          >
+            <FileCheck className="h-4 w-4 mr-2" />
+            Legal Information
+          </TabsTrigger>
+          <TabsTrigger 
+            value="activity" 
+            className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
+          >
+            <Activity className="h-4 w-4 mr-2" />
+            Account Activity
+          </TabsTrigger>
+          <TabsTrigger 
+            value="security" 
+            className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
+          >
+            <Shield className="h-4 w-4 mr-2" />
+            Security
+          </TabsTrigger>
+          <TabsTrigger 
+            value="bank" 
+            className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
+          >
+            <Building2 className="h-4 w-4 mr-2" />
+            Bank Details
+          </TabsTrigger>
         </TabsList>
 
         {/* Personal Information */}
