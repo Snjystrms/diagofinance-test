@@ -17,6 +17,7 @@ import { userPaymentMethodsApi, userCurrencyRatesApi, userBrokerCryptoWalletsApi
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { CLIENT_WALLET_REFRESH_EVENT, notifyWalletRefresh } from "@/lib/client-events";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DepositPageSkeleton, DepositFormSkeleton } from "./deposit-page-skeleton";
 import toast from "react-hot-toast";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { 
@@ -39,7 +40,8 @@ import {
   CheckCircle2,
   Loader2,
   WalletMinimal,
-  Banknote
+  Banknote,
+  Plus
 } from "lucide-react";
 
 function useAuthImageUrl(url: string | null | undefined, token: string | null): string | null {
@@ -962,11 +964,7 @@ function USDTDepositContent() {
       return;
     }
 
-    // Validate transaction hash format if provided
-    if (transactionHash.trim() && (!transactionHash.startsWith("0x") || transactionHash.length < 10)) {
-      setError("Invalid transaction hash format");
-      return;
-    }
+    // No format validation - allow any transaction hash format
     
     setIsSubmitting(true);
     
@@ -1005,8 +1003,12 @@ function USDTDepositContent() {
     }
   };
 
-  const isValidHash = transactionHash.trim() === "" || (transactionHash.startsWith("0x") && transactionHash.length >= 10);
-  const canSubmit = amount.trim() !== "" && parseFloat(amount) > 0 && transactionHash.trim() !== "" && paymentProof !== null && isValidHash;
+  const canSubmit = amount.trim() !== "" && parseFloat(amount) > 0 && transactionHash.trim() !== "" && paymentProof !== null;
+
+  // Show full page skeleton during initial load
+  if (pmLoading && walletLoading) {
+    return <DepositPageSkeleton />;
+  }
 
   return (
     <div className="min-h-screen w-full bg-background px-4 py-6 lg:px-6 xl:px-8">
@@ -1379,7 +1381,7 @@ function USDTDepositContent() {
                           value={transactionHash}
                           onChange={(e) => setTransactionHash(e.target.value)}
                           className="pl-10 h-12 border-2 border-border focus:border-primary rounded-xl"
-                          placeholder="0x1234567890abcdef..."
+                          placeholder="Enter your transaction hash"
                         />
                       </div>
                       <p className="text-xs text-muted-foreground">
@@ -1506,7 +1508,7 @@ function USDTDepositContent() {
                       Deposit Processed
                     </h3>
                     <p className="mb-4 text-muted-foreground">
-                      Your deposit is under review and will be credited soon!.
+                      Your deposit is under review and will be credited soon!
                     </p>
                     <div className="space-y-3">
                       <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/20">
@@ -1514,16 +1516,39 @@ function USDTDepositContent() {
                           The admin team is reviewing your deposit and will credit the funds to your wallet once approved.
                         </p>
                       </div>
-                      {getExplorerTxUrl(selectedCryptoWallet?.network, transactionHash) && (
+                      <div className="grid gap-3 sm:grid-cols-2">
                         <Button
                           variant="outline"
                           className="w-full border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                          onClick={() => window.open(getExplorerTxUrl(selectedCryptoWallet?.network, transactionHash)!, '_blank')}
+                          onClick={() => {
+                            const url = getExplorerTxUrl(selectedCryptoWallet?.network, transactionHash);
+                            if (url) {
+                              window.open(url, '_blank');
+                            } else {
+                              toast.error('Explorer URL not available for this network');
+                            }
+                          }}
                         >
                           <ExternalLink className="h-4 w-4 mr-2" />
                           View on {selectedCryptoWallet?.network?.split(' ')[0] || 'Block'} Explorer
                         </Button>
-                      )}
+                        <Button
+                          variant="default"
+                          className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                          onClick={() => {
+                            // Reset form to make another deposit
+                            setDepositStatus('pending');
+                            setAmount('');
+                            setTransactionHash('');
+                            setPaymentProof(null);
+                            setPaymentProofPreview(null);
+                            setError(null);
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Make Another Deposit
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 )}
