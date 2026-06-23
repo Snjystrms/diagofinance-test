@@ -828,10 +828,10 @@ export const ibRequestsApi = {
     const queryString = queryParams.toString();
     const url = `/user/internal-transfer/ib-wallet-transactions${queryString ? `?${queryString}` : ""}`;
 
-    return apiCall<any>(url, {
+    return apiCall<IbInternalTransferWalletTransactionsResponse>(url, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
-    }) as unknown as Promise<IbInternalTransferWalletTransactionsResponse>;
+    });
   },
 
   getSubIbs: (token: string, params?: { page?: number; limit?: number; search?: string }) => {

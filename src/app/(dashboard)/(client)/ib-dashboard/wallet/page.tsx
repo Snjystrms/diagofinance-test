@@ -189,9 +189,9 @@ export default function IbWalletPage() {
         setError("Unable to load wallet data");
       }
 
-      if (transactionsResponse?.success && Array.isArray(transactionsResponse?.data)) {
-        setTransactions(transactionsResponse.data);
-        const pag = transactionsResponse.pagination;
+      if (transactionsResponse?.success && Array.isArray(transactionsResponse?.data?.data)) {
+        setTransactions(transactionsResponse.data.data);
+        const pag = transactionsResponse.data.pagination;
         if (pag) {
           setPagination({
             current_page: pag.current_page || page,
@@ -200,9 +200,9 @@ export default function IbWalletPage() {
             total_pages: pag.last_page || 1,
           });
         }
-      } else if (transactionsResponse?.data && Array.isArray(transactionsResponse.data)) {
-        setTransactions(transactionsResponse.data);
-        const pag = transactionsResponse.pagination;
+      } else if (transactionsResponse?.data && Array.isArray(transactionsResponse.data.data)) {
+        setTransactions(transactionsResponse.data.data);
+        const pag = transactionsResponse.data.pagination;
         if (pag) {
           setPagination({
             current_page: pag.current_page || page,
