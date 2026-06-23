@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useLayoutEffect } from "react";
+import { useState, useCallback, useLayoutEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowRight,
@@ -37,7 +37,7 @@ const advantages = [
 ];
 
 const stats = [
-  { value: "$15", label: "Rebate per lot*", icon: CircleDollarSign },
+  { value: "Up to $15", label: "Rebate per lot*", icon: CircleDollarSign },
   { value: "24h", label: "Onboarding time", icon: Zap },
   { value: "100%", label: "Transparent reporting", icon: ShieldCheck },
 ];
@@ -47,6 +47,7 @@ export default function BecomePartnerPage() {
   const router = useRouter();
   const [isCheckingStatus, setIsCheckingStatus] = useState(true);
   const [isInitialized, setIsInitialized] = useState(false);
+  const submitTriggerRef = useRef<(() => void) | null>(null);
 
   const checkStatus = useCallback(async () => {
     setIsCheckingStatus(true);
@@ -139,7 +140,7 @@ export default function BecomePartnerPage() {
                   ))}
                 </div>
 
-                <BecomePartnerCta className="max-w-xl" />
+                <BecomePartnerCta className="max-w-xl" submitTriggerRef={submitTriggerRef} />
               </div>
 
               {/* right — feature card */}
@@ -188,8 +189,8 @@ export default function BecomePartnerPage() {
                   </div>
 
                   <div className="inline-flex w-fit items-center gap-3 rounded-full bg-primary-foreground/15 px-4 py-2 text-sm font-semibold text-primary-foreground backdrop-blur">
-                    <span className="flex size-8 items-center justify-center rounded-full bg-primary-foreground/20 text-base font-extrabold">
-                      $15
+                    <span className="flex items-center justify-center rounded-full bg-primary-foreground/20 px-3 py-1 text-sm font-extrabold">
+                      Up to $15
                     </span>
                     Rebate per lot*
                   </div>
@@ -237,7 +238,7 @@ export default function BecomePartnerPage() {
 
                     <div>
                       <p className="text-3xl font-extrabold tracking-tight text-foreground">
-                        $15
+                        Up to $15
                       </p>
                       <p className="mt-1 text-sm font-medium text-muted-foreground">
                         rebate per lot*
@@ -272,7 +273,7 @@ export default function BecomePartnerPage() {
 
               {/* right — advantages + support */}
               <div className="space-y-4">
-                {advantages.map(({ title, description, icon: Icon }, i) => (
+                {advantages.map(({ title, description, icon: Icon }) => (
                   <div
                     key={title}
                     className="group flex items-start gap-4 rounded-2xl border border-border bg-muted/40 p-5 shadow-sm transition-colors hover:border-primary/25 hover:bg-muted/60"
@@ -337,10 +338,26 @@ export default function BecomePartnerPage() {
               </p>
             </div>
             <div className="flex items-center lg:justify-end">
-              <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-5 py-3.5 text-sm font-medium text-primary">
+              <button
+                type="button"
+                onClick={() => {
+                  const element = document.getElementById("ib-cta-container");
+                  if (element) {
+                    element.scrollIntoView({ behavior: "smooth" });
+                    const textarea = document.getElementById("ib-notes");
+                    if (textarea) {
+                      textarea.focus();
+                    }
+                  }
+                  if (submitTriggerRef.current) {
+                    submitTriggerRef.current();
+                  }
+                }}
+                className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-5 py-3.5 text-sm font-medium text-primary transition hover:bg-primary/10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              >
                 <ArrowRight className="h-4 w-4" />
                 Apply now — it&apos;s free
-              </div>
+              </button>
             </div>
           </div>
         </section>

@@ -93,6 +93,8 @@ type UpdateUserFormData = z.infer<typeof updateUserSchema>;
 type SponsorOption = {
   id: number;
   name: string;
+  uuid?: string;
+  email?: string;
 };
 
 const statusFilters = [
@@ -332,6 +334,8 @@ export default function NewUsersPage() {
             user.username ||
             user.email ||
             `User ${user.id}`,
+          uuid: user.uuid,
+          email: user.email,
         }));
       setSponsorSearchResults(results);
     } catch {
@@ -976,7 +980,7 @@ export default function NewUsersPage() {
 
               <TabsContent value="transfer" className="space-y-3">
                 <div className="space-y-2">
-                  <Label htmlFor="sponsor-search">New Sponsor</Label>
+                  <Label htmlFor="sponsor-search">New Partner</Label>
                   <ApiSearchBar
                     value={sponsorSearchQuery}
                     onChange={setSponsorSearchQuery}
@@ -1004,7 +1008,13 @@ export default function NewUsersPage() {
                           }`}
                           onClick={() => setSelectedNewSponsorId(String(option.id))}
                         >
-                          {option.name}
+                          <div>
+                            <p className="font-medium">{option.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {option.uuid ? `UUID: ${option.uuid}` : `ID: ${option.id}`}
+                              {option.email ? ` • ${option.email}` : ''}
+                            </p>
+                          </div>
                         </button>
                       ))}
                     </div>
@@ -1050,8 +1060,8 @@ export default function NewUsersPage() {
                     ? "Updating..."
                     : "Removing..."
                   : manageSponsorTab === "transfer"
-                    ? "Update Sponsor"
-                    : "Remove Sponsor"}
+                    ? "Update Parent"
+                    : "Remove Parent"}
               </Button>
             </DialogFooter>
           </DialogContent>

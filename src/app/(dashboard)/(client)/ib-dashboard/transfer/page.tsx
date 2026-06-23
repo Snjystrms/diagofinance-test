@@ -320,7 +320,7 @@ export default function TransferPage() {
                     {formatCurrency(transferResult.amount, transferResult.ib_wallet.currency)} transferred successfully
                   </p>
                   <p className="text-xs text-emerald-700/70 dark:text-emerald-400/70">
-                    IB wallet → Client wallet
+                    Partner wallet → Client wallet
                   </p>
                 </div>
               </div>
@@ -329,7 +329,7 @@ export default function TransferPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    IB Wallet
+                    Partner Wallet
                   </p>
                   <div className="flex flex-col gap-1">
                     <div className="flex justify-between text-sm">

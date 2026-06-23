@@ -756,6 +756,29 @@ export interface IbDirectRatesResponse {
   rates: IbDirectRate[];
 }
 
+export interface IbInternalTransferWalletTransaction {
+  id?: number;
+  transaction_type: string;
+  amount: number;
+  direction: string;
+  description: string;
+  status: string;
+  created_at: string;
+  balance_before: number;
+  balance_after: number;
+}
+
+export interface IbInternalTransferWalletTransactionsResponse {
+  success: boolean;
+  data: IbInternalTransferWalletTransaction[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+  };
+}
+
 export const ibRequestsApi = {
   overview: (token: string) =>
     apiCall<IbRequestStatusResponse>(`/user/ib-requests/status`, {
@@ -797,6 +820,19 @@ export const ibRequestsApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),
+
+  getIbWalletTransactions: (token: string, params?: { page?: number; limit?: number }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", String(params.page));
+    if (params?.limit) queryParams.append("limit", String(params.limit));
+    const queryString = queryParams.toString();
+    const url = `/user/internal-transfer/ib-wallet-transactions${queryString ? `?${queryString}` : ""}`;
+
+    return apiCall<any>(url, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }) as unknown as Promise<IbInternalTransferWalletTransactionsResponse>;
+  },
 
   getSubIbs: (token: string, params?: { page?: number; limit?: number; search?: string }) => {
     const queryParams = new URLSearchParams();
@@ -1287,7 +1323,7 @@ export const adminIbUsersApi = {
     );
   },
 
-  wallet: (id: number | string, token: string, page = 1, perPage = 20) => {
+  wallet: (id: number | string, token: string, page = 1, perPage = 10) => {
     if (!token) throw new Error("Token is required to fetch IB wallet");
     if (id === null || id === undefined || `${id}`.trim() === "")
       throw new Error("IB user ID is required");

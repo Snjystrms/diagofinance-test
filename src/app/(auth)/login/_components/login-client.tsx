@@ -505,27 +505,28 @@ export function LoginClient() {
                     />
 
                     <div className="flex items-center justify-between pt-1">
-                      <button
-                        type="button"
-                        onClick={() => setShowForgotPassword(true)}
-                        className="text-xs text-primary/60 hover:text-primary transition-colors"
-                      >
-                        Forgot your password?
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => setShowForgotPassword(true)}
+                          className="text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary px-2 py-1 rounded"
+                        >
+                          Forgot your password?
+                        </button>
                     </div>
 
                     <button
-                      type="submit"
-                      disabled={isLoading}
-                      className="
-                        w-full py-3 rounded-lg text-sm font-bold tracking-wide
-                        bg-primary text-primary-foreground
-                        hover:bg-primary/90
-                        disabled:opacity-40 disabled:cursor-not-allowed
-                        transition-all flex items-center justify-center gap-2
-                        shadow-[0_0_20px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]
-                      "
-                    >
+                       type="submit"
+                       disabled={isLoading}
+                       className="
+                         w-full py-3 rounded-lg text-sm font-bold tracking-wide
+                         bg-primary text-primary-foreground
+                         hover:bg-primary/90 hover:shadow-xl
+                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
+                         disabled:opacity-40 disabled:cursor-not-allowed
+                         transition-all transform hover:scale-105 flex items-center justify-center gap-2
+                         shadow-[0_0_20px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]
+                       "
+                     >
                       {isLoading ? (
                         <>
                   <Spinner className="mr-2 h-4 w-4" />

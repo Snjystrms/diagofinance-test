@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
-import { ArrowUpRight, CheckCircle2, Loader2, XCircle, Clock } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, Loader2, XCircle, Clock, ShieldCheck } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { useAuth } from "@/contexts/auth-context";
@@ -12,51 +12,34 @@ import { cn } from "@/lib/utils";
 
 interface BecomePartnerCtaProps {
   className?: string;
+  submitTriggerRef?: { current: (() => void) | null };
 }
 
-export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
+export function BecomePartnerCta({ className, submitTriggerRef }: BecomePartnerCtaProps) {
   const { token } = useAuth();
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [statusData, setStatusData] = useState<IbRequestStatusResponse | null>(null);
-  // Show status only if ib_request exists (not null) - if null, user hasn't applied yet
   const hasSubmitted = Boolean(statusData?.ib_request);
 
   const refreshStatus = useCallback(async () => {
     if (!token) {
-      console.log("[IB Status] No token available, skipping API call");
       setStatusData(null);
       return;
     }
 
-    console.log("[IB Status] Calling getStatus API with token:", token ? "token exists" : "no token");
     setIsCheckingStatus(true);
     try {
-      console.log("[IB Status] Making API call to /user/ib-requests/status");
       const response = await ibRequestsApi.getStatus(token);
-      console.log("[IB Status] Full API response:", JSON.stringify(response, null, 2));
-      
-      // The API returns: { success: true, data: { ib_request, status_text, ... } }
       const data = response?.data;
-      console.log("[IB Status] Extracted data from response.data:", data);
-      console.log("[IB Status] status_text:", data?.status_text);
-      console.log("[IB Status] ib_request:", data?.ib_request);
       
       if (data) {
-        // Always set statusData if we have data, even if ib_request is null
-        console.log("[IB Status] Valid data structure, setting statusData");
         setStatusData(data);
       } else {
-        console.log("[IB Status] No data in response, setting statusData to null");
         setStatusData(null);
       }
     } catch (error) {
-      console.error("[IB Status] Failed to load IB request status:", error);
-      if (error instanceof Error) {
-        console.error("[IB Status] Error message:", error.message);
-        console.error("[IB Status] Error stack:", error.stack);
-      }
       setStatusData(null);
     } finally {
       setIsCheckingStatus(false);
@@ -67,7 +50,7 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
     void refreshStatus();
   }, [refreshStatus]);
 
-  const handleSubmit = async () => {
+  const handleSubmit = useCallback(async () => {
     if (!token) {
       toast.error("You need to be signed in to submit a partner request.");
       return;
@@ -79,7 +62,7 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
         notes.trim() ? { notes: notes.trim() } : {},
         token
       );
-      toast.success("Your IB request has been sent. Our team will contact you shortly.");
+      toast.success("Your Partner request has been sent. Our team will contact you shortly.");
       setNotes("");
       await refreshStatus();
     } catch (error) {
@@ -91,16 +74,25 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
     } finally {
       setIsSubmitting(false);
     }
-  };
+  }, [token, notes, refreshStatus]);
+
+  useEffect(() => {
+    if (submitTriggerRef) {
+      submitTriggerRef.current = handleSubmit;
+    }
+    return () => {
+      if (submitTriggerRef) {
+        submitTriggerRef.current = null;
+      }
+    };
+  }, [submitTriggerRef, handleSubmit]);
 
   const submittedDetails = useMemo(() => {
-    // Only show details if ib_request exists (user has applied)
     if (!statusData || !statusData.ib_request) return null;
 
     const ibRequest = statusData.ib_request;
     const timestamp = ibRequest.created_at_ist || ibRequest.created_at;
 
-    // Determine status based on ib_request.status: 0 = Pending, 1 = Approved, 2 = Rejected
     let statusText: string;
     switch (ibRequest.status) {
       case 0:
@@ -131,8 +123,8 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
 
   if (isCheckingStatus) {
     return (
-      <div className={cn("flex items-center gap-3 rounded-3xl border border-indigo-100 bg-white/80 px-6 py-6 text-sm text-slate-600 shadow-sm", className)}>
-        <Loader2 className="h-4 w-4 animate-spin text-indigo-500" aria-hidden="true" />
+      <div className={cn("flex items-center gap-3 rounded-2xl border border-indigo-100 bg-white/60 backdrop-blur-md px-6 py-5 text-sm font-medium text-slate-600 shadow-sm max-w-xl", className)}>
+        <Loader2 className="h-5 w-5 animate-spin text-indigo-500" aria-hidden="true" />
         Checking your partner request status...
       </div>
     );
@@ -148,34 +140,35 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
 
     if (isRejected) {
       return (
-        <div className="space-y-3 rounded-3xl border border-red-200 bg-red-50/80 px-6 py-6 text-sm text-red-700 shadow-sm">
-          <div className="flex items-start gap-3">
-            <XCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" aria-hidden="true" />
+        <div className="space-y-4 rounded-3xl border border-red-200/60 bg-gradient-to-b from-red-50/50 to-red-50/20 backdrop-blur-md px-6 py-6 shadow-sm max-w-xl">
+          <div className="flex items-start gap-3.5">
+            <XCircle className="mt-0.5 h-6 w-6 flex-shrink-0 text-red-500" aria-hidden="true" />
             <div className="space-y-2">
-              <p className="text-base font-semibold text-red-700">
-                IB Request Rejected
-              </p>
-              <p>
-                Status: <span className="font-medium text-red-800 capitalize">{statusText}</span>
-                {createdLabel ? ` • Submitted on ${createdLabel}` : null}
+              <h4 className="text-base font-bold text-red-800 tracking-tight">
+                Partner Request Declined
+              </h4>
+              <p className="text-sm text-red-700/90 leading-relaxed">
+                Status: <span className="font-semibold text-red-800 capitalize">{statusText}</span>
+                {createdLabel ? ` • Processed on ${createdLabel}` : null}
               </p>
               {adminComment ? (
-                <div className="rounded-2xl bg-white/70 px-4 py-3 text-sm text-red-700">
-                  <span className="font-medium">Admin Comment:</span> {adminComment}
+                <div className="rounded-xl border border-red-200/40 bg-white/80 px-4 py-3 text-sm text-red-800 shadow-inner">
+                  <span className="font-semibold block text-xs uppercase tracking-wider text-red-600 mb-1">Feedback:</span> 
+                  {adminComment}
                 </div>
               ) : null}
-              <p>
-                Your IB request has been rejected. If you have questions or would like to reapply,
-                please reach out to partners@crmapp.com with your details.
+              <p className="text-sm text-slate-600 leading-relaxed pt-1">
+                Your request has been declined. If you have any questions or want to update your portfolio,
+                please reach out directly to <a href="mailto:partners@crmapp.com" className="font-medium text-indigo-600 hover:underline">partners@crmapp.com</a>.
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             <button
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 rounded-full border border-red-300 bg-white px-6 py-3 text-sm font-semibold text-red-700 transition hover:border-red-400 hover:text-red-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-80"
+              className="inline-flex items-center gap-2 rounded-full border border-red-200 bg-white px-5 py-2.5 text-sm font-semibold text-red-700 shadow-sm transition duration-200 ease-in-out hover:bg-red-50 hover:border-red-300 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubmitting ? (
                 <>
@@ -191,7 +184,7 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
             </button>
             <Link
               href="#partner-benefits"
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition duration-200 ease-in-out hover:border-slate-300 hover:text-slate-800 shadow-sm"
             >
               Review Benefits
             </Link>
@@ -202,38 +195,39 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
 
     if (isApproved) {
       return (
-        <div className="space-y-3 rounded-3xl border border-emerald-200 bg-emerald-50/80 px-6 py-6 text-sm text-emerald-700 shadow-sm">
-          <div className="flex items-start gap-3">
-            <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-500" aria-hidden="true" />
+        <div className="space-y-4 rounded-3xl border border-emerald-200/60 bg-gradient-to-b from-emerald-50/50 to-emerald-50/20 backdrop-blur-md px-6 py-6 shadow-sm max-w-xl">
+          <div className="flex items-start gap-3.5">
+            <CheckCircle2 className="mt-0.5 h-6 w-6 flex-shrink-0 text-emerald-500" aria-hidden="true" />
             <div className="space-y-2">
-              <p className="text-base font-semibold text-emerald-700">
-                🎉 IB Request Approved!
-              </p>
-              <p>
-                Status: <span className="font-medium text-emerald-800 capitalize">{statusText}</span>
+              <h4 className="text-base font-bold text-emerald-800 tracking-tight">
+                🎉 Partner Request Approved!
+              </h4>
+              <p className="text-sm text-emerald-700/90 leading-relaxed">
+                Status: <span className="font-semibold text-emerald-800 capitalize">{statusText}</span>
                 {createdLabel ? ` • Approved on ${createdLabel}` : null}
               </p>
               {adminComment ? (
-                <div className="rounded-2xl bg-white/70 px-4 py-3 text-sm text-emerald-700">
-                  <span className="font-medium">Admin Comment:</span> {adminComment}
+                <div className="rounded-xl border border-emerald-200/40 bg-white/80 px-4 py-3 text-sm text-emerald-800 shadow-inner">
+                  <span className="font-semibold block text-xs uppercase tracking-wider text-emerald-600 mb-1">Welcome Message:</span> 
+                  {adminComment}
                 </div>
               ) : null}
-              <p>
-                Congratulations! Your IB request has been approved. You now have access to the IB dashboard where you can track your earnings, manage clients, and view your performance metrics.
+              <p className="text-sm text-slate-600 leading-relaxed pt-1">
+                Congratulations! You now have full access to your Partner dashboard where you can manage your clients, view analytics, and track your active earnings.
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             <Link
               href="/ib-dashboard"
-              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-emerald-500/30 transition hover:bg-emerald-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-600/10 transition duration-200 ease-in-out hover:bg-emerald-500 transform hover:-translate-y-0.5 active:translate-y-0"
             >
-              Go to IB Dashboard
+              Go to Partner Dashboard
               <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
             </Link>
             <Link
               href="#partner-benefits"
-              className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white px-6 py-3 text-sm font-semibold text-emerald-700 transition hover:border-emerald-400 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+              className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-5 py-3 text-sm font-semibold text-emerald-700 transition duration-200 ease-in-out hover:bg-emerald-50 hover:border-emerald-300 shadow-sm"
             >
               Review Benefits
             </Link>
@@ -244,38 +238,38 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
 
     if (isPending) {
       return (
-        <div className="space-y-3 rounded-3xl border border-amber-200 bg-amber-50/80 px-6 py-6 text-sm text-amber-700 shadow-sm">
-          <div className="flex items-start gap-3">
-            <Clock className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-500" aria-hidden="true" />
+        <div className="space-y-4 rounded-3xl border border-amber-200/60 bg-gradient-to-b from-amber-50/50 to-amber-50/20 backdrop-blur-md px-6 py-6 shadow-sm max-w-xl">
+          <div className="flex items-start gap-3.5">
+            <Clock className="mt-0.5 h-6 w-6 flex-shrink-0 text-amber-500" aria-hidden="true" />
             <div className="space-y-2">
-              <p className="text-base font-semibold text-amber-700">
-                IB Request Pending
-              </p>
-              <p>
-                Status: <span className="font-medium text-amber-800 capitalize">{statusText}</span>
+              <h4 className="text-base font-bold text-amber-800 tracking-tight">
+                Partner Application Pending
+              </h4>
+              <p className="text-sm text-amber-700/90 leading-relaxed">
+                Status: <span className="font-semibold text-amber-800 capitalize">{statusText}</span>
                 {createdLabel ? ` • Submitted on ${createdLabel}` : null}
               </p>
               {adminComment ? (
-                <div className="rounded-2xl bg-white/70 px-4 py-3 text-sm text-amber-700">
-                  <span className="font-medium">Admin Comment:</span> {adminComment}
+                <div className="rounded-xl border border-amber-200/40 bg-white/80 px-4 py-3 text-sm text-amber-800 shadow-inner">
+                  <span className="font-semibold block text-xs uppercase tracking-wider text-amber-600 mb-1">Desk Note:</span> 
+                  {adminComment}
                 </div>
               ) : null}
-              <p>
-                Your IB request is currently under review. Our partner desk will follow up via email once a decision has been made.
-                If you need to contact us, reach out to partners@crmapp.com with your details.
+              <p className="text-sm text-slate-600 leading-relaxed pt-1">
+                Our onboarding desk is carefully reviewing your credentials. We will update you via email as soon as a validation decision is ready.
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3 pt-2">
             <Link
               href="#partner-benefits"
-              className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-white px-6 py-3 text-sm font-semibold text-amber-700 transition hover:border-amber-400 hover:text-amber-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 focus-visible:ring-offset-2"
+              className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-white px-5 py-2.5 text-sm font-semibold text-amber-700 transition duration-200 ease-in-out hover:bg-amber-50 hover:border-amber-300 shadow-sm"
             >
               Review Benefits
             </Link>
             <Link
               href="/"
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition duration-200 ease-in-out hover:border-slate-300 hover:text-slate-800 shadow-sm"
             >
               Back to Dashboard
             </Link>
@@ -284,40 +278,38 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
       );
     }
 
-    // Default other status state
     return (
-      <div className="space-y-3 rounded-3xl border border-emerald-200 bg-emerald-50/80 px-6 py-6 text-sm text-emerald-700 shadow-sm">
-        <div className="flex items-start gap-3">
-          <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-emerald-500" aria-hidden="true" />
+      <div className="space-y-4 rounded-3xl border border-emerald-200/60 bg-gradient-to-b from-emerald-50/50 to-emerald-50/20 backdrop-blur-md px-6 py-6 shadow-sm max-w-xl">
+        <div className="flex items-start gap-3.5">
+          <CheckCircle2 className="mt-0.5 h-6 w-6 flex-shrink-0 text-emerald-500" aria-hidden="true" />
           <div className="space-y-2">
-            <p className="text-base font-semibold text-emerald-700">
-              IB request already submitted
-            </p>
-            <p>
-              Status: <span className="font-medium text-emerald-800 capitalize">{statusText}</span>
+            <h4 className="text-base font-bold text-emerald-800 tracking-tight">
+              Partner Request Received
+            </h4>
+            <p className="text-sm text-emerald-700/90 leading-relaxed">
+              Status: <span className="font-semibold text-emerald-800 capitalize">{statusText}</span>
               {createdLabel ? ` • Submitted on ${createdLabel}` : null}
             </p>
             {adminComment ? (
-              <div className="rounded-2xl bg-white/70 px-4 py-3 text-sm text-emerald-700">
-                <span className="font-medium">Admin Comment:</span> {adminComment}
+              <div className="rounded-xl border border-emerald-200/40 bg-white/80 px-4 py-3 text-sm text-emerald-800 shadow-inner">
+                <span className="font-semibold block text-xs uppercase tracking-wider text-emerald-600 mb-1">Feedback:</span> {adminComment}
               </div>
             ) : null}
-            <p>
-              Our partner desk will follow up via email. If you need to amend your request,
-              reach out to partners@crmapp.com with your details.
+            <p className="text-sm text-slate-600 leading-relaxed pt-1">
+              Your application details are archived with our security and support desks.
             </p>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3 pt-2">
           <Link
             href="#partner-benefits"
-            className="inline-flex items-center gap-2 rounded-full border border-emerald-300 bg-white px-6 py-3 text-sm font-semibold text-emerald-700 transition hover:border-emerald-400 hover:text-emerald-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2"
+            className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-700 transition duration-200 ease-in-out hover:bg-emerald-50 hover:border-emerald-300 shadow-sm"
           >
             Review Benefits
           </Link>
           <Link
             href="/"
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition duration-200 ease-in-out hover:border-slate-300 hover:text-slate-800 shadow-sm"
           >
             Back to Dashboard
           </Link>
@@ -327,24 +319,24 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
   };
 
   return (
-    <div className={cn("space-y-4", className)}>
+    <div id="partner-cta-container" className={cn("space-y-5 max-w-xl", className)}>
       {hasSubmitted && submittedDetails ? (
         getStatusDisplay()
       ) : (
         <>
-          <div className="space-y-2">
+          <div className="space-y-2.5">
             <label
-              htmlFor="ib-notes"
-              className="text-sm font-medium text-slate-700"
+              htmlFor="partner-notes"
+              className="text-sm font-semibold text-slate-700 flex items-center gap-1.5"
             >
               Optional notes for our partner desk
             </label>
             <textarea
-              id="ib-notes"
+              id="partner-notes"
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
-              placeholder="Share any additional information that will help us prepare your onboarding."
-              className="min-h-24 w-full resize-y rounded-2xl border border-indigo-100 bg-white/90 px-4 py-3 text-sm text-slate-700 shadow-sm transition focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              placeholder="Share details about your network, business framework, or client handling patterns to help accelerate onboarding."
+              className="min-h-28 w-full resize-y rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-md px-4 py-3.5 text-sm text-slate-800 placeholder-slate-400 shadow-inner transition duration-200 ease-in-out focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-100"
             />
           </div>
           <div className="flex flex-wrap items-center gap-3">
@@ -352,12 +344,12 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
               type="button"
               onClick={handleSubmit}
               disabled={isSubmitting}
-              className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:bg-indigo-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-80"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/10 transition duration-200 ease-in-out hover:bg-primary/90 transform hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70"
             >
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  Sending...
+                  Sending Application...
                 </>
               ) : (
                 <>
@@ -368,18 +360,20 @@ export function BecomePartnerCta({ className }: BecomePartnerCtaProps) {
             </button>
             <Link
               href="#partner-benefits"
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:border-indigo-200 hover:text-indigo-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2"
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition duration-200 ease-in-out hover:border-slate-300 hover:text-slate-800 shadow-sm"
             >
               Explore Benefits
             </Link>
           </div>
-          <p className="text-xs text-slate-500">
-            Submitting sends an Introducing Broker request to our compliance team.
-            We typically respond within one business day.
-          </p>
+          <div className="flex items-start gap-2 rounded-2xl bg-slate-50 border border-slate-100/80 p-3.5">
+            <ShieldCheck className="h-4 w-4 text-slate-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
+            <p className="text-xs text-slate-500 leading-normal">
+              Submitting registers an active Introducing Partner registration query with our compliance desk. 
+              Our service criteria standards evaluate profiles within one standard business day.
+            </p>
+          </div>
         </>
       )}
     </div>
   );
 }
-

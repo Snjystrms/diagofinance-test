@@ -88,7 +88,7 @@ export function ProtectedRoute({
             className="mx-auto"
           />
           <p className="mt-4 text-sm font-semibold tracking-[0.01em] text-foreground">Redirecting</p>
-          <p className="mt-1.5 text-sm leading-6 text-foreground/78">Taking you to the right dashboard.</p>
+          <p className="mt-1.5 text-sm leading-6 text-foreground/78">Taking you to the Vinnexia dashboard.</p>
         </div>
       </div>
     );

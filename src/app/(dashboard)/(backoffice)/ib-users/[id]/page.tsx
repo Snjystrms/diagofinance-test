@@ -456,7 +456,7 @@ function WalletTab({
                 <TableBody>
                   {transactions.map((tx, index) => (
                     <TableRow key={tx.id}>
-                      <TableCell className="capitalize">{(currentPage - 1) * 20 + index + 1}</TableCell>
+                      <TableCell className="capitalize">{(currentPage - 1) * 10 + index + 1}</TableCell>
                       <TableCell className="capitalize">{tx.type}</TableCell>
                       <TableCell className="font-medium tabular-nums">
                         {formatCurrency(tx.net_amount ?? tx.amount)}
@@ -1311,7 +1311,7 @@ export default function IbUserDetailPage() {
         case "wallet": {
           if (walletLoaded) return;
           setWalletLoading(true);
-          const res = await adminIbUsersApi.wallet(userId, token, walletPage, 20);
+          const res = await adminIbUsersApi.wallet(userId, token, walletPage, 10);
           setWalletData(res.data ?? null);
           setWalletLoaded(true);
           break;
