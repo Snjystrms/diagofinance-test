@@ -140,7 +140,7 @@ All forms use Zod schemas for validation:
 - **Forgot Password**: Email
 - **Reset Password**: Token, new password, confirm password
 
-## API Integration 
+## API Integration ##
 
 The application expects the backend to return responses in this format:
 
