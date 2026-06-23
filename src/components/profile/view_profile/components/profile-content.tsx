@@ -934,17 +934,11 @@ export default function ProfileContent() {
           setProfileData(normalizedProfile);
           setIs2FAEnabled(Boolean(normalizedProfile.user?.google_2FA_status));
           
-          // Initialize document type based on existing data
+          // Initialize document type - default to aadhaar_card since all docs are stored in passport_id_number
           if (normalizedProfile.personal_information?.passport_id_number) {
-            setSelectedDocumentType("passport");
-          } else if (normalizedProfile.personal_information?.tax_number) {
-            // Check if it looks like a specific document type
-            const taxValue = normalizedProfile.personal_information.tax_number;
-            if (taxValue === "aadhaar_card" || taxValue === "driving_licence" || taxValue === "pan_card" || taxValue === "voter_id") {
-              setSelectedDocumentType(taxValue);
-            } else {
-              setSelectedDocumentType("aadhaar_card"); // Default
-            }
+            // Since we can't determine the actual document type from the data,
+            // default to aadhaar_card (user can change it in the UI if needed)
+            setSelectedDocumentType("aadhaar_card");
           }
           
           // Initialize DOB date state
@@ -1808,13 +1802,8 @@ export default function ProfileContent() {
                         value={selectedDocumentType}
                         onValueChange={(value) => {
                           setSelectedDocumentType(value);
-                          // Clear both document fields
+                          // Clear the passport_id_number field when changing document type
                           handlePersonalInfoChange("passport_id_number", null);
-                          handlePersonalInfoChange("tax_number", null);
-                          // Set the tax_number to the document type identifier (except for passport)
-                          if (value !== "passport") {
-                            handlePersonalInfoChange("tax_number", value);
-                          }
                         }}
                       >
                         <SelectTrigger
@@ -1843,22 +1832,13 @@ export default function ProfileContent() {
                         </Label>
                         <Input
                           id="document_number"
-                          value={
-                            selectedDocumentType === "passport"
-                              ? (profileData.personal_information.passport_id_number || "")
-                              : (profileData.personal_information.tax_number && profileData.personal_information.tax_number !== selectedDocumentType 
-                                  ? profileData.personal_information.tax_number 
-                                  : "")
-                          }
+                          value={profileData.personal_information.passport_id_number || ""}
                           onChange={(e) => {
                             const value = sanitizeIdentifierInput(e.target.value, 24) || null;
-                            if (selectedDocumentType === "passport") {
-                              handlePersonalInfoChange("passport_id_number", value);
-                            } else {
-                              handlePersonalInfoChange("tax_number", value || selectedDocumentType);
-                            }
+                            // Store all document types in passport_id_number field
+                            handlePersonalInfoChange("passport_id_number", value);
                           }}
-                          className={getFieldError("passport_id_number") || getFieldError("tax_number") ? "w-full border-destructive" : "w-full"}
+                          className={getFieldError("passport_id_number") ? "w-full border-destructive" : "w-full"}
                           placeholder={`Enter ${
                             selectedDocumentType === "aadhaar_card" ? "Aadhaar card" :
                             selectedDocumentType === "driving_licence" ? "driving licence" :
@@ -1867,9 +1847,9 @@ export default function ProfileContent() {
                             "voter ID"
                           } number`}
                         />
-                        {(getFieldError("passport_id_number") || getFieldError("tax_number")) ? (
-                          <p className="text-sm text-destructive">{getFieldError("passport_id_number") || getFieldError("tax_number")}</p>
-                        ) : null}
+                        {getFieldError("passport_id_number") && (
+                          <p className="text-sm text-destructive">{getFieldError("passport_id_number")}</p>
+                        )}
                       </div>
                     )}
                     <div className="space-y-2">
