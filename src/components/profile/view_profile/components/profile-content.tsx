@@ -326,7 +326,7 @@ export default function ProfileContent() {
       requireText("pin_code", personal_information.pin_code, "PIN code");
       requireText("nationality", personal_information.nationality, "Nationality");
       requireText("employment_status", personal_information.employment_status, "Employment status");
-      requireText("tax_number", personal_information.tax_number, "Tax number");
+      // requireText("tax_number", personal_information.tax_number, "Tax number");
       requireText("client_type", personal_information.client_type, "Client type");
       requireText("country", personal_information.country, "Country");
       requireText("state", personal_information.state, "State");

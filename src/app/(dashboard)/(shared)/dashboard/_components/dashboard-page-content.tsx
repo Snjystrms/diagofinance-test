@@ -1814,8 +1814,8 @@ const walletCardRef = useCallback((node: HTMLDivElement | null) => {
                       </svg>
                     }
                     stats={depositsStatistics}
-                    lineColor="#22c55e"
-                    primaryColor="#22c55e"
+                    lineColor="hsl(var(--primary))"
+                    primaryColor="hsl(var(--primary))"
                     emptyStateLabel="No deposit data available"
                     formatValue={(value) => formatCurrency(value, depositsCurrency)}
                     selectedPeriod={depositStatisticsPeriod === 7 ? "7d" : "1m"}
@@ -1868,8 +1868,8 @@ const walletCardRef = useCallback((node: HTMLDivElement | null) => {
                       </svg>
                     }
                     stats={withdrawalsStatistics}
-                    lineColor="#ef4444"
-                    primaryColor="#ef4444"
+                    lineColor="hsl(var(--accent))"
+                    primaryColor="hsl(var(--accent))"
                     emptyStateLabel="No withdrawal data available"
                     formatValue={(value) => formatCurrency(value, withdrawalsCurrency)}
                     selectedPeriod={withdrawalStatisticsPeriod === 7 ? "7d" : "1m"}

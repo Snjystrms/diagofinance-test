@@ -75,6 +75,30 @@ export function DashboardTrendChart({
   // Use controlled period if provided, otherwise use internal state
   const selectedPeriod = controlledPeriod ?? internalPeriod
   
+  // Resolve CSS variables to actual color values
+  const resolvedPrimaryColor = React.useMemo(() => {
+    if (typeof window === "undefined") return primaryColor
+    
+    // If it's already a hex/rgb color, return as-is
+    if (primaryColor.startsWith("#") || primaryColor.startsWith("rgb")) {
+      return primaryColor
+    }
+    
+    // If it's a CSS variable like "hsl(var(--primary))", resolve it
+    if (primaryColor.includes("var(--")) {
+      const testEl = document.createElement("div")
+      testEl.style.color = primaryColor
+      testEl.style.visibility = "hidden"
+      testEl.style.position = "absolute"
+      document.body.appendChild(testEl)
+      const computedColor = getComputedStyle(testEl).color
+      document.body.removeChild(testEl)
+      return computedColor || primaryColor
+    }
+    
+    return primaryColor
+  }, [primaryColor])
+  
   const handlePeriodChange = (period: PeriodOption["value"]) => {
     if (onPeriodChange) {
       onPeriodChange(period)
@@ -91,10 +115,10 @@ export function DashboardTrendChart({
     () => ({
       amount: {
         label: title,
-        color: lineColor,
+        color: resolvedPrimaryColor,
       },
     }),
-    [lineColor, title],
+    [resolvedPrimaryColor, title],
   )
 
   const displayedStats = React.useMemo(() => {
@@ -312,17 +336,17 @@ export function DashboardTrendChart({
                   <YAxis hide domain={["dataMin - 2", "dataMax + 2"]} />
                   <ChartTooltip
                     content={<ChartTooltipContent hideIndicator hideLabel />}
-                    cursor={{ stroke: primaryColor, strokeWidth: 1, strokeDasharray: "5 5" }}
+                    cursor={{ stroke: resolvedPrimaryColor, strokeWidth: 1, strokeDasharray: "5 5" }}
                   />
                   <Line
                     type="monotone"
                     dataKey="amount"
-                    stroke={primaryColor}
+                    stroke={resolvedPrimaryColor}
                     strokeWidth={2.5}
                     dot={false}
                     activeDot={{
                       r: 5,
-                      fill: primaryColor,
+                      fill: resolvedPrimaryColor,
                       stroke: "#ffffff",
                       strokeWidth: 2,
                       className: "drop-shadow-lg",
