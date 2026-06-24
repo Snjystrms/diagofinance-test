@@ -90,7 +90,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           <div className="mt-10 flex items-center gap-8">
             {[
               { value: '150+', label: 'Markets' },
-              // { value: '50K+', label: 'Traders' },
+              { value: '100%', label: 'Trust' },
               { value: '24/7', label: 'Support' },
             ].map((stat, i) => (
               <div key={i} className="flex flex-col items-center gap-1">

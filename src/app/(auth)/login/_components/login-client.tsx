@@ -312,9 +312,9 @@ export function LoginClient() {
             {/* ── 2FA ── */}
             {show2FA ? (
               <div key="2fa-form" className="space-y-5">
-                <p className="text-sm text-muted-foreground text-center">
+                {/* <p className="text-sm text-muted-foreground text-center">
                   Enter the 6-digit code from your authenticator app
-                </p>
+                </p> */}
                 <div className="flex justify-center">
                   <input
                     type="text"
@@ -323,6 +323,11 @@ export function LoginClient() {
                     maxLength={6}
                     value={twoFACode}
                     onChange={(e) => setTwoFACode(e.target.value.replace(/\D/g, ''))}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !isVerifying2FA && twoFACode.length === 6) {
+                        handle2FAVerification();
+                      }
+                    }}
                     placeholder="123456"
                     autoFocus
                     className="
@@ -335,7 +340,7 @@ export function LoginClient() {
                     "
                   />
                 </div>
-                <div className="flex justify-end gap-3 pt-1">
+                <div className="flex justify-center gap-3 pt-1">
                   <button
                     type="button"
                     onClick={() => {
@@ -435,7 +440,7 @@ export function LoginClient() {
                         <button
                           type="button"
                           onClick={() => setShowForgotPassword(false)}
-                          className="text-sm text-primary/70 hover:text-primary transition-colors"
+                          className="text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary px-2 py-1 rounded"
                         >
                           ← Back to Login
                         </button>

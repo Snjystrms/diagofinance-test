@@ -1428,19 +1428,19 @@ export default function ProfileContent() {
   return (
     <div className="space-y-6">
       {/* Profile Status Section */}
-      <div className="ib-portal-hero relative overflow-hidden rounded-[28px] border px-6 py-6 sm:px-8 sm:py-7">
+      <div className="ib-portal-hero relative overflow-hidden rounded-[28px] border px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
         <div className="pointer-events-none absolute -right-12 -top-14 h-52 w-52 rounded-full bg-primary/10 blur-3xl" />
         <div className="pointer-events-none absolute left-1/3 -bottom-10 h-40 w-40 rounded-full bg-primary/6 blur-2xl" />
-        <div className="relative flex items-center justify-between border-b border-border/50 pb-5">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-lg tracking-tight">
-              Your Profile Status:
+        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/50 pb-4 sm:pb-5">
+          <div className="min-w-0 flex-1">
+            <CardTitle className="flex flex-wrap items-center gap-2 text-base sm:text-lg tracking-tight">
+              <span className="whitespace-nowrap">Your Profile Status:</span>
               {getVerificationBadge()}
             </CardTitle>
           </div>
         </div>
-        <div className="relative pt-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="relative pt-5 sm:pt-6">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {/* Personal Information Status */}
             <Card className={`relative overflow-hidden rounded-2xl border shadow-sm ${
               verificationStatus.personal_information.status === "completed"
@@ -1448,22 +1448,22 @@ export default function ProfileContent() {
                 : "border-amber-500/40 bg-card/80 shadow-amber-950/5 dark:border-amber-500/35 dark:bg-black/20"
             }`}>
               <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-foreground/5 blur-2xl" />
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className={`rounded-xl border p-2.5 shadow-sm ${
+              <CardContent className="p-3.5 sm:p-4">
+                <div className="flex items-start gap-2.5 sm:gap-3">
+                  <div className={`shrink-0 rounded-xl border p-2 sm:p-2.5 shadow-sm ${
                     verificationStatus.personal_information.status === "completed"
                       ? "border-emerald-500/30 bg-emerald-500/10"
                       : "border-amber-500/35 bg-amber-500/10"
                   }`}>
-                    <Scale className={`h-5 w-5 ${
+                    <Scale className={`h-4 w-4 sm:h-5 sm:w-5 ${
                       verificationStatus.personal_information.status === "completed"
                         ? "text-emerald-600 dark:text-emerald-300"
                         : "text-amber-600 dark:text-amber-300"
                     }`} />
                   </div>
-                  <div className="flex-1">
-                    <h4 className="mb-1 text-sm font-semibold">Personal Information</h4>
-                    <p className="text-xs text-muted-foreground">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="mb-1 text-xs sm:text-sm font-semibold break-words">Personal Information</h4>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground break-words line-clamp-2">
                       {verificationStatus.personal_information.message}
                     </p>
                     <div className="mt-2">
@@ -1481,22 +1481,22 @@ export default function ProfileContent() {
                 : "border-amber-500/40 bg-card/80 shadow-amber-950/5 dark:border-amber-500/35 dark:bg-black/20"
             }`}>
               <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-foreground/5 blur-2xl" />
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className={`rounded-xl border p-2.5 shadow-sm ${
+              <CardContent className="p-3.5 sm:p-4">
+                <div className="flex items-start gap-2.5 sm:gap-3">
+                  <div className={`shrink-0 rounded-xl border p-2 sm:p-2.5 shadow-sm ${
                     verificationStatus.legal_information.status === "completed"
                       ? "border-emerald-500/30 bg-emerald-500/10"
                       : "border-amber-500/35 bg-amber-500/10"
                   }`}>
-                    <Settings className={`h-5 w-5 ${
+                    <Settings className={`h-4 w-4 sm:h-5 sm:w-5 ${
                       verificationStatus.legal_information.status === "completed"
                         ? "text-emerald-600 dark:text-emerald-300"
                         : "text-amber-600 dark:text-amber-300"
                     }`} />
                   </div>
-                  <div className="flex-1">
-                    <h4 className="mb-1 text-sm font-semibold">Legal Information</h4>
-                    <p className="text-xs text-muted-foreground">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="mb-1 text-xs sm:text-sm font-semibold break-words">Legal Information</h4>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground break-words line-clamp-2">
                       {verificationStatus.legal_information.message}
                     </p>
                     <div className="mt-2">
@@ -1514,22 +1514,22 @@ export default function ProfileContent() {
                 : "border-amber-500/40 bg-card/80 shadow-amber-950/5 dark:border-amber-500/35 dark:bg-black/20"
             }`}>
               <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-foreground/5 blur-2xl" />
-              <CardContent className="p-4">
-                <div className="flex items-start gap-3">
-                  <div className={`rounded-xl border p-2.5 shadow-sm ${
+              <CardContent className="p-3.5 sm:p-4">
+                <div className="flex items-start gap-2.5 sm:gap-3">
+                  <div className={`shrink-0 rounded-xl border p-2 sm:p-2.5 shadow-sm ${
                     verificationStatus.documents_verification.status === "completed"
                       ? "border-emerald-500/30 bg-emerald-500/10"
                       : "border-amber-500/35 bg-amber-500/10"
                   }`}>
-                    <FileText className={`h-5 w-5 ${
+                    <FileText className={`h-4 w-4 sm:h-5 sm:w-5 ${
                       verificationStatus.documents_verification.status === "completed"
                         ? "text-emerald-600 dark:text-emerald-300"
                         : "text-amber-600 dark:text-amber-300"
                     }`} />
                   </div>
-                  <div className="flex-1">
-                    <h4 className="mb-1 text-sm font-semibold">Documents Verification</h4>
-                    <p className="text-xs text-muted-foreground">
+                  <div className="flex-1 min-w-0">
+                    <h4 className="mb-1 text-xs sm:text-sm font-semibold break-words">Documents Verification</h4>
+                    <p className="text-[11px] sm:text-xs text-muted-foreground break-words line-clamp-2">
                       {verificationStatus.documents_verification.message}
                     </p>
                     <div className="mt-2">
