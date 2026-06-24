@@ -174,7 +174,7 @@ interface LoginResponse {
 
 ## Development
 
-### Available Scripts ###
+### Available Scripts
 
 - `npm run dev` - Start development server
 - `npm run build` - Build for production
