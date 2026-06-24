@@ -43,7 +43,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ApiErrorState } from "@/components/errors/api-error-state";
-import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
+import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import {
@@ -345,10 +345,6 @@ export function AdminTransactionContent() {
     );
   }
 
-  if (loading && rows.length === 0 && !loadError) {
-    return <ListPageSkeleton statsCount={4} columnCount={8} rowCount={10} />;
-  }
-
   if (loadError && rows.length === 0) {
     return (
       <div className="px-4 py-10 md:px-6 lg:px-8">
@@ -533,11 +529,15 @@ export function AdminTransactionContent() {
       {/* Table */}
       <div className="rounded-lg border bg-card">
         <div className="p-5">
-          <AppDataTable<AdminTransactionItem>
-            data={rows}
-            columns={columns}
-            pageCount={totalPages}
-          />
+          {loading && rows.length === 0 ? (
+            <TableSectionSkeleton columnCount={12} rowCount={10} />
+          ) : (
+            <AppDataTable<AdminTransactionItem>
+              data={rows}
+              columns={columns}
+              pageCount={totalPages}
+            />
+          )}
         </div>
       </div>
 

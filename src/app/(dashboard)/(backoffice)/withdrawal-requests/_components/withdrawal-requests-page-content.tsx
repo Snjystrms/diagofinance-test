@@ -295,6 +295,33 @@ export function WithdrawalRequestsPageContent() {
     }
   };
 
+  // Format datetime to "Jun 24, 2026, 02:34 PM IST"
+  const formatDateTime = (dateString: string | null | undefined): string => {
+    if (!dateString) return "-";
+    
+    try {
+      const date = new Date(dateString);
+      
+      // Format date part: "Jun 24, 2026"
+      const datePart = date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+      
+      // Format time part: "02:34 PM"
+      const timePart = date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+      
+      return `${datePart}, ${timePart} IST`;
+    } catch {
+      return dateString;
+    }
+  };
+
   const withdrawalColumns: ColumnDef<AdminWithdrawalRequest>[] = useMemo(
     () => [
       {
@@ -347,6 +374,17 @@ export function WithdrawalRequestsPageContent() {
         accessorKey: "status",
         cell: ({ row }) => statusBadge(row.original.status),
       },
+       {
+      id: "processed_by",
+      accessorKey: "processed_by",
+      header: "Processed By",
+      cell: ({ row }) => (
+         <div className="space-y-0.5">
+        <div className="font-normal">{row.original.approved_by || "-"} </div>
+         <div className="font-normal">{formatDateTime(row.original.approved_at)} </div>
+        </div>
+      ),
+    },
       {
         id: "created_at",
         header: "Created",

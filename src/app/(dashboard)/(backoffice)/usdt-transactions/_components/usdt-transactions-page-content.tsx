@@ -8,7 +8,7 @@ import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
-import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
+import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -348,6 +348,33 @@ export function USDTTransactionsPageContent() {
     }
   };
 
+  // Format datetime to "Jun 24, 2026, 02:34 PM IST"
+  const formatDateTime = (dateString: string | null | undefined): string => {
+    if (!dateString) return "-";
+    
+    try {
+      const date = new Date(dateString);
+      
+      // Format date part: "Jun 24, 2026"
+      const datePart = date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+      
+      // Format time part: "02:34 PM"
+      const timePart = date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+      
+      return `${datePart}, ${timePart} IST`;
+    } catch {
+      return dateString;
+    }
+  };
+
   const depositColumns: ColumnDef<AdminUSDTDepositRequest>[] = useMemo(
     () => [
    {
@@ -422,6 +449,17 @@ export function USDTTransactionsPageContent() {
         cell: ({ row }) => statusBadge(row.original.status),
       },
       {
+      id: "processed_by",
+      accessorKey: "processed_by",
+      header: "Processed By",
+      cell: ({ row }) => (
+         <div className="space-y-0.5">
+        <div className="font-normal">{row.original.approved_by || "-"} </div>
+         <div className="font-normal">{formatDateTime(row.original.approved_at)} </div>
+        </div>
+      ),
+    },
+      {
         id: "created_at",
         header: "Created",
         accessorKey: "created_at",
@@ -463,19 +501,6 @@ export function USDTTransactionsPageContent() {
             You do not have permission to view USDT deposit transactions.
           </p>
         </div>
-
-    );
-  }
-
-  if (loading && depositRows.length === 0) {
-    return (
-
-        <ListPageSkeleton
-          actionCount={1}
-          columnCount={6}
-          rowCount={10}
-          filterPillCount={4}
-        />
 
     );
   }
@@ -578,12 +603,16 @@ export function USDTTransactionsPageContent() {
             </div>
           </div>
 
-          <AppDataTable<AdminUSDTDepositRequest>
-            data={depositRows}
-            columns={depositColumns}
-            pageCount={totalPages}
-            getRowId={(row) => String(row.id)}
-          />
+          {loading && depositRows.length === 0 ? (
+            <TableSectionSkeleton columnCount={9} rowCount={10} />
+          ) : (
+            <AppDataTable<AdminUSDTDepositRequest>
+              data={depositRows}
+              columns={depositColumns}
+              pageCount={totalPages}
+              getRowId={(row) => String(row.id)}
+            />
+          )}
         </div>
 
         {/* View Details Dialog */}

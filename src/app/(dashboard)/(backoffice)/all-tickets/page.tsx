@@ -628,10 +628,18 @@ export default function AdminTicketsPage() {
         accessorFn: (row) => row.reply_note,
         cell: ({ row }) => {
           const ticket = row.original;
+          const truncateText = (text: string | null | undefined, maxWords: number = 10): string => {
+            if (!text) return "-";
+            const words = text.trim().split(/\s+/);
+            if (words.length <= maxWords) return text;
+            return words.slice(0, maxWords).join(" ") + "...";
+          };
+          
           return (
             <div className="space-y-1 text-sm">
-              <div className="font-normal">{ticket.reply_note}</div>
-              {/* <div className="text-xs text-muted-foreground line-clamp-2">{ticket.reply_note}</div> */}
+              <div className="font-normal" title={ticket.reply_note || ""}>
+                {truncateText(ticket.reply_note)}
+              </div>
             </div>
           );
         },

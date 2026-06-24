@@ -55,7 +55,6 @@ type ProfileFormField =
   | "country_code"
   | "dob"
   | "address"
-  | "passport_id_number"
   | "pin_code"
   | "nationality"
   | "employment_status"
@@ -166,7 +165,6 @@ export default function ProfileContent() {
   const [bankDetailsSaving, setBankDetailsSaving] = useState(false);
   const [bankValidationErrors, setBankValidationErrors] = useState<Partial<Record<BankDetailsField, string>>>({});
   const [locationHydrated, setLocationHydrated] = useState(false);
-  const [selectedDocumentType, setSelectedDocumentType] = useState<string>("");
   const [bankDetails, setBankDetails] = useState<BankDetailsFormState>({
     client: "primary-client",
     accountName: "",
@@ -324,7 +322,7 @@ export default function ProfileContent() {
       requireText("country_code", String(profileUser.country_code ?? ""), "Country code");
       requireText("dob", formatDateForInput(personal_information.dob), "Date of birth");
       requireText("address", personal_information.address, "Address");
-      requireText("passport_id_number", personal_information.passport_id_number, "Passport ID number");
+      // Document number validation removed - allow users to enter any format
       requireText("pin_code", personal_information.pin_code, "PIN code");
       requireText("nationality", personal_information.nationality, "Nationality");
       requireText("employment_status", personal_information.employment_status, "Employment status");
@@ -343,7 +341,7 @@ export default function ProfileContent() {
       }
 
       if (profileUser.mobile?.trim() && !/^\d{8,15}$/.test(profileUser.mobile.trim())) {
-        errors.mobile = "Mobile number must contain 8 to 15 digits.";
+        errors.mobile = "Mobile number must contain 10 digits.";
       }
 
       if (String(profileUser.country_code ?? "").trim() && !/^\+\d{1,4}$/.test(String(profileUser.country_code).trim())) {
@@ -934,13 +932,6 @@ export default function ProfileContent() {
           setProfileData(normalizedProfile);
           setIs2FAEnabled(Boolean(normalizedProfile.user?.google_2FA_status));
           
-          // Initialize document type - default to aadhaar_card since all docs are stored in passport_id_number
-          if (normalizedProfile.personal_information?.passport_id_number) {
-            // Since we can't determine the actual document type from the data,
-            // default to aadhaar_card (user can change it in the UI if needed)
-            setSelectedDocumentType("aadhaar_card");
-          }
-          
           // Initialize DOB date state
           if (normalizedProfile.personal_information?.dob) {
             try {
@@ -1086,7 +1077,6 @@ export default function ProfileContent() {
     const personalInformationPayload: UserProfileUpdatePayload = {
       dob: formatDateForInput(personal_information.dob),
       address: personal_information.address || "",
-      passport_id_number: personal_information.passport_id_number || "",
       pin_code: personal_information.pin_code || "",
       nationality: personal_information.nationality || "",
       employment_status: personal_information.employment_status || "",
@@ -1138,7 +1128,17 @@ export default function ProfileContent() {
       const errors = validateProfileSection(section);
       if (Object.keys(errors).length > 0) {
         setValidationErrors(errors);
-        toast.error("Please fix the highlighted fields before saving.");
+        
+        // Log errors for debugging
+        console.log("Validation errors:", errors);
+        
+        // Create a detailed error message with the first few errors
+        const errorFields = Object.entries(errors).slice(0, 3);
+        const errorMessage = errorFields.length === 1 
+          ? errorFields[0][1]
+          : `Please fix these fields: ${errorFields.map(([_, msg]) => msg).join(", ")}`;
+        
+        toast.error(errorMessage);
         return;
       }
 
@@ -1645,11 +1645,11 @@ export default function ProfileContent() {
                         <Input
                           id="mobile"
                           value={profileData.user.mobile || ""}
-                          onChange={(e) => handleUserInfoChange("mobile", sanitizeDigits(e.target.value, 15))}
+                          onChange={(e) => handleUserInfoChange("mobile", sanitizeDigits(e.target.value, 10))}
                           className={getFieldError("mobile") ? "w-full border-destructive" : "w-full"}
                           placeholder="Enter mobile number"
                           inputMode="numeric"
-                          maxLength={15}
+                          maxLength={10}
                         />
                         {getFieldError("mobile") ? (
                           <p className="text-sm text-destructive">{getFieldError("mobile")}</p>
@@ -1796,62 +1796,6 @@ export default function ProfileContent() {
                         <p className="text-sm text-destructive">{getFieldError("nationality")}</p>
                       ) : null}
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="document_type">Document Type</Label>
-                      <Select
-                        value={selectedDocumentType}
-                        onValueChange={(value) => {
-                          setSelectedDocumentType(value);
-                          // Clear the passport_id_number field when changing document type
-                          handlePersonalInfoChange("passport_id_number", null);
-                        }}
-                      >
-                        <SelectTrigger
-                          id="document_type"
-                          className="w-full"
-                        >
-                          <SelectValue placeholder="Select document type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="aadhaar_card">Aadhaar Card</SelectItem>
-                          <SelectItem value="driving_licence">Driving Licence</SelectItem>
-                          <SelectItem value="passport">Passport</SelectItem>
-                          <SelectItem value="pan_card">PAN Card</SelectItem>
-                          <SelectItem value="voter_id">Voter ID</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    {selectedDocumentType && (
-                      <div className="space-y-2">
-                        <Label htmlFor="document_number">
-                          {selectedDocumentType === "aadhaar_card" && "Aadhaar Card Number"}
-                          {selectedDocumentType === "driving_licence" && "Driving Licence Number"}
-                          {selectedDocumentType === "passport" && "Passport Number"}
-                          {selectedDocumentType === "pan_card" && "PAN Card Number"}
-                          {selectedDocumentType === "voter_id" && "Voter ID Number"}
-                        </Label>
-                        <Input
-                          id="document_number"
-                          value={profileData.personal_information.passport_id_number || ""}
-                          onChange={(e) => {
-                            const value = sanitizeIdentifierInput(e.target.value, 24) || null;
-                            // Store all document types in passport_id_number field
-                            handlePersonalInfoChange("passport_id_number", value);
-                          }}
-                          className={getFieldError("passport_id_number") ? "w-full border-destructive" : "w-full"}
-                          placeholder={`Enter ${
-                            selectedDocumentType === "aadhaar_card" ? "Aadhaar card" :
-                            selectedDocumentType === "driving_licence" ? "driving licence" :
-                            selectedDocumentType === "passport" ? "passport" :
-                            selectedDocumentType === "pan_card" ? "PAN card" :
-                            "voter ID"
-                          } number`}
-                        />
-                        {getFieldError("passport_id_number") && (
-                          <p className="text-sm text-destructive">{getFieldError("passport_id_number")}</p>
-                        )}
-                      </div>
-                    )}
                     <div className="space-y-2">
                       <Label htmlFor="pin_code">PIN Code</Label>
                       <Input
