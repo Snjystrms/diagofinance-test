@@ -17,6 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { type IbWalletData, ibRequestsApi, type IbInternalTransferWalletTransaction } from "@/lib/api";
+import { type IbInternalTransferWalletTransactionsResponse } from "@/lib/api-trading-ib";
 import { formatCurrency } from "@/lib/format";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { getIbWalletSnapshot, normalizeIbWalletData } from "@/lib/ib";
@@ -45,7 +46,7 @@ function WalletLoadingState() {
       <div className="rounded-[28px] border border-border/60 bg-card p-6 shadow-sm">
         <div className="space-y-3">
           {Array.from({ length: 6 }).map((_, index) => (
-            <Skeleton key={index} className="h-20 w-full rounded-2xl" />
+            <Skeleton key={index} className="h-14 w-full rounded-2xl" />
           ))}
         </div>
       </div>
@@ -61,34 +62,33 @@ function getStatusBadge(status?: string) {
   const normalized = status.toLowerCase();
 
   if (["completed", "success", "approved"].includes(normalized)) {
-    return <Badge className="border-0 bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">{status}</Badge>;
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">{status}</span>
+      </span>
+    );
   }
 
   if (["pending", "processing"].includes(normalized)) {
-    return <Badge className="border-0 bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300">{status}</Badge>;
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+        <span className="text-xs font-medium text-amber-600 dark:text-amber-400">{status}</span>
+      </span>
+    );
   }
 
   if (["failed", "rejected", "cancelled"].includes(normalized)) {
-    return <Badge className="border-0 bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">{status}</Badge>;
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+        <span className="text-xs font-medium text-rose-600 dark:text-rose-400">{status}</span>
+      </span>
+    );
   }
 
   return <Badge variant="outline">{status}</Badge>;
-}
-
-function getDirection(type?: string) {
-  const normalized = type?.toLowerCase() ?? "";
-  const isOutflow =
-    normalized.includes("withdrawal") ||
-    normalized.includes("debit") ||
-    normalized.includes("transfer");
-
-  return {
-    isOutflow,
-    icon: isOutflow ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />,
-    tone: isOutflow
-      ? "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"
-      : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300",
-  };
 }
 
 function PaginationControls({
@@ -107,10 +107,10 @@ function PaginationControls({
 }) {
   if (pagination.total_pages <= 1) return null;
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-4">
-      <div className="text-sm text-muted-foreground">
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-4 px-1">
+      <div className="text-xs text-muted-foreground tabular-nums">
         Showing {(pagination.current_page - 1) * pagination.per_page + 1}–
-        {Math.min(pagination.current_page * pagination.per_page, pagination.total)} of {pagination.total} results
+        {Math.min(pagination.current_page * pagination.per_page, pagination.total)} of {pagination.total}
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button
@@ -125,7 +125,9 @@ function PaginationControls({
           .filter((p) => p === 1 || p === pagination.total_pages || Math.abs(p - pagination.current_page) <= 1)
           .map((p, idx, arr) => (
             <div key={p} className="flex items-center gap-2">
-              {idx > 0 && arr[idx - 1] !== p - 1 && <span className="px-1 text-muted-foreground">…</span>}
+              {idx > 0 && arr[idx - 1] !== p - 1 && (
+                <span className="px-1 text-muted-foreground">…</span>
+              )}
               <Button
                 variant={p === pagination.current_page ? "default" : "outline"}
                 size="sm"
@@ -146,6 +148,133 @@ function PaginationControls({
           Next
         </Button>
       </div>
+    </div>
+  );
+}
+
+function TransactionTable({
+  transactions,
+  currency,
+}: {
+  transactions: IbInternalTransferWalletTransaction[];
+  currency: string;
+}) {
+  return (
+    <div className="w-full overflow-x-auto rounded-2xl border border-border/50">
+      <table className="w-full min-w-[640px] text-sm">
+        <thead>
+          <tr className="border-b border-border/50 bg-muted/20">
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Type
+            </th>
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Description
+            </th>
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Status
+            </th>
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Date
+            </th>
+            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Before
+            </th>
+            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              After
+            </th>
+            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Amount
+            </th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-border/40">
+          {transactions.map((tx, index) => {
+            const isOutflow = tx.direction === "debit";
+            const amount = typeof tx.amount === "number" ? tx.amount : 0;
+
+            const displayType =
+              tx.transaction_type === "transfer_out"
+                ? "Transfer Out"
+                : tx.transaction_type === "ib_withdrawal"
+                  ? "IB Withdrawal"
+                  : tx.transaction_type === "credit"
+                    ? "Credit"
+                    : tx.transaction_type === "ib_commission"
+                      ? "Commission"
+                      : tx.transaction_type || "Transaction";
+
+            return (
+              <tr
+                key={index}
+                className="group transition-colors hover:bg-muted/20"
+              >
+                {/* Type */}
+                <td className="whitespace-nowrap px-4 py-3.5">
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-[13px] ${
+                        isOutflow
+                          ? "bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300"
+                          : "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300"
+                      }`}
+                    >
+                      {isOutflow ? (
+                        <ArrowUpRight className="h-3.5 w-3.5" />
+                      ) : (
+                        <ArrowDownRight className="h-3.5 w-3.5" />
+                      )}
+                    </span>
+                    <span className="font-medium text-foreground">{displayType}</span>
+                  </div>
+                </td>
+
+                {/* Description */}
+                <td className="max-w-[180px] truncate px-4 py-3.5 text-muted-foreground">
+                  {tx.description || <span className="text-border">—</span>}
+                </td>
+
+                {/* Status */}
+                <td className="whitespace-nowrap px-4 py-3.5">
+                  {getStatusBadge(tx.status)}
+                </td>
+
+                {/* Date */}
+                <td className="whitespace-nowrap px-4 py-3.5 tabular-nums text-xs text-muted-foreground">
+                  {tx.created_at ? formatDateTimeInIST(tx.created_at) : "—"}
+                </td>
+
+                {/* Balance Before */}
+                <td className="whitespace-nowrap px-4 py-3.5 text-right tabular-nums text-xs text-muted-foreground">
+                  {typeof tx.balance_before === "number"
+                    ? formatCurrency(tx.balance_before, "USD")
+                    : <span className="text-border">—</span>}
+                </td>
+
+                {/* Balance After */}
+                <td className="whitespace-nowrap px-4 py-3.5 text-right tabular-nums text-xs text-muted-foreground">
+                  {typeof tx.balance_after === "number"
+                    ? formatCurrency(tx.balance_after, "USD")
+                    : <span className="text-border">—</span>}
+                </td>
+
+                {/* Amount */}
+                <td className="whitespace-nowrap px-4 py-3.5 text-right">
+                  <span
+                    className={`font-semibold tabular-nums ${
+                      isOutflow
+                        ? "text-rose-600 dark:text-rose-300"
+                        : "text-emerald-600 dark:text-emerald-300"
+                    }`}
+                  >
+                    {isOutflow ? "−" : "+"}
+                    {formatCurrency(Math.abs(amount), currency)}
+                  </span>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }
@@ -174,10 +303,10 @@ export default function IbWalletPage() {
     try {
       setIsLoading(true);
       setError(null);
-      
+
       const [walletResponse, transactionsResponse] = await Promise.all([
         ibRequestsApi.getIbWallet(token),
-        ibRequestsApi.getIbWalletTransactions(token, { page, limit: 10 })
+        ibRequestsApi.getIbWalletTransactions(token, { page, limit: 10 }),
       ]);
 
       const normalized = normalizeIbWalletData(walletResponse?.data);
@@ -189,20 +318,12 @@ export default function IbWalletPage() {
         setError("Unable to load wallet data");
       }
 
-      if (transactionsResponse?.success && Array.isArray(transactionsResponse?.data?.data)) {
-        setTransactions(transactionsResponse.data.data);
-        const pag = transactionsResponse.data.pagination;
-        if (pag) {
-          setPagination({
-            current_page: pag.current_page || page,
-            per_page: pag.per_page || 10,
-            total: pag.total || 0,
-            total_pages: pag.last_page || 1,
-          });
-        }
-      } else if (transactionsResponse?.data && Array.isArray(transactionsResponse.data.data)) {
-        setTransactions(transactionsResponse.data.data);
-        const pag = transactionsResponse.data.pagination;
+      const txResponse = transactionsResponse as unknown as IbInternalTransferWalletTransactionsResponse;
+
+      if (txResponse?.success && Array.isArray(txResponse?.data)) {
+        setTransactions(txResponse.data);
+
+        const pag = txResponse.pagination;
         if (pag) {
           setPagination({
             current_page: pag.current_page || page,
@@ -256,12 +377,10 @@ export default function IbWalletPage() {
         title="Partner and main wallet ledger"
         description="Review current balances and the latest transfer activity linked to your Partner account."
         actions={
-          <>
-            <Button variant="outline" onClick={fetchWalletData}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Refresh
-            </Button>
-          </>
+          <Button variant="outline" onClick={fetchWalletData}>
+            <RefreshCw className="mr-2 h-4 w-4" />
+            Refresh
+          </Button>
         }
       />
 
@@ -295,60 +414,7 @@ export default function IbWalletPage() {
       >
         {transactions.length > 0 ? (
           <div className="space-y-4">
-            <div className="space-y-3">
-              {transactions.map((transaction, index) => {
-                const isOutflow = transaction.direction === "debit";
-                const direction = {
-                  isOutflow,
-                  icon: isOutflow ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />,
-                  tone: isOutflow
-                    ? "bg-rose-100 text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"
-                    : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300",
-                };
-                const amount = typeof transaction.amount === "number" ? transaction.amount : 0;
-                const currency = snapshot.currency;
-
-                // Map transaction_type to display name
-                const displayType =
-                  transaction.transaction_type === "transfer_out"
-                    ? "Transfer Out"
-                    : transaction.transaction_type === "credit"
-                      ? "Credit"
-                      : (transaction.transaction_type || "Transaction");
-
-                return (
-                  <div
-                    key={index}
-                    className="flex flex-col gap-4 rounded-3xl border border-border/60 bg-muted/15 p-4 sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div className="flex min-w-0 items-start gap-3">
-                      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ${direction.tone}`}>
-                        {direction.icon}
-                      </div>
-                      <div className="min-w-0 space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <p className="font-medium text-foreground">{displayType}</p>
-                          {getStatusBadge(transaction.status)}
-                        </div>
-                        {transaction.description ? (
-                          <p className="text-sm text-muted-foreground">{transaction.description}</p>
-                        ) : null}
-                        <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                          <Clock className="h-3.5 w-3.5" />
-                          <span>{transaction.created_at ? formatDateTimeInIST(transaction.created_at) : "Date unavailable"}</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="sm:text-right">
-                      <p className={`text-lg font-semibold ${direction.isOutflow ? "text-rose-600 dark:text-rose-300" : "text-emerald-600 dark:text-emerald-300"}`}>
-                        {direction.isOutflow ? "-" : "+"}
-                        {formatCurrency(Math.abs(amount), currency)}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+            <TransactionTable transactions={transactions} currency={snapshot.currency} />
             <PaginationControls
               pagination={pagination}
               isLoading={isLoading}

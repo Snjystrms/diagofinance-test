@@ -72,32 +72,67 @@ export function DashboardTrendChart({
   const [internalPeriod, setInternalPeriod] =
     React.useState<PeriodOption["value"]>("7d")
   
+  // Track theme changes by observing class changes on document element
+  const [themeVersion, setThemeVersion] = React.useState(0)
+  
+  React.useEffect(() => {
+    if (typeof window === "undefined") return
+    
+    // Force re-computation when theme changes
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === "class" || mutation.attributeName === "style") {
+          setThemeVersion((v) => v + 1)
+        }
+      })
+    })
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "style"],
+    })
+    
+    return () => observer.disconnect()
+  }, [])
+  
   // Use controlled period if provided, otherwise use internal state
   const selectedPeriod = controlledPeriod ?? internalPeriod
   
-  // Resolve CSS variables to actual color values
+  // Resolve CSS variables to actual color values that SVG can render.
+  // SVG stroke does NOT support oklch() or other modern color spaces —
+  // we must always resolve to rgb() via the DOM element trick.
   const resolvedPrimaryColor = React.useMemo(() => {
     if (typeof window === "undefined") return primaryColor
     
-    // If it's already a hex/rgb color, return as-is
-    if (primaryColor.startsWith("#") || primaryColor.startsWith("rgb")) {
+    // If it's already a hex color, return as-is (hex is safe for SVG)
+    if (primaryColor.startsWith("#")) {
       return primaryColor
     }
     
-    // If it's a CSS variable like "hsl(var(--primary))", resolve it
-    if (primaryColor.includes("var(--")) {
-      const testEl = document.createElement("div")
-      testEl.style.color = primaryColor
-      testEl.style.visibility = "hidden"
-      testEl.style.position = "absolute"
-      document.body.appendChild(testEl)
-      const computedColor = getComputedStyle(testEl).color
-      document.body.removeChild(testEl)
-      return computedColor || primaryColor
-    }
+    // For everything else (CSS variables, oklch, hsl, rgb, etc.)
+    // use the browser to compute the final rgb() value that SVG understands.
+    const testEl = document.createElement("div")
+    testEl.style.color = primaryColor
+    testEl.style.visibility = "hidden"
+    testEl.style.position = "absolute"
+    document.body.appendChild(testEl)
+    const computedColor = getComputedStyle(testEl).color
+    document.body.removeChild(testEl)
     
-    return primaryColor
-  }, [primaryColor])
+    // getComputedStyle().color always returns rgb() or rgba() — safe for SVG
+    return computedColor || primaryColor
+  }, [primaryColor, themeVersion]) // Re-compute when theme changes
+  
+  // Get contrasting stroke color for activeDot based on theme
+  const activeDotStroke = React.useMemo(() => {
+    if (typeof window === "undefined") return "#ffffff"
+    
+    const root = document.documentElement
+    const bgValue = getComputedStyle(root).getPropertyValue("--background").trim()
+    // Default to white for light themes, dark for dark themes
+    // A simple heuristic: if background is dark, use light stroke
+    return bgValue.includes("0.145") || bgValue.includes("0.205") ? "#ffffff" : "#000000"
+  }, [themeVersion]) // Re-compute when theme changes
   
   const handlePeriodChange = (period: PeriodOption["value"]) => {
     if (onPeriodChange) {
@@ -347,7 +382,7 @@ export function DashboardTrendChart({
                     activeDot={{
                       r: 5,
                       fill: resolvedPrimaryColor,
-                      stroke: "#ffffff",
+                      stroke: activeDotStroke,
                       strokeWidth: 2,
                       className: "drop-shadow-lg",
                     }}
