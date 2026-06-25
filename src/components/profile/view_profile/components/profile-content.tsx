@@ -55,6 +55,7 @@ type ProfileFormField =
   | "country_code"
   | "dob"
   | "address"
+  | "passport_id_number"
   | "pin_code"
   | "nationality"
   | "employment_status"
@@ -147,6 +148,7 @@ export default function ProfileContent() {
   const [countryOptions, setCountryOptions] = useState<LocationCountryOption[]>(() =>
     FALLBACK_COUNTRY_OPTIONS.slice().sort((left, right) => left.name.localeCompare(right.name))
   );
+  const [selectedDocumentType, setSelectedDocumentType] = useState<string>("");
   const [stateOptions, setStateOptions] = useState<LocationStateOption[]>([]);
   const [cityOptions, setCityOptions] = useState<LocationCityOption[]>([]);
   const [selectedCountryId, setSelectedCountryId] = useState<number | null>(null);
@@ -1087,8 +1089,11 @@ export default function ProfileContent() {
       city: personal_information.city || "",
     };
 
-    if (personal_information.other_id_number?.trim()) {
-      personalInformationPayload.other_id_number = personal_information.other_id_number.trim();
+    // Send the same document ID value to both passport_id_number and other_id_number
+    if (personal_information.passport_id_number?.trim()) {
+      const documentId = personal_information.passport_id_number.trim();
+      personalInformationPayload.passport_id_number = documentId;
+      personalInformationPayload.other_id_number = documentId;
     }
 
     const legalInformationPayload: UserProfileUpdatePayload = {
@@ -1796,6 +1801,57 @@ export default function ProfileContent() {
                         <p className="text-sm text-destructive">{getFieldError("nationality")}</p>
                       ) : null}
                     </div>
+                     <div className="space-y-2">
+                      <Label htmlFor="document_type">Document Type</Label>
+                      <Select
+                        value={selectedDocumentType}
+                        onValueChange={(value) => {
+                          setSelectedDocumentType(value);
+                          // Clear the passport_id_number field when changing document type
+                          handlePersonalInfoChange("passport_id_number", null);
+                        }}
+                      >
+                        <SelectTrigger
+                          id="document_type"
+                          className="w-full"
+                        >
+                          <SelectValue placeholder="Select document type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="aadhaar_card">Aadhaar Card</SelectItem>
+                          <SelectItem value="driving_licence">Driving Licence</SelectItem>
+                          <SelectItem value="passport">Passport</SelectItem>
+                          <SelectItem value="pan_card">PAN Card</SelectItem>
+                          <SelectItem value="voter_id">Voter ID</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {selectedDocumentType && (
+                      <div className="space-y-2">
+                        <Label htmlFor="document_number">Document ID</Label>
+                        <Input
+                          id="document_number"
+                          value={profileData.personal_information.passport_id_number || ""}
+                          onChange={(e) => {
+                            const value = sanitizeIdentifierInput(e.target.value, 24) || null;
+                            // Store document ID in passport_id_number field
+                            // Will be sent to both passport_id_number and other_id_number in payload
+                            handlePersonalInfoChange("passport_id_number", value);
+                          }}
+                          className={getFieldError("passport_id_number") ? "w-full border-destructive" : "w-full"}
+                          placeholder={`Enter ${
+                            selectedDocumentType === "aadhaar_card" ? "Aadhaar card" :
+                            selectedDocumentType === "driving_licence" ? "driving licence" :
+                            selectedDocumentType === "passport" ? "passport" :
+                            selectedDocumentType === "pan_card" ? "PAN card" :
+                            "voter ID"
+                          } number`}
+                        />
+                        {getFieldError("passport_id_number") && (
+                          <p className="text-sm text-destructive">{getFieldError("passport_id_number")}</p>
+                        )}
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <Label htmlFor="pin_code">PIN Code</Label>
                       <Input
