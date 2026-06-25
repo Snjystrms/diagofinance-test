@@ -133,7 +133,15 @@ const formatMt5Balance = (account: MT5Account, liveBalances: Record<string, numb
   // ONLY use API balance from liveBalances - show "-" if null
   const balanceValue = liveBalances[account.account_id];
   
+  console.log(`[formatMt5Balance] Account ${account.account_id}:`, {
+    isCent,
+    balanceValue,
+    balanceType: typeof balanceValue,
+    hasBalance: balanceValue !== null && balanceValue !== undefined,
+  });
+  
   if (balanceValue === null || balanceValue === undefined) {
+    console.log(`[formatMt5Balance] Returning "-" for ${account.account_id}`);
     return "-"; // API failed or didn't return balance
   }
   
@@ -144,7 +152,9 @@ const formatMt5Balance = (account: MT5Account, liveBalances: Record<string, numb
     maximumFractionDigits: 2,
   });
 
-  return isCent ? `¢${formatted}` : formatCurrency(amount);
+  const result = isCent ? `¢${formatted}` : formatCurrency(amount);
+  console.log(`[formatMt5Balance] Returning formatted balance for ${account.account_id}: ${result}`);
+  return result;
 };
 
 const getMt5TransferCurrency = (account?: MT5Account | null) =>
@@ -239,30 +249,44 @@ function InternalTransferContent() {
         setMt5Accounts(accounts);
         
         // Fetch live balances for all accounts - NO FALLBACK, ONLY USE API
+        console.log(`[Internal Transfer] Fetching balances for ${accounts.length} MT5 accounts`);
+        
         const balancePromises = accounts.map(async (account) => {
+          console.log(`[Internal Transfer] Fetching balance for MT5 ${account.mt5_id}, account_id: ${account.account_id}`);
           try {
             const balanceResponse = await mt5AccountsApi.getBalance(account.mt5_id, token);
-            console.log(`[MT5 Balance API] Account ${account.mt5_id}:`, balanceResponse);
+            console.log(`[Internal Transfer API] Full response for ${account.mt5_id}:`, JSON.stringify(balanceResponse, null, 2));
+            console.log(`[Internal Transfer] Response properties for ${account.account_id}:`, {
+              success: balanceResponse.success,
+              hasData: !!balanceResponse.data,
+              dataKeys: balanceResponse.data ? Object.keys(balanceResponse.data) : [],
+              balance: balanceResponse.data?.balance,
+              balanceType: typeof balanceResponse.data?.balance,
+            });
+            
             // ONLY use API balance - no fallback
             if (balanceResponse.success && balanceResponse.data?.balance !== undefined) {
-              console.log(`[MT5 Balance] Using API balance ${balanceResponse.data.balance} for ${account.account_id}`);
+              console.log(`[Internal Transfer] ✅ Using API balance ${balanceResponse.data.balance} for ${account.account_id}`);
               return { accountId: account.account_id, balance: balanceResponse.data.balance };
             }
             // If API doesn't return balance, return null to indicate failure
-            console.warn(`[MT5 Balance] API failed for ${account.account_id}, no balance available`);
+            console.warn(`[Internal Transfer] ❌ API failed for ${account.account_id}, no balance available`);
             return { accountId: account.account_id, balance: null }; // null = show "-"
           } catch (error) {
-            console.error(`Failed to fetch balance for ${account.mt5_id}:`, error);
+            console.error(`[Internal Transfer] ❌ Error fetching balance for ${account.mt5_id}:`, error);
             return { accountId: account.account_id, balance: null }; // null = show "-"
           }
         });
         
         const balances = await Promise.all(balancePromises);
+        console.log(`[Internal Transfer] All balance results:`, balances);
+        
         const balanceMap = balances.reduce((acc, { accountId, balance }) => {
           acc[accountId] = balance;
           return acc;
         }, {} as Record<string, number | null>);
         
+        console.log(`[Internal Transfer] Final balance map:`, balanceMap);
         setMt5Balances(balanceMap);
       } else {
         setMt5Accounts([]);
