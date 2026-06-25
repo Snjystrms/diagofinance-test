@@ -1,15 +1,19 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Calendar, CreditCard, Eye, Pencil, Server, Trash2, User, Wallet } from "lucide-react";
+import { Calendar, CreditCard, Eye, Pencil, RefreshCw, Server, Trash2, User, Wallet } from "lucide-react";
 
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { AdminMT5Account } from "@/lib/api";
+import { mt5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
 import { formatDateTimeInIST } from "@/lib/formatters";
+import { Spinner } from "@/components/ui/spinner";
+import { useAuth } from "@/contexts/auth-context";
 
 const emptyValue = "-";
 
@@ -48,6 +52,92 @@ const getMt5DisplayBalance = (account: AdminMT5Account, rawBalance: number | nul
   if (!Number.isFinite(balance)) return 0;
   return isCentAccount(account) ? balance * 100 : balance;
 };
+
+// Balance button component
+function BalanceButton({ account }: { account: AdminMT5Account }) {
+  const { token } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [liveBalance, setLiveBalance] = useState<number | null>(null);
+  const [hasError, setHasError] = useState(false);
+
+  const fetchBalance = async () => {
+    if (!token) return;
+    const mt5Login = account.mt5_id ?? account.account_id ?? account.id;
+    if (!mt5Login) return;
+
+    setIsLoading(true);
+    setHasError(false);
+    
+    try {
+      const response = await mt5AccountsApi.getAdminBalance(mt5Login, token) as unknown as MT5AccountBalance;
+      if (response.success && response.balance !== undefined) {
+        setLiveBalance(response.balance);
+      } else {
+        setHasError(true);
+      }
+    } catch (error) {
+      console.error("Failed to fetch MT5 balance:", error);
+      setHasError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (liveBalance !== null) {
+    const displayBalance = getMt5DisplayBalance(account, liveBalance);
+    return (
+      <div className="flex items-center gap-2">
+        <Wallet className="h-4 w-4 text-muted-foreground" />
+        <span className="font-medium">{displayBalance.toFixed(2)} {getMt5BalanceCurrency(account)}</span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6"
+          onClick={fetchBalance}
+          disabled={isLoading}
+        >
+          <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
+        </Button>
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={fetchBalance}
+        disabled={isLoading}
+        className="text-red-600"
+      >
+        {isLoading ? <Spinner className="h-3 w-3 mr-1" size="sm" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+        Retry
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={fetchBalance}
+      disabled={isLoading}
+    >
+      {isLoading ? (
+        <>
+          <Spinner className="h-3 w-3 mr-1" size="sm" />
+          Loading...
+        </>
+      ) : (
+        <>
+          <Eye className="h-3 w-3 mr-1" />
+          Show Balance
+        </>
+      )}
+    </Button>
+  );
+}
 
 const deriveGroupName = (account: AdminMT5Account) => {
   return account.mt5_group_name ?? emptyValue;
@@ -167,15 +257,7 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
      accessorKey: "self_wallet",
      header: ({ column }) => <DataTableColumnHeader column={column} title="Wallet Balance" />,
      cell: ({ row }) => {
-       const balance = row.original.self_wallet;
-       if (balance == null) return <span className="text-muted-foreground">{emptyValue}</span>;
-       const displayBalance = getMt5DisplayBalance(row.original, balance);
-       return (
-         <div className="flex items-center gap-2">
-           <Wallet className="h-4 w-4 text-muted-foreground" />
-           <span className="font-medium">{displayBalance.toFixed(2)} {getMt5BalanceCurrency(row.original)}</span>
-         </div>
-       );
+       return <BalanceButton account={row.original} />;
      },
      enableColumnFilter: true,
    },

@@ -1886,6 +1886,12 @@ export const mt5AccountsApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),
+  // Admin endpoint for fetching MT5 balance
+  getAdminBalance: (mt5Login: number | string, token: string) =>
+    apiCall<MT5AccountBalance>(`/admin/mt5-accounts/${mt5Login}/balance`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
 };
 
 export const adminMT5AccountsApi = {

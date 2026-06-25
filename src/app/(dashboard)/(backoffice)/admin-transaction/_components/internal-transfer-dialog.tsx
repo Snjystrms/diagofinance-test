@@ -79,14 +79,27 @@ const isCentMt5Account = (account?: AdminMT5Account) =>
 
 const getMt5AccountCurrency = (account?: AdminMT5Account) => (isCentMt5Account(account) ? "usc" : "usd");
 
-const getMt5AccountBalance = (account?: AdminMT5Account) => {
+const getMt5AccountBalance = (account?: AdminMT5Account, liveBalances?: Map<string, number>) => {
   if (!account) return 0;
-  // For CENT accounts, prioritize balance field and multiply by 100
+  
+  // Try to get live balance first
+  if (liveBalances) {
+    const accId = String(account.account_id ?? account.mt5_id ?? account.id ?? "");
+    const liveBalance = liveBalances.get(accId);
+    if (liveBalance !== undefined) {
+      // For CENT accounts, multiply by 100
+      if (isCentMt5Account(account)) {
+        return liveBalance * 100;
+      }
+      return liveBalance;
+    }
+  }
+  
+  // Fallback to cached balance
   if (isCentMt5Account(account)) {
     const rawBalance = account.balance ?? account.self_wallet ?? 0;
     return typeof rawBalance === 'number' ? rawBalance * 100 : Number(rawBalance) * 100;
   }
-  // For non-CENT accounts, use self_wallet
   return account.self_wallet ?? 0;
 };
 
@@ -118,6 +131,8 @@ export function InternalTransferDialog({
   const [mt5AccountsWithWalletIds, setMt5AccountsWithWalletIds] = useState<
     Map<string, number>
   >(new Map());
+  const [mt5LiveBalances, setMt5LiveBalances] = useState<Map<string, number>>(new Map());
+  const [loadingBalances, setLoadingBalances] = useState(false);
   const userSearchRef = useRef<HTMLDivElement>(null);
   const userSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -211,6 +226,7 @@ export function InternalTransferDialog({
     setUserMt5Accounts([]);
     setWalletBalances([]);
     setMt5AccountsWithWalletIds(new Map());
+    setMt5LiveBalances(new Map());
   };
 
   const fetchUserMt5Accounts = useCallback(
@@ -238,9 +254,39 @@ export function InternalTransferDialog({
           }
         }
         setMt5AccountsWithWalletIds(walletIdMap);
+
+        // Fetch live balances for all accounts
+        setLoadingBalances(true);
+        const balancePromises = liveAccounts.map(async (acc) => {
+          const mt5Login = acc.mt5_id ?? acc.account_id ?? acc.id;
+          const accId = String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "");
+          if (!mt5Login) return { accId, balance: null };
+
+          try {
+            const balanceResponse = await mt5AccountsApi.getAdminBalance(mt5Login, token) as unknown as MT5AccountBalance;
+            if (balanceResponse.success && balanceResponse.balance !== undefined) {
+              return { accId, balance: balanceResponse.balance };
+            }
+            return { accId, balance: null };
+          } catch (error) {
+            console.error(`Failed to fetch balance for MT5 ${mt5Login}:`, error);
+            return { accId, balance: null };
+          }
+        });
+
+        const balances = await Promise.all(balancePromises);
+        const balanceMap = new Map<string, number>();
+        balances.forEach(({ accId, balance }) => {
+          if (balance !== null) {
+            balanceMap.set(accId, balance);
+          }
+        });
+        setMt5LiveBalances(balanceMap);
+        setLoadingBalances(false);
       } catch {
         setUserMt5Accounts([]);
         setMt5AccountsWithWalletIds(new Map());
+        setMt5LiveBalances(new Map());
       } finally {
         setLoadingMt5Accounts(false);
       }
@@ -278,6 +324,7 @@ export function InternalTransferDialog({
       setSubmitting(false);
       setWalletBalances([]);
       setMt5AccountsWithWalletIds(new Map());
+      setMt5LiveBalances(new Map());
     }
   }, [open]);
 
@@ -291,6 +338,7 @@ export function InternalTransferDialog({
     setShowUserResults(false);
     setWalletBalances([]);
     setMt5AccountsWithWalletIds(new Map());
+    setMt5LiveBalances(new Map());
   }, [transferType]);
 
   useEffect(() => {
@@ -552,7 +600,7 @@ export function InternalTransferDialog({
                 const accId = String(
                   acc.account_id ?? acc.mt5_id ?? acc.id ?? "",
                 );
-                const accBalance = getMt5AccountBalance(acc);
+                const accBalance = getMt5AccountBalance(acc, mt5LiveBalances);
                 const type = acc.account_mode ?? "-";
                 const currency = getMt5AccountCurrency(acc);
                 return (
@@ -579,7 +627,7 @@ export function InternalTransferDialog({
         >
           {filteredAccounts.map((acc) => {
             const accId = String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "");
-            const accBalance = getMt5AccountBalance(acc);
+            const accBalance = getMt5AccountBalance(acc, mt5LiveBalances);
             const type = acc.account_mode ?? "-";
             const currency = getMt5AccountCurrency(acc);
             return (

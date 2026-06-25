@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import toast from "react-hot-toast";
@@ -54,6 +54,7 @@ import {
   adminBonusApi,
   type AdminBonusLedgerItem,
 } from "@/lib/api";
+import { mt5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
@@ -121,6 +122,8 @@ export default function BonusManagementPage() {
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
   const [form, setForm] = useState<BonusFormState>(emptyForm);
   const [userSearch, setUserSearch] = useState("");
+  const [selectedMt5Balance, setSelectedMt5Balance] = useState<number | null>(null);
+  const [loadingBalance, setLoadingBalance] = useState(false);
   
   // Use query params for search and filter to enable data table pagination
   const [historySearch, setHistorySearch] = useQueryState(
@@ -243,6 +246,36 @@ export default function BonusManagementPage() {
     () => mt5Users.find((item) => item.account_id === form.mt5_id) ?? null,
     [form.mt5_id, mt5Users]
   );
+
+  // Fetch live balance when MT5 user is selected
+  useEffect(() => {
+    if (!selectedMt5User || !token) {
+      setSelectedMt5Balance(null);
+      return;
+    }
+
+    const fetchBalance = async () => {
+      const mt5Login = selectedMt5User.account_id;
+      if (!mt5Login) return;
+
+      setLoadingBalance(true);
+      try {
+        const response = await mt5AccountsApi.getAdminBalance(mt5Login, token) as unknown as MT5AccountBalance;
+        if (response.success && response.balance !== undefined) {
+          setSelectedMt5Balance(response.balance);
+        } else {
+          setSelectedMt5Balance(null);
+        }
+      } catch (error) {
+        console.error("Failed to fetch MT5 balance:", error);
+        setSelectedMt5Balance(null);
+      } finally {
+        setLoadingBalance(false);
+      }
+    };
+
+    void fetchBalance();
+  }, [selectedMt5User, token]);
 
   const allBonuses = useMemo(() => bonusListData?.bonuses ?? [], [bonusListData]);
 
@@ -699,7 +732,20 @@ export default function BonusManagementPage() {
                     <div>
                       <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Current Balance</p>
                       <p className="mt-1 text-xl font-semibold text-foreground">
-                       {formatMoney(selectedMt5User.account_type_name === "CENT" ? selectedMt5User.current_balance * 100 : selectedMt5User.current_balance)} {selectedMt5User.account_type_name === "CENT" ? "USC" : "USD"}
+                        {loadingBalance ? (
+                          <span className="flex items-center gap-2 text-sm">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Loading...
+                          </span>
+                        ) : selectedMt5Balance !== null ? (
+                          <>
+                            {formatMoney(selectedMt5User.account_type_name === "CENT" ? selectedMt5Balance * 100 : selectedMt5Balance)} {selectedMt5User.account_type_name === "CENT" ? "USC" : "USD"}
+                          </>
+                        ) : (
+                          <>
+                            {formatMoney(selectedMt5User.account_type_name === "CENT" ? selectedMt5User.current_balance * 100 : selectedMt5User.current_balance)} {selectedMt5User.account_type_name === "CENT" ? "USC" : "USD"}
+                          </>
+                        )}
                       </p>
                     </div>
                   </div>
