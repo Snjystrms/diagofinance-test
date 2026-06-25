@@ -131,8 +131,8 @@ const isCentMt5Account = (account?: MT5Account | null) =>
 const formatMt5Balance = (account: MT5Account, liveBalances: Record<string, number>) => {
   const isCent = isCentMt5Account(account);
   
-  // Use live balance if available, otherwise fall back to account.balance
-  const balanceValue = liveBalances[account.account_id] ?? account.balance;
+  // PRIORITIZE live balance from API - only use account.balance if live balance doesn't exist in map
+  const balanceValue = account.account_id in liveBalances ? liveBalances[account.account_id] : account.balance;
   const amount = isCent ? balanceValue * 100 : balanceValue;
   
   const formatted = Number(amount).toLocaleString("en-US", {
@@ -234,11 +234,19 @@ function InternalTransferContent() {
         const accounts = response.data.mt5_accounts;
         setMt5Accounts(accounts);
         
-        // Fetch live balances for all accounts
+        // Fetch live balances for all accounts - PRIORITIZE LIVE DATA
         const balancePromises = accounts.map(async (account) => {
           try {
             const balanceResponse = await mt5AccountsApi.getBalance(account.mt5_id, token);
-            return { accountId: account.account_id, balance: balanceResponse.data?.balance ?? account.balance };
+            console.log(`[MT5 Balance API] Account ${account.mt5_id}:`, balanceResponse);
+            // If API succeeds, always use the live balance even if it's 0
+            if (balanceResponse.success && balanceResponse.data?.balance !== undefined) {
+              console.log(`[MT5 Balance] Using LIVE balance ${balanceResponse.data.balance} for ${account.account_id}`);
+              return { accountId: account.account_id, balance: balanceResponse.data.balance };
+            }
+            // Only fallback if API fails
+            console.log(`[MT5 Balance] Using CACHED balance ${account.balance} for ${account.account_id}`);
+            return { accountId: account.account_id, balance: account.balance };
           } catch (error) {
             console.error(`Failed to fetch balance for ${account.mt5_id}:`, error);
             return { accountId: account.account_id, balance: account.balance };
@@ -413,8 +421,8 @@ function InternalTransferContent() {
   
   // Check if "from" accounts have zero balance
   const mainWalletHasBalance = mainWallet ? mainWallet.balance > 0 : false;
-  const mt5ToWalletAccountHasBalance = selectedMt5ToWalletAccount ? (mt5Balances[selectedMt5ToWalletAccount.account_id] ?? selectedMt5ToWalletAccount.balance) > 0 : false;
-  const mt5ToMt5FromAccountHasBalance = selectedMt5ToMt5FromAccount ? (mt5Balances[selectedMt5ToMt5FromAccount.account_id] ?? selectedMt5ToMt5FromAccount.balance) > 0 : false;
+  const mt5ToWalletAccountHasBalance = selectedMt5ToWalletAccount ? (selectedMt5ToWalletAccount.account_id in mt5Balances ? mt5Balances[selectedMt5ToWalletAccount.account_id] : selectedMt5ToWalletAccount.balance) > 0 : false;
+  const mt5ToMt5FromAccountHasBalance = selectedMt5ToMt5FromAccount ? (selectedMt5ToMt5FromAccount.account_id in mt5Balances ? mt5Balances[selectedMt5ToMt5FromAccount.account_id] : selectedMt5ToMt5FromAccount.balance) > 0 : false;
   
   // MT5 to MT5: Always use USD when both accounts are CENT
   const mt5ToMt5Currency = useMemo(() => {

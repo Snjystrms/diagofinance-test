@@ -53,12 +53,17 @@ export default function WalletOverviewPage() {
       if (response.success && response.data) {
         setWalletData(response.data)
         
-        // Fetch live balances for MT5 wallets
+        // Fetch live balances for MT5 wallets - PRIORITIZE LIVE DATA
         if (response.data.mt5_wallets && response.data.mt5_wallets.length > 0) {
           const balancePromises = response.data.mt5_wallets.map(async (wallet) => {
             try {
               const balanceResponse = await mt5AccountsApi.getBalance(wallet.mt5_id, token);
-              return { mt5Id: wallet.mt5_id, balance: balanceResponse.data?.balance ?? wallet.balance };
+              // If API succeeds, always use the live balance even if it's 0
+              if (balanceResponse.success && balanceResponse.data?.balance !== undefined) {
+                return { mt5Id: wallet.mt5_id, balance: balanceResponse.data.balance };
+              }
+              // Only fallback if API fails
+              return { mt5Id: wallet.mt5_id, balance: wallet.balance };
             } catch (error) {
               console.error(`Failed to fetch balance for MT5 ${wallet.mt5_id}:`, error);
               return { mt5Id: wallet.mt5_id, balance: wallet.balance };
@@ -398,7 +403,8 @@ export default function WalletOverviewPage() {
               <CardContent className="pt-6">
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {mt5Wallets.map((wallet) => {
-                    const liveBalance = mt5Balances[wallet.mt5_id] ?? wallet.balance;
+                    // PRIORITIZE live balance from API - only use wallet.balance if live balance doesn't exist
+                    const liveBalance = wallet.mt5_id in mt5Balances ? mt5Balances[wallet.mt5_id] : wallet.balance;
                     const displayBalance = wallet.currency === 'USC' ? liveBalance * 100 : liveBalance;
                     
                     return (

@@ -197,10 +197,18 @@ export function ClientMt5AccountCard({
       try {
         setIsLoadingBalance(true);
         const response = await mt5AccountsApi.getBalance(mt5Login, token);
-        setLiveBalance(response.data?.balance ?? null);
+        console.log(`[MT5 Card Balance API] Account ${mt5Login}:`, response);
+        // PRIORITIZE live balance - use it if API succeeds, even if balance is 0
+        if (response.success && response.data?.balance !== undefined) {
+          console.log(`[MT5 Card] Using LIVE balance ${response.data.balance} for ${mt5Login}`);
+          setLiveBalance(response.data.balance);
+        } else {
+          console.log(`[MT5 Card] API didn't return balance for ${mt5Login}, using prop balance`);
+          setLiveBalance(null); // API didn't return balance, fallback to prop
+        }
       } catch (error) {
         console.error(`Failed to fetch balance for MT5 ${mt5Login}:`, error);
-        setLiveBalance(null);
+        setLiveBalance(null); // API error, fallback to prop
       } finally {
         setIsLoadingBalance(false);
       }
