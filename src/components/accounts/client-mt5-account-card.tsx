@@ -16,7 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { mt5AccountsApi } from "@/lib/api";
+import { mt5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
 import { useAuth } from "@/contexts/auth-context";
 
 type ClientMt5AccountMenuAction = {

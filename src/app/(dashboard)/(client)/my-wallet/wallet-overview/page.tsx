@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/auth-context'
-import { walletApi, mt5AccountsApi, type WalletSummaryData } from '@/lib/api'
+import { walletApi, type WalletSummaryData } from '@/lib/api'
+import { mt5AccountsApi, type MT5AccountBalance } from '@/lib/api-trading-ib'
 import { userBrokerCryptoWalletsApi, type BrokerCryptoWalletItem } from '@/lib/api-auth-admin'
 import { CLIENT_WALLET_REFRESH_EVENT } from '@/lib/client-events'
 import { ApiErrorState } from '@/components/errors/api-error-state'

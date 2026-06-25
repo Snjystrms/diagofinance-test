@@ -39,12 +39,11 @@ import { IbMetricCard, IbPageHeader, IbPageShell, IbSectionCard } from "@/compon
 
 import {
   internalTransferApi,
-  mt5AccountsApi,
   walletApi,
   type MT5Account,
-  type MT5AccountBalance,
   type WalletSummaryData,
 } from "@/lib/api";
+import { mt5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
 import { formatCurrency } from "@/lib/format";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { useAuth } from "@/contexts/auth-context";
