@@ -1862,9 +1862,27 @@ export interface AdminMT5AccountsListResponse {
   [key: string]: unknown;
 }
 
+export type MT5AccountBalance = {
+  success: boolean;
+  account_id: string;
+  mt5_login: number;
+  name: string;
+  balance: number;
+  equity: number;
+  margin: number;
+  free_margin: number;
+  profit: number;
+  currency: string | null;
+};
+
 export const mt5AccountsApi = {
   getAll: (token: string) =>
     apiCall<{ mt5_accounts: MT5Account[] }>(`/user/mt5-account`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+  getBalance: (mt5Login: number | string, token: string) =>
+    apiCall<MT5AccountBalance>(`/user/mt5-account/${mt5Login}/balance`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),

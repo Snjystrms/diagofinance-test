@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -536,7 +537,7 @@ export default function AdminTicketsPage() {
     () => [
       {
         id: "ticket",
-        header: "Ticket",
+        header: "Sr. No.",
         accessorFn: (_row, index) => index + 1,
         cell: ({ row }) => {
           const ticket = row.original;
@@ -556,12 +557,15 @@ export default function AdminTicketsPage() {
           const user = ticket.user;
           return (
             <div className="space-y-1 text-sm">
-              <div className="font-medium">
+              <Link
+                href={`/new-users/${user?.id ?? ""}`}
+                className="font-medium hover:underline"
+              >
                 {user
                   ? `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() ||
                     user.email
                   : "—"}
-              </div>
+              </Link>
               <div className="text-xs text-muted-foreground">
                 {user?.email ?? "—"}
               </div>

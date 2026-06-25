@@ -7,6 +7,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import {
   ArrowLeft,
+  Copy,
   Eye,
   EyeOff,
   Globe,
@@ -16,6 +17,7 @@ import {
   RefreshCw,
   ShieldCheck,
   UserRound,
+  ZoomIn,
 } from "lucide-react";
 import { AuthenticatedImage } from "@/components/authenticated-image";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
@@ -25,6 +27,7 @@ import { ProtectedRoute } from "@/components/protected-route";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
@@ -447,6 +450,9 @@ export default function NewUserDetailPage() {
   const [decryptedPassword, setDecryptedPassword] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [loadingPassword, setLoadingPassword] = useState(false);
+
+  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
+  const [previewImageOpen, setPreviewImageOpen] = useState(false);
 
   const [depositsState, setDepositsState] = useState(() => createPaginatedState<AdminUserTransactionItem>());
   const [withdrawalsState, setWithdrawalsState] = useState(() => createPaginatedState<AdminUserTransactionItem>());
@@ -960,12 +966,26 @@ export default function NewUserDetailPage() {
                                   size="sm"
                                   onClick={() => setShowPassword(!showPassword)}
                                   className="h-8 w-8 p-0"
+                                  title={showPassword ? "Hide password" : "Show password"}
                                 >
                                   {showPassword ? (
                                     <EyeOff className="h-4 w-4" />
                                   ) : (
                                     <Eye className="h-4 w-4" />
                                   )}
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(decryptedPassword);
+                                    toast.success("Password copied to clipboard");
+                                  }}
+                                  className="h-8 w-8 p-0"
+                                  title="Copy password"
+                                >
+                                  <Copy className="h-4 w-4" />
                                 </Button>
                               </>
                             ) : (
@@ -1042,49 +1062,109 @@ export default function NewUserDetailPage() {
                             {kycData.document_urls?.poi_front_file && (
                               <div className="flex items-center justify-between gap-3">
                                 <span className="text-muted-foreground">POI (Front)</span>
-                                <a href={kycData.document_urls.poi_front_file} target="_blank" rel="noopener noreferrer">
-                                  <AuthenticatedImage
-                                    src={kycData.document_urls.poi_front_file}
-                                    alt="POI Front"
-                                    className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
-                                  />
-                                </a>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setPreviewImageUrl(kycData.document_urls?.poi_front_file ?? null);
+                                      setPreviewImageOpen(true);
+                                    }}
+                                    className="h-8 w-8 p-0"
+                                    title="Preview image"
+                                  >
+                                    <ZoomIn className="h-4 w-4" />
+                                  </Button>
+                                  <a href={kycData.document_urls.poi_front_file} target="_blank" rel="noopener noreferrer">
+                                    <AuthenticatedImage
+                                      src={kycData.document_urls.poi_front_file}
+                                      alt="POI Front"
+                                      className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
+                                    />
+                                  </a>
+                                </div>
                               </div>
                             )}
                             {kycData.document_urls?.poa_front_file && (
                               <div className="flex items-center justify-between gap-3">
                                 <span className="text-muted-foreground">POA (Front)</span>
-                                <a href={kycData.document_urls.poa_front_file} target="_blank" rel="noopener noreferrer">
-                                  <AuthenticatedImage
-                                    src={kycData.document_urls.poa_front_file}
-                                    alt="POA Front"
-                                    className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
-                                  />
-                                </a>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setPreviewImageUrl(kycData.document_urls?.poa_front_file ?? null);
+                                      setPreviewImageOpen(true);
+                                    }}
+                                    className="h-8 w-8 p-0"
+                                    title="Preview image"
+                                  >
+                                    <ZoomIn className="h-4 w-4" />
+                                  </Button>
+                                  <a href={kycData.document_urls.poa_front_file} target="_blank" rel="noopener noreferrer">
+                                    <AuthenticatedImage
+                                      src={kycData.document_urls.poa_front_file}
+                                      alt="POA Front"
+                                      className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
+                                    />
+                                  </a>
+                                </div>
                               </div>
                             )}
                             {kycData.document_urls?.poa_back_file && (
                               <div className="flex items-center justify-between gap-3">
                                 <span className="text-muted-foreground">POA (Back)</span>
-                                <a href={kycData.document_urls.poa_back_file} target="_blank" rel="noopener noreferrer">
-                                  <AuthenticatedImage
-                                    src={kycData.document_urls.poa_back_file}
-                                    alt="POA Back"
-                                    className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
-                                  />
-                                </a>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setPreviewImageUrl(kycData.document_urls?.poa_back_file ?? null);
+                                      setPreviewImageOpen(true);
+                                    }}
+                                    className="h-8 w-8 p-0"
+                                    title="Preview image"
+                                  >
+                                    <ZoomIn className="h-4 w-4" />
+                                  </Button>
+                                  <a href={kycData.document_urls.poa_back_file} target="_blank" rel="noopener noreferrer">
+                                    <AuthenticatedImage
+                                      src={kycData.document_urls.poa_back_file}
+                                      alt="POA Back"
+                                      className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
+                                    />
+                                  </a>
+                                </div>
                               </div>
                             )}
                             {kycData.document_urls?.other_file && (
                               <div className="flex items-center justify-between gap-3">
                                 <span className="text-muted-foreground">Other</span>
-                                <a href={kycData.document_urls.other_file} target="_blank" rel="noopener noreferrer">
-                                  <AuthenticatedImage
-                                    src={kycData.document_urls.other_file}
-                                    alt="Other Document"
-                                    className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
-                                  />
-                                </a>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      setPreviewImageUrl(kycData.document_urls?.other_file ?? null);
+                                      setPreviewImageOpen(true);
+                                    }}
+                                    className="h-8 w-8 p-0"
+                                    title="Preview image"
+                                  >
+                                    <ZoomIn className="h-4 w-4" />
+                                  </Button>
+                                  <a href={kycData.document_urls.other_file} target="_blank" rel="noopener noreferrer">
+                                    <AuthenticatedImage
+                                      src={kycData.document_urls.other_file}
+                                      alt="Other Document"
+                                      className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
+                                    />
+                                  </a>
+                                </div>
                               </div>
                             )}
                           </>
@@ -1524,6 +1604,21 @@ export default function NewUserDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Image Preview Dialog */}
+      <Dialog open={previewImageOpen} onOpenChange={setPreviewImageOpen}>
+        <DialogContent className="max-w-4xl">
+          {previewImageUrl && (
+            <div className="flex items-center justify-center">
+              <AuthenticatedImage
+                src={previewImageUrl}
+                alt="Document Preview"
+                className="max-h-[80vh] w-auto rounded-lg"
+              />
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </ProtectedRoute>
   );
 }

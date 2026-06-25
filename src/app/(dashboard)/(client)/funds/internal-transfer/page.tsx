@@ -42,6 +42,7 @@ import {
   mt5AccountsApi,
   walletApi,
   type MT5Account,
+  type MT5AccountBalance,
   type WalletSummaryData,
 } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
@@ -127,13 +128,12 @@ function formatWalletLabel(walletKey: string) {
 const isCentMt5Account = (account?: MT5Account | null) =>
   String(account?.account_type_name ?? "").trim().toLowerCase() === "cent";
 
-const formatMt5Balance = (account: MT5Account) => {
+const formatMt5Balance = (account: MT5Account, liveBalances: Record<string, number>) => {
   const isCent = isCentMt5Account(account);
   
-  // For CENT accounts, prioritize balance field and multiply by 100
-  const amount = isCent 
-    ? account.balance * 100
-    : account.balance;
+  // Use live balance if available, otherwise fall back to account.balance
+  const balanceValue = liveBalances[account.account_id] ?? account.balance;
+  const amount = isCent ? balanceValue * 100 : balanceValue;
   
   const formatted = Number(amount).toLocaleString("en-US", {
     minimumFractionDigits: 2,
@@ -153,6 +153,7 @@ function InternalTransferContent() {
   const { token, user } = useAuth();
   const searchParams = useSearchParams();
   const [mt5Accounts, setMt5Accounts] = useState<MT5Account[]>([]);
+  const [mt5Balances, setMt5Balances] = useState<Record<string, number>>({});
   const [walletSummary, setWalletSummary] = useState<WalletSummaryData | null>(
     null,
   );
@@ -230,7 +231,27 @@ function InternalTransferContent() {
     if (accountsResult.status === "fulfilled") {
       const response = accountsResult.value;
       if (response.success && response.data?.mt5_accounts) {
-        setMt5Accounts(response.data.mt5_accounts);
+        const accounts = response.data.mt5_accounts;
+        setMt5Accounts(accounts);
+        
+        // Fetch live balances for all accounts
+        const balancePromises = accounts.map(async (account) => {
+          try {
+            const balanceResponse = await mt5AccountsApi.getBalance(account.mt5_id, token);
+            return { accountId: account.account_id, balance: balanceResponse.data?.balance ?? account.balance };
+          } catch (error) {
+            console.error(`Failed to fetch balance for ${account.mt5_id}:`, error);
+            return { accountId: account.account_id, balance: account.balance };
+          }
+        });
+        
+        const balances = await Promise.all(balancePromises);
+        const balanceMap = balances.reduce((acc, { accountId, balance }) => {
+          acc[accountId] = balance;
+          return acc;
+        }, {} as Record<string, number>);
+        
+        setMt5Balances(balanceMap);
       } else {
         setMt5Accounts([]);
         setAccountsError("Unable to load MT5 accounts");
@@ -257,9 +278,9 @@ function InternalTransferContent() {
     () =>
       liveMt5Accounts.map((account) => ({
         id: account.account_id,
-        label: `${account.account_id} • ${formatMt5Balance(account)} • ${account.account_mode ?? "—"}`,
+        label: `${account.account_id} • ${formatMt5Balance(account, mt5Balances)} • ${account.account_mode ?? "—"}`,
       })),
-    [liveMt5Accounts],
+    [liveMt5Accounts, mt5Balances],
   );
 
   const walletOptions = useMemo<WalletOption[]>(() => {
@@ -392,8 +413,8 @@ function InternalTransferContent() {
   
   // Check if "from" accounts have zero balance
   const mainWalletHasBalance = mainWallet ? mainWallet.balance > 0 : false;
-  const mt5ToWalletAccountHasBalance = selectedMt5ToWalletAccount ? selectedMt5ToWalletAccount.balance > 0 : false;
-  const mt5ToMt5FromAccountHasBalance = selectedMt5ToMt5FromAccount ? selectedMt5ToMt5FromAccount.balance > 0 : false;
+  const mt5ToWalletAccountHasBalance = selectedMt5ToWalletAccount ? (mt5Balances[selectedMt5ToWalletAccount.account_id] ?? selectedMt5ToWalletAccount.balance) > 0 : false;
+  const mt5ToMt5FromAccountHasBalance = selectedMt5ToMt5FromAccount ? (mt5Balances[selectedMt5ToMt5FromAccount.account_id] ?? selectedMt5ToMt5FromAccount.balance) > 0 : false;
   
   // MT5 to MT5: Always use USD when both accounts are CENT
   const mt5ToMt5Currency = useMemo(() => {
@@ -702,7 +723,7 @@ function InternalTransferContent() {
                           {account.account_mode}
                         </Badge>
                       </div>
-                      <span className="text-muted-foreground tabular-nums">{formatMt5Balance(account)}</span>
+                      <span className="text-muted-foreground tabular-nums">{formatMt5Balance(account, mt5Balances)}</span>
                     </div>
                   ))}
                 </div>
@@ -858,7 +879,7 @@ function InternalTransferContent() {
                                 <Input
                                   type="number"
                                   min="0.01"
-                                  step="0.01"
+                                  step="any"
                                   placeholder="0.00"
                                   onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                   className="pr-14"
@@ -1043,7 +1064,7 @@ function InternalTransferContent() {
                                 <Input
                                   type="number"
                                   min="0.01"
-                                  step="0.01"
+                                  step="any"
                                   placeholder="0.00"
                                   onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                   className="pr-14"
@@ -1221,7 +1242,7 @@ function InternalTransferContent() {
                                 <Input
                                   type="number"
                                   min="0.01"
-                                  step="0.01"
+                                  step="any"
                                   placeholder="0.00"
                                   onWheel={(e) => (e.target as HTMLInputElement).blur()}
                                   className="pr-14"

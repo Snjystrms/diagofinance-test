@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/auth-context'
-import { walletApi, type WalletSummaryData } from '@/lib/api'
+import { walletApi, mt5AccountsApi, type WalletSummaryData } from '@/lib/api'
 import { userBrokerCryptoWalletsApi, type BrokerCryptoWalletItem } from '@/lib/api-auth-admin'
 import { CLIENT_WALLET_REFRESH_EVENT } from '@/lib/client-events'
 import { ApiErrorState } from '@/components/errors/api-error-state'
@@ -36,6 +36,7 @@ export default function WalletOverviewPage() {
   const [error, setError] = useState<unknown | null>(null)
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null)
   const [brokerCryptoWallet, setBrokerCryptoWallet] = useState<BrokerCryptoWalletItem | null>(null)
+  const [mt5Balances, setMt5Balances] = useState<Record<string, number>>({})
 
   const fetchWalletSummary = React.useCallback(async () => {
     if (!token) {
@@ -51,6 +52,27 @@ export default function WalletOverviewPage() {
       
       if (response.success && response.data) {
         setWalletData(response.data)
+        
+        // Fetch live balances for MT5 wallets
+        if (response.data.mt5_wallets && response.data.mt5_wallets.length > 0) {
+          const balancePromises = response.data.mt5_wallets.map(async (wallet) => {
+            try {
+              const balanceResponse = await mt5AccountsApi.getBalance(wallet.mt5_id, token);
+              return { mt5Id: wallet.mt5_id, balance: balanceResponse.data?.balance ?? wallet.balance };
+            } catch (error) {
+              console.error(`Failed to fetch balance for MT5 ${wallet.mt5_id}:`, error);
+              return { mt5Id: wallet.mt5_id, balance: wallet.balance };
+            }
+          });
+          
+          const balances = await Promise.all(balancePromises);
+          const balanceMap = balances.reduce((acc, { mt5Id, balance }) => {
+            acc[mt5Id] = balance;
+            return acc;
+          }, {} as Record<string, number>);
+          
+          setMt5Balances(balanceMap);
+        }
       } else {
         setError(response.message || 'Unable to load wallet summary')
       }
@@ -370,54 +392,59 @@ export default function WalletOverviewPage() {
                   MT5 Wallet Accounts
                 </CardTitle>
                 <CardDescription className="text-base mt-1">
-                  Account-linked MT5 wallet balances and status. Wallet addresses are hidden.
+                  Account-linked MT5 wallet balances and status.
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {mt5Wallets.map((wallet) => (
-                    <div
-                      key={wallet.id}
-                      className="rounded-2xl border bg-card p-5 shadow-sm transition-colors hover:border-primary/30"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-medium text-muted-foreground">
-                            MT5 User ID
-                          </p>
-                          <p className="text-2xl font-bold text-foreground">
-                            {wallet.mt5_id}
-                          </p>
-                        </div>
-                        <Badge variant="outline" className="capitalize">
-                          {wallet.account_mode}
-                        </Badge>
-                      </div>
-
-                      <div className="mt-4 space-y-3">
-                        <div>
-                          <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                            Balance
-                          </p>
-                          <p className="mt-1 text-lg font-semibold text-foreground">
-                            {wallet.currency === 'USC' ? '¢' : '$'} 
-                            {formatAmount(wallet.currency === 'USC' ? wallet.balance * 100 : wallet.balance)}
-                          </p>
-                        </div>
-
-                        <div className="flex flex-wrap items-center gap-2">
-                          <Badge variant="default" className="capitalize">
-                            {wallet.status}
+                  {mt5Wallets.map((wallet) => {
+                    const liveBalance = mt5Balances[wallet.mt5_id] ?? wallet.balance;
+                    const displayBalance = wallet.currency === 'USC' ? liveBalance * 100 : liveBalance;
+                    
+                    return (
+                      <div
+                        key={wallet.id}
+                        className="rounded-2xl border bg-card p-5 shadow-sm transition-colors hover:border-primary/30"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-medium text-muted-foreground">
+                              MT5 User ID
+                            </p>
+                            <p className="text-2xl font-bold text-foreground">
+                              {wallet.mt5_id}
+                            </p>
+                          </div>
+                          <Badge variant="outline" className="capitalize">
+                            {wallet.account_mode}
                           </Badge>
-                          {wallet.is_primary ? (
-                            <Badge className="bg-primary/10 text-primary hover:bg-primary/10">
-                              Primary
+                        </div>
+
+                        <div className="mt-4 space-y-3">
+                          <div>
+                            <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                              Balance
+                            </p>
+                            <p className="mt-1 text-lg font-semibold text-foreground">
+                              {wallet.currency === 'USC' ? '¢' : '$'} 
+                              {formatAmount(displayBalance)}
+                            </p>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge variant="default" className="capitalize">
+                              {wallet.status}
                             </Badge>
-                          ) : null}
+                            {wallet.is_primary ? (
+                              <Badge className="bg-primary/10 text-primary hover:bg-primary/10">
+                                Primary
+                              </Badge>
+                            ) : null}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </CardContent>
             </Card>

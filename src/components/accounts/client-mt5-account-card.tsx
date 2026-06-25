@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { type LucideIcon, CheckCircle2, Clock, Copy, DollarSign, MoreVertical, Wallet, XCircle, Zap } from "lucide-react";
@@ -15,6 +16,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
+import { mt5AccountsApi } from "@/lib/api";
+import { useAuth } from "@/contexts/auth-context";
 
 type ClientMt5AccountMenuAction = {
   icon: LucideIcon;
@@ -178,9 +181,36 @@ export function ClientMt5AccountCard({
   menuActions = [],
   className,
 }: ClientMt5AccountCardProps) {
+  const { token } = useAuth();
+  const [liveBalance, setLiveBalance] = useState<number | null>(null);
+  const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  
   const isCentAccount = accountTypeName?.trim().toUpperCase() === "CENT";
   const normalizedCurrency = isCentAccount ? "USC" : normalizeCurrencyCode(balanceCurrency ?? currency);
   const accountMode = formatMode(mode);
+
+  // Fetch live balance on mount and when mt5Login changes
+  useEffect(() => {
+    if (!mt5Login || !token) return;
+    
+    const fetchBalance = async () => {
+      try {
+        setIsLoadingBalance(true);
+        const response = await mt5AccountsApi.getBalance(mt5Login, token);
+        setLiveBalance(response.data?.balance ?? null);
+      } catch (error) {
+        console.error(`Failed to fetch balance for MT5 ${mt5Login}:`, error);
+        setLiveBalance(null);
+      } finally {
+        setIsLoadingBalance(false);
+      }
+    };
+
+    void fetchBalance();
+  }, [mt5Login, token]);
+
+  // Use live balance if available, otherwise use prop balance
+  const displayBalance = liveBalance !== null ? liveBalance : balance;
 
   return (
     <Card
@@ -247,7 +277,11 @@ export function ClientMt5AccountCard({
           <div className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/30 p-3.5">
             <span className="text-sm font-medium text-foreground">Balance</span>
             <span className="truncate text-right font-bold text-primary">
-              {formatBalance(balance, normalizedCurrency, accountTypeName)}
+              {isLoadingBalance ? (
+                <span className="text-xs text-muted-foreground">Loading...</span>
+              ) : (
+                formatBalance(displayBalance, normalizedCurrency, accountTypeName)
+              )}
             </span>
           </div>
 
