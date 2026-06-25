@@ -52,7 +52,7 @@ The application integrates with the following backend APIs:
    - Available on verify OTP page
 
 5. **POST /user/forget-password**
-   - Sends password reset instructions
+   - Sends password reset instructios
    - Redirects to reset password page
 
 6. **POST /user/reset-password***
