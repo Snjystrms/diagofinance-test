@@ -36,7 +36,7 @@ export default function WalletOverviewPage() {
   const [error, setError] = useState<unknown | null>(null)
   const [copiedAddress, setCopiedAddress] = useState<string | null>(null)
   const [brokerCryptoWallet, setBrokerCryptoWallet] = useState<BrokerCryptoWalletItem | null>(null)
-  const [mt5Balances, setMt5Balances] = useState<Record<string, number>>({})
+  const [mt5Balances, setMt5Balances] = useState<Record<string, number | null>>({})
 
   const fetchWalletSummary = React.useCallback(async () => {
     if (!token) {
@@ -53,20 +53,20 @@ export default function WalletOverviewPage() {
       if (response.success && response.data) {
         setWalletData(response.data)
         
-        // Fetch live balances for MT5 wallets - PRIORITIZE LIVE DATA
+        // Fetch live balances for MT5 wallets - NO FALLBACK, ONLY USE API
         if (response.data.mt5_wallets && response.data.mt5_wallets.length > 0) {
           const balancePromises = response.data.mt5_wallets.map(async (wallet) => {
             try {
               const balanceResponse = await mt5AccountsApi.getBalance(wallet.mt5_id, token);
-              // If API succeeds, always use the live balance even if it's 0
+              // ONLY use API balance - no fallback
               if (balanceResponse.success && balanceResponse.data?.balance !== undefined) {
                 return { mt5Id: wallet.mt5_id, balance: balanceResponse.data.balance };
               }
-              // Only fallback if API fails
-              return { mt5Id: wallet.mt5_id, balance: wallet.balance };
+              // If API doesn't return balance, show null (will display as "-")
+              return { mt5Id: wallet.mt5_id, balance: null };
             } catch (error) {
               console.error(`Failed to fetch balance for MT5 ${wallet.mt5_id}:`, error);
-              return { mt5Id: wallet.mt5_id, balance: wallet.balance };
+              return { mt5Id: wallet.mt5_id, balance: null };
             }
           });
           
@@ -74,7 +74,7 @@ export default function WalletOverviewPage() {
           const balanceMap = balances.reduce((acc, { mt5Id, balance }) => {
             acc[mt5Id] = balance;
             return acc;
-          }, {} as Record<string, number>);
+          }, {} as Record<string, number | null>);
           
           setMt5Balances(balanceMap);
         }
@@ -403,9 +403,8 @@ export default function WalletOverviewPage() {
               <CardContent className="pt-6">
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                   {mt5Wallets.map((wallet) => {
-                    // PRIORITIZE live balance from API - only use wallet.balance if live balance doesn't exist
-                    const liveBalance = wallet.mt5_id in mt5Balances ? mt5Balances[wallet.mt5_id] : wallet.balance;
-                    const displayBalance = wallet.currency === 'USC' ? liveBalance * 100 : liveBalance;
+                    // ONLY use API balance - show "-" if null
+                    const liveBalance = mt5Balances[wallet.mt5_id];
                     
                     return (
                       <div
@@ -432,8 +431,14 @@ export default function WalletOverviewPage() {
                               Balance
                             </p>
                             <p className="mt-1 text-lg font-semibold text-foreground">
-                              {wallet.currency === 'USC' ? '¢' : '$'} 
-                              {formatAmount(displayBalance)}
+                              {liveBalance === null || liveBalance === undefined ? (
+                                <span className="text-muted-foreground">-</span>
+                              ) : (
+                                <>
+                                  {wallet.currency === 'USC' ? '¢' : '$'} 
+                                  {formatAmount(wallet.currency === 'USC' ? liveBalance * 100 : liveBalance)}
+                                </>
+                              )}
                             </p>
                           </div>
 

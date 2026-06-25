@@ -198,17 +198,17 @@ export function ClientMt5AccountCard({
         setIsLoadingBalance(true);
         const response = await mt5AccountsApi.getBalance(mt5Login, token);
         console.log(`[MT5 Card Balance API] Account ${mt5Login}:`, response);
-        // PRIORITIZE live balance - use it if API succeeds, even if balance is 0
+        // ONLY use API balance - no fallback
         if (response.success && response.data?.balance !== undefined) {
-          console.log(`[MT5 Card] Using LIVE balance ${response.data.balance} for ${mt5Login}`);
+          console.log(`[MT5 Card] Using API balance ${response.data.balance} for ${mt5Login}`);
           setLiveBalance(response.data.balance);
         } else {
-          console.log(`[MT5 Card] API didn't return balance for ${mt5Login}, using prop balance`);
-          setLiveBalance(null); // API didn't return balance, fallback to prop
+          console.log(`[MT5 Card] API didn't return balance for ${mt5Login}, showing "-"`);
+          setLiveBalance(null); // null = show "-"
         }
       } catch (error) {
         console.error(`Failed to fetch balance for MT5 ${mt5Login}:`, error);
-        setLiveBalance(null); // API error, fallback to prop
+        setLiveBalance(null); // null = show "-"
       } finally {
         setIsLoadingBalance(false);
       }
@@ -217,8 +217,8 @@ export function ClientMt5AccountCard({
     void fetchBalance();
   }, [mt5Login, token]);
 
-  // Use live balance if available, otherwise use prop balance
-  const displayBalance = liveBalance !== null ? liveBalance : balance;
+  // Use live balance ONLY - show "-" if null
+  const displayBalance = liveBalance;
 
   return (
     <Card
@@ -287,6 +287,8 @@ export function ClientMt5AccountCard({
             <span className="truncate text-right font-bold text-primary">
               {isLoadingBalance ? (
                 <span className="text-xs text-muted-foreground">Loading...</span>
+              ) : displayBalance === null ? (
+                <span className="text-muted-foreground">-</span>
               ) : (
                 formatBalance(displayBalance, normalizedCurrency, accountTypeName)
               )}
