@@ -203,25 +203,22 @@ export function ClientMt5AccountCard({
         console.log(`[MT5 Card] Starting balance fetch for MT5 ${mt5Login}`);
         setIsLoadingBalance(true);
         
-        const response = await mt5AccountsApi.getBalance(mt5Login, token);
+        const response = await mt5AccountsApi.getBalance(mt5Login, token) as unknown as MT5AccountBalance;
         console.log(`[MT5 Card Balance API] Full response for account ${mt5Login}:`, JSON.stringify(response, null, 2));
         console.log(`[MT5 Card] Response properties:`, {
           success: response.success,
-          hasData: !!response.data,
-          dataKeys: response.data ? Object.keys(response.data) : [],
-          balance: response.data?.balance,
-          balanceType: typeof response.data?.balance,
+          hasBalanceOnRoot: response.balance !== undefined,
+          balanceOnRoot: response.balance,
         });
         
-        // ONLY use API balance - no fallback
-        if (response.success && response.data?.balance !== undefined) {
-          console.log(`[MT5 Card] ✅ Using API balance ${response.data.balance} for ${mt5Login}`);
-          setLiveBalance(response.data.balance);
+        // API returns balance at root level directly
+        if (response.success && response.balance !== undefined) {
+          console.log(`[MT5 Card] ✅ Using API balance ${response.balance} for ${mt5Login}`);
+          setLiveBalance(response.balance);
         } else {
           console.log(`[MT5 Card] ❌ API didn't return valid balance for ${mt5Login}:`, {
             success: response.success,
-            hasData: !!response.data,
-            balance: response.data?.balance,
+            balance: response.balance,
           });
           console.log(`[MT5 Card] Setting null, showing "-"`);
           setLiveBalance(null); // null = show "-"

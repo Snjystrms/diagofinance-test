@@ -254,20 +254,18 @@ function InternalTransferContent() {
         const balancePromises = accounts.map(async (account) => {
           console.log(`[Internal Transfer] Fetching balance for MT5 ${account.mt5_id}, account_id: ${account.account_id}`);
           try {
-            const balanceResponse = await mt5AccountsApi.getBalance(account.mt5_id, token);
+            const balanceResponse = await mt5AccountsApi.getBalance(account.mt5_id, token) as unknown as MT5AccountBalance;
             console.log(`[Internal Transfer API] Full response for ${account.mt5_id}:`, JSON.stringify(balanceResponse, null, 2));
             console.log(`[Internal Transfer] Response properties for ${account.account_id}:`, {
               success: balanceResponse.success,
-              hasData: !!balanceResponse.data,
-              dataKeys: balanceResponse.data ? Object.keys(balanceResponse.data) : [],
-              balance: balanceResponse.data?.balance,
-              balanceType: typeof balanceResponse.data?.balance,
+              hasBalanceOnRoot: balanceResponse.balance !== undefined,
+              balanceOnRoot: balanceResponse.balance,
             });
             
-            // ONLY use API balance - no fallback
-            if (balanceResponse.success && balanceResponse.data?.balance !== undefined) {
-              console.log(`[Internal Transfer] ✅ Using API balance ${balanceResponse.data.balance} for ${account.account_id}`);
-              return { accountId: account.account_id, balance: balanceResponse.data.balance };
+            // API returns balance at root level directly
+            if (balanceResponse.success && balanceResponse.balance !== undefined) {
+              console.log(`[Internal Transfer] ✅ Using API balance ${balanceResponse.balance} for ${account.account_id}`);
+              return { accountId: account.account_id, balance: balanceResponse.balance };
             }
             // If API doesn't return balance, return null to indicate failure
             console.warn(`[Internal Transfer] ❌ API failed for ${account.account_id}, no balance available`);

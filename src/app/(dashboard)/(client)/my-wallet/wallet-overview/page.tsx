@@ -61,20 +61,18 @@ export default function WalletOverviewPage() {
           const balancePromises = response.data.mt5_wallets.map(async (wallet) => {
             console.log(`[Wallet Overview] Fetching balance for MT5 ${wallet.mt5_id}`);
             try {
-              const balanceResponse = await mt5AccountsApi.getBalance(wallet.mt5_id, token);
+              const balanceResponse = await mt5AccountsApi.getBalance(wallet.mt5_id, token) as unknown as MT5AccountBalance;
               console.log(`[Wallet Overview API] Full response for MT5 ${wallet.mt5_id}:`, JSON.stringify(balanceResponse, null, 2));
               console.log(`[Wallet Overview] Response properties for ${wallet.mt5_id}:`, {
                 success: balanceResponse.success,
-                hasData: !!balanceResponse.data,
-                dataKeys: balanceResponse.data ? Object.keys(balanceResponse.data) : [],
-                balance: balanceResponse.data?.balance,
-                balanceType: typeof balanceResponse.data?.balance,
+                hasBalanceOnRoot: balanceResponse.balance !== undefined,
+                balanceOnRoot: balanceResponse.balance,
               });
               
-              // ONLY use API balance - no fallback
-              if (balanceResponse.success && balanceResponse.data?.balance !== undefined) {
-                console.log(`[Wallet Overview] ✅ Got balance ${balanceResponse.data.balance} for MT5 ${wallet.mt5_id}`);
-                return { mt5Id: wallet.mt5_id, balance: balanceResponse.data.balance };
+              // API returns balance at root level directly
+              if (balanceResponse.success && balanceResponse.balance !== undefined) {
+                console.log(`[Wallet Overview] ✅ Got balance ${balanceResponse.balance} for MT5 ${wallet.mt5_id}`);
+                return { mt5Id: wallet.mt5_id, balance: balanceResponse.balance };
               }
               // If API doesn't return balance, show null (will display as "-")
               console.log(`[Wallet Overview] ❌ No valid balance for MT5 ${wallet.mt5_id}, returning null`);
