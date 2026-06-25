@@ -742,10 +742,7 @@ export function InternalTransferDialog({
                             <span>Main Wallet</span>
                             <span className="text-xs text-muted-foreground">
                               Balance:{" "}
-                              {wallet.balance.toLocaleString("en-US", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}{" "}
+                              {Math.floor(wallet.balance * 10000) / 10000}{" "}
                               {formatCurrencyCode(wallet.currency)}
                             </span>
                           </div>
@@ -800,10 +797,7 @@ export function InternalTransferDialog({
                             <span>Main Wallet</span>
                             <span className="text-xs text-muted-foreground">
                               Balance:{" "}
-                              {wallet.balance.toLocaleString("en-US", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}{" "}
+                              {Math.floor(wallet.balance * 10000) / 10000}{" "}
                               {formatCurrencyCode(wallet.currency)}
                             </span>
                           </div>
@@ -840,10 +834,7 @@ export function InternalTransferDialog({
                             <span>IB Wallet</span>
                             <span className="text-xs text-muted-foreground">
                               Balance:{" "}
-                              {wallet.balance.toLocaleString("en-US", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}{" "}
+                              {Math.floor(wallet.balance * 10000) / 10000}{" "}
                               {formatCurrencyCode(wallet.currency)}
                             </span>
                           </div>
@@ -876,10 +867,7 @@ export function InternalTransferDialog({
                             <span>Main Wallet</span>
                             <span className="text-xs text-muted-foreground">
                               Balance:{" "}
-                              {wallet.balance.toLocaleString("en-US", {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2,
-                              })}{" "}
+                              {Math.floor(wallet.balance * 10000) / 10000}{" "}
                               {formatCurrencyCode(wallet.currency)}
                             </span>
                           </div>

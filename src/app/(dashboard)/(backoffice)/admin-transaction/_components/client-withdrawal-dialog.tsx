@@ -275,7 +275,7 @@ export function ClientWithdrawalDialog({ open, onOpenChange, token, onSuccess }:
                           )}
                         </div>
                         <span className="font-medium">
-                          {wallet.balance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {wallet.currency}
+                          {typeof wallet.balance === 'number' ? Math.floor(wallet.balance * 10000) / 10000 : wallet.balance} {wallet.currency}
                         </span>
                       </div>
                     ))}

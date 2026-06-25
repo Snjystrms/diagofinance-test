@@ -21,14 +21,12 @@ export const fmtISTDateTime = (s?: string | null) => {
 };
 
 export const formatAmount = (amount?: string | number | null) => {
-  if (amount === undefined || amount === null) return "0.00";
+  if (amount === undefined || amount === null) return "0.0000";
   try {
     const num = typeof amount === "number" ? amount : parseFloat(String(amount));
-    if (Number.isNaN(num)) return "0.00";
-    return num.toLocaleString("en-US", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
+    if (Number.isNaN(num)) return "0.0000";
+    // Truncate to 4 decimal places without rounding
+    return String(Math.floor(num * 10000) / 10000);
   } catch {
     return String(amount);
   }
