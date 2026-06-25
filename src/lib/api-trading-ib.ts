@@ -1882,7 +1882,7 @@ export const mt5AccountsApi = {
       headers: { Authorization: `Bearer ${token}` },
     }),
   getBalance: (mt5Login: number | string, token: string) =>
-    apiCall<MT5AccountBalance>(`user/mt5-account {
+    apiCall<MT5AccountBalance>(`/user/mt5-account/${mt5Login}/balance`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),
