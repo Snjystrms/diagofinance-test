@@ -61,7 +61,7 @@ The application integrates with the following backend APIs:
 
 ## Getting Started
 
-### Prerequisites ##
+### Prerequisites 
 
 - Node.js 18+ 
 - npm or yarn
