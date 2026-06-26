@@ -56,26 +56,15 @@ export default function WalletOverviewPage() {
         
         // Fetch live balances for MT5 wallets - NO FALLBACK, ONLY USE API
         if (response.data.mt5_wallets && response.data.mt5_wallets.length > 0) {
-          console.log(`[Wallet Overview] Fetching balances for ${response.data.mt5_wallets.length} MT5 wallets`);
           
           const balancePromises = response.data.mt5_wallets.map(async (wallet) => {
-            console.log(`[Wallet Overview] Fetching balance for MT5 ${wallet.mt5_id}`);
             try {
               const balanceResponse = await mt5AccountsApi.getBalance(wallet.mt5_id, token) as unknown as MT5AccountBalance;
-              console.log(`[Wallet Overview API] Full response for MT5 ${wallet.mt5_id}:`, JSON.stringify(balanceResponse, null, 2));
-              console.log(`[Wallet Overview] Response properties for ${wallet.mt5_id}:`, {
-                success: balanceResponse.success,
-                hasBalanceOnRoot: balanceResponse.balance !== undefined,
-                balanceOnRoot: balanceResponse.balance,
-              });
               
               // API returns balance at root level directly
               if (balanceResponse.success && balanceResponse.balance !== undefined) {
-                console.log(`[Wallet Overview] ✅ Got balance ${balanceResponse.balance} for MT5 ${wallet.mt5_id}`);
                 return { mt5Id: wallet.mt5_id, balance: balanceResponse.balance };
               }
-              // If API doesn't return balance, show null (will display as "-")
-              console.log(`[Wallet Overview] ❌ No valid balance for MT5 ${wallet.mt5_id}, returning null`);
               return { mt5Id: wallet.mt5_id, balance: null };
             } catch (error) {
               console.error(`[Wallet Overview] ❌ Error fetching balance for MT5 ${wallet.mt5_id}:`, error);
@@ -84,14 +73,11 @@ export default function WalletOverviewPage() {
           });
           
           const balances = await Promise.all(balancePromises);
-          console.log(`[Wallet Overview] All balance results:`, balances);
           
           const balanceMap = balances.reduce((acc, { mt5Id, balance }) => {
             acc[mt5Id] = balance;
             return acc;
           }, {} as Record<string, number | null>);
-          
-          console.log(`[Wallet Overview] Final balance map:`, balanceMap);
           setMt5Balances(balanceMap);
         }
       } else {
@@ -421,11 +407,6 @@ export default function WalletOverviewPage() {
                   {mt5Wallets.map((wallet) => {
                     // ONLY use API balance - show "-" if null
                     const liveBalance = mt5Balances[wallet.mt5_id];
-                    console.log(`[Wallet Overview Render] MT5 ${wallet.mt5_id}:`, {
-                      liveBalance,
-                      currency: wallet.currency,
-                      willShow: liveBalance === null || liveBalance === undefined ? '-' : 'balance',
-                    });
                     
                     return (
                       <div

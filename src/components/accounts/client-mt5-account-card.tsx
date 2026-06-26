@@ -191,20 +191,16 @@ export function ClientMt5AccountCard({
 
   // Fetch live balance on mount and when mt5Login changes
   useEffect(() => {
-    console.log(`[MT5 Card] useEffect triggered - mt5Login: ${mt5Login}, token: ${token ? 'exists' : 'missing'}`);
     
     if (!mt5Login || !token) {
-      console.log(`[MT5 Card] Skipping fetch - mt5Login or token missing`);
       return;
     }
     
     const fetchBalance = async () => {
       try {
-        console.log(`[MT5 Card] Starting balance fetch for MT5 ${mt5Login}`);
         setIsLoadingBalance(true);
         
         const response = await mt5AccountsApi.getBalance(mt5Login, token) as unknown as MT5AccountBalance;
-        console.log(`[MT5 Card Balance API] Full response for account ${mt5Login}:`, JSON.stringify(response, null, 2));
         console.log(`[MT5 Card] Response properties:`, {
           success: response.success,
           hasBalanceOnRoot: response.balance !== undefined,
@@ -213,14 +209,8 @@ export function ClientMt5AccountCard({
         
         // API returns balance at root level directly
         if (response.success && response.balance !== undefined) {
-          console.log(`[MT5 Card] ✅ Using API balance ${response.balance} for ${mt5Login}`);
           setLiveBalance(response.balance);
         } else {
-          console.log(`[MT5 Card] ❌ API didn't return valid balance for ${mt5Login}:`, {
-            success: response.success,
-            balance: response.balance,
-          });
-          console.log(`[MT5 Card] Setting null, showing "-"`);
           setLiveBalance(null); // null = show "-"
         }
       } catch (error) {
@@ -228,7 +218,6 @@ export function ClientMt5AccountCard({
         setLiveBalance(null); // null = show "-"
       } finally {
         setIsLoadingBalance(false);
-        console.log(`[MT5 Card] Finished balance fetch for ${mt5Login}`);
       }
     };
 
@@ -237,13 +226,6 @@ export function ClientMt5AccountCard({
 
   // Use live balance ONLY - show "-" if null
   const displayBalance = liveBalance;
-
-  console.log(`[MT5 Card] Render state for ${mt5Login}:`, {
-    isLoadingBalance,
-    liveBalance,
-    displayBalance,
-    willShow: isLoadingBalance ? 'Loading...' : displayBalance === null ? '-' : 'balance',
-  });
 
   return (
     <Card

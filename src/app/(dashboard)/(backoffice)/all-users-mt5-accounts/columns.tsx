@@ -50,7 +50,8 @@ const getMt5BalanceCurrency = (account: AdminMT5Account) => (isCentAccount(accou
 const getMt5DisplayBalance = (account: AdminMT5Account, rawBalance: number | null | undefined) => {
   const balance = typeof rawBalance === "number" ? rawBalance : Number(rawBalance ?? 0);
   if (!Number.isFinite(balance)) return 0;
-  return isCentAccount(account) ? balance * 100 : balance;
+  // Balance API already returns correct value (USC for CENT, USD for standard)
+  return balance;
 };
 
 // Balance button component

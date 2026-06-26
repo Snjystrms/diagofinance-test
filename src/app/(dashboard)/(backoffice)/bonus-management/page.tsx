@@ -739,7 +739,7 @@ export default function BonusManagementPage() {
                           </span>
                         ) : selectedMt5Balance !== null ? (
                           <>
-                            {formatMoney(selectedMt5User.account_type_name === "CENT" ? selectedMt5Balance * 100 : selectedMt5Balance)} {selectedMt5User.account_type_name === "CENT" ? "USC" : "USD"}
+                            {formatMoney(selectedMt5Balance)} {selectedMt5User.account_type_name === "CENT" ? "USC" : "USD"}
                           </>
                         ) : (
                           <>

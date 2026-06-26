@@ -82,15 +82,11 @@ const getMt5AccountCurrency = (account?: AdminMT5Account) => (isCentMt5Account(a
 const getMt5AccountBalance = (account?: AdminMT5Account, liveBalances?: Map<string, number>) => {
   if (!account) return 0;
   
-  // Try to get live balance first
+  // Try to get live balance first (API returns correct value: USC for CENT, USD for standard)
   if (liveBalances) {
     const accId = String(account.account_id ?? account.mt5_id ?? account.id ?? "");
     const liveBalance = liveBalances.get(accId);
     if (liveBalance !== undefined) {
-      // For CENT accounts, multiply by 100
-      if (isCentMt5Account(account)) {
-        return liveBalance * 100;
-      }
       return liveBalance;
     }
   }
