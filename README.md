@@ -12,7 +12,7 @@ A complete authentication system built with Next.js, TanStack Query, and shadcn/
 - ✅ **Protected Routes** - Authentication-based route protection
 - ✅ **Form Validation** - Zod schema vlidation
 - ✅ **Loading States** - TanStack Query loading indicators
-- ✅ **Toast Notifications** - Success/errol feedback
+- ✅ **Toast Notifications** - Success/error feedback
 - ✅ **Responsive Design** - Mobile-friendly UI
 - ✅ **Dark/Light Theme** - Theme switching support
 
