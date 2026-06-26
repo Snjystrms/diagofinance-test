@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { BackofficeDetailDialogSkeleton } from "@/components/loading/backoffice-page-skeletons";
 import {
@@ -10,6 +12,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { AdminMT5Account } from "@/lib/api";
+import { mt5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
+import { useAuth } from "@/contexts/auth-context";
 import { formatDateTimeInIST } from "@/lib/formatters";
 
 interface AccountDetailsDialogProps {
@@ -52,7 +56,19 @@ const getAccountTypeName = (account: AdminMT5Account) => {
 const getMt5BalanceCurrency = (account: AdminMT5Account) =>
   getAccountTypeName(account).trim().toLowerCase() === "cent" ? "USC" : "USD";
 
-const formatWalletBalance = (account: AdminMT5Account) => {
+const formatWalletBalance = (account: AdminMT5Account, liveBalance?: number | null, fetchFailed?: boolean) => {
+  // If API failed, return "-"
+  if (fetchFailed) {
+    return emptyValue;
+  }
+  
+  // Use live balance if available (API returns correct value)
+  if (liveBalance !== null && liveBalance !== undefined) {
+    const currency = getMt5BalanceCurrency(account);
+    return `${displayValue(liveBalance)} ${currency}`;
+  }
+  
+  // Fallback to cached balance
   if (account.self_wallet === undefined || account.self_wallet === null) {
     return emptyValue;
   }
@@ -74,6 +90,46 @@ export function AccountDetailsDialog({
   account,
   loading = false,
 }: AccountDetailsDialogProps) {
+  const { token } = useAuth();
+  const [liveBalance, setLiveBalance] = useState<number | null>(null);
+  const [loadingBalance, setLoadingBalance] = useState(false);
+  const [balanceFetchFailed, setBalanceFetchFailed] = useState(false);
+
+  // Fetch live balance when account changes
+  useEffect(() => {
+    if (!account || !token || !open) {
+      setLiveBalance(null);
+      setBalanceFetchFailed(false);
+      return;
+    }
+
+    const fetchBalance = async () => {
+      const mt5Login = account.mt5_id ?? account.account_id ?? account.id;
+      if (!mt5Login) return;
+
+      setLoadingBalance(true);
+      setBalanceFetchFailed(false);
+      try {
+        const response = await mt5AccountsApi.getAdminBalance(mt5Login, token) as unknown as MT5AccountBalance;
+        if (response.success && response.balance !== undefined) {
+          setLiveBalance(response.balance);
+          setBalanceFetchFailed(false);
+        } else {
+          setLiveBalance(null);
+          setBalanceFetchFailed(true);
+        }
+      } catch (error) {
+        console.error("Failed to fetch MT5 balance:", error);
+        setLiveBalance(null);
+        setBalanceFetchFailed(true);
+      } finally {
+        setLoadingBalance(false);
+      }
+    };
+
+    void fetchBalance();
+  }, [account, token, open]);
+
   const user = account?.user ?? account?.User;
   const group = account?.group;
   const accountType = account?.accountType;
@@ -123,7 +179,16 @@ export function AccountDetailsDialog({
                 <DetailItem label="Server" value={account.server} />
                 <DetailItem label="Account Type" value={getAccountTypeName(account)} />
                 <DetailItem label="Leverage" value={account.leverage ? `1:${account.leverage}` : emptyValue} />
-                <DetailItem label="Wallet Balance" value={formatWalletBalance(account)} />
+                <DetailItem label="Wallet Balance" value={
+                  loadingBalance ? (
+                    <span className="flex items-center gap-2 text-xs">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Loading...
+                    </span>
+                  ) : (
+                    formatWalletBalance(account, liveBalance, balanceFetchFailed)
+                  )
+                } />
                 <DetailItem label="Main Password" value={account.main_password} />
                 <DetailItem label="Investor Password" value={account.investor_password} />
                 <DetailItem label="Created" value={formatDate(account.created_at)} />

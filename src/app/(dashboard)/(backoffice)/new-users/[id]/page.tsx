@@ -11,6 +11,7 @@ import {
   Eye,
   EyeOff,
   Globe,
+  Loader2,
   Mail,
   MapPin,
   Phone,
@@ -46,6 +47,7 @@ import {
   type AdminUserWalletHistoryItem,
   type PaginationMeta,
 } from "@/lib/api";
+import { mt5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
 import { formatDateTimeInIST } from "@/lib/formatters";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -168,7 +170,13 @@ const formatValueWithCurrency = (value: unknown, currency?: unknown) => {
 const getUserMt5BalanceCurrency = (account: AdminUserMt5AccountItem) =>
   isCentAccountTypeName(account.account_type_name) ? "USC" : "USD";
 
-const getMt5DisplayBalance = (account: AdminUserMt5AccountItem) => {
+const getMt5DisplayBalance = (account: AdminUserMt5AccountItem, liveBalance?: number | null) => {
+  // Use live balance if available (API already returns correct value)
+  if (liveBalance !== null && liveBalance !== undefined) {
+    return liveBalance;
+  }
+  
+  // Fallback to cached balance with × 100 multiplication for CENT accounts
   const rawBalance = typeof account.balance === "number" ? account.balance : Number(account.balance ?? 0);
   if (!Number.isFinite(rawBalance)) return 0;
   return isCentAccountTypeName(account.account_type_name) ? rawBalance * 100 : rawBalance;
@@ -464,6 +472,8 @@ export default function NewUserDetailPage() {
   const [referralLoaded, setReferralLoaded] = useState(false);
   const [walletHistoryState, setWalletHistoryState] = useState(() => createPaginatedState<AdminUserWalletHistoryItem>());
   const [mt5AccountsState, setMt5AccountsState] = useState(() => createCollectionState<AdminUserMt5AccountItem>());
+  const [mt5LiveBalances, setMt5LiveBalances] = useState<Map<string, number | null>>(new Map());
+  const [loadingMt5Balances, setLoadingMt5Balances] = useState(false);
 
   const loadDepositsPage = useCallback(async (page = 1) => {
     if (!token || !userUuid) return;
@@ -621,6 +631,8 @@ export default function NewUserDetailPage() {
     setReferralLoaded(false);
     setWalletHistoryState(createPaginatedState<AdminUserWalletHistoryItem>());
     setMt5AccountsState(createCollectionState<AdminUserMt5AccountItem>());
+    setMt5LiveBalances(new Map());
+    setLoadingMt5Balances(false);
 
     if (!id) {
       setLoadingProfile(false);
@@ -770,6 +782,53 @@ export default function NewUserDetailPage() {
     withdrawalsState.loaded,
     withdrawalsState.loading,
   ]);
+
+  // Fetch live MT5 balances when accounts are loaded
+  useEffect(() => {
+    if (!token || !mt5AccountsState.rows.length || mt5AccountsState.loading) {
+      return;
+    }
+
+    const fetchMt5Balances = async () => {
+      setLoadingMt5Balances(true);
+      const newBalances = new Map<string, number | null>();
+
+      console.log("[MT5 Balance Fetch] Starting to fetch balances for", mt5AccountsState.rows.length, "accounts");
+
+      await Promise.all(
+        mt5AccountsState.rows.map(async (account) => {
+          const mt5Login = account.mt5_id ?? account.id;
+          if (!mt5Login) {
+            console.warn("[MT5 Balance Fetch] Skipping account without mt5_id or id:", account);
+            return;
+          }
+
+          try {
+            console.log("[MT5 Balance Fetch] Fetching balance for MT5 login:", mt5Login);
+            const response = await mt5AccountsApi.getAdminBalance(mt5Login, token) as unknown as MT5AccountBalance;
+            console.log("[MT5 Balance Fetch] Response for", mt5Login, ":", response);
+            
+            if (response.success && response.balance !== undefined) {
+              newBalances.set(String(mt5Login), response.balance);
+              console.log("[MT5 Balance Fetch] ✓ Stored balance for", mt5Login, ":", response.balance);
+            } else {
+              newBalances.set(String(mt5Login), null);
+              console.warn("[MT5 Balance Fetch] ✗ Invalid response for", mt5Login, "- success:", response.success, "balance:", response.balance);
+            }
+          } catch (error) {
+            newBalances.set(String(mt5Login), null);
+            console.error("[MT5 Balance Fetch] ✗ Failed to fetch balance for", mt5Login, ":", error);
+          }
+        })
+      );
+
+      console.log("[MT5 Balance Fetch] Completed. Total balances fetched:", newBalances.size);
+      setMt5LiveBalances(newBalances);
+      setLoadingMt5Balances(false);
+    };
+
+    void fetchMt5Balances();
+  }, [token, mt5AccountsState.rows, mt5AccountsState.loading]);
 
   const summaryCards = useMemo(
     () => [
@@ -1377,22 +1436,48 @@ export default function NewUserDetailPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {mt5AccountsState.rows.map((item, index) => (
-                                <TableRow key={item.id}>
-                                  <TableCell className="font-medium">
-                                    <SerialNumberCell serialNumber={index + 1} />
-                                  </TableCell>
-                                  
-                                  <TableCell>{item.mt5_id || "-"}</TableCell>
-                                  <TableCell className="max-w-[220px] truncate">{item.group_name || "-"}</TableCell>
-                                  <TableCell className="font-mono text-xs">
-                                    {formatValueWithCurrency(getMt5DisplayBalance(item), getUserMt5BalanceCurrency(item))}
-                                  </TableCell>
-                                  {/* <TableCell className="font-mono text-xs">{item.investor_password || "-"}</TableCell>
-                                  <TableCell className="font-mono text-xs">{item.main_password || "-"}</TableCell> */}
-                                  <TableCell>{formatDateTime(item.date)}</TableCell>
-                                </TableRow>
-                              ))}
+                              {mt5AccountsState.rows.map((item, index) => {
+                                const mt5Login = String(item.mt5_id ?? item.id);
+                                const liveBalance = mt5LiveBalances.get(mt5Login);
+                                
+                                // Determine what to display
+                                let displayContent: string;
+                                if (loadingMt5Balances) {
+                                  // Still loading
+                                  displayContent = "loading";
+                                } else if (liveBalance === null && mt5LiveBalances.has(mt5Login)) {
+                                  // API failed for this account (explicitly set to null)
+                                  displayContent = "-";
+                                } else {
+                                  // Show balance (either live or cached fallback)
+                                  const displayBalance = getMt5DisplayBalance(item, liveBalance);
+                                  displayContent = formatValueWithCurrency(displayBalance, getUserMt5BalanceCurrency(item));
+                                }
+                                
+                                return (
+                                  <TableRow key={item.id}>
+                                    <TableCell className="font-medium">
+                                      <SerialNumberCell serialNumber={index + 1} />
+                                    </TableCell>
+                                    
+                                    <TableCell>{item.mt5_id || "-"}</TableCell>
+                                    <TableCell className="max-w-[220px] truncate">{item.group_name || "-"}</TableCell>
+                                    <TableCell className="font-mono text-xs">
+                                      {displayContent === "loading" ? (
+                                        <span className="flex items-center gap-2">
+                                          <Loader2 className="h-3 w-3 animate-spin" />
+                                          Loading...
+                                        </span>
+                                      ) : (
+                                        displayContent
+                                      )}
+                                    </TableCell>
+                                    {/* <TableCell className="font-mono text-xs">{item.investor_password || "-"}</TableCell>
+                                    <TableCell className="font-mono text-xs">{item.main_password || "-"}</TableCell> */}
+                                    <TableCell>{formatDateTime(item.date)}</TableCell>
+                                  </TableRow>
+                                );
+                              })}
                             </TableBody>
                           </Table>
                         </div>,
