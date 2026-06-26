@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useDeferredValue, useMemo, useCallback } from "react";
+import { useState, useRef, useDeferredValue, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -33,6 +33,7 @@ import { formatDateTime } from "@/lib/formatters";
 import toast from "react-hot-toast";
 
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import {
   Mail,
   Send,
@@ -80,12 +81,24 @@ export default function EmailManagementPage() {
 
   // user search
   const [userSearch, setUserSearch] = useState("");
-  const deferredSearch = useDeferredValue(userSearch.trim().toLowerCase());
 
   const [emails, setEmails] = useState<string[]>([]);
   const [isBroadcastAll, setIsBroadcastAll] = useState(true);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BroadcastEmailResponse["data"] | null>(null);
+
+  // ---- Email exclusion list ----
+  const [exclusionInput, setExclusionInput] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<EmailExclusion | null>(null);
+
+  // Client search (for adding clients to exclusion list)
+  const [exclusionUserSearch, setExclusionUserSearch] = useState("");
+
+  // Filter (for searching within existing excluded emails)
+  const [exclusionListFilter, setExclusionListFilter] = useState("");
+  const deferredListFilter = useDeferredValue(
+    exclusionListFilter.trim().toLowerCase()
+  );
 
   // ── History ──
   const [historyPage, setHistoryPage] = useState(1);
@@ -100,11 +113,23 @@ export default function EmailManagementPage() {
     staleTime: 30 * 1000,
   });
 
-  // Fetch all users once (large limit) so search is client-side
+  // Fetch all users only when user has typed at least 3 characters
+  const shouldFetchUsers = 
+    (!isBroadcastAll && userSearch.trim().length >= 3) || 
+    (activeTab === "exclusions" && exclusionUserSearch.trim().length >= 3);
+
   const { data: allUsers = [], isLoading: loadingUsers } = useQuery({
-    queryKey: ["email-mgmt-users", token],
+    queryKey: ["email-mgmt-users", token, userSearch.trim(), exclusionUserSearch.trim()],
     queryFn: async () => {
-      const res = await adminUsersApi.list({ token: token!, page: 1, limit: 1000 });
+      const searchQuery = activeTab === "exclusions" 
+        ? exclusionUserSearch.trim() 
+        : userSearch.trim();
+      const res = await adminUsersApi.list({ 
+        token: token!, 
+        page: 1, 
+        limit: 50,
+        search: searchQuery
+      });
       const raw = res?.data ?? res;
       const list: PendingUser[] =
         (raw as { users?: PendingUser[] })?.users ??
@@ -115,34 +140,14 @@ export default function EmailManagementPage() {
     enabled:
       Boolean(token) &&
       (!isManager || canSearchClientEmails) &&
-      (!isBroadcastAll || activeTab === "exclusions"),
+      shouldFetchUsers,
     staleTime: 2 * 60 * 1000,
   });
 
   const filteredUsers = useMemo(() => {
-    if (deferredSearch.length < 3) return [];
-    return allUsers
-      .filter((u) =>
-        `${u.name} ${u.email} ${u.username ?? ""}`.toLowerCase().includes(deferredSearch)
-      )
-      .slice(0, 50);
-  }, [deferredSearch, allUsers]);
-
-  // ---- Email exclusion list ----
-  const [exclusionInput, setExclusionInput] = useState("");
-  const [deleteTarget, setDeleteTarget] = useState<EmailExclusion | null>(null);
-
-  // Client search (for adding clients to exclusion list)
-  const [exclusionUserSearch, setExclusionUserSearch] = useState("");
-  const deferredExclusionSearch = useDeferredValue(
-    exclusionUserSearch.trim().toLowerCase()
-  );
-
-  // Filter (for searching within existing excluded emails)
-  const [exclusionListFilter, setExclusionListFilter] = useState("");
-  const deferredListFilter = useDeferredValue(
-    exclusionListFilter.trim().toLowerCase()
-  );
+    // Since we're doing server-side search now, just return the results
+    return allUsers.slice(0, 50);
+  }, [allUsers]);
 
   const exclusionsQuery = useQuery({
     queryKey: ["email-exclusions", token],
@@ -167,15 +172,9 @@ export default function EmailManagementPage() {
   );
 
   const filteredExclusionUsers = useMemo(() => {
-    if (deferredExclusionSearch.length < 3) return [];
-    return allUsers
-      .filter((u) =>
-        `${u.name} ${u.email} ${u.username ?? ""}`
-          .toLowerCase()
-          .includes(deferredExclusionSearch)
-      )
-      .slice(0, 50);
-  }, [deferredExclusionSearch, allUsers]);
+    // Since we're doing server-side search now, just return the results
+    return allUsers.slice(0, 50);
+  }, [allUsers]);
 
   const filteredExclusions = useMemo(() => {
     if (!deferredListFilter) return exclusions;
@@ -440,19 +439,18 @@ export default function EmailManagementPage() {
                   {/* User search */}
                   <div className="space-y-1.5">
                     <Label>Search clients</Label>
-                    <div className="relative">
-                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        placeholder="Type at least 3 letters to search by name or email"
-                        className="pl-9"
-                        value={userSearch}
-                        onChange={(e) => setUserSearch(e.target.value)}
-                        disabled={loadingUsers}
-                      />
-                      {loadingUsers && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-                      )}
-                    </div>
+                    <ApiSearchBar
+                      value={userSearch}
+                      onChange={setUserSearch}
+                      onSearch={(value) => {
+                        setUserSearch(value || "");
+                      }}
+                      placeholder="Search by name or email"
+                      minimumLength={3}
+                      delay={300}
+                      disabled={loadingUsers}
+                      className="w-full max-w-full"
+                    />
 
                     {/* Dropdown */}
                     {showDropdown && (
@@ -846,22 +844,21 @@ export default function EmailManagementPage() {
                   {/* Client search */}
                   <div className="space-y-1.5">
                     <Label>Search clients</Label>
-                    <div className="relative">
-                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                      <Input
-                        placeholder="Type at least 3 letters to search by name or email"
-                        className="pl-9"
-                        value={exclusionUserSearch}
-                        onChange={(e) => setExclusionUserSearch(e.target.value)}
-                        disabled={loadingUsers || addExclusionMutation.isPending}
-                      />
-                      {loadingUsers && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
-                      )}
-                    </div>
+                    <ApiSearchBar
+                      value={exclusionUserSearch}
+                      onChange={setExclusionUserSearch}
+                      onSearch={(value) => {
+                        setExclusionUserSearch(value || "");
+                      }}
+                      placeholder="Search by name or email"
+                      minimumLength={3}
+                      delay={300}
+                      disabled={loadingUsers || addExclusionMutation.isPending}
+                      className="w-full max-w-full"
+                    />
 
                     {/* Dropdown */}
-                    {deferredExclusionSearch.length >= 3 && filteredExclusionUsers.length > 0 && (
+                    {exclusionUserSearch.trim().length >= 3 && filteredExclusionUsers.length > 0 && (
                       <div className="rounded-xl border border-border/60 bg-background shadow-md overflow-hidden">
                         <div className="max-h-52 overflow-y-auto divide-y divide-border/50">
                           {filteredExclusionUsers.map((user) => {
@@ -897,12 +894,12 @@ export default function EmailManagementPage() {
                         </div>
                       </div>
                     )}
-                    {deferredExclusionSearch.length >= 3 &&
+                    {exclusionUserSearch.trim().length >= 3 &&
                       filteredExclusionUsers.length === 0 &&
                       !loadingUsers && (
                         <p className="text-xs text-muted-foreground">No users found.</p>
                       )}
-                    {deferredExclusionSearch.length < 3 && (
+                    {exclusionUserSearch.trim().length < 3 && (
                       <p className="text-xs text-muted-foreground">
                         Type at least 3 letters to search users.
                       </p>

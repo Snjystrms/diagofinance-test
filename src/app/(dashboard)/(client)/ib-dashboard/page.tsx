@@ -172,6 +172,43 @@ export default function IbDashboardPage() {
   const [transferAmount, setTransferAmount] = useState("");
   const [transferComment, setTransferComment] = useState("");
   const [isTransferring, setIsTransferring] = useState(false);
+  
+  // Track theme changes for dynamic color resolution
+  const [themeVersion, setThemeVersion] = useState(0);
+  
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === "class" || mutation.attributeName === "style") {
+          setThemeVersion((v) => v + 1);
+        }
+      });
+    });
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "style"],
+    });
+    
+    return () => observer.disconnect();
+  }, []);
+  
+  // Get theme-aware color for axis ticks
+  const tickColor = useMemo(() => {
+    if (typeof window === "undefined") return "#71717a";
+    
+    const testEl = document.createElement("div");
+    testEl.className = "text-muted-foreground";
+    testEl.style.visibility = "hidden";
+    testEl.style.position = "absolute";
+    document.body.appendChild(testEl);
+    const computedColor = getComputedStyle(testEl).color;
+    document.body.removeChild(testEl);
+    
+    return computedColor || "#71717a";
+  }, [themeVersion]);
 
   const fetchDashboard = useCallback(async () => {
     if (!token) {
@@ -447,22 +484,27 @@ export default function IbDashboardPage() {
                   dataKey="date"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                  tick={{ fontSize: 12, fill: tickColor }}
                 />
                 <YAxis
                   domain={[0, maxRebate]}
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
+                  tick={{ fontSize: 12, fill: tickColor }}
                 />
                 <ChartTooltip content={<ChartTooltipContent />} />
                 <Line
                   type="monotone"
                   dataKey="rebates"
-                  stroke="var(--color-rebates)"
+                  stroke="var(--primary)"
                   strokeWidth={3}
                   dot={false}
-                  activeDot={{ r: 4 }}
+                  activeDot={{ 
+                    r: 4,
+                    fill: "var(--primary)",
+                    stroke: "var(--background)",
+                    strokeWidth: 2,
+                  }}
                 />
               </LineChart>
             </ChartContainer>

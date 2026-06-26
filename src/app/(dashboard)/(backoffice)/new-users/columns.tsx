@@ -393,7 +393,7 @@ export const getColumnsWithActions = (
   },
   {
     id: "ib_status",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="IB Status" />,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Partner Status" />,
     cell: ({ row }) => {
       const user = row.original;
       const isIb = Boolean(String(user.sponsor_id ?? "").trim());
