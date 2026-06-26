@@ -110,7 +110,7 @@ src/
 ├── components/            # Reusable components
 │   ├── ui/               # shadcn/ui components
 │   ├── header.tsx        # Header with user menu
-│   ├── main-layout.tsx   # Dashboard layout
+│   ├── main-layout.tsx   # Dashboard layoutt
 │   ├── protected-route.tsx # Route protection
 │   └── query-provider.tsx # TanStack Query provider
 ├── contexts/             # React Context providers
