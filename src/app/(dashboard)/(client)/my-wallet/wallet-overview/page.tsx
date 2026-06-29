@@ -123,11 +123,11 @@ export default function WalletOverviewPage() {
   }
 
   const isCreditTransaction = (type: string) => {
-    return type.includes('deposit') || type.includes('transfer_in') || type.includes('bonus')  || type.includes('bonus') || type.includes('credit')
+    return type.includes('deposit') || type.includes('transfer_in') || type.includes('bonus') || type.includes('credit') || type.includes('ib_commission')
   }
 
   const getTransactionIcon = (type: string) => {
-    if (type.includes('bonus') || type.includes('credit')) {
+    if (type.includes('bonus') || type.includes('credit') || type.includes('ib_commission')) {
       return <Sparkles className="h-4 w-4 text-emerald-600" />
     } else if (isCreditTransaction(type)) {
       return <ArrowDownRight className="h-4 w-4 text-green-600" />
@@ -138,7 +138,7 @@ export default function WalletOverviewPage() {
   }
 
   const getTransactionColor = (type: string) => {
-    if (type.includes('bonus') || type.includes('credit')) {
+    if (type.includes('bonus') || type.includes('credit') || type.includes('ib_commission')) {
       return 'text-emerald-600 dark:text-emerald-400'
     } else if (isCreditTransaction(type)) {
       return 'text-green-600 dark:text-green-400'
@@ -487,7 +487,7 @@ export default function WalletOverviewPage() {
                       <div className="flex items-center gap-4 flex-1 min-w-0">
                         <div
                           className={`p-3 rounded-xl transition-all duration-300 flex-shrink-0 ${
-                            transaction.type.includes('bonus')
+                            transaction.type.includes('bonus') || transaction.type.includes('ib_commission')
                               ? 'bg-emerald-100 dark:bg-emerald-900/20 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-900/30'
                               : isCreditTransaction(transaction.type)
                               ? 'bg-green-100 dark:bg-green-900/20 group-hover:bg-green-200 dark:group-hover:bg-green-900/30'
