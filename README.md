@@ -10,7 +10,7 @@ A complete authentication system built with Next.js, TanStack Query, and shadcn/
 - ✅ **Password Reset** - Forgot password and reset functionality
 - ✅ **Resend OTP** - Ability to resend verification codes
 - ✅ **Protected Routes** - Authentication-based route protection
-- ✅ **Form Validation** - Zod schema vlidation
+- ✅ **Form Validation** - Zod schema validation
 - ✅ **Loading States** - TanStack Query loading indicators
 - ✅ **Toast Notifications** - Success/error feedback
 - ✅ **Responsive Design** - Mobile-friendly UI
