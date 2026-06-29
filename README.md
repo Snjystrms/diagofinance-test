@@ -6,7 +6,7 @@ A complete authentication system built with Next.js, TanStack Query, and shadcn/
 
 - ✅ **User Registration** - Complete registration form with validation
 - ✅ **Email Verification** - OTP verification system
-- ✅ **User Login** - Smcure login with JWT tokens
+- ✅ **User Login** - Secure login with JWT tokens
 - ✅ **Password Reset** - Forgot password and reset functionality
 - ✅ **Resend OTP** - Ability to resend verification codes
 - ✅ **Protected Routes** - Authentication-based route protection
