@@ -49,7 +49,7 @@ The application integrates with the following backend APIs:
 
 4. **POST /user/resend-otp**
    - Resends OTP to user's email
-   - Available on verify OTP page
+   - Available on verify OTP plage
 
 5. **POST /user/forget-password**
    - Sends password reset instructios
