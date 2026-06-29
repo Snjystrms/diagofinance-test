@@ -39,7 +39,7 @@ The application integrates with the following backend APIs:
    - Redirects to verify OTP page
 
 2. **POST /user/verify-otp**
-   - Verifies OTP for account activation
+   - Verifies OTP for account actiivation
    - Redirects to login page on success
 
 3. **POST /user/login***
