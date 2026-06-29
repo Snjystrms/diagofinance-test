@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback, useRef, type ChangeEvent } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { parseAsInteger, useQueryState } from "nuqs";
+import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
 
@@ -274,6 +274,8 @@ const transformUser = (raw: Record<string, unknown>): PendingUser => {
         ? raw.payment_verified
         : Number(raw.payment_verified ?? 0) || 0,
     created_at: String(raw.created_at ?? ""),
+    approved_at: String(raw.approved_at ?? ""),
+    approved_by: String(raw.approved_by ?? ""),
   };
 };
 
@@ -486,7 +488,7 @@ export default function UserVerificationPage() {
   const [rows, setRows] = useState<ListRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("1");
+  const [statusFilter, setStatusFilter] = useQueryState("status", parseAsString.withDefault("0"));
   const [search, setSearch] = useState<string>("");
   const [searchInput, setSearchInput] = useState<string>("");
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));

@@ -1435,6 +1435,8 @@ export interface TransactionReportItem {
 export interface TransactionReportListParams {
   token: string;
   search?: string;
+  from_date?: string;
+  to_date?: string;
   page?: number;
   per_page?: number;
 }
@@ -1453,6 +1455,8 @@ export interface TransactionReportListPayload {
   };
   filters?: {
     search?: string | null;
+    from_date?: string | null;
+    to_date?: string | null;
   };
 }
 
@@ -1460,6 +1464,8 @@ export interface TransactionReportExportParams {
   token: string;
   format?: "xlsx" | "csv";
   search?: string;
+  from_date?: string;
+  to_date?: string;
 }
 
 export const adminTransactionReportApi = {
@@ -1475,6 +1481,8 @@ export const adminTransactionReportApi = {
     if (queryParams.search && queryParams.search.trim()) {
       qs.set("search", queryParams.search.trim());
     }
+    if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
+    if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
 
     const endpoint = `/admin/reports/transaction-report${qs.toString() ? `?${qs.toString()}` : ""}`;
 
@@ -1484,7 +1492,7 @@ export const adminTransactionReportApi = {
     });
   },
 
-  export: async ({ token, format = "xlsx", search }: TransactionReportExportParams) => {
+  export: async ({ token, format = "xlsx", search, from_date, to_date }: TransactionReportExportParams) => {
     if (!token) {
       throw new Error("Token is required to export transaction report");
     }
@@ -1498,6 +1506,8 @@ export const adminTransactionReportApi = {
     if (search && search.trim()) {
       qs.set("search", search.trim());
     }
+    if (from_date) qs.set("from_date", from_date);
+    if (to_date) qs.set("to_date", to_date);
 
     const endpoint = `/admin/reports/transaction-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {

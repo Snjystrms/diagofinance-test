@@ -442,9 +442,17 @@ export default function CurrencyManagementPage() {
       {
         id: "created_at",
         accessorKey: "created_at",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Created" />,
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Created at" />,
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">{fmtDate(row.original.created_at)}</span>
+        ),
+      },
+            {
+        id: "updated_at",
+        accessorKey: "updated_at",
+        header: ({ column }) => <DataTableColumnHeader column={column} title="Updated at" />,
+        cell: ({ row }) => (
+          <span className="text-sm text-muted-foreground">{fmtDate(row.original.updated_at)}</span>
         ),
       },
       {

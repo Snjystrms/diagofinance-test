@@ -159,6 +159,8 @@ const transformUser = (raw: Record<string, unknown>): PendingUser => {
     payment_verified: typeof raw.payment_verified === "number" ? raw.payment_verified : Number(raw.payment_verified ?? 0) || 0,
     main_wallet_balance: toNullableNumber(raw.main_wallet_balance),
     created_at: String(raw.created_at ?? ""),
+    approved_by: String(raw.approved_by ?? ""),
+    approved_at: String(raw.approved_at ?? ""),
   };
 };
 

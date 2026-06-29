@@ -254,6 +254,9 @@ export function BankDetailViewDialog({
               <h3 className="mb-3 text-sm font-semibold">Verification Status</h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 <DetailRow label="Status" value={detail.status || "pending"} />
+                 {detail.verified_by && (
+                <DetailRow label="Verified By" value={detail.verified_by} />
+                 )}
                 {detail.verified_at && (
                   <DetailRow
                     label="Verified At"

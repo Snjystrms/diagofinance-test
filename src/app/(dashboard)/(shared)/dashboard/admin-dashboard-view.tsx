@@ -120,7 +120,7 @@ const allKpiCards = [
   { title: "Pending Withdrawals",    value: kpis?.pending_withdraw ?? 0,                description: "Awaiting processing",         icon: Clock, ibVariant: "ib-portal-surface-amber",   href: "/withdrawal-requests?status=pending" },
   // Row 3
   { title: "Pending Partner Request", value: kpis?.pending_ib_request ?? 0,             description: "Pending Partner requests",      icon: Clock,       ibVariant: "ib-portal-surface-primary", href: "/all-ib?status=0" },
-  { title: "Pending KYC Clients",        value: kpis?.pending_kyc_clients ?? 0,             description: "Awaiting approval",           icon: Clock,        ibVariant: "ib-portal-surface-amber",   href: "/user-verification" },
+  { title: "Pending KYC Clients",        value: kpis?.pending_kyc_clients ?? 0,             description: "Awaiting approval",           icon: Clock,        ibVariant: "ib-portal-surface-amber",   href: "/user-verification?status=0" },
   { title: "Pending Bank Details",   value: kpis?.pending_bank_details_request ?? 0,    description: "Bank detail review queue",    icon: Landmark,     ibVariant: "ib-portal-surface-primary", href: "/add-bank-details" },
 ] satisfies KpiCardItem[];
 

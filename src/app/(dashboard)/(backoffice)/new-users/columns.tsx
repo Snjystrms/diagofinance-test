@@ -456,6 +456,22 @@ export const getColumnsWithActions = (
     ),
   },
     {
+    id: "approved_by",
+    accessorKey: "approved_by",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Processed By" />,
+    cell: ({ row }) => (
+      <div className="space-y-1">
+      <div className="flex items-center gap-1 text-sm">
+        <User className="h-4 w-4 text-muted-foreground" />
+        <span>{row.original.approved_by || "-"}</span>
+      </div>
+       <div className="text-xs text-muted-foreground">
+            <span>{row.original.approved_at || "-"}</span>
+          </div>
+      </div>
+    ),
+  },
+    {
     id: "referred_by",
     accessorKey: "sponsor_by",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Referred By" />,
@@ -469,8 +485,6 @@ export const getColumnsWithActions = (
             <span>{row.original.sponsor_by_email || "-"}</span>
           </div>
       </div>
-      
-      
     ),
   },
   ...(permissions?.showActionsColumn
