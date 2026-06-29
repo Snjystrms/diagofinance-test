@@ -112,6 +112,7 @@ import { normalizeIbWalletData } from "@/lib/ib"
 import { CLIENT_WALLET_REFRESH_EVENT } from "@/lib/client-events"
 import { mapPositionRows } from "@/app/(dashboard)/(client)/trade-history/all-trades/_lib/trade-history"
 import { LivePositionsTable } from "@/app/(dashboard)/(client)/trade-history/all-trades/_components/live-positions-table"
+import { utilityFunctions } from "@/utils/operations"
 
 const formatAmount = (amount?: number) => {
   const numAmount = typeof amount === 'number' ? amount : 0
@@ -1351,7 +1352,8 @@ const walletCardRef = useCallback((node: HTMLDivElement | null) => {
                     {(() => {
                       const h = new Date().getHours();
                       const greeting = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
-                      const firstName = user?.name?.split(" ")[0];
+                      const fullName = utilityFunctions.formatName(user?.name);
+                      const firstName = fullName?.split(" ")[0];
                       return firstName ? `${greeting}, ${firstName}` : greeting;
                     })()}
                   </h1>

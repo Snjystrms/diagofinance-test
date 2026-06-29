@@ -267,18 +267,12 @@ function WithdrawalRequestContent() {
     };
   }, [token]);
 
-  const totalBalance = walletData?.total_balance || 0;
   const withdrawalAmount = parseFloat(amount) || 0;
-  const remainingBalance = totalBalance - withdrawalAmount;
   const wallets = walletData ? Object.values(walletData.wallets) : [];
   const mainWallet = wallets.find((wallet) => wallet.is_primary) || wallets[0];
   const mainWalletBalance =
     walletData?.wallets?.main?.balance ?? mainWallet?.balance ?? 0;
   const currency = mainWallet?.currency || "USDT";
-  const withdrawalExposure =
-    totalBalance > 0
-      ? Math.min(100, Math.round((withdrawalAmount / totalBalance) * 100))
-      : 0;
   const supportsBankWithdrawal = !!bankTransferMethodId && !!bankDetails?.id;
   const isCryptoWithdrawal = withdrawalType === "crypto";
   const isBankWithdrawal = withdrawalType === "bank";
@@ -376,13 +370,6 @@ function WithdrawalRequestContent() {
 
     if (amountNum < minimumAmount) {
       setError(`Minimum withdrawal amount is ${minimumAmount} ${currency}`);
-      return;
-    }
-
-    if (amountNum > totalBalance) {
-      setError(
-        `Insufficient balance. Available: ${formatAmount(totalBalance)} ${currency}`,
-      );
       return;
     }
 

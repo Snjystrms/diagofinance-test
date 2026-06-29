@@ -312,6 +312,19 @@ export const utilityFunctions = {
     }).format(amount)
   },
 
+  // Format name to title case (first letter uppercase, rest lowercase)
+  // e.g., "JITENDRA PATLE" -> "Jitendra Patle", "jOHN DOE" -> "John Doe"
+  formatName: (name: string | undefined | null): string => {
+    if (!name) return ''
+    return name
+      .split(' ')
+      .map(word => {
+        if (!word) return ''
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+      })
+      .join(' ')
+  },
+
   // Generate random ID
   generateRandomId: (length: number = 8): string => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
