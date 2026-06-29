@@ -537,14 +537,14 @@ function OverviewTab({
                   dataKey="date"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  tick={{ fontSize: 11, fill: "hsl(var(--foreground))" }}
                   tickFormatter={(v: string) => v.slice(5)}
                 />
                 <YAxis
                   domain={[0, maxRebate]}
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  tick={{ fontSize: 11, fill: "hsl(var(--foreground))" }}
                   width={48}
                 />
                 <ChartTooltip

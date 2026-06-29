@@ -456,7 +456,7 @@ export default function IbDashboardPage() {
       <div className="grid gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
         <IbSectionCard
           title="Rebate trend"
-          description="Recent rebate activity for your IB account."
+          description="Recent rebate activity for your Partner account."
           actions={
             <div className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground">
               <LineChartIcon className="h-3.5 w-3.5 shrink-0" />
