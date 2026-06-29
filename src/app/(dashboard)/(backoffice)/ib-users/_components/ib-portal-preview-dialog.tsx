@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDownRight,
   ArrowUpRight,
@@ -456,6 +456,29 @@ function OverviewTab({
     },
   };
 
+  // Recompute whenever the theme class on <html> changes
+  const [themeVersion, setThemeVersion] = useState(0);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const observer = new MutationObserver(() => setThemeVersion((v) => v + 1));
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["class", "style"],
+    });
+    return () => observer.disconnect();
+  }, []);
+
+  const tickColor = useMemo(() => {
+    if (typeof window === "undefined") return "#000000";
+    const el = document.createElement("div");
+    el.className = "text-foreground";
+    el.style.cssText = "position:absolute;visibility:hidden";
+    document.body.appendChild(el);
+    const color = getComputedStyle(el).color;
+    document.body.removeChild(el);
+    return color || "#000000";
+  }, [themeVersion]);
+
   const todayEarnedStr = totalEarned
     ? `Today: ${formatCurrency(totalEarned.today)}`
     : "Today: 0.00";
@@ -537,14 +560,14 @@ function OverviewTab({
                   dataKey="date"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 11, fill: "hsl(var(--foreground))" }}
+                  tick={{ fontSize: 11, fill: tickColor }}
                   tickFormatter={(v: string) => v.slice(5)}
                 />
                 <YAxis
                   domain={[0, maxRebate]}
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 11, fill: "hsl(var(--foreground))" }}
+                  tick={{ fontSize: 11, fill: tickColor }}
                   width={48}
                 />
                 <ChartTooltip
