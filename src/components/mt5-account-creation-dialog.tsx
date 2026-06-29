@@ -116,7 +116,7 @@ export function Mt5AccountCreationDialog({
               <div className="flex items-center gap-2 mb-0.5">
                 <span className="text-[10px] font-bold tracking-[0.18em] uppercase text-[#FFB401]">MetaTrader 5</span>
                 <span className="w-1 h-1 rounded-full bg-[#FFB401]/40" />
-                <span className="text-[10px] tracking-widest uppercase text-white/35">Vaspan Capital</span>
+                <span className="text-[10px] tracking-widest uppercase text-white/35">Vinnexia Capital</span>
               </div>
               <h2 className="text-xl font-bold text-white tracking-tight leading-tight">
                 Open Your Trading Account
@@ -153,7 +153,7 @@ export function Mt5AccountCreationDialog({
             <p className="text-xs text-muted-foreground leading-relaxed">
               Your MT5 account gives you access to{" "}
               <span className="text-foreground font-medium">1000+ instruments</span>,
-              real-time data, and one-click execution — all within the Vaspan platform.
+              real-time data, and one-click execution — all within the vinnexia platform.
             </p>
           </div>
         </div>

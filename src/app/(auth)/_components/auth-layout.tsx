@@ -48,7 +48,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           <div className="flex flex-col items-center mb-8">
             <Image
               src={logoSrc}
-              alt="Vaspan"
+              alt="vinnexia"
               width={72}
               height={72}
               className="object-contain drop-shadow-[0_0_18px_color-mix(in_srgb,var(--color-primary)_50%,transparent)]"
@@ -58,7 +58,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               className="truncate font-cinzel text-[21px] font-bold uppercase tracking-[0.2em] text-transparent [-webkit-text-stroke:0.5px_var(--color-foreground)] [text-shadow:0_0_4px_color-mix(in_srgb,var(--color-foreground)_25%,transparent)]"
               style={{ textShadow: '0 0 20px color-mix(in srgb, var(--color-primary) 25%, transparent)' }}
             >
-              Vaspan CAPITAL
+              VINNEXIA CAPITAL
             </span>
             <span className="font-arvo text-xs font-semibold tracking-[0.18em] text-primary mt-1.5 uppercase">
               Trade With Confidence
@@ -77,7 +77,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             />
             <Image
               src="/login-bull1.png"
-              alt="Vaspan bull"
+              alt="vinnexia bull"
               width={460}
               height={340}
               className="relative z-10 object-contain w-full max-w-[460px]
@@ -125,7 +125,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           <div className="flex flex-col items-center lg:hidden">
             <Image
               src={logoSrc}
-              alt="Vaspan"
+              alt="vinnexia"
               width={52}
               height={52}
               className="object-contain"
@@ -135,7 +135,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               className="truncate font-cinzel text-[21px] font-bold uppercase tracking-[0.2em] text-transparent [-webkit-text-stroke:0.5px_var(--color-foreground)] [text-shadow:0_0_4px_color-mix(in_srgb,var(--color-foreground)_25%,transparent)]"
               style={{ textShadow: '0 0 20px color-mix(in srgb, var(--color-primary) 25%, transparent)' }}
             >
-              Vaspan CAPITAL
+              VINNEXIA CAPITAL
             </span>
             <span className="font-arvo text-[10px] font-semibold tracking-wide text-primary mt-0.5">
               Trade With Confidence

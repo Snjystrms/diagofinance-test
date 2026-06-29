@@ -70,7 +70,7 @@ export function NewsDialog({ open, onOpenChange, newsItems }: NewsDialogProps) {
               <div className="flex items-center gap-2 mb-0.5">
                 <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#FFB401]">Breaking</span>
                 <span className="w-1 h-1 rounded-full bg-[#FFB401]/50" />
-                <span className="text-[10px] tracking-widest uppercase text-white/40">Vaspan Capital</span>
+                <span className="text-[10px] tracking-widest uppercase text-white/40">Vinnexia Capital</span>
               </div>
               <h2 className="text-xl font-bold text-white tracking-tight">Latest News</h2>
               <p className="text-sm text-white/50 mt-0.5">Stay ahead with real-time updates &amp; announcements.</p>
