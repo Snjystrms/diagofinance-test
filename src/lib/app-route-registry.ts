@@ -105,9 +105,9 @@ export const crmData = {
   },
   teams: [
     {
-      name: "Vinnexia Capital",
-      logoBright: "/vinnexia-logo.svg",
-      logoDark: "/vinnexia-logo-dark.svg",
+      name: "Vaspan Capital",
+      logoBright: "/Vaspan-logo.svg",
+      logoDark: "/Vaspan-logo-dark.svg",
       plan: "Precision, Power, Performance.",
     },
   ],

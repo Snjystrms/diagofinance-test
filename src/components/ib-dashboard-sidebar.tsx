@@ -199,7 +199,7 @@ export function IbDashboardSidebar() {
                   : "text-transparent [-webkit-text-stroke:0.5px_white] [text-shadow:0_0_4px_rgba(255,255,255,0.25)]"
               )}
             >
-              Vinnexia Capital
+              Vaspan Capital
             </span>
             <span className="truncate font-arvo text-[10px] font-bold tracking-wide text-[#FFB800]">
               Precision, Power, Performance
