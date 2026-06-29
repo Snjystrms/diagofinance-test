@@ -82,6 +82,52 @@ import {
 import { formatCurrency } from "@/lib/format";
 import { formatAmount, formatDateTimeInIST } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
+import dynamic from "next/dynamic";
+import type { ChartConfig } from "@/components/ui/chart";
+
+const ChartContainer = dynamic(
+  () =>
+    import("@/components/ui/chart").then((m) => ({
+      default: m.ChartContainer,
+    })),
+  { ssr: false },
+);
+const ChartTooltip = dynamic(
+  () =>
+    import("@/components/ui/chart").then((m) => ({ default: m.ChartTooltip })),
+  { ssr: false },
+);
+const ChartTooltipContent = dynamic(
+  () =>
+    import("@/components/ui/chart").then((m) => ({
+      default: m.ChartTooltipContent,
+    })),
+  { ssr: false },
+);
+const BarChart = dynamic(
+  () => import("recharts").then((m) => ({ default: m.BarChart })),
+  { ssr: false },
+);
+const Bar = dynamic(
+  () => import("recharts").then((m) => ({ default: m.Bar })),
+  { ssr: false },
+);
+const CartesianGrid = dynamic(
+  () => import("recharts").then((m) => ({ default: m.CartesianGrid })),
+  { ssr: false },
+);
+const XAxis = dynamic(
+  () => import("recharts").then((m) => ({ default: m.XAxis })),
+  { ssr: false },
+);
+const YAxis = dynamic(
+  () => import("recharts").then((m) => ({ default: m.YAxis })),
+  { ssr: false },
+);
+const Cell = dynamic(
+  () => import("recharts").then((m) => ({ default: m.Cell })),
+  { ssr: false },
+);
 
 type TabKey = "overview" | "wallet" | "network" | "profile" | "commission";
 
@@ -210,6 +256,18 @@ function OverviewTab({
   const earningSummary = data?.earning_summary;
   const partnerInfo = data?.partner_info;
 
+  const maxRebate = useMemo(() => {
+    if (rebatesGraph.length === 0) return 1;
+    return Math.max(...rebatesGraph.map((r) => r.rebates), 1);
+  }, [rebatesGraph]);
+
+  const chartConfig: ChartConfig = {
+    rebates: {
+      label: "Rebates",
+      color: "var(--primary)",
+    },
+  };
+
   const todayEarnedStr = totalEarned
     ? `Today: ${formatCurrency(totalEarned.today)}`
     : "Today: 0.00";
@@ -267,21 +325,59 @@ function OverviewTab({
           {loading ? (
             <Skeleton className="h-[280px] w-full rounded-[24px]" />
           ) : rebatesGraph.length > 0 ? (
-            <div className="flex h-[280px] flex-col items-center justify-center gap-2 rounded-[24px] border border-border/60 bg-muted/20 p-4">
-              <div className="grid w-full grid-cols-7 gap-1">
-                {rebatesGraph.map((point) => (
-                  <div key={point.date} className="flex flex-col items-center gap-1">
-                    <div
-                      className="w-full rounded-sm bg-primary/20"
-                      style={{ height: `${Math.max(4, point.rebates || 2)}px` }}
+            <ChartContainer
+              config={chartConfig}
+              className="h-[280px] w-full"
+            >
+              <BarChart
+                data={rebatesGraph}
+                margin={{ top: 8, right: 4, left: -16, bottom: 0 }}
+                barCategoryGap="30%"
+              >
+                <defs>
+                  <linearGradient id="rebateBarGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="var(--primary)" stopOpacity={0.9} />
+                    <stop offset="100%" stopColor="var(--primary)" stopOpacity={0.4} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="hsl(var(--border))"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="date"
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  tickFormatter={(v: string) => v.slice(5)}
+                />
+                <YAxis
+                  domain={[0, maxRebate]}
+                  tickLine={false}
+                  axisLine={false}
+                  tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }}
+                  width={48}
+                />
+                <ChartTooltip
+                  cursor={{ fill: "hsl(var(--muted))", opacity: 0.4, radius: 6 }}
+                  content={<ChartTooltipContent />}
+                />
+                <Bar
+                  dataKey="rebates"
+                  fill="url(#rebateBarGradient)"
+                  radius={[6, 6, 0, 0]}
+                  maxBarSize={40}
+                >
+                  {rebatesGraph.map((point) => (
+                    <Cell
+                      key={point.date}
+                      fill="url(#rebateBarGradient)"
                     />
-                    <span className="text-[10px] text-muted-foreground">
-                      {point.date.slice(5)}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+                  ))}
+                </Bar>
+              </BarChart>
+            </ChartContainer>
           ) : (
             <div className="flex h-[280px] flex-col items-center justify-center gap-2 rounded-[24px] border border-dashed border-border/60 bg-muted/20 text-sm text-muted-foreground">
               <TrendingUp className="h-6 w-6" />
