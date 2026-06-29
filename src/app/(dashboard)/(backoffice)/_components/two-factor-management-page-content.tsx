@@ -112,6 +112,8 @@ const transformUser = (raw: Record<string, unknown>): PendingUser => {
         ? raw.payment_verified
         : Number(raw.payment_verified ?? 0) || 0,
     created_at: String(raw.created_at ?? ""),
+    approved_by: String(raw.approved_by ?? ""),
+    approved_at: typeof raw.approved_at === "number" ? raw.approved_at : String(raw.approved_at ?? ""),
   };
 };
 
