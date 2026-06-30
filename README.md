@@ -13,7 +13,7 @@ A complete authentication system built with Next.js, TanStack Query, and shadcn/
 - ✅ **Form Validation** - Zod schema validation
 - ✅ **Loading States** - TanStack Query loading inndicators
 - ✅ **Toast Notifications** - Success/error feedback
-- ✅ **Responsive Design** - Moobile-friendly UI
+- ✅ **Responsive Design** - Mobile-friendly UI
 - ✅ **Dark/Light Theme** - Theme switching support
 
 ## Tech Stack
