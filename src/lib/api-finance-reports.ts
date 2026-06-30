@@ -1296,6 +1296,8 @@ export interface IbCommissionReportListParams {
   search?: string;
   page?: number;
   per_page?: number;
+  from_date?: string | null;
+  to_date?: string | null;
 }
 
 export interface IbCommissionReportListPayload {
@@ -1316,6 +1318,9 @@ export interface IbCommissionReportListPayload {
 export interface IbCommissionReportExportParams {
   token: string;
   format?: "xlsx" | "csv";
+  from_date?: string | null;
+  to_date?: string | null;
+  search?: string | null;
 }
 
 export const adminIbCommissionListReportApi = {
@@ -1329,6 +1334,8 @@ export const adminIbCommissionListReportApi = {
     if (queryParams.page) qs.set("page", String(queryParams.page));
     if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
     if (queryParams.search) qs.set("search", queryParams.search);
+    if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
+    if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
 
     const endpoint = `/admin/reports/commission-report${qs.toString() ? `?${qs.toString()}` : ""}`;
 
@@ -1338,7 +1345,7 @@ export const adminIbCommissionListReportApi = {
     });
   },
 
-  export: async ({ token, format = "xlsx" }: IbCommissionReportExportParams) => {
+  export: async ({ token, format = "xlsx", from_date, to_date, search }: IbCommissionReportExportParams) => {
     if (!token) {
       throw new Error("Token is required to export IB commission report");
     }
@@ -1349,6 +1356,9 @@ export const adminIbCommissionListReportApi = {
 
     const qs = new URLSearchParams();
     qs.set("format", format);
+    if (from_date) qs.set("from_date", from_date);
+    if (to_date) qs.set("to_date", to_date);
+    if (search) qs.set("search", search);
 
     const endpoint = `/admin/reports/commission-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {

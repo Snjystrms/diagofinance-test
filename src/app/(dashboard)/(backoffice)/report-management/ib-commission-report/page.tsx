@@ -59,6 +59,10 @@ export default function IbCommissionReportPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
 
+  // Date Filters
+  const [fromDate, setFromDate] = useQueryState("from_date", parseAsString);
+  const [toDate, setToDate] = useQueryState("to_date", parseAsString);
+
   // Search
   const [searchQuery, setSearchQuery] = useQueryState("search", parseAsString);
   const [searchInput, setSearchInput] = useState(searchQuery || "");
@@ -83,6 +87,8 @@ export default function IbCommissionReportPage() {
         search: searchQuery || undefined,
         page,
         per_page: perPage,
+        from_date: fromDate || undefined,
+        to_date: toDate || undefined,
       });
 
       const payload = response as unknown as IbCommissionReportListPayload;
@@ -111,7 +117,7 @@ export default function IbCommissionReportPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, page, perPage, searchQuery]);
+  }, [token, page, perPage, searchQuery, fromDate, toDate]);
 
   useEffect(() => {
     void loadReport();
@@ -135,6 +141,9 @@ export default function IbCommissionReportPage() {
         const { blob, filename } = await adminIbCommissionListReportApi.export({
           token,
           format: formatType,
+          from_date: fromDate || undefined,
+          to_date: toDate || undefined,
+          search: searchQuery || undefined,
         });
 
         if (!blob.size) {
@@ -163,7 +172,7 @@ export default function IbCommissionReportPage() {
         );
       }
     },
-    [canViewReport, token]
+    [canViewReport, token, fromDate, toDate, searchQuery]
   );
 
   if (!canViewReport) {
@@ -189,18 +198,67 @@ export default function IbCommissionReportPage() {
       isRefreshing={loading}
     >
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <ApiSearchBar
-            value={searchInput}
-            onChange={(value) => setSearchInput(value)}
-            onSearch={(value) => {
-              setPage(1);
-              setSearchQuery(value.trim() || null);
-            }}
-            placeholder="Search by IB name, email..."
-            minimumLength={3}
-            delay={300}
-          />
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex-1">
+            <ApiSearchBar
+              value={searchInput}
+              onChange={(value) => setSearchInput(value)}
+              onSearch={(value) => {
+                setPage(1);
+                setSearchQuery(value.trim() || null);
+              }}
+              placeholder="Search by IB name, email..."
+              minimumLength={3}
+              delay={300}
+            />
+          </div>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <label htmlFor="from-date" className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
+                From
+              </label>
+              <input
+                id="from-date"
+                type="date"
+                value={fromDate || ""}
+                onChange={(e) => {
+                  setPage(1);
+                  setFromDate(e.target.value || null);
+                }}
+                className="h-9 w-36 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label htmlFor="to-date" className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
+                To
+              </label>
+              <input
+                id="to-date"
+                type="date"
+                value={toDate || ""}
+                onChange={(e) => {
+                  setPage(1);
+                  setToDate(e.target.value || null);
+                }}
+                className="h-9 w-36 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+            {(fromDate || toDate) && (
+              <Button
+                aria-label="Clear date filters"
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setPage(1);
+                  setFromDate(null);
+                  setToDate(null);
+                }}
+                className="h-9 text-muted-foreground hover:text-foreground text-xs"
+              >
+                Clear Dates
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="rounded-lg border bg-card">
