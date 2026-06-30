@@ -109,6 +109,7 @@ export interface USDTDepositRequest {
   amount: string
   transaction_hash?: string
   payment_proof?: File
+  comment?: string
 }
 
 export interface USDTDepositResponse {
@@ -140,6 +141,10 @@ export async function submitUSDTDeposit(
   
   if (data.payment_proof) {
     formData.append('payment_proof', data.payment_proof)
+  }
+
+  if (data.comment) {
+    formData.append('comment', data.comment)
   }
 
   const config: RequestInit = {

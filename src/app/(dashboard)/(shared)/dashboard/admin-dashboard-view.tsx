@@ -78,7 +78,7 @@ export function AdminDashboardView({ adminDashboardData, userName }: AdminDashbo
   const transactionChartConfig = {
     deposit: { label: "Deposit", color: "#22c55e" },
     withdraw: { label: "Withdraw", color: "#ef4444" },
-    ib_withdraw: { label: "IB Withdraw", color: "#3b82f6" },
+    ib_withdraw: { label: "Partner Withdraw", color: "#3b82f6" },
   };
 
   const clientsChartConfig = {
@@ -213,7 +213,7 @@ const KpiGrid = ({ cards }: { cards: KpiCardItem[] }) => (
                       <p className="text-sm font-bold">{formatCurrency(summaryMetrics[period].withdraw)}</p>
                     </div>
                     <div className="p-3 rounded-lg bg-muted/50">
-                      <p className="text-xs text-muted-foreground">IB Withdraw</p>
+                      <p className="text-xs text-muted-foreground">Partner Withdraw</p>
                       <p className="text-sm font-bold">{formatCurrency(summaryMetrics[period].ib_withdraw)}</p>
                     </div>
                   </div>
@@ -231,7 +231,7 @@ const KpiGrid = ({ cards }: { cards: KpiCardItem[] }) => (
                     <p className="text-sm font-bold text-primary">{formatCurrency(summaryMetrics.total.withdraw)}</p>
                   </div>
                   <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
-                    <p className="text-xs text-muted-foreground">IB Withdraw</p>
+                    <p className="text-xs text-muted-foreground">Partner Withdraw</p>
                     <p className="text-sm font-bold text-primary">{formatCurrency(summaryMetrics.total.ib_withdraw)}</p>
                   </div>
                 </div>

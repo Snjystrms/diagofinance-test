@@ -343,7 +343,7 @@ function IbCommissionLevelCard({ level }: { level: IbCommissionLevel }) {
           <div className="flex items-center gap-4 text-sm">
             <span className="font-semibold">Level {level.level}</span>
             <span className="text-muted-foreground">
-              Rate: {formatAmount(level.commission_rate)}%
+              Rate: {formatAmount(level.commission_rate)}$
             </span>
           </div>
           <div className="flex items-center gap-4 text-sm">

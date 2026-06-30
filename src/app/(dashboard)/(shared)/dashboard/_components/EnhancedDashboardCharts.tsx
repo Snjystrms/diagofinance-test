@@ -41,7 +41,7 @@ type ClientChartPoint = {
 const transactionChartConfig = {
   deposit: { label: "Deposit", color: "var(--primary)" },
   withdraw: { label: "Withdraw", color: "var(--accent)" },
-  ib_withdraw: { label: "IB Withdraw", color: "var(--secondary)" },
+  ib_withdraw: { label: "Partner Withdraw", color: "var(--secondary)" },
 } satisfies ChartConfig;
 
 const clientChartConfig = {
@@ -108,7 +108,7 @@ export function EnhancedDashboardCharts({ adminDashboardData }: EnhancedChartsPr
   const transactionMetrics: { name: string; amount: number; change: number; colorVar: string }[] = [
     { name: "Deposit", amount: transactionSummary.deposit, change: transactionSummary.depositChange, colorVar: "var(--primary)" },
     { name: "Withdraw", amount: transactionSummary.withdraw, change: transactionSummary.withdrawChange, colorVar: "var(--accent)" },
-    { name: "IB Withdraw", amount: transactionSummary.ibWithdraw, change: transactionSummary.ibWithdrawChange, colorVar: "var(--secondary)" },
+    { name: "Partner Withdraw", amount: transactionSummary.ibWithdraw, change: transactionSummary.ibWithdrawChange, colorVar: "var(--secondary)" },
   ];
 
   return (

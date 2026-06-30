@@ -279,7 +279,7 @@ export default function TransactionsHistoryPage() {
       },
       {
         id: 'deposited_by',
-        header: 'Deposited By',
+        header: 'Processed By',
         accessorKey: 'deposited_by',
         meta: { mobileHidden: true },
         cell: ({ row }) => {

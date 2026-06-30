@@ -3388,6 +3388,7 @@ export interface BankDepositRequest {
   amount: number;
   transaction_id: string;
   payment_proof ?: string | File | null;
+  comment?: string;
 }
 
 export interface BankDepositSubmitData {
@@ -3438,6 +3439,9 @@ export const bankDepositApi = {
     formData.append('transaction_id', data.transaction_id);
     if (data.payment_proof) {
       formData.append('payment_proof', data.payment_proof);
+    }
+    if (data.comment) {
+      formData.append('comment', data.comment);
     }
 
     return apiCall<{ success: boolean; message: string; data: BankDepositSubmitData }>(

@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ApiErrorState } from "@/components/errors/api-error-state";
@@ -284,6 +284,7 @@ function USDTDepositContent() {
   const [pmLoading, setPmLoading] = useState(true);
   const [amount, setAmount] = useState("");
   const [transactionHash, setTransactionHash] = useState("");
+  const [usdtComment, setUsdtComment] = useState("");
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
   const [paymentProofPreview, setPaymentProofPreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -311,6 +312,7 @@ function USDTDepositContent() {
   // Bank deposit state
   const [bankAmount, setBankAmount] = useState("");
   const [bankTxId, setBankTxId] = useState("");
+  const [bankComment, setBankComment] = useState("");
   const [bankPaymentProof, setBankPaymentProof] = useState<File | null>(null);
   const [bankPaymentProofPreview, setBankPaymentProofPreview] = useState<string | null>(null);
   const [bankError, setBankError] = useState<string | null>(null);
@@ -913,6 +915,7 @@ function USDTDepositContent() {
           amount: convertedUsdAmount,
           transaction_id: bankTxId.trim(),
           payment_proof: bankPaymentProof || undefined,
+          comment: bankComment.trim() || undefined,
         },
         token
       );
@@ -921,6 +924,7 @@ function USDTDepositContent() {
         setBankSubmitResult(raw.data);
         setBankAmount("");
         setBankTxId("");
+        setBankComment("");
         toast.success(raw.message || "Bank deposit request submitted successfully");
         void fetchBankRequests();
         notifyWalletRefresh();
@@ -975,6 +979,7 @@ function USDTDepositContent() {
           amount: amount,
           transaction_hash: transactionHash.trim(),
           payment_proof: paymentProof || undefined,
+          comment: usdtComment.trim() || undefined,
         },
         token || undefined
       );
@@ -1387,6 +1392,21 @@ function USDTDepositContent() {
                       <p className="text-xs text-muted-foreground">
                         You can find this in your wallet&apos;s transaction history or on the blockchain explorer
                       </p>
+                    </div>
+
+                    {/* Comment */}
+                    <div className="space-y-3">
+                      <Label htmlFor="usdt-comment" className="text-sm font-semibold text-foreground">
+                        Comment <span className="text-muted-foreground font-normal">(Optional)</span>
+                      </Label>
+                      <textarea
+                        id="usdt-comment"
+                        value={usdtComment}
+                        onChange={(e) => setUsdtComment(e.target.value)}
+                        rows={3}
+                        className="w-full rounded-xl border-2 border-border focus:border-primary bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none resize-none transition-colors"
+                        placeholder="Add any additional notes for this deposit (optional)"
+                      />
                     </div>
 
                     {/* Payment Proof Upload */}
@@ -2547,6 +2567,22 @@ function USDTDepositContent() {
                         <p className="text-xs text-muted-foreground">
                           Found on your bank statement or payment receipt.
                         </p>
+                      </div>
+
+                      {/* Comment */}
+                      <div className="space-y-2">
+                        <Label htmlFor="bank-comment" className="text-sm font-semibold">
+                          Comment <span className="text-muted-foreground font-normal">(Optional)</span>
+                        </Label>
+                        <textarea
+                          id="bank-comment"
+                          value={bankComment}
+                          onChange={(e) => setBankComment(e.target.value)}
+                          rows={3}
+                          className="w-full rounded-xl border-2 border-border focus:border-primary bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none resize-none transition-colors"
+                          placeholder="Add any additional notes for this deposit (optional)"
+                          disabled={isSubmittingBank}
+                        />
                       </div>
 
                       {/* Bank Payment Proof Upload */}

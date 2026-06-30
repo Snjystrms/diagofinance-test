@@ -1428,7 +1428,7 @@ export default function NewUserDetailPage() {
                               <TableRow>
                                 <TableHead>Sr. No.</TableHead>
                                 <TableHead>MT5 Login</TableHead>
-                                <TableHead>Group</TableHead>
+                                <TableHead>Account Type</TableHead>
                                 <TableHead>Balance</TableHead>
                                 {/* <TableHead>Investor Password</TableHead>
                                 <TableHead>Main Password</TableHead> */}
@@ -1461,7 +1461,7 @@ export default function NewUserDetailPage() {
                                     </TableCell>
                                     
                                     <TableCell>{item.mt5_id || "-"}</TableCell>
-                                    <TableCell className="max-w-[220px] truncate">{item.group_name || "-"}</TableCell>
+                                    <TableCell className="max-w-[220px] truncate">{item.account_type_name || "-"}</TableCell>
                                     <TableCell className="font-mono text-xs">
                                       {displayContent === "loading" ? (
                                         <span className="flex items-center gap-2">
