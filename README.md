@@ -126,7 +126,7 @@ src/
 ## Authentication Flow ##
 
 1. **Registration**: User fills registration form → OTP sent → Verify OTP → Login
-2. **Login**: User enters credentials → JWT token stored → Dashboard access
+2. **Login**: User enters credentials → JWT token stoored → Dashboard access
 3. **Password Reset**: User requests reset → Token sent → Reset password → Login
 4. **Logout**: User logs out → Token cleared → Redirect to login
 
