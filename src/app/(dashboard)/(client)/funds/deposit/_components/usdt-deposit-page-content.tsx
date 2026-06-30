@@ -308,6 +308,9 @@ function USDTDepositContent() {
   const [cregisOutTradeNo, setCregisOutTradeNo] = useState<string | null>(null);
   const [cregisDepositStatus, setCregisDepositStatus] = useState<CregisDepositStatusData | null>(null);
   const [isPollingCregisStatus, setIsPollingCregisStatus] = useState(false);
+  // History of all deposit order IDs stored in localStorage
+  const [cregisHistory, setCregisHistory] = useState<{ outTradeNo: string; amount: number; timestamp: string }[]>([]);
+  const hasMountedCregisCheck = useRef(false);
 
   // Bank deposit state
   const [bankAmount, setBankAmount] = useState("");
@@ -652,6 +655,8 @@ function USDTDepositContent() {
       if (checkoutUrl && outTradeNo) {
         // Store the out_trade_no in localStorage to check status when user returns
         localStorage.setItem('cregis_pending_deposit', outTradeNo);
+        // Also save to history
+        addToCregisHistory(outTradeNo, amountNum);
         
         // Build return URL with the cryptocurrency tab
         const returnUrl = `${window.location.origin}/funds/deposit?tab=cryptocurrency`;
@@ -678,6 +683,18 @@ function USDTDepositContent() {
       setIsSubmittingCregis(false);
     }
   };
+
+  // Helper to add an order to the persistent history in localStorage
+  const addToCregisHistory = useCallback((outTradeNo: string, amount: number) => {
+    const raw = localStorage.getItem('cregis_deposit_history');
+    const history: { outTradeNo: string; amount: number; timestamp: string }[] = raw ? JSON.parse(raw) : [];
+    // Avoid duplicates
+    if (!history.find(h => h.outTradeNo === outTradeNo)) {
+      const updated = [{ outTradeNo, amount, timestamp: new Date().toISOString() }, ...history].slice(0, 20);
+      localStorage.setItem('cregis_deposit_history', JSON.stringify(updated));
+      setCregisHistory(updated);
+    }
+  }, []);
 
   // Function to check Cregis deposit status (check once, no polling)
   const checkCregisStatus = useCallback(async (outTradeNo: string) => {
@@ -712,30 +729,38 @@ function USDTDepositContent() {
     }
   }, [token]);
 
-  // Check for pending Cregis deposit on component mount
+  // Check for pending Cregis deposit on component mount — run only once
   useEffect(() => {
+    if (hasMountedCregisCheck.current) return;
+    hasMountedCregisCheck.current = true;
+
+    // Always reset the submit loader state in case user navigated back
+    setIsSubmittingCregis(false);
+
+    // Load history from localStorage
+    const rawHistory = localStorage.getItem('cregis_deposit_history');
+    if (rawHistory) {
+      try {
+        setCregisHistory(JSON.parse(rawHistory));
+      } catch { /* ignore */ }
+    }
+
     const pendingOutTradeNo = localStorage.getItem('cregis_pending_deposit');
-    
     if (pendingOutTradeNo && token) {
-      // activeTab is already set to "cregis" during initialization
       setCregisOutTradeNo(pendingOutTradeNo);
-      
-      // Check status once (no polling)
+      // Check status immediately on mount (covers the "returning from cregis page" scenario)
       checkCregisStatus(pendingOutTradeNo);
     }
-  }, [token, checkCregisStatus]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
-  // Re-check Cregis status when returning from callback URL
+  // Re-check Cregis status when tab param changes to cryptocurrency (e.g. user clicks tab)
   useEffect(() => {
     const urlTabParam = searchParams.get('tab');
-    
-    // If coming back to cryptocurrency tab with a pending deposit, refresh status
     if (urlTabParam === 'cryptocurrency' && token) {
       const pendingOutTradeNo = localStorage.getItem('cregis_pending_deposit');
-      
       if (pendingOutTradeNo) {
         setCregisOutTradeNo(pendingOutTradeNo);
-        // Re-check status when tab is accessed via URL (callback scenario)
         checkCregisStatus(pendingOutTradeNo);
       }
     }
@@ -2240,6 +2265,63 @@ function USDTDepositContent() {
                 );
               })()}
             </TabsContent>}
+
+            {/* Cregis Deposit History */}
+            {hasCregis && cregisHistory.length > 0 && activeTab === 'cregis' && (
+              <Card className="border border-border/60 bg-card shadow-sm">
+                <CardHeader className="pb-4">
+                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    Recent Crypto Deposits
+                  </CardTitle>
+                  <CardDescription>Your last {cregisHistory.length} deposit order(s). Click &quot;Check Status&quot; to refresh any pending order.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="divide-y divide-border/50">
+                    {cregisHistory.map((entry) => {
+                      const isCurrent = entry.outTradeNo === cregisOutTradeNo;
+                      return (
+                        <div
+                          key={entry.outTradeNo}
+                          className={`flex items-center justify-between px-6 py-4 transition-colors ${
+                            isCurrent ? 'bg-primary/5' : 'hover:bg-muted/40'
+                          }`}
+                        >
+                          <div className="flex flex-col gap-1 min-w-0">
+                            <code className="text-xs font-mono text-foreground truncate">{entry.outTradeNo}</code>
+                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                              <span className="font-medium text-foreground">${entry.amount.toFixed(2)}</span>
+                              <span>{formatDateTimeInIST(entry.timestamp)}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 ml-4 shrink-0">
+                            {isCurrent && (
+                              <Badge variant="outline" className="text-xs border-primary/30 text-primary">Current</Badge>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-7 text-xs"
+                              disabled={isPollingCregisStatus}
+                              onClick={() => {
+                                setCregisOutTradeNo(entry.outTradeNo);
+                                checkCregisStatus(entry.outTradeNo);
+                              }}
+                            >
+                              {isPollingCregisStatus && isCurrent ? (
+                                <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Checking...</>
+                              ) : (
+                                <><RefreshCw className="h-3 w-3 mr-1" />Check Status</>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             {/* â”€â”€ Bank Transfer tab â”€â”€ */}
             {hasBank && <TabsContent value="bank" className="space-y-8">
