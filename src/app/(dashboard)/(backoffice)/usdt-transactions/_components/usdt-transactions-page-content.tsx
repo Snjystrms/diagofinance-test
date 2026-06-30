@@ -434,6 +434,20 @@ export function USDTTransactionsPageContent() {
           );
         },
       },
+            {
+        id: "user_comment",
+        header: "User Comment",
+        accessorKey: "user_comment",
+        cell: ({ row }) => {
+          const comment = row.original.user_comment;
+          if (!comment) return <span className="text-muted-foreground">—</span>;
+          return (
+            <span className="font-mono text-xs max-w-[200px] truncate block" title={comment}>
+              {comment}
+            </span>
+          );
+        },
+      },
       {
         id: "deposit_type",
         header: "Type",
@@ -660,6 +674,12 @@ export function USDTTransactionsPageContent() {
                           {viewingDepositRequest.transaction_reference ||
                             viewingDepositRequest.transaction_hash ||
                             "—"}
+                        </div>
+                      </div>
+                        <div>
+                        <span className="text-muted-foreground">User Comment: </span>
+                        <div className="font-mono text-xs break-all">
+                          {viewingDepositRequest.user_comment || "—"}
                         </div>
                       </div>
                     </div>

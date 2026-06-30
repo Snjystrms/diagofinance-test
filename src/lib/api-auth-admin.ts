@@ -2958,6 +2958,7 @@ export interface AdminUSDTDepositRequest {
   user_id: number;
   transaction_hash: string | null;
   transaction_reference?: string | null;
+  user_comment: string | null;
   payment_proof_url: string | null;
   amount: number;
   status: "pending" | "approved" | "rejected";
