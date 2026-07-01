@@ -753,7 +753,8 @@ export interface AdminBankDetailsListData {
     page: number;
     per_page: number;
     total: number;
-    page_count: number;
+    total_pages: number;
+    page_count?: number;
   };
 }
 

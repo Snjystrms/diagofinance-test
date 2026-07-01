@@ -123,6 +123,14 @@ export default function ReportManagementPage() {
     "payment_method_id",
     parseAsString
   );
+  const [sourceFilter, setSourceFilter] = useQueryState(
+    "source",
+    parseAsString
+  );
+  const [isIbFilter, setIsIbFilter] = useQueryState(
+    "is_ib",
+    parseAsString
+  );
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [fromDateStr, setFromDateStr] = useQueryState(
     "from_date",
@@ -219,6 +227,8 @@ export default function ReportManagementPage() {
         search: searchQuery || undefined,
         sort_column: sortColumn || undefined,
         sort_order: sortOrder || undefined,
+        source: sourceFilter && sourceFilter !== "all" ? sourceFilter : undefined,
+        is_ib: isIbFilter && isIbFilter !== "all" ? Number(isIbFilter) : undefined,
       });
 
       if (requestId !== requestIdRef.current) return;
@@ -263,6 +273,8 @@ export default function ReportManagementPage() {
     sortColumn,
     sortOrder,
     searchQuery,
+    sourceFilter,
+    isIbFilter,
   ]);
 
   useEffect(() => {
@@ -283,6 +295,8 @@ export default function ReportManagementPage() {
   const handleResetFilters = useCallback(() => {
     setStatusFilter(null);
     setPaymentMethodFilter(null);
+    setSourceFilter(null);
+    setIsIbFilter(null);
     setFromDate(undefined);
     setToDate(undefined);
     setSortColumn(null);
@@ -293,6 +307,8 @@ export default function ReportManagementPage() {
   }, [
     setStatusFilter,
     setPaymentMethodFilter,
+    setSourceFilter,
+    setIsIbFilter,
     setSortColumn,
     setSortOrder,
     setSearchQuery,
@@ -325,6 +341,8 @@ export default function ReportManagementPage() {
         from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
         to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
         search: searchQuery || undefined,
+        source: sourceFilter && sourceFilter !== "all" ? sourceFilter : undefined,
+        is_ib: isIbFilter && isIbFilter !== "all" ? Number(isIbFilter) : undefined,
       });
 
       if (blob.size === 0) {
@@ -350,20 +368,22 @@ export default function ReportManagementPage() {
         { id: exportToastId }
       );
     }
-  }, [canViewReport, token, statusFilter, paymentMethodFilter, fromDate, toDate, searchQuery]);
+  }, [canViewReport, token, statusFilter, paymentMethodFilter, fromDate, toDate, searchQuery, sourceFilter, isIbFilter]);
 
   // Count active filters
   const activeFilterCount = useMemo(() => {
     let count = 0;
     if (statusFilter) count++;
     if (paymentMethodFilter) count++;
+    if (sourceFilter) count++;
+    if (isIbFilter) count++;
     if (fromDate) count++;
     if (toDate) count++;
     if (sortColumn) count++;
     if (sortOrder) count++;
     if (searchQuery) count++;
     return count;
-  }, [statusFilter, paymentMethodFilter, fromDate, toDate, sortColumn, sortOrder, searchQuery]);
+  }, [statusFilter, paymentMethodFilter, sourceFilter, isIbFilter, fromDate, toDate, sortColumn, sortOrder, searchQuery]);
 
   const columns: ColumnDef<DepositReportItem>[] = useMemo(
     () => [
@@ -568,11 +588,11 @@ export default function ReportManagementPage() {
               delay={300}
             />
           </div>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
             <div className="space-y-1.5">
               <Label htmlFor="status-filter" className="text-xs font-medium text-muted-foreground">Status</Label>
               <Select
-                value={statusFilter || undefined}
+                value={statusFilter || "all"}
                 onValueChange={(value) => {
                   setStatusFilter(value === "all" ? null : value);
                   setPage(1);
@@ -589,23 +609,45 @@ export default function ReportManagementPage() {
                 </SelectContent>
               </Select>
             </div>
-            {/* <div className="space-y-1.5">
-              <Label htmlFor="payment-method-filter" className="text-xs font-medium text-muted-foreground">Payment Method</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="source-filter" className="text-xs font-medium text-muted-foreground">Source</Label>
               <Select
-                value={paymentMethodFilter || undefined}
+                value={sourceFilter || "all"}
                 onValueChange={(value) => {
-                  setPaymentMethodFilter(value === "all" ? null : value);
+                  setSourceFilter(value === "all" ? null : value);
                   setPage(1);
                 }}
               >
-                <SelectTrigger id="payment-method-filter" className="h-9">
-                  <SelectValue placeholder="All Methods" />
+                <SelectTrigger id="source-filter" className="h-9 w-full">
+                  <SelectValue placeholder="All Sources" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Methods</SelectItem>
+                  <SelectItem value="all">All Sources</SelectItem>
+                  <SelectItem value="online">Online</SelectItem>
+                  <SelectItem value="bank">Bank</SelectItem>
+                  <SelectItem value="usdt">USDT</SelectItem>
                 </SelectContent>
               </Select>
-            </div> */}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ib-filter" className="text-xs font-medium text-muted-foreground">Partner (IB)</Label>
+              <Select
+                value={isIbFilter || "all"}
+                onValueChange={(value) => {
+                  setIsIbFilter(value === "all" ? null : value);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger id="ib-filter" className="h-9 w-full">
+                  <SelectValue placeholder="All Users" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Users</SelectItem>
+                  <SelectItem value="1">Only Partner (IB)</SelectItem>
+                  <SelectItem value="0">Only Clients</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
               <Popover>

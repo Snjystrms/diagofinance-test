@@ -712,6 +712,8 @@ export interface DepositReportListParams {
   sort_column?: string;
   sort_order?: "ASC" | "DESC";
   search?: string;
+  source?: string | null;
+  is_ib?: number | string | null;
 }
 
 export interface DepositReportListPayload {
@@ -732,6 +734,8 @@ export interface DepositReportListPayload {
     from_date?: string | null;
     to_date?: string | null;
     search?: string | null;
+    source?: string | null;
+    is_ib?: string | null;
   };
 }
 
@@ -743,6 +747,8 @@ export interface DepositReportExportParams {
   from_date?: string;
   to_date?: string;
   search?: string;
+  source?: string | null;
+  is_ib?: number | string | null;
 }
 
 export const adminDepositReportApi = {
@@ -768,6 +774,10 @@ export const adminDepositReportApi = {
     if (queryParams.sort_column) qs.set("sort_column", queryParams.sort_column);
     if (queryParams.sort_order) qs.set("sort_order", queryParams.sort_order);
     if (queryParams.search) qs.set("search", queryParams.search);
+    if (queryParams.source) qs.set("source", queryParams.source);
+    if (queryParams.is_ib !== undefined && queryParams.is_ib !== null) {
+      qs.set("is_ib", String(queryParams.is_ib));
+    }
 
     const endpoint = `/admin/reports/deposit-report${qs.toString() ? `?${qs.toString()}` : ""}`;
 
@@ -800,6 +810,10 @@ export const adminDepositReportApi = {
     if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
     if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
     if (queryParams.search) qs.set("search", queryParams.search);
+    if (queryParams.source) qs.set("source", queryParams.source);
+    if (queryParams.is_ib !== undefined && queryParams.is_ib !== null) {
+      qs.set("is_ib", String(queryParams.is_ib));
+    }
 
     const endpoint = `/admin/reports/deposit-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {

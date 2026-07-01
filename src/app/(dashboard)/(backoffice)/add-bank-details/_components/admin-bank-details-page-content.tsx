@@ -107,7 +107,7 @@ export function AdminBankDetailsPageContent() {
         .map((row) => normalizeAdminBankDetailRow(row))
         .filter((row): row is AdminBankDetailItem => row !== null);
 
-      const payloadRecord = payload as { count?: number; pagination?: { total?: number; page_count?: number } };
+      const payloadRecord = payload as { count?: number; pagination?: { total?: number; page_count?: number; total_pages?: number } };
       const count =
         typeof payloadRecord.count === "number"
           ? payloadRecord.count
@@ -115,9 +115,11 @@ export function AdminBankDetailsPageContent() {
             ? payloadRecord.pagination.total
             : rows.length;
       const pageCount =
-        typeof payloadRecord.pagination?.page_count === "number"
-          ? payloadRecord.pagination.page_count
-          : 1;
+        typeof payloadRecord.pagination?.total_pages === "number"
+          ? payloadRecord.pagination.total_pages
+          : typeof payloadRecord.pagination?.page_count === "number"
+            ? payloadRecord.pagination.page_count
+            : 1;
 
       return { count, rows, pageCount };
     },
