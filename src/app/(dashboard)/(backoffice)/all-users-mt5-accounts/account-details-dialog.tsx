@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
+import toast from "react-hot-toast";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { BackofficeDetailDialogSkeleton } from "@/components/loading/backoffice-page-skeletons";
 import {
   Dialog,
@@ -12,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { AdminMT5Account } from "@/lib/api";
-import { mt5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
+import { adminMT5AccountsApi, mt5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
 import { useAuth } from "@/contexts/auth-context";
 import { formatDateTimeInIST } from "@/lib/formatters";
 
@@ -94,6 +96,7 @@ export function AccountDetailsDialog({
   const [liveBalance, setLiveBalance] = useState<number | null>(null);
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [balanceFetchFailed, setBalanceFetchFailed] = useState(false);
+  const [sendingCredentials, setSendingCredentials] = useState(false);
 
   // Fetch live balance when account changes
   useEffect(() => {
@@ -129,6 +132,26 @@ export function AccountDetailsDialog({
 
     void fetchBalance();
   }, [account, token, open]);
+
+  const handleResendCredentials = async () => {
+    if (!token || !account) return;
+    
+    const mt5Id = account.mt5_id ?? account.account_id ?? account.id;
+    if (!mt5Id) {
+      toast.error("Cannot resend: MT5 ID not found on this account.");
+      return;
+    }
+    try {
+      setSendingCredentials(true);
+      const response = await adminMT5AccountsApi.resendCredentialsEmail(mt5Id, token);
+      toast.success(response.data?.message ?? "MT5 credentials email resent successfully");
+    } catch (error) {
+      console.error("Failed to resend MT5 credentials email:", error);
+      toast.error("Failed to resend MT5 credentials email. Please try again.");
+    } finally {
+      setSendingCredentials(false);
+    }
+  };
 
   const user = account?.user ?? account?.User;
   const group = account?.group;
@@ -223,6 +246,26 @@ export function AccountDetailsDialog({
                 <DetailItem label="Updated" value={formatDate(account.updated_at)} />
               </dl>
             </section>
+          </div>
+        )}
+
+        {!loading && account && (
+          <div className="flex justify-end border-t border-border/40 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleResendCredentials}
+              disabled={sendingCredentials}
+              className="gap-2"
+            >
+              {sendingCredentials ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Mail className="h-4 w-4" />
+              )}
+              {sendingCredentials ? "Sending..." : "Resend MT5 Credentials Email"}
+            </Button>
           </div>
         )}
       </DialogContent>

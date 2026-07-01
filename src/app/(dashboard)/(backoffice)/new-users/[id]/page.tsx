@@ -458,6 +458,7 @@ export default function NewUserDetailPage() {
   const [decryptedPassword, setDecryptedPassword] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [loadingPassword, setLoadingPassword] = useState(false);
+  const [sendingWelcomeEmail, setSendingWelcomeEmail] = useState(false);
 
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [previewImageOpen, setPreviewImageOpen] = useState(false);
@@ -611,6 +612,20 @@ export default function NewUserDetailPage() {
       toast.error(getAdminFriendlyErrorMessage(error, { resource: "user password", action: "decrypt" }));
     } finally {
       setLoadingPassword(false);
+    }
+  }, [token, id]);
+
+  const handleResendWelcomeEmail = useCallback(async () => {
+    if (!token || !id) return;
+    try {
+      setSendingWelcomeEmail(true);
+      const response = await adminUsersApi.resendWelcomeEmail(id, token);
+      toast.success(response.data?.message ?? "Welcome email resent successfully");
+    } catch (error) {
+      console.error(`Failed to resend welcome email for user ${id}:`, error);
+      toast.error(getAdminFriendlyErrorMessage(error, { resource: "welcome email", action: "resend" }));
+    } finally {
+      setSendingWelcomeEmail(false);
     }
   }, [token, id]);
 
@@ -943,15 +958,30 @@ export default function NewUserDetailPage() {
                 </p>
               </div>
             </div>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setProfileReloadToken((value) => value + 1)}
-              disabled={loadingProfile}
-            >
-              <RefreshCw className={`mr-2 h-4 w-4 ${loadingProfile ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={handleResendWelcomeEmail}
+                disabled={sendingWelcomeEmail || loadingProfile || !crudUser}
+              >
+                {sendingWelcomeEmail ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Mail className="mr-2 h-4 w-4" />
+                )}
+                {sendingWelcomeEmail ? "Sending..." : "Resend Welcome Email"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setProfileReloadToken((value) => value + 1)}
+                disabled={loadingProfile}
+              >
+                <RefreshCw className={`mr-2 h-4 w-4 ${loadingProfile ? "animate-spin" : ""}`} />
+                Refresh
+              </Button>
+            </div>
           </div>
 
           {loadingProfile && !crudUser ? (

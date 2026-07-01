@@ -1996,4 +1996,22 @@ export const adminMT5AccountsApi = {
       body: JSON.stringify(body),
     });
   },
+
+  resendCredentialsEmail: (mt5Id: string | number, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to resend MT5 credentials email");
+    }
+    if (!mt5Id) {
+      throw new Error("MT5 ID is required to resend MT5 credentials email");
+    }
+
+    return apiCall<{ success: boolean; message: string }>(
+      `/admin/mt5-accounts/${mt5Id}/resend-credentials-email`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      },
+    );
+  },
 };

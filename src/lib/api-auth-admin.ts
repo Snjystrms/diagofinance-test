@@ -1258,6 +1258,23 @@ export const adminUsersApi = {
     });
   },
 
+  resendWelcomeEmail: (id: number | string, token: string) => {
+    ensureAdminUserToken(token, "resend welcome email");
+    ensureAdminUserIdentifier(id, "resend welcome email");
+
+    return apiCall<{ success: boolean; message: string }>(
+      `/admin/user-management/crud/users/${id}/resend-welcome-email`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({}),
+      },
+    );
+  },
+
   updateStatus: (id: number | string, status: number, token: string) => {
     ensureAdminUserToken(token, "update user status");
     ensureAdminUserIdentifier(id, "update user status");
