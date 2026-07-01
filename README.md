@@ -51,7 +51,7 @@ The application integrates with the following backend APIs:
    - Resends OTP to user's email
    - Available on verify OTP plage
 
-5. **POST /user/forget-password**
+5. **POST /user/forget-password***
    - Sends password reset instructios
    - Redirects to reset password page
 
