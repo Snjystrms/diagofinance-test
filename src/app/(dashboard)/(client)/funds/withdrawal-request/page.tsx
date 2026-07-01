@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import { ApiErrorState } from "@/components/errors/api-error-state";
@@ -120,6 +120,7 @@ function WithdrawalRequestContent() {
   const [bankDetails, setBankDetails] = useState<UserBankDetailsData | null>(
     null,
   );
+  const [userBankAccounts, setUserBankAccounts] = useState<UserBankDetailsData[]>([]);
   const [bankDetailsLoading, setBankDetailsLoading] = useState(true);
   const [bankTransferMethodId, setBankTransferMethodId] = useState<
     number | null
@@ -184,6 +185,7 @@ function WithdrawalRequestContent() {
     const fetchWithdrawalMeta = async () => {
       if (!token) {
         setBankDetails(null);
+        setUserBankAccounts([]);
         setBankTransferMethodId(null);
         setLocalPaymentMethodId(null);
         setBankDetailsLoading(false);
@@ -208,6 +210,9 @@ function WithdrawalRequestContent() {
             : bankPayload && "id" in bankPayload
               ? [bankPayload as UserBankDetailsData]
               : [];
+        
+        setUserBankAccounts(bankList);
+
         const preferredBank =
           bankList.find((entry) => (entry.status ?? "").toLowerCase() === "approved") ??
           bankList[0] ??
@@ -243,6 +248,7 @@ function WithdrawalRequestContent() {
       } catch (fetchError) {
         console.error("Failed to load withdrawal metadata:", fetchError);
         setBankDetails(null);
+        setUserBankAccounts([]);
         setBankTransferMethodId(null);
         setLocalPaymentMethodId(null);
       } finally {
@@ -634,6 +640,27 @@ function WithdrawalRequestContent() {
                       <Label className="text-sm font-semibold text-foreground">
                         Your Bank Account (Withdrawal Destination)
                       </Label>
+                      {userBankAccounts.length > 1 && (
+                        <Select
+                          value={bankDetails?.id ? String(bankDetails.id) : undefined}
+                          onValueChange={(val) => {
+                            const found = userBankAccounts.find((acc) => String(acc.id) === val);
+                            if (found) setBankDetails(found);
+                          }}
+                        >
+                          <SelectTrigger className="h-10 w-full rounded-xl border-2 border-border bg-background focus:border-primary px-3 shadow-sm">
+                            <SelectValue placeholder="Select a bank account" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {userBankAccounts.map((acc) => (
+                              <SelectItem key={acc.id} value={String(acc.id)}>
+                                {acc.bank_name} - {acc.account_number} ({acc.account_holder_name})
+                                {acc.status && ` [${acc.status}]`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
                       <div className="rounded-xl border border-border/60 bg-muted/20 p-4 text-sm">
                         <div className="grid gap-3 md:grid-cols-2">
                           <div>

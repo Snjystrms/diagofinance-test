@@ -235,12 +235,12 @@ export function TransactionDetailsDialog({
               <InfoRow
                 label="Created At"
                 icon={CalendarIcon}
-                value={fmtDateTime(transaction.created_at)}
+                value={fmtISTDateTime(transaction.created_at)}
               />
               <InfoRow
                 label="Updated At"
                 icon={CalendarIcon}
-                value={fmtDateTime(transaction.updated_at)}
+                value={fmtISTDateTime(transaction.updated_at)}
               />
             </div>
           </div>

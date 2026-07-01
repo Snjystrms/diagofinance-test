@@ -314,7 +314,7 @@ export function AdminTransactionContent() {
       cell: ({ row }) => (
         <div className="flex items-center gap-2 text-sm">
           <CalendarIcon className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
-          <span className="whitespace-nowrap">{fmtDateTime(row.original.created_at)}</span>
+          <span className="whitespace-nowrap">{fmtISTDateTime(row.original.created_at)}</span>
         </div>
       ),
     },

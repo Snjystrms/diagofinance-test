@@ -97,6 +97,14 @@ const deriveTotalCommission = (user: AdminIbUser): string => {
   const val = user.total_commission;
   return val != null ? String(val) : "-";
 };
+const derivePartnerWallet = (user: AdminIbUser): string => {
+  const val = user.partner_wallet;
+  return val != null ? String(val) : "-";
+};
+const deriveMainWallet = (user: AdminIbUser): string => {
+  const val = user.main_wallet;
+  return val != null ? String(val) : "-";
+};
 
 const derivePartnerId = (user: AdminIbUser) => user.referral_code ?? "-";
 
@@ -469,32 +477,35 @@ export default function IbUsersPage() {
         },
       },
       {
-        id: "ib_info",
-        header: "Total Commission (USD)",
+        id: "partner_wallet",
+        header: "Partner Wallet",
         cell: ({ row }) => {
           const user = row.original;
-          const ibName = deriveIbName(user);
-          const partnerId = derivePartnerId(user);
-          const sponsorId = deriveSponsorId(user);
-          const totalCommission = deriveTotalCommission(user);
+          const partnerWallet = derivePartnerWallet(user);
           return (
             <div className="space-y-1 text-sm">
-              {totalCommission !== "-" ? (
+              {partnerWallet !== "-" ? (
                 <div className="text-center">
-                  {totalCommission}
+                  {partnerWallet}
                 </div>
               ) : null}
-
-              {/* {partnerId !== "-" ? (
-                <div>
-                  <span className="font-medium">Partner ID:</span> {partnerId}
+            </div>
+          );
+        },
+      },
+        {
+        id: "main_wallet",
+        header: "Main Wallet",
+        cell: ({ row }) => {
+          const user = row.original;
+          const mainWallet = deriveMainWallet(user);
+          return (
+            <div className="space-y-1 text-sm">
+              {mainWallet !== "-" ? (
+                <div className="text-center">
+                  {mainWallet}
                 </div>
               ) : null}
-              {sponsorId !== "-" ? (
-                <div>
-                  <span className="font-medium">Sponsor ID:</span> {sponsorId}
-                </div>
-              ) : null} */}
             </div>
           );
         },
