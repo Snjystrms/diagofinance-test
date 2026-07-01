@@ -428,7 +428,7 @@ export function AdminTransactionContent() {
                 </div>
               </CardContent>
             </Card>
-            <Card className="rounded-2xl border-border/60 shadow-sm">
+            {/* <Card className="rounded-2xl border-border/60 shadow-sm">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">
@@ -440,8 +440,8 @@ export function AdminTransactionContent() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
-            <Card className="rounded-2xl border-border/60 shadow-sm">
+            </Card> */}
+            {/* <Card className="rounded-2xl border-border/60 shadow-sm">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">
@@ -453,7 +453,7 @@ export function AdminTransactionContent() {
                   </div>
                 </div>
               </CardContent>
-            </Card>
+            </Card> */}
             <Card className="rounded-2xl border-border/60 shadow-sm">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-3">

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
-import { useQueryState, parseAsInteger } from "nuqs";
+import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
 import { ArrowLeftRight, DollarSign, RefreshCw, Search, Users } from "lucide-react";
 
 import { ApiErrorState } from "@/components/errors/api-error-state";
@@ -436,6 +436,9 @@ export default function IbClientsPage() {
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [limit] = useQueryState("limit", parseAsInteger.withDefault(10));
 
+  const [fromDate, setFromDate] = useQueryState("from_date", parseAsString);
+  const [toDate, setToDate] = useQueryState("to_date", parseAsString);
+
   const [clientsSearch, setClientsSearch] = useState({ query: "", input: "" });
   const [subIbsSearch, setSubIbsSearch] = useState({ query: "", input: "" });
   const [rebatesSearch, setRebatesSearch] = useState({ query: "", input: "" });
@@ -464,7 +467,13 @@ export default function IbClientsPage() {
     try {
       setClientsLoading(true);
       setClientsError(null);
-      const res = await ibRequestsApi.getClients(token, { page, limit, search: clientsSearch.query || undefined });
+      const res = await ibRequestsApi.getClients(token, {
+        page,
+        limit,
+        search: clientsSearch.query || undefined,
+        from_date: fromDate || undefined,
+        to_date: toDate || undefined,
+      });
       // apiCall returns raw JSON → { success, message, data: [...], pagination: {...} }
       const raw = res as unknown as { data: ClientRow[]; pagination: unknown };
       const rows: ClientRow[] = Array.isArray(raw.data) ? raw.data : [];
@@ -477,7 +486,7 @@ export default function IbClientsPage() {
     } finally {
       setClientsLoading(false);
     }
-  }, [token, page, limit, clientsSearch.query]);
+  }, [token, page, limit, clientsSearch.query, fromDate, toDate]);
 
   /* ── Fetch sub-IBs ─────────────────────────────────────────────────────── */
   const fetchSubIbs = useCallback(async () => {
@@ -485,7 +494,13 @@ export default function IbClientsPage() {
     try {
       setSubIbsLoading(true);
       setSubIbsError(null);
-      const res = await ibRequestsApi.getSubIbs(token, { page, limit, search: subIbsSearch.query || undefined });
+      const res = await ibRequestsApi.getSubIbs(token, {
+        page,
+        limit,
+        search: subIbsSearch.query || undefined,
+        from_date: fromDate || undefined,
+        to_date: toDate || undefined,
+      });
       // apiCall returns raw JSON → { success, message, data: [...], pagination: {...} }
       const raw = res as unknown as { data: SubIbRow[]; pagination: unknown };
       const rows: SubIbRow[] = Array.isArray(raw.data) ? raw.data : [];
@@ -498,14 +513,20 @@ export default function IbClientsPage() {
     } finally {
       setSubIbsLoading(false);
     }
-  }, [token, page, limit, subIbsSearch.query]);
+  }, [token, page, limit, subIbsSearch.query, fromDate, toDate]);
 
   const fetchRebates = useCallback(async () => {
     if (!token) { setRebatesError("Authentication required"); return; }
     try {
       setRebatesLoading(true);
       setRebatesError(null);
-      const res = await ibRequestsApi.getRebates(token, { page, limit, search: rebatesSearch.query || undefined });
+      const res = await ibRequestsApi.getRebates(token, {
+        page,
+        limit,
+        search: rebatesSearch.query || undefined,
+        from_date: fromDate || undefined,
+        to_date: toDate || undefined,
+      });
       // apiCall returns raw JSON → { success, message, data: { summary: [...], total, pagination: {...} } }
       const raw = res as unknown as { data: { summary: RebateDeal[]; total: number; pagination: unknown } };
       const dataBlock = raw.data ?? {};
@@ -523,7 +544,7 @@ export default function IbClientsPage() {
     } finally {
       setRebatesLoading(false);
     }
-  }, [token, page, limit, rebatesSearch.query]);
+  }, [token, page, limit, rebatesSearch.query, fromDate, toDate]);
 
   useEffect(() => {
     if (activeTab === "clients") void fetchClients();
@@ -637,6 +658,54 @@ export default function IbClientsPage() {
             <TabsTrigger value="sub-ibs">Sub Partners</TabsTrigger>
             <TabsTrigger value="rebates">Rebates</TabsTrigger>
           </TabsList>
+
+          {/* Date Filters */}
+          <div className="flex flex-wrap items-center gap-4 rounded-[20px] border border-border/60 bg-muted/20 p-4">
+            <div className="flex items-center gap-2">
+              <label htmlFor="from-date" className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
+                From Date
+              </label>
+              <input
+                id="from-date"
+                type="date"
+                value={fromDate || ""}
+                onChange={(e) => {
+                  setPage(1);
+                  setFromDate(e.target.value || null);
+                }}
+                className="h-9 w-36 rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label htmlFor="to-date" className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
+                To Date
+              </label>
+              <input
+                id="to-date"
+                type="date"
+                value={toDate || ""}
+                onChange={(e) => {
+                  setPage(1);
+                  setToDate(e.target.value || null);
+                }}
+                className="h-9 w-36 rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+            </div>
+            {(fromDate || toDate) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setPage(1);
+                  setFromDate(null);
+                  setToDate(null);
+                }}
+                className="h-9 text-muted-foreground hover:text-foreground text-xs font-medium"
+              >
+                Clear Dates
+              </Button>
+            )}
+          </div>
 
           {/* Error state */}
           {!!currentError && (

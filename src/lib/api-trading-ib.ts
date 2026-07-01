@@ -834,11 +834,13 @@ export const ibRequestsApi = {
     });
   },
 
-  getSubIbs: (token: string, params?: { page?: number; limit?: number; search?: string }) => {
+  getSubIbs: (token: string, params?: { page?: number; limit?: number; search?: string; from_date?: string | null; to_date?: string | null }) => {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", String(params.page));
     if (params?.limit) queryParams.append("limit", String(params.limit));
     if (params?.search) queryParams.append("search", params.search);
+    if (params?.from_date) queryParams.append("from_date", params.from_date);
+    if (params?.to_date) queryParams.append("to_date", params.to_date);
     const queryString = queryParams.toString();
     const url = `/user/ib-client-summary/sub-ibs${queryString ? `?${queryString}` : ""}`;
 
@@ -848,11 +850,13 @@ export const ibRequestsApi = {
     });
   },
 
-  getClients: (token: string, params?: { page?: number; limit?: number; search?: string }) => {
+  getClients: (token: string, params?: { page?: number; limit?: number; search?: string; from_date?: string | null; to_date?: string | null }) => {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", String(params.page));
     if (params?.limit) queryParams.append("limit", String(params.limit));
     if (params?.search) queryParams.append("search", params.search);
+    if (params?.from_date) queryParams.append("from_date", params.from_date);
+    if (params?.to_date) queryParams.append("to_date", params.to_date);
     const queryString = queryParams.toString();
     const url = `/user/ib-client-summary/clients${queryString ? `?${queryString}` : ""}`;
 
@@ -862,11 +866,13 @@ export const ibRequestsApi = {
     });
   },
 
-  getRebates: (token: string, params?: { page?: number; limit?: number; search?: string }) => {
+  getRebates: (token: string, params?: { page?: number; limit?: number; search?: string; from_date?: string | null; to_date?: string | null }) => {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", String(params.page));
     if (params?.limit) queryParams.append("limit", String(params.limit));
     if (params?.search) queryParams.append("search", params.search);
+    if (params?.from_date) queryParams.append("from_date", params.from_date);
+    if (params?.to_date) queryParams.append("to_date", params.to_date);
     const queryString = queryParams.toString();
     const url = `/user/ib-client-summary/rebates${queryString ? `?${queryString}` : ""}`;
 
