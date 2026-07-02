@@ -127,7 +127,7 @@ export function TransactionDetailsDialog({
               Wallet & Reference
             </h3>
             <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
-              <InfoRow label="Wallet ID" icon={Wallet} value={`#${transaction.wallet_id}`} />
+              {/* <InfoRow label="Wallet ID" icon={Wallet} value={`#${transaction.wallet_id}`} /> */}
               <InfoRow
                 label="Reference Type"
                 value={

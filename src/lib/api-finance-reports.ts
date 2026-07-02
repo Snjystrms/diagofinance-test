@@ -1,4 +1,10 @@
-import { API_BASE_URL, ApiRequestError, PaginationMeta, apiCall, handle401Redirect } from "./api-core";
+import {
+  API_BASE_URL,
+  ApiRequestError,
+  PaginationMeta,
+  apiCall,
+  handle401Redirect,
+} from "./api-core";
 
 export interface Mt5ToMt5TransferRequest {
   from_mt5_account_id: string;
@@ -120,12 +126,14 @@ export const walletApi = {
       start_date?: string;
       end_date?: string;
       period?: string;
-    }
+    },
   ) => {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", String(params.page));
-    if (params?.per_page) queryParams.append("per_page", String(params.per_page));
-    if (params?.transaction_type) queryParams.append("transaction_type", params.transaction_type);
+    if (params?.per_page)
+      queryParams.append("per_page", String(params.per_page));
+    if (params?.transaction_type)
+      queryParams.append("transaction_type", params.transaction_type);
     if (params?.status) queryParams.append("status", params.status);
     if (params?.start_date) queryParams.append("start_date", params.start_date);
     if (params?.end_date) queryParams.append("end_date", params.end_date);
@@ -149,7 +157,10 @@ export const internalTransferApi = {
       body: JSON.stringify(data),
     }),
 
-  userWalletToUserWallet: (data: WalletToWalletTransferRequest, token: string) =>
+  userWalletToUserWallet: (
+    data: WalletToWalletTransferRequest,
+    token: string,
+  ) =>
     apiCall(`/user/internal-transfer/user-to-user`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
@@ -223,7 +234,7 @@ export const withdrawalApi = {
   getUserWithdrawals: (
     page: number = 1,
     limit: number = 10,
-    token: string
+    token: string,
   ): Promise<WithdrawalsResponse> => {
     return apiCall<unknown>(`/user/withdrawals?page=${page}&limit=${limit}`, {
       method: "GET",
@@ -248,7 +259,9 @@ export const withdrawalApi = {
         } else if (Array.isArray(response.data)) {
           withdrawals = response.data as WithdrawalItem[];
         } else if (data.withdrawals) {
-          withdrawals = Array.isArray(data.withdrawals) ? (data.withdrawals as WithdrawalItem[]) : [];
+          withdrawals = Array.isArray(data.withdrawals)
+            ? (data.withdrawals as WithdrawalItem[])
+            : [];
           pagination = data.pagination as typeof pagination;
         }
       } else if (!response.success) {
@@ -304,10 +317,13 @@ export interface MarkAllReadResponse {
 
 export const notificationApi = {
   getNotifications: (token: string, page: number = 1, perPage: number = 20) =>
-    apiCall<NotificationsResponse>(`/user/notifications?page=${page}&per_page=${perPage}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+    apiCall<NotificationsResponse>(
+      `/user/notifications?page=${page}&per_page=${perPage}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
 
   getUnreadCount: (token: string) =>
     apiCall<UnreadCountResponse>(`/user/notifications/unread-count`, {
@@ -385,7 +401,7 @@ export const adminNotificationApi = {
       limit?: number;
       status?: "all" | "unread" | "read";
       search?: string;
-    }
+    },
   ) => {
     const qs = new URLSearchParams();
     qs.set("page", String(params?.page ?? 1));
@@ -398,15 +414,18 @@ export const adminNotificationApi = {
       {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
-      }
+      },
     );
   },
 
   getUnreadCount: (token: string) =>
-    apiCall<AdminUnreadCountResponse["data"]>(`/admin/notifications/unread-count`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+    apiCall<AdminUnreadCountResponse["data"]>(
+      `/admin/notifications/unread-count`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
 
   markAsRead: (notificationId: number, token: string) =>
     apiCall(`/admin/notifications/${notificationId}/read`, {
@@ -415,10 +434,13 @@ export const adminNotificationApi = {
     }),
 
   markAllAsRead: (token: string) =>
-    apiCall<AdminMarkAllReadResponse["data"]>(`/admin/notifications/mark-all-read`, {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+    apiCall<AdminMarkAllReadResponse["data"]>(
+      `/admin/notifications/mark-all-read`,
+      {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
 };
 
 export interface TicketItem {
@@ -494,15 +516,21 @@ export interface TicketReplyRequest {
 
 export const ticketApi = {
   list: (token: string, page: number = 1, perPage: number = 10) =>
-    apiCall<TicketListResponse>(`/user/ticket/list?page=${page}&per_page=${perPage}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+    apiCall<TicketListResponse>(
+      `/user/ticket/list?page=${page}&per_page=${perPage}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
 
   create: (data: CreateTicketRequest, token: string) =>
     apiCall<CreateTicketResponse>(`/user/ticket/store`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     }),
 
@@ -515,7 +543,10 @@ export const ticketApi = {
   reply: (ticketId: string, data: TicketReplyRequest, token: string) =>
     apiCall(`/user/ticket/${ticketId}/reply`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     }),
 };
@@ -629,12 +660,16 @@ export const adminTicketApi = {
       user_id?: string;
       enquiry_type?: string;
       priority?: string;
-    } = {}
+    } = {},
   ) => {
     const qs = new URLSearchParams();
     qs.set("page", String(params.page ?? 1));
     qs.set("limit", String(params.limit ?? 10));
-    if (params.status !== undefined && params.status !== null && params.status !== "all") {
+    if (
+      params.status !== undefined &&
+      params.status !== null &&
+      params.status !== "all"
+    ) {
       qs.set("status", String(params.status));
     }
     if (params.search) qs.set("search", params.search);
@@ -660,17 +695,31 @@ export const adminTicketApi = {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
-  reply: (ticketId: string | number, data: AdminTicketReplyRequest, token: string) =>
+  reply: (
+    ticketId: string | number,
+    data: AdminTicketReplyRequest,
+    token: string,
+  ) =>
     apiCall(`/admin/tickets/${ticketId}/reply`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     }),
 
-  close: (ticketId: string | number, data: AdminTicketCloseRequest, token: string) =>
+  close: (
+    ticketId: string | number,
+    data: AdminTicketCloseRequest,
+    token: string,
+  ) =>
     apiCall(`/admin/tickets/${ticketId}/close`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     }),
 };
@@ -764,7 +813,10 @@ export const adminDepositReportApi = {
     if (queryParams.status !== undefined && queryParams.status !== null) {
       qs.set("status", String(queryParams.status));
     }
-    if (queryParams.payment_method_id && queryParams.payment_method_id !== "all") {
+    if (
+      queryParams.payment_method_id &&
+      queryParams.payment_method_id !== "all"
+    ) {
       qs.set("payment_method_id", String(queryParams.payment_method_id));
     } else if (queryParams.payment_method_id === "all") {
       qs.set("payment_method_id", "all");
@@ -802,7 +854,10 @@ export const adminDepositReportApi = {
     if (queryParams.status !== undefined && queryParams.status !== null) {
       qs.set("status", String(queryParams.status));
     }
-    if (queryParams.payment_method_id && queryParams.payment_method_id !== "all") {
+    if (
+      queryParams.payment_method_id &&
+      queryParams.payment_method_id !== "all"
+    ) {
       qs.set("payment_method_id", String(queryParams.payment_method_id));
     } else if (queryParams.payment_method_id === "all") {
       qs.set("payment_method_id", "all");
@@ -834,8 +889,7 @@ export const adminDepositReportApi = {
           "message" in payload &&
           typeof payload.message === "string"
             ? payload.message
-            : null) ||
-          `HTTP ${response.status}`,
+            : null) || `HTTP ${response.status}`,
         status: response.status,
         statusText: response.statusText,
         endpoint,
@@ -848,7 +902,7 @@ export const adminDepositReportApi = {
       blob,
       filename: parseContentDispositionFilename(
         response.headers.get("content-disposition"),
-        `deposit-report.${format === "csv" ? "csv" : "xlsx"}`
+        `deposit-report.${format === "csv" ? "csv" : "xlsx"}`,
       ),
     };
   },
@@ -935,7 +989,10 @@ export const adminWithdrawalReportApi = {
     if (queryParams.status !== undefined && queryParams.status !== null) {
       qs.set("status", String(queryParams.status));
     }
-    if (queryParams.payment_method_id && queryParams.payment_method_id !== "all") {
+    if (
+      queryParams.payment_method_id &&
+      queryParams.payment_method_id !== "all"
+    ) {
       qs.set("payment_method_id", String(queryParams.payment_method_id));
     } else if (queryParams.payment_method_id === "all") {
       qs.set("payment_method_id", "all");
@@ -969,7 +1026,10 @@ export const adminWithdrawalReportApi = {
     if (queryParams.status !== undefined && queryParams.status !== null) {
       qs.set("status", String(queryParams.status));
     }
-    if (queryParams.payment_method_id && queryParams.payment_method_id !== "all") {
+    if (
+      queryParams.payment_method_id &&
+      queryParams.payment_method_id !== "all"
+    ) {
       qs.set("payment_method_id", String(queryParams.payment_method_id));
     } else if (queryParams.payment_method_id === "all") {
       qs.set("payment_method_id", "all");
@@ -997,8 +1057,7 @@ export const adminWithdrawalReportApi = {
           "message" in payload &&
           typeof payload.message === "string"
             ? payload.message
-            : null) ||
-          `HTTP ${response.status}`,
+            : null) || `HTTP ${response.status}`,
         status: response.status,
         statusText: response.statusText,
         endpoint,
@@ -1011,7 +1070,7 @@ export const adminWithdrawalReportApi = {
       blob,
       filename: parseContentDispositionFilename(
         response.headers.get("content-disposition"),
-        `withdrawal-report.${format === "csv" ? "csv" : "xlsx"}`
+        `withdrawal-report.${format === "csv" ? "csv" : "xlsx"}`,
       ),
     };
   },
@@ -1134,8 +1193,7 @@ export const adminIbWithdrawalReportApi = {
           "message" in payload &&
           typeof payload.message === "string"
             ? payload.message
-            : null) ||
-          `HTTP ${response.status}`,
+            : null) || `HTTP ${response.status}`,
         status: response.status,
         statusText: response.statusText,
         endpoint,
@@ -1148,7 +1206,7 @@ export const adminIbWithdrawalReportApi = {
       blob,
       filename: parseContentDispositionFilename(
         response.headers.get("content-disposition"),
-        `ib-withdrawal-report.${format === "csv" ? "csv" : "xlsx"}`
+        `ib-withdrawal-report.${format === "csv" ? "csv" : "xlsx"}`,
       ),
     };
   },
@@ -1257,8 +1315,7 @@ export const adminInternalTransferReportApi = {
           "message" in payload &&
           typeof payload.message === "string"
             ? payload.message
-            : null) ||
-          `HTTP ${response.status}`,
+            : null) || `HTTP ${response.status}`,
         status: response.status,
         statusText: response.statusText,
         endpoint,
@@ -1271,7 +1328,7 @@ export const adminInternalTransferReportApi = {
       blob,
       filename: parseContentDispositionFilename(
         response.headers.get("content-disposition"),
-        `internal-transfer-report.${format === "csv" ? "csv" : "xlsx"}`
+        `internal-transfer-report.${format === "csv" ? "csv" : "xlsx"}`,
       ),
     };
   },
@@ -1359,7 +1416,13 @@ export const adminIbCommissionListReportApi = {
     });
   },
 
-  export: async ({ token, format = "xlsx", from_date, to_date, search }: IbCommissionReportExportParams) => {
+  export: async ({
+    token,
+    format = "xlsx",
+    from_date,
+    to_date,
+    search,
+  }: IbCommissionReportExportParams) => {
     if (!token) {
       throw new Error("Token is required to export IB commission report");
     }
@@ -1393,8 +1456,7 @@ export const adminIbCommissionListReportApi = {
           "message" in payload &&
           typeof payload.message === "string"
             ? payload.message
-            : null) ||
-          `HTTP ${response.status}`,
+            : null) || `HTTP ${response.status}`,
         status: response.status,
         statusText: response.statusText,
         endpoint,
@@ -1407,7 +1469,7 @@ export const adminIbCommissionListReportApi = {
       blob,
       filename: parseContentDispositionFilename(
         response.headers.get("content-disposition"),
-        `ib-commission-report.${format === "csv" ? "csv" : "xlsx"}`
+        `ib-commission-report.${format === "csv" ? "csv" : "xlsx"}`,
       ),
     };
   },
@@ -1516,7 +1578,13 @@ export const adminTransactionReportApi = {
     });
   },
 
-  export: async ({ token, format = "xlsx", search, from_date, to_date }: TransactionReportExportParams) => {
+  export: async ({
+    token,
+    format = "xlsx",
+    search,
+    from_date,
+    to_date,
+  }: TransactionReportExportParams) => {
     if (!token) {
       throw new Error("Token is required to export transaction report");
     }
@@ -1552,8 +1620,7 @@ export const adminTransactionReportApi = {
           "message" in payload &&
           typeof payload.message === "string"
             ? payload.message
-            : null) ||
-          `HTTP ${response.status}`,
+            : null) || `HTTP ${response.status}`,
         status: response.status,
         statusText: response.statusText,
         endpoint,
@@ -1566,7 +1633,7 @@ export const adminTransactionReportApi = {
       blob,
       filename: parseContentDispositionFilename(
         response.headers.get("content-disposition"),
-        `transaction-report.${format === "csv" ? "csv" : "xlsx"}`
+        `transaction-report.${format === "csv" ? "csv" : "xlsx"}`,
       ),
     };
   },
@@ -1659,8 +1726,7 @@ export const adminLoginActivityReportApi = {
           "message" in payload &&
           typeof payload.message === "string"
             ? payload.message
-            : null) ||
-          `HTTP ${response.status}`,
+            : null) || `HTTP ${response.status}`,
         status: response.status,
         statusText: response.statusText,
         endpoint,
@@ -1673,7 +1739,7 @@ export const adminLoginActivityReportApi = {
       blob,
       filename: parseContentDispositionFilename(
         response.headers.get("content-disposition"),
-        `login-activity-report.${format === "csv" ? "csv" : "xlsx"}`
+        `login-activity-report.${format === "csv" ? "csv" : "xlsx"}`,
       ),
     };
   },
@@ -1722,12 +1788,17 @@ export interface TradingHistoryReportExportParams {
   format?: "xlsx" | "csv";
 }
 
-const parseContentDispositionFilename = (contentDisposition: string | null, fallback: string) => {
+const parseContentDispositionFilename = (
+  contentDisposition: string | null,
+  fallback: string,
+) => {
   if (!contentDisposition) {
     return fallback;
   }
 
-  const utf8Match = contentDisposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+  const utf8Match = contentDisposition.match(
+    /filename\*\s*=\s*UTF-8''([^;]+)/i,
+  );
   if (utf8Match?.[1]) {
     try {
       return decodeURIComponent(utf8Match[1]);
@@ -1736,7 +1807,9 @@ const parseContentDispositionFilename = (contentDisposition: string | null, fall
     }
   }
 
-  const filenameMatch = contentDisposition.match(/filename\s*=\s*"([^"]+)"|filename\s*=\s*([^;]+)/i);
+  const filenameMatch = contentDisposition.match(
+    /filename\s*=\s*"([^"]+)"|filename\s*=\s*([^;]+)/i,
+  );
   const filename = filenameMatch?.[1] ?? filenameMatch?.[2];
 
   if (!filename) {
@@ -1766,7 +1839,10 @@ export const adminTradingHistoryReportApi = {
     });
   },
 
-  export: async ({ token, format = "xlsx" }: TradingHistoryReportExportParams) => {
+  export: async ({
+    token,
+    format = "xlsx",
+  }: TradingHistoryReportExportParams) => {
     if (!token) {
       throw new Error("Token is required to export trading history report");
     }
@@ -1797,8 +1873,7 @@ export const adminTradingHistoryReportApi = {
           "message" in payload &&
           typeof payload.message === "string"
             ? payload.message
-            : null) ||
-          `HTTP ${response.status}`,
+            : null) || `HTTP ${response.status}`,
         status: response.status,
         statusText: response.statusText,
         endpoint,
@@ -1811,7 +1886,7 @@ export const adminTradingHistoryReportApi = {
       blob,
       filename: parseContentDispositionFilename(
         response.headers.get("content-disposition"),
-        `trading-history-report.${format === "csv" ? "csv" : "xlsx"}`
+        `trading-history-report.${format === "csv" ? "csv" : "xlsx"}`,
       ),
     };
   },
@@ -1842,7 +1917,12 @@ export const adminAllUsersReportApi = {
     const qs = new URLSearchParams();
     qs.set("format", format);
     if (search && search.trim()) qs.set("search", search.trim());
-    if (status !== undefined && status !== null && `${status}` !== "" && status !== "all") {
+    if (
+      status !== undefined &&
+      status !== null &&
+      `${status}` !== "" &&
+      status !== "all"
+    ) {
       qs.set("status", String(status));
     }
 
@@ -1865,8 +1945,7 @@ export const adminAllUsersReportApi = {
           "message" in payload &&
           typeof payload.message === "string"
             ? payload.message
-            : null) ||
-          `HTTP ${response.status}`,
+            : null) || `HTTP ${response.status}`,
         status: response.status,
         statusText: response.statusText,
         endpoint,
@@ -1879,7 +1958,7 @@ export const adminAllUsersReportApi = {
       blob,
       filename: parseContentDispositionFilename(
         response.headers.get("content-disposition"),
-        `all-users-report.${format === "csv" ? "csv" : "xlsx"}`
+        `all-users-report.${format === "csv" ? "csv" : "xlsx"}`,
       ),
     };
   },
@@ -1918,15 +1997,31 @@ export const adminMt5UsersReportApi = {
     const qs = new URLSearchParams();
     qs.set("format", format);
     if (search && search.trim()) qs.set("search", search.trim());
-    if (status !== undefined && status !== null && `${status}` !== "" && status !== "all") {
+    if (
+      status !== undefined &&
+      status !== null &&
+      `${status}` !== "" &&
+      status !== "all"
+    ) {
       qs.set("status", String(status));
     }
-    if (account_mode !== undefined && account_mode !== null && `${account_mode}` !== "" && account_mode !== "all") {
+    if (
+      account_mode !== undefined &&
+      account_mode !== null &&
+      `${account_mode}` !== "" &&
+      account_mode !== "all"
+    ) {
       qs.set("account_mode", String(account_mode));
     }
-    if (user_id !== undefined && user_id !== null && `${user_id}` !== "") qs.set("user_id", String(user_id));
-    if (group_id !== undefined && group_id !== null && `${group_id}` !== "") qs.set("group_id", String(group_id));
-    if (manager_id !== undefined && manager_id !== null && `${manager_id}` !== "") {
+    if (user_id !== undefined && user_id !== null && `${user_id}` !== "")
+      qs.set("user_id", String(user_id));
+    if (group_id !== undefined && group_id !== null && `${group_id}` !== "")
+      qs.set("group_id", String(group_id));
+    if (
+      manager_id !== undefined &&
+      manager_id !== null &&
+      `${manager_id}` !== ""
+    ) {
       qs.set("manager_id", String(manager_id));
     }
 
@@ -1949,8 +2044,7 @@ export const adminMt5UsersReportApi = {
           "message" in payload &&
           typeof payload.message === "string"
             ? payload.message
-            : null) ||
-          `HTTP ${response.status}`,
+            : null) || `HTTP ${response.status}`,
         status: response.status,
         statusText: response.statusText,
         endpoint,
@@ -1963,7 +2057,7 @@ export const adminMt5UsersReportApi = {
       blob,
       filename: parseContentDispositionFilename(
         response.headers.get("content-disposition"),
-        `mt5-users-report.${format === "csv" ? "csv" : "xlsx"}`
+        `mt5-users-report.${format === "csv" ? "csv" : "xlsx"}`,
       ),
     };
   },
@@ -2006,27 +2100,20 @@ export interface AdminDashboardClientsGraph {
   data: AdminDashboardClientsGraphData[];
 }
 
+export interface AdminDashboardSummaryMetricItem {
+  start_date: string | null;
+  end_date: string | null;
+  deposit: number;
+  withdraw: number;
+  ib_withdraw: number;
+}
+
 export interface AdminDashboardSummaryMetrics {
-  daily: {
-    deposit: number;
-    withdraw: number;
-    ib_withdraw: number;
-  };
-  weekly: {
-    deposit: number;
-    withdraw: number;
-    ib_withdraw: number;
-  };
-  monthly: {
-    deposit: number;
-    withdraw: number;
-    ib_withdraw: number;
-  };
-  total: {
-    deposit: number;
-    withdraw: number;
-    ib_withdraw: number;
-  };
+  daily: AdminDashboardSummaryMetricItem;
+  weekly: AdminDashboardSummaryMetricItem;
+  monthly: AdminDashboardSummaryMetricItem;
+  previous_month?: AdminDashboardSummaryMetricItem;
+  total: AdminDashboardSummaryMetricItem;
 }
 
 export interface AdminDashboardData {
