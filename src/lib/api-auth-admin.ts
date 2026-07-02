@@ -1,4 +1,11 @@
-import { API_BASE_URL, type ApiResponse, PaginationMeta, apiCall, ApiRequestError, handle401Redirect } from "./api-core";
+import {
+  API_BASE_URL,
+  type ApiResponse,
+  PaginationMeta,
+  apiCall,
+  ApiRequestError,
+  handle401Redirect,
+} from "./api-core";
 
 export interface RegisterRequest {
   first_name: string;
@@ -117,7 +124,10 @@ export interface UserDashboardProfileStatus {
   status_code?: number;
   is_verified?: boolean;
   checklist: Record<
-    "personal_information" | "legal_information" | "documents_verification" | string,
+    | "personal_information"
+    | "legal_information"
+    | "documents_verification"
+    | string,
     UserDashboardProfileChecklistItem | undefined
   >;
 }
@@ -442,18 +452,17 @@ export interface AdminUserTransactionItem {
   admin_comment?: string | null;
   user_comment?: string | null;
   transaction_hash?: string | null;
-  payment_method?:  {
+  payment_method?: {
     id: number;
     type: string;
-     name: string;
-  },
+    name: string;
+  };
   mt5_id?: string | null;
   deposit_type?: string | null;
   note?: string | null;
   comment?: string | null;
   user?: AdminUserTransactionUser;
   [key: string]: unknown;
-  
 }
 
 export interface AdminUserBankDetailUser {
@@ -527,9 +536,10 @@ export interface AdminUserWalletBalancesData {
   wallets: AdminWalletBalanceItem[];
 }
 
-export type AdminUserWalletBalancesResponse = ApiResponse<AdminUserWalletBalancesData> & {
-  pagination?: PaginationMeta;
-};
+export type AdminUserWalletBalancesResponse =
+  ApiResponse<AdminUserWalletBalancesData> & {
+    pagination?: PaginationMeta;
+  };
 
 export interface AdminUserReferralItem {
   id?: number | string;
@@ -542,7 +552,9 @@ export interface AdminUserReferralItem {
   [key: string]: unknown;
 }
 
-export type AdminUserWalletHistoryResponse = ApiResponse<AdminUserWalletHistoryItem[]> & {
+export type AdminUserWalletHistoryResponse = ApiResponse<
+  AdminUserWalletHistoryItem[]
+> & {
   pagination?: PaginationMeta;
 };
 
@@ -669,8 +681,7 @@ export interface UserLegalInformationUpdateRequest {
   estimated_annual_amount: number;
 }
 
-export type UserProfileUpdateRequest =
-  UserBasicProfileUpdateRequest &
+export type UserProfileUpdateRequest = UserBasicProfileUpdateRequest &
   UserPersonalInformationUpdateRequest &
   UserLegalInformationUpdateRequest;
 
@@ -780,8 +791,10 @@ export interface BrokerBankDetailPayload {
   is_active: boolean;
 }
 
-export interface BrokerBankDetailItem
-  extends Omit<BrokerBankDetailPayload, "is_active"> {
+export interface BrokerBankDetailItem extends Omit<
+  BrokerBankDetailPayload,
+  "is_active"
+> {
   id: number;
   is_active: number | boolean;
   created_at: string;
@@ -1027,11 +1040,18 @@ export const adminAccountTypesApi = {
     return apiCall<{
       accountTypes: AccountTypeItem[];
       pagination?: PaginationMeta;
-    }>(endpoint, { method: "GET", headers: { Authorization: `Bearer ${token}` } });
+    }>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
   },
 
   create: (body: AccountTypeUpsertBody, token: string) =>
-    apiCall<{ success?: boolean; message?: string; data?: AccountTypeCreateResponseData }>(`/admin/account-types/create`, {
+    apiCall<{
+      success?: boolean;
+      message?: string;
+      data?: AccountTypeCreateResponseData;
+    }>(`/admin/account-types/create`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -1041,23 +1061,29 @@ export const adminAccountTypesApi = {
     }),
 
   update: (id: string | number, body: AccountTypeUpsertBody, token: string) =>
-    apiCall<{ accountType?: AccountTypeItem } | AccountTypeItem>(`/admin/account-types/${id}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
+    apiCall<{ accountType?: AccountTypeItem } | AccountTypeItem>(
+      `/admin/account-types/${id}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+        body: JSON.stringify(body),
       },
-      body: JSON.stringify(body),
-    }),
+    ),
 
   getById: (id: string | number, token: string) =>
-    apiCall<{ accountType?: AccountTypeItem } | AccountTypeItem>(`/admin/account-types/${id}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
+    apiCall<{ accountType?: AccountTypeItem } | AccountTypeItem>(
+      `/admin/account-types/${id}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
       },
-    }),
+    ),
 
   toggleStatus: (id: number | string, token: string) =>
     apiCall<AccountTypeItem>(`/admin/account-types/${id}/toggle-status`, {
@@ -1136,13 +1162,19 @@ const ensureAdminUserToken = (token: string, action: string) => {
   }
 };
 
-const ensureAdminUserIdentifier = (value: number | string | undefined | null, action: string) => {
+const ensureAdminUserIdentifier = (
+  value: number | string | undefined | null,
+  action: string,
+) => {
   if (value === undefined || value === null || `${value}` === "") {
     throw new Error(`A valid user identifier is required to ${action}`);
   }
 };
 
-const ensureAdminUserUuid = (uuid: string | undefined | null, action: string) => {
+const ensureAdminUserUuid = (
+  uuid: string | undefined | null,
+  action: string,
+) => {
   if (!uuid || !uuid.trim()) {
     throw new Error(`A valid user uuid is required to ${action}`);
   }
@@ -1156,7 +1188,14 @@ const buildPaginatedQuery = (page = 1, limit = 10) => {
 };
 
 export const adminUsersApi = {
-  list: ({ token, page = 1, limit = 10, search, status, isApproved }: AdminUsersListParams) => {
+  list: ({
+    token,
+    page = 1,
+    limit = 10,
+    search,
+    status,
+    isApproved,
+  }: AdminUsersListParams) => {
     ensureAdminUserToken(token, "fetch admin users");
 
     const qs = new URLSearchParams();
@@ -1171,7 +1210,11 @@ export const adminUsersApi = {
       qs.set("status", String(status));
     }
 
-    if (isApproved !== undefined && isApproved !== null && `${isApproved}` !== "") {
+    if (
+      isApproved !== undefined &&
+      isApproved !== null &&
+      `${isApproved}` !== ""
+    ) {
       qs.set("is_approved", String(isApproved));
     }
 
@@ -1186,19 +1229,23 @@ export const adminUsersApi = {
   create: (body: AdminUserCreateBody, token: string) => {
     ensureAdminUserToken(token, "create admin user");
 
-    const sanitizedBody = Object.entries(body).reduce<Record<string, string>>((acc, [key, value]) => {
-      if (value === undefined || value === null) {
-        return acc;
-      }
+    const sanitizedBody = Object.entries(body).reduce<Record<string, string>>(
+      (acc, [key, value]) => {
+        if (value === undefined || value === null) {
+          return acc;
+        }
 
-      const stringValue = typeof value === "string" ? value.trim() : String(value);
-      if (stringValue === "") {
-        return acc;
-      }
+        const stringValue =
+          typeof value === "string" ? value.trim() : String(value);
+        if (stringValue === "") {
+          return acc;
+        }
 
-      acc[key] = stringValue;
-      return acc;
-    }, {});
+        acc[key] = stringValue;
+        return acc;
+      },
+      {},
+    );
 
     return apiCall(`/admin/user-management/crud/users`, {
       method: "POST",
@@ -1214,29 +1261,36 @@ export const adminUsersApi = {
     ensureAdminUserToken(token, "fetch admin user detail");
     ensureAdminUserIdentifier(id, "fetch admin user detail");
 
-    return apiCall<AdminUserDetailApiData>(`/admin/user-management/crud/users/${id}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    return apiCall<AdminUserDetailApiData>(
+      `/admin/user-management/crud/users/${id}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
   },
 
   update: (id: number | string, body: AdminUserUpdateBody, token: string) => {
     ensureAdminUserToken(token, "update admin user");
     ensureAdminUserIdentifier(id, "update admin user");
 
-    const sanitizedBody = Object.entries(body).reduce<Record<string, string>>((acc, [key, value]) => {
-      if (value === undefined || value === null) {
-        return acc;
-      }
+    const sanitizedBody = Object.entries(body).reduce<Record<string, string>>(
+      (acc, [key, value]) => {
+        if (value === undefined || value === null) {
+          return acc;
+        }
 
-      const stringValue = typeof value === "string" ? value.trim() : String(value);
-      if (stringValue === "") {
-        return acc;
-      }
+        const stringValue =
+          typeof value === "string" ? value.trim() : String(value);
+        if (stringValue === "") {
+          return acc;
+        }
 
-      acc[key] = stringValue;
-      return acc;
-    }, {});
+        acc[key] = stringValue;
+        return acc;
+      },
+      {},
+    );
 
     return apiCall(`/admin/user-management/crud/users/${id}`, {
       method: "PUT",
@@ -1322,34 +1376,43 @@ export const adminUsersApi = {
       payload.new_sponsor_user_id = body.new_sponsor_user_id;
     }
 
-    return apiCall<TransferSponsorResponse>(`/admin/ib-management/transfer-sponsor`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+    return apiCall<TransferSponsorResponse>(
+      `/admin/ib-management/transfer-sponsor`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
       },
-      body: JSON.stringify(payload),
-    });
+    );
   },
 
   detailByUuid: (uuid: string, token: string) => {
     ensureAdminUserToken(token, "fetch admin user profile");
     ensureAdminUserUuid(uuid, "fetch admin user profile");
 
-    return apiCall<AdminUserDetailsApiData>(`/admin/user-management/users/user-details/${uuid}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    return apiCall<AdminUserDetailsApiData>(
+      `/admin/user-management/users/user-details/${uuid}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
   },
 
   mt5TabDetails: (uuid: string, token: string) => {
     ensureAdminUserToken(token, "fetch admin user MT5 details");
     ensureAdminUserUuid(uuid, "fetch admin user MT5 details");
 
-    return apiCall<AdminUserMt5TabDetailsApiData>(`/admin/user-management/users/${uuid}/mt5-tab-details`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    return apiCall<AdminUserMt5TabDetailsApiData>(
+      `/admin/user-management/users/${uuid}/mt5-tab-details`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
   },
 
   deposits: (uuid: string, token: string, page = 1, limit = 10) => {
@@ -1361,7 +1424,7 @@ export const adminUsersApi = {
       {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
-      }
+      },
     );
   },
 
@@ -1374,7 +1437,7 @@ export const adminUsersApi = {
       {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
-      }
+      },
     );
   },
 
@@ -1387,7 +1450,7 @@ export const adminUsersApi = {
       {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
-      }
+      },
     );
   },
 
@@ -1400,11 +1463,16 @@ export const adminUsersApi = {
       {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
-      }
+      },
     );
   },
 
-  walletHistory: async (uuid: string, token: string, page = 1, limit = 10): Promise<AdminUserWalletHistoryResponse> => {
+  walletHistory: async (
+    uuid: string,
+    token: string,
+    page = 1,
+    limit = 10,
+  ): Promise<AdminUserWalletHistoryResponse> => {
     ensureAdminUserToken(token, "fetch admin user wallet history");
     ensureAdminUserUuid(uuid, "fetch admin user wallet history");
 
@@ -1413,7 +1481,7 @@ export const adminUsersApi = {
       {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
-      }
+      },
     );
 
     return response as AdminUserWalletHistoryResponse;
@@ -1422,14 +1490,17 @@ export const adminUsersApi = {
   walletBalances: (userId: number, token: string) => {
     ensureAdminUserToken(token, "fetch admin user wallet balances");
 
-    return apiCall<AdminUserWalletBalancesData>(`/admin/user-management/users/wallet-balances`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+    return apiCall<AdminUserWalletBalancesData>(
+      `/admin/user-management/users/wallet-balances`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ user_id: userId }),
       },
-      body: JSON.stringify({ user_id: userId }),
-    });
+    );
   },
 
   referralBy: (uuid: string, token: string, page = 1, limit = 10) => {
@@ -1441,7 +1512,7 @@ export const adminUsersApi = {
       {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
-      }
+      },
     );
   },
 
@@ -1449,10 +1520,13 @@ export const adminUsersApi = {
     ensureAdminUserToken(token, "decrypt user password");
     ensureAdminUserIdentifier(id, "decrypt user password");
 
-    return apiCall<{ password: string }>(`/admin/user-management/crud/users/${id}/decrypt-password`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    return apiCall<{ password: string }>(
+      `/admin/user-management/crud/users/${id}/decrypt-password`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
   },
 };
 
@@ -1510,9 +1584,17 @@ export interface NewsCreateResponse {
 }
 
 export const adminNewsApi = {
-  list: (params: { token: string; page?: number; per_page?: number; type?: "news" | "promotion" | "all" }) => {
+  list: (params: {
+    token: string;
+    page?: number;
+    per_page?: number;
+    type?: "news" | "promotion" | "all";
+  }) => {
     const { token, page = 1, per_page = 10, type } = params;
-    const query = new URLSearchParams({ page: String(page), per_page: String(per_page) });
+    const query = new URLSearchParams({
+      page: String(page),
+      per_page: String(per_page),
+    });
     if (type && type !== "all") query.set("type", type);
     return apiCall<NewsListData>(`/admin/news/list?${query.toString()}`, {
       method: "GET",
@@ -1521,10 +1603,13 @@ export const adminNewsApi = {
   },
 
   get: (id: string | number, token: string) =>
-    apiCall<{ success: boolean; message: string; data?: NewsItem }>(`/admin/news/${id}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+    apiCall<{ success: boolean; message: string; data?: NewsItem }>(
+      `/admin/news/${id}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
 
   create: (body: NewsCreateBody, token: string) => {
     if (!token) {
@@ -1549,7 +1634,10 @@ export const adminNewsApi = {
 
     return apiCall<NewsCreateResponse>(`/admin/news/create`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         title: body.title,
         description: body.description,
@@ -1565,10 +1653,13 @@ export const adminNewsApi = {
     if (body.image instanceof File) {
       const formData = new FormData();
       if (body.title !== undefined) formData.append("title", body.title);
-      if (body.description !== undefined) formData.append("description", body.description);
-      if (body.short_description !== undefined) formData.append("short_description", body.short_description);
+      if (body.description !== undefined)
+        formData.append("description", body.description);
+      if (body.short_description !== undefined)
+        formData.append("short_description", body.short_description);
       formData.append("image", body.image);
-      if (body.status !== undefined) formData.append("status", String(body.status));
+      if (body.status !== undefined)
+        formData.append("status", String(body.status));
       if (body.type) formData.append("type", body.type);
 
       return apiCall<NewsCreateResponse>(`/admin/news/${id}`, {
@@ -1580,11 +1671,18 @@ export const adminNewsApi = {
 
     return apiCall<NewsCreateResponse>(`/admin/news/${id}`, {
       method: "PUT",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         ...(body.title !== undefined && { title: body.title }),
-        ...(body.description !== undefined && { description: body.description }),
-        ...(body.short_description !== undefined && { short_description: body.short_description }),
+        ...(body.description !== undefined && {
+          description: body.description,
+        }),
+        ...(body.short_description !== undefined && {
+          short_description: body.short_description,
+        }),
         ...(body.image !== undefined && { image: body.image }),
         ...(body.status !== undefined && { status: body.status }),
         ...(body.type !== undefined && { type: body.type }),
@@ -1599,11 +1697,17 @@ export const adminNewsApi = {
     }),
 
   toggleStatus: (id: string | number, status: 0 | 1, token: string) =>
-    apiCall<{ success: boolean; message: string }>(`/admin/news/${id}/toggle-status`, {
-      method: "PATCH",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    }),
+    apiCall<{ success: boolean; message: string }>(
+      `/admin/news/${id}/toggle-status`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      },
+    ),
 };
 
 export interface CurrencyRateItem {
@@ -1646,11 +1750,17 @@ export interface CurrencyRateUpdateBody {
 export const adminCurrencyRatesApi = {
   list: (params: { token: string; page?: number; per_page?: number }) => {
     const { token, page = 1, per_page = 10 } = params;
-    const query = new URLSearchParams({ page: String(page), per_page: String(per_page) });
-    return apiCall<CurrencyRateListData>(`/admin/currency-rates/list?${query.toString()}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
+    const query = new URLSearchParams({
+      page: String(page),
+      per_page: String(per_page),
     });
+    return apiCall<CurrencyRateListData>(
+      `/admin/currency-rates/list?${query.toString()}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
   },
 
   get: (id: string | number, token: string) =>
@@ -1662,22 +1772,31 @@ export const adminCurrencyRatesApi = {
   create: (body: CurrencyRateCreateBody, token: string) =>
     apiCall<CurrencyRateItem>(`/admin/currency-rates/create`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(body),
     }),
 
   update: (id: string | number, body: CurrencyRateUpdateBody, token: string) =>
     apiCall<CurrencyRateItem>(`/admin/currency-rates/${id}`, {
       method: "PUT",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(body),
     }),
 
   delete: (id: string | number, token: string) =>
-    apiCall<{ success: boolean; message: string }>(`/admin/currency-rates/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+    apiCall<{ success: boolean; message: string }>(
+      `/admin/currency-rates/${id}`,
+      {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
 
   toggleStatus: (id: string | number, token: string) =>
     apiCall<CurrencyRateItem>(`/admin/currency-rates/${id}/toggle-status`, {
@@ -1689,11 +1808,17 @@ export const adminCurrencyRatesApi = {
 export const userCurrencyRatesApi = {
   list: (params: { token: string; page?: number; per_page?: number }) => {
     const { token, page = 1, per_page = 100 } = params;
-    const query = new URLSearchParams({ page: String(page), per_page: String(per_page) });
-    return apiCall<CurrencyRateListData>(`/admin/currency-rates/list?${query.toString()}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
+    const query = new URLSearchParams({
+      page: String(page),
+      per_page: String(per_page),
     });
+    return apiCall<CurrencyRateListData>(
+      `/admin/currency-rates/list?${query.toString()}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
   },
 };
 
@@ -1710,11 +1835,17 @@ export interface UserNewsListResponse {
 export const userNewsApi = {
   list: (params: { token: string; page?: number; per_page?: number }) => {
     const { token, page = 1, per_page = 100 } = params;
-    const query = new URLSearchParams({ page: String(page), per_page: String(per_page) });
-    return apiCall<UserNewsListResponse>(`/user/news/list?${query.toString()}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
+    const query = new URLSearchParams({
+      page: String(page),
+      per_page: String(per_page),
     });
+    return apiCall<UserNewsListResponse>(
+      `/user/news/list?${query.toString()}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
   },
 
   get: (id: string | number, token: string) =>
@@ -1732,7 +1863,10 @@ export const authApi = {
     apiCall("/user/verify-otp", { method: "POST", body: JSON.stringify(data) }),
 
   login: (data: LoginRequest) =>
-    apiCall<LoginResponse>("/auth/login", { method: "POST", body: JSON.stringify(data) }),
+    apiCall<LoginResponse>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 
   refreshToken: (token: string) =>
     apiCall<{ token?: string; access_token?: string }>("/auth/refresh", {
@@ -1745,10 +1879,16 @@ export const authApi = {
     apiCall("/user/resend-otp", { method: "POST", body: JSON.stringify(data) }),
 
   forgotPassword: (data: ForgotPasswordRequest) =>
-    apiCall("/user/forget-password", { method: "POST", body: JSON.stringify(data) }),
+    apiCall("/user/forget-password", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 
   resetPassword: (data: ResetPasswordRequest) =>
-    apiCall("/user/reset-password", { method: "POST", body: JSON.stringify(data) }),
+    apiCall("/user/reset-password", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
 
   logout: (token: string) =>
     apiCall("/auth/logout", {
@@ -1771,7 +1911,10 @@ export const authApi = {
   verifyAndEnableTwoFactor: (data: TwoFactorVerifyRequest, token: string) =>
     apiCall("/user/2fa/verify-and-enable", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     }),
 
@@ -1788,26 +1931,35 @@ export const authApi = {
       body: JSON.stringify(data),
     }),
 
-  uploadProfileDocuments: async (formData: FormData, token: string): Promise<KycUploadResponse> => {
+  uploadProfileDocuments: async (
+    formData: FormData,
+    token: string,
+  ): Promise<KycUploadResponse> => {
     const response = await fetch(`${API_BASE_URL}/user/profile/document`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` } as Record<string, string>,
       body: formData,
     });
-    if (handle401Redirect(response, !!token)) return new Promise<KycUploadResponse>(() => {});
+    if (handle401Redirect(response, !!token))
+      return new Promise<KycUploadResponse>(() => {});
     const json = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(json?.message || `Upload failed (${response.status})`);
+    if (!response.ok)
+      throw new Error(json?.message || `Upload failed (${response.status})`);
     return json as KycUploadResponse;
   },
 
-  getProfileDocumentsStatus: async (token: string): Promise<KycStatusResponse> => {
+  getProfileDocumentsStatus: async (
+    token: string,
+  ): Promise<KycStatusResponse> => {
     const response = await fetch(`${API_BASE_URL}/user/profile/document`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` } as Record<string, string>,
     });
-    if (handle401Redirect(response, !!token)) return new Promise<KycStatusResponse>(() => {});
+    if (handle401Redirect(response, !!token))
+      return new Promise<KycStatusResponse>(() => {});
     const json = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(json?.message || `Fetch failed (${response.status})`);
+    if (!response.ok)
+      throw new Error(json?.message || `Fetch failed (${response.status})`);
     return json as KycStatusResponse;
   },
 
@@ -1820,7 +1972,10 @@ export const authApi = {
   updateProfile: (data: UserProfileUpdatePayload, token: string) =>
     apiCall<ProfileViewResponse>(`/user/profile/update`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     }),
 
@@ -1857,12 +2012,19 @@ export const authApi = {
 
     return apiCall<UserBankDetailsData>(`/user/bank-details`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     });
   },
 
-  updateBankDetails: (id: number, data: UserBankDetailsPayload, token: string) => {
+  updateBankDetails: (
+    id: number,
+    data: UserBankDetailsPayload,
+    token: string,
+  ) => {
     if (data.passbook_photo instanceof File) {
       const formData = new FormData();
       formData.append("account_holder_name", data.account_holder_name);
@@ -1883,7 +2045,10 @@ export const authApi = {
 
     return apiCall<UserBankDetailsData>(`/user/bank-details/${id}`, {
       method: "PUT",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     });
   },
@@ -1901,12 +2066,19 @@ export const authApi = {
     }),
 
   getTradingAccountsSummary: (token: string) =>
-    apiCall<TradingAccountsSummaryResponse>(`/user/dashboard/trading-accounts-summary`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+    apiCall<TradingAccountsSummaryResponse>(
+      `/user/dashboard/trading-accounts-summary`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
 
-  getWalletStatistics: (token: string, type: "deposits" | "withdrawals", period: number = 30) =>
+  getWalletStatistics: (
+    token: string,
+    type: "deposits" | "withdrawals",
+    period: number = 30,
+  ) =>
     apiCall<{
       type: string;
       period: string;
@@ -1923,7 +2095,15 @@ export const authApi = {
 };
 
 export const adminBankDetailsApi = {
-  list: (token: string, search?: string | null, page: number = 1, perPage: number = 10) => {
+  list: (
+    token: string,
+    search?: string | null,
+    page: number = 1,
+    perPage: number = 10,
+    status?: string | null,
+    sortColumn?: string | null,
+    sortOrder?: string | null,
+  ) => {
     if (!token) {
       throw new Error("Token is required to fetch bank details");
     }
@@ -1933,6 +2113,23 @@ export const adminBankDetailsApi = {
     qs.set("per_page", String(perPage));
     if (search && search.trim()) {
       qs.set("search", search.trim());
+    }
+
+    const normalizedStatus = status?.trim();
+    if (normalizedStatus) {
+      qs.set("status", normalizedStatus);
+    }
+
+    const normalizedSortColumn = sortColumn?.trim() || "id";
+    if (normalizedSortColumn) {
+      qs.set("sort_column", normalizedSortColumn);
+    }
+
+    const normalizedSortOrder = sortOrder?.trim().toLowerCase();
+    if (normalizedSortOrder === "asc" || normalizedSortOrder === "desc") {
+      qs.set("sort_order", normalizedSortOrder);
+    } else {
+      qs.set("sort_order", "desc");
     }
 
     const endpoint = `/admin/bank-details?${qs.toString()}`;
@@ -1987,10 +2184,13 @@ export const adminBankDetailsApi = {
       throw new Error("Bank detail UUID is required");
     }
 
-    return apiCall<AdminBankDetailItem>(`/admin/bank-details/${encodeURIComponent(id)}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    return apiCall<AdminBankDetailItem>(
+      `/admin/bank-details/${encodeURIComponent(id)}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
   },
 
   update: (uuid: string, body: AdminBankDetailUpdateBody, token: string) => {
@@ -2014,28 +2214,30 @@ export const adminBankDetailsApi = {
       formData.append("country", body.country);
       formData.append("passbook_photo", body.passbook_photo);
 
-      return apiCall<AdminBankDetailItem>(`/admin/bank-details/${encodeURIComponent(id)}`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
+      return apiCall<AdminBankDetailItem>(
+        `/admin/bank-details/${encodeURIComponent(id)}`,
+        {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        },
+      );
     }
 
-    return apiCall<AdminBankDetailItem>(`/admin/bank-details/${encodeURIComponent(id)}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+    return apiCall<AdminBankDetailItem>(
+      `/admin/bank-details/${encodeURIComponent(id)}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
       },
-      body: JSON.stringify(body),
-    });
+    );
   },
 
-  verify: (
-    uuid: string,
-    body: AdminBankDetailVerifyBody,
-    token: string
-  ) => {
+  verify: (uuid: string, body: AdminBankDetailVerifyBody, token: string) => {
     if (!token) {
       throw new Error("Token is required to verify bank detail");
     }
@@ -2045,14 +2247,17 @@ export const adminBankDetailsApi = {
       throw new Error("Bank detail UUID is required");
     }
 
-    return apiCall<AdminBankDetailItem>(`/admin/bank-details/${encodeURIComponent(id)}/verify`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+    return apiCall<AdminBankDetailItem>(
+      `/admin/bank-details/${encodeURIComponent(id)}/verify`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
       },
-      body: JSON.stringify(body),
-    });
+    );
   },
 
   delete: (uuid: string, token: string) => {
@@ -2116,10 +2321,13 @@ export const adminBrokerBankDetailsApi = {
       throw new Error("Token is required to fetch broker bank details");
     }
 
-    return apiCall<AdminBrokerBankDetailsListData>(`/admin/broker-bank-details`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    return apiCall<AdminBrokerBankDetailsListData>(
+      `/admin/broker-bank-details`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
   },
 
   create: (body: BrokerBankDetailPayload, token: string) => {
@@ -2147,13 +2355,20 @@ export const adminBrokerBankDetailsApi = {
       throw new Error("Broker bank detail ID is required");
     }
 
-    return apiCall<BrokerBankDetailItem>(`/admin/broker-bank-details/${detailId}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    return apiCall<BrokerBankDetailItem>(
+      `/admin/broker-bank-details/${detailId}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
   },
 
-  update: (id: number | string, body: BrokerBankDetailPayload, token: string) => {
+  update: (
+    id: number | string,
+    body: BrokerBankDetailPayload,
+    token: string,
+  ) => {
     if (!token) {
       throw new Error("Token is required to update broker bank detail");
     }
@@ -2163,14 +2378,17 @@ export const adminBrokerBankDetailsApi = {
       throw new Error("Broker bank detail ID is required");
     }
 
-    return apiCall<BrokerBankDetailItem>(`/admin/broker-bank-details/${detailId}`, {
-      method: "PUT",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+    return apiCall<BrokerBankDetailItem>(
+      `/admin/broker-bank-details/${detailId}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
       },
-      body: JSON.stringify(body),
-    });
+    );
   },
 
   delete: (id: number | string, token: string) => {
@@ -2192,23 +2410,25 @@ export const adminBrokerBankDetailsApi = {
 
 export const adminBonusApi = {
   list: (
-    params: {
-      page?: number;
-      per_page?: number;
-      search?: string;
-      type?: string;
-      mt5_id?: string;
-      sort_column?: string;
-      sort_order?: string;
-    } | Record<string, string | number>,
-    token: string
+    params:
+      | {
+          page?: number;
+          per_page?: number;
+          search?: string;
+          type?: string;
+          mt5_id?: string;
+          sort_column?: string;
+          sort_order?: string;
+        }
+      | Record<string, string | number>,
+    token: string,
   ) => {
     if (!token) {
       throw new Error("Token is required to fetch bonus list");
     }
 
     const qs = new URLSearchParams();
-    
+
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== "") {
         qs.set(key, String(value));
@@ -2283,10 +2503,16 @@ export const admin2FAApi = {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
-  verifyAndEnableTwoFactor: (data: { admin_id: string | number; token: string }, token: string) =>
+  verifyAndEnableTwoFactor: (
+    data: { admin_id: string | number; token: string },
+    token: string,
+  ) =>
     apiCall("/admin/2fa/verify-and-enable", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     }),
 
@@ -2296,35 +2522,44 @@ export const admin2FAApi = {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
-  verifyLogin2FA: (data: { admin_id: string | number; verify_otp: string | number }) =>
+  verifyLogin2FA: (data: {
+    admin_id: string | number;
+    verify_otp: string | number;
+  }) =>
     apiCall<LoginResponse>("/admin/google-verify-login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
-  }),
+    }),
 };
 
 export const adminClient2FAApi = {
   enable: async (userId: string | number, token: string) => {
     try {
-      return await apiCall<AdminManagedTwoFactorSetupResponse>(`/admin/client/${userId}/2fa/enable`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({}),
-      });
-    } catch (err: unknown) {
-      if (err instanceof ApiRequestError && err.status === 405) {
-        return await apiCall<AdminManagedTwoFactorSetupResponse>(`/admin/client/${userId}/2fa/enable`, {
+      return await apiCall<AdminManagedTwoFactorSetupResponse>(
+        `/admin/client/${userId}/2fa/enable`,
+        {
           method: "PATCH",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({}),
-        });
+        },
+      );
+    } catch (err: unknown) {
+      if (err instanceof ApiRequestError && err.status === 405) {
+        return await apiCall<AdminManagedTwoFactorSetupResponse>(
+          `/admin/client/${userId}/2fa/enable`,
+          {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({}),
+          },
+        );
       }
       throw err;
     }
@@ -2332,22 +2567,28 @@ export const adminClient2FAApi = {
 
   disable: async (userId: string | number, token: string) => {
     try {
-      return await apiCall<TwoFactorDisableResponse>(`/admin/client/${userId}/2fa/disable`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({}),
-      });
-    } catch (err: unknown) {
-      if (err instanceof ApiRequestError && err.status === 405) {
-        return await apiCall<TwoFactorDisableResponse>(`/admin/client/${userId}/2fa/disable`, {
+      return await apiCall<TwoFactorDisableResponse>(
+        `/admin/client/${userId}/2fa/disable`,
+        {
           method: "PATCH",
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
-        });
+          body: JSON.stringify({}),
+        },
+      );
+    } catch (err: unknown) {
+      if (err instanceof ApiRequestError && err.status === 405) {
+        return await apiCall<TwoFactorDisableResponse>(
+          `/admin/client/${userId}/2fa/disable`,
+          {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
       }
       throw err;
     }
@@ -2367,10 +2608,16 @@ export const manager2FAApi = {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
-  verifyAndEnableTwoFactor: (data: { manager_id: string | number; token: string }, token: string) =>
+  verifyAndEnableTwoFactor: (
+    data: { manager_id: string | number; token: string },
+    token: string,
+  ) =>
     apiCall("/manager/2fa/verify-and-enable", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     }),
 
@@ -2380,7 +2627,10 @@ export const manager2FAApi = {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
-  verifyLogin2FA: (data: { manager_id: string | number; verify_otp: string | number }) =>
+  verifyLogin2FA: (data: {
+    manager_id: string | number;
+    verify_otp: string | number;
+  }) =>
     apiCall<LoginResponse>("/manager/google-verify-login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -2391,24 +2641,30 @@ export const manager2FAApi = {
 export const adminManagedManager2FAApi = {
   enable: async (managerId: string | number, token: string) => {
     try {
-      return await apiCall<AdminManagedTwoFactorSetupResponse>(`/admin/manager/${managerId}/2fa/enable`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({}),
-      });
-    } catch (err: unknown) {
-      if (err instanceof ApiRequestError && err.status === 405) {
-        return await apiCall<AdminManagedTwoFactorSetupResponse>(`/admin/manager/${managerId}/2fa/enable`, {
+      return await apiCall<AdminManagedTwoFactorSetupResponse>(
+        `/admin/manager/${managerId}/2fa/enable`,
+        {
           method: "PATCH",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
           body: JSON.stringify({}),
-        });
+        },
+      );
+    } catch (err: unknown) {
+      if (err instanceof ApiRequestError && err.status === 405) {
+        return await apiCall<AdminManagedTwoFactorSetupResponse>(
+          `/admin/manager/${managerId}/2fa/enable`,
+          {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({}),
+          },
+        );
       }
       throw err;
     }
@@ -2416,22 +2672,28 @@ export const adminManagedManager2FAApi = {
 
   disable: async (managerId: string | number, token: string) => {
     try {
-      return await apiCall<TwoFactorDisableResponse>(`/admin/manager/${managerId}/2fa/disable`, {
-        method: "PATCH",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({}),
-      });
-    } catch (err: unknown) {
-      if (err instanceof ApiRequestError && err.status === 405) {
-        return await apiCall<TwoFactorDisableResponse>(`/admin/manager/${managerId}/2fa/disable`, {
+      return await apiCall<TwoFactorDisableResponse>(
+        `/admin/manager/${managerId}/2fa/disable`,
+        {
           method: "PATCH",
           headers: {
             Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
           },
-        });
+          body: JSON.stringify({}),
+        },
+      );
+    } catch (err: unknown) {
+      if (err instanceof ApiRequestError && err.status === 405) {
+        return await apiCall<TwoFactorDisableResponse>(
+          `/admin/manager/${managerId}/2fa/disable`,
+          {
+            method: "PATCH",
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          },
+        );
       }
       throw err;
     }
@@ -2445,12 +2707,17 @@ export interface AdminKycExportParams {
   status?: string | number;
 }
 
-const parseKycExportContentDispositionFilename = (contentDisposition: string | null, fallback: string) => {
+const parseKycExportContentDispositionFilename = (
+  contentDisposition: string | null,
+  fallback: string,
+) => {
   if (!contentDisposition) {
     return fallback;
   }
 
-  const utf8Match = contentDisposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+  const utf8Match = contentDisposition.match(
+    /filename\*\s*=\s*UTF-8''([^;]+)/i,
+  );
   if (utf8Match?.[1]) {
     try {
       return decodeURIComponent(utf8Match[1]);
@@ -2459,7 +2726,9 @@ const parseKycExportContentDispositionFilename = (contentDisposition: string | n
     }
   }
 
-  const filenameMatch = contentDisposition.match(/filename\s*=\s*"([^"]+)"|filename\s*=\s*([^;]+)/i);
+  const filenameMatch = contentDisposition.match(
+    /filename\s*=\s*"([^"]+)"|filename\s*=\s*([^;]+)/i,
+  );
   const filename = filenameMatch?.[1] ?? filenameMatch?.[2];
 
   if (!filename) {
@@ -2470,7 +2739,13 @@ const parseKycExportContentDispositionFilename = (contentDisposition: string | n
 };
 
 export const adminKycApi = {
-  listPending: (status: string | number, token: string, search?: string, page = 1, limit = 10) => {
+  listPending: (
+    status: string | number,
+    token: string,
+    search?: string,
+    page = 1,
+    limit = 10,
+  ) => {
     const qs = new URLSearchParams();
     qs.set("status", encodeURIComponent(String(status)));
     qs.set("page", String(page));
@@ -2478,10 +2753,15 @@ export const adminKycApi = {
     if (search && search.trim()) {
       qs.set("search", search.trim());
     }
-    
+
     return apiCall<{
       items: Array<Record<string, unknown>>;
-      pagination: { current_page: number; per_page: number; total: number; total_pages: number };
+      pagination: {
+        current_page: number;
+        per_page: number;
+        total: number;
+        total_pages: number;
+      };
     }>(`/admin/user-management/users/kyc/pending?${qs.toString()}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
@@ -2489,12 +2769,19 @@ export const adminKycApi = {
   },
 
   getUserKyc: (userUuid: string, token: string) =>
-    apiCall(`/admin/user-management/users/kyc/${encodeURIComponent(userUuid)}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+    apiCall(
+      `/admin/user-management/users/kyc/${encodeURIComponent(userUuid)}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
 
-  uploadForUser: (userId: number | string, formData: FormData, token: string) => {
+  uploadForUser: (
+    userId: number | string,
+    formData: FormData,
+    token: string,
+  ) => {
     ensureAdminUserToken(token, "upload KYC documents");
     ensureAdminUserIdentifier(userId, "upload KYC documents");
 
@@ -2504,7 +2791,7 @@ export const adminKycApi = {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
-      }
+      },
     );
   },
 
@@ -2519,17 +2806,25 @@ export const adminKycApi = {
         | { status: "approved" | "rejected" | "pending"; comment?: string }
       >;
     },
-    token: string
+    token: string,
   ) => {
     if (!body.user_uuid) throw new Error("User UUID missing in review body");
     return apiCall(`/admin/user-management/users/kyc/review`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(body),
     });
   },
 
-  export: async ({ token, format = "xlsx", search, status }: AdminKycExportParams) => {
+  export: async ({
+    token,
+    format = "xlsx",
+    search,
+    status,
+  }: AdminKycExportParams) => {
     if (!token) {
       throw new Error("Token is required to export KYC submissions");
     }
@@ -2541,7 +2836,12 @@ export const adminKycApi = {
     const qs = new URLSearchParams();
     qs.set("format", format);
     if (search && search.trim()) qs.set("search", search.trim());
-    if (status !== undefined && status !== null && `${status}` !== "" && `${status}` !== "none") {
+    if (
+      status !== undefined &&
+      status !== null &&
+      `${status}` !== "" &&
+      `${status}` !== "none"
+    ) {
       qs.set("status", String(status));
     }
 
@@ -2564,8 +2864,7 @@ export const adminKycApi = {
           "message" in payload &&
           typeof payload.message === "string"
             ? payload.message
-            : null) ||
-          `HTTP ${response.status}`,
+            : null) || `HTTP ${response.status}`,
         status: response.status,
         statusText: response.statusText,
         endpoint,
@@ -2578,7 +2877,7 @@ export const adminKycApi = {
       blob,
       filename: parseKycExportContentDispositionFilename(
         response.headers.get("content-disposition"),
-        `all_users_kyc.${format === "csv" ? "csv" : "xlsx"}`
+        `all_users_kyc.${format === "csv" ? "csv" : "xlsx"}`,
       ),
     };
   },
@@ -2586,10 +2885,13 @@ export const adminKycApi = {
 
 export const adminManagersApi = {
   list: (token: string) =>
-    apiCall<{ managers: ManagerItem[]; pagination?: PaginationMeta }>(`/admin/manager/list`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+    apiCall<{ managers: ManagerItem[]; pagination?: PaginationMeta }>(
+      `/admin/manager/list`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
 
   create: (body: ManagerCreateBody, token: string) =>
     apiCall<{ manager: ManagerItem }>(`/admin/manager/create`, {
@@ -2627,7 +2929,8 @@ export const adminManagersApi = {
       },
       body: JSON.stringify({
         ...body,
-        password: typeof body.password === "string" ? body.password.trim() : undefined,
+        password:
+          typeof body.password === "string" ? body.password.trim() : undefined,
         permissions: Array.isArray(body.permissions) ? body.permissions : [],
       }),
     }),
@@ -2758,13 +3061,19 @@ export const adminCommissionPlansApi = {
     });
   },
 
-  update: (planId: number | string, body: CommissionPlanUpsertBody, token: string) => {
+  update: (
+    planId: number | string,
+    body: CommissionPlanUpsertBody,
+    token: string,
+  ) => {
     if (!token) {
       throw new Error("Token is required to update a commission plan");
     }
 
     if (planId === undefined || planId === null || `${planId}` === "") {
-      throw new Error("A valid plan identifier is required to update a commission plan");
+      throw new Error(
+        "A valid plan identifier is required to update a commission plan",
+      );
     }
 
     return apiCall<CommissionPlan>(`/admin/commission/plans/${planId}`, {
@@ -2780,7 +3089,9 @@ export const adminCommissionPlansApi = {
     }
 
     if (planId === undefined || planId === null || `${planId}` === "") {
-      throw new Error("A valid plan identifier is required to delete a commission plan");
+      throw new Error(
+        "A valid plan identifier is required to delete a commission plan",
+      );
     }
 
     return apiCall(`/admin/commission/plans/${planId}`, {
@@ -2862,7 +3173,13 @@ export type AdminIbPlanListParams = {
 };
 
 export const adminIbPlansApi = {
-  list: ({ token, page = 1, perPage = 20, search, status }: AdminIbPlanListParams) => {
+  list: ({
+    token,
+    page = 1,
+    perPage = 20,
+    search,
+    status,
+  }: AdminIbPlanListParams) => {
     if (!token) {
       throw new Error("Token is required to fetch IB plans");
     }
@@ -2890,7 +3207,9 @@ export const adminIbPlansApi = {
     }
 
     if (planId === undefined || planId === null || `${planId}` === "") {
-      throw new Error("A valid plan identifier is required to fetch an IB plan");
+      throw new Error(
+        "A valid plan identifier is required to fetch an IB plan",
+      );
     }
 
     return apiCall<AdminIbPlanItem>(`/admin/ib-plans/${planId}`, {
@@ -2911,13 +3230,19 @@ export const adminIbPlansApi = {
     });
   },
 
-  update: (planId: number | string, body: AdminIbPlanUpsertBody, token: string) => {
+  update: (
+    planId: number | string,
+    body: AdminIbPlanUpsertBody,
+    token: string,
+  ) => {
     if (!token) {
       throw new Error("Token is required to update an IB plan");
     }
 
     if (planId === undefined || planId === null || `${planId}` === "") {
-      throw new Error("A valid plan identifier is required to update an IB plan");
+      throw new Error(
+        "A valid plan identifier is required to update an IB plan",
+      );
     }
 
     return apiCall<AdminIbPlanItem>(`/admin/ib-plans/${planId}`, {
@@ -2927,13 +3252,19 @@ export const adminIbPlansApi = {
     });
   },
 
-  patch: (planId: number | string, body: Partial<AdminIbPlanUpsertBody>, token: string) => {
+  patch: (
+    planId: number | string,
+    body: Partial<AdminIbPlanUpsertBody>,
+    token: string,
+  ) => {
     if (!token) {
       throw new Error("Token is required to patch an IB plan");
     }
 
     if (planId === undefined || planId === null || `${planId}` === "") {
-      throw new Error("A valid plan identifier is required to patch an IB plan");
+      throw new Error(
+        "A valid plan identifier is required to patch an IB plan",
+      );
     }
 
     return apiCall<AdminIbPlanItem>(`/admin/ib-plans/${planId}`, {
@@ -2949,7 +3280,9 @@ export const adminIbPlansApi = {
     }
 
     if (planId === undefined || planId === null || `${planId}` === "") {
-      throw new Error("A valid plan identifier is required to delete an IB plan");
+      throw new Error(
+        "A valid plan identifier is required to delete an IB plan",
+      );
     }
 
     return apiCall(`/admin/ib-plans/${planId}`, {
@@ -2961,10 +3294,13 @@ export const adminIbPlansApi = {
 
 export const permissionsApi = {
   listAll: (token: string) =>
-    apiCall<{ permissions: GroupedPermissions[]; total?: number }>(`/permissions/permissions`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+    apiCall<{ permissions: GroupedPermissions[]; total?: number }>(
+      `/permissions/permissions`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
 };
 
 export const kycFileUrl = (fileName?: string | null) =>
@@ -3026,7 +3362,14 @@ export interface AdminUSDTDepositVerifyResponse {
 }
 
 export const adminUSDTDepositApi = {
-  listAll: (page: number = 1, limit: number = 10, token: string, search?: string, status?: string, depositType?: string | null) => {
+  listAll: (
+    page: number = 1,
+    limit: number = 10,
+    token: string,
+    search?: string,
+    status?: string,
+    depositType?: string | null,
+  ) => {
     const qs = new URLSearchParams();
     qs.set("page", String(page));
     qs.set("limit", String(limit));
@@ -3039,17 +3382,23 @@ export const adminUSDTDepositApi = {
     if (depositType && depositType !== "all" && depositType !== "none") {
       qs.set("deposit_type", depositType);
     }
-    
-    return apiCall<AdminUSDTDepositListResponse>(`/admin/deposits/all?${qs.toString()}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+
+    return apiCall<AdminUSDTDepositListResponse>(
+      `/admin/deposits/all?${qs.toString()}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
   },
 
   verify: (data: AdminUSDTDepositVerifyRequest, token: string) =>
     apiCall<AdminUSDTDepositVerifyResponse>(`/admin/deposits/verify`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     }),
 };
@@ -3133,7 +3482,10 @@ export const binanceDepositApi = {
   create: (data: BinanceDepositCreateRequest, token: string) =>
     apiCall<BinanceDepositCreateResponse>(`/user/deposit/binance/create`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     }),
 
@@ -3151,7 +3503,7 @@ export const binanceDepositApi = {
       date_to?: string | null;
       sort_column?: string;
       sort_order?: string;
-    }
+    },
   ) => {
     const qs = new URLSearchParams();
     qs.set("per_page", String(perPage));
@@ -3159,14 +3511,18 @@ export const binanceDepositApi = {
     qs.set("sort_column", options?.sort_column || "created_at");
     qs.set("sort_order", options?.sort_order || "DESC");
     if (options?.search) qs.set("search", options.search);
-    if (options?.payment_method_id !== undefined && options?.payment_method_id !== null) {
+    if (
+      options?.payment_method_id !== undefined &&
+      options?.payment_method_id !== null
+    ) {
       qs.set("payment_method_id", String(options.payment_method_id));
     }
     if (options?.status !== undefined && options?.status !== null) {
       qs.set("status", String(options.status));
     }
     if (options?.source) qs.set("source", options.source);
-    if (options?.payment_category) qs.set("payment_category", options.payment_category);
+    if (options?.payment_category)
+      qs.set("payment_category", options.payment_category);
     if (options?.date_from) qs.set("date_from", options.date_from);
     if (options?.date_to) qs.set("date_to", options.date_to);
     return apiCall<DepositListResponse>(`/user/deposit/list?${qs.toString()}`, {
@@ -3176,10 +3532,13 @@ export const binanceDepositApi = {
   },
 
   getStatus: (merchantTradeNo: string, token: string) =>
-    apiCall<BinanceDepositStatusResponse>(`/user/deposit/binance/status/${merchantTradeNo}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+    apiCall<BinanceDepositStatusResponse>(
+      `/user/deposit/binance/status/${merchantTradeNo}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
 };
 
 export interface CoinsBuyDepositCreateRequest {
@@ -3232,14 +3591,20 @@ export const coinsbuyDepositApi = {
   create: (data: CoinsBuyDepositCreateRequest, token: string) =>
     apiCall<CoinsBuyDepositCreateResponse>(`/user/deposit/coinsbuy/create`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     }),
 
   triggerWebhook: (data: CoinsBuyWebhookRequest, token: string) =>
     apiCall<CoinsBuyWebhookResponse>(`/webhook/coinsbuy`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     }),
 };
@@ -3305,15 +3670,21 @@ export const cregisDepositApi = {
   create: (data: CregisDepositCreateRequest, token: string) =>
     apiCall<CregisDepositCreateResponse>(`/user/deposit/cregis/create`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     }),
 
   getStatus: (outTradeNo: string, token: string) =>
-    apiCall<CregisDepositStatusData>(`/user/deposit/cregis/status/${outTradeNo}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+    apiCall<CregisDepositStatusData>(
+      `/user/deposit/cregis/status/${outTradeNo}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
 };
 
 export interface AdminWithdrawalRequest {
@@ -3406,7 +3777,7 @@ export interface AdminWithdrawalDecisionResponse {
 export interface BankDepositRequest {
   amount: number;
   transaction_id: string;
-  payment_proof ?: string | File | null;
+  payment_proof?: string | File | null;
   comment?: string;
 }
 
@@ -3454,23 +3825,24 @@ export interface BankDepositListData {
 export const bankDepositApi = {
   submit: (data: BankDepositRequest, token: string) => {
     const formData = new FormData();
-    formData.append('amount', String(data.amount));
-    formData.append('transaction_id', data.transaction_id);
+    formData.append("amount", String(data.amount));
+    formData.append("transaction_id", data.transaction_id);
     if (data.payment_proof) {
-      formData.append('payment_proof', data.payment_proof);
+      formData.append("payment_proof", data.payment_proof);
     }
     if (data.comment) {
-      formData.append('comment', data.comment);
+      formData.append("comment", data.comment);
     }
 
-    return apiCall<{ success: boolean; message: string; data: BankDepositSubmitData }>(
-      `/user/bank-deposit/submit`,
-      {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      },
-    );
+    return apiCall<{
+      success: boolean;
+      message: string;
+      data: BankDepositSubmitData;
+    }>(`/user/bank-deposit/submit`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
   },
 
   listRequests: (token: string, page = 1, limit = 10, status?: string) => {
@@ -3500,7 +3872,13 @@ export const bankDepositApi = {
 };
 
 export const adminWithdrawalApi = {
-  listAll: (page: number = 1, limit: number = 10, token: string, status?: string, search?: string) => {
+  listAll: (
+    page: number = 1,
+    limit: number = 10,
+    token: string,
+    status?: string,
+    search?: string,
+  ) => {
     const qs = new URLSearchParams();
     qs.set("page", String(page));
     qs.set("limit", String(limit));
@@ -3511,18 +3889,31 @@ export const adminWithdrawalApi = {
       qs.set("search", search.trim());
     }
 
-    return apiCall<AdminWithdrawalListResponse>(`/admin/withdrawals?${qs.toString()}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    return apiCall<AdminWithdrawalListResponse>(
+      `/admin/withdrawals?${qs.toString()}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
   },
 
-  decision: (id: string | number, data: AdminWithdrawalDecisionRequest, token: string) =>
-    apiCall<AdminWithdrawalDecisionResponse>(`/admin/withdrawals/${id}/decision`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    }),
+  decision: (
+    id: string | number,
+    data: AdminWithdrawalDecisionRequest,
+    token: string,
+  ) =>
+    apiCall<AdminWithdrawalDecisionResponse>(
+      `/admin/withdrawals/${id}/decision`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      },
+    ),
 };
 
 export interface BroadcastEmailRequest {
@@ -3570,22 +3961,28 @@ export interface BroadcastEmailResponse {
 export const adminBroadcastEmailApi = {
   send: (data: BroadcastEmailRequest | FormData, token: string) => {
     const isFormData = data instanceof FormData;
-    return apiCall<BroadcastEmailResponse["data"]>("/admin/user-management/broadcast-email", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        ...(isFormData ? {} : { "Content-Type": "application/json" }),
+    return apiCall<BroadcastEmailResponse["data"]>(
+      "/admin/user-management/broadcast-email",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          ...(isFormData ? {} : { "Content-Type": "application/json" }),
+        },
+        body: isFormData ? data : JSON.stringify(data),
       },
-      body: isFormData ? data : JSON.stringify(data),
-    });
+    );
   },
 
   history: (params: { token: string; page?: number; limit?: number }) => {
     const { token, page = 1, limit = 10 } = params;
-    const qs = new URLSearchParams({ page: String(page), limit: String(limit) });
+    const qs = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    });
     return apiCall<BroadcastEmailHistoryResponse>(
       `/admin/user-management/broadcast-email/history?${qs.toString()}`,
-      { method: "GET", headers: { Authorization: `Bearer ${token}` } }
+      { method: "GET", headers: { Authorization: `Bearer ${token}` } },
     );
   },
 };
@@ -3613,24 +4010,39 @@ export interface EmailExclusionMutationResponse {
 
 export const adminEmailExclusionsApi = {
   list: (token: string) =>
-    apiCall<EmailExclusionListResponse>("/admin/user-management/email-exclusions", {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+    apiCall<EmailExclusionListResponse>(
+      "/admin/user-management/email-exclusions",
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
 
   add: (email: string, token: string) =>
-    apiCall<EmailExclusionMutationResponse>("/admin/user-management/email-exclusions", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    }),
+    apiCall<EmailExclusionMutationResponse>(
+      "/admin/user-management/email-exclusions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      },
+    ),
 
   remove: (email: string, token: string) =>
-    apiCall<EmailExclusionMutationResponse>("/admin/user-management/email-exclusions", {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    }),
+    apiCall<EmailExclusionMutationResponse>(
+      "/admin/user-management/email-exclusions",
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email }),
+      },
+    ),
 };
 
 // ─── Payment Methods ──────────────────────────────────────────────────────────
@@ -3682,7 +4094,7 @@ export const userPaymentMethodsApi = {
   list: (token: string) =>
     apiCall<{ status: number; message: string; data: UserPaymentMethod[] }>(
       "/user/payment-methods",
-      { method: "GET", headers: { Authorization: `Bearer ${token}` } }
+      { method: "GET", headers: { Authorization: `Bearer ${token}` } },
     ),
 };
 
@@ -3696,26 +4108,38 @@ export const adminPaymentMethodsApi = {
   create: (data: PaymentMethodRequest, token: string) =>
     apiCall<PaymentMethodResponse>("/admin/payment-methods", {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     }),
 
   update: (id: number, data: PaymentMethodRequest, token: string) =>
     apiCall<PaymentMethodResponse>(`/admin/payment-methods/${id}`, {
       method: "PUT",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     }),
 
   toggleStatus: (id: number, token: string) =>
-    apiCall<PaymentMethodResponse>(`/admin/payment-methods/${id}/toggle-status`, {
-      method: "PATCH",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+    apiCall<PaymentMethodResponse>(
+      `/admin/payment-methods/${id}/toggle-status`,
+      {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
 
   delete: (id: number, token: string) =>
-    apiCall<{ status: number; message: string }>(`/admin/payment-methods/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+    apiCall<{ status: number; message: string }>(
+      `/admin/payment-methods/${id}`,
+      {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
 };

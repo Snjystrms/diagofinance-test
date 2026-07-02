@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/dialog";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
-import { formatDateTimeInIST } from "@/lib/formatters";
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
 import {
   adminCurrencyRatesApi,
   type CurrencyRateItem,
@@ -63,7 +63,7 @@ const normalize = (item: CurrencyRateItem): CurrencyRateRow => ({
   updated_at: item.updated_at,
 });
 
-const fmtDate = (s?: string) => (s ? formatDateTimeInIST(s) : "-");
+const fmtDate = (s?: string) => (s ? formatApiDateTimeAsIST(s) : "-");
 
 const defaultFormValue: CurrencyRateFormValue = {
   from_currency: "USD",

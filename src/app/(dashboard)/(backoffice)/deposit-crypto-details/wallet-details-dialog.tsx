@@ -14,7 +14,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { BrokerCryptoWallet } from "@/lib/api";
-import { formatDateTimeInIST } from "@/lib/formatters";
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
 
 interface WalletDetailsDialogProps {
   open: boolean;
@@ -32,7 +32,7 @@ const displayValue = (value: unknown) => {
 
 const formatDate = (value: unknown) => {
   if (typeof value !== "string" || !value) return emptyValue;
-  return formatDateTimeInIST(value);
+  return formatApiDateTimeAsIST(value);
 };
 
 const DetailItem = ({ label, value }: { label: string; value: unknown }) => (

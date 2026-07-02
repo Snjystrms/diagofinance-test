@@ -33,14 +33,22 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-import { CheckCircle2, XCircle, Eye, Calendar, FileImage, RefreshCw, CircleDollarSign } from "lucide-react";
+import {
+  CheckCircle2,
+  XCircle,
+  Eye,
+  Calendar,
+  FileImage,
+  RefreshCw,
+  CircleDollarSign,
+} from "lucide-react";
 
 import {
   adminUSDTDepositApi,
   depositProofUrl,
   type AdminUSDTDepositRequest,
 } from "@/lib/api";
-import { formatDateTimeInIST } from "@/lib/formatters";
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
 import { useAuth } from "@/contexts/auth-context";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import {
@@ -55,7 +63,7 @@ import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 const fmtDateTime = (s?: string | null) => {
   if (!s) return "—";
   try {
-    return formatDateTimeInIST(s);
+    return formatApiDateTimeAsIST(s);
   } catch {
     return s;
   }
@@ -103,19 +111,21 @@ export function USDTTransactionsPageContent() {
   const ctxToken = authCtx?.token;
   const token =
     ctxToken ||
-    (typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : "");
+    (typeof window !== "undefined"
+      ? localStorage.getItem("auth_token") || ""
+      : "");
 
   const { filterFeatureOptions } = useManagerPermissions();
   const { isAdmin, isManager, can } = useModuleCapabilities("transaction");
 
   const depositStatusFeatureOptions = useMemo(
     () => filterFeatureOptions("transaction", DEPOSIT_STATUS_OPTIONS),
-    [filterFeatureOptions]
+    [filterFeatureOptions],
   );
 
   const allowedStatusValues = useMemo(
     () => depositStatusFeatureOptions.map((opt) => opt.value),
-    [depositStatusFeatureOptions]
+    [depositStatusFeatureOptions],
   );
 
   const allowedStatusesSet = useMemo(() => {
@@ -134,7 +144,7 @@ export function USDTTransactionsPageContent() {
       if (isAdmin || !isManager) return true;
       return allowedStatusesSet.has((status || "").toLowerCase());
     },
-    [isAdmin, isManager, allowedStatusesSet]
+    [isAdmin, isManager, allowedStatusesSet],
   );
 
   const [depositRows, setDepositRows] = useState<AdminUSDTDepositRequest[]>([]);
@@ -145,16 +155,25 @@ export function USDTTransactionsPageContent() {
   const [search, setSearch] = useQueryState("search", parseAsString);
   const [searchInput, setSearchInput] = useState<string>(search ?? "");
   const [totalPages, setTotalPages] = useState(1);
-  const [statusFilter, setStatusFilter] = useQueryState("status", parseAsString.withDefault("all"));
-  const [depositTypeFilter, setDepositTypeFilter] = useQueryState("deposit_type", parseAsString.withDefault("all"));
+  const [statusFilter, setStatusFilter] = useQueryState(
+    "status",
+    parseAsString.withDefault("all"),
+  );
+  const [depositTypeFilter, setDepositTypeFilter] = useQueryState(
+    "deposit_type",
+    parseAsString.withDefault("all"),
+  );
 
   // View details dialog state
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
-  const [viewingDepositRequest, setViewingDepositRequest] = useState<AdminUSDTDepositRequest | null>(null);
+  const [viewingDepositRequest, setViewingDepositRequest] =
+    useState<AdminUSDTDepositRequest | null>(null);
   const [proofBlobUrl, setProofBlobUrl] = useState<string>("");
   const [proofLoading, setProofLoading] = useState(false);
   const [proofError, setProofError] = useState(false);
-  const [verifyDecision, setVerifyDecision] = useState<"approve" | "reject">("approve");
+  const [verifyDecision, setVerifyDecision] = useState<"approve" | "reject">(
+    "approve",
+  );
   const [adminNotes, setAdminNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const requestIdRef = useRef(0);
@@ -166,16 +185,35 @@ export function USDTTransactionsPageContent() {
       setLoadError(null);
       setDepositRows([]);
       const searchTerm =
-        typeof search === "string" && search.trim().length >= 3 ? search.trim() : undefined;
-      const statusParam = statusFilter !== "all" && statusFilter !== "none" ? statusFilter : undefined;
-      const depositTypeParam = depositTypeFilter !== "all" && depositTypeFilter !== "none" ? depositTypeFilter : undefined;
-      const res = await adminUSDTDepositApi.listAll(page, perPage, token, searchTerm, statusParam, depositTypeParam);
+        typeof search === "string" && search.trim().length >= 3
+          ? search.trim()
+          : undefined;
+      const statusParam =
+        statusFilter !== "all" && statusFilter !== "none"
+          ? statusFilter
+          : undefined;
+      const depositTypeParam =
+        depositTypeFilter !== "all" && depositTypeFilter !== "none"
+          ? depositTypeFilter
+          : undefined;
+      const res = await adminUSDTDepositApi.listAll(
+        page,
+        perPage,
+        token,
+        searchTerm,
+        statusParam,
+        depositTypeParam,
+      );
       if (currentRequestId !== requestIdRef.current) return;
       const requests = res?.data?.deposits ?? [];
       setDepositRows(requests);
 
       if (res?.data?.pagination) {
-        setTotalPages(res.data.pagination.totalPages || res.data.pagination.total_pages || 1);
+        setTotalPages(
+          res.data.pagination.totalPages ||
+            res.data.pagination.total_pages ||
+            1,
+        );
       }
     } catch (e: unknown) {
       if (currentRequestId !== requestIdRef.current) return;
@@ -185,7 +223,7 @@ export function USDTTransactionsPageContent() {
         getAdminFriendlyErrorMessage(e, {
           resource: "deposit requests",
           action: "load",
-        })
+        }),
       );
       setDepositRows([]);
     }
@@ -278,24 +316,36 @@ export function USDTTransactionsPageContent() {
     const nextFilter = sanitizeFilterValue(
       statusFilter,
       allowedStatusValues,
-      depositStatusFeatureOptions[0].value
+      depositStatusFeatureOptions[0].value,
     );
     if (nextFilter !== statusFilter) {
       setStatusFilter(nextFilter);
     }
-  }, [isManager, depositStatusFeatureOptions, allowedStatusValues, statusFilter]);
+  }, [
+    isManager,
+    depositStatusFeatureOptions,
+    allowedStatusValues,
+    statusFilter,
+  ]);
 
-  const showAllStatusOption = isAdmin || !isManager || depositStatusFeatureOptions.length > 1;
+  const showAllStatusOption =
+    isAdmin || !isManager || depositStatusFeatureOptions.length > 1;
 
   const handleViewDetails = useCallback(
     (request: AdminUSDTDepositRequest) => {
-      if (!assertCan(canViewStatus(request.status), "You do not have permission to view this request", toast.error)) {
+      if (
+        !assertCan(
+          canViewStatus(request.status),
+          "You do not have permission to view this request",
+          toast.error,
+        )
+      ) {
         return;
       }
       setViewingDepositRequest(request);
       setViewDialogOpen(true);
     },
-    [canViewStatus]
+    [canViewStatus],
   );
 
   const resetVerifyState = useCallback(() => {
@@ -305,7 +355,13 @@ export function USDTTransactionsPageContent() {
 
   const submitVerify = async () => {
     if (!token || !viewingDepositRequest) return;
-    if (!assertCan(canTakeDepositAction, "You do not have permission to update this deposit", toast.error)) {
+    if (
+      !assertCan(
+        canTakeDepositAction,
+        "You do not have permission to update this deposit",
+        toast.error,
+      )
+    ) {
       return;
     }
     if (verifyDecision === "reject" && !adminNotes.trim()) {
@@ -322,12 +378,12 @@ export function USDTTransactionsPageContent() {
           action: verifyDecision,
           admin_notes: adminNotes.trim() || undefined,
         },
-        token
+        token,
       );
 
       toast.success(
         res?.message ||
-          `Deposit request ${verifyDecision === "approve" ? "approve" : "reject"} successfully`
+          `Deposit request ${verifyDecision === "approve" ? "approve" : "reject"} successfully`,
       );
 
       await loadList();
@@ -341,62 +397,41 @@ export function USDTTransactionsPageContent() {
         getAdminFriendlyErrorMessage(e, {
           resource: "deposit requests",
           action: "update",
-        })
+        }),
       );
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Format datetime to "Jun 24, 2026, 02:34 PM IST"
   const formatDateTime = (dateString: string | null | undefined): string => {
-    if (!dateString) return "-";
-    
-    try {
-      const date = new Date(dateString);
-      
-      // Format date part: "Jun 24, 2026"
-      const datePart = date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      });
-      
-      // Format time part: "02:34 PM"
-      const timePart = date.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-        hour12: true,
-      });
-      
-      return `${datePart}, ${timePart} IST`;
-    } catch {
-      return dateString;
-    }
+    if (!dateString) return "—";
+    return formatApiDateTimeAsIST(dateString, "—");
   };
 
   const depositColumns: ColumnDef<AdminUSDTDepositRequest>[] = useMemo(
     () => [
-   {
-  id: "sr_no",
-  header: "Sr. No.",
-  cell: ({ row, table }) => {
-    const pageIndex = table.getState().pagination.pageIndex ?? 0;
-    const pageSize = table.getState().pagination.pageSize ?? 10;
-    return (
-      <span className="font-mono text-sm">
-        {pageIndex * pageSize + row.index + 1}
-      </span>
-    );
-  },
-},
+      {
+        id: "sr_no",
+        header: "Sr. No.",
+        cell: ({ row, table }) => {
+          const pageIndex = table.getState().pagination.pageIndex ?? 0;
+          const pageSize = table.getState().pagination.pageSize ?? 10;
+          return (
+            <span className="font-mono text-sm">
+              {pageIndex * pageSize + row.index + 1}
+            </span>
+          );
+        },
+      },
       {
         id: "user",
         header: "User",
         accessorKey: "user",
         cell: ({ row }) => {
           const userInfo = row.original.user;
-          if (!userInfo) return <span className="text-muted-foreground">—</span>;
+          if (!userInfo)
+            return <span className="text-muted-foreground">—</span>;
           return (
             <div className="space-y-0.5">
               <Link
@@ -407,7 +442,9 @@ export function USDTTransactionsPageContent() {
                   ? `${userInfo.first_name || ""} ${userInfo.last_name || ""}`.trim()
                   : "—"}
               </Link>
-              <div className="text-xs text-muted-foreground">{userInfo.email}</div>
+              <div className="text-xs text-muted-foreground">
+                {userInfo.email}
+              </div>
             </div>
           );
         },
@@ -417,7 +454,9 @@ export function USDTTransactionsPageContent() {
         header: "Amount (USD)",
         accessorKey: "amount",
         cell: ({ row }) => (
-          <span className="font-medium whitespace-nowrap">{formatAmount(row.original.amount.toFixed(2))}</span>
+          <span className="font-medium whitespace-nowrap">
+            {formatAmount(row.original.amount.toFixed(2))}
+          </span>
         ),
       },
       {
@@ -425,16 +464,21 @@ export function USDTTransactionsPageContent() {
         header: "Reference",
         accessorKey: "transaction_reference",
         cell: ({ row }) => {
-          const reference = row.original.transaction_reference || row.original.transaction_hash;
-          if (!reference) return <span className="text-muted-foreground">—</span>;
+          const reference =
+            row.original.transaction_reference || row.original.transaction_hash;
+          if (!reference)
+            return <span className="text-muted-foreground">—</span>;
           return (
-            <span className="font-mono text-xs max-w-[200px] truncate block" title={reference}>
+            <span
+              className="font-mono text-xs max-w-[200px] truncate block"
+              title={reference}
+            >
               {reference}
             </span>
           );
         },
       },
-            {
+      {
         id: "user_comment",
         header: "User Comment",
         accessorKey: "user_comment",
@@ -442,7 +486,10 @@ export function USDTTransactionsPageContent() {
           const comment = row.original.user_comment;
           if (!comment) return <span className="text-muted-foreground">—</span>;
           return (
-            <span className="font-mono text-xs max-w-[200px] truncate block" title={comment}>
+            <span
+              className="font-mono text-xs max-w-[200px] truncate block"
+              title={comment}
+            >
               {comment}
             </span>
           );
@@ -463,16 +510,20 @@ export function USDTTransactionsPageContent() {
         cell: ({ row }) => statusBadge(row.original.status),
       },
       {
-      id: "processed_by",
-      accessorKey: "processed_by",
-      header: "Processed By",
-      cell: ({ row }) => (
-         <div className="space-y-0.5">
-        <div className="font-normal">{row.original.approved_by || "-"} </div>
-         <div className="font-normal">{formatDateTime(row.original.approved_at)} </div>
-        </div>
-      ),
-    },
+        id: "processed_by",
+        accessorKey: "processed_by",
+        header: "Processed By",
+        cell: ({ row }) => (
+          <div className="space-y-0.5">
+            <div className="font-normal">
+              {row.original.approved_by || "-"}{" "}
+            </div>
+            <div className="font-normal">
+              {formatDateTime(row.original.approved_at)}{" "}
+            </div>
+          </div>
+        ),
+      },
       {
         id: "created_at",
         header: "Created",
@@ -504,18 +555,16 @@ export function USDTTransactionsPageContent() {
         },
       },
     ],
-    [handleViewDetails]
+    [handleViewDetails],
   );
 
   if (!canViewDeposits) {
     return (
-
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <p className="text-muted-foreground">
-            You do not have permission to view USDT deposit transactions.
-          </p>
-        </div>
-
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <p className="text-muted-foreground">
+          You do not have permission to view USDT deposit transactions.
+        </p>
+      </div>
     );
   }
 
@@ -537,369 +586,405 @@ export function USDTTransactionsPageContent() {
   }
 
   return (
-
-      <div className="p-6 space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
-              <CircleDollarSign className="h-6 w-6 text-primary" />
-              Deposit List
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Manage and review all deposit requests
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={loadList} disabled={loading}>
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
-          </div>
+    <div className="p-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+            <CircleDollarSign className="h-6 w-6 text-primary" />
+            Deposit List
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Manage and review all deposit requests
+          </p>
         </div>
-
-        <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-          <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
-            <ApiSearchBar
-              value={searchInput}
-              onChange={setSearchInput}
-              onSearch={(value) => {
-                void setSearch(value || null);
-              }}
-              placeholder="Search by user, email, amount, or reference"
-              minimumLength={3}
-              delay={300}
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={loadList} disabled={loading}>
+            <RefreshCw
+              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
             />
+            Refresh
+          </Button>
+        </div>
+      </div>
 
-            {(!isManager || depositStatusFeatureOptions.length > 0) && (
-              <div className="flex items-center gap-2">
-                <label htmlFor="deposit-status-filter" className="text-sm font-medium">
-                  Filter by Status:
-                </label>
-                <Select
-                  value={statusFilter === "none" ? undefined : statusFilter}
-                  onValueChange={setStatusFilter}
-                  disabled={isManager && !depositStatusFeatureOptions.length}
-                >
-                  <SelectTrigger id="deposit-status-filter" className="w-[200px]">
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {showAllStatusOption && <SelectItem value="all">All</SelectItem>}
-                    {depositStatusFeatureOptions.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
+      <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
+        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+          <ApiSearchBar
+            value={searchInput}
+            onChange={setSearchInput}
+            onSearch={(value) => {
+              void setSearch(value || null);
+            }}
+            placeholder="Search by user, email, amount, or reference"
+            minimumLength={3}
+            delay={300}
+          />
 
+          {(!isManager || depositStatusFeatureOptions.length > 0) && (
             <div className="flex items-center gap-2">
-              <label htmlFor="deposit-type-filter" className="text-sm font-medium">
-                Filter by Type:
+              <label
+                htmlFor="deposit-status-filter"
+                className="text-sm font-medium"
+              >
+                Filter by Status:
               </label>
               <Select
-                value={depositTypeFilter}
-                onValueChange={(value) =>
-                  setDepositTypeFilter(value)
-                }
+                value={statusFilter === "none" ? undefined : statusFilter}
+                onValueChange={setStatusFilter}
+                disabled={isManager && !depositStatusFeatureOptions.length}
               >
-                <SelectTrigger id="deposit-type-filter" className="w-[180px]">
-                  <SelectValue placeholder="Select type" />
+                <SelectTrigger id="deposit-status-filter" className="w-[200px]">
+                  <SelectValue placeholder="Select status" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="bank">Bank</SelectItem>
-                  <SelectItem value="usd">USD</SelectItem>
+                  {showAllStatusOption && (
+                    <SelectItem value="all">All</SelectItem>
+                  )}
+                  {depositStatusFeatureOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          {loading && depositRows.length === 0 ? (
-            <TableSectionSkeleton columnCount={9} rowCount={10} />
-          ) : (
-            <AppDataTable<AdminUSDTDepositRequest>
-              data={depositRows}
-              columns={depositColumns}
-              pageCount={totalPages}
-              getRowId={(row) => String(row.id)}
-            />
           )}
+
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="deposit-type-filter"
+              className="text-sm font-medium"
+            >
+              Filter by Type:
+            </label>
+            <Select
+              value={depositTypeFilter}
+              onValueChange={(value) => setDepositTypeFilter(value)}
+            >
+              <SelectTrigger id="deposit-type-filter" className="w-[180px]">
+                <SelectValue placeholder="Select type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="bank">Bank</SelectItem>
+                <SelectItem value="usd">USD</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        {/* View Details Dialog */}
-        <Dialog
-          open={viewDialogOpen}
-          onOpenChange={(o) => {
-            setViewDialogOpen(o);
-            if (!o) {
-              setViewingDepositRequest(null);
-              resetVerifyState();
-            }
-          }}
-        >
-          <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Deposit Request Details</DialogTitle>
-              <DialogDescription>View complete details of the deposit request</DialogDescription>
-            </DialogHeader>
-
-            {viewingDepositRequest && (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="rounded-lg border p-4">
-                    <p className="text-xs text-muted-foreground mb-2">Request Information</p>
-                    <div className="space-y-2 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Status: </span>
-                        {statusBadge(viewingDepositRequest.status || "pending")}
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Amount: </span>
-                        <span className="font-medium">
-                          {formatAmount(viewingDepositRequest.amount || "0")} USD
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Deposit Type: </span>
-                        <span className="font-medium capitalize">
-                          {viewingDepositRequest.deposit_type || "—"}
-                        </span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Reference: </span>
-                        <div className="font-mono text-xs break-all">
-                          {viewingDepositRequest.transaction_reference ||
-                            viewingDepositRequest.transaction_hash ||
-                            "—"}
-                        </div>
-                      </div>
-                        <div>
-                        <span className="text-muted-foreground">User Comment: </span>
-                        <div className="font-mono text-xs break-all">
-                          {viewingDepositRequest.user_comment || "—"}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="rounded-lg border p-4">
-                    <p className="text-xs text-muted-foreground mb-2">User Information</p>
-                    <div className="space-y-2 text-sm">
-                      {viewingDepositRequest.user ? (
-                        <>
-                          <div>
-                            <span className="text-muted-foreground">Name: </span>
-                            <span className="font-medium">
-                              {viewingDepositRequest.user.first_name || viewingDepositRequest.user.last_name
-                                ? `${viewingDepositRequest.user.first_name || ""} ${viewingDepositRequest.user.last_name || ""}`.trim()
-                                : "—"}
-                            </span>
-                          </div>
-                          <div>
-                            <span className="text-muted-foreground">Email: </span>
-                            <span className="font-medium">
-                              {viewingDepositRequest.user.email}
-                            </span>
-                          </div>
-                        </>
-                      ) : (
-                        <span className="text-muted-foreground">No user information available</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-lg border p-4">
-                  <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
-                    <FileImage className="h-4 w-4" />
-                    Payment Proof
-                  </p>
-                  {viewingDepositRequest.payment_proof_url ? (
-                    <div className="rounded-md border bg-background p-4 flex items-center justify-center min-h-[120px]">
-                      {proofLoading && !proofBlobUrl && (
-                        <Spinner className="h-6 w-6" />
-                      )}
-                      {proofError && (
-                        <span className="text-sm text-muted-foreground">
-                          Unable to load payment proof.
-                        </span>
-                      )}
-                      {proofBlobUrl && (
-                        <img
-                          src={proofBlobUrl}
-                          alt="Payment proof"
-                          className="max-h-96 w-auto object-contain"
-                        />
-                      )}
-                    </div>
-                  ) : (
-                    <div className="rounded-md border border-dashed bg-muted/30 p-4 flex flex-col items-center justify-center gap-1 min-h-[120px] text-center">
-                      <FileImage className="h-8 w-8 text-muted-foreground opacity-60" />
-                      <span className="text-sm font-medium text-muted-foreground">
-                        No deposit image provided
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        The user has not uploaded a payment proof for this deposit request.
-                      </span>
-                    </div>
-                  )}
-                </div>
-
-                {(viewingDepositRequest.admin_notes || viewingDepositRequest.approved_by || viewingDepositRequest.approved_at) && (
-                  <div className="rounded-lg border p-4">
-                    <p className="text-xs text-muted-foreground mb-2">Admin Information</p>
-                    <div className="space-y-2 text-sm">
-                      {viewingDepositRequest.admin_notes && (
-                        <div>
-                          <span className="text-muted-foreground">Admin Notes: </span>
-                          <div className="mt-1 p-2 bg-muted rounded-md">
-                            {viewingDepositRequest.admin_notes}
-                          </div>
-                        </div>
-                      )}
-                      {viewingDepositRequest.approved_at && (
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span className="text-muted-foreground">Approved At: </span>
-                          <span>
-                            {fmtDateTime(viewingDepositRequest.approved_at)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                <div className="rounded-lg border p-4">
-                  <p className="text-xs text-muted-foreground mb-2">Timestamps</p>
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Created: </span>
-                      <span>{fmtDateTime(viewingDepositRequest.created_at)}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-muted-foreground">Updated: </span>
-                      <span>{fmtDateTime(viewingDepositRequest.updated_at)}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {(() => {
-                  const isPending = viewingDepositRequest.status === "pending";
-                  const canVerify =
-                    canTakeDepositAction && isPending && canViewStatus("pending");
-                  if (!canVerify) return null;
-
-                  return (
-                    <>
-                      <Separator />
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label className="text-sm font-semibold">Verification Decision</Label>
-                          <Tabs
-                            value={verifyDecision}
-                            onValueChange={(value) => {
-                              if (value === "approve" || value === "reject") {
-                                setVerifyDecision(value);
-                              }
-                            }}
-                            className="w-full"
-                          >
-                            <TabsList className="grid h-auto w-full grid-cols-2 rounded-2xl bg-muted/50 p-1">
-                              <TabsTrigger value="approve" className="rounded-xl">
-                                <CheckCircle2 className="mr-2 h-4 w-4" />
-                                Approve
-                              </TabsTrigger>
-                              <TabsTrigger value="reject" className="rounded-xl">
-                                <XCircle className="mr-2 h-4 w-4" />
-                                Reject
-                              </TabsTrigger>
-                            </TabsList>
-                          </Tabs>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="admin-notes" className="text-sm font-semibold">
-                            Admin Notes{" "}
-                            {verifyDecision === "reject" && (
-                              <span className="text-destructive">*</span>
-                            )}
-                          </Label>
-                          <Textarea
-                            id="admin-notes"
-                            value={adminNotes}
-                            onChange={(e) => setAdminNotes(e.target.value)}
-                            placeholder={
-                              verifyDecision === "reject"
-                                ? "Please provide a reason for rejection..."
-                                : "Optional notes about this verification..."
-                            }
-                            className="min-h-[100px]"
-                          />
-                          {verifyDecision === "reject" && (
-                            <p className="text-xs text-muted-foreground">
-                              Rejection reason is required
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-            )}
-
-            <DialogFooter className="flex-col gap-2 sm:flex-row">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setViewDialogOpen(false)}
-                disabled={submitting}
-                className="w-full sm:w-auto"
-              >
-                Close
-              </Button>
-              {viewingDepositRequest &&
-                canTakeDepositAction &&
-                viewingDepositRequest.status === "pending" &&
-                canViewStatus("pending") && (
-                  <Button
-                    type="button"
-                    onClick={submitVerify}
-                    disabled={submitting || (verifyDecision === "reject" && !adminNotes.trim())}
-                    className={`w-full sm:w-auto ${
-                      verifyDecision === "approve"
-                        ? "bg-green-600 hover:bg-green-700"
-                        : "bg-red-600 hover:bg-red-700"
-                    }`}
-                  >
-                    {submitting ? (
-                      <>
-                        <Spinner className="mr-2 h-4 w-4" />
-                        Processing...
-                      </>
-                    ) : verifyDecision === "approve" ? (
-                      <>
-                        <CheckCircle2 className="mr-2 h-4 w-4" />
-                        Approve
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="mr-2 h-4 w-4" />
-                        Reject
-                      </>
-                    )}
-                  </Button>
-                )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {loading && depositRows.length === 0 ? (
+          <TableSectionSkeleton columnCount={9} rowCount={10} />
+        ) : (
+          <AppDataTable<AdminUSDTDepositRequest>
+            data={depositRows}
+            columns={depositColumns}
+            pageCount={totalPages}
+            getRowId={(row) => String(row.id)}
+          />
+        )}
       </div>
 
+      {/* View Details Dialog */}
+      <Dialog
+        open={viewDialogOpen}
+        onOpenChange={(o) => {
+          setViewDialogOpen(o);
+          if (!o) {
+            setViewingDepositRequest(null);
+            resetVerifyState();
+          }
+        }}
+      >
+        <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Deposit Request Details</DialogTitle>
+            <DialogDescription>
+              View complete details of the deposit request
+            </DialogDescription>
+          </DialogHeader>
+
+          {viewingDepositRequest && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="rounded-lg border p-4">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Request Information
+                  </p>
+                  <div className="space-y-2 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Status: </span>
+                      {statusBadge(viewingDepositRequest.status || "pending")}
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Amount: </span>
+                      <span className="font-medium">
+                        {formatAmount(viewingDepositRequest.amount || "0")} USD
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">
+                        Deposit Type:{" "}
+                      </span>
+                      <span className="font-medium capitalize">
+                        {viewingDepositRequest.deposit_type || "—"}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Reference: </span>
+                      <div className="font-mono text-xs break-all">
+                        {viewingDepositRequest.transaction_reference ||
+                          viewingDepositRequest.transaction_hash ||
+                          "—"}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">
+                        User Comment:{" "}
+                      </span>
+                      <div className="font-mono text-xs break-all">
+                        {viewingDepositRequest.user_comment || "—"}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-lg border p-4">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    User Information
+                  </p>
+                  <div className="space-y-2 text-sm">
+                    {viewingDepositRequest.user ? (
+                      <>
+                        <div>
+                          <span className="text-muted-foreground">Name: </span>
+                          <span className="font-medium">
+                            {viewingDepositRequest.user.first_name ||
+                            viewingDepositRequest.user.last_name
+                              ? `${viewingDepositRequest.user.first_name || ""} ${viewingDepositRequest.user.last_name || ""}`.trim()
+                              : "—"}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Email: </span>
+                          <span className="font-medium">
+                            {viewingDepositRequest.user.email}
+                          </span>
+                        </div>
+                      </>
+                    ) : (
+                      <span className="text-muted-foreground">
+                        No user information available
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-lg border p-4">
+                <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                  <FileImage className="h-4 w-4" />
+                  Payment Proof
+                </p>
+                {viewingDepositRequest.payment_proof_url ? (
+                  <div className="rounded-md border bg-background p-4 flex items-center justify-center min-h-[120px]">
+                    {proofLoading && !proofBlobUrl && (
+                      <Spinner className="h-6 w-6" />
+                    )}
+                    {proofError && (
+                      <span className="text-sm text-muted-foreground">
+                        Unable to load payment proof.
+                      </span>
+                    )}
+                    {proofBlobUrl && (
+                      <img
+                        src={proofBlobUrl}
+                        alt="Payment proof"
+                        className="max-h-96 w-auto object-contain"
+                      />
+                    )}
+                  </div>
+                ) : (
+                  <div className="rounded-md border border-dashed bg-muted/30 p-4 flex flex-col items-center justify-center gap-1 min-h-[120px] text-center">
+                    <FileImage className="h-8 w-8 text-muted-foreground opacity-60" />
+                    <span className="text-sm font-medium text-muted-foreground">
+                      No deposit image provided
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      The user has not uploaded a payment proof for this deposit
+                      request.
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              {(viewingDepositRequest.admin_notes ||
+                viewingDepositRequest.approved_by ||
+                viewingDepositRequest.approved_at) && (
+                <div className="rounded-lg border p-4">
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Admin Information
+                  </p>
+                  <div className="space-y-2 text-sm">
+                    {viewingDepositRequest.admin_notes && (
+                      <div>
+                        <span className="text-muted-foreground">
+                          Admin Notes:{" "}
+                        </span>
+                        <div className="mt-1 p-2 bg-muted rounded-md">
+                          {viewingDepositRequest.admin_notes}
+                        </div>
+                      </div>
+                    )}
+                    {viewingDepositRequest.approved_at && (
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-muted-foreground">
+                          Approved At:{" "}
+                        </span>
+                        <span>
+                          {fmtDateTime(viewingDepositRequest.approved_at)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="rounded-lg border p-4">
+                <p className="text-xs text-muted-foreground mb-2">Timestamps</p>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Created: </span>
+                    <span>{fmtDateTime(viewingDepositRequest.created_at)}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground">Updated: </span>
+                    <span>{fmtDateTime(viewingDepositRequest.updated_at)}</span>
+                  </div>
+                </div>
+              </div>
+
+              {(() => {
+                const isPending = viewingDepositRequest.status === "pending";
+                const canVerify =
+                  canTakeDepositAction && isPending && canViewStatus("pending");
+                if (!canVerify) return null;
+
+                return (
+                  <>
+                    <Separator />
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label className="text-sm font-semibold">
+                          Verification Decision
+                        </Label>
+                        <Tabs
+                          value={verifyDecision}
+                          onValueChange={(value) => {
+                            if (value === "approve" || value === "reject") {
+                              setVerifyDecision(value);
+                            }
+                          }}
+                          className="w-full"
+                        >
+                          <TabsList className="grid h-auto w-full grid-cols-2 rounded-2xl bg-muted/50 p-1">
+                            <TabsTrigger value="approve" className="rounded-xl">
+                              <CheckCircle2 className="mr-2 h-4 w-4" />
+                              Approve
+                            </TabsTrigger>
+                            <TabsTrigger value="reject" className="rounded-xl">
+                              <XCircle className="mr-2 h-4 w-4" />
+                              Reject
+                            </TabsTrigger>
+                          </TabsList>
+                        </Tabs>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="admin-notes"
+                          className="text-sm font-semibold"
+                        >
+                          Admin Notes{" "}
+                          {verifyDecision === "reject" && (
+                            <span className="text-destructive">*</span>
+                          )}
+                        </Label>
+                        <Textarea
+                          id="admin-notes"
+                          value={adminNotes}
+                          onChange={(e) => setAdminNotes(e.target.value)}
+                          placeholder={
+                            verifyDecision === "reject"
+                              ? "Please provide a reason for rejection..."
+                              : "Optional notes about this verification..."
+                          }
+                          className="min-h-[100px]"
+                        />
+                        {verifyDecision === "reject" && (
+                          <p className="text-xs text-muted-foreground">
+                            Rejection reason is required
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          )}
+
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setViewDialogOpen(false)}
+              disabled={submitting}
+              className="w-full sm:w-auto"
+            >
+              Close
+            </Button>
+            {viewingDepositRequest &&
+              canTakeDepositAction &&
+              viewingDepositRequest.status === "pending" &&
+              canViewStatus("pending") && (
+                <Button
+                  type="button"
+                  onClick={submitVerify}
+                  disabled={
+                    submitting ||
+                    (verifyDecision === "reject" && !adminNotes.trim())
+                  }
+                  className={`w-full sm:w-auto ${
+                    verifyDecision === "approve"
+                      ? "bg-green-600 hover:bg-green-700"
+                      : "bg-red-600 hover:bg-red-700"
+                  }`}
+                >
+                  {submitting ? (
+                    <>
+                      <Spinner className="mr-2 h-4 w-4" />
+                      Processing...
+                    </>
+                  ) : verifyDecision === "approve" ? (
+                    <>
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Approve
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Reject
+                    </>
+                  )}
+                </Button>
+              )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
   );
 }

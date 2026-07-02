@@ -11,11 +11,11 @@ import { AuthImage } from "@/components/ui/auth-image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { BrokerCryptoWallet } from "@/lib/api";
-import { formatDateTimeInIST } from "@/lib/formatters";
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
 
 const emptyValue = "-";
 
-const fmtDate = (value?: string) => (value ? formatDateTimeInIST(value) : emptyValue);
+const fmtDate = (value?: string) => (value ? formatApiDateTimeAsIST(value) : emptyValue);
 
 const getStatusBadge = (isActive: number) => {
   return (
@@ -162,6 +162,17 @@ export const getColumns = (): ColumnDef<BrokerCryptoWallet>[] => [
       <div className="flex items-center gap-1">
         <Calendar className="h-4 w-4 text-muted-foreground" />
         <span className="text-sm">{fmtDate(row.original.created_at)}</span>
+      </div>
+    ),
+  },
+  {
+    id: "updated_at",
+    accessorKey: "updated_at",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Updated" />,
+    cell: ({ row }) => (
+      <div className="flex items-center gap-1">
+        <Calendar className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm">{fmtDate(row.original.updated_at)}</span>
       </div>
     ),
   },

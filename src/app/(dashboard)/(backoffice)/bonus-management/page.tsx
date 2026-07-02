@@ -56,7 +56,7 @@ import {
 } from "@/lib/api";
 import { mt5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
-import { formatDateTimeInIST } from "@/lib/formatters";
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 
 type BonusActionMode = "give" | "remove";
@@ -385,7 +385,7 @@ export default function BonusManagementPage() {
         header: ({ column }) => <DataTableColumnHeader column={column} title="Created" />,
         accessorFn: (row) => row.created_at,
         cell: ({ row }) => (
-          <span className="whitespace-nowrap">{formatDateTimeInIST(row.original.created_at)}</span>
+          <span className="whitespace-nowrap">{formatApiDateTimeAsIST(row.original.created_at)}</span>
         ),
       },
     ],

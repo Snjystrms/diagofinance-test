@@ -34,7 +34,7 @@ import {
   type BrokerBankDetailItem,
 } from "@/lib/api";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
-import { formatDateTimeInIST } from "@/lib/formatters";
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
 
 import {
   emptyBrokerBankDetailForm,
@@ -316,11 +316,20 @@ export function AdminBrokerBankDetailsPageContent() {
         },
       },
       {
+        id: "created_at",
+        header: "Created",
+        cell: ({ row }) => (
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
+            {formatApiDateTimeAsIST(row.original.created_at)}
+          </span>
+        ),
+      },
+      {
         id: "updated_at",
         header: "Updated",
         cell: ({ row }) => (
           <span className="text-xs text-muted-foreground whitespace-nowrap">
-            {formatDateTimeInIST(row.original.updated_at)}
+            {formatApiDateTimeAsIST(row.original.updated_at)}
           </span>
         ),
       },

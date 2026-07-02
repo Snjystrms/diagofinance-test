@@ -7,7 +7,18 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { parseAsInteger, useQueryState } from "nuqs";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
-import { Building2, ChevronDown, Download, Eye, Landmark, Pencil, Plus, RefreshCw, Trash2, Users } from "lucide-react";
+import {
+  Building2,
+  ChevronDown,
+  Download,
+  Eye,
+  Landmark,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Trash2,
+  Users,
+} from "lucide-react";
 import * as XLSX from "xlsx";
 
 import { AppDataTable } from "@/components/app-data-table";
@@ -18,7 +29,13 @@ import { ProtectedRoute } from "@/components/protected-route";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +44,13 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/auth-context";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   adminBankDetailsApi,
   adminUsersApi,
@@ -77,18 +101,37 @@ export function AdminBankDetailsPageContent() {
 
   const [search, setSearch] = useState("");
   const [searchInput, setSearchInput] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  // const [sortColumn, setSortColumn] = useState("id");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
-  const [formValues, setFormValues] = useState<BankDetailFormValues>(emptyBankDetailForm);
+  const [formValues, setFormValues] =
+    useState<BankDetailFormValues>(emptyBankDetailForm);
   const [userSearch, setUserSearch] = useState("");
-  const [selectedDetail, setSelectedDetail] = useState<AdminBankDetailItem | null>(null);
+  const [selectedDetail, setSelectedDetail] =
+    useState<AdminBankDetailItem | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
-  const [deleteCandidate, setDeleteCandidate] = useState<AdminBankDetailItem | null>(null);
+  const [deleteCandidate, setDeleteCandidate] =
+    useState<AdminBankDetailItem | null>(null);
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
 
   const deferredUserSearch = useDeferredValue(userSearch.trim());
-  const queryKey = useMemo(() => ["admin-bank-details", token, search, page, perPage] as const, [token, search, page, perPage]);
+  const queryKey = useMemo(
+    () =>
+      [
+        "admin-bank-details",
+        token,
+        search,
+        page,
+        perPage,
+        statusFilter,
+        // sortColumn,
+        sortOrder,
+      ] as const,
+    [token, search, page, perPage, statusFilter, sortOrder],
+  );
 
   const {
     data: bankDetailsResponse,
@@ -100,14 +143,29 @@ export function AdminBankDetailsPageContent() {
   } = useQuery({
     queryKey,
     queryFn: async () => {
-      const response = await adminBankDetailsApi.list(token!, search || undefined, page, perPage);
+      const response = await adminBankDetailsApi.list(
+        token!,
+        search || undefined,
+        page,
+        perPage,
+        statusFilter === "all" ? undefined : statusFilter,
+        // sortColumn,
+        sortOrder,
+      );
       const payload = response.data ?? { count: 0, rows: [] };
       const rawRows = extractBankDetailListRows(payload as unknown);
       const rows = rawRows
         .map((row) => normalizeAdminBankDetailRow(row))
         .filter((row): row is AdminBankDetailItem => row !== null);
 
-      const payloadRecord = payload as { count?: number; pagination?: { total?: number; page_count?: number; total_pages?: number } };
+      const payloadRecord = payload as {
+        count?: number;
+        pagination?: {
+          total?: number;
+          page_count?: number;
+          total_pages?: number;
+        };
+      };
       const count =
         typeof payloadRecord.count === "number"
           ? payloadRecord.count
@@ -127,10 +185,7 @@ export function AdminBankDetailsPageContent() {
     staleTime: 60 * 1000,
   });
 
-  const {
-    data: userOptions = [],
-    isFetching: isFetchingUsers,
-  } = useQuery({
+  const { data: userOptions = [], isFetching: isFetchingUsers } = useQuery({
     queryKey: ["admin-bank-detail-users", token, deferredUserSearch],
     queryFn: async () => {
       const response = await adminUsersApi.list({
@@ -140,7 +195,9 @@ export function AdminBankDetailsPageContent() {
         search: deferredUserSearch || undefined,
       });
 
-      return extractAdminUserOptions((response.data ?? null) as AdminUsersListApiData | null);
+      return extractAdminUserOptions(
+        (response.data ?? null) as AdminUsersListApiData | null,
+      );
     },
     enabled:
       Boolean(token) &&
@@ -166,14 +223,27 @@ export function AdminBankDetailsPageContent() {
     },
     onError: (error) => {
       toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "bank details", action: "create" })
+        getAdminFriendlyErrorMessage(error, {
+          resource: "bank details",
+          action: "create",
+        }),
       );
     },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async ({ uuid, values }: { uuid: string; values: BankDetailFormValues }) =>
-      adminBankDetailsApi.update(uuid, toBankDetailUpdatePayload(values), token!),
+    mutationFn: async ({
+      uuid,
+      values,
+    }: {
+      uuid: string;
+      values: BankDetailFormValues;
+    }) =>
+      adminBankDetailsApi.update(
+        uuid,
+        toBankDetailUpdatePayload(values),
+        token!,
+      ),
     onSuccess: (response) => {
       toast.success(response.message || "Bank details updated successfully");
       setDialogMode(null);
@@ -183,13 +253,17 @@ export function AdminBankDetailsPageContent() {
     },
     onError: (error) => {
       toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "bank details", action: "update" })
+        getAdminFriendlyErrorMessage(error, {
+          resource: "bank details",
+          action: "update",
+        }),
       );
     },
   });
 
   const deleteMutation = useMutation({
-    mutationFn: async (uuid: string) => adminBankDetailsApi.delete(uuid, token!),
+    mutationFn: async (uuid: string) =>
+      adminBankDetailsApi.delete(uuid, token!),
     onSuccess: (response) => {
       toast.success(response.message || "Bank details deleted successfully");
       setDeleteCandidate(null);
@@ -197,14 +271,29 @@ export function AdminBankDetailsPageContent() {
     },
     onError: (error) => {
       toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "bank details", action: "delete" })
+        getAdminFriendlyErrorMessage(error, {
+          resource: "bank details",
+          action: "delete",
+        }),
       );
     },
   });
 
   const verifyMutation = useMutation({
-    mutationFn: async ({ uuid, status, adminNotes }: { uuid: string; status: "approved" | "rejected"; adminNotes: string }) =>
-      adminBankDetailsApi.verify(uuid, { status, admin_notes: adminNotes }, token!),
+    mutationFn: async ({
+      uuid,
+      status,
+      adminNotes,
+    }: {
+      uuid: string;
+      status: "approved" | "rejected";
+      adminNotes: string;
+    }) =>
+      adminBankDetailsApi.verify(
+        uuid,
+        { status, admin_notes: adminNotes },
+        token!,
+      ),
     onSuccess: (response) => {
       toast.success(response.message || "Bank details verified successfully");
       setViewOpen(false);
@@ -213,23 +302,32 @@ export function AdminBankDetailsPageContent() {
     },
     onError: (error) => {
       toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "bank details", action: "verify" })
+        getAdminFriendlyErrorMessage(error, {
+          resource: "bank details",
+          action: "verify",
+        }),
       );
     },
   });
 
-  const rows = useMemo(() => bankDetailsResponse?.rows ?? [], [bankDetailsResponse]);
+  const rows = useMemo(
+    () => bankDetailsResponse?.rows ?? [],
+    [bankDetailsResponse],
+  );
   const filteredRows = rows;
 
   const totalBankDetails = bankDetailsResponse?.count ?? rows.length;
-  const pendingCount = useMemo(() => rows.filter(row => row.status === "pending").length, [rows]);
+  const pendingCount = useMemo(
+    () => rows.filter((row) => row.status === "pending").length,
+    [rows],
+  );
   const uniqueUsers = useMemo(
     () => new Set(rows.map((row) => row.user?.uuid).filter(Boolean)).size,
-    [rows]
+    [rows],
   );
   const countriesCovered = useMemo(
     () => new Set(rows.map((row) => row.country?.trim()).filter(Boolean)).size,
-    [rows]
+    [rows],
   );
 
   const openCreateDialog = () => {
@@ -268,81 +366,94 @@ export function AdminBankDetailsPageContent() {
     if (dialogMode === "edit" && selectedDetail) {
       const routeId = resolveBankDetailRouteId(selectedDetail);
       if (!routeId) {
-        toast.error("This record has no usable id or UUID. Refresh and try again.");
+        toast.error(
+          "This record has no usable id or UUID. Refresh and try again.",
+        );
         return;
       }
       updateMutation.mutate({ uuid: routeId, values: formValues });
     }
   };
 
-  const handleExport = useCallback((formatType: "xlsx" | "csv") => {
-    if (!canList) {
-      toast.error("You do not have permission to export bank details");
-      return;
-    }
-
-    const exportToastId = `bank-details-export-${formatType}`;
-    try {
-      if (filteredRows.length === 0) {
-        toast.error("No data to export", { id: exportToastId });
+  const handleExport = useCallback(
+    (formatType: "xlsx" | "csv") => {
+      if (!canList) {
+        toast.error("You do not have permission to export bank details");
         return;
       }
 
-      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
-      const exportData = filteredRows.map((row, index) => ({
-        "Sr. No.": index + 1,
-        User: row.user?.name || "-",
-        Email: row.user?.email || "-",
-        "Account Holder": row.account_holder_name || "-",
-        Bank: row.bank_name || "-",
-        Country: row.country || "-",
-        "Account Number": row.account_number || "-",
-        IBAN: row.iban_number || "-",
-        "SWIFT/IFSC": row.swift_ifsc_code || "-",
-        Address: row.address || "-",
-      }));
+      const exportToastId = `bank-details-export-${formatType}`;
+      try {
+        if (filteredRows.length === 0) {
+          toast.error("No data to export", { id: exportToastId });
+          return;
+        }
 
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const filenameBase = `bank-details-${getExportTimestamp()}`;
-      let filename = `${filenameBase}.xlsx`;
+        toast.loading(`Preparing ${formatType.toUpperCase()} export...`, {
+          id: exportToastId,
+        });
+        const exportData = filteredRows.map((row, index) => ({
+          "Sr. No.": index + 1,
+          User: row.user?.name || "-",
+          Email: row.user?.email || "-",
+          "Account Holder": row.account_holder_name || "-",
+          Bank: row.bank_name || "-",
+          Country: row.country || "-",
+          "Account Number": row.account_number || "-",
+          IBAN: row.iban_number || "-",
+          "SWIFT/IFSC": row.swift_ifsc_code || "-",
+          Address: row.address || "-",
+        }));
 
-      if (formatType === "xlsx") {
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Bank Details");
-        XLSX.writeFile(workbook, filename);
-      } else {
-        const csv = XLSX.utils.sheet_to_csv(worksheet);
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        filename = `${filenameBase}.csv`;
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(link.href);
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const filenameBase = `bank-details-${getExportTimestamp()}`;
+        let filename = `${filenameBase}.xlsx`;
+
+        if (formatType === "xlsx") {
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, worksheet, "Bank Details");
+          XLSX.writeFile(workbook, filename);
+        } else {
+          const csv = XLSX.utils.sheet_to_csv(worksheet);
+          const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+          const link = document.createElement("a");
+          filename = `${filenameBase}.csv`;
+          link.href = URL.createObjectURL(blob);
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(link.href);
+        }
+
+        toast.success(
+          `Exported ${filteredRows.length} bank details to ${filename}`,
+          {
+            id: exportToastId,
+          },
+        );
+      } catch (error: unknown) {
+        console.error(`Failed to export ${formatType}:`, error);
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "bank details",
+            action: "export",
+          }),
+          { id: exportToastId },
+        );
       }
-
-      toast.success(`Exported ${filteredRows.length} bank details to ${filename}`, {
-        id: exportToastId,
-      });
-    } catch (error: unknown) {
-      console.error(`Failed to export ${formatType}:`, error);
-      toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "bank details", action: "export" }),
-        { id: exportToastId },
-      );
-    }
-  }, [canList, filteredRows]);
+    },
+    [canList, filteredRows],
+  );
 
   const columns = useMemo<ColumnDef<AdminBankDetailItem>[]>(
     () => [
-        {
-    id: "sr_no",
-    header: "Sr. No.",
-    cell: ({ row, table }) => <SerialNumberCell row={row} table={table} />,
-    enableSorting: false,
-  },
+      {
+        id: "sr_no",
+        header: "Sr. No.",
+        cell: ({ row, table }) => <SerialNumberCell row={row} table={table} />,
+        enableSorting: false,
+      },
       {
         id: "user",
         header: "User",
@@ -354,7 +465,9 @@ export function AdminBankDetailsPageContent() {
             >
               {row.original.user?.name || "-"}
             </Link>
-            <div className="text-xs text-muted-foreground">{row.original.user?.email || "-"}</div>
+            <div className="text-xs text-muted-foreground">
+              {row.original.user?.email || "-"}
+            </div>
           </div>
         ),
       },
@@ -379,7 +492,9 @@ export function AdminBankDetailsPageContent() {
         header: "Account Number",
         accessorKey: "account_number",
         cell: ({ row }) => (
-          <span className="font-mono text-xs">{row.original.account_number || "-"}</span>
+          <span className="font-mono text-xs">
+            {row.original.account_number || "-"}
+          </span>
         ),
       },
       {
@@ -446,7 +561,7 @@ export function AdminBankDetailsPageContent() {
         },
       },
     ],
-    [canMutate, openEditDialog, openViewDialog]
+    [canMutate, openEditDialog, openViewDialog],
   );
 
   if (!isAdmin && isManager && !canList && !canMutate) {
@@ -493,9 +608,12 @@ export function AdminBankDetailsPageContent() {
                 <Landmark className="h-6 w-6 text-primary" />
               </div>
               <div>
-                <h1 className="text-2xl font-semibold tracking-tight">Bank Details</h1>
+                <h1 className="text-2xl font-semibold tracking-tight">
+                  Bank Details
+                </h1>
                 <p className="text-sm text-muted-foreground">
-                  Create, review, update, and delete user bank details from the admin panel.
+                  Create, review, update, and delete user bank details from the
+                  admin panel.
                 </p>
               </div>
             </div>
@@ -521,8 +639,14 @@ export function AdminBankDetailsPageContent() {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
-                  <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
+                <Button
+                  variant="outline"
+                  onClick={() => refetch()}
+                  disabled={isFetching}
+                >
+                  <RefreshCw
+                    className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`}
+                  />
                   Refresh
                 </Button>
               </>
@@ -540,18 +664,77 @@ export function AdminBankDetailsPageContent() {
           <CardContent className="space-y-4">
             {canList ? (
               <>
-                <div className="pt-4 max-w-md">
-                  <ApiSearchBar
-                    value={searchInput}
-                    onChange={setSearchInput}
-                    onSearch={(value) => {
-                      setPage(1);
-                      setSearch(value);
-                    }}
-                    placeholder="Search by user, account holder, bank name..."
-                    minimumLength={3}
-                    delay={300}
-                  />
+                <div className="flex flex-col gap-3 pt-4 md:flex-row md:items-center">
+                  <div className="w-full max-w-md">
+                    <ApiSearchBar
+                      value={searchInput}
+                      onChange={setSearchInput}
+                      onSearch={(value) => {
+                        setPage(1);
+                        setSearch(value);
+                      }}
+                      placeholder="Search by user, account holder, bank name..."
+                      minimumLength={3}
+                      delay={300}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-3 sm:flex-row">
+                    <div className="w-full min-w-[180px] sm:w-[180px]">
+                      <Select
+                        value={statusFilter}
+                        onValueChange={(value) => {
+                          setStatusFilter(value);
+                          setPage(1);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Filter status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All statuses</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="approved">Approved</SelectItem>
+                          <SelectItem value="rejected">Rejected</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+{/* 
+                    <div className="w-full min-w-[180px] sm:w-[180px]">
+                      <Select
+                        value={sortColumn}
+                        onValueChange={(value) => {
+                          setSortColumn(value);
+                          setPage(1);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Sort by" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="id">Sort by ID</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div> */}
+
+                    <div className="w-full min-w-[140px] sm:w-[140px]">
+                      <Select
+                        value={sortOrder}
+                        onValueChange={(value) => {
+                          setSortOrder(value as "asc" | "desc");
+                          setPage(1);
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Order" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="asc">Ascending</SelectItem>
+                          <SelectItem value="desc">Descending</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
 
                 {isLoading ? (
@@ -570,7 +753,8 @@ export function AdminBankDetailsPageContent() {
               </>
             ) : (
               <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-                You can add bank details, but your account is not allowed to view the existing list.
+                You can add bank details, but your account is not allowed to
+                view the existing list.
               </div>
             )}
           </CardContent>
@@ -613,7 +797,9 @@ export function AdminBankDetailsPageContent() {
             if (!selectedDetail) return;
             const routeId = resolveBankDetailRouteId(selectedDetail);
             if (!routeId) {
-              toast.error("This record has no usable id or UUID. Refresh and try again.");
+              toast.error(
+                "This record has no usable id or UUID. Refresh and try again.",
+              );
               return;
             }
             verifyMutation.mutate({ uuid: routeId, status, adminNotes });
@@ -649,6 +835,3 @@ export function AdminBankDetailsPageContent() {
     </ProtectedRoute>
   );
 }
-
-
-

@@ -19,7 +19,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/auth-context";
 import type { AdminBankDetailItem } from "@/lib/api";
-import { formatDateTimeInIST } from "@/lib/formatters";
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
 
 type BankDetailViewDialogProps = {
   detail: AdminBankDetailItem | null;
@@ -260,7 +260,7 @@ export function BankDetailViewDialog({
                 {detail.verified_at && (
                   <DetailRow
                     label="Verified At"
-                    value={formatDateTimeInIST(detail.verified_at)}
+                    value={formatApiDateTimeAsIST(detail.verified_at)}
                   />
                 )}
                 {detail.admin_notes && (

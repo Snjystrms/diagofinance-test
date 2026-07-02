@@ -56,3 +56,35 @@ export function formatDateTimeInIST(value: DateInput, fallback = "-"): string {
 
   return `${formatted} IST`;
 }
+
+/**
+ * Format an API datetime string that is ALREADY in IST (no timezone suffix).
+ * Unlike formatDateTimeInIST which treats bare strings as UTC (appending Z),
+ * this function treats them as IST by appending +05:30 before parsing.
+ * e.g. formatApiDateTimeAsIST("2026-07-02T12:11:42") => "Jul 2, 2026, 12:11 PM IST"
+ */
+export function formatApiDateTimeAsIST(value: DateInput, fallback = "-"): string {
+  if (value === undefined || value === null || value === "") return fallback;
+
+  let normalized = value;
+  if (
+    typeof value === "string" &&
+    ISO_DATE_TIME_WITHOUT_ZONE.test(value.trim()) &&
+    !TIME_ZONE_SUFFIX.test(value.trim())
+  ) {
+    // Append IST offset so it's parsed as-is without UTC conversion
+    normalized = `${value.trim()}+05:30`;
+  }
+
+  const date = new Date(normalized as string);
+  if (Number.isNaN(date.getTime())) {
+    return typeof value === "string" && value.trim() ? value : fallback;
+  }
+
+  const formatted = new Intl.DateTimeFormat("en-US", {
+    ...DEFAULT_DATE_TIME_OPTIONS,
+    timeZone: IST_TIME_ZONE,
+  }).format(date);
+
+  return `${formatted} IST`;
+}

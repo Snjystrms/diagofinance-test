@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, Pencil, Trash2, CreditCard, RefreshCw } from "lucide-react";
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
 import toast from "react-hot-toast";
 
 const formatType = (type: string) =>
@@ -329,7 +330,7 @@ export default function PspSettingPage() {
                       </TableCell>
 
                       <TableCell className="text-sm text-muted-foreground">
-                        {pm.created_at ? new Date(pm.created_at).toLocaleDateString() : "—"}
+                        {pm.created_at ? formatApiDateTimeAsIST(pm.created_at) : "—"}
                       </TableCell>
 
                       <TableCell>

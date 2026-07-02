@@ -11,13 +11,22 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { AdminMT5Account } from "@/lib/api";
 import { mt5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
-import { formatDateTimeInIST } from "@/lib/formatters";
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/contexts/auth-context";
 
+const formatDateTime = (value?: string) => {
+  if (!value) return "-";
+  try {
+    return formatApiDateTimeAsIST(value);
+  } catch {
+    return value;
+  }
+};
+
 const emptyValue = "-";
 
-const fmtDate = (value?: string) => (value ? formatDateTimeInIST(value) : emptyValue);
+// const fmtDate = (value?: string) => (value ? formatDateTimeInIST(value) : emptyValue);
 
 const deriveAccountId = (account: AdminMT5Account) => {
   return account.account_id ?? account.mt5_id ?? account.id ?? emptyValue;
@@ -282,11 +291,11 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
   {
     id: "created_at",
     accessorKey: "created_at",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Created" />,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Created at" />,
     cell: ({ row }) => (
       <div className="flex items-center gap-1 whitespace-nowrap">
         <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-        <span className="text-sm">{fmtDate(row.original.created_at)}</span>
+        <span className="text-sm">{formatDateTime(row.original.created_at)}</span>
       </div>
     ),
     enableColumnFilter: false,

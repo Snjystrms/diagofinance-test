@@ -37,7 +37,7 @@ import {
 import {   Eye, CheckCircle2, XCircle, Calendar, FileText, User, Mail, Hash, Clock, AlertCircle, Shield, Image as ImageIcon, Plus, Upload, Download, ChevronDown, RefreshCw } from "lucide-react";
 
 import { adminKycApi, adminUsersApi, kycFileUrl, type AdminUsersListApiData, type PendingUser } from "@/lib/api";
-import { formatDateTimeInIST } from "@/lib/formatters";
+import { formatDateTime, formatApiDateTimeAsIST } from "@/lib/formatters";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 // If you already have auth context, import it. Fallback to localStorage token.
 import { useAuth } from "@/contexts/auth-context";
@@ -141,11 +141,12 @@ const KYC_STATUS_OPTIONS: KycStatusOption[] = [
 const fmtDateTime = (s?: string) => {
   if (!s) return "—";
   try {
-    return formatDateTimeInIST(s);
+    return formatApiDateTimeAsIST(s);
   } catch {
     return s;
   }
 };
+
 
 const formatStatusLabel = (v: string) => {
   switch (v) {
@@ -848,12 +849,12 @@ export default function UserVerificationPage() {
       },
       {
         id: "submitted_at",
-        header: "Submitted",
+        header: "Submitted at",
         accessorKey: "submitted_at",
         cell: ({ row }) => (
           <div className="flex items-center gap-1 text-sm">
             <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span>{fmtDateTime(row.original.submitted_at)}</span>
+            <span>{formatDateTime(row.original.submitted_at)}</span>
           </div>
         ),
       },

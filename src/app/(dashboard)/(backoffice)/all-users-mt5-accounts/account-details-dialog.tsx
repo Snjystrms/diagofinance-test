@@ -16,7 +16,7 @@ import {
 import type { AdminMT5Account } from "@/lib/api";
 import { adminMT5AccountsApi, mt5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
 import { useAuth } from "@/contexts/auth-context";
-import { formatDateTimeInIST } from "@/lib/formatters";
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
 
 interface AccountDetailsDialogProps {
   open: boolean;
@@ -34,7 +34,7 @@ const displayValue = (value: unknown) => {
 
 const formatDate = (value: unknown) => {
   if (typeof value !== "string" || !value) return emptyValue;
-  return formatDateTimeInIST(value);
+  return formatApiDateTimeAsIST(value);
 };
 
 const statusLabel = (status: AdminMT5Account["status"]) => {

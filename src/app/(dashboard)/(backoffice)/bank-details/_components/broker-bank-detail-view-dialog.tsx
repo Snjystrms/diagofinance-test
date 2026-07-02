@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 
 import type { BrokerBankDetailItem } from "@/lib/api";
-import { formatDateTimeInIST } from "@/lib/formatters";
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
 
 import { isBrokerBankDetailActive } from "../_lib/broker-bank-details";
 
@@ -79,8 +79,8 @@ export function BrokerBankDetailViewDialog({
 
             <div className="grid gap-4 md:grid-cols-2">
               <DetailRow label="Address" value={detail.address} />
-              <DetailRow label="Created at" value={formatDateTimeInIST(detail.created_at)} />
-              <DetailRow label="Updated at" value={formatDateTimeInIST(detail.updated_at)} />
+              <DetailRow label="Created at" value={formatApiDateTimeAsIST(detail.created_at)} />
+              <DetailRow label="Updated at" value={formatApiDateTimeAsIST(detail.updated_at)} />
             </div>
           </div>
         )}

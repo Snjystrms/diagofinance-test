@@ -33,7 +33,7 @@ import {
   CheckCheck,
   RefreshCw,
 } from "lucide-react";
-import { formatDateTimeInIST } from "@/lib/formatters";
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
 
 /* ---------------- Types ---------------- */
 type StatusFilter = "all" | "unread" | "read";
@@ -41,7 +41,7 @@ type StatusFilter = "all" | "unread" | "read";
 /* ---------------- Helpers ---------------- */
 const formatDateTime = (dateString: string) => {
   try {
-    return formatDateTimeInIST(dateString);
+    return formatApiDateTimeAsIST(dateString);
   } catch {
     return dateString;
   }

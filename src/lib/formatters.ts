@@ -2,10 +2,10 @@
  * Shared formatting utilities. Import from here instead of defining locally in each page.
  */
 
-import { formatDateTimeInIST } from "./date-time";
+import { formatApiDateTimeAsIST } from "./date-time";
 
 export { formatDate, formatCurrency } from "./format";
-export { formatInIST, formatDateTimeInIST, IST_TIME_ZONE, parseApiDate } from "./date-time";
+export { formatInIST, formatDateTimeInIST, formatApiDateTimeAsIST, IST_TIME_ZONE, parseApiDate } from "./date-time";
 
 /**
  * Format a numeric amount with 2 decimal places, optionally with currency symbol.
@@ -24,10 +24,11 @@ export function formatAmount(amount?: number | string | null, currency?: string)
 
 /**
  * Format API timestamps in IST.
- * e.g. formatDateTime("2026-04-20T08:46:35") => "Apr 20, 2026, 02:16 PM IST"
+ * Treats the API datetime string as already in IST (no UTC conversion).
+ * e.g. formatDateTime("2026-07-01T13:01:38") => "Jul 1, 2026, 01:01 PM IST"
  */
 export function formatDateTime(value?: string | null): string {
-  return formatDateTimeInIST(value, "-");
+  return formatApiDateTimeAsIST(value, "-");
 }
 
 /**

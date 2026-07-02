@@ -1,5 +1,5 @@
 import { Badge } from "@/components/ui/badge";
-import { formatDateTimeInIST } from "@/lib/formatters";
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
 
 export type TransactionStatusOption = {
   value: string;
@@ -17,7 +17,7 @@ export const DEPOSIT_STATUS_OPTIONS: TransactionStatusOption[] = [
 export const fmtDateTime = (s?: string | null) => {
   if (!s) return "—";
   try {
-    return formatDateTimeInIST(s);
+    return formatApiDateTimeAsIST(s);
   } catch {
     return s;
   }
