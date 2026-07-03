@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import { ApiErrorState } from "@/components/errors/api-error-state";
@@ -1083,7 +1083,7 @@ import { KyCGuard } from "@/components/kyc-guard";
 // 1. Set IS_WITHDRAWAL_CLOSED to false, OR
 // 2. Delete this entire block (from here to the end of the file) and restore the default export.
 // =========================================================================
-const IS_WITHDRAWAL_CLOSED = true;
+const IS_WITHDRAWAL_CLOSED = false;
 
 import { Lock, ArrowLeft } from "lucide-react";
 
