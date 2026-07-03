@@ -16,6 +16,7 @@ export interface AccountType {
   mode?: string;
   leverage_value?: number | string;
   status?: boolean;
+  minimum_deposit?: number;
   created_at?: string;
   updated_at?: string;
   groups?: {

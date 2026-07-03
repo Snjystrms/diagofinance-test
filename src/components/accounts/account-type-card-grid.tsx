@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/lib/format";
 import type { AccountType } from "@/lib/api";
 
 type AccountTypeCardGridProps = {
@@ -27,16 +28,6 @@ const getAccountIcon = (accountName: string) => {
   return SquareStack;
 };
 
-const getMinimumDeposit = (accountName: string): string => {
-  const name = accountName.toLowerCase();
-  if (name.includes("exclusive")) return "$500";
-  if (name.includes("standard plus")) return "$200";
-  if (name.includes("standard")) return "$50";
-  if (name.includes("cent")) return "$10";
-  if (name.includes("shares")) return "$1000";
-  return "$100";
-};
-
 export function AccountTypeCardGrid({
   accountTypes,
   className,
@@ -45,7 +36,7 @@ export function AccountTypeCardGrid({
     <div className={cn("grid gap-6 md:grid-cols-2 lg:grid-cols-3", className)}>
       {accountTypes.map((accountType) => {
         const Icon = getAccountIcon(accountType.name);
-        const minimumDeposit = getMinimumDeposit(accountType.name);
+        const minimumDeposit = formatCurrency(accountType.minimum_deposit);
 
         return (
           <Card key={accountType.id} className="flex flex-col">

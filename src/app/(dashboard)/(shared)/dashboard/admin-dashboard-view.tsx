@@ -86,6 +86,13 @@ type KpiCardItem = {
   href: string;
 };
 
+const SUMMARY_PERIOD_LABELS: Record<string, string> = {
+  daily: "Daily",
+  weekly: "Weekly",
+  monthly: "Monthly",
+  previous_month: "Previous Month",
+};
+
 export function AdminDashboardView({
   adminDashboardData,
   userName,
@@ -157,8 +164,6 @@ export function AdminDashboardView({
     const growthPercent = first > 0 ? ((last - first) / first) * 100 : 0;
     return { total: last, growthPercent };
   }, [clientsChartData]);
-
-  // Replace the three separate arrays and KpiGrid calls with this:
 
   const allKpiCards = [
     // Row 1
@@ -352,57 +357,54 @@ export function AdminDashboardView({
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {(["daily", "weekly", "monthly"] as const).map((period) => {
-                const metricRange = formatSummaryDateRange(
-                  summaryMetrics?.[period],
-                );
+              {(["daily", "weekly", "monthly", "previous_month"] as const).map(
+                (period) => {
+                  const metric = summaryMetrics?.[period];
+                  const metricRange = formatSummaryDateRange(metric);
 
-                return (
-                  <div key={period} className="space-y-2">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <h4 className="text-sm font-semibold text-muted-foreground capitalize">
-                        {period}
-                      </h4>
-                      <span className="rounded-full border border-border/50 bg-background/80 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
-                        {metricRange}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      Range: {metricRange}
-                    </p>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div className="p-3 rounded-lg bg-muted/50">
-                        <p className="text-xs text-muted-foreground">Deposit</p>
-                        <p className="text-sm font-bold">
-                          {formatCurrency(
-                            summaryMetrics?.[period].deposit ?? 0,
-                          )}
-                        </p>
+                  return (
+                    <div key={period} className="space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h4 className="text-sm font-semibold text-muted-foreground">
+                          {SUMMARY_PERIOD_LABELS[period] ?? period}
+                        </h4>
+                        <span className="rounded-full border border-border/50 bg-background/80 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                          {metricRange}
+                        </span>
                       </div>
-                      <div className="p-3 rounded-lg bg-muted/50">
-                        <p className="text-xs text-muted-foreground">
-                          Withdraw
-                        </p>
-                        <p className="text-sm font-bold">
-                          {formatCurrency(
-                            summaryMetrics?.[period].withdraw ?? 0,
-                          )}
-                        </p>
-                      </div>
-                      <div className="p-3 rounded-lg bg-muted/50">
-                        <p className="text-xs text-muted-foreground">
-                          Partner Withdraw
-                        </p>
-                        <p className="text-sm font-bold">
-                          {formatCurrency(
-                            summaryMetrics?.[period].ib_withdraw ?? 0,
-                          )}
-                        </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        Range: {metricRange}
+                      </p>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div className="p-3 rounded-lg bg-muted/50">
+                          <p className="text-xs text-muted-foreground">
+                            Deposit
+                          </p>
+                          <p className="text-sm font-bold">
+                            {formatCurrency(metric?.deposit ?? 0)}
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-lg bg-muted/50">
+                          <p className="text-xs text-muted-foreground">
+                            Withdraw
+                          </p>
+                          <p className="text-sm font-bold">
+                            {formatCurrency(metric?.withdraw ?? 0)}
+                          </p>
+                        </div>
+                        <div className="p-3 rounded-lg bg-muted/50">
+                          <p className="text-xs text-muted-foreground">
+                            Partner Withdraw
+                          </p>
+                          <p className="text-sm font-bold">
+                            {formatCurrency(metric?.ib_withdraw ?? 0)}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                },
+              )}
               <div className="space-y-2 pt-2 border-t">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h4 className="text-sm font-semibold">Total</h4>
