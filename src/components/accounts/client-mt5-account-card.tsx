@@ -3,7 +3,17 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { type LucideIcon, CheckCircle2, Clock, Copy, DollarSign, MoreVertical, Wallet, XCircle, Zap } from "lucide-react";
+import {
+  type LucideIcon,
+  CheckCircle2,
+  Clock,
+  Copy,
+  DollarSign,
+  MoreVertical,
+  Wallet,
+  XCircle,
+  Zap,
+} from "lucide-react";
 import toast from "react-hot-toast";
 
 import { Badge } from "@/components/ui/badge";
@@ -59,9 +69,15 @@ function normalizeCurrencyCode(value?: string) {
   return "USD";
 }
 
-function formatBalance(value: number | string | null | undefined, currency: string, accountTypeName?: string | null) {
+function formatBalance(
+  value: number | string | null | undefined,
+  currency: string,
+  accountTypeName?: string | null,
+) {
   const normalizedValue =
-    value === undefined || value === null || Number.isNaN(Number(value)) ? 0 : Number(value);
+    value === undefined || value === null || Number.isNaN(Number(value))
+      ? 0
+      : Number(value);
 
   // Multiply by 100 for cent accounts
   const isCent = accountTypeName?.trim().toUpperCase() === "CENT";
@@ -79,7 +95,9 @@ function formatLeverage(value?: number | string | null) {
   }
 
   const normalizedValue = String(value).trim();
-  return normalizedValue.includes(":") ? normalizedValue : `1:${normalizedValue}`;
+  return normalizedValue.includes(":")
+    ? normalizedValue
+    : `1:${normalizedValue}`;
 }
 
 function getStatusBadge(status: string | number | undefined) {
@@ -116,7 +134,9 @@ function getStatusBadge(status: string | number | undefined) {
   return (
     <Badge className="shrink-0 border-0 bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400">
       <XCircle className="mr-1 h-3 w-3" />
-      {normalizedStatus ? normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1) : "Unknown"}
+      {normalizedStatus
+        ? normalizedStatus.charAt(0).toUpperCase() + normalizedStatus.slice(1)
+        : "Unknown"}
     </Badge>
   );
 }
@@ -184,37 +204,44 @@ export function ClientMt5AccountCard({
   const { token } = useAuth();
   const [liveBalance, setLiveBalance] = useState<number | null>(null);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
-  
+
   const isCentAccount = accountTypeName?.trim().toUpperCase() === "CENT";
-  const normalizedCurrency = isCentAccount ? "USC" : normalizeCurrencyCode(balanceCurrency ?? currency);
+  const normalizedCurrency = isCentAccount
+    ? "USC"
+    : normalizeCurrencyCode(balanceCurrency ?? currency);
   const accountMode = formatMode(mode);
 
   // Fetch live balance on mount and when mt5Login changes
   useEffect(() => {
-    
     if (!mt5Login || !token) {
       return;
     }
-    
+
     const fetchBalance = async () => {
       try {
         setIsLoadingBalance(true);
-        
-        const response = await mt5AccountsApi.getBalance(mt5Login, token) as unknown as MT5AccountBalance;
+
+        const response = (await mt5AccountsApi.getBalance(
+          mt5Login,
+          token,
+        )) as unknown as MT5AccountBalance;
         console.log(`[MT5 Card] Response properties:`, {
           success: response.success,
-          hasBalanceOnRoot: response.balance !== undefined,
-          balanceOnRoot: response.balance,
+          hasEquityOnRoot: response.equity !== undefined,
+          equityOnRoot: response.equity,
         });
-        
-        // API returns balance at root level directly
-        if (response.success && response.balance !== undefined) {
-          setLiveBalance(response.balance);
+
+        // API returns equity at root level directly
+        if (response.success && response.equity !== undefined) {
+          setLiveBalance(response.equity);
         } else {
           setLiveBalance(null); // null = show "-"
         }
       } catch (error) {
-        console.error(`[MT5 Card] ❌ Error fetching balance for MT5 ${mt5Login}:`, error);
+        console.error(
+          `[MT5 Card] ❌ Error fetching balance for MT5 ${mt5Login}:`,
+          error,
+        );
         setLiveBalance(null); // null = show "-"
       } finally {
         setIsLoadingBalance(false);
@@ -231,7 +258,7 @@ export function ClientMt5AccountCard({
     <Card
       className={cn(
         "group h-full border border-border/60 bg-card shadow-sm transition-all duration-300 hover:border-primary/40 hover:shadow-lg",
-        className
+        className,
       )}
     >
       <CardContent className="flex h-full flex-col p-5 sm:p-6">
@@ -248,13 +275,17 @@ export function ClientMt5AccountCard({
               />
             </div>
             <div className="min-w-0 space-y-2">
-              <h3 className="break-words text-lg font-bold leading-snug text-foreground">{title}</h3>
+              <h3 className="break-words text-lg font-bold leading-snug text-foreground">
+                {title}
+              </h3>
               <div className="flex flex-wrap items-center gap-2">
                 {getStatusBadge(status)}
                 <Badge variant="outline" className="border-border text-xs">
                   {accountMode}
                 </Badge>
-                <span className="text-xs text-muted-foreground">{normalizedCurrency}</span>
+                <span className="text-xs text-muted-foreground">
+                  {normalizedCurrency}
+                </span>
               </div>
             </div>
           </div>
@@ -262,7 +293,12 @@ export function ClientMt5AccountCard({
           {menuActions.length > 0 ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="ghost" size="icon" className="h-9 w-9 rounded-lg">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-lg"
+                >
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -271,7 +307,11 @@ export function ClientMt5AccountCard({
                   const ActionIcon = action.icon;
 
                   return (
-                    <DropdownMenuItem key={action.label} onClick={action.onSelect} className="cursor-pointer">
+                    <DropdownMenuItem
+                      key={action.label}
+                      onClick={action.onSelect}
+                      className="cursor-pointer"
+                    >
                       <ActionIcon className="mr-2 h-4 w-4" />
                       {action.label}
                     </DropdownMenuItem>
@@ -284,8 +324,22 @@ export function ClientMt5AccountCard({
 
         <div className="mb-5 space-y-3">
           {/* <AccountValue icon={Wallet} label="Account ID" value={accountId} copyLabel="Account ID" /> */}
-          {mt5Login ? <AccountValue icon={Zap} label="MT5 Login" value={mt5Login} copyLabel="MT5 login" /> : null}
-          {server ? <AccountValue icon={Zap} label="Server" value={server} copyLabel="Server" /> : null}
+          {mt5Login ? (
+            <AccountValue
+              icon={Zap}
+              label="MT5 Login"
+              value={mt5Login}
+              copyLabel="MT5 login"
+            />
+          ) : null}
+          {server ? (
+            <AccountValue
+              icon={Zap}
+              label="Server"
+              value={server}
+              copyLabel="Server"
+            />
+          ) : null}
         </div>
 
         <div className="space-y-3">
@@ -293,11 +347,17 @@ export function ClientMt5AccountCard({
             <span className="text-sm font-medium text-foreground">Balance</span>
             <span className="truncate text-right font-bold text-primary">
               {isLoadingBalance ? (
-                <span className="text-xs text-muted-foreground">Loading...</span>
+                <span className="text-xs text-muted-foreground">
+                  Loading...
+                </span>
               ) : displayBalance === null ? (
                 <span className="text-muted-foreground">-</span>
               ) : (
-                formatBalance(displayBalance, normalizedCurrency, accountTypeName)
+                formatBalance(
+                  displayBalance,
+                  normalizedCurrency,
+                  accountTypeName,
+                )
               )}
             </span>
           </div>
@@ -305,10 +365,10 @@ export function ClientMt5AccountCard({
           <div className="space-y-3">
             <div className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/30 p-3.5">
               {/* <div className="space-y-1"> */}
-                <span className="text-xs text-muted-foreground">Leverage</span>
-                <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                  <Zap className="h-3 w-3 text-primary" />
-                  {formatLeverage(leverage)}
+              <span className="text-xs text-muted-foreground">Leverage</span>
+              <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                <Zap className="h-3 w-3 text-primary" />
+                {formatLeverage(leverage)}
                 {/* </div> */}
               </div>
             </div>

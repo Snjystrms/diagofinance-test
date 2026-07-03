@@ -6,7 +6,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useSearchParams } from "next/navigation";
 import { z } from "zod";
 import toast from "react-hot-toast";
-import { Repeat, Wallet, ArrowLeftRight, ArrowRight, ArrowDown, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import {
+  Repeat,
+  Wallet,
+  ArrowLeftRight,
+  ArrowRight,
+  ArrowDown,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Button } from "@/components/ui/button";
@@ -35,7 +44,12 @@ import {
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { IbMetricCard, IbPageHeader, IbPageShell, IbSectionCard } from "@/components/ib/ib-page-primitives";
+import {
+  IbMetricCard,
+  IbPageHeader,
+  IbPageShell,
+  IbSectionCard,
+} from "@/components/ib/ib-page-primitives";
 
 import {
   internalTransferApi,
@@ -125,20 +139,25 @@ function formatWalletLabel(walletKey: string) {
 }
 
 const isCentMt5Account = (account?: MT5Account | null) =>
-  String(account?.account_type_name ?? "").trim().toLowerCase() === "cent";
+  String(account?.account_type_name ?? "")
+    .trim()
+    .toLowerCase() === "cent";
 
-const formatMt5Balance = (account: MT5Account, liveBalances: Record<string, number | null>) => {
+const formatMt5Balance = (
+  account: MT5Account,
+  liveBalances: Record<string, number | null>,
+) => {
   const isCent = isCentMt5Account(account);
-  
+
   // ONLY use API balance from liveBalances - show "-" if null
   const balanceValue = liveBalances[account.account_id];
-  
+
   if (balanceValue === null || balanceValue === undefined) {
     return "-"; // API failed or didn't return balance
   }
-  
+
   const amount = isCent ? balanceValue * 100 : balanceValue;
-  
+
   const formatted = Number(amount).toLocaleString("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -158,7 +177,9 @@ function InternalTransferContent() {
   const { token, user } = useAuth();
   const searchParams = useSearchParams();
   const [mt5Accounts, setMt5Accounts] = useState<MT5Account[]>([]);
-  const [mt5Balances, setMt5Balances] = useState<Record<string, number | null>>({});
+  const [mt5Balances, setMt5Balances] = useState<Record<string, number | null>>(
+    {},
+  );
   const [walletSummary, setWalletSummary] = useState<WalletSummaryData | null>(
     null,
   );
@@ -238,31 +259,48 @@ function InternalTransferContent() {
       if (response.success && response.data?.mt5_accounts) {
         const accounts = response.data.mt5_accounts;
         setMt5Accounts(accounts);
-        
+
         const balancePromises = accounts.map(async (account) => {
           try {
-            const balanceResponse = await mt5AccountsApi.getBalance(account.mt5_id, token) as unknown as MT5AccountBalance;
-            
-            // API returns balance at root level directly
-            if (balanceResponse.success && balanceResponse.balance !== undefined) {
-              return { accountId: account.account_id, balance: balanceResponse.balance };
+            const balanceResponse = (await mt5AccountsApi.getBalance(
+              account.mt5_id,
+              token,
+            )) as unknown as MT5AccountBalance;
+
+            // API returns equity at root level directly
+            if (
+              balanceResponse.success &&
+              balanceResponse.equity !== undefined
+            ) {
+              return {
+                accountId: account.account_id,
+                balance: balanceResponse.equity,
+              };
             }
             // If API doesn't return balance, return null to indicate failure
-            console.warn(`[Internal Transfer] ❌ API failed for ${account.account_id}, no balance available`);
+            console.warn(
+              `[Internal Transfer] ❌ API failed for ${account.account_id}, no balance available`,
+            );
             return { accountId: account.account_id, balance: null }; // null = show "-"
           } catch (error) {
-            console.error(`[Internal Transfer] ❌ Error fetching balance for ${account.mt5_id}:`, error);
+            console.error(
+              `[Internal Transfer] ❌ Error fetching balance for ${account.mt5_id}:`,
+              error,
+            );
             return { accountId: account.account_id, balance: null }; // null = show "-"
           }
         });
-        
+
         const balances = await Promise.all(balancePromises);
-        
-        const balanceMap = balances.reduce((acc, { accountId, balance }) => {
-          acc[accountId] = balance;
-          return acc;
-        }, {} as Record<string, number | null>);
-        
+
+        const balanceMap = balances.reduce(
+          (acc, { accountId, balance }) => {
+            acc[accountId] = balance;
+            return acc;
+          },
+          {} as Record<string, number | null>,
+        );
+
         setMt5Balances(balanceMap);
       } else {
         setMt5Accounts([]);
@@ -421,21 +459,27 @@ function InternalTransferContent() {
     liveMt5Accounts,
     walletToMt5Form.watch("toAccountId"),
   );
-  const mt5ToWalletCurrency = getMt5TransferCurrency(selectedMt5ToWalletAccount);
-  
+  const mt5ToWalletCurrency = getMt5TransferCurrency(
+    selectedMt5ToWalletAccount,
+  );
+
   // Check if "from" accounts have zero balance
   const mainWalletHasBalance = mainWallet ? mainWallet.balance > 0 : false;
-  const mt5ToWalletAccountHasBalance = selectedMt5ToWalletAccount ? (mt5Balances[selectedMt5ToWalletAccount.account_id] ?? 0) > 0 : false;
-  const mt5ToMt5FromAccountHasBalance = selectedMt5ToMt5FromAccount ? (mt5Balances[selectedMt5ToMt5FromAccount.account_id] ?? 0) > 0 : false;
-  
+  const mt5ToWalletAccountHasBalance = selectedMt5ToWalletAccount
+    ? (mt5Balances[selectedMt5ToWalletAccount.account_id] ?? 0) > 0
+    : false;
+  const mt5ToMt5FromAccountHasBalance = selectedMt5ToMt5FromAccount
+    ? (mt5Balances[selectedMt5ToMt5FromAccount.account_id] ?? 0) > 0
+    : false;
+
   // MT5 to MT5: Always use USD when both accounts are CENT
   const mt5ToMt5Currency = useMemo(() => {
     const fromIsCent = isCentMt5Account(selectedMt5ToMt5FromAccount);
     const toIsCent = isCentMt5Account(selectedMt5ToMt5ToAccount);
-    
+
     // If both are CENT, use USD (backend will handle conversion)
     if (fromIsCent && toIsCent) return "USD";
-    
+
     // Otherwise use the "from" account currency
     return getMt5TransferCurrency(selectedMt5ToMt5FromAccount);
   }, [selectedMt5ToMt5FromAccount, selectedMt5ToMt5ToAccount]);
@@ -444,24 +488,31 @@ function InternalTransferContent() {
   const filteredMt5ToMt5ToAccounts = useMemo(() => {
     const fromAccountId = mt5ToMt5Form.watch("fromAccountId");
     if (!selectedMt5ToMt5FromAccount) return mt5AccountOptions;
-    
+
     const fromIsCent = isCentMt5Account(selectedMt5ToMt5FromAccount);
     return mt5AccountOptions.filter((option) => {
       // Exclude the "from" account
       if (option.id === fromAccountId) return false;
-      
+
       const account = findMt5AccountById(liveMt5Accounts, option.id);
       const accountIsCent = isCentMt5Account(account);
       return fromIsCent === accountIsCent;
     });
-  }, [selectedMt5ToMt5FromAccount, mt5AccountOptions, liveMt5Accounts, mt5ToMt5Form]);
+  }, [
+    selectedMt5ToMt5FromAccount,
+    mt5AccountOptions,
+    liveMt5Accounts,
+    mt5ToMt5Form,
+  ]);
 
   // Clear "To" account if it doesn't match the filtered list
   useEffect(() => {
     const toAccountId = mt5ToMt5Form.watch("toAccountId");
     if (!toAccountId || !selectedMt5ToMt5FromAccount) return;
-    
-    const isValidToAccount = filteredMt5ToMt5ToAccounts.some((opt) => opt.id === toAccountId);
+
+    const isValidToAccount = filteredMt5ToMt5ToAccounts.some(
+      (opt) => opt.id === toAccountId,
+    );
     if (!isValidToAccount) {
       mt5ToMt5Form.setValue("toAccountId", "", { shouldValidate: false });
     }
@@ -661,7 +712,7 @@ function InternalTransferContent() {
         title="Internal Transfers"
         description="Move funds seamlessly between your CRM wallets and linked MT5 trading accounts."
       />
-      
+
       {walletError ? (
         <ApiErrorState
           error={walletError}
@@ -727,15 +778,28 @@ function InternalTransferContent() {
             liveMt5Accounts.length > 0 ? (
               <div className="space-y-2 mt-2">
                 <div className="space-y-1.5">
-                  {(showAllAccounts ? liveMt5Accounts : liveMt5Accounts.slice(0, 2)).map((account) => (
-                    <div key={account.account_id} className="flex items-center justify-between text-xs border-t border-border/50 pt-1.5 first:border-t-0 first:pt-0">
+                  {(showAllAccounts
+                    ? liveMt5Accounts
+                    : liveMt5Accounts.slice(0, 2)
+                  ).map((account) => (
+                    <div
+                      key={account.account_id}
+                      className="flex items-center justify-between text-xs border-t border-border/50 pt-1.5 first:border-t-0 first:pt-0"
+                    >
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">{account.account_id}</span>
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                        <span className="font-medium">
+                          {account.account_id}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] px-1.5 py-0 h-4"
+                        >
                           {account.account_mode}
                         </Badge>
                       </div>
-                      <span className="text-muted-foreground tabular-nums">{formatMt5Balance(account, mt5Balances)}</span>
+                      <span className="text-muted-foreground tabular-nums">
+                        {formatMt5Balance(account, mt5Balances)}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -752,7 +816,8 @@ function InternalTransferContent() {
                     ) : (
                       <>
                         <ChevronDown className="h-3.5 w-3.5" />
-                        Show {liveMt5Accounts.length - 3} more account{liveMt5Accounts.length - 3 !== 1 ? 's' : ''}
+                        Show {liveMt5Accounts.length - 3} more account
+                        {liveMt5Accounts.length - 3 !== 1 ? "s" : ""}
                       </>
                     )}
                   </button>
@@ -773,9 +838,24 @@ function InternalTransferContent() {
         className="space-y-4"
       >
         <TabsList className="ib-portal-surface inline-flex h-auto w-full flex-wrap gap-1 rounded-2xl border p-1.5">
-        <TabsTrigger value="wallet-to-mt5" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 transition-colors">Wallet to MT5</TabsTrigger>
-        <TabsTrigger value="mt5-to-wallet" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 transition-colors">MT5 to Wallet</TabsTrigger>
-        <TabsTrigger value="mt5-to-mt5" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 transition-colors">MT5 to MT5</TabsTrigger>
+          <TabsTrigger
+            value="wallet-to-mt5"
+            className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 transition-colors"
+          >
+            Wallet to MT5
+          </TabsTrigger>
+          <TabsTrigger
+            value="mt5-to-wallet"
+            className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 transition-colors"
+          >
+            MT5 to Wallet
+          </TabsTrigger>
+          <TabsTrigger
+            value="mt5-to-mt5"
+            className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 transition-colors"
+          >
+            MT5 to MT5
+          </TabsTrigger>
         </TabsList>
         <TabsContent value="wallet-to-mt5">
           <IbSectionCard
@@ -784,178 +864,198 @@ function InternalTransferContent() {
           >
             <Form {...walletToMt5Form}>
               <form
-                onSubmit={walletToMt5Form.handleSubmit(
-                  handleWalletToMt5Submit,
-                )}
+                onSubmit={walletToMt5Form.handleSubmit(handleWalletToMt5Submit)}
                 className="space-y-6"
               >
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                      Transfer route
-                    </p>
-                   <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_40px_minmax(0,1fr)] items-end gap-2 sm:max-w-lg">
-                      <FormField
-                        control={walletToMt5Form.control}
-                        name="fromWalletType"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>From wallet</FormLabel>
-                            <Select value={field.value} disabled>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue
-                                    placeholder={walletSelectPlaceholder}
-                                  />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {mainWallet && (
-                                  <SelectItem value={mainWallet.value}>
-                                    {mainWallet.label} ({mainWallet.balance.toFixed(2)}{" "}
-                                    USD)
-                                  </SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                       <div className="flex h-8 sm:h-10 items-center justify-center">
-                          <ArrowRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
-                          <ArrowDown className="h-4 w-4 text-muted-foreground sm:hidden" />
-                       </div>
-                      <FormField
-                        control={walletToMt5Form.control}
-                        name="toAccountId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>To MT5 account</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value}
-                              disabled={
-                                isLoadingResources || liveMt5Accounts.length === 0
-                              }
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue
-                                    placeholder={mt5SelectPlaceholder}
-                                  />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent 
-                                side="bottom" 
-                                align="start" 
-                                sideOffset={4}
-                                avoidCollisions={false}
-                                className="max-h-[300px] overflow-y-auto"
-                              >
-                                {mt5AccountOptions.length > 0 ? (
-                                  mt5AccountOptions.map((option) => (
-                                    <SelectItem key={option.id} value={option.id}>
-                                      {option.label}
-                                    </SelectItem>
-                                  ))
-                                ) : (
-                                  <SelectItem value="no-accounts" disabled>
-                                    No accounts available
-                                  </SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                      Amount
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,200px)_1fr] gap-4 items-start">
-                      <FormField
-                        control={walletToMt5Form.control}
-                        name="amount"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Amount to transfer</FormLabel>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                    Transfer route
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_40px_minmax(0,1fr)] items-end gap-2 sm:max-w-lg">
+                    <FormField
+                      control={walletToMt5Form.control}
+                      name="fromWalletType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>From wallet</FormLabel>
+                          <Select value={field.value} disabled>
                             <FormControl>
-                              <div className="relative">
-                                <Input
-                                  type="number"
-                                  min="0.01"
-                                  step="any"
-                                  placeholder="0.00"
-                                  onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                                  className="pr-14"
-                                  {...field}
+                              <SelectTrigger>
+                                <SelectValue
+                                  placeholder={walletSelectPlaceholder}
                                 />
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium pointer-events-none">
-                                  USD
-                                </span>
-                              </div>
+                              </SelectTrigger>
                             </FormControl>
-                              {walletToMt5Form.watch("amount") && Number(walletToMt5Form.watch("amount")) > 0 && selectedWalletToMt5Account && isCentMt5Account(selectedWalletToMt5Account) && (
-                      <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 mt-3 max-w-xs">
-                        <p className="text-xs text-muted-foreground">Conversion</p>
-                        <p className="text-sm font-semibold text-foreground mt-0.5">
-                          {Number(walletToMt5Form.watch("amount")).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD = {(Number(walletToMt5Form.watch("amount")) * 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC
-                        </p>
+                            <SelectContent>
+                              {mainWallet && (
+                                <SelectItem value={mainWallet.value}>
+                                  {mainWallet.label} (
+                                  {mainWallet.balance.toFixed(2)} USD)
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex h-8 sm:h-10 items-center justify-center">
+                      <ArrowRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
+                      <ArrowDown className="h-4 w-4 text-muted-foreground sm:hidden" />
+                    </div>
+                    <FormField
+                      control={walletToMt5Form.control}
+                      name="toAccountId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>To MT5 account</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={
+                              isLoadingResources || liveMt5Accounts.length === 0
+                            }
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue
+                                  placeholder={mt5SelectPlaceholder}
+                                />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent
+                              side="bottom"
+                              align="start"
+                              sideOffset={4}
+                              avoidCollisions={false}
+                              className="max-h-[300px] overflow-y-auto"
+                            >
+                              {mt5AccountOptions.length > 0 ? (
+                                mt5AccountOptions.map((option) => (
+                                  <SelectItem key={option.id} value={option.id}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="no-accounts" disabled>
+                                  No accounts available
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                    Amount
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,200px)_1fr] gap-4 items-start">
+                    <FormField
+                      control={walletToMt5Form.control}
+                      name="amount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Amount to transfer</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                type="number"
+                                min="0.01"
+                                step="any"
+                                placeholder="0.00"
+                                onWheel={(e) =>
+                                  (e.target as HTMLInputElement).blur()
+                                }
+                                className="pr-14"
+                                {...field}
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium pointer-events-none">
+                                USD
+                              </span>
+                            </div>
+                          </FormControl>
+                          {walletToMt5Form.watch("amount") &&
+                            Number(walletToMt5Form.watch("amount")) > 0 &&
+                            selectedWalletToMt5Account &&
+                            isCentMt5Account(selectedWalletToMt5Account) && (
+                              <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 mt-3 max-w-xs">
+                                <p className="text-xs text-muted-foreground">
+                                  Conversion
+                                </p>
+                                <p className="text-sm font-semibold text-foreground mt-0.5">
+                                  {Number(
+                                    walletToMt5Form.watch("amount"),
+                                  ).toLocaleString("en-US", {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  })}{" "}
+                                  USD ={" "}
+                                  {(
+                                    Number(walletToMt5Form.watch("amount")) *
+                                    100
+                                  ).toLocaleString("en-US", {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2,
+                                  })}{" "}
+                                  USC
+                                </p>
+                              </div>
+                            )}
+                          {mainWallet && (
+                            <p className="text-xs text-muted-foreground">
+                              Max. {mainWallet.balance.toFixed(2)} USD
+                            </p>
+                          )}
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {mainWallet && (
+                      <div className="pt-6">
+                        <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-muted text-sm text-muted-foreground border">
+                          <Wallet className="h-3.5 w-3.5" />
+                          Available:{" "}
+                          <span className="font-medium text-foreground">
+                            {mainWallet.balance.toFixed(2)} USD
+                          </span>
+                        </div>
                       </div>
                     )}
-                            {mainWallet && (
-                              <p className="text-xs text-muted-foreground">
-                                Max. {mainWallet.balance.toFixed(2)} USD
-                              </p>
-                            )}
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      {mainWallet && (
-                        <div className="pt-6">
-                          <div className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-muted text-sm text-muted-foreground border">
-                            <Wallet className="h-3.5 w-3.5" />
-                            Available:{" "}
-                            <span className="font-medium text-foreground">
-                              {mainWallet.balance.toFixed(2)} USD
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
                   </div>
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <div className="flex flex-col gap-1">
-                      <p className="text-xs text-muted-foreground">
-                        Funds arrive instantly
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-xs text-muted-foreground">
+                      Funds arrive instantly
+                    </p>
+                    {!mainWalletHasBalance && mainWallet && (
+                      <p className="text-xs text-destructive font-medium">
+                        Insufficient balance in wallet
                       </p>
-                      {!mainWalletHasBalance && mainWallet && (
-                        <p className="text-xs text-destructive font-medium">
-                          Insufficient balance in wallet
-                        </p>
-                      )}
-                    </div>
-                    <Button
-                      type="submit"
-                      disabled={
-                        walletToMt5Form.formState.isSubmitting || !mainWallet || !mainWalletHasBalance
-                      }
-                    >
-                      {walletToMt5Form.formState.isSubmitting
-                        ? "Processing…"
-                        : "Transfer funds"}
-                    </Button>
+                    )}
                   </div>
-                </form>
-              </Form>
+                  <Button
+                    type="submit"
+                    disabled={
+                      walletToMt5Form.formState.isSubmitting ||
+                      !mainWallet ||
+                      !mainWalletHasBalance
+                    }
+                  >
+                    {walletToMt5Form.formState.isSubmitting
+                      ? "Processing…"
+                      : "Transfer funds"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </IbSectionCard>
         </TabsContent>
 
@@ -966,163 +1066,182 @@ function InternalTransferContent() {
           >
             <Form {...mt5ToWalletForm}>
               <form
-                onSubmit={mt5ToWalletForm.handleSubmit(
-                  handleMt5ToWalletSubmit,
-                )}
+                onSubmit={mt5ToWalletForm.handleSubmit(handleMt5ToWalletSubmit)}
                 className="space-y-6"
               >
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                      Transfer route
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_40px_minmax(0,1fr)] items-end gap-2 sm:max-w-lg">
-                      <FormField
-                        control={mt5ToWalletForm.control}
-                        name="fromAccountId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>From MT5 account</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value}
-                              disabled={
-                                isLoadingResources || liveMt5Accounts.length === 0
-                              }
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue
-                                    placeholder={mt5SelectPlaceholder}
-                                  />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent 
-                                side="bottom" 
-                                align="start" 
-                                sideOffset={4}
-                                avoidCollisions={false}
-                                className="max-h-[300px] overflow-y-auto"
-                              >
-                                {mt5AccountOptions.length > 0 ? (
-                                  mt5AccountOptions.map((option) => (
-                                    <SelectItem key={option.id} value={option.id}>
-                                      {option.label}
-                                    </SelectItem>
-                                  ))
-                                ) : (
-                                  <SelectItem value="no-accounts" disabled>
-                                    No accounts available
-                                  </SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                       <div className="flex h-8 sm:h-10 items-center justify-center">
-                            <ArrowRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
-                            <ArrowDown className="h-4 w-4 text-muted-foreground sm:hidden" />
-                       </div>
-                      <FormField
-                        control={mt5ToWalletForm.control}
-                        name="toWalletType"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>To wallet</FormLabel>
-                            <Select
-                              value={field.value}
-                              disabled
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue
-                                    placeholder={walletSelectPlaceholder}
-                                  />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {mainWallet && (
-                                  <SelectItem value={mainWallet.value}>
-                                    {mainWallet.label} ({mainWallet.balance.toFixed(2)}{" "}
-                                    USD)
-                                  </SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                      Amount
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,200px)_1fr] gap-4 items-start">
-                      <FormField
-                        control={mt5ToWalletForm.control}
-                        name="amount"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Amount to transfer</FormLabel>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                    Transfer route
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_40px_minmax(0,1fr)] items-end gap-2 sm:max-w-lg">
+                    <FormField
+                      control={mt5ToWalletForm.control}
+                      name="fromAccountId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>From MT5 account</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={
+                              isLoadingResources || liveMt5Accounts.length === 0
+                            }
+                          >
                             <FormControl>
-                              <div className="relative">
-                                <Input
-                                  type="number"
-                                  min="0.01"
-                                  step="any"
-                                  placeholder="0.00"
-                                  onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                                  className="pr-14"
-                                  {...field}
+                              <SelectTrigger>
+                                <SelectValue
+                                  placeholder={mt5SelectPlaceholder}
                                 />
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium pointer-events-none">
-                                  USD
-                                </span>
-                              </div>
+                              </SelectTrigger>
                             </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      {mt5ToWalletForm.watch("amount") && Number(mt5ToWalletForm.watch("amount")) > 0 && selectedMt5ToWalletAccount && isCentMt5Account(selectedMt5ToWalletAccount) && (
+                            <SelectContent
+                              side="bottom"
+                              align="start"
+                              sideOffset={4}
+                              avoidCollisions={false}
+                              className="max-h-[300px] overflow-y-auto"
+                            >
+                              {mt5AccountOptions.length > 0 ? (
+                                mt5AccountOptions.map((option) => (
+                                  <SelectItem key={option.id} value={option.id}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="no-accounts" disabled>
+                                  No accounts available
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex h-8 sm:h-10 items-center justify-center">
+                      <ArrowRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
+                      <ArrowDown className="h-4 w-4 text-muted-foreground sm:hidden" />
+                    </div>
+                    <FormField
+                      control={mt5ToWalletForm.control}
+                      name="toWalletType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>To wallet</FormLabel>
+                          <Select value={field.value} disabled>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue
+                                  placeholder={walletSelectPlaceholder}
+                                />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {mainWallet && (
+                                <SelectItem value={mainWallet.value}>
+                                  {mainWallet.label} (
+                                  {mainWallet.balance.toFixed(2)} USD)
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                    Amount
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,200px)_1fr] gap-4 items-start">
+                    <FormField
+                      control={mt5ToWalletForm.control}
+                      name="amount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Amount to transfer</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                type="number"
+                                min="0.01"
+                                step="any"
+                                placeholder="0.00"
+                                onWheel={(e) =>
+                                  (e.target as HTMLInputElement).blur()
+                                }
+                                className="pr-14"
+                                {...field}
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium pointer-events-none">
+                                USD
+                              </span>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {mt5ToWalletForm.watch("amount") &&
+                      Number(mt5ToWalletForm.watch("amount")) > 0 &&
+                      selectedMt5ToWalletAccount &&
+                      isCentMt5Account(selectedMt5ToWalletAccount) && (
                         <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 mt-3 max-w-xs">
-                          <p className="text-xs text-muted-foreground">Conversion</p>
+                          <p className="text-xs text-muted-foreground">
+                            Conversion
+                          </p>
                           <p className="text-sm font-semibold text-foreground mt-0.5">
-                            {Number(mt5ToWalletForm.watch("amount")).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD = {(Number(mt5ToWalletForm.watch("amount")) * 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC
+                            {Number(
+                              mt5ToWalletForm.watch("amount"),
+                            ).toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}{" "}
+                            USD ={" "}
+                            {(
+                              Number(mt5ToWalletForm.watch("amount")) * 100
+                            ).toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}{" "}
+                            USC
                           </p>
                         </div>
                       )}
-                    </div>
                   </div>
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <div className="flex flex-col gap-1">
-                      <p className="text-xs text-muted-foreground">
-                        Funds arrive instantly
-                      </p>
-                      {selectedMt5ToWalletAccount && !mt5ToWalletAccountHasBalance && (
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-xs text-muted-foreground">
+                      Funds arrive instantly
+                    </p>
+                    {selectedMt5ToWalletAccount &&
+                      !mt5ToWalletAccountHasBalance && (
                         <p className="text-xs text-destructive font-medium">
                           Insufficient balance in MT5 account
                         </p>
                       )}
-                    </div>
-                    <Button
-                      type="submit"
-                      disabled={mt5ToWalletForm.formState.isSubmitting || !selectedMt5ToWalletAccount || !mt5ToWalletAccountHasBalance}
-                    >
-                      {mt5ToWalletForm.formState.isSubmitting
-                        ? "Processing…"
-                        : "Transfer funds"}
-                    </Button>
                   </div>
-                </form>
-              </Form>
+                  <Button
+                    type="submit"
+                    disabled={
+                      mt5ToWalletForm.formState.isSubmitting ||
+                      !selectedMt5ToWalletAccount ||
+                      !mt5ToWalletAccountHasBalance
+                    }
+                  >
+                    {mt5ToWalletForm.formState.isSubmitting
+                      ? "Processing…"
+                      : "Transfer funds"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </IbSectionCard>
         </TabsContent>
 
@@ -1136,171 +1255,198 @@ function InternalTransferContent() {
                 onSubmit={mt5ToMt5Form.handleSubmit(handleMt5ToMt5Submit)}
                 className="space-y-6"
               >
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                      Transfer route
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_40px_minmax(0,1fr)] items-end gap-2 sm:max-w-lg">
-                      <FormField
-                        control={mt5ToMt5Form.control}
-                        name="fromAccountId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>From MT5 account</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value}
-                              disabled={
-                                isLoadingResources || liveMt5Accounts.length === 0
-                              }
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue
-                                    placeholder={mt5SelectPlaceholder}
-                                  />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent 
-                                side="bottom" 
-                                align="start" 
-                                sideOffset={4}
-                                avoidCollisions={false}
-                                className="max-h-[300px] overflow-y-auto"
-                              >
-                                {mt5AccountOptions.length > 0 ? (
-                                  mt5AccountOptions.map((option) => (
-                                    <SelectItem key={option.id} value={option.id}>
-                                      {option.label}
-                                    </SelectItem>
-                                  ))
-                                ) : (
-                                  <SelectItem value="no-accounts" disabled>
-                                    No accounts available
-                                  </SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                       <div className="flex h-8 sm:h-10 items-center justify-center">
-                        <ArrowRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
-                        <ArrowDown className="h-4 w-4 text-muted-foreground sm:hidden" />
-                       </div>
-                      <FormField
-                        control={mt5ToMt5Form.control}
-                        name="toAccountId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>To MT5 account</FormLabel>
-                            <Select
-                              onValueChange={field.onChange}
-                              value={field.value}
-                              disabled={
-                                isLoadingResources || liveMt5Accounts.length === 0
-                              }
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue
-                                    placeholder={mt5SelectPlaceholder}
-                                  />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent 
-                                side="bottom" 
-                                align="start" 
-                                sideOffset={4}
-                                avoidCollisions={false}
-                                className="max-h-[300px] overflow-y-auto"
-                              >
-                                {filteredMt5ToMt5ToAccounts.length > 0 ? (
-                                  filteredMt5ToMt5ToAccounts.map((option) => (
-                                    <SelectItem key={option.id} value={option.id}>
-                                      {option.label}
-                                    </SelectItem>
-                                  ))
-                                ) : (
-                                  <SelectItem value="no-accounts" disabled>
-                                    No accounts available
-                                  </SelectItem>
-                                )}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
-                      Amount
-                    </p>
-                    <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,200px)_1fr] gap-4 items-start">
-                      <FormField
-                        control={mt5ToMt5Form.control}
-                        name="amount"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Amount to transfer</FormLabel>
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                    Transfer route
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_40px_minmax(0,1fr)] items-end gap-2 sm:max-w-lg">
+                    <FormField
+                      control={mt5ToMt5Form.control}
+                      name="fromAccountId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>From MT5 account</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={
+                              isLoadingResources || liveMt5Accounts.length === 0
+                            }
+                          >
                             <FormControl>
-                              <div className="relative">
-                                <Input
-                                  type="number"
-                                  min="0.01"
-                                  step="any"
-                                  placeholder="0.00"
-                                  onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                                  className="pr-14"
-                                  {...field}
+                              <SelectTrigger>
+                                <SelectValue
+                                  placeholder={mt5SelectPlaceholder}
                                 />
-                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium pointer-events-none">
-                                  {mt5ToMt5Currency}
-                                </span>
-                              </div>
+                              </SelectTrigger>
                             </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                       {mt5ToMt5Form.watch("amount") && Number(mt5ToMt5Form.watch("amount")) > 0 && selectedMt5ToMt5FromAccount && selectedMt5ToMt5ToAccount && isCentMt5Account(selectedMt5ToMt5FromAccount) && isCentMt5Account(selectedMt5ToMt5ToAccount) && (
-                      <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 mt-3 max-w-xs">
-                        <p className="text-xs text-muted-foreground">Conversion</p>
-                        <p className="text-sm font-semibold text-foreground mt-0.5">
-                          {Number(mt5ToMt5Form.watch("amount")).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD = {(Number(mt5ToMt5Form.watch("amount")) * 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC
-                        </p>
-                      </div>
-                    )}
+                            <SelectContent
+                              side="bottom"
+                              align="start"
+                              sideOffset={4}
+                              avoidCollisions={false}
+                              className="max-h-[300px] overflow-y-auto"
+                            >
+                              {mt5AccountOptions.length > 0 ? (
+                                mt5AccountOptions.map((option) => (
+                                  <SelectItem key={option.id} value={option.id}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="no-accounts" disabled>
+                                  No accounts available
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex h-8 sm:h-10 items-center justify-center">
+                      <ArrowRight className="h-4 w-4 text-muted-foreground hidden sm:block" />
+                      <ArrowDown className="h-4 w-4 text-muted-foreground sm:hidden" />
                     </div>
+                    <FormField
+                      control={mt5ToMt5Form.control}
+                      name="toAccountId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>To MT5 account</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                            disabled={
+                              isLoadingResources || liveMt5Accounts.length === 0
+                            }
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue
+                                  placeholder={mt5SelectPlaceholder}
+                                />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent
+                              side="bottom"
+                              align="start"
+                              sideOffset={4}
+                              avoidCollisions={false}
+                              className="max-h-[300px] overflow-y-auto"
+                            >
+                              {filteredMt5ToMt5ToAccounts.length > 0 ? (
+                                filteredMt5ToMt5ToAccounts.map((option) => (
+                                  <SelectItem key={option.id} value={option.id}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <SelectItem value="no-accounts" disabled>
+                                  No accounts available
+                                </SelectItem>
+                              )}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                  <div className="flex items-center justify-between pt-2 border-t">
-                    <div className="flex flex-col gap-1">
-                      <p className="text-xs text-muted-foreground">
-                        Funds arrive instantly
-                      </p>
-                      {selectedMt5ToMt5FromAccount && !mt5ToMt5FromAccountHasBalance && (
+                </div>
+
+                <Separator />
+
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                    Amount
+                  </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,200px)_1fr] gap-4 items-start">
+                    <FormField
+                      control={mt5ToMt5Form.control}
+                      name="amount"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Amount to transfer</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                type="number"
+                                min="0.01"
+                                step="any"
+                                placeholder="0.00"
+                                onWheel={(e) =>
+                                  (e.target as HTMLInputElement).blur()
+                                }
+                                className="pr-14"
+                                {...field}
+                              />
+                              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-medium pointer-events-none">
+                                {mt5ToMt5Currency}
+                              </span>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {mt5ToMt5Form.watch("amount") &&
+                      Number(mt5ToMt5Form.watch("amount")) > 0 &&
+                      selectedMt5ToMt5FromAccount &&
+                      selectedMt5ToMt5ToAccount &&
+                      isCentMt5Account(selectedMt5ToMt5FromAccount) &&
+                      isCentMt5Account(selectedMt5ToMt5ToAccount) && (
+                        <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2 mt-3 max-w-xs">
+                          <p className="text-xs text-muted-foreground">
+                            Conversion
+                          </p>
+                          <p className="text-sm font-semibold text-foreground mt-0.5">
+                            {Number(
+                              mt5ToMt5Form.watch("amount"),
+                            ).toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}{" "}
+                            USD ={" "}
+                            {(
+                              Number(mt5ToMt5Form.watch("amount")) * 100
+                            ).toLocaleString("en-US", {
+                              minimumFractionDigits: 2,
+                              maximumFractionDigits: 2,
+                            })}{" "}
+                            USC
+                          </p>
+                        </div>
+                      )}
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-2 border-t">
+                  <div className="flex flex-col gap-1">
+                    <p className="text-xs text-muted-foreground">
+                      Funds arrive instantly
+                    </p>
+                    {selectedMt5ToMt5FromAccount &&
+                      !mt5ToMt5FromAccountHasBalance && (
                         <p className="text-xs text-destructive font-medium">
                           Insufficient balance in source MT5 account
                         </p>
                       )}
-                    </div>
-                    <Button
-                      type="submit"
-                      disabled={mt5ToMt5Form.formState.isSubmitting || !selectedMt5ToMt5FromAccount || !mt5ToMt5FromAccountHasBalance}
-                    >
-                      {mt5ToMt5Form.formState.isSubmitting
-                        ? "Processing…"
-                        : "Transfer funds"}
-                    </Button>
                   </div>
-                </form>
-              </Form>
+                  <Button
+                    type="submit"
+                    disabled={
+                      mt5ToMt5Form.formState.isSubmitting ||
+                      !selectedMt5ToMt5FromAccount ||
+                      !mt5ToMt5FromAccountHasBalance
+                    }
+                  >
+                    {mt5ToMt5Form.formState.isSubmitting
+                      ? "Processing…"
+                      : "Transfer funds"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
           </IbSectionCard>
         </TabsContent>
       </Tabs>
@@ -1311,4 +1457,3 @@ function InternalTransferContent() {
 export default function InternalTransferPage() {
   return <InternalTransferContent />;
 }
-

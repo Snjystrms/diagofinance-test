@@ -72,34 +72,48 @@ function extractMt5Accounts(res: unknown): AdminMT5Account[] {
 }
 
 const getAccountTypeName = (account?: AdminMT5Account) =>
-  account?.accountType?.name ?? account?.AdminMT5AccountType?.name ?? account?.account_type ?? "";
+  account?.accountType?.name ??
+  account?.AdminMT5AccountType?.name ??
+  account?.account_type ??
+  "";
 
 const isCentMt5Account = (account?: AdminMT5Account) =>
   getAccountTypeName(account).trim().toLowerCase() === "cent";
 
-const getMt5AccountCurrency = (account?: AdminMT5Account) => (isCentMt5Account(account) ? "usc" : "usd");
+const getMt5AccountCurrency = (account?: AdminMT5Account) =>
+  isCentMt5Account(account) ? "usc" : "usd";
 
-const getMt5AccountBalance = (account?: AdminMT5Account, liveBalances?: Map<string, number>) => {
+const getMt5AccountBalance = (
+  account?: AdminMT5Account,
+  liveBalances?: Map<string, number>,
+) => {
   if (!account) return 0;
-  
+
   // Try to get live balance first (API returns correct value: USC for CENT, USD for standard)
   if (liveBalances) {
-    const accId = String(account.account_id ?? account.mt5_id ?? account.id ?? "");
+    const accId = String(
+      account.account_id ?? account.mt5_id ?? account.id ?? "",
+    );
     const liveBalance = liveBalances.get(accId);
     if (liveBalance !== undefined) {
       return liveBalance;
     }
   }
-  
+
   // Fallback to cached balance
   if (isCentMt5Account(account)) {
     const rawBalance = account.balance ?? account.self_wallet ?? 0;
-    return typeof rawBalance === 'number' ? rawBalance * 100 : Number(rawBalance) * 100;
+    return typeof rawBalance === "number"
+      ? rawBalance * 100
+      : Number(rawBalance) * 100;
   }
   return account.self_wallet ?? 0;
 };
 
-const formatCurrencyCode = (value: unknown) => String(value ?? "USD").trim().toLowerCase();
+const formatCurrencyCode = (value: unknown) =>
+  String(value ?? "USD")
+    .trim()
+    .toLowerCase();
 
 export function InternalTransferDialog({
   open,
@@ -127,7 +141,9 @@ export function InternalTransferDialog({
   const [mt5AccountsWithWalletIds, setMt5AccountsWithWalletIds] = useState<
     Map<string, number>
   >(new Map());
-  const [mt5LiveBalances, setMt5LiveBalances] = useState<Map<string, number>>(new Map());
+  const [mt5LiveBalances, setMt5LiveBalances] = useState<Map<string, number>>(
+    new Map(),
+  );
   const [loadingBalances, setLoadingBalances] = useState(false);
   const userSearchRef = useRef<HTMLDivElement>(null);
   const userSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -142,10 +158,12 @@ export function InternalTransferDialog({
     transferType === "mt5_to_main" ||
     transferType === "ib_to_main";
   const selectedFromMt5Account = userMt5Accounts.find(
-    (acc) => String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "") === fromMt5Account,
+    (acc) =>
+      String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "") === fromMt5Account,
   );
   const selectedToMt5Account = userMt5Accounts.find(
-    (acc) => String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "") === toMt5Account,
+    (acc) =>
+      String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "") === toMt5Account,
   );
   const amountCurrency =
     transferType === "mt5_to_mt5"
@@ -237,7 +255,7 @@ export function InternalTransferDialog({
         const allAccounts = extractMt5Accounts(res.data ?? res);
         // Filter to show only live accounts
         const liveAccounts = allAccounts.filter(
-          (acc) => (acc.account_mode ?? "").toLowerCase() === "live"
+          (acc) => (acc.account_mode ?? "").toLowerCase() === "live",
         );
         setUserMt5Accounts(liveAccounts);
 
@@ -259,13 +277,22 @@ export function InternalTransferDialog({
           if (!mt5Login) return { accId, balance: null };
 
           try {
-            const balanceResponse = await mt5AccountsApi.getAdminBalance(mt5Login, token) as unknown as MT5AccountBalance;
-            if (balanceResponse.success && balanceResponse.balance !== undefined) {
-              return { accId, balance: balanceResponse.balance };
+            const balanceResponse = (await mt5AccountsApi.getAdminBalance(
+              mt5Login,
+              token,
+            )) as unknown as MT5AccountBalance;
+            if (
+              balanceResponse.success &&
+              balanceResponse.equity !== undefined
+            ) {
+              return { accId, balance: balanceResponse.equity };
             }
             return { accId, balance: null };
           } catch (error) {
-            console.error(`Failed to fetch balance for MT5 ${mt5Login}:`, error);
+            console.error(
+              `Failed to fetch balance for MT5 ${mt5Login}:`,
+              error,
+            );
             return { accId, balance: null };
           }
         });
@@ -287,7 +314,7 @@ export function InternalTransferDialog({
         setLoadingMt5Accounts(false);
       }
     },
-    [token]
+    [token],
   );
 
   const fetchWalletBalances = useCallback(
@@ -373,13 +400,19 @@ export function InternalTransferDialog({
     if (isMt5ToMt5 && fromMt5Account && toMt5Account) {
       const fromIsCent = isCentMt5Account(selectedFromMt5Account);
       const toIsCent = isCentMt5Account(selectedToMt5Account);
-      
+
       // If currency types don't match, clear the "To" account
       if (fromIsCent !== toIsCent) {
         setToMt5Account("");
       }
     }
-  }, [fromMt5Account, isMt5ToMt5, selectedFromMt5Account, selectedToMt5Account, toMt5Account]);
+  }, [
+    fromMt5Account,
+    isMt5ToMt5,
+    selectedFromMt5Account,
+    selectedToMt5Account,
+    toMt5Account,
+  ]);
 
   const handleSubmit = async () => {
     const numAmount = parseFloat(amount);
@@ -466,12 +499,14 @@ export function InternalTransferDialog({
           to_account: String(toAccountId),
           type: transferType,
         },
-        token
+        token,
       );
-      
+
       if (res.data) {
         // Show success message from API response
-        toast.success(res.message || "Internal transfer processed successfully");
+        toast.success(
+          res.message || "Internal transfer processed successfully",
+        );
         onSuccess(res.data);
       }
       onOpenChange(false);
@@ -480,7 +515,7 @@ export function InternalTransferDialog({
         getAdminFriendlyErrorMessage(error, {
           resource: "internal transfer",
           action: "process",
-        })
+        }),
       );
     } finally {
       setSubmitting(false);
@@ -575,8 +610,8 @@ export function InternalTransferDialog({
     if (filteredAccounts.length === 0) {
       return (
         <p className="text-sm text-muted-foreground py-2">
-          {isToAccount && fromMt5Account 
-            ? `No matching ${isCentMt5Account(selectedFromMt5Account) ? 'CENT' : 'USD'} accounts found`
+          {isToAccount && fromMt5Account
+            ? `No matching ${isCentMt5Account(selectedFromMt5Account) ? "CENT" : "USD"} accounts found`
             : "No MT5 accounts found for this user"}
         </p>
       );
@@ -614,9 +649,9 @@ export function InternalTransferDialog({
               })()}
           </SelectValue>
         </SelectTrigger>
-        <SelectContent 
-          side="bottom" 
-          align="start" 
+        <SelectContent
+          side="bottom"
+          align="start"
           sideOffset={4}
           avoidCollisions={false}
           className="max-h-[300px] overflow-y-auto"
@@ -664,9 +699,9 @@ export function InternalTransferDialog({
               <SelectTrigger id="transfer-type">
                 <SelectValue placeholder="Select type" />
               </SelectTrigger>
-              <SelectContent 
-                side="bottom" 
-                align="start" 
+              <SelectContent
+                side="bottom"
+                align="start"
                 sideOffset={4}
                 avoidCollisions={false}
               >
@@ -773,9 +808,9 @@ export function InternalTransferDialog({
                   <SelectTrigger>
                     <SelectValue placeholder="Select source wallet" />
                   </SelectTrigger>
-                  <SelectContent 
-                    side="bottom" 
-                    align="start" 
+                  <SelectContent
+                    side="bottom"
+                    align="start"
                     sideOffset={4}
                     avoidCollisions={false}
                   >
@@ -828,9 +863,9 @@ export function InternalTransferDialog({
                   <SelectTrigger>
                     <SelectValue placeholder="Select destination wallet" />
                   </SelectTrigger>
-                  <SelectContent 
-                    side="bottom" 
-                    align="start" 
+                  <SelectContent
+                    side="bottom"
+                    align="start"
                     sideOffset={4}
                     avoidCollisions={false}
                   >
@@ -865,9 +900,9 @@ export function InternalTransferDialog({
                   <SelectTrigger>
                     <SelectValue placeholder="Select source wallet" />
                   </SelectTrigger>
-                  <SelectContent 
-                    side="bottom" 
-                    align="start" 
+                  <SelectContent
+                    side="bottom"
+                    align="start"
                     sideOffset={4}
                     avoidCollisions={false}
                   >
@@ -898,9 +933,9 @@ export function InternalTransferDialog({
                   <SelectTrigger>
                     <SelectValue placeholder="Select destination wallet" />
                   </SelectTrigger>
-                  <SelectContent 
-                    side="bottom" 
-                    align="start" 
+                  <SelectContent
+                    side="bottom"
+                    align="start"
                     sideOffset={4}
                     avoidCollisions={false}
                   >
@@ -939,32 +974,69 @@ export function InternalTransferDialog({
               {amount && Number(amount) > 0 && (
                 <>
                   {/* Main to MT5: Show USD to USC if target is CENT */}
-                  {transferType === "main_to_mt5" && isCentMt5Account(selectedToMt5Account) && (
-                    <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
-                      <p className="text-xs text-muted-foreground">Conversion</p>
-                      <p className="text-sm font-semibold text-foreground mt-0.5">
-                        {Number(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD = {(Number(amount) * 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC
-                      </p>
-                    </div>
-                  )}
+                  {transferType === "main_to_mt5" &&
+                    isCentMt5Account(selectedToMt5Account) && (
+                      <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+                        <p className="text-xs text-muted-foreground">
+                          Conversion
+                        </p>
+                        <p className="text-sm font-semibold text-foreground mt-0.5">
+                          {Number(amount).toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          USD ={" "}
+                          {(Number(amount) * 100).toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          USC
+                        </p>
+                      </div>
+                    )}
                   {/* MT5 to MT5: Show USD to USC conversion if CENT accounts */}
-                  {transferType === "mt5_to_mt5" && (isCentMt5Account(selectedFromMt5Account) || isCentMt5Account(selectedToMt5Account)) && (
-                    <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
-                      <p className="text-xs text-muted-foreground">Conversion</p>
-                      <p className="text-sm font-semibold text-foreground mt-0.5">
-                        {Number(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD = {(Number(amount) * 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC
-                      </p>
-                    </div>
-                  )}
+                  {transferType === "mt5_to_mt5" &&
+                    (isCentMt5Account(selectedFromMt5Account) ||
+                      isCentMt5Account(selectedToMt5Account)) && (
+                      <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+                        <p className="text-xs text-muted-foreground">
+                          Conversion
+                        </p>
+                        <p className="text-sm font-semibold text-foreground mt-0.5">
+                          {Number(amount).toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          USD ={" "}
+                          {(Number(amount) * 100).toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          USC
+                        </p>
+                      </div>
+                    )}
                   {/* MT5 to Main: Show USD to USC conversion if source is CENT */}
-                  {transferType === "mt5_to_main" && isCentMt5Account(selectedFromMt5Account) && (
-                    <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
-                      <p className="text-xs text-muted-foreground">Conversion</p>
-                      <p className="text-sm font-semibold text-foreground mt-0.5">
-                        {Number(amount).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD = {(Number(amount) * 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USC
-                      </p>
-                    </div>
-                  )}
+                  {transferType === "mt5_to_main" &&
+                    isCentMt5Account(selectedFromMt5Account) && (
+                      <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+                        <p className="text-xs text-muted-foreground">
+                          Conversion
+                        </p>
+                        <p className="text-sm font-semibold text-foreground mt-0.5">
+                          {Number(amount).toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          USD ={" "}
+                          {(Number(amount) * 100).toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          USC
+                        </p>
+                      </div>
+                    )}
                 </>
               )}
             </div>

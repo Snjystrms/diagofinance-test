@@ -27,10 +27,23 @@ import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton
 import { ProtectedRoute } from "@/components/protected-route";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { ApiRequestError } from "@/lib/api-core";
@@ -158,7 +171,10 @@ const formatSignedValue = (value: unknown) => {
   return `${sign}${formatNumericValue(numeric)}`;
 };
 
-const isCentAccountTypeName = (value: unknown) => String(value ?? "").trim().toLowerCase() === "cent";
+const isCentAccountTypeName = (value: unknown) =>
+  String(value ?? "")
+    .trim()
+    .toLowerCase() === "cent";
 
 const formatValueWithCurrency = (value: unknown, currency?: unknown) => {
   const formatted = formatNumericValue(value);
@@ -170,30 +186,52 @@ const formatValueWithCurrency = (value: unknown, currency?: unknown) => {
 const getUserMt5BalanceCurrency = (account: AdminUserMt5AccountItem) =>
   isCentAccountTypeName(account.account_type_name) ? "USC" : "USD";
 
-const getMt5DisplayBalance = (account: AdminUserMt5AccountItem, liveBalance?: number | null) => {
+const getMt5DisplayBalance = (
+  account: AdminUserMt5AccountItem,
+  liveBalance?: number | null,
+) => {
   // Use live balance if available (API already returns correct value)
   if (liveBalance !== null && liveBalance !== undefined) {
     return liveBalance;
   }
-  
+
   // Fallback to cached balance with × 100 multiplication for CENT accounts
-  const rawBalance = typeof account.balance === "number" ? account.balance : Number(account.balance ?? 0);
+  const rawBalance =
+    typeof account.balance === "number"
+      ? account.balance
+      : Number(account.balance ?? 0);
   if (!Number.isFinite(rawBalance)) return 0;
-  return isCentAccountTypeName(account.account_type_name) ? rawBalance * 100 : rawBalance;
+  return isCentAccountTypeName(account.account_type_name)
+    ? rawBalance * 100
+    : rawBalance;
 };
 
-const normalizeBooleanLabel = (value: unknown, positive = "Yes", negative = "No") => {
+const normalizeBooleanLabel = (
+  value: unknown,
+  positive = "Yes",
+  negative = "No",
+) => {
   if (value === null || value === undefined || value === "") return "-";
-  const normalized = typeof value === "boolean" ? value : `${value}` === "1" || `${value}`.toLowerCase() === "true";
+  const normalized =
+    typeof value === "boolean"
+      ? value
+      : `${value}` === "1" || `${value}`.toLowerCase() === "true";
   return normalized ? positive : negative;
 };
 
-const statusBadge = (value: unknown, mode: "profile" | "transaction" | "activity" | "wallet" = "profile") => {
+const statusBadge = (
+  value: unknown,
+  mode: "profile" | "transaction" | "activity" | "wallet" = "profile",
+) => {
   const normalized = `${value ?? ""}`.trim().toLowerCase();
 
   if (mode === "profile") {
     if (normalized === "1" || normalized === "active") {
-      return <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Active</Badge>;
+      return (
+        <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+          Active
+        </Badge>
+      );
     }
     if (normalized === "2" || normalized === "blocked") {
       return <Badge variant="destructive">Blocked</Badge>;
@@ -204,28 +242,52 @@ const statusBadge = (value: unknown, mode: "profile" | "transaction" | "activity
   }
 
   if (mode === "transaction") {
-    if (normalized === "1" || normalized === "approved" || normalized === "completed") {
-      return <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Approved</Badge>;
+    if (
+      normalized === "1" ||
+      normalized === "approved" ||
+      normalized === "completed"
+    ) {
+      return (
+        <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+          Approved
+        </Badge>
+      );
     }
     if (normalized === "2" || normalized === "rejected") {
-      return <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-300">Rejected</Badge>;
+      return (
+        <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-300">
+          Rejected
+        </Badge>
+      );
     }
     return <Badge variant="secondary">Pending</Badge>;
   }
 
   if (mode === "activity") {
     if (normalized === "1" || normalized === "success") {
-      return <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Successful</Badge>;
+      return (
+        <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+          Successful
+        </Badge>
+      );
     }
     return <Badge variant="secondary">Recorded</Badge>;
   }
 
   if (mode === "wallet") {
     if (normalized === "1" || normalized === "completed") {
-      return <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">Settled</Badge>;
+      return (
+        <Badge className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+          Settled
+        </Badge>
+      );
     }
     if (normalized === "2" || normalized === "rejected") {
-      return <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-300">Rejected</Badge>;
+      return (
+        <Badge className="bg-rose-500/10 text-rose-700 dark:text-rose-300">
+          Rejected
+        </Badge>
+      );
     }
     return <Badge variant="secondary">Pending</Badge>;
   }
@@ -233,25 +295,34 @@ const statusBadge = (value: unknown, mode: "profile" | "transaction" | "activity
   return <Badge variant="outline">{value ? String(value) : "Unknown"}</Badge>;
 };
 
-
 const readPagination = (value: unknown): PaginationMeta | null => {
   if (!value || typeof value !== "object") return null;
   const record = value as Record<string, unknown>;
   const pagination: PaginationMeta = {
     page: typeof record.page === "number" ? record.page : undefined,
-    current_page: typeof record.current_page === "number" ? record.current_page : undefined,
+    current_page:
+      typeof record.current_page === "number" ? record.current_page : undefined,
     per_page: typeof record.per_page === "number" ? record.per_page : undefined,
     limit: typeof record.limit === "number" ? record.limit : undefined,
     total: typeof record.total === "number" ? record.total : undefined,
-    total_pages: typeof record.total_pages === "number" ? record.total_pages : undefined,
-    last_page: typeof record.last_page === "number" ? record.last_page : undefined,
+    total_pages:
+      typeof record.total_pages === "number" ? record.total_pages : undefined,
+    last_page:
+      typeof record.last_page === "number" ? record.last_page : undefined,
   };
 
-  return Object.values(pagination).some((entry) => entry !== undefined) ? pagination : null;
+  return Object.values(pagination).some((entry) => entry !== undefined)
+    ? pagination
+    : null;
 };
 
-const withFallbackPagination = (pagination: PaginationMeta | null, page: number, rowCount: number): PaginationMeta => {
-  const perPage = pagination?.per_page ?? pagination?.limit ?? DEFAULT_PAGE_SIZE;
+const withFallbackPagination = (
+  pagination: PaginationMeta | null,
+  page: number,
+  rowCount: number,
+): PaginationMeta => {
+  const perPage =
+    pagination?.per_page ?? pagination?.limit ?? DEFAULT_PAGE_SIZE;
   const total = pagination?.total ?? rowCount;
   const lastPage =
     pagination?.last_page ??
@@ -269,28 +340,45 @@ const withFallbackPagination = (pagination: PaginationMeta | null, page: number,
   };
 };
 
-const getPaginatedSerialNumber = (index: number, pagination: PaginationMeta | null): number => {
+const getPaginatedSerialNumber = (
+  index: number,
+  pagination: PaginationMeta | null,
+): number => {
   const currentPage = pagination?.current_page ?? pagination?.page ?? 1;
-  const pageSize = pagination?.per_page ?? pagination?.limit ?? DEFAULT_PAGE_SIZE;
+  const pageSize =
+    pagination?.per_page ?? pagination?.limit ?? DEFAULT_PAGE_SIZE;
   return (Math.max(1, currentPage) - 1) * Math.max(1, pageSize) + index + 1;
 };
 
-const extractCrudUserFromDetailPayload = (payload: unknown): CrudUserDetails | null => {
+const extractCrudUserFromDetailPayload = (
+  payload: unknown,
+): CrudUserDetails | null => {
   if (!payload || typeof payload !== "object") return null;
   const record = payload as Record<string, unknown>;
   if (record.data && typeof record.data === "object") {
     const data = record.data as Record<string, unknown>;
-    if (data.user && typeof data.user === "object") return data.user as CrudUserDetails;
-    if (typeof (data as unknown as CrudUserDetails).id === "number") return data as unknown as CrudUserDetails;
+    if (data.user && typeof data.user === "object")
+      return data.user as CrudUserDetails;
+    if (typeof (data as unknown as CrudUserDetails).id === "number")
+      return data as unknown as CrudUserDetails;
   }
-  if (record.user && typeof record.user === "object") return record.user as CrudUserDetails;
-  if (typeof (record as unknown as CrudUserDetails).id === "number") return record as unknown as CrudUserDetails;
+  if (record.user && typeof record.user === "object")
+    return record.user as CrudUserDetails;
+  if (typeof (record as unknown as CrudUserDetails).id === "number")
+    return record as unknown as CrudUserDetails;
   return null;
 };
 
-const normalizeMt5TabDetails = (payload?: AdminUserMt5TabDetailsApiData | null): AdminUserMt5TabDetailsData | null => {
+const normalizeMt5TabDetails = (
+  payload?: AdminUserMt5TabDetailsApiData | null,
+): AdminUserMt5TabDetailsData | null => {
   if (!payload) return null;
-  if ("data" in payload && payload.data && typeof payload.data === "object" && !Array.isArray(payload.data)) {
+  if (
+    "data" in payload &&
+    payload.data &&
+    typeof payload.data === "object" &&
+    !Array.isArray(payload.data)
+  ) {
     return payload.data;
   }
   return payload as AdminUserMt5TabDetailsData;
@@ -353,8 +441,12 @@ const resolveUuidFromDetailPayload = (payload: unknown): string | null => {
 function DetailItem({ label, value }: { label: string; value: ReactNode }) {
   return (
     <div className="rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm">
-      <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">{label}</div>
-      <div className="mt-2 text-sm font-medium text-foreground">{value || "-"}</div>
+      <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-2 text-sm font-medium text-foreground">
+        {value || "-"}
+      </div>
     </div>
   );
 }
@@ -376,8 +468,12 @@ function SummaryMetric({
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/70 via-primary to-amber-500/80" />
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">{title}</div>
-            <div className="mt-3 text-3xl font-semibold tracking-tight text-foreground">{value}</div>
+            <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+              {title}
+            </div>
+            <div className="mt-3 text-3xl font-semibold tracking-tight text-foreground">
+              {value}
+            </div>
             <p className="mt-2 text-sm text-muted-foreground">{description}</p>
           </div>
           <div className="rounded-2xl border border-primary/15 bg-primary/10 p-3 text-primary">
@@ -389,7 +485,13 @@ function SummaryMetric({
   );
 }
 
-function EmptySectionState({ title, description }: { title: string; description: string }) {
+function EmptySectionState({
+  title,
+  description,
+}: {
+  title: string;
+  description: string;
+}) {
   return (
     <div className="rounded-2xl border border-dashed border-border/80 bg-muted/20 px-6 py-10 text-center">
       <h3 className="text-sm font-semibold text-foreground">{title}</h3>
@@ -414,7 +516,8 @@ function PaginationControls({
   return (
     <div className="flex flex-col gap-3 border-t border-border/60 pt-4 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
       <div>
-        Page {currentPage} of {Math.max(1, lastPage)} {total ? `- ${total} records` : ""}
+        Page {currentPage} of {Math.max(1, lastPage)}{" "}
+        {total ? `- ${total} records` : ""}
       </div>
       <div className="flex items-center gap-2">
         <Button
@@ -450,12 +553,15 @@ export default function NewUserDetailPage() {
   const [userUuid, setUserUuid] = useState<string>("");
   const [crudUser, setCrudUser] = useState<CrudUserDetails | null>(null);
   const [kycData, setKycData] = useState<KycData | null>(null);
-  const [mt5Summary, setMt5Summary] = useState<AdminUserMt5TabDetailsData | null>(null);
+  const [mt5Summary, setMt5Summary] =
+    useState<AdminUserMt5TabDetailsData | null>(null);
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [profileError, setProfileError] = useState<unknown | null>(null);
   const [profileReloadToken, setProfileReloadToken] = useState(0);
 
-  const [decryptedPassword, setDecryptedPassword] = useState<string | null>(null);
+  const [decryptedPassword, setDecryptedPassword] = useState<string | null>(
+    null,
+  );
   const [showPassword, setShowPassword] = useState(false);
   const [loadingPassword, setLoadingPassword] = useState(false);
   const [sendingWelcomeEmail, setSendingWelcomeEmail] = useState(false);
@@ -463,105 +569,220 @@ export default function NewUserDetailPage() {
   const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
   const [previewImageOpen, setPreviewImageOpen] = useState(false);
 
-  const [depositsState, setDepositsState] = useState(() => createPaginatedState<AdminUserTransactionItem>());
-  const [withdrawalsState, setWithdrawalsState] = useState(() => createPaginatedState<AdminUserTransactionItem>());
-  const [bankDetailsState, setBankDetailsState] = useState(() => createPaginatedState<AdminUserBankDetailItem>());
-  const [activityState, setActivityState] = useState(() => createPaginatedState<AdminUserActivityLogItem>());
+  const [depositsState, setDepositsState] = useState(() =>
+    createPaginatedState<AdminUserTransactionItem>(),
+  );
+  const [withdrawalsState, setWithdrawalsState] = useState(() =>
+    createPaginatedState<AdminUserTransactionItem>(),
+  );
+  const [bankDetailsState, setBankDetailsState] = useState(() =>
+    createPaginatedState<AdminUserBankDetailItem>(),
+  );
+  const [activityState, setActivityState] = useState(() =>
+    createPaginatedState<AdminUserActivityLogItem>(),
+  );
   const [referrer, setReferrer] = useState<AdminUserReferralItem | null>(null);
   const [referralLoading, setReferralLoading] = useState(false);
   const [referralError, setReferralError] = useState<unknown | null>(null);
   const [referralLoaded, setReferralLoaded] = useState(false);
-  const [walletHistoryState, setWalletHistoryState] = useState(() => createPaginatedState<AdminUserWalletHistoryItem>());
-  const [mt5AccountsState, setMt5AccountsState] = useState(() => createCollectionState<AdminUserMt5AccountItem>());
-  const [mt5LiveBalances, setMt5LiveBalances] = useState<Map<string, number | null>>(new Map());
+  const [walletHistoryState, setWalletHistoryState] = useState(() =>
+    createPaginatedState<AdminUserWalletHistoryItem>(),
+  );
+  const [mt5AccountsState, setMt5AccountsState] = useState(() =>
+    createCollectionState<AdminUserMt5AccountItem>(),
+  );
+  const [mt5LiveBalances, setMt5LiveBalances] = useState<
+    Map<string, number | null>
+  >(new Map());
   const [loadingMt5Balances, setLoadingMt5Balances] = useState(false);
 
-  const loadDepositsPage = useCallback(async (page = 1) => {
-    if (!token || !userUuid) return;
-    try {
-      setDepositsState((prev) => ({ ...prev, loading: true, error: null }));
-      const response = await adminUsersApi.deposits(userUuid, token, page, DEFAULT_PAGE_SIZE);
-      const normalized = normalizePaginatedRows(response.data);
-      setDepositsState({
-        rows: normalized.rows,
-        pagination: withFallbackPagination(normalized.pagination, page, normalized.rows.length),
-        loading: false,
-        error: null,
-        loaded: true,
-      });
-    } catch (error) {
-      console.error(`Failed to load deposits for user ${id}:`, error);
-      setDepositsState((prev) => ({ ...prev, loading: false, error, loaded: true }));
-      toast.error(getAdminFriendlyErrorMessage(error, { resource: "user deposits", action: "load" }));
-    }
-  }, [profileReloadToken, token, userUuid, id]);
+  const loadDepositsPage = useCallback(
+    async (page = 1) => {
+      if (!token || !userUuid) return;
+      try {
+        setDepositsState((prev) => ({ ...prev, loading: true, error: null }));
+        const response = await adminUsersApi.deposits(
+          userUuid,
+          token,
+          page,
+          DEFAULT_PAGE_SIZE,
+        );
+        const normalized = normalizePaginatedRows(response.data);
+        setDepositsState({
+          rows: normalized.rows,
+          pagination: withFallbackPagination(
+            normalized.pagination,
+            page,
+            normalized.rows.length,
+          ),
+          loading: false,
+          error: null,
+          loaded: true,
+        });
+      } catch (error) {
+        console.error(`Failed to load deposits for user ${id}:`, error);
+        setDepositsState((prev) => ({
+          ...prev,
+          loading: false,
+          error,
+          loaded: true,
+        }));
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "user deposits",
+            action: "load",
+          }),
+        );
+      }
+    },
+    [profileReloadToken, token, userUuid, id],
+  );
 
-  const loadWithdrawalsPage = useCallback(async (page = 1) => {
-    if (!token || !userUuid) return;
-    try {
-      setWithdrawalsState((prev) => ({ ...prev, loading: true, error: null }));
-      const response = await adminUsersApi.withdrawals(userUuid, token, page, DEFAULT_PAGE_SIZE);
-      const normalized = normalizePaginatedRows(response.data);
-      setWithdrawalsState({
-        rows: normalized.rows,
-        pagination: withFallbackPagination(normalized.pagination, page, normalized.rows.length),
-        loading: false,
-        error: null,
-        loaded: true,
-      });
-    } catch (error) {
-      console.error(`Failed to load withdrawals for user ${id}:`, error);
-      setWithdrawalsState((prev) => ({ ...prev, loading: false, error, loaded: true }));
-      toast.error(getAdminFriendlyErrorMessage(error, { resource: "user withdrawals", action: "load" }));
-    }
-  }, [token, userUuid, id]);
+  const loadWithdrawalsPage = useCallback(
+    async (page = 1) => {
+      if (!token || !userUuid) return;
+      try {
+        setWithdrawalsState((prev) => ({
+          ...prev,
+          loading: true,
+          error: null,
+        }));
+        const response = await adminUsersApi.withdrawals(
+          userUuid,
+          token,
+          page,
+          DEFAULT_PAGE_SIZE,
+        );
+        const normalized = normalizePaginatedRows(response.data);
+        setWithdrawalsState({
+          rows: normalized.rows,
+          pagination: withFallbackPagination(
+            normalized.pagination,
+            page,
+            normalized.rows.length,
+          ),
+          loading: false,
+          error: null,
+          loaded: true,
+        });
+      } catch (error) {
+        console.error(`Failed to load withdrawals for user ${id}:`, error);
+        setWithdrawalsState((prev) => ({
+          ...prev,
+          loading: false,
+          error,
+          loaded: true,
+        }));
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "user withdrawals",
+            action: "load",
+          }),
+        );
+      }
+    },
+    [token, userUuid, id],
+  );
 
-  const loadBankDetailsPage = useCallback(async (page = 1) => {
-    if (!token || !userUuid) return;
-    try {
-      setBankDetailsState((prev) => ({ ...prev, loading: true, error: null }));
-      const response = await adminUsersApi.bankDetails(userUuid, token, page, DEFAULT_PAGE_SIZE);
-      const normalized = normalizePaginatedRows(response.data);
-      setBankDetailsState({
-        rows: normalized.rows,
-        pagination: withFallbackPagination(normalized.pagination, page, normalized.rows.length),
-        loading: false,
-        error: null,
-        loaded: true,
-      });
-    } catch (error) {
-      console.error(`Failed to load bank details for user ${id}:`, error);
-      setBankDetailsState((prev) => ({ ...prev, loading: false, error, loaded: true }));
-      toast.error(getAdminFriendlyErrorMessage(error, { resource: "bank details", action: "load" }));
-    }
-  }, [token, userUuid, id]);
+  const loadBankDetailsPage = useCallback(
+    async (page = 1) => {
+      if (!token || !userUuid) return;
+      try {
+        setBankDetailsState((prev) => ({
+          ...prev,
+          loading: true,
+          error: null,
+        }));
+        const response = await adminUsersApi.bankDetails(
+          userUuid,
+          token,
+          page,
+          DEFAULT_PAGE_SIZE,
+        );
+        const normalized = normalizePaginatedRows(response.data);
+        setBankDetailsState({
+          rows: normalized.rows,
+          pagination: withFallbackPagination(
+            normalized.pagination,
+            page,
+            normalized.rows.length,
+          ),
+          loading: false,
+          error: null,
+          loaded: true,
+        });
+      } catch (error) {
+        console.error(`Failed to load bank details for user ${id}:`, error);
+        setBankDetailsState((prev) => ({
+          ...prev,
+          loading: false,
+          error,
+          loaded: true,
+        }));
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "bank details",
+            action: "load",
+          }),
+        );
+      }
+    },
+    [token, userUuid, id],
+  );
 
-  const loadActivityPage = useCallback(async (page = 1) => {
-    if (!token || !userUuid) return;
-    try {
-      setActivityState((prev) => ({ ...prev, loading: true, error: null }));
-      const response = await adminUsersApi.activityLog(userUuid, token, page, DEFAULT_PAGE_SIZE);
-      const normalized = normalizePaginatedRows(response.data);
-      setActivityState({
-        rows: normalized.rows,
-        pagination: withFallbackPagination(normalized.pagination, page, normalized.rows.length),
-        loading: false,
-        error: null,
-        loaded: true,
-      });
-    } catch (error) {
-      console.error(`Failed to load activity log for user ${id}:`, error);
-      setActivityState((prev) => ({ ...prev, loading: false, error, loaded: true }));
-      toast.error(getAdminFriendlyErrorMessage(error, { resource: "activity log", action: "load" }));
-    }
-  }, [token, userUuid, id]);
+  const loadActivityPage = useCallback(
+    async (page = 1) => {
+      if (!token || !userUuid) return;
+      try {
+        setActivityState((prev) => ({ ...prev, loading: true, error: null }));
+        const response = await adminUsersApi.activityLog(
+          userUuid,
+          token,
+          page,
+          DEFAULT_PAGE_SIZE,
+        );
+        const normalized = normalizePaginatedRows(response.data);
+        setActivityState({
+          rows: normalized.rows,
+          pagination: withFallbackPagination(
+            normalized.pagination,
+            page,
+            normalized.rows.length,
+          ),
+          loading: false,
+          error: null,
+          loaded: true,
+        });
+      } catch (error) {
+        console.error(`Failed to load activity log for user ${id}:`, error);
+        setActivityState((prev) => ({
+          ...prev,
+          loading: false,
+          error,
+          loaded: true,
+        }));
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "activity log",
+            action: "load",
+          }),
+        );
+      }
+    },
+    [token, userUuid, id],
+  );
 
   const loadReferral = useCallback(async () => {
     if (!token || !userUuid) return;
     try {
       setReferralLoading(true);
       setReferralError(null);
-      const response = await adminUsersApi.referralBy(userUuid, token, 1, DEFAULT_PAGE_SIZE);
+      const response = await adminUsersApi.referralBy(
+        userUuid,
+        token,
+        1,
+        DEFAULT_PAGE_SIZE,
+      );
       const data = response?.data as Record<string, unknown> | undefined;
       if (data && typeof data === "object" && !Array.isArray(data)) {
         setReferrer(data as unknown as AdminUserReferralItem);
@@ -571,36 +792,70 @@ export default function NewUserDetailPage() {
     } catch (error) {
       console.error(`Failed to load referral data for user ${id}:`, error);
       setReferralError(error);
-      toast.error(getAdminFriendlyErrorMessage(error, { resource: "referral details", action: "load" }));
+      toast.error(
+        getAdminFriendlyErrorMessage(error, {
+          resource: "referral details",
+          action: "load",
+        }),
+      );
     } finally {
       setReferralLoading(false);
       setReferralLoaded(true);
     }
   }, [token, userUuid, id]);
 
-  const loadWalletHistoryPage = useCallback(async (page = 1) => {
-    if (!token || !userUuid) return;
-    try {
-      setWalletHistoryState((prev) => ({ ...prev, loading: true, error: null }));
-      const response = await adminUsersApi.walletHistory(userUuid, token, page, DEFAULT_PAGE_SIZE);
-      const normalized = normalizePaginatedRows(response.data, response.pagination ?? null);
-      setWalletHistoryState({
-        rows: normalized.rows,
-        pagination: withFallbackPagination(normalized.pagination, page, normalized.rows.length),
-        loading: false,
-        error: null,
-        loaded: true,
-      });
-    } catch (error) {
-      console.error(`Failed to load wallet history for user ${id}:`, error);
-      setWalletHistoryState((prev) => ({ ...prev, loading: false, error, loaded: true }));
-      toast.error(getAdminFriendlyErrorMessage(error, { resource: "wallet history", action: "load" }));
-    }
-  }, [token, userUuid, id]);
+  const loadWalletHistoryPage = useCallback(
+    async (page = 1) => {
+      if (!token || !userUuid) return;
+      try {
+        setWalletHistoryState((prev) => ({
+          ...prev,
+          loading: true,
+          error: null,
+        }));
+        const response = await adminUsersApi.walletHistory(
+          userUuid,
+          token,
+          page,
+          DEFAULT_PAGE_SIZE,
+        );
+        const normalized = normalizePaginatedRows(
+          response.data,
+          response.pagination ?? null,
+        );
+        setWalletHistoryState({
+          rows: normalized.rows,
+          pagination: withFallbackPagination(
+            normalized.pagination,
+            page,
+            normalized.rows.length,
+          ),
+          loading: false,
+          error: null,
+          loaded: true,
+        });
+      } catch (error) {
+        console.error(`Failed to load wallet history for user ${id}:`, error);
+        setWalletHistoryState((prev) => ({
+          ...prev,
+          loading: false,
+          error,
+          loaded: true,
+        }));
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "wallet history",
+            action: "load",
+          }),
+        );
+      }
+    },
+    [token, userUuid, id],
+  );
 
   const handleDecryptPassword = useCallback(async () => {
     if (!token || !id) return;
-    
+
     try {
       setLoadingPassword(true);
       const response = await adminUsersApi.decryptPassword(id, token);
@@ -609,7 +864,12 @@ export default function NewUserDetailPage() {
       toast.success("Password decrypted successfully");
     } catch (error) {
       console.error(`Failed to decrypt password for user ${id}:`, error);
-      toast.error(getAdminFriendlyErrorMessage(error, { resource: "user password", action: "decrypt" }));
+      toast.error(
+        getAdminFriendlyErrorMessage(error, {
+          resource: "user password",
+          action: "decrypt",
+        }),
+      );
     } finally {
       setLoadingPassword(false);
     }
@@ -620,10 +880,17 @@ export default function NewUserDetailPage() {
     try {
       setSendingWelcomeEmail(true);
       const response = await adminUsersApi.resendWelcomeEmail(id, token);
-      toast.success(response.data?.message ?? "Welcome email resent successfully");
+      toast.success(
+        response.data?.message ?? "Welcome email resent successfully",
+      );
     } catch (error) {
       console.error(`Failed to resend welcome email for user ${id}:`, error);
-      toast.error(getAdminFriendlyErrorMessage(error, { resource: "welcome email", action: "resend" }));
+      toast.error(
+        getAdminFriendlyErrorMessage(error, {
+          resource: "welcome email",
+          action: "resend",
+        }),
+      );
     } finally {
       setSendingWelcomeEmail(false);
     }
@@ -676,7 +943,9 @@ export default function NewUserDetailPage() {
 
         if (cancelled) return;
 
-        const crudUserData = extractCrudUserFromDetailPayload(detailResponse?.data);
+        const crudUserData = extractCrudUserFromDetailPayload(
+          detailResponse?.data,
+        );
         if (!crudUserData) {
           throw new Error("User profile payload is empty.");
         }
@@ -685,7 +954,9 @@ export default function NewUserDetailPage() {
         setCrudUser(crudUserData);
 
         try {
-          const detailPayload = detailResponse?.data as Record<string, unknown> | undefined;
+          const detailPayload = detailResponse?.data as
+            | Record<string, unknown>
+            | undefined;
           const kycPayload = detailPayload?.kyc as KycData | undefined;
           if (kycPayload) {
             setKycData(kycPayload);
@@ -695,10 +966,15 @@ export default function NewUserDetailPage() {
         }
 
         try {
-          const mt5Response = await adminUsersApi.mt5TabDetails(resolvedUuid, token);
+          const mt5Response = await adminUsersApi.mt5TabDetails(
+            resolvedUuid,
+            token,
+          );
           if (cancelled) return;
 
-          const normalizedMt5 = normalizeMt5TabDetails(mt5Response.data ?? null);
+          const normalizedMt5 = normalizeMt5TabDetails(
+            mt5Response.data ?? null,
+          );
           setMt5Summary(normalizedMt5);
           setMt5AccountsState({
             rows: normalizedMt5?.mt5Accounts ?? [],
@@ -708,7 +984,10 @@ export default function NewUserDetailPage() {
           });
         } catch (mt5Error) {
           if (cancelled) return;
-          console.error(`Failed to load MT5 tab details for user ${resolvedUuid}:`, mt5Error);
+          console.error(
+            `Failed to load MT5 tab details for user ${resolvedUuid}:`,
+            mt5Error,
+          );
           setMt5Summary(null);
           setMt5AccountsState({
             rows: [],
@@ -721,7 +1000,12 @@ export default function NewUserDetailPage() {
         if (cancelled) return;
         console.error(`Failed to load user profile for ID ${id}:`, error);
         setProfileError(error);
-        toast.error(getAdminFriendlyErrorMessage(error, { resource: "user details", action: "load" }));
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "user details",
+            action: "load",
+          }),
+        );
       } finally {
         if (!cancelled) {
           setLoadingProfile(false);
@@ -808,36 +1092,74 @@ export default function NewUserDetailPage() {
       setLoadingMt5Balances(true);
       const newBalances = new Map<string, number | null>();
 
-      console.log("[MT5 Balance Fetch] Starting to fetch balances for", mt5AccountsState.rows.length, "accounts");
+      console.log(
+        "[MT5 Balance Fetch] Starting to fetch balances for",
+        mt5AccountsState.rows.length,
+        "accounts",
+      );
 
       await Promise.all(
         mt5AccountsState.rows.map(async (account) => {
           const mt5Login = account.mt5_id ?? account.id;
           if (!mt5Login) {
-            console.warn("[MT5 Balance Fetch] Skipping account without mt5_id or id:", account);
+            console.warn(
+              "[MT5 Balance Fetch] Skipping account without mt5_id or id:",
+              account,
+            );
             return;
           }
 
           try {
-            console.log("[MT5 Balance Fetch] Fetching balance for MT5 login:", mt5Login);
-            const response = await mt5AccountsApi.getAdminBalance(mt5Login, token) as unknown as MT5AccountBalance;
-            console.log("[MT5 Balance Fetch] Response for", mt5Login, ":", response);
-            
-            if (response.success && response.balance !== undefined) {
-              newBalances.set(String(mt5Login), response.balance);
-              console.log("[MT5 Balance Fetch] ✓ Stored balance for", mt5Login, ":", response.balance);
+            console.log(
+              "[MT5 Balance Fetch] Fetching equity for MT5 login:",
+              mt5Login,
+            );
+            const response = (await mt5AccountsApi.getAdminBalance(
+              mt5Login,
+              token,
+            )) as unknown as MT5AccountBalance;
+            console.log(
+              "[MT5 Balance Fetch] Response for",
+              mt5Login,
+              ":",
+              response,
+            );
+
+            if (response.success && response.equity !== undefined) {
+              newBalances.set(String(mt5Login), response.equity);
+              console.log(
+                "[MT5 Balance Fetch] ✓ Stored equity for",
+                mt5Login,
+                ":",
+                response.equity,
+              );
             } else {
               newBalances.set(String(mt5Login), null);
-              console.warn("[MT5 Balance Fetch] ✗ Invalid response for", mt5Login, "- success:", response.success, "balance:", response.balance);
+              console.warn(
+                "[MT5 Balance Fetch] ✗ Invalid response for",
+                mt5Login,
+                "- success:",
+                response.success,
+                "equity:",
+                response.equity,
+              );
             }
           } catch (error) {
             newBalances.set(String(mt5Login), null);
-            console.error("[MT5 Balance Fetch] ✗ Failed to fetch balance for", mt5Login, ":", error);
+            console.error(
+              "[MT5 Balance Fetch] ✗ Failed to fetch balance for",
+              mt5Login,
+              ":",
+              error,
+            );
           }
-        })
+        }),
       );
 
-      console.log("[MT5 Balance Fetch] Completed. Total balances fetched:", newBalances.size);
+      console.log(
+        "[MT5 Balance Fetch] Completed. Total balances fetched:",
+        newBalances.size,
+      );
       setMt5LiveBalances(newBalances);
       setLoadingMt5Balances(false);
     };
@@ -866,7 +1188,11 @@ export default function NewUserDetailPage() {
         icon: ShieldCheck,
       },
     ],
-    [mt5Summary?.totalMt5Account, mt5Summary?.totalDeposit, mt5Summary?.totalWithdraw],
+    [
+      mt5Summary?.totalMt5Account,
+      mt5Summary?.totalDeposit,
+      mt5Summary?.totalWithdraw,
+    ],
   );
 
   if (profileError && !crudUser) {
@@ -886,7 +1212,9 @@ export default function NewUserDetailPage() {
               setProfileError(null);
               setProfileReloadToken((value) => value + 1);
             }}
-            title={isManagerPermissionDenied ? "Insufficient permissions" : undefined}
+            title={
+              isManagerPermissionDenied ? "Insufficient permissions" : undefined
+            }
             unauthorizedMessage={
               isManagerPermissionDenied
                 ? "Your manager role does not include access to this user profile. Ask an administrator if you need it."
@@ -922,7 +1250,9 @@ export default function NewUserDetailPage() {
           resource={errorResource}
           action="load"
           onRetry={retry}
-          title={isManagerPermissionDenied ? "Insufficient permissions" : undefined}
+          title={
+            isManagerPermissionDenied ? "Insufficient permissions" : undefined
+          }
           unauthorizedMessage={
             isManagerPermissionDenied
               ? "Your manager role does not include access to this section. Ask an administrator if you need it."
@@ -933,7 +1263,9 @@ export default function NewUserDetailPage() {
     }
 
     if (!state.rows.length) {
-      return <EmptySectionState title={emptyTitle} description={emptyDescription} />;
+      return (
+        <EmptySectionState title={emptyTitle} description={emptyDescription} />
+      );
     }
 
     return content;
@@ -945,16 +1277,23 @@ export default function NewUserDetailPage() {
         <div className="space-y-6 px-4 py-6 md:px-6 lg:px-8">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-2">
-              <Button asChild variant="ghost" className="w-fit px-0 text-muted-foreground hover:bg-transparent hover:text-foreground">
+              <Button
+                asChild
+                variant="ghost"
+                className="w-fit px-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
+              >
                 <Link href="/new-users">
                   <ArrowLeft className="mr-2 h-4 w-4" />
                   Back to New Users
                 </Link>
               </Button>
               <div>
-                <h1 className="text-3xl font-semibold tracking-tight text-foreground">User Profile</h1>
+                <h1 className="text-3xl font-semibold tracking-tight text-foreground">
+                  User Profile
+                </h1>
                 <p className="text-sm text-muted-foreground">
-                  Review profile details, trading accounts, transactions, and operational history.
+                  Review profile details, trading accounts, transactions, and
+                  operational history.
                 </p>
               </div>
             </div>
@@ -978,7 +1317,9 @@ export default function NewUserDetailPage() {
                 onClick={() => setProfileReloadToken((value) => value + 1)}
                 disabled={loadingProfile}
               >
-                <RefreshCw className={`mr-2 h-4 w-4 ${loadingProfile ? "animate-spin" : ""}`} />
+                <RefreshCw
+                  className={`mr-2 h-4 w-4 ${loadingProfile ? "animate-spin" : ""}`}
+                />
                 Refresh
               </Button>
             </div>
@@ -1003,7 +1344,9 @@ export default function NewUserDetailPage() {
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <h2 className="text-3xl font-semibold tracking-tight text-foreground">
-                              {[crudUser?.first_name, crudUser?.last_name].filter(Boolean).join(" ") || "Unknown User"}
+                              {[crudUser?.first_name, crudUser?.last_name]
+                                .filter(Boolean)
+                                .join(" ") || "Unknown User"}
                             </h2>
                             {/* {statusBadge(crudUser?.status, "profile")} */}
                             {/* {normalizeBooleanLabel(crudUser?.is_approved) === "Yes" ? (
@@ -1027,7 +1370,9 @@ export default function NewUserDetailPage() {
                             </span>
                             <span className="inline-flex items-center gap-2">
                               <MapPin className="h-4 w-4" />
-                              {[crudUser?.city, crudUser?.state].filter(Boolean).join(", ") || "Location not shared"}
+                              {[crudUser?.city, crudUser?.state]
+                                .filter(Boolean)
+                                .join(", ") || "Location not shared"}
                             </span>
                           </div>
                         </div>
@@ -1038,7 +1383,10 @@ export default function NewUserDetailPage() {
                           label={crudUser?.sponsor_id ? "Partner ID" : "Type"}
                           value={crudUser?.sponsor_id ?? "Client"}
                         />
-                        <DetailItem label="Registered" value={formatDateTime(crudUser?.created_at)} />
+                        <DetailItem
+                          label="Registered"
+                          value={formatDateTime(crudUser?.created_at)}
+                        />
                         <div className="rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm sm:col-span-2">
                           <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                             Password
@@ -1047,7 +1395,9 @@ export default function NewUserDetailPage() {
                             {decryptedPassword ? (
                               <>
                                 <div className="flex-1 text-sm font-medium text-foreground">
-                                  {showPassword ? decryptedPassword : "••••••••"}
+                                  {showPassword
+                                    ? decryptedPassword
+                                    : "••••••••"}
                                 </div>
                                 <Button
                                   type="button"
@@ -1055,7 +1405,11 @@ export default function NewUserDetailPage() {
                                   size="sm"
                                   onClick={() => setShowPassword(!showPassword)}
                                   className="h-8 w-8 p-0"
-                                  title={showPassword ? "Hide password" : "Show password"}
+                                  title={
+                                    showPassword
+                                      ? "Hide password"
+                                      : "Show password"
+                                  }
                                 >
                                   {showPassword ? (
                                     <EyeOff className="h-4 w-4" />
@@ -1068,8 +1422,12 @@ export default function NewUserDetailPage() {
                                   variant="ghost"
                                   size="sm"
                                   onClick={() => {
-                                    navigator.clipboard.writeText(decryptedPassword);
-                                    toast.success("Password copied to clipboard");
+                                    navigator.clipboard.writeText(
+                                      decryptedPassword,
+                                    );
+                                    toast.success(
+                                      "Password copied to clipboard",
+                                    );
                                   }}
                                   className="h-8 w-8 p-0"
                                   title="Copy password"
@@ -1106,13 +1464,17 @@ export default function NewUserDetailPage() {
 
                     <Card className="border-border/70 bg-background/80 shadow-none">
                       <CardHeader className="pb-3">
-                        <CardTitle className="text-base">Account Status</CardTitle>
+                        <CardTitle className="text-base">
+                          Account Status
+                        </CardTitle>
                         {/* <CardDescription>Approval state recorded in CRM</CardDescription> */}
                       </CardHeader>
                       <CardContent className="grid gap-3 text-sm">
                         <div className="flex items-center justify-between gap-3">
                           <span className="text-muted-foreground">Status</span>
-                          <span className="font-medium">{statusBadge(crudUser?.status, "profile")}</span>
+                          <span className="font-medium">
+                            {statusBadge(crudUser?.status, "profile")}
+                          </span>
                         </div>
                         {/* <div className="flex items-center justify-between gap-3">
                           <span className="text-muted-foreground">Is Approved</span>
@@ -1128,7 +1490,9 @@ export default function NewUserDetailPage() {
                         </div> */}
                         {crudUser?.rejection_reason ? (
                           <div className="flex items-start justify-between gap-3">
-                            <span className="text-muted-foreground">Rejection</span>
+                            <span className="text-muted-foreground">
+                              Rejection
+                            </span>
                             <span className="max-w-[180px] text-right font-medium text-rose-600 dark:text-rose-400">
                               {crudUser.rejection_reason}
                             </span>
@@ -1138,26 +1502,39 @@ export default function NewUserDetailPage() {
                           <>
                             <div className="my-1 border-t border-border/40" />
                             <div className="flex items-center justify-between gap-3">
-                              <span className="text-muted-foreground">KYC Status</span>
-                              <span className="font-medium capitalize">{kycData.kyc_status}</span>
+                              <span className="text-muted-foreground">
+                                KYC Status
+                              </span>
+                              <span className="font-medium capitalize">
+                                {kycData.kyc_status}
+                              </span>
                             </div>
                             <div className="flex items-center justify-between gap-3">
-                              <span className="text-muted-foreground">Verification</span>
-                              <span className="font-medium capitalize">{kycData.verification_status}</span>
+                              <span className="text-muted-foreground">
+                                Verification
+                              </span>
+                              <span className="font-medium capitalize">
+                                {kycData.verification_status}
+                              </span>
                             </div>
                             {kycData.document_urls && (
                               <div className="my-1 border-t border-border/40" />
                             )}
                             {kycData.document_urls?.poi_front_file && (
                               <div className="flex items-center justify-between gap-3">
-                                <span className="text-muted-foreground">POI (Front)</span>
+                                <span className="text-muted-foreground">
+                                  POI (Front)
+                                </span>
                                 <div className="flex items-center gap-2">
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => {
-                                      setPreviewImageUrl(kycData.document_urls?.poi_front_file ?? null);
+                                      setPreviewImageUrl(
+                                        kycData.document_urls?.poi_front_file ??
+                                          null,
+                                      );
                                       setPreviewImageOpen(true);
                                     }}
                                     className="h-8 w-8 p-0"
@@ -1165,7 +1542,11 @@ export default function NewUserDetailPage() {
                                   >
                                     <ZoomIn className="h-4 w-4" />
                                   </Button>
-                                  <a href={kycData.document_urls.poi_front_file} target="_blank" rel="noopener noreferrer">
+                                  <a
+                                    href={kycData.document_urls.poi_front_file}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
                                     <AuthenticatedImage
                                       src={kycData.document_urls.poi_front_file}
                                       alt="POI Front"
@@ -1177,14 +1558,19 @@ export default function NewUserDetailPage() {
                             )}
                             {kycData.document_urls?.poa_front_file && (
                               <div className="flex items-center justify-between gap-3">
-                                <span className="text-muted-foreground">POA (Front)</span>
+                                <span className="text-muted-foreground">
+                                  POA (Front)
+                                </span>
                                 <div className="flex items-center gap-2">
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => {
-                                      setPreviewImageUrl(kycData.document_urls?.poa_front_file ?? null);
+                                      setPreviewImageUrl(
+                                        kycData.document_urls?.poa_front_file ??
+                                          null,
+                                      );
                                       setPreviewImageOpen(true);
                                     }}
                                     className="h-8 w-8 p-0"
@@ -1192,7 +1578,11 @@ export default function NewUserDetailPage() {
                                   >
                                     <ZoomIn className="h-4 w-4" />
                                   </Button>
-                                  <a href={kycData.document_urls.poa_front_file} target="_blank" rel="noopener noreferrer">
+                                  <a
+                                    href={kycData.document_urls.poa_front_file}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
                                     <AuthenticatedImage
                                       src={kycData.document_urls.poa_front_file}
                                       alt="POA Front"
@@ -1204,14 +1594,19 @@ export default function NewUserDetailPage() {
                             )}
                             {kycData.document_urls?.poa_back_file && (
                               <div className="flex items-center justify-between gap-3">
-                                <span className="text-muted-foreground">POA (Back)</span>
+                                <span className="text-muted-foreground">
+                                  POA (Back)
+                                </span>
                                 <div className="flex items-center gap-2">
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => {
-                                      setPreviewImageUrl(kycData.document_urls?.poa_back_file ?? null);
+                                      setPreviewImageUrl(
+                                        kycData.document_urls?.poa_back_file ??
+                                          null,
+                                      );
                                       setPreviewImageOpen(true);
                                     }}
                                     className="h-8 w-8 p-0"
@@ -1219,7 +1614,11 @@ export default function NewUserDetailPage() {
                                   >
                                     <ZoomIn className="h-4 w-4" />
                                   </Button>
-                                  <a href={kycData.document_urls.poa_back_file} target="_blank" rel="noopener noreferrer">
+                                  <a
+                                    href={kycData.document_urls.poa_back_file}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
                                     <AuthenticatedImage
                                       src={kycData.document_urls.poa_back_file}
                                       alt="POA Back"
@@ -1231,14 +1630,19 @@ export default function NewUserDetailPage() {
                             )}
                             {kycData.document_urls?.other_file && (
                               <div className="flex items-center justify-between gap-3">
-                                <span className="text-muted-foreground">Other</span>
+                                <span className="text-muted-foreground">
+                                  Other
+                                </span>
                                 <div className="flex items-center gap-2">
                                   <Button
                                     type="button"
                                     variant="ghost"
                                     size="sm"
                                     onClick={() => {
-                                      setPreviewImageUrl(kycData.document_urls?.other_file ?? null);
+                                      setPreviewImageUrl(
+                                        kycData.document_urls?.other_file ??
+                                          null,
+                                      );
                                       setPreviewImageOpen(true);
                                     }}
                                     className="h-8 w-8 p-0"
@@ -1246,7 +1650,11 @@ export default function NewUserDetailPage() {
                                   >
                                     <ZoomIn className="h-4 w-4" />
                                   </Button>
-                                  <a href={kycData.document_urls.other_file} target="_blank" rel="noopener noreferrer">
+                                  <a
+                                    href={kycData.document_urls.other_file}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                  >
                                     <AuthenticatedImage
                                       src={kycData.document_urls.other_file}
                                       alt="Other Document"
@@ -1273,12 +1681,14 @@ export default function NewUserDetailPage() {
                   action="load"
                   onRetry={() => setProfileReloadToken((value) => value + 1)}
                   title={
-                    user?.type === "manager" && getErrorHttpStatus(mt5AccountsState.error) === 401
+                    user?.type === "manager" &&
+                    getErrorHttpStatus(mt5AccountsState.error) === 401
                       ? "Insufficient permissions"
                       : undefined
                   }
                   unauthorizedMessage={
-                    user?.type === "manager" && getErrorHttpStatus(mt5AccountsState.error) === 401
+                    user?.type === "manager" &&
+                    getErrorHttpStatus(mt5AccountsState.error) === 401
                       ? "Your manager role does not include access to MT5 totals for this user. Ask an administrator if you need it."
                       : undefined
                   }
@@ -1300,27 +1710,71 @@ export default function NewUserDetailPage() {
               <Card className="border-border/70 shadow-sm">
                 <CardHeader className="space-y-4">
                   <div className="space-y-1">
-                    <CardTitle className="text-xl">Operational History</CardTitle>
+                    <CardTitle className="text-xl">
+                      Operational History
+                    </CardTitle>
                     <CardDescription>
-                      Navigate between funding, banking, MT5, referral, and activity records for this user.
+                      Navigate between funding, banking, MT5, referral, and
+                      activity records for this user.
                     </CardDescription>
                   </div>
-                  <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as TabKey)} className="space-y-5">
+                  <Tabs
+                    value={activeTab}
+                    onValueChange={(value) => setActiveTab(value as TabKey)}
+                    className="space-y-5"
+                  >
                     <TabsList className="ib-portal-surface inline-flex h-auto w-full flex-wrap gap-1 rounded-2xl border p-1.5">
-                      <TabsTrigger value="deposits" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">Deposits</TabsTrigger>
-                      <TabsTrigger value="withdrawals" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">Withdrawals</TabsTrigger>
-                      <TabsTrigger value="mt5Accounts" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">MT5 Accounts</TabsTrigger>
-                      <TabsTrigger value="bankDetails" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">Bank Details</TabsTrigger>
-                      <TabsTrigger value="activityLog" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">Login Activity</TabsTrigger>
-                      <TabsTrigger value="referralBy" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">Referral By</TabsTrigger>
-                      <TabsTrigger value="walletHistory" className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20">Wallet History</TabsTrigger>
+                      <TabsTrigger
+                        value="deposits"
+                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20"
+                      >
+                        Deposits
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="withdrawals"
+                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20"
+                      >
+                        Withdrawals
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="mt5Accounts"
+                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20"
+                      >
+                        MT5 Accounts
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="bankDetails"
+                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20"
+                      >
+                        Bank Details
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="activityLog"
+                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20"
+                      >
+                        Login Activity
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="referralBy"
+                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20"
+                      >
+                        Referral By
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="walletHistory"
+                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20"
+                      >
+                        Wallet History
+                      </TabsTrigger>
                     </TabsList>
 
                     <TabsContent value="deposits" className="space-y-4">
                       {renderSectionState(
                         depositsState,
                         () => {
-                          void loadDepositsPage(depositsState.pagination?.current_page ?? 1);
+                          void loadDepositsPage(
+                            depositsState.pagination?.current_page ?? 1,
+                          );
                         },
                         "No deposits found",
                         "This user does not have any deposit records yet.",
@@ -1341,13 +1795,28 @@ export default function NewUserDetailPage() {
                               {depositsState.rows.map((item, index) => (
                                 <TableRow key={item.id}>
                                   <TableCell className="font-medium">
-                                    <SerialNumberCell serialNumber={getPaginatedSerialNumber(index, walletHistoryState.pagination)} />
+                                    <SerialNumberCell
+                                      serialNumber={getPaginatedSerialNumber(
+                                        index,
+                                        walletHistoryState.pagination,
+                                      )}
+                                    />
                                   </TableCell>
-                                  <TableCell>{formatNumericValue(item.amount)}</TableCell>
-                                  <TableCell className="max-w-[200px] truncate">{item.transaction_hash || "-"}</TableCell>
-                                  <TableCell className="max-w-[220px] truncate">{item.deposit_type || "-"}</TableCell>
-                                  <TableCell>{statusBadge(item.status, "transaction")}</TableCell>
-                                  <TableCell>{formatDateTime(item.created_at)}</TableCell>
+                                  <TableCell>
+                                    {formatNumericValue(item.amount)}
+                                  </TableCell>
+                                  <TableCell className="max-w-[200px] truncate">
+                                    {item.transaction_hash || "-"}
+                                  </TableCell>
+                                  <TableCell className="max-w-[220px] truncate">
+                                    {item.deposit_type || "-"}
+                                  </TableCell>
+                                  <TableCell>
+                                    {statusBadge(item.status, "transaction")}
+                                  </TableCell>
+                                  <TableCell>
+                                    {formatDateTime(item.created_at)}
+                                  </TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>
@@ -1367,7 +1836,9 @@ export default function NewUserDetailPage() {
                       {renderSectionState(
                         withdrawalsState,
                         () => {
-                          void loadWithdrawalsPage(withdrawalsState.pagination?.current_page ?? 1);
+                          void loadWithdrawalsPage(
+                            withdrawalsState.pagination?.current_page ?? 1,
+                          );
                         },
                         "No withdrawals found",
                         "This user does not have any withdrawal records yet.",
@@ -1388,40 +1859,97 @@ export default function NewUserDetailPage() {
                             <TableBody>
                               {withdrawalsState.rows.map((item, index) => {
                                 const raw = item as Record<string, unknown>;
-                                const isCrypto = item.payment_method?.type === "local";
-                                const isBank = item.payment_method?.type === "bank_transfer";
+                                const isCrypto =
+                                  item.payment_method?.type === "local";
+                                const isBank =
+                                  item.payment_method?.type === "bank_transfer";
                                 return (
                                   <TableRow key={item.id}>
                                     <TableCell className="font-medium">
-                                      <SerialNumberCell serialNumber={index + 1} />
+                                      <SerialNumberCell
+                                        serialNumber={index + 1}
+                                      />
                                     </TableCell>
-                                    <TableCell>{formatNumericValue(item.amount)}</TableCell>
-                                    <TableCell>{item.payment_method?.name || "-"}</TableCell>
+                                    <TableCell>
+                                      {formatNumericValue(item.amount)}
+                                    </TableCell>
+                                    <TableCell>
+                                      {item.payment_method?.name || "-"}
+                                    </TableCell>
                                     <TableCell className="max-w-[220px] whitespace-normal text-xs">
                                       {isCrypto ? (
                                         <div className="space-y-0.5">
-                                          <div className="break-all"><span className="text-muted-foreground">Wallet: </span>{String(raw.wallet_address ?? "-")}</div>
-                                          <div><span className="text-muted-foreground">Chain: </span>{String(raw.chain_id ?? "-")}</div>
+                                          <div className="break-all">
+                                            <span className="text-muted-foreground">
+                                              Wallet:{" "}
+                                            </span>
+                                            {String(raw.wallet_address ?? "-")}
+                                          </div>
+                                          <div>
+                                            <span className="text-muted-foreground">
+                                              Chain:{" "}
+                                            </span>
+                                            {String(raw.chain_id ?? "-")}
+                                          </div>
                                         </div>
                                       ) : isBank ? (
                                         (() => {
-                                          const bd = raw.bank_detail as Record<string, unknown> | null | undefined;
+                                          const bd = raw.bank_detail as
+                                            | Record<string, unknown>
+                                            | null
+                                            | undefined;
                                           return bd ? (
                                             <div className="space-y-0.5">
-                                              <div><span className="text-muted-foreground">Bank: </span>{String(bd.bank_name ?? "-")}</div>
-                                              <div><span className="text-muted-foreground">Holder: </span>{String(bd.account_holder_name ?? "-")}</div>
-                                              <div><span className="text-muted-foreground">A/c: </span>{String(bd.account_number ?? "-")}</div>
-                                              <div><span className="text-muted-foreground">IFSC: </span>{String(bd.swift_ifsc_code ?? bd.iban_number ?? "-")}</div>
+                                              <div>
+                                                <span className="text-muted-foreground">
+                                                  Bank:{" "}
+                                                </span>
+                                                {String(bd.bank_name ?? "-")}
+                                              </div>
+                                              <div>
+                                                <span className="text-muted-foreground">
+                                                  Holder:{" "}
+                                                </span>
+                                                {String(
+                                                  bd.account_holder_name ?? "-",
+                                                )}
+                                              </div>
+                                              <div>
+                                                <span className="text-muted-foreground">
+                                                  A/c:{" "}
+                                                </span>
+                                                {String(
+                                                  bd.account_number ?? "-",
+                                                )}
+                                              </div>
+                                              <div>
+                                                <span className="text-muted-foreground">
+                                                  IFSC:{" "}
+                                                </span>
+                                                {String(
+                                                  bd.swift_ifsc_code ??
+                                                    bd.iban_number ??
+                                                    "-",
+                                                )}
+                                              </div>
                                             </div>
-                                          ) : "-";
+                                          ) : (
+                                            "-"
+                                          );
                                         })()
                                       ) : (
                                         "-"
                                       )}
                                     </TableCell>
-                                    <TableCell className="max-w-[220px] truncate">{item.user_comment || "-"}</TableCell>
-                                    <TableCell>{statusBadge(item.status, "transaction")}</TableCell>
-                                    <TableCell>{formatDateTime(item.created_at)}</TableCell>
+                                    <TableCell className="max-w-[220px] truncate">
+                                      {item.user_comment || "-"}
+                                    </TableCell>
+                                    <TableCell>
+                                      {statusBadge(item.status, "transaction")}
+                                    </TableCell>
+                                    <TableCell>
+                                      {formatDateTime(item.created_at)}
+                                    </TableCell>
                                   </TableRow>
                                 );
                               })}
@@ -1449,9 +1977,24 @@ export default function NewUserDetailPage() {
                         "MT5 accounts",
                         <div className="space-y-4">
                           <div className="grid gap-3 md:grid-cols-3">
-                            <DetailItem label="Total Deposit" value={formatNumericValue(mt5Summary?.totalDeposit ?? 0)} />
-                            <DetailItem label="Total Withdraw" value={formatNumericValue(mt5Summary?.totalWithdraw ?? 0)} />
-                            <DetailItem label="Accounts" value={formatNumericValue(mt5Summary?.totalMt5Account ?? 0)} />
+                            <DetailItem
+                              label="Total Deposit"
+                              value={formatNumericValue(
+                                mt5Summary?.totalDeposit ?? 0,
+                              )}
+                            />
+                            <DetailItem
+                              label="Total Withdraw"
+                              value={formatNumericValue(
+                                mt5Summary?.totalWithdraw ?? 0,
+                              )}
+                            />
+                            <DetailItem
+                              label="Accounts"
+                              value={formatNumericValue(
+                                mt5Summary?.totalMt5Account ?? 0,
+                              )}
+                            />
                           </div>
                           <Table>
                             <TableHeader>
@@ -1468,30 +2011,44 @@ export default function NewUserDetailPage() {
                             <TableBody>
                               {mt5AccountsState.rows.map((item, index) => {
                                 const mt5Login = String(item.mt5_id ?? item.id);
-                                const liveBalance = mt5LiveBalances.get(mt5Login);
-                                
+                                const liveBalance =
+                                  mt5LiveBalances.get(mt5Login);
+
                                 // Determine what to display
                                 let displayContent: string;
                                 if (loadingMt5Balances) {
                                   // Still loading
                                   displayContent = "loading";
-                                } else if (liveBalance === null && mt5LiveBalances.has(mt5Login)) {
+                                } else if (
+                                  liveBalance === null &&
+                                  mt5LiveBalances.has(mt5Login)
+                                ) {
                                   // API failed for this account (explicitly set to null)
                                   displayContent = "-";
                                 } else {
                                   // Show balance (either live or cached fallback)
-                                  const displayBalance = getMt5DisplayBalance(item, liveBalance);
-                                  displayContent = formatValueWithCurrency(displayBalance, getUserMt5BalanceCurrency(item));
+                                  const displayBalance = getMt5DisplayBalance(
+                                    item,
+                                    liveBalance,
+                                  );
+                                  displayContent = formatValueWithCurrency(
+                                    displayBalance,
+                                    getUserMt5BalanceCurrency(item),
+                                  );
                                 }
-                                
+
                                 return (
                                   <TableRow key={item.id}>
                                     <TableCell className="font-medium">
-                                      <SerialNumberCell serialNumber={index + 1} />
+                                      <SerialNumberCell
+                                        serialNumber={index + 1}
+                                      />
                                     </TableCell>
-                                    
+
                                     <TableCell>{item.mt5_id || "-"}</TableCell>
-                                    <TableCell className="max-w-[220px] truncate">{item.account_type_name || "-"}</TableCell>
+                                    <TableCell className="max-w-[220px] truncate">
+                                      {item.account_type_name || "-"}
+                                    </TableCell>
                                     <TableCell className="font-mono text-xs">
                                       {displayContent === "loading" ? (
                                         <span className="flex items-center gap-2">
@@ -1504,7 +2061,9 @@ export default function NewUserDetailPage() {
                                     </TableCell>
                                     {/* <TableCell className="font-mono text-xs">{item.investor_password || "-"}</TableCell>
                                     <TableCell className="font-mono text-xs">{item.main_password || "-"}</TableCell> */}
-                                    <TableCell>{formatDateTime(item.date)}</TableCell>
+                                    <TableCell>
+                                      {formatDateTime(item.date)}
+                                    </TableCell>
                                   </TableRow>
                                 );
                               })}
@@ -1518,7 +2077,9 @@ export default function NewUserDetailPage() {
                       {renderSectionState(
                         bankDetailsState,
                         () => {
-                          void loadBankDetailsPage(bankDetailsState.pagination?.current_page ?? 1);
+                          void loadBankDetailsPage(
+                            bankDetailsState.pagination?.current_page ?? 1,
+                          );
                         },
                         "No bank details found",
                         "The user has not added any withdrawal bank accounts yet.",
@@ -1539,17 +2100,33 @@ export default function NewUserDetailPage() {
                             <TableBody>
                               {bankDetailsState.rows.map((item) => (
                                 <TableRow key={item.id}>
-                                  <TableCell className="font-medium">{item.account_holder_name || "-"}</TableCell>
+                                  <TableCell className="font-medium">
+                                    {item.account_holder_name || "-"}
+                                  </TableCell>
                                   <TableCell>{item.bank_name || "-"}</TableCell>
-                                  <TableCell>{item.account_number || "-"}</TableCell>
-                                  <TableCell>{item.iban_number || item.swift_ifsc_code || "-"}</TableCell>
+                                  <TableCell>
+                                    {item.account_number || "-"}
+                                  </TableCell>
+                                  <TableCell>
+                                    {item.iban_number ||
+                                      item.swift_ifsc_code ||
+                                      "-"}
+                                  </TableCell>
                                   <TableCell>{item.country || "-"}</TableCell>
                                   <TableCell className="max-w-[220px] whitespace-normal">
                                     <div>{item.user?.email || "-"}</div>
-                                    <div className="text-xs text-muted-foreground">{item.user?.mobile || "-"}</div>
+                                    <div className="text-xs text-muted-foreground">
+                                      {item.user?.mobile || "-"}
+                                    </div>
                                   </TableCell>
                                   <TableCell>
-                                    <Badge variant={item.status === "active" ? "default" : "secondary"}>
+                                    <Badge
+                                      variant={
+                                        item.status === "active"
+                                          ? "default"
+                                          : "secondary"
+                                      }
+                                    >
                                       {item.status || "-"}
                                     </Badge>
                                   </TableCell>
@@ -1572,7 +2149,9 @@ export default function NewUserDetailPage() {
                       {renderSectionState(
                         activityState,
                         () => {
-                          void loadActivityPage(activityState.pagination?.current_page ?? 1);
+                          void loadActivityPage(
+                            activityState.pagination?.current_page ?? 1,
+                          );
                         },
                         "No activity found",
                         "No login activity has been recorded for this user yet.",
@@ -1592,16 +2171,33 @@ export default function NewUserDetailPage() {
                             </TableHeader>
                             <TableBody>
                               {activityState.rows.map((item, index) => (
-                                <TableRow key={`${item.ip_address ?? "activity"}-${item.created_at ?? index}`}>
+                                <TableRow
+                                  key={`${item.ip_address ?? "activity"}-${item.created_at ?? index}`}
+                                >
                                   <TableCell>
-                                    <SerialNumberCell serialNumber={index + 1} className="" />
+                                    <SerialNumberCell
+                                      serialNumber={index + 1}
+                                      className=""
+                                    />
                                   </TableCell>
-                                  <TableCell>{formatDateTime(item.created_at)}</TableCell>
-                                  <TableCell>{item.ip_address || "-"}</TableCell>
-                                  <TableCell>{[item.browser_name, item.browser_version].filter(Boolean).join(" ") || "-"}</TableCell>
-                                  <TableCell>{item.device_name || "-"}</TableCell>
+                                  <TableCell>
+                                    {formatDateTime(item.created_at)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {item.ip_address || "-"}
+                                  </TableCell>
+                                  <TableCell>
+                                    {[item.browser_name, item.browser_version]
+                                      .filter(Boolean)
+                                      .join(" ") || "-"}
+                                  </TableCell>
+                                  <TableCell>
+                                    {item.device_name || "-"}
+                                  </TableCell>
                                   <TableCell>{item.os_name || "-"}</TableCell>
-                                  <TableCell>{statusBadge(item.status, "activity")}</TableCell>
+                                  <TableCell>
+                                    {statusBadge(item.status, "activity")}
+                                  </TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>
@@ -1629,12 +2225,14 @@ export default function NewUserDetailPage() {
                           action="load"
                           onRetry={() => void loadReferral()}
                           title={
-                            user?.type === "manager" && getErrorHttpStatus(referralError) === 401
+                            user?.type === "manager" &&
+                            getErrorHttpStatus(referralError) === 401
                               ? "Insufficient permissions"
                               : undefined
                           }
                           unauthorizedMessage={
-                            user?.type === "manager" && getErrorHttpStatus(referralError) === 401
+                            user?.type === "manager" &&
+                            getErrorHttpStatus(referralError) === 401
                               ? "Your manager role does not include access to referral details. Ask an administrator if you need it."
                               : undefined
                           }
@@ -1649,8 +2247,19 @@ export default function NewUserDetailPage() {
                           <DetailItem label="Name" value={referrer.name} />
                           <DetailItem label="Email" value={referrer.email} />
                           <DetailItem label="Mobile" value={referrer.mobile} />
-                          <DetailItem label="IB ID" value={String((referrer as Record<string, unknown>).sponsor_id ?? referrer.referral_code ?? "-")} />
-                          <DetailItem label="Since" value={formatDateTime(referrer.created_at)} />
+                          <DetailItem
+                            label="IB ID"
+                            value={String(
+                              (referrer as Record<string, unknown>)
+                                .sponsor_id ??
+                                referrer.referral_code ??
+                                "-",
+                            )}
+                          />
+                          <DetailItem
+                            label="Since"
+                            value={formatDateTime(referrer.created_at)}
+                          />
                         </div>
                       )}
                     </TabsContent>
@@ -1659,7 +2268,9 @@ export default function NewUserDetailPage() {
                       {renderSectionState(
                         walletHistoryState,
                         () => {
-                          void loadWalletHistoryPage(walletHistoryState.pagination?.current_page ?? 1);
+                          void loadWalletHistoryPage(
+                            walletHistoryState.pagination?.current_page ?? 1,
+                          );
                         },
                         "No wallet history found",
                         "There are no wallet balance mutations recorded for this user yet.",
@@ -1683,21 +2294,60 @@ export default function NewUserDetailPage() {
                               {walletHistoryState.rows.map((item, index) => (
                                 <TableRow key={item.id}>
                                   <TableCell className="font-medium">
-                                   <SerialNumberCell serialNumber={getPaginatedSerialNumber(index, walletHistoryState.pagination)} />
+                                    <SerialNumberCell
+                                      serialNumber={getPaginatedSerialNumber(
+                                        index,
+                                        walletHistoryState.pagination,
+                                      )}
+                                    />
                                   </TableCell>
-                                  <TableCell className="font-medium">{item.payment_type || "-"}</TableCell>
-                                  <TableCell className={["withdrawal", "transfer_out"].includes(String(item.payment_type ?? "").toLowerCase()) || Number(item.amount ?? 0) < 0 ? "text-rose-600" : "text-emerald-700 dark:text-emerald-300"}>
+                                  <TableCell className="font-medium">
+                                    {item.payment_type || "-"}
+                                  </TableCell>
+                                  <TableCell
+                                    className={
+                                      ["withdrawal", "transfer_out"].includes(
+                                        String(
+                                          item.payment_type ?? "",
+                                        ).toLowerCase(),
+                                      ) || Number(item.amount ?? 0) < 0
+                                        ? "text-rose-600"
+                                        : "text-emerald-700 dark:text-emerald-300"
+                                    }
+                                  >
                                     {[
-                                      formatSignedValue(["withdrawal", "transfer_out"].includes(String(item.payment_type ?? "").toLowerCase()) ? -Math.abs(Number(item.amount ?? 0)) : item.amount),
+                                      formatSignedValue(
+                                        ["withdrawal", "transfer_out"].includes(
+                                          String(
+                                            item.payment_type ?? "",
+                                          ).toLowerCase(),
+                                        )
+                                          ? -Math.abs(Number(item.amount ?? 0))
+                                          : item.amount,
+                                      ),
                                       item.currency,
-                                    ].filter(Boolean).join(" ")}
+                                    ]
+                                      .filter(Boolean)
+                                      .join(" ")}
                                   </TableCell>
-                                  <TableCell>{item.wallet_type || "-"}</TableCell>
-                                  <TableCell>{formatNumericValue(item.balance_before)}</TableCell>
-                                  <TableCell>{formatNumericValue(item.balance_after)}</TableCell>
-                                  <TableCell>{statusBadge(item.status, "wallet")}</TableCell>
-                                  <TableCell className="max-w-[260px] truncate">{item.remark || "-"}</TableCell>
-                                  <TableCell>{formatDateTime(item.created_at)}</TableCell>
+                                  <TableCell>
+                                    {item.wallet_type || "-"}
+                                  </TableCell>
+                                  <TableCell>
+                                    {formatNumericValue(item.balance_before)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {formatNumericValue(item.balance_after)}
+                                  </TableCell>
+                                  <TableCell>
+                                    {statusBadge(item.status, "wallet")}
+                                  </TableCell>
+                                  <TableCell className="max-w-[260px] truncate">
+                                    {item.remark || "-"}
+                                  </TableCell>
+                                  <TableCell>
+                                    {formatDateTime(item.created_at)}
+                                  </TableCell>
                                 </TableRow>
                               ))}
                             </TableBody>

@@ -3,7 +3,17 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
-import { Calendar, CreditCard, Eye, Pencil, RefreshCw, Server, Trash2, User, Wallet } from "lucide-react";
+import {
+  Calendar,
+  CreditCard,
+  Eye,
+  Pencil,
+  RefreshCw,
+  Server,
+  Trash2,
+  User,
+  Wallet,
+} from "lucide-react";
 
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
@@ -49,15 +59,26 @@ const deriveUserEmail = (account: AdminMT5Account) => {
 };
 
 const deriveAccountType = (account: AdminMT5Account) => {
-  return account.accountType?.name ?? account.AdminMT5AccountType?.name ?? account.account_type ?? emptyValue;
+  return (
+    account.accountType?.name ??
+    account.AdminMT5AccountType?.name ??
+    account.account_type ??
+    emptyValue
+  );
 };
 
-const isCentAccount = (account: AdminMT5Account) => deriveAccountType(account).trim().toLowerCase() === "cent";
+const isCentAccount = (account: AdminMT5Account) =>
+  deriveAccountType(account).trim().toLowerCase() === "cent";
 
-const getMt5BalanceCurrency = (account: AdminMT5Account) => (isCentAccount(account) ? "USC" : "USD");
+const getMt5BalanceCurrency = (account: AdminMT5Account) =>
+  isCentAccount(account) ? "USC" : "USD";
 
-const getMt5DisplayBalance = (account: AdminMT5Account, rawBalance: number | null | undefined) => {
-  const balance = typeof rawBalance === "number" ? rawBalance : Number(rawBalance ?? 0);
+const getMt5DisplayBalance = (
+  account: AdminMT5Account,
+  rawBalance: number | null | undefined,
+) => {
+  const balance =
+    typeof rawBalance === "number" ? rawBalance : Number(rawBalance ?? 0);
   if (!Number.isFinite(balance)) return 0;
   // Balance API already returns correct value (USC for CENT, USD for standard)
   return balance;
@@ -77,11 +98,14 @@ function BalanceButton({ account }: { account: AdminMT5Account }) {
 
     setIsLoading(true);
     setHasError(false);
-    
+
     try {
-      const response = await mt5AccountsApi.getAdminBalance(mt5Login, token) as unknown as MT5AccountBalance;
-      if (response.success && response.balance !== undefined) {
-        setLiveBalance(response.balance);
+      const response = (await mt5AccountsApi.getAdminBalance(
+        mt5Login,
+        token,
+      )) as unknown as MT5AccountBalance;
+      if (response.success && response.equity !== undefined) {
+        setLiveBalance(response.equity);
       } else {
         setHasError(true);
       }
@@ -98,7 +122,9 @@ function BalanceButton({ account }: { account: AdminMT5Account }) {
     return (
       <div className="flex items-center gap-2">
         <Wallet className="h-4 w-4 text-muted-foreground" />
-        <span className="font-medium">{displayBalance.toFixed(2)} {getMt5BalanceCurrency(account)}</span>
+        <span className="font-medium">
+          {displayBalance.toFixed(2)} {getMt5BalanceCurrency(account)}
+        </span>
         <Button
           variant="ghost"
           size="icon"
@@ -106,7 +132,7 @@ function BalanceButton({ account }: { account: AdminMT5Account }) {
           onClick={fetchBalance}
           disabled={isLoading}
         >
-          <RefreshCw className={`h-3 w-3 ${isLoading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-3 w-3 ${isLoading ? "animate-spin" : ""}`} />
         </Button>
       </div>
     );
@@ -121,7 +147,11 @@ function BalanceButton({ account }: { account: AdminMT5Account }) {
         disabled={isLoading}
         className="text-red-600"
       >
-        {isLoading ? <Spinner className="h-3 w-3 mr-1" size="sm" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+        {isLoading ? (
+          <Spinner className="h-3 w-3 mr-1" size="sm" />
+        ) : (
+          <RefreshCw className="h-3 w-3 mr-1" />
+        )}
         Retry
       </Button>
     );
@@ -154,8 +184,10 @@ const deriveGroupName = (account: AdminMT5Account) => {
 };
 
 const getStatusBadge = (status: AdminMT5Account["status"]) => {
-  const statusValue = typeof status === "string" ? status.toLowerCase() : status;
-  const isActive = statusValue === 1 || statusValue === "1" || statusValue === "active";
+  const statusValue =
+    typeof status === "string" ? status.toLowerCase() : status;
+  const isActive =
+    statusValue === 1 || statusValue === "1" || statusValue === "active";
 
   return (
     <Badge
@@ -194,7 +226,9 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
   {
     id: "account_id",
     accessorKey: "account_id",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Account" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Account" />
+    ),
     cell: ({ row }) => {
       const account = row.original;
       const accountId = deriveAccountId(account);
@@ -216,7 +250,9 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
   },
   {
     id: "user",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="User" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="User" />
+    ),
     cell: ({ row }) => {
       const account = row.original;
 
@@ -231,7 +267,9 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
               {deriveUserName(account)}
             </Link>
           </div>
-          <div className="text-xs text-muted-foreground">{deriveUserEmail(account)}</div>
+          <div className="text-xs text-muted-foreground">
+            {deriveUserEmail(account)}
+          </div>
         </div>
       );
     },
@@ -240,20 +278,28 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
   {
     id: "account_type",
     accessorKey: "account_type",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
-    cell: ({ row }) => <Badge variant="outline">{deriveAccountType(row.original)}</Badge>,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Type" />
+    ),
+    cell: ({ row }) => (
+      <Badge variant="outline">{deriveAccountType(row.original)}</Badge>
+    ),
     enableColumnFilter: true,
   },
   {
     id: "account_mode",
     accessorKey: "account_mode",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Mode" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Mode" />
+    ),
     cell: ({ row }) => getModeBadge(row.original.account_mode),
     enableColumnFilter: true,
   },
   {
     id: "group",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Group" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Group" />
+    ),
     cell: ({ row }) => (
       <div className="flex items-center gap-2">
         <Server className="h-4 w-4 text-muted-foreground" />
@@ -262,19 +308,23 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
     ),
     enableColumnFilter: false,
   },
-   {
-     id: "self_wallet",
-     accessorKey: "self_wallet",
-     header: ({ column }) => <DataTableColumnHeader column={column} title="Wallet Balance" />,
-     cell: ({ row }) => {
-       return <BalanceButton account={row.original} />;
-     },
-     enableColumnFilter: true,
-   },
+  {
+    id: "self_wallet",
+    accessorKey: "self_wallet",
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Wallet Balance" />
+    ),
+    cell: ({ row }) => {
+      return <BalanceButton account={row.original} />;
+    },
+    enableColumnFilter: true,
+  },
   {
     id: "leverage",
     accessorKey: "leverage",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Leverage" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Leverage" />
+    ),
     cell: ({ row }) => {
       const leverage = row.original.leverage;
       return leverage ? `1:${leverage}` : emptyValue;
@@ -284,18 +334,24 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
   {
     id: "status",
     accessorKey: "status",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Status" />
+    ),
     cell: ({ row }) => getStatusBadge(row.original.status),
     enableColumnFilter: true,
   },
   {
     id: "created_at",
     accessorKey: "created_at",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Created at" />,
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Created at" />
+    ),
     cell: ({ row }) => (
       <div className="flex items-center gap-1 whitespace-nowrap">
         <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-        <span className="text-sm">{formatDateTime(row.original.created_at)}</span>
+        <span className="text-sm">
+          {formatDateTime(row.original.created_at)}
+        </span>
       </div>
     ),
     enableColumnFilter: false,
@@ -312,8 +368,17 @@ interface RowActionsProps {
   canDelete: boolean;
 }
 
-const RowActions = ({ row, onView, onEdit, onDelete, canView, canEdit, canDelete }: RowActionsProps) => {
-  const accountId = row.original.id ?? row.original.account_id ?? row.original.mt5_id;
+const RowActions = ({
+  row,
+  onView,
+  onEdit,
+  onDelete,
+  canView,
+  canEdit,
+  canDelete,
+}: RowActionsProps) => {
+  const accountId =
+    row.original.id ?? row.original.account_id ?? row.original.mt5_id;
 
   return (
     <div className="flex items-center justify-end gap-2">
@@ -373,25 +438,24 @@ export const getColumnsWithActions = (
 ): ColumnDef<AdminMT5Account>[] => [
   ...getColumns(),
   ...(permissions?.showActionsColumn
-    ? [{
-    id: "actions",
-    header: "Actions",
-    cell: ({ row }: { row: { original: AdminMT5Account } }) => (
-      <RowActions
-        row={row}
-        onView={onView}
-        onEdit={onEdit}
-        onDelete={onDelete}
-        canView={Boolean(permissions?.canView)}
-        canEdit={Boolean(permissions?.canEdit)}
-        canDelete={Boolean(permissions?.canDelete)}
-      />
-    ),
-    enableColumnFilter: false,
-    enableSorting: false,
-  }]
+    ? [
+        {
+          id: "actions",
+          header: "Actions",
+          cell: ({ row }: { row: { original: AdminMT5Account } }) => (
+            <RowActions
+              row={row}
+              onView={onView}
+              onEdit={onEdit}
+              onDelete={onDelete}
+              canView={Boolean(permissions?.canView)}
+              canEdit={Boolean(permissions?.canEdit)}
+              canDelete={Boolean(permissions?.canDelete)}
+            />
+          ),
+          enableColumnFilter: false,
+          enableSorting: false,
+        },
+      ]
     : []),
 ];
-
-
-

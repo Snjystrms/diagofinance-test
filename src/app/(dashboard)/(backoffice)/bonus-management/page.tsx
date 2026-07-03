@@ -25,7 +25,13 @@ import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ProtectedRoute } from "@/components/protected-route";
-import { Command, CommandEmpty, CommandGroup, CommandItem, CommandList } from "@/components/ui/command";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -45,15 +51,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/auth-context";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
-import {
-  adminBonusApi,
-  type AdminBonusLedgerItem,
-} from "@/lib/api";
+import { adminBonusApi, type AdminBonusLedgerItem } from "@/lib/api";
 import { mt5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { formatApiDateTimeAsIST } from "@/lib/formatters";
@@ -118,23 +127,27 @@ export default function BonusManagementPage() {
   const canRemove = hasFeature("bonusManagement", "removeBonus");
   const canMutate = canGive || canRemove;
 
-  const [actionMode, setActionMode] = useState<BonusActionMode>(canGive ? "give" : "remove");
+  const [actionMode, setActionMode] = useState<BonusActionMode>(
+    canGive ? "give" : "remove",
+  );
   const [isActionDialogOpen, setIsActionDialogOpen] = useState(false);
   const [form, setForm] = useState<BonusFormState>(emptyForm);
   const [userSearch, setUserSearch] = useState("");
-  const [selectedMt5Balance, setSelectedMt5Balance] = useState<number | null>(null);
+  const [selectedMt5Balance, setSelectedMt5Balance] = useState<number | null>(
+    null,
+  );
   const [loadingBalance, setLoadingBalance] = useState(false);
-  
+
   // Use query params for search and filter to enable data table pagination
   const [historySearch, setHistorySearch] = useQueryState(
     "search",
-    parseAsString.withDefault("")
+    parseAsString.withDefault(""),
   );
   const [typeFilter, setTypeFilter] = useQueryState(
     "type",
-    parseAsString.withDefault("all")
+    parseAsString.withDefault("all"),
   );
-  
+
   // Get page and perPage from URL (managed by useDataTable)
   const [urlPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [urlPerPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
@@ -146,12 +159,25 @@ export default function BonusManagementPage() {
   }, [historySearch]);
 
   const bonusListQueryKey = useMemo(
-    () => ["admin-bonus-list", token, urlPage, urlPerPage, searchTerm, typeFilter] as const,
-    [token, urlPage, urlPerPage, searchTerm, typeFilter]
+    () =>
+      [
+        "admin-bonus-list",
+        token,
+        urlPage,
+        urlPerPage,
+        searchTerm,
+        typeFilter,
+      ] as const,
+    [token, urlPage, urlPerPage, searchTerm, typeFilter],
   );
   const bonusUsersQueryKey = useMemo(
-    () => ["admin-bonus-mt5-users", token, userSearch.trim().length >= 3 ? userSearch.trim() : ""] as const,
-    [token, userSearch]
+    () =>
+      [
+        "admin-bonus-mt5-users",
+        token,
+        userSearch.trim().length >= 3 ? userSearch.trim() : "",
+      ] as const,
+    [token, userSearch],
   );
 
   const {
@@ -179,7 +205,17 @@ export default function BonusManagementPage() {
       }
 
       const response = await adminBonusApi.list(params, token!);
-      return response.data ?? { bonuses: [], pagination: { current_page: 1, total_pages: 1, total_records: 0, per_page: urlPerPage } };
+      return (
+        response.data ?? {
+          bonuses: [],
+          pagination: {
+            current_page: 1,
+            total_pages: 1,
+            total_records: 0,
+            per_page: urlPerPage,
+          },
+        }
+      );
     },
     enabled: Boolean(token) && canList,
     staleTime: 60 * 1000,
@@ -194,7 +230,10 @@ export default function BonusManagementPage() {
   } = useQuery({
     queryKey: bonusUsersQueryKey,
     queryFn: async () => {
-      const response = await adminBonusApi.listMt5Users(token!, userSearch.trim());
+      const response = await adminBonusApi.listMt5Users(
+        token!,
+        userSearch.trim(),
+      );
       return response.data ?? [];
     },
     enabled: Boolean(token) && canMutate && userSearch.trim().length >= 3,
@@ -209,7 +248,13 @@ export default function BonusManagementPage() {
   };
 
   const mutation = useMutation({
-    mutationFn: async ({ mode, values }: { mode: BonusActionMode; values: BonusFormState }) => {
+    mutationFn: async ({
+      mode,
+      values,
+    }: {
+      mode: BonusActionMode;
+      values: BonusFormState;
+    }) => {
       const amount = Number(values.amount);
       const payload = {
         mt5_id: values.mt5_id,
@@ -225,7 +270,10 @@ export default function BonusManagementPage() {
     },
     onSuccess: async (response, variables) => {
       toast.success(
-        response.message || (variables.mode === "give" ? "Bonus added successfully" : "Bonus removed successfully")
+        response.message ||
+          (variables.mode === "give"
+            ? "Bonus added successfully"
+            : "Bonus removed successfully"),
       );
       setForm(emptyForm());
       setUserSearch("");
@@ -237,14 +285,14 @@ export default function BonusManagementPage() {
         getAdminFriendlyErrorMessage(error, {
           resource: "bonus",
           action: variables.mode === "give" ? "create" : "update",
-        })
+        }),
       );
     },
   });
 
   const selectedMt5User = useMemo(
     () => mt5Users.find((item) => item.account_id === form.mt5_id) ?? null,
-    [form.mt5_id, mt5Users]
+    [form.mt5_id, mt5Users],
   );
 
   // Fetch live balance when MT5 user is selected
@@ -260,9 +308,12 @@ export default function BonusManagementPage() {
 
       setLoadingBalance(true);
       try {
-        const response = await mt5AccountsApi.getAdminBalance(mt5Login, token) as unknown as MT5AccountBalance;
-        if (response.success && response.balance !== undefined) {
-          setSelectedMt5Balance(response.balance);
+        const response = (await mt5AccountsApi.getAdminBalance(
+          mt5Login,
+          token,
+        )) as unknown as MT5AccountBalance;
+        if (response.success && response.equity !== undefined) {
+          setSelectedMt5Balance(response.equity);
         } else {
           setSelectedMt5Balance(null);
         }
@@ -277,14 +328,21 @@ export default function BonusManagementPage() {
     void fetchBalance();
   }, [selectedMt5User, token]);
 
-  const allBonuses = useMemo(() => bonusListData?.bonuses ?? [], [bonusListData]);
+  const allBonuses = useMemo(
+    () => bonusListData?.bonuses ?? [],
+    [bonusListData],
+  );
 
-  const pagination = useMemo(() => bonusListData?.pagination ?? {
-    current_page: 1,
-    total_pages: 1,
-    total_records: 0,
-    per_page: urlPerPage,
-  }, [bonusListData, urlPerPage]);
+  const pagination = useMemo(
+    () =>
+      bonusListData?.pagination ?? {
+        current_page: 1,
+        total_pages: 1,
+        total_records: 0,
+        per_page: urlPerPage,
+      },
+    [bonusListData, urlPerPage],
+  );
 
   const summary = useMemo(() => {
     const granted = allBonuses
@@ -299,7 +357,9 @@ export default function BonusManagementPage() {
       granted,
       removed,
       net: granted - removed,
-      activeAccounts: new Set(allBonuses.map((item) => item.mt5User?.account_id).filter(Boolean)).size,
+      activeAccounts: new Set(
+        allBonuses.map((item) => item.mt5User?.account_id).filter(Boolean),
+      ).size,
     };
   }, [allBonuses, pagination]);
 
@@ -313,11 +373,15 @@ export default function BonusManagementPage() {
       },
       {
         id: "account",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="MT5 Account" />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="MT5 Account" />
+        ),
         accessorFn: (row) => row.mt5User?.account_id ?? "",
         cell: ({ row }) => (
           <div className="space-y-0.5">
-            <div className="font-medium">{row.original.mt5User?.account_id ?? "-"}</div>
+            <div className="font-medium">
+              {row.original.mt5User?.account_id ?? "-"}
+            </div>
             <Link
               href={`/new-users/${row.original.user_id ?? ""}`}
               className="text-xs text-muted-foreground hover:underline"
@@ -329,13 +393,17 @@ export default function BonusManagementPage() {
       },
       {
         id: "email",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="User Email" />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="User Email" />
+        ),
         accessorFn: (row) => row.user?.email ?? "",
         cell: ({ row }) => row.original.user?.email ?? "-",
       },
       {
         id: "type",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Type" />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Type" />
+        ),
         accessorFn: (row) => row.type,
         cell: ({ row }) => {
           const incoming = isBonusIn(row.original.type);
@@ -347,10 +415,14 @@ export default function BonusManagementPage() {
                 "gap-1 border px-2.5 py-0.5",
                 incoming
                   ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                  : "border-rose-200 bg-rose-50 text-rose-700"
+                  : "border-rose-200 bg-rose-50 text-rose-700",
               )}
             >
-              {incoming ? <ArrowUpCircle className="h-3.5 w-3.5" /> : <ArrowDownCircle className="h-3.5 w-3.5" />}
+              {incoming ? (
+                <ArrowUpCircle className="h-3.5 w-3.5" />
+              ) : (
+                <ArrowDownCircle className="h-3.5 w-3.5" />
+              )}
               {incoming ? "Given" : "Removed"}
             </Badge>
           );
@@ -358,10 +430,14 @@ export default function BonusManagementPage() {
       },
       {
         id: "amount",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Amount (USD)" />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Amount (USD)" />
+        ),
         accessorFn: (row) => row.amount,
         cell: ({ row }) => (
-          <span className="font-semibold">{formatMoney(row.original.amount)}</span>
+          <span className="font-semibold">
+            {formatMoney(row.original.amount)}
+          </span>
         ),
       },
       // {
@@ -382,67 +458,82 @@ export default function BonusManagementPage() {
       },
       {
         id: "created_at",
-        header: ({ column }) => <DataTableColumnHeader column={column} title="Created" />,
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Created" />
+        ),
         accessorFn: (row) => row.created_at,
         cell: ({ row }) => (
-          <span className="whitespace-nowrap">{formatApiDateTimeAsIST(row.original.created_at)}</span>
+          <span className="whitespace-nowrap">
+            {formatApiDateTimeAsIST(row.original.created_at)}
+          </span>
         ),
       },
     ],
-    []
+    [],
   );
 
-  const handleExport = useCallback((formatType: "xlsx" | "csv") => {
-    const exportToastId = `bonus-ledger-export-${formatType}`;
-    try {
-      if (allBonuses.length === 0) {
-        toast.error("No data to export", { id: exportToastId });
-        return;
+  const handleExport = useCallback(
+    (formatType: "xlsx" | "csv") => {
+      const exportToastId = `bonus-ledger-export-${formatType}`;
+      try {
+        if (allBonuses.length === 0) {
+          toast.error("No data to export", { id: exportToastId });
+          return;
+        }
+
+        toast.loading(`Preparing ${formatType.toUpperCase()} export...`, {
+          id: exportToastId,
+        });
+        const exportData = allBonuses.map((bonus, index) => ({
+          "Sr. No.": index + 1,
+          "MT5 Account": bonus.mt5User?.account_id ?? "-",
+          Name: bonus.mt5User?.name ?? "-",
+          Email: bonus.user?.email ?? "-",
+          Type: isBonusIn(bonus.type) ? "Given" : "Removed",
+          Amount: Number(bonus.amount ?? 0),
+          "Equity Ref.": Number(bonus.equity ?? 0),
+          Comment: bonus.comment || "-",
+          Created: formatExportDateTime(bonus.created_at),
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const filenameBase = `bonus-ledger-${getExportTimestamp()}`;
+        let filename = `${filenameBase}.xlsx`;
+
+        if (formatType === "xlsx") {
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, worksheet, "Bonus Ledger");
+          XLSX.writeFile(workbook, filename);
+        } else {
+          const csv = XLSX.utils.sheet_to_csv(worksheet);
+          const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+          const link = document.createElement("a");
+          filename = `${filenameBase}.csv`;
+          link.href = URL.createObjectURL(blob);
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(link.href);
+        }
+
+        toast.success(
+          `Exported ${allBonuses.length} bonus records to ${filename}`,
+          { id: exportToastId },
+        );
+      } catch (error: unknown) {
+        console.error(`Failed to export ${formatType}:`, error);
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "bonus ledger",
+            action: "export",
+          }),
+          { id: exportToastId },
+        );
       }
-
-      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
-      const exportData = allBonuses.map((bonus, index) => ({
-        "Sr. No.": index + 1,
-        "MT5 Account": bonus.mt5User?.account_id ?? "-",
-        Name: bonus.mt5User?.name ?? "-",
-        Email: bonus.user?.email ?? "-",
-        Type: isBonusIn(bonus.type) ? "Given" : "Removed",
-        Amount: Number(bonus.amount ?? 0),
-        "Equity Ref.": Number(bonus.equity ?? 0),
-        Comment: bonus.comment || "-",
-        Created: formatExportDateTime(bonus.created_at),
-      }));
-
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const filenameBase = `bonus-ledger-${getExportTimestamp()}`;
-      let filename = `${filenameBase}.xlsx`;
-
-      if (formatType === "xlsx") {
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Bonus Ledger");
-        XLSX.writeFile(workbook, filename);
-      } else {
-        const csv = XLSX.utils.sheet_to_csv(worksheet);
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        filename = `${filenameBase}.csv`;
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(link.href);
-      }
-
-      toast.success(`Exported ${allBonuses.length} bonus records to ${filename}`, { id: exportToastId });
-    } catch (error: unknown) {
-      console.error(`Failed to export ${formatType}:`, error);
-      toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "bonus ledger", action: "export" }),
-        { id: exportToastId },
-      );
-    }
-  }, [allBonuses]);
+    },
+    [allBonuses],
+  );
 
   const handleSubmit = () => {
     const amount = Number(form.amount);
@@ -491,13 +582,18 @@ export default function BonusManagementPage() {
                 Bonus Management
               </h1>
               <p className="max-w-3xl text-sm text-muted-foreground">
-                Credit or remove bonus against MT5 accounts and review the complete bonus ledger from one place.
+                Credit or remove bonus against MT5 accounts and review the
+                complete bonus ledger from one place.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="gap-2" disabled={!canList}>
+                  <Button
+                    variant="outline"
+                    className="gap-2"
+                    disabled={!canList}
+                  >
                     <Download className="h-4 w-4" />
                     Export
                     <ChevronDown className="h-4 w-4" />
@@ -523,7 +619,12 @@ export default function BonusManagementPage() {
                 onClick={() => void refreshAll()}
                 disabled={isFetchingBonuses || isFetchingMt5Users}
               >
-                <RefreshCw className={cn("mr-2 h-4 w-4", (isFetchingBonuses || isFetchingMt5Users) && "animate-spin")} />
+                <RefreshCw
+                  className={cn(
+                    "mr-2 h-4 w-4",
+                    (isFetchingBonuses || isFetchingMt5Users) && "animate-spin",
+                  )}
+                />
                 Refresh
               </Button>
             </div>
@@ -589,9 +690,12 @@ export default function BonusManagementPage() {
                 ) : (
                   <div className="rounded-xl border border-dashed p-10 text-center">
                     <Gift className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-                    <h3 className="text-lg font-semibold text-foreground">No bonus records found</h3>
+                    <h3 className="text-lg font-semibold text-foreground">
+                      No bonus records found
+                    </h3>
                     <p className="mt-2 text-sm text-muted-foreground">
-                      Try changing the filters or create a new bonus action for an MT5 account.
+                      Try changing the filters or create a new bonus action for
+                      an MT5 account.
                     </p>
                   </div>
                 )}
@@ -606,7 +710,8 @@ export default function BonusManagementPage() {
           <DialogHeader>
             <DialogTitle>Manage Bonus</DialogTitle>
             <DialogDescription>
-              Select an MT5 account and apply a credit or deduction from the same modal.
+              Select an MT5 account and apply a credit or deduction from the
+              same modal.
             </DialogDescription>
           </DialogHeader>
 
@@ -638,7 +743,9 @@ export default function BonusManagementPage() {
                     }
                   }}
                   onSearch={() => {
-                    void queryClient.invalidateQueries({ queryKey: bonusUsersQueryKey });
+                    void queryClient.invalidateQueries({
+                      queryKey: bonusUsersQueryKey,
+                    });
                   }}
                   placeholder="Type at least 3 letters to search MT5 accounts"
                   minimumLength={3}
@@ -662,12 +769,20 @@ export default function BonusManagementPage() {
                               value={item.account_id}
                               onSelect={() => {
                                 setUserSearch(item.account_id);
-                                setForm((current) => ({ ...current, mt5_id: item.account_id }));
+                                setForm((current) => ({
+                                  ...current,
+                                  mt5_id: item.account_id,
+                                }));
                               }}
                             >
                               <div className="flex flex-col">
-                                <span className="font-medium">{item.account_id}</span>
-                                <span className="text-xs text-muted-foreground">{item.name} | {item.email} | {item.mode} | {item.account_type_name}</span>
+                                <span className="font-medium">
+                                  {item.account_id}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {item.name} | {item.email} | {item.mode} |{" "}
+                                  {item.account_type_name}
+                                </span>
                               </div>
                             </CommandItem>
                           ))}
@@ -677,11 +792,16 @@ export default function BonusManagementPage() {
                   </Command>
                 )}
                 {userSearch.trim().length < 3 && !form.mt5_id && (
-                  <p className="text-xs text-muted-foreground">Type at least 3 letters to search MT5 accounts.</p>
+                  <p className="text-xs text-muted-foreground">
+                    Type at least 3 letters to search MT5 accounts.
+                  </p>
                 )}
                 {isMt5UsersError ? (
                   <p className="text-xs text-destructive">
-                    {getAdminFriendlyErrorMessage(mt5UsersError, { resource: "MT5 users", action: "load" })}
+                    {getAdminFriendlyErrorMessage(mt5UsersError, {
+                      resource: "MT5 users",
+                      action: "load",
+                    })}
                   </p>
                 ) : null}
               </div>
@@ -690,7 +810,9 @@ export default function BonusManagementPage() {
                 <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
-                      <p className="font-medium text-foreground">{selectedMt5User.name}</p>
+                      <p className="font-medium text-foreground">
+                        {selectedMt5User.name}
+                      </p>
                       <p className="truncate text-sm text-muted-foreground sm:max-w-[320px]">
                         {selectedMt5User.email}
                       </p>
@@ -702,7 +824,7 @@ export default function BonusManagementPage() {
                           "w-fit font-mono",
                           selectedMt5User.mode?.toLowerCase() === "live"
                             ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                            : "border-amber-200 bg-amber-50 text-amber-700"
+                            : "border-amber-200 bg-amber-50 text-amber-700",
                         )}
                       >
                         {selectedMt5User.mode?.toUpperCase() ?? "DEMO"}
@@ -719,18 +841,24 @@ export default function BonusManagementPage() {
                   </div>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Action</p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                        Action
+                      </p>
                       <div className="mt-1 flex items-center gap-2 text-sm font-medium text-foreground">
                         {actionMode === "give" ? (
                           <ArrowUpCircle className="h-4 w-4 text-emerald-600" />
                         ) : (
                           <ArrowDownCircle className="h-4 w-4 text-rose-600" />
                         )}
-                        {actionMode === "give" ? "Credit bonus to wallet" : "Remove bonus from wallet"}
+                        {actionMode === "give"
+                          ? "Credit bonus to wallet"
+                          : "Remove bonus from wallet"}
                       </div>
                     </div>
                     <div>
-                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">Current Balance</p>
+                      <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                        Current Balance
+                      </p>
                       <p className="mt-1 text-xl font-semibold text-foreground">
                         {loadingBalance ? (
                           <span className="flex items-center gap-2 text-sm">
@@ -739,11 +867,21 @@ export default function BonusManagementPage() {
                           </span>
                         ) : selectedMt5Balance !== null ? (
                           <>
-                            {formatMoney(selectedMt5Balance)} {selectedMt5User.account_type_name === "CENT" ? "USC" : "USD"}
+                            {formatMoney(selectedMt5Balance)}{" "}
+                            {selectedMt5User.account_type_name === "CENT"
+                              ? "USC"
+                              : "USD"}
                           </>
                         ) : (
                           <>
-                            {formatMoney(selectedMt5User.account_type_name === "CENT" ? selectedMt5User.current_balance * 100 : selectedMt5User.current_balance)} {selectedMt5User.account_type_name === "CENT" ? "USC" : "USD"}
+                            {formatMoney(
+                              selectedMt5User.account_type_name === "CENT"
+                                ? selectedMt5User.current_balance * 100
+                                : selectedMt5User.current_balance,
+                            )}{" "}
+                            {selectedMt5User.account_type_name === "CENT"
+                              ? "USC"
+                              : "USD"}
                           </>
                         )}
                       </p>
@@ -760,19 +898,33 @@ export default function BonusManagementPage() {
                   inputMode="decimal"
                   min="1"
                   step="1"
-                  placeholder={actionMode === "give" ? "Enter bonus amount" : "Enter amount to remove"}
+                  placeholder={
+                    actionMode === "give"
+                      ? "Enter bonus amount"
+                      : "Enter amount to remove"
+                  }
                   value={form.amount}
-                  onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      amount: event.target.value,
+                    }))
+                  }
                   onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 />
-                {selectedMt5User?.account_type_name === "CENT" && form.amount && Number(form.amount) > 0 && (
-                  <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
-                    <p className="text-xs text-muted-foreground">Conversion</p>
-                    <p className="text-sm font-semibold text-foreground mt-0.5">
-                      {formatMoney(Number(form.amount))} USD = {formatMoney(Number(form.amount) * 100)} USC
-                    </p>
-                  </div>
-                )}
+                {selectedMt5User?.account_type_name === "CENT" &&
+                  form.amount &&
+                  Number(form.amount) > 0 && (
+                    <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
+                      <p className="text-xs text-muted-foreground">
+                        Conversion
+                      </p>
+                      <p className="text-sm font-semibold text-foreground mt-0.5">
+                        {formatMoney(Number(form.amount))} USD ={" "}
+                        {formatMoney(Number(form.amount) * 100)} USC
+                      </p>
+                    </div>
+                  )}
               </div>
 
               <div className="space-y-2">
@@ -782,14 +934,22 @@ export default function BonusManagementPage() {
                   rows={4}
                   placeholder="Add internal note for this bonus action"
                   value={form.comment}
-                  onChange={(event) => setForm((current) => ({ ...current, comment: event.target.value }))}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      comment: event.target.value,
+                    }))
+                  }
                 />
               </div>
             </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => handleDialogOpenChange(false)}>
+            <Button
+              variant="outline"
+              onClick={() => handleDialogOpenChange(false)}
+            >
               Cancel
             </Button>
             <Button
@@ -819,6 +979,3 @@ export default function BonusManagementPage() {
     </ProtectedRoute>
   );
 }
-
-
-
