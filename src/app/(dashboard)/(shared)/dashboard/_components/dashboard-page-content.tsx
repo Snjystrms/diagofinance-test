@@ -1282,16 +1282,30 @@ export function DashboardPageContent() {
         component: (
           <div
             onClick={() => {
-              const shouldGoToKyc = profileTimeline.some(
+              const pendingDocs = profileTimeline.some(
                 (item) =>
                   item.id === "documents_verification" &&
                   item.status === "Pending",
               );
-              router.push(
-                shouldGoToKyc
-                  ? "/profile/kyc-verification"
-                  : "/profile/view_profile",
+              const pendingPersonal = profileTimeline.some(
+                (item) =>
+                  item.id === "personal_information" &&
+                  item.status === "Pending",
               );
+              const pendingLegal = profileTimeline.some(
+                (item) =>
+                  item.id === "legal_information" &&
+                  item.status === "Pending",
+              );
+              if (pendingDocs) {
+                router.push("/profile/kyc-verification");
+              } else if (pendingPersonal) {
+                router.push("/profile/view_profile#personal");
+              } else if (pendingLegal) {
+                router.push("/profile/view_profile#account");
+              } else {
+                router.push("/profile/view_profile");
+              }
             }}
             className="rounded-3xl h-full relative overflow-hidden border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-background to-muted/30 group cursor-pointer"
           >
@@ -1338,7 +1352,19 @@ export function DashboardPageContent() {
                   {profileTimeline.slice(0, 3).map((activity) => (
                     <div
                       key={activity.id}
-                      className="flex gap-3 items-start p-2 rounded-lg hover:bg-muted/50 transition-colors group/item"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (activity.id === "documents_verification") {
+                          router.push("/profile/kyc-verification");
+                        } else if (activity.id === "personal_information") {
+                          router.push("/profile/view_profile#personal");
+                        } else if (activity.id === "legal_information") {
+                          router.push("/profile/view_profile#account");
+                        } else {
+                          router.push("/profile/view_profile");
+                        }
+                      }}
+                      className="flex gap-3 items-start p-2 rounded-lg hover:bg-muted/50 transition-colors group/item cursor-pointer"
                     >
                       <div
                         className={`size-7 rounded-full flex items-center justify-center text-white flex-shrink-0 shadow-md transition-transform group-hover/item:scale-110 ${
@@ -2063,7 +2089,32 @@ export function DashboardPageContent() {
                     {/* Profile Status Card - Enhanced */}
                     <div className="sm:col-span-2 lg:col-span-1">
                       <Card
-                        onClick={() => router.push("/profile/view_profile")}
+                        onClick={() => {
+                          const pendingDocs = profileTimeline.some(
+                            (item) =>
+                              item.id === "documents_verification" &&
+                              item.status === "Pending",
+                          );
+                          const pendingPersonal = profileTimeline.some(
+                            (item) =>
+                              item.id === "personal_information" &&
+                              item.status === "Pending",
+                          );
+                          const pendingLegal = profileTimeline.some(
+                            (item) =>
+                              item.id === "legal_information" &&
+                              item.status === "Pending",
+                          );
+                          if (pendingDocs) {
+                            router.push("/profile/kyc-verification");
+                          } else if (pendingPersonal) {
+                            router.push("/profile/view_profile#personal");
+                          } else if (pendingLegal) {
+                            router.push("/profile/view_profile#account");
+                          } else {
+                            router.push("/profile/view_profile");
+                          }
+                        }}
                         className="rounded-[28px] h-full relative overflow-hidden border shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface cursor-pointer"
                       >
                         <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/8 to-purple-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
@@ -2109,10 +2160,22 @@ export function DashboardPageContent() {
                             <div className="space-y-3 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
                               {profileTimeline
                                 .slice(0, 3)
-                                .map((activity, index) => (
+                                .map((activity) => (
                                   <div
                                     key={activity.id}
-                                    className="flex gap-3 items-start p-2 rounded-lg hover:bg-muted/50 transition-colors group/item"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      if (activity.id === "documents_verification") {
+                                        router.push("/profile/kyc-verification");
+                                      } else if (activity.id === "personal_information") {
+                                        router.push("/profile/view_profile#personal");
+                                      } else if (activity.id === "legal_information") {
+                                        router.push("/profile/view_profile#account");
+                                      } else {
+                                        router.push("/profile/view_profile");
+                                      }
+                                    }}
+                                    className="flex gap-3 items-start p-2 rounded-lg hover:bg-muted/50 transition-colors group/item cursor-pointer"
                                   >
                                     <div
                                       className={`size-7 rounded-full flex items-center justify-center text-white flex-shrink-0 shadow-md transition-transform group-hover/item:scale-110 ${
