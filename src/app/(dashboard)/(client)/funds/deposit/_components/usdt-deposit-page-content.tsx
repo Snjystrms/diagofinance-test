@@ -309,7 +309,7 @@ function USDTDepositContent() {
   const [cregisDepositStatus, setCregisDepositStatus] = useState<CregisDepositStatusData | null>(null);
   const [isPollingCregisStatus, setIsPollingCregisStatus] = useState(false);
   // History of all deposit order IDs stored in localStorage
-  const [cregisHistory, setCregisHistory] = useState<{ outTradeNo: string; amount: number; timestamp: string }[]>([]);
+  const [cregisHistory, setCregisHistory] = useState<{ outTradeNo: string; amount: number; timestamp: string; status?: string }[]>([]);
   const hasMountedCregisCheck = useRef(false);
 
   // Bank deposit state
@@ -687,7 +687,7 @@ function USDTDepositContent() {
   // Helper to add an order to the persistent history in localStorage
   const addToCregisHistory = useCallback((outTradeNo: string, amount: number) => {
     const raw = localStorage.getItem('cregis_deposit_history');
-    const history: { outTradeNo: string; amount: number; timestamp: string }[] = raw ? JSON.parse(raw) : [];
+    const history: { outTradeNo: string; amount: number; timestamp: string; status?: string }[] = raw ? JSON.parse(raw) : [];
     // Avoid duplicates
     if (!history.find(h => h.outTradeNo === outTradeNo)) {
       const updated = [{ outTradeNo, amount, timestamp: new Date().toISOString() }, ...history].slice(0, 20);
@@ -706,6 +706,17 @@ function USDTDepositContent() {
 
       if (response.success && response.data) {
         setCregisDepositStatus(response.data);
+
+        // Update status in cregisHistory and localStorage
+        setCregisHistory((prevHistory) => {
+          const updated = prevHistory.map((item) =>
+            item.outTradeNo === outTradeNo
+              ? { ...item, status: response.data!.cregis_status }
+              : item
+          );
+          localStorage.setItem('cregis_deposit_history', JSON.stringify(updated));
+          return updated;
+        });
         
         // Clear localStorage for final statuses (completed, expired, cancelled)
         const finalStatuses = ['paid', 'completed', 'expired', 'cancelled'];
@@ -2295,8 +2306,30 @@ function USDTDepositContent() {
                             </div>
                           </div>
                           <div className="flex items-center gap-2 ml-4 shrink-0">
-                            {isCurrent && (
-                              <Badge variant="outline" className="text-xs border-primary/30 text-primary">Current</Badge>
+                            {entry.status ? (
+                              (() => {
+                                const statusInfo = getCregisStatusInfo(entry.status);
+                                return (
+                                  <Badge
+                                    variant={statusInfo.variant}
+                                    className={`text-xs font-semibold ${
+                                      statusInfo.color === 'emerald'
+                                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
+                                        : statusInfo.color === 'red'
+                                        ? 'bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20'
+                                        : statusInfo.color === 'amber'
+                                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20'
+                                        : 'border-border'
+                                    }`}
+                                  >
+                                    {statusInfo.label}
+                                  </Badge>
+                                );
+                              })()
+                            ) : (
+                              isCurrent && (
+                                <Badge variant="outline" className="text-xs border-primary/30 text-primary">Current</Badge>
+                              )
                             )}
                             <Button
                               variant="outline"

@@ -1077,7 +1077,59 @@ function WithdrawalRequestContent() {
 
 import { KyCGuard } from "@/components/kyc-guard";
 
+// =========================================================================
+// TEMPORARY WITHDRAWAL MAINTENANCE BLOCKER
+// To reopen withdrawals:
+// 1. Set IS_WITHDRAWAL_CLOSED to false, OR
+// 2. Delete this entire block (from here to the end of the file) and restore the default export.
+// =========================================================================
+const IS_WITHDRAWAL_CLOSED = true;
+
+import { Lock, ArrowLeft } from "lucide-react";
+
+function WithdrawalClosedOverlay() {
+  return (
+    <div className="flex min-h-[85vh] w-full items-center justify-center px-4 py-12 bg-background/50 backdrop-blur-sm">
+      <Card className="w-full max-w-lg border-2 border-border/60 bg-card shadow-2xl rounded-[28px] overflow-hidden relative">
+        <div className="absolute top-0 inset-x-0 h-2 bg-gradient-to-r from-amber-500 via-orange-500 to-red-500" />
+        <CardContent className="pt-10 pb-10 px-8 flex flex-col items-center text-center space-y-6">
+          <div className="relative flex h-20 w-20 items-center justify-center rounded-3xl border border-amber-500/20 bg-amber-500/10 shadow-md">
+            <div className="absolute inset-0 rounded-3xl bg-amber-500/5 animate-pulse" />
+            <Lock className="h-10 w-10 text-amber-500" />
+          </div>
+          
+          <div className="space-y-3">
+            <h2 className="text-3xl font-extrabold tracking-tight text-foreground md:text-3xl">
+              Withdrawals Temporarily Closed
+            </h2>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              We are currently performing scheduled maintenance on our withdrawal processing systems to enhance security and speed. 
+              During this brief window, withdrawal requests cannot be submitted.
+            </p>
+            <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 text-amber-800 dark:text-amber-300 text-xs font-medium max-w-md mx-auto">
+              Your patience and understanding are highly appreciated. If you have any urgent concerns, please contact our support team.
+            </div>
+          </div>
+
+          <div className="w-full pt-4">
+            <Button asChild className="w-full h-12 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
+              <Link href="/dashboard">
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Go Back to Dashboard
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function WithdrawalRequestPage() {
+  if (IS_WITHDRAWAL_CLOSED) {
+    return <WithdrawalClosedOverlay />;
+  }
+
   return (
     <KyCGuard>
       <WithdrawalRequestContent />
