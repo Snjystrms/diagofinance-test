@@ -73,12 +73,13 @@ export function IbCommissionDialog({
     try {
       setLoading(true);
       setLoadError(null);
-      const response = await adminIbCommissionReportApi.getCommissionLevelReport({
-        token,
-        user_id: String(userId),
-        date_from: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
-        date_to: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
-      });
+      const response =
+        await adminIbCommissionReportApi.getCommissionLevelReport({
+          token,
+          user_id: String(userId),
+          date_from: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
+          date_to: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
+        });
       setReport(
         unwrapPayload<IbCommissionReportPayload>(
           response as unknown as IbCommissionReportPayload,
@@ -260,9 +261,7 @@ export function IbCommissionDialog({
                   </p>
                 </div>
                 <div className="rounded-lg border bg-card p-4">
-                  <p className="text-xs text-muted-foreground">
-                    Total Trades
-                  </p>
+                  <p className="text-xs text-muted-foreground">Total Trades</p>
                   <p className="mt-1 text-lg font-semibold">
                     {report.summary.total_trade_count}
                   </p>
@@ -274,11 +273,13 @@ export function IbCommissionDialog({
                   <div className="flex items-center justify-between border-b p-4">
                     <div>
                       <h3 className="text-base font-semibold">
-                        {level.level_label}
+                        {level.level_label === "IB"
+                          ? "Partner"
+                          : level.level_label}
                       </h3>
                       <p className="text-xs text-muted-foreground">
-                        Users: {level.user_count} | Trades:{" "}
-                        {level.trade_count} | Days: {level.trade_days}
+                        Users: {level.user_count} | Trades: {level.trade_count}{" "}
+                        | Days: {level.trade_days}
                       </p>
                     </div>
                     <Badge variant="secondary">
@@ -313,9 +314,7 @@ export function IbCommissionDialog({
                               </div>
                             </td>
                             <td className="p-3">{u.sponsor_id || "\u2014"}</td>
-                            <td className="p-3">
-                              {formatAmount(u.volume)}
-                            </td>
+                            <td className="p-3">{formatAmount(u.volume)}</td>
                             <td className="p-3">
                               {formatAmount(u.commission)}
                             </td>

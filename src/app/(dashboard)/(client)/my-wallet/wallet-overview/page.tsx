@@ -34,9 +34,18 @@ import {
   Shield,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { formatDateTimeInIST } from "@/lib/formatters";
+import { formatApiDateTimeAsIST, formatDateTimeInIST } from "@/lib/formatters";
 import { Skeleton } from "@/components/ui/skeleton";
 import toast from "react-hot-toast";
+
+const formatDateTime = (value?: string | null): string => {
+  if (!value) return "-";
+  try {
+    return formatApiDateTimeAsIST(value);
+  } catch {
+    return String(value);
+  }
+};
 
 export default function WalletOverviewPage() {
   const { token } = useAuth();
@@ -586,7 +595,7 @@ export default function WalletOverviewPage() {
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Clock className="h-3 w-3" />
                           <span className="truncate">
-                            {formatDateTimeInIST(transaction.created_at)}
+                            {formatDateTime(transaction.created_at)}
                           </span>
                         </div>
                       </div>

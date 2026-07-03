@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header'
 import { SerialNumberCell } from '@/components/data-table/serial-number-cell'
+import {formatApiDateTimeAsIST} from '@/lib/formatters'
 import { 
   Clock, 
   CheckCircle, 
@@ -40,6 +41,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useQueryState, parseAsInteger } from 'nuqs'
 import { useRouter } from 'next/navigation'
 
+const formatDateTime = (value?: string | null): string => {
+  if (!value) return "-";
+  try {
+    return formatApiDateTimeAsIST(value);
+  } catch {
+    return String(value);
+  }
+};
 // Status badge component
 const StatusBadge = ({ status }: { status: string }) => {
   const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', className: string, icon: React.ReactNode }> = {
@@ -261,7 +270,7 @@ const columns: ColumnDef<WithdrawalItem>[] = [
       <div className="flex items-center gap-2 text-sm whitespace-nowrap">
         <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
         <span>
-          {formatDateTimeInIST(row.original.created_at)}
+          {formatDateTime(row.original.created_at)}
         </span>
       </div>
     ),

@@ -56,7 +56,16 @@ import {
 } from '@/components/ui/dialog'
 import { Card, CardContent } from '@/components/ui/card'
 import { useQueryState, parseAsInteger, parseAsString } from 'nuqs'
+import {formatApiDateTimeAsIST} from "@/lib/formatters";
 
+const formatDateTime = (value?: string | null): string => {
+  if (!value) return "-";
+  try {
+    return formatApiDateTimeAsIST(value);
+  } catch {
+    return String(value);
+  }
+};
 // Status badge component
 const StatusBadge = ({ status }: { status: number }) => {
   const statusMap: Record<number, string> = { 0: 'pending', 1: 'approved', 2: 'rejected' }
@@ -350,7 +359,7 @@ const columns: ColumnDef<DepositListItem>[] = [
       <div className="flex items-center gap-2 text-sm whitespace-nowrap">
         <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
         <span>
-          {formatDateTimeInIST(row.original.created_at)}
+          {formatDateTime(row.original.created_at)}
         </span>
       </div>
     ),

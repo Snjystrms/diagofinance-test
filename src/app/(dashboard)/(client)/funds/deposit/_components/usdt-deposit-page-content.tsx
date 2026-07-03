@@ -1,31 +1,77 @@
-'use client'
-import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
+﻿"use client";
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+  useRef,
+} from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ApiErrorState } from "@/components/errors/api-error-state";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import { submitUSDTDeposit } from "@/utils/operations";
-import { walletApi, binanceDepositApi, coinsbuyDepositApi, cregisDepositApi, bankDepositApi, userBrokerBankDetailsApi, type WalletSummaryData, type BinanceDepositCreateResponse, type CoinsBuyDepositCreateResponse, type CregisDepositCreateResponse, type BankDepositRecord, type BrokerBankDetailItem } from "@/lib/api";
-import { userPaymentMethodsApi, userCurrencyRatesApi, userBrokerCryptoWalletsApi, type UserPaymentMethod, type CurrencyRateItem, type BrokerCryptoWalletItem, type CregisDepositStatusData } from "@/lib/api-auth-admin";
+import {
+  walletApi,
+  binanceDepositApi,
+  coinsbuyDepositApi,
+  cregisDepositApi,
+  bankDepositApi,
+  userBrokerBankDetailsApi,
+  type WalletSummaryData,
+  type BinanceDepositCreateResponse,
+  type CoinsBuyDepositCreateResponse,
+  type CregisDepositCreateResponse,
+  type BankDepositRecord,
+  type BrokerBankDetailItem,
+} from "@/lib/api";
+import {
+  userPaymentMethodsApi,
+  userCurrencyRatesApi,
+  userBrokerCryptoWalletsApi,
+  type UserPaymentMethod,
+  type CurrencyRateItem,
+  type BrokerCryptoWalletItem,
+  type CregisDepositStatusData,
+} from "@/lib/api-auth-admin";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
-import { CLIENT_WALLET_REFRESH_EVENT, notifyWalletRefresh } from "@/lib/client-events";
+import {
+  CLIENT_WALLET_REFRESH_EVENT,
+  notifyWalletRefresh,
+} from "@/lib/client-events";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DepositPageSkeleton, DepositFormSkeleton } from "./deposit-page-skeleton";
+import {
+  DepositPageSkeleton,
+  DepositFormSkeleton,
+} from "./deposit-page-skeleton";
 import toast from "react-hot-toast";
-import { formatDateTimeInIST } from "@/lib/formatters";
-import { 
-  Copy, 
-  Hash, 
-  ShieldCheck, 
-  Wallet, 
-  CheckCircle, 
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
+import {
+  Copy,
+  Hash,
+  ShieldCheck,
+  Wallet,
+  CheckCircle,
   Clock,
   ExternalLink,
   QrCode,
@@ -41,10 +87,22 @@ import {
   Loader2,
   WalletMinimal,
   Banknote,
-  Plus
+  Plus,
 } from "lucide-react";
 
-function useAuthImageUrl(url: string | null | undefined, token: string | null): string | null {
+const formatDateTime = (value?: string | null): string => {
+  if (!value) return "-";
+  try {
+    return formatApiDateTimeAsIST(value);
+  } catch {
+    return String(value);
+  }
+};
+
+function useAuthImageUrl(
+  url: string | null | undefined,
+  token: string | null,
+): string | null {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const objectUrlRef = useRef<string | null>(null);
 
@@ -113,7 +171,10 @@ const NETWORK_EXPLORER_TX_PATH: Record<string, string> = {
   "Near Protocol (NEAR)": "/transactions",
 };
 
-function getExplorerTxUrl(network: string | undefined, txHash: string): string | null {
+function getExplorerTxUrl(
+  network: string | undefined,
+  txHash: string,
+): string | null {
   if (!network || !txHash) return null;
   const baseUrl = NETWORK_EXPLORER_URLS[network];
   if (!baseUrl) return null;
@@ -124,7 +185,13 @@ function getExplorerTxUrl(network: string | undefined, txHash: string): string |
 const isBrokerBankDetailActive = (detail: BrokerBankDetailItem) =>
   detail.is_active === true || detail.is_active === 1;
 
-function ComingSoonTab({ name, description }: { name: string; description?: string | null }) {
+function ComingSoonTab({
+  name,
+  description,
+}: {
+  name: string;
+  description?: string | null;
+}) {
   return (
     <div className="flex flex-col items-center justify-center gap-3 py-20 text-muted-foreground">
       <Clock className="h-10 w-10 opacity-40" />
@@ -139,41 +206,43 @@ function USDTDepositContent() {
   const { user, token } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   // Map between internal tab values and URL-friendly names
   const tabToUrl = (tab: string): string => {
     const mapping: Record<string, string> = {
-      'local': 'on-chain',
-      'binance_pay': 'binance-pay',
-      'coinsbuy': 'coinsbuy',
-      'cregis': 'cryptocurrency',
-      'bank': 'bank-deposit',
+      local: "on-chain",
+      binance_pay: "binance-pay",
+      coinsbuy: "coinsbuy",
+      cregis: "cryptocurrency",
+      bank: "bank-deposit",
     };
     return mapping[tab] || tab;
   };
-  
+
   const urlToTab = (urlTab: string): string => {
     const mapping: Record<string, string> = {
-      'on-chain': 'local',
-      'binance-pay': 'binance_pay',
-      'coinsbuy': 'coinsbuy',
-      'cryptocurrency': 'cregis',
-      'bank-deposit': 'bank',
+      "on-chain": "local",
+      "binance-pay": "binance_pay",
+      coinsbuy: "coinsbuy",
+      cryptocurrency: "cregis",
+      "bank-deposit": "bank",
     };
     return mapping[urlTab] || urlTab;
   };
-  
+
   // Check for pending Cregis deposit on initialization to set the correct tab
   const [activeTab, setActiveTab] = useState<string>(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       // First check URL parameter
-      const urlTabParam = new URLSearchParams(window.location.search).get('tab');
+      const urlTabParam = new URLSearchParams(window.location.search).get(
+        "tab",
+      );
       if (urlTabParam) {
         return urlToTab(urlTabParam);
       }
-      
+
       // Then check for pending Cregis deposit
-      const pendingOutTradeNo = localStorage.getItem('cregis_pending_deposit');
+      const pendingOutTradeNo = localStorage.getItem("cregis_pending_deposit");
       if (pendingOutTradeNo) {
         return "cregis";
       }
@@ -184,95 +253,102 @@ function USDTDepositContent() {
   // Handle tab change and update URL
   const handleTabChange = (newTab: string) => {
     setActiveTab(newTab);
-    
+
     // Update URL with the new tab parameter
     if (newTab) {
       const urlFriendlyTab = tabToUrl(newTab);
       const params = new URLSearchParams(searchParams.toString());
-      params.set('tab', urlFriendlyTab);
+      params.set("tab", urlFriendlyTab);
       router.push(`?${params.toString()}`, { scroll: false });
     } else {
       // Remove tab parameter if no tab is selected
       const params = new URLSearchParams(searchParams.toString());
-      params.delete('tab');
+      params.delete("tab");
       const queryString = params.toString();
-      router.push(queryString ? `?${queryString}` : window.location.pathname, { scroll: false });
+      router.push(queryString ? `?${queryString}` : window.location.pathname, {
+        scroll: false,
+      });
     }
   };
 
   // Helper function to get status display info based on cregis_status
   const getCregisStatusInfo = (cregisStatus: string) => {
     const status = cregisStatus.toLowerCase();
-    
+
     switch (status) {
-      case 'new':
+      case "new":
         return {
-          label: 'Pending',
-          variant: 'outline' as const,
-          color: 'amber',
+          label: "Pending",
+          variant: "outline" as const,
+          color: "amber",
           icon: Clock,
-          message: 'Your deposit is being processed. You will be notified once the funds are approved.',
+          message:
+            "Your deposit is being processed. You will be notified once the funds are approved.",
           canRefresh: true,
           showNewDeposit: false,
         };
-      case 'paid':
-      case 'completed':
+      case "paid":
+      case "completed":
         return {
-          label: 'Completed',
-          variant: 'default' as const,
-          color: 'emerald',
+          label: "Completed",
+          variant: "default" as const,
+          color: "emerald",
           icon: CheckCircle2,
-          message: 'Your deposit has been approved and credited to your wallet.',
+          message:
+            "Your deposit has been approved and credited to your wallet.",
           canRefresh: false,
           showNewDeposit: true,
         };
-      case 'expired':
+      case "expired":
         return {
-          label: 'Expired',
-          variant: 'destructive' as const,
-          color: 'red',
+          label: "Expired",
+          variant: "destructive" as const,
+          color: "red",
           icon: AlertCircle,
-          message: 'This deposit has expired. Please create a new deposit.',
+          message: "This deposit has expired. Please create a new deposit.",
           canRefresh: false,
           showNewDeposit: true,
         };
-      case 'cancelled':
+      case "cancelled":
         return {
-          label: 'Cancelled',
-          variant: 'destructive' as const,
-          color: 'red',
+          label: "Cancelled",
+          variant: "destructive" as const,
+          color: "red",
           icon: X,
-          message: 'This deposit was cancelled. Please try again or contact support.',
+          message:
+            "This deposit was cancelled. Please try again or contact support.",
           canRefresh: false,
           showNewDeposit: true,
         };
-      case 'paid_partial':
+      case "paid_partial":
         return {
-          label: 'Partial Payment',
-          variant: 'outline' as const,
-          color: 'amber',
+          label: "Partial Payment",
+          variant: "outline" as const,
+          color: "amber",
           icon: AlertCircle,
-          message: 'Partial payment received. The remaining amount is required to complete this deposit.',
+          message:
+            "Partial payment received. The remaining amount is required to complete this deposit.",
           canRefresh: true,
           showNewDeposit: false,
         };
-      case 'paid_over':
+      case "paid_over":
         return {
-          label: 'Overpaid',
-          variant: 'outline' as const,
-          color: 'amber',
+          label: "Overpaid",
+          variant: "outline" as const,
+          color: "amber",
           icon: AlertCircle,
-          message: 'Overpayment detected. Our team will review and process the excess amount.',
+          message:
+            "Overpayment detected. Our team will review and process the excess amount.",
           canRefresh: true,
           showNewDeposit: false,
         };
       default:
         return {
           label: status.charAt(0).toUpperCase() + status.slice(1),
-          variant: 'outline' as const,
-          color: 'gray',
+          variant: "outline" as const,
+          color: "gray",
           icon: Clock,
-          message: 'Processing your deposit...',
+          message: "Processing your deposit...",
           canRefresh: true,
           showNewDeposit: false,
         };
@@ -286,18 +362,20 @@ function USDTDepositContent() {
   const [transactionHash, setTransactionHash] = useState("");
   const [usdtComment, setUsdtComment] = useState("");
   const [paymentProof, setPaymentProof] = useState<File | null>(null);
-  const [paymentProofPreview, setPaymentProofPreview] = useState<string | null>(null);
+  const [paymentProofPreview, setPaymentProofPreview] = useState<string | null>(
+    null,
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [depositStatus, setDepositStatus] = useState("pending"); // pending, submitted, confirmed
   const [error, setError] = useState<string | null>(null);
   const [walletData, setWalletData] = useState<WalletSummaryData | null>(null);
   const [walletLoading, setWalletLoading] = useState(true);
-  
+
   // Binance deposit state
   const [binanceAmount, setBinanceAmount] = useState("");
   const [binanceComment, setBinanceComment] = useState("");
   const [isSubmittingBinance, setIsSubmittingBinance] = useState(false);
-  
+
   // CoinsBuy deposit state
   const [coinsbuyAmount, setCoinsbuyAmount] = useState("");
   const [isSubmittingCoinsbuy, setIsSubmittingCoinsbuy] = useState(false);
@@ -306,10 +384,13 @@ function USDTDepositContent() {
   const [cregisAmount, setCregisAmount] = useState("");
   const [isSubmittingCregis, setIsSubmittingCregis] = useState(false);
   const [cregisOutTradeNo, setCregisOutTradeNo] = useState<string | null>(null);
-  const [cregisDepositStatus, setCregisDepositStatus] = useState<CregisDepositStatusData | null>(null);
+  const [cregisDepositStatus, setCregisDepositStatus] =
+    useState<CregisDepositStatusData | null>(null);
   const [isPollingCregisStatus, setIsPollingCregisStatus] = useState(false);
   // History of all deposit order IDs stored in localStorage
-  const [cregisHistory, setCregisHistory] = useState<{ outTradeNo: string; amount: number; timestamp: string; status?: string }[]>([]);
+  const [cregisHistory, setCregisHistory] = useState<
+    { outTradeNo: string; amount: number; timestamp: string; status?: string }[]
+  >([]);
   const hasMountedCregisCheck = useRef(false);
 
   // Bank deposit state
@@ -317,28 +398,48 @@ function USDTDepositContent() {
   const [bankTxId, setBankTxId] = useState("");
   const [bankComment, setBankComment] = useState("");
   const [bankPaymentProof, setBankPaymentProof] = useState<File | null>(null);
-  const [bankPaymentProofPreview, setBankPaymentProofPreview] = useState<string | null>(null);
+  const [bankPaymentProofPreview, setBankPaymentProofPreview] = useState<
+    string | null
+  >(null);
   const [bankError, setBankError] = useState<string | null>(null);
   const [isSubmittingBank, setIsSubmittingBank] = useState(false);
-  const [bankSubmitResult, setBankSubmitResult] = useState<{ id: number; status: string; created_at: string } | null>(null);
+  const [bankSubmitResult, setBankSubmitResult] = useState<{
+    id: number;
+    status: string;
+    created_at: string;
+  } | null>(null);
   const [bankRequests, setBankRequests] = useState<BankDepositRecord[]>([]);
   const [bankRequestsLoading, setBankRequestsLoading] = useState(false);
-  const [brokerBankDetails, setBrokerBankDetails] = useState<BrokerBankDetailItem[]>([]);
-  const [brokerBankDetailsLoading, setBrokerBankDetailsLoading] = useState(false);
-  const [brokerBankDetailsError, setBrokerBankDetailsError] = useState<string | null>(null);
-  const [selectedBankDetailId, setSelectedBankDetailId] = useState<number | null>(null);
+  const [brokerBankDetails, setBrokerBankDetails] = useState<
+    BrokerBankDetailItem[]
+  >([]);
+  const [brokerBankDetailsLoading, setBrokerBankDetailsLoading] =
+    useState(false);
+  const [brokerBankDetailsError, setBrokerBankDetailsError] = useState<
+    string | null
+  >(null);
+  const [selectedBankDetailId, setSelectedBankDetailId] = useState<
+    number | null
+  >(null);
   const [bankCurrency, setBankCurrency] = useState("INR");
   const [currencyRates, setCurrencyRates] = useState<CurrencyRateItem[]>([]);
   const [currencyRatesLoading, setCurrencyRatesLoading] = useState(false);
 
   // Broker crypto wallets state
-  const [cryptoWallets, setCryptoWallets] = useState<BrokerCryptoWalletItem[]>([]);
+  const [cryptoWallets, setCryptoWallets] = useState<BrokerCryptoWalletItem[]>(
+    [],
+  );
   const [cryptoWalletsLoading, setCryptoWalletsLoading] = useState(false);
-  const [cryptoWalletsError, setCryptoWalletsError] = useState<string | null>(null);
-  const [selectedCryptoWalletId, setSelectedCryptoWalletId] = useState<number | null>(null);
+  const [cryptoWalletsError, setCryptoWalletsError] = useState<string | null>(
+    null,
+  );
+  const [selectedCryptoWalletId, setSelectedCryptoWalletId] = useState<
+    number | null
+  >(null);
   const [cryptoCopied, setCryptoCopied] = useState(false);
   const wallets = walletData ? Object.values(walletData.wallets || {}) : [];
-  const primaryWallet = wallets.find((wallet) => wallet.is_primary) || wallets[0];
+  const primaryWallet =
+    wallets.find((wallet) => wallet.is_primary) || wallets[0];
   const currency = primaryWallet?.currency || "USD";
   const totalBalance = walletData?.total_balance ?? 0;
   const availableBalance = primaryWallet?.balance ?? totalBalance;
@@ -346,39 +447,70 @@ function USDTDepositContent() {
     .filter((wallet) => wallet.id !== primaryWallet?.id)
     .reduce((sum, wallet) => sum + wallet.balance, 0);
   const recentDeposit = walletData?.recent_transactions?.find(
-    (tx) => tx.type?.toLowerCase() === "deposit" || tx.type?.toLowerCase() === "credit"
+    (tx) =>
+      tx.type?.toLowerCase() === "deposit" ||
+      tx.type?.toLowerCase() === "credit",
   );
 
   const formatAmount = (value: number) =>
-    value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 6 });
+    value.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 6,
+    });
 
-  const recentDepositAmount = recentDeposit ? parseFloat(String(recentDeposit.amount ?? 0)) : null;
+  const recentDepositAmount = recentDeposit
+    ? parseFloat(String(recentDeposit.amount ?? 0))
+    : null;
   const recentDepositLabel = recentDepositAmount
     ? `${formatAmount(recentDepositAmount)} USD`
     : "No recent deposits";
-  const recentDepositDate = recentDeposit ? formatDateTimeInIST(recentDeposit.created_at) : "-";
+  const recentDepositDate = recentDeposit
+    ? formatDateTime(recentDeposit.created_at)
+    : "-";
   const enabledMethodCount = paymentMethods.length;
   const minimumAmountLabel = "$10 equivalent";
   const MINIMUM_DEPOSIT_AMOUNT = 10; // $10 minimum deposit
   const settlementLabel = "Supported digital asset";
 
-  const selectedCryptoWallet = cryptoWallets.find((w) => w.id === selectedCryptoWalletId) || cryptoWallets[0] || null;
-  const authScreenshotUrl = useAuthImageUrl(selectedCryptoWallet?.wallet_screenshot_url, token);
+  const selectedCryptoWallet =
+    cryptoWallets.find((w) => w.id === selectedCryptoWalletId) ||
+    cryptoWallets[0] ||
+    null;
+  const authScreenshotUrl = useAuthImageUrl(
+    selectedCryptoWallet?.wallet_screenshot_url,
+    token,
+  );
 
   const typedAmountNum = parseFloat(amount) || 0;
   const depositReadiness =
-    availableBalance > 0 ? Math.min(100, Math.round((typedAmountNum / availableBalance) * 100)) : 0;
+    availableBalance > 0
+      ? Math.min(100, Math.round((typedAmountNum / availableBalance) * 100))
+      : 0;
   const visibleBrokerBankDetails = useMemo(() => {
-    const activeDetails = brokerBankDetails.filter((detail) => isBrokerBankDetailActive(detail));
+    const activeDetails = brokerBankDetails.filter((detail) =>
+      isBrokerBankDetailActive(detail),
+    );
     return activeDetails.length > 0 ? activeDetails : brokerBankDetails;
   }, [brokerBankDetails]);
-  const selectedBankDetail = visibleBrokerBankDetails.find((d) => d.id === selectedBankDetailId) || visibleBrokerBankDetails[0] || null;
+  const selectedBankDetail =
+    visibleBrokerBankDetails.find((d) => d.id === selectedBankDetailId) ||
+    visibleBrokerBankDetails[0] ||
+    null;
   const availableBankCurrencies = useMemo(() => {
     const activeRates = currencyRates.filter((rate) => {
       const rawStatus = String(rate.status).toLowerCase();
-      return rate.from_currency?.toUpperCase() === "USD" && (rawStatus === "true" || rawStatus === "1" || rawStatus === "active");
+      return (
+        rate.from_currency?.toUpperCase() === "USD" &&
+        (rawStatus === "true" || rawStatus === "1" || rawStatus === "active")
+      );
     });
-    const unique = Array.from(new Set(activeRates.map((rate) => rate.to_currency?.toUpperCase()).filter(Boolean)));
+    const unique = Array.from(
+      new Set(
+        activeRates
+          .map((rate) => rate.to_currency?.toUpperCase())
+          .filter(Boolean),
+      ),
+    );
     return unique.sort((a, b) => a.localeCompare(b));
   }, [currencyRates]);
   const selectedUsdToBankRate = useMemo(() => {
@@ -399,24 +531,37 @@ function USDTDepositContent() {
       : null;
 
   // Derive which tabs to show from API response
-  const hasLocal    = paymentMethods.some(p => p.type === "local");
-  const hasBinance  = paymentMethods.some(p => p.type === "binance_pay");
-  const hasCoinsbuy = paymentMethods.some(p => p.type === "coinsbuy");
-  const hasCregis   = paymentMethods.some(p => p.type === "cregis");
-  const hasBank     = paymentMethods.some(p => p.type === "bank_transfer");
-  const KNOWN_TYPES = ["local", "binance_pay", "coinsbuy", "cregis", "bank_transfer"];
-  const comingSoonMethods = paymentMethods.filter(p => !KNOWN_TYPES.includes(p.type));
+  const hasLocal = paymentMethods.some((p) => p.type === "local");
+  const hasBinance = paymentMethods.some((p) => p.type === "binance_pay");
+  const hasCoinsbuy = paymentMethods.some((p) => p.type === "coinsbuy");
+  const hasCregis = paymentMethods.some((p) => p.type === "cregis");
+  const hasBank = paymentMethods.some((p) => p.type === "bank_transfer");
+  const KNOWN_TYPES = [
+    "local",
+    "binance_pay",
+    "coinsbuy",
+    "cregis",
+    "bank_transfer",
+  ];
+  const comingSoonMethods = paymentMethods.filter(
+    (p) => !KNOWN_TYPES.includes(p.type),
+  );
 
   // Fetch active payment methods
   useEffect(() => {
-    if (!token) { setPmLoading(false); return; }
-    userPaymentMethodsApi.list(token)
-      .then(res => {
-        const methods = (res as unknown as { data?: UserPaymentMethod[] })?.data ?? [];
+    if (!token) {
+      setPmLoading(false);
+      return;
+    }
+    userPaymentMethodsApi
+      .list(token)
+      .then((res) => {
+        const methods =
+          (res as unknown as { data?: UserPaymentMethod[] })?.data ?? [];
         setPaymentMethods(methods);
         // Don't reset activeTab if it was already set from URL or localStorage
         // Only reset to empty string if no tab was selected
-        setActiveTab(prev => prev || "");
+        setActiveTab((prev) => prev || "");
       })
       .catch(() => {})
       .finally(() => setPmLoading(false));
@@ -454,7 +599,10 @@ function USDTDepositContent() {
 
     window.addEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh);
     return () => {
-      window.removeEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh);
+      window.removeEventListener(
+        CLIENT_WALLET_REFRESH_EVENT,
+        handleWalletRefresh,
+      );
     };
   }, [token]);
 
@@ -503,7 +651,7 @@ function USDTDepositContent() {
           amount: amountNum,
           user_comment: binanceComment.trim() || undefined,
         },
-        token
+        token,
       );
 
       if (!response.success || !response.data) {
@@ -512,26 +660,37 @@ function USDTDepositContent() {
 
       // apiCall returns ApiResponse<T>, and based on the console log, response.data is already the nested data object
       // So response.data contains qr_content directly, not response.data.data
-      const depositData = (response.data as unknown) as BinanceDepositCreateResponse['data'];
-      
+      const depositData =
+        response.data as unknown as BinanceDepositCreateResponse["data"];
+
       // Get qr_content, checkout_url, or universal_url (in order of preference)
-      const qrContent = depositData?.qr_content || depositData?.checkout_url || depositData?.universal_url;
-      
+      const qrContent =
+        depositData?.qr_content ||
+        depositData?.checkout_url ||
+        depositData?.universal_url;
+
       if (qrContent) {
         notifyWalletRefresh();
         window.location.href = qrContent;
       } else {
-        console.error("Binance deposit response data:", JSON.stringify(depositData, null, 2));
-        toast.error("Payment link is not available right now. Please try again.");
+        console.error(
+          "Binance deposit response data:",
+          JSON.stringify(depositData, null, 2),
+        );
+        toast.error(
+          "Payment link is not available right now. Please try again.",
+        );
         setIsSubmittingBinance(false);
       }
     } catch (err) {
       console.error("Error creating Binance deposit:", err);
-      setError(getFriendlyErrorMessage(err, {
-        audience: "client",
-        resource: "Binance deposit",
-        action: "create",
-      }));
+      setError(
+        getFriendlyErrorMessage(err, {
+          audience: "client",
+          resource: "Binance deposit",
+          action: "create",
+        }),
+      );
       setIsSubmittingBinance(false);
     }
   };
@@ -563,14 +722,17 @@ function USDTDepositContent() {
         {
           amount: amountNum,
         },
-        token
+        token,
       );
 
       if (!response.success || !response.data) {
-        throw new Error(response.message || "Failed to create CoinsBuy deposit");
+        throw new Error(
+          response.message || "Failed to create CoinsBuy deposit",
+        );
       }
 
-      const depositData = (response.data as unknown) as CoinsBuyDepositCreateResponse['data'];
+      const depositData =
+        response.data as unknown as CoinsBuyDepositCreateResponse["data"];
       const coinsbuyDepositId = depositData?.coinsbuy_deposit_id;
 
       if (!coinsbuyDepositId) {
@@ -586,7 +748,7 @@ function USDTDepositContent() {
               id: coinsbuyDepositId,
             },
           },
-          token
+          token,
         );
 
         if (!webhookResponse.success) {
@@ -605,11 +767,13 @@ function USDTDepositContent() {
       setCoinsbuyAmount("");
     } catch (err) {
       console.error("Error creating CoinsBuy deposit:", err);
-      setError(getFriendlyErrorMessage(err, {
-        audience: "client",
-        resource: "CoinsBuy deposit",
-        action: "create",
-      }));
+      setError(
+        getFriendlyErrorMessage(err, {
+          audience: "client",
+          resource: "CoinsBuy deposit",
+          action: "create",
+        }),
+      );
       setIsSubmittingCoinsbuy(false);
     }
   };
@@ -641,104 +805,139 @@ function USDTDepositContent() {
           amount: amountNum,
           currency: "USD",
         },
-        token
+        token,
       );
 
       if (!response.success || !response.data) {
         throw new Error(response.message || "Failed to create Cregis deposit");
       }
 
-      const depositData = (response.data as unknown) as CregisDepositCreateResponse['data'];
+      const depositData =
+        response.data as unknown as CregisDepositCreateResponse["data"];
       const checkoutUrl = depositData?.checkout_url;
       const outTradeNo = depositData?.out_trade_no;
-      
+
       if (checkoutUrl && outTradeNo) {
         // Store the out_trade_no in localStorage to check status when user returns
-        localStorage.setItem('cregis_pending_deposit', outTradeNo);
+        localStorage.setItem("cregis_pending_deposit", outTradeNo);
         // Also save to history
         addToCregisHistory(outTradeNo, amountNum);
-        
+
         // Build return URL with the cryptocurrency tab
         const returnUrl = `${window.location.origin}/funds/deposit?tab=cryptocurrency`;
-        
+
         // Append return URL to checkout if the provider supports it
-        const finalCheckoutUrl = checkoutUrl.includes('?') 
+        const finalCheckoutUrl = checkoutUrl.includes("?")
           ? `${checkoutUrl}&return_url=${encodeURIComponent(returnUrl)}`
           : `${checkoutUrl}?return_url=${encodeURIComponent(returnUrl)}`;
-        
+
         notifyWalletRefresh();
         window.location.href = finalCheckoutUrl;
       } else {
-        console.error("Cregis deposit response data:", JSON.stringify(depositData, null, 2));
-        toast.error("Payment link is not available right now. Please try again.");
+        console.error(
+          "Cregis deposit response data:",
+          JSON.stringify(depositData, null, 2),
+        );
+        toast.error(
+          "Payment link is not available right now. Please try again.",
+        );
         setIsSubmittingCregis(false);
       }
     } catch (err) {
       console.error("Error creating Cregis deposit:", err);
-      setError(getFriendlyErrorMessage(err, {
-        audience: "client",
-        resource: "Cregis deposit",
-        action: "create",
-      }));
+      setError(
+        getFriendlyErrorMessage(err, {
+          audience: "client",
+          resource: "Cregis deposit",
+          action: "create",
+        }),
+      );
       setIsSubmittingCregis(false);
     }
   };
 
   // Helper to add an order to the persistent history in localStorage
-  const addToCregisHistory = useCallback((outTradeNo: string, amount: number) => {
-    const raw = localStorage.getItem('cregis_deposit_history');
-    const history: { outTradeNo: string; amount: number; timestamp: string; status?: string }[] = raw ? JSON.parse(raw) : [];
-    // Avoid duplicates
-    if (!history.find(h => h.outTradeNo === outTradeNo)) {
-      const updated = [{ outTradeNo, amount, timestamp: new Date().toISOString() }, ...history].slice(0, 20);
-      localStorage.setItem('cregis_deposit_history', JSON.stringify(updated));
-      setCregisHistory(updated);
-    }
-  }, []);
+  const addToCregisHistory = useCallback(
+    (outTradeNo: string, amount: number) => {
+      const raw = localStorage.getItem("cregis_deposit_history");
+      const history: {
+        outTradeNo: string;
+        amount: number;
+        timestamp: string;
+        status?: string;
+      }[] = raw ? JSON.parse(raw) : [];
+      // Avoid duplicates
+      if (!history.find((h) => h.outTradeNo === outTradeNo)) {
+        const updated = [
+          { outTradeNo, amount, timestamp: new Date().toISOString() },
+          ...history,
+        ].slice(0, 20);
+        localStorage.setItem("cregis_deposit_history", JSON.stringify(updated));
+        setCregisHistory(updated);
+      }
+    },
+    [],
+  );
 
   // Function to check Cregis deposit status (check once, no polling)
-  const checkCregisStatus = useCallback(async (outTradeNo: string) => {
-    if (!token) return;
+  const checkCregisStatus = useCallback(
+    async (outTradeNo: string) => {
+      if (!token) return;
 
-    try {
-      setIsPollingCregisStatus(true);
-      const response = await cregisDepositApi.getStatus(outTradeNo, token);
+      try {
+        setIsPollingCregisStatus(true);
+        const response = await cregisDepositApi.getStatus(outTradeNo, token);
 
-      if (response.success && response.data) {
-        setCregisDepositStatus(response.data);
+        if (response.success && response.data) {
+          setCregisDepositStatus(response.data);
 
-        // Update status in cregisHistory and localStorage
-        setCregisHistory((prevHistory) => {
-          const updated = prevHistory.map((item) =>
-            item.outTradeNo === outTradeNo
-              ? { ...item, status: response.data!.cregis_status }
-              : item
-          );
-          localStorage.setItem('cregis_deposit_history', JSON.stringify(updated));
-          return updated;
-        });
-        
-        // Clear localStorage for final statuses (completed, expired, cancelled)
-        const finalStatuses = ['paid', 'completed', 'expired', 'cancelled'];
-        if (finalStatuses.includes(response.data.cregis_status.toLowerCase())) {
-          localStorage.removeItem('cregis_pending_deposit');
-          
-          if (['paid', 'completed'].includes(response.data.cregis_status.toLowerCase())) {
-            toast.success("Crypto payment completed successfully!");
-            notifyWalletRefresh();
-          } else if (response.data.cregis_status.toLowerCase() === 'expired') {
-            toast.error("Payment expired. Please create a new deposit.");
-          } else if (response.data.cregis_status.toLowerCase() === 'cancelled') {
-            toast.error("Payment was cancelled.");
+          // Update status in cregisHistory and localStorage
+          setCregisHistory((prevHistory) => {
+            const updated = prevHistory.map((item) =>
+              item.outTradeNo === outTradeNo
+                ? { ...item, status: response.data!.cregis_status }
+                : item,
+            );
+            localStorage.setItem(
+              "cregis_deposit_history",
+              JSON.stringify(updated),
+            );
+            return updated;
+          });
+
+          // Clear localStorage for final statuses (completed, expired, cancelled)
+          const finalStatuses = ["paid", "completed", "expired", "cancelled"];
+          if (
+            finalStatuses.includes(response.data.cregis_status.toLowerCase())
+          ) {
+            localStorage.removeItem("cregis_pending_deposit");
+
+            if (
+              ["paid", "completed"].includes(
+                response.data.cregis_status.toLowerCase(),
+              )
+            ) {
+              toast.success("Crypto payment completed successfully!");
+              notifyWalletRefresh();
+            } else if (
+              response.data.cregis_status.toLowerCase() === "expired"
+            ) {
+              toast.error("Payment expired. Please create a new deposit.");
+            } else if (
+              response.data.cregis_status.toLowerCase() === "cancelled"
+            ) {
+              toast.error("Payment was cancelled.");
+            }
           }
         }
+      } catch (err) {
+        console.error("Error checking Cregis status:", err);
+      } finally {
+        setIsPollingCregisStatus(false);
       }
-    } catch (err) {
-      console.error("Error checking Cregis status:", err);
-    } finally {
-      setIsPollingCregisStatus(false);
-    }
-  }, [token]);
+    },
+    [token],
+  );
 
   // Check for pending Cregis deposit on component mount — run only once
   useEffect(() => {
@@ -749,27 +948,29 @@ function USDTDepositContent() {
     setIsSubmittingCregis(false);
 
     // Load history from localStorage
-    const rawHistory = localStorage.getItem('cregis_deposit_history');
+    const rawHistory = localStorage.getItem("cregis_deposit_history");
     if (rawHistory) {
       try {
         setCregisHistory(JSON.parse(rawHistory));
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
 
-    const pendingOutTradeNo = localStorage.getItem('cregis_pending_deposit');
+    const pendingOutTradeNo = localStorage.getItem("cregis_pending_deposit");
     if (pendingOutTradeNo && token) {
       setCregisOutTradeNo(pendingOutTradeNo);
       // Check status immediately on mount (covers the "returning from cregis page" scenario)
       checkCregisStatus(pendingOutTradeNo);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   // Re-check Cregis status when tab param changes to cryptocurrency (e.g. user clicks tab)
   useEffect(() => {
-    const urlTabParam = searchParams.get('tab');
-    if (urlTabParam === 'cryptocurrency' && token) {
-      const pendingOutTradeNo = localStorage.getItem('cregis_pending_deposit');
+    const urlTabParam = searchParams.get("tab");
+    if (urlTabParam === "cryptocurrency" && token) {
+      const pendingOutTradeNo = localStorage.getItem("cregis_pending_deposit");
       if (pendingOutTradeNo) {
         setCregisOutTradeNo(pendingOutTradeNo);
         checkCregisStatus(pendingOutTradeNo);
@@ -777,12 +978,15 @@ function USDTDepositContent() {
     }
   }, [searchParams, token, checkCregisStatus]);
 
-  const handleBankPaymentProofChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleBankPaymentProofChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
       setBankPaymentProof(file);
       const reader = new FileReader();
-      reader.onloadend = () => setBankPaymentProofPreview(reader.result as string);
+      reader.onloadend = () =>
+        setBankPaymentProofPreview(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
@@ -801,14 +1005,19 @@ function USDTDepositContent() {
     setBankTxId("");
   };
 
-  const [bankRequestStatusFilter, setBankRequestStatusFilter] = useState<string>("all");
+  const [bankRequestStatusFilter, setBankRequestStatusFilter] =
+    useState<string>("all");
   const fetchBankRequests = useCallback(async () => {
     if (!token) return;
     try {
       setBankRequestsLoading(true);
-      const statusParam = bankRequestStatusFilter !== "all" ? bankRequestStatusFilter : undefined;
+      const statusParam =
+        bankRequestStatusFilter !== "all" ? bankRequestStatusFilter : undefined;
       const res = await bankDepositApi.listRequests(token, 1, 50, statusParam);
-      const raw = res as unknown as { success: boolean; data: { requests: BankDepositRecord[] } };
+      const raw = res as unknown as {
+        success: boolean;
+        data: { requests: BankDepositRecord[] };
+      };
       if (raw.success && Array.isArray(raw.data?.requests)) {
         const sorted = [...raw.data.requests].sort((a, b) => {
           const idA = typeof a.id === "number" ? a.id : 0;
@@ -848,7 +1057,7 @@ function USDTDepositContent() {
           audience: "client",
           resource: "bank account details",
           action: "load",
-        })
+        }),
       );
     } finally {
       setBrokerBankDetailsLoading(false);
@@ -862,8 +1071,14 @@ function USDTDepositContent() {
     }
     try {
       setCurrencyRatesLoading(true);
-      const response = await userCurrencyRatesApi.list({ token, page: 1, per_page: 500 });
-      const rates = Array.isArray(response.data?.currencyRates) ? response.data.currencyRates : [];
+      const response = await userCurrencyRatesApi.list({
+        token,
+        page: 1,
+        per_page: 500,
+      });
+      const rates = Array.isArray(response.data?.currencyRates)
+        ? response.data.currencyRates
+        : [];
       setCurrencyRates(rates);
     } catch (fetchError) {
       console.error("Failed to fetch currency rates:", fetchError);
@@ -896,7 +1111,7 @@ function USDTDepositContent() {
           audience: "client",
           resource: "crypto wallet details",
           action: "load",
-        })
+        }),
       );
     } finally {
       setCryptoWalletsLoading(false);
@@ -909,7 +1124,12 @@ function USDTDepositContent() {
       void fetchBrokerBankDetails();
       void fetchCurrencyRates();
     }
-  }, [activeTab, fetchBankRequests, fetchBrokerBankDetails, fetchCurrencyRates]);
+  }, [
+    activeTab,
+    fetchBankRequests,
+    fetchBrokerBankDetails,
+    fetchCurrencyRates,
+  ]);
 
   useEffect(() => {
     if (activeTab === "local") {
@@ -940,7 +1160,9 @@ function USDTDepositContent() {
       return;
     }
     if (!convertedUsdAmount || convertedUsdAmount <= 0) {
-      setBankError("Deposit conversion rate is currently unavailable for this currency");
+      setBankError(
+        "Deposit conversion rate is currently unavailable for this currency",
+      );
       return;
     }
     try {
@@ -953,23 +1175,37 @@ function USDTDepositContent() {
           payment_proof: bankPaymentProof || undefined,
           comment: bankComment.trim() || undefined,
         },
-        token
+        token,
       );
-      const raw = res as unknown as { success: boolean; message?: string; data?: { id: number; status: string; created_at: string } };
+      const raw = res as unknown as {
+        success: boolean;
+        message?: string;
+        data?: { id: number; status: string; created_at: string };
+      };
       if (raw.success && raw.data) {
         setBankSubmitResult(raw.data);
         setBankAmount("");
         setBankTxId("");
         setBankComment("");
-        toast.success(raw.message || "Bank deposit request submitted successfully");
+        toast.success(
+          raw.message || "Bank deposit request submitted successfully",
+        );
         void fetchBankRequests();
         notifyWalletRefresh();
       } else {
-        setBankError((raw as { message?: string }).message || "Submission failed");
+        setBankError(
+          (raw as { message?: string }).message || "Submission failed",
+        );
       }
     } catch (e) {
       console.error("Bank deposit error:", e);
-      setBankError(getFriendlyErrorMessage(e, { audience: "client", resource: "bank deposit", action: "submit" }));
+      setBankError(
+        getFriendlyErrorMessage(e, {
+          audience: "client",
+          resource: "bank deposit",
+          action: "submit",
+        }),
+      );
     } finally {
       setIsSubmittingBank(false);
     }
@@ -1005,9 +1241,9 @@ function USDTDepositContent() {
     }
 
     // No format validation - allow any transaction hash format
-    
+
     setIsSubmitting(true);
-    
+
     try {
       // Call API using the function from operations.ts
       const data = await submitUSDTDeposit(
@@ -1017,7 +1253,7 @@ function USDTDepositContent() {
           payment_proof: paymentProof || undefined,
           comment: usdtComment.trim() || undefined,
         },
-        token || undefined
+        token || undefined,
       );
 
       if (!data.success) {
@@ -1027,24 +1263,29 @@ function USDTDepositContent() {
       setDepositStatus("submitted");
       setIsSubmitting(false);
       notifyWalletRefresh();
-      
+
       // Simulate confirmation after a delay (in real app, this would come from backend)
       setTimeout(() => {
         setDepositStatus("confirmed");
       }, 3000);
-
     } catch (err) {
       console.error("Error submitting deposit:", err);
-      setError(getFriendlyErrorMessage(err, {
-        audience: "client",
-        resource: "deposit",
-        action: "submit",
-      }));
+      setError(
+        getFriendlyErrorMessage(err, {
+          audience: "client",
+          resource: "deposit",
+          action: "submit",
+        }),
+      );
       setIsSubmitting(false);
     }
   };
 
-  const canSubmit = amount.trim() !== "" && parseFloat(amount) > 0 && transactionHash.trim() !== "" && paymentProof !== null;
+  const canSubmit =
+    amount.trim() !== "" &&
+    parseFloat(amount) > 0 &&
+    transactionHash.trim() !== "" &&
+    paymentProof !== null;
 
   // Show full page skeleton during initial load
   if (pmLoading && walletLoading) {
@@ -1063,29 +1304,56 @@ function USDTDepositContent() {
               Fund Deposit
             </h1>
             <p className="max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
-              Choose a payment method below, follow the transfer instructions, then submit your payment details for review.
+              Choose a payment method below, follow the transfer instructions,
+              then submit your payment details for review.
             </p>
           </div>
         </div>
         <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-sm">
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Main Wallet</p>
-              <p className="text-sm font-semibold text-foreground">{walletLoading ? "--" : `${formatAmount(availableBalance)} USD`}</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Main Wallet
+              </p>
+              <p className="text-sm font-semibold text-foreground">
+                {walletLoading ? "--" : `${formatAmount(availableBalance)} USD`}
+              </p>
             </div>
             <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Last Deposit</p>
-              <p className="text-sm font-semibold text-foreground">{walletLoading ? "--" : recentDepositLabel}</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Last Deposit
+              </p>
+              <p className="text-sm font-semibold text-foreground">
+                {walletLoading ? "--" : recentDepositLabel}
+              </p>
             </div>
             <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
-              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Method</p>
-              <p className="text-sm font-semibold text-foreground">{activeTab === "bank" ? "Bank" : activeTab === "binance_pay" ? "Binance" : activeTab === "coinsbuy" ? "CoinsBuy" : activeTab === "cregis" ? "Crypto Currency" : activeTab === "local" ? "On-Chain" : "Not selected"}</p>
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Method
+              </p>
+              <p className="text-sm font-semibold text-foreground">
+                {activeTab === "bank"
+                  ? "Bank"
+                  : activeTab === "binance_pay"
+                    ? "Binance"
+                    : activeTab === "coinsbuy"
+                      ? "CoinsBuy"
+                      : activeTab === "cregis"
+                        ? "Crypto Currency"
+                        : activeTab === "local"
+                          ? "On-Chain"
+                          : "Not selected"}
+              </p>
             </div>
           </div>
         </div>
 
         {/* Deposit type toggle */}
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+        <Tabs
+          value={activeTab}
+          onValueChange={handleTabChange}
+          className="space-y-6"
+        >
           {pmLoading ? (
             <div className="flex gap-2">
               <Skeleton className="h-9 w-24 rounded-lg" />
@@ -1094,13 +1362,60 @@ function USDTDepositContent() {
             </div>
           ) : (
             <TabsList className="ib-portal-surface inline-flex h-auto w-full flex-wrap gap-1 rounded-2xl border p-1.5">
-              {hasLocal    && <TabsTrigger className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary" value="local"><QrCode className="h-4 w-4 mr-2" />On-Chain</TabsTrigger>}
-              {hasBinance  && <TabsTrigger className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary" value="binance_pay"><WalletMinimal className="h-4 w-4 mr-2" />Binance Pay</TabsTrigger>}
-              {hasCoinsbuy && <TabsTrigger className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary" value="coinsbuy"><Wallet className="h-4 w-4 mr-2" />CoinsBuy</TabsTrigger>}
-              {hasCregis   && <TabsTrigger className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary" value="cregis"><Shield className="h-4 w-4 mr-2" />Crypto Currency</TabsTrigger>}
-              {hasBank     && <TabsTrigger className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary" value="bank"><Building2 className="h-4 w-4 mr-2" />Bank Deposit</TabsTrigger>}
-              {comingSoonMethods.map(p => (
-                <TabsTrigger className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary" key={p.type} value={p.type}><Clock className="h-4 w-4 mr-2" />{p.name}</TabsTrigger>
+              {hasLocal && (
+                <TabsTrigger
+                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
+                  value="local"
+                >
+                  <QrCode className="h-4 w-4 mr-2" />
+                  On-Chain
+                </TabsTrigger>
+              )}
+              {hasBinance && (
+                <TabsTrigger
+                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
+                  value="binance_pay"
+                >
+                  <WalletMinimal className="h-4 w-4 mr-2" />
+                  Binance Pay
+                </TabsTrigger>
+              )}
+              {hasCoinsbuy && (
+                <TabsTrigger
+                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
+                  value="coinsbuy"
+                >
+                  <Wallet className="h-4 w-4 mr-2" />
+                  CoinsBuy
+                </TabsTrigger>
+              )}
+              {hasCregis && (
+                <TabsTrigger
+                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
+                  value="cregis"
+                >
+                  <Shield className="h-4 w-4 mr-2" />
+                  Crypto Currency
+                </TabsTrigger>
+              )}
+              {hasBank && (
+                <TabsTrigger
+                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
+                  value="bank"
+                >
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Bank Deposit
+                </TabsTrigger>
+              )}
+              {comingSoonMethods.map((p) => (
+                <TabsTrigger
+                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
+                  key={p.type}
+                  value={p.type}
+                >
+                  <Clock className="h-4 w-4 mr-2" />
+                  {p.name}
+                </TabsTrigger>
               ))}
             </TabsList>
           )}
@@ -1119,25 +1434,53 @@ function USDTDepositContent() {
                     Pick your transfer rail
                   </p>
                   <p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">
-                    Choose a method from the tabs above to unlock tailored instructions, fields, and settlement details.
+                    Choose a method from the tabs above to unlock tailored
+                    instructions, fields, and settlement details.
                   </p>
                 </div>
                 <div className="rounded-2xl border border-border/70 bg-background/70 p-4 backdrop-blur-sm">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Available methods</p>
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Available methods
+                  </p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    {hasLocal && <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">On-Chain</Badge>}
-                    {hasBinance && <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">Binance Pay</Badge>}
-                    {hasCoinsbuy && <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">CoinsBuy</Badge>}
-                    {hasCregis && <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">Crypto Currency</Badge>}
-                    {hasBank && <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">Bank Deposit</Badge>}
-                    {comingSoonMethods.length > 0 && <Badge variant="outline" className="rounded-full">More options</Badge>}
+                    {hasLocal && (
+                      <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">
+                        On-Chain
+                      </Badge>
+                    )}
+                    {hasBinance && (
+                      <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">
+                        Binance Pay
+                      </Badge>
+                    )}
+                    {hasCoinsbuy && (
+                      <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">
+                        CoinsBuy
+                      </Badge>
+                    )}
+                    {hasCregis && (
+                      <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">
+                        Crypto Currency
+                      </Badge>
+                    )}
+                    {hasBank && (
+                      <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">
+                        Bank Deposit
+                      </Badge>
+                    )}
+                    {comingSoonMethods.length > 0 && (
+                      <Badge variant="outline" className="rounded-full">
+                        More options
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </div>
             </div>
           )}
 
-            {hasLocal && <TabsContent value="local" className="space-y-6">
+          {hasLocal && (
+            <TabsContent value="local" className="space-y-6">
               <div className="rounded-[28px] border border-border/60 bg-card p-5 shadow-sm md:p-6">
                 <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
                   <div className="space-y-2">
@@ -1149,786 +1492,977 @@ function USDTDepositContent() {
                       Deposit using wallet transfer details
                     </h2>
                     <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                      Use the destination address and network below, then submit either the transaction hash or a payment proof screenshot for review.
+                      Use the destination address and network below, then submit
+                      either the transaction hash or a payment proof screenshot
+                      for review.
                     </p>
                   </div>
-<div className="grid grid-cols-2 gap-3">
-                     <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                       <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Network</div>
-                       <div className="mt-2 text-sm font-semibold text-foreground">{selectedCryptoWallet?.network || "—"}</div>
-                     </div>
-                     <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                       <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Currency</div>
-                       <div className="mt-2 text-sm font-semibold text-foreground">{selectedCryptoWallet?.currency || "—"}</div>
-                     </div>
-                     <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                       <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Minimum</div>
-                       <div className="mt-2 text-sm font-semibold text-foreground">{minimumAmountLabel}</div>
-                     </div>
-                     <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                       <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">Settlement</div>
-                       <div className="mt-2 text-sm font-semibold text-foreground">{settlementLabel}</div>
-                     </div>
-                   </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Network
+                      </div>
+                      <div className="mt-2 text-sm font-semibold text-foreground">
+                        {selectedCryptoWallet?.network || "—"}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Currency
+                      </div>
+                      <div className="mt-2 text-sm font-semibold text-foreground">
+                        {selectedCryptoWallet?.currency || "—"}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Minimum
+                      </div>
+                      <div className="mt-2 text-sm font-semibold text-foreground">
+                        {minimumAmountLabel}
+                      </div>
+                    </div>
+                    <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Settlement
+                      </div>
+                      <div className="mt-2 text-sm font-semibold text-foreground">
+                        {settlementLabel}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                 
-                 {/* Left Column - Crypto Wallet Details */}
-            <Card className="border border-border/60 bg-card shadow-sm">
-              <CardHeader className="text-center pb-6 relative z-10">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1" />
-                  <div className="space-y-1">
-                    <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
-                      <div className="rounded-lg border border-primary/20 bg-primary/10 p-1.5">
-                        <QrCode className="h-5 w-5 text-primary" />
+                {/* Left Column - Crypto Wallet Details */}
+                <Card className="border border-border/60 bg-card shadow-sm">
+                  <CardHeader className="text-center pb-6 relative z-10">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1" />
+                      <div className="space-y-1">
+                        <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
+                          <div className="rounded-lg border border-primary/20 bg-primary/10 p-1.5">
+                            <QrCode className="h-5 w-5 text-primary" />
+                          </div>
+                          Transfer Destination
+                        </CardTitle>
+                        <CardDescription>
+                          Select a wallet and use the transfer details below for
+                          your deposit.
+                        </CardDescription>
                       </div>
-                      Transfer Destination
-                    </CardTitle>
-                    <CardDescription>
-                      Select a wallet and use the transfer details below for your deposit.
-                    </CardDescription>
-                  </div>
-                  <div className="flex flex-1 justify-end">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={fetchCryptoWallets}
-                      disabled={cryptoWalletsLoading}
-                      aria-label="Refresh crypto wallets"
-                    >
-                      <RefreshCw className={`h-3.5 w-3.5 ${cryptoWalletsLoading ? "animate-spin" : ""}`} />
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-               
-              <CardContent className="space-y-6 relative z-10">
-                {cryptoWalletsLoading ? (
-                  <div className="space-y-3">
-                    {[1, 2].map((item) => (
-                      <div key={item} className="rounded-2xl border border-border/50 bg-muted/20 p-4">
-                        <Skeleton className="mb-3 h-5 w-40" />
-                        <Skeleton className="h-20 w-full rounded-xl" />
+                      <div className="flex flex-1 justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={fetchCryptoWallets}
+                          disabled={cryptoWalletsLoading}
+                          aria-label="Refresh crypto wallets"
+                        >
+                          <RefreshCw
+                            className={`h-3.5 w-3.5 ${cryptoWalletsLoading ? "animate-spin" : ""}`}
+                          />
+                        </Button>
                       </div>
-                    ))}
-                  </div>
-                ) : cryptoWalletsError ? (
-                  <ApiErrorState
-                    message={cryptoWalletsError}
-                    audience="client"
-                    resource="crypto wallet details"
-                    action="load"
-                    variant="inline"
-                  />
-                ) : cryptoWallets.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-border/60 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
-                    Crypto wallet details are not available right now. Please contact support before sending funds.
-                  </div>
-                ) : (
-                  <>
-                    {/* Wallet Selector - show if multiple wallets */}
-                    {cryptoWallets.length > 1 && (
-                      <div className="space-y-2">
-                        <Label className="text-sm font-semibold text-foreground">Select Wallet</Label>
-                        <div className="flex flex-col gap-2">
-                          {cryptoWallets.map((wallet) => (
-                            <button
-                              key={wallet.id}
-                              type="button"
-                              onClick={() => setSelectedCryptoWalletId(wallet.id)}
-                              className={`flex items-start gap-3 rounded-xl border-2 p-3 text-left transition-all ${
-                                selectedCryptoWalletId === wallet.id
-                                  ? "border-primary bg-primary/5"
-                                  : "border-border/60 bg-muted/20 hover:border-primary/40"
-                              }`}
-                            >
-                              <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                                selectedCryptoWalletId === wallet.id
-                                  ? "bg-primary/20 text-primary"
-                                  : "bg-muted/40 text-muted-foreground"
-                              }`}>
-                                <QrCode className="h-4 w-4" />
-                              </div>
-                              <div className="min-w-0 flex-1 overflow-hidden">
-                                <div className="text-sm font-semibold text-foreground truncate">
-                                  {wallet.currency ? `${wallet.currency} · ` : ''}{wallet.label || wallet.network}
-                                </div>
-                                <div className="text-xs text-muted-foreground font-mono truncate">
-                                  {wallet.wallet_address}
-                                </div>
-                              </div>
-                              <Badge variant={selectedCryptoWalletId === wallet.id ? "default" : "secondary"} className="shrink-0 max-w-[140px] truncate">
-                                {wallet.network}
-                              </Badge>
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    </div>
+                  </CardHeader>
 
-                    {/* Selected Wallet Details */}
-                    {selectedCryptoWallet && (
+                  <CardContent className="space-y-6 relative z-10">
+                    {cryptoWalletsLoading ? (
+                      <div className="space-y-3">
+                        {[1, 2].map((item) => (
+                          <div
+                            key={item}
+                            className="rounded-2xl border border-border/50 bg-muted/20 p-4"
+                          >
+                            <Skeleton className="mb-3 h-5 w-40" />
+                            <Skeleton className="h-20 w-full rounded-xl" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : cryptoWalletsError ? (
+                      <ApiErrorState
+                        message={cryptoWalletsError}
+                        audience="client"
+                        resource="crypto wallet details"
+                        action="load"
+                        variant="inline"
+                      />
+                    ) : cryptoWallets.length === 0 ? (
+                      <div className="rounded-xl border border-dashed border-border/60 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
+                        Crypto wallet details are not available right now.
+                        Please contact support before sending funds.
+                      </div>
+                    ) : (
                       <>
-                        {/* Wallet Screenshot / QR */}
-                        {selectedCryptoWallet.wallet_screenshot_url && (
-                          <div className="flex justify-center">
-                            <div className="rounded-[28px] border border-border/60 bg-muted/20 p-5 shadow-inner">
-                              {authScreenshotUrl ? (
-                                <img
-                                  src={authScreenshotUrl}
-                                  alt={`${selectedCryptoWallet.label || selectedCryptoWallet.network} wallet QR code`}
-                                  className="h-64 w-64 rounded-2xl bg-white object-contain"
-                                />
-                              ) : (
-                                <Skeleton className="h-64 w-64 rounded-2xl" />
-                              )}
+                        {/* Wallet Selector - show if multiple wallets */}
+                        {cryptoWallets.length > 1 && (
+                          <div className="space-y-2">
+                            <Label className="text-sm font-semibold text-foreground">
+                              Select Wallet
+                            </Label>
+                            <div className="flex flex-col gap-2">
+                              {cryptoWallets.map((wallet) => (
+                                <button
+                                  key={wallet.id}
+                                  type="button"
+                                  onClick={() =>
+                                    setSelectedCryptoWalletId(wallet.id)
+                                  }
+                                  className={`flex items-start gap-3 rounded-xl border-2 p-3 text-left transition-all ${
+                                    selectedCryptoWalletId === wallet.id
+                                      ? "border-primary bg-primary/5"
+                                      : "border-border/60 bg-muted/20 hover:border-primary/40"
+                                  }`}
+                                >
+                                  <div
+                                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                                      selectedCryptoWalletId === wallet.id
+                                        ? "bg-primary/20 text-primary"
+                                        : "bg-muted/40 text-muted-foreground"
+                                    }`}
+                                  >
+                                    <QrCode className="h-4 w-4" />
+                                  </div>
+                                  <div className="min-w-0 flex-1 overflow-hidden">
+                                    <div className="text-sm font-semibold text-foreground truncate">
+                                      {wallet.currency
+                                        ? `${wallet.currency} · `
+                                        : ""}
+                                      {wallet.label || wallet.network}
+                                    </div>
+                                    <div className="text-xs text-muted-foreground font-mono truncate">
+                                      {wallet.wallet_address}
+                                    </div>
+                                  </div>
+                                  <Badge
+                                    variant={
+                                      selectedCryptoWalletId === wallet.id
+                                        ? "default"
+                                        : "secondary"
+                                    }
+                                    className="shrink-0 max-w-[140px] truncate"
+                                  >
+                                    {wallet.network}
+                                  </Badge>
+                                </button>
+                              ))}
                             </div>
                           </div>
                         )}
 
-                        {/* Network Info */}
-                        <div className="grid grid-cols-2 gap-3">
-                          <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
-                            <div className="text-xs font-medium text-muted-foreground">Network</div>
-                            <Badge variant="secondary" className="mt-1.5 max-w-full truncate">
-                              {selectedCryptoWallet.network}
-                            </Badge>
-                          </div>
-                          <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
-                            <div className="text-xs font-medium text-muted-foreground">Currency</div>
-                            <Badge variant="secondary" className="mt-1.5 max-w-full truncate">
-                              {selectedCryptoWallet.currency}
-                            </Badge>
-                          </div>
-                          <div className="col-span-2 rounded-2xl border border-border/60 bg-muted/20 p-3">
-                            <div className="text-xs font-medium text-muted-foreground">Minimum</div>
-                            <div className="mt-1.5 font-semibold text-foreground">{minimumAmountLabel}</div>
-                          </div>
-                        </div>
+                        {/* Selected Wallet Details */}
+                        {selectedCryptoWallet && (
+                          <>
+                            {/* Wallet Screenshot / QR */}
+                            {selectedCryptoWallet.wallet_screenshot_url && (
+                              <div className="flex justify-center">
+                                <div className="rounded-[28px] border border-border/60 bg-muted/20 p-5 shadow-inner">
+                                  {authScreenshotUrl ? (
+                                    <img
+                                      src={authScreenshotUrl}
+                                      alt={`${selectedCryptoWallet.label || selectedCryptoWallet.network} wallet QR code`}
+                                      className="h-64 w-64 rounded-2xl bg-white object-contain"
+                                    />
+                                  ) : (
+                                    <Skeleton className="h-64 w-64 rounded-2xl" />
+                                  )}
+                                </div>
+                              </div>
+                            )}
 
-                        {/* Deposit Address */}
-                        <div className="space-y-3">
-                          <Label className="text-sm font-semibold text-foreground">
-                            Destination Address
-                          </Label>
-                          <div className="flex items-center gap-2">
-                            <div className="flex-1 bg-muted/50 rounded-lg p-3 border">
-                              <code className="text-sm font-mono break-all">
-                                {selectedCryptoWallet.wallet_address}
-                              </code>
+                            {/* Network Info */}
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
+                                <div className="text-xs font-medium text-muted-foreground">
+                                  Network
+                                </div>
+                                <Badge
+                                  variant="secondary"
+                                  className="mt-1.5 max-w-full truncate"
+                                >
+                                  {selectedCryptoWallet.network}
+                                </Badge>
+                              </div>
+                              <div className="rounded-2xl border border-border/60 bg-muted/20 p-3">
+                                <div className="text-xs font-medium text-muted-foreground">
+                                  Currency
+                                </div>
+                                <Badge
+                                  variant="secondary"
+                                  className="mt-1.5 max-w-full truncate"
+                                >
+                                  {selectedCryptoWallet.currency}
+                                </Badge>
+                              </div>
+                              <div className="col-span-2 rounded-2xl border border-border/60 bg-muted/20 p-3">
+                                <div className="text-xs font-medium text-muted-foreground">
+                                  Minimum
+                                </div>
+                                <div className="mt-1.5 font-semibold text-foreground">
+                                  {minimumAmountLabel}
+                                </div>
+                              </div>
                             </div>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                navigator.clipboard.writeText(selectedCryptoWallet.wallet_address).then(() => {
-                                  setCryptoCopied(true);
-                                  setTimeout(() => setCryptoCopied(false), 1500);
-                                });
-                              }}
-                              className="h-12 px-3 bg-background hover:bg-accent border-border"
-                            >
-                              <Copy className="h-4 w-4" />
-                              {cryptoCopied ? "Copied!" : "Copy"}
-                            </Button>
+
+                            {/* Deposit Address */}
+                            <div className="space-y-3">
+                              <Label className="text-sm font-semibold text-foreground">
+                                Destination Address
+                              </Label>
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 bg-muted/50 rounded-lg p-3 border">
+                                  <code className="text-sm font-mono break-all">
+                                    {selectedCryptoWallet.wallet_address}
+                                  </code>
+                                </div>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    navigator.clipboard
+                                      .writeText(
+                                        selectedCryptoWallet.wallet_address,
+                                      )
+                                      .then(() => {
+                                        setCryptoCopied(true);
+                                        setTimeout(
+                                          () => setCryptoCopied(false),
+                                          1500,
+                                        );
+                                      });
+                                  }}
+                                  className="h-12 px-3 bg-background hover:bg-accent border-border"
+                                >
+                                  <Copy className="h-4 w-4" />
+                                  {cryptoCopied ? "Copied!" : "Copy"}
+                                </Button>
+                              </div>
+                            </div>
+                          </>
+                        )}
+
+                        {/* Important Notes */}
+                        <div className="rounded-2xl border border-amber-300/40 bg-amber-50/70 p-4 dark:border-amber-800/50 dark:bg-amber-950/20">
+                          <div className="flex items-start gap-3">
+                            <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                            <div className="text-sm text-amber-900 dark:text-amber-100">
+                              <p className="font-medium mb-1">
+                                Important Notes:
+                              </p>
+                              <ul className="space-y-1 text-xs text-amber-800/90 dark:text-amber-200/90">
+                                <li>
+                                  Only send supported assets on the selected
+                                  network
+                                </li>
+                                <li>Minimum deposit: {minimumAmountLabel}</li>
+                                <li>
+                                  Confirmation time may vary depending on
+                                  network traffic
+                                </li>
+                                <li>
+                                  Double-check the address and network before
+                                  sending
+                                </li>
+                              </ul>
+                            </div>
                           </div>
                         </div>
                       </>
                     )}
+                  </CardContent>
+                </Card>
 
-                    {/* Important Notes */}
-                    <div className="rounded-2xl border border-amber-300/40 bg-amber-50/70 p-4 dark:border-amber-800/50 dark:bg-amber-950/20">
-                      <div className="flex items-start gap-3">
-                        <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
-                        <div className="text-sm text-amber-900 dark:text-amber-100">
-                          <p className="font-medium mb-1">Important Notes:</p>
-                          <ul className="space-y-1 text-xs text-amber-800/90 dark:text-amber-200/90">
-                            <li>Only send supported assets on the selected network</li>
-                            <li>Minimum deposit: {minimumAmountLabel}</li>
-                            <li>Confirmation time may vary depending on network traffic</li>
-                            <li>Double-check the address and network before sending</li>
-                          </ul>
-                        </div>
+                {/* Right Column - Transaction Hash Submission */}
+                <Card className="border border-border/60 bg-card shadow-sm">
+                  <CardHeader className="relative z-10">
+                    <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                      <div className="rounded-lg border border-primary/20 bg-primary/10 p-1.5">
+                        <Hash className="h-5 w-5 text-primary" />
                       </div>
-                    </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+                      Submit Transfer Details
+                    </CardTitle>
+                    <CardDescription>
+                      After sending funds, submit the transfer details for
+                      review. We will verify the payment and process the deposit
+                      shortly.
+                    </CardDescription>
+                  </CardHeader>
 
-            {/* Right Column - Transaction Hash Submission */}
-            <Card className="border border-border/60 bg-card shadow-sm">
-              <CardHeader className="relative z-10">
-                <CardTitle className="text-2xl font-bold flex items-center gap-2">
-                  <div className="rounded-lg border border-primary/20 bg-primary/10 p-1.5">
-                    <Hash className="h-5 w-5 text-primary" />
-                  </div>
-                  Submit Transfer Details
-                </CardTitle>
-                <CardDescription>
-                  After sending funds, submit the transfer details for review. We will verify the payment and process the deposit shortly.
-                </CardDescription>
-              </CardHeader>
+                  <CardContent className="space-y-6 relative z-10">
+                    {depositStatus === "pending" && (
+                      <>
+                        {/* Error Message */}
+                        {error && (
+                          <ApiErrorState
+                            message={error}
+                            audience="client"
+                            resource="deposit"
+                            action="submit"
+                            variant="inline"
+                          />
+                        )}
 
-              <CardContent className="space-y-6 relative z-10">
-                {depositStatus === "pending" && (
-                  <>
-                    {/* Error Message */}
-                    {error && (
-                      <ApiErrorState
-                        message={error}
-                        audience="client"
-                        resource="deposit"
-                        action="submit"
-                        variant="inline"
-                      />
-                    )}
-
-                    {/* Amount Input */}
-                    <div className="space-y-3">
-                      <Label htmlFor="amount" className="text-sm font-semibold text-foreground">
-                        Amount <span className="text-destructive">*</span>
-                      </Label>
-                      <div className="relative">
-                        <DollarSign className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                        <Input
-                          id="amount"
-                          type="number"
-                          step="1"
-                          min="1"
-                          value={amount}
-                          onChange={(e) => setAmount(e.target.value)}
-                          onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                          className="pl-10 h-12 border-2 border-border focus:border-primary rounded-xl"
-                          placeholder="100.00"
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Enter the amount you transferred (minimum: {minimumAmountLabel})
-                      </p>
-                    </div>
-
-                    {/* Transaction Hash Input */}
-                    <div className="space-y-3">
-                      <Label htmlFor="txhash" className="text-sm font-semibold text-foreground">
-                        Transaction Hash <span className="text-destructive">*</span>
-                      </Label>
-                      <div className="relative">
-                        <Hash className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                        <Input
-                          id="txhash"
-                          value={transactionHash}
-                          onChange={(e) => setTransactionHash(e.target.value)}
-                          className="pl-10 h-12 border-2 border-border focus:border-primary rounded-xl"
-                          placeholder="Enter your transaction hash"
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        You can find this in your wallet&apos;s transaction history or on the blockchain explorer
-                      </p>
-                    </div>
-
-                    {/* Comment */}
-                    <div className="space-y-3">
-                      <Label htmlFor="usdt-comment" className="text-sm font-semibold text-foreground">
-                        Comment <span className="text-muted-foreground font-normal">(Optional)</span>
-                      </Label>
-                      <textarea
-                        id="usdt-comment"
-                        value={usdtComment}
-                        onChange={(e) => setUsdtComment(e.target.value)}
-                        rows={3}
-                        className="w-full rounded-xl border-2 border-border focus:border-primary bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none resize-none transition-colors"
-                        placeholder="Add any additional notes for this deposit (optional)"
-                      />
-                    </div>
-
-                    {/* Payment Proof Upload */}
-                    <div className="space-y-3">
-                      <Label htmlFor="payment_proof" className="text-sm font-semibold text-foreground">
-                        Payment Proof (Screenshot) <span className="text-destructive">*</span>
-                      </Label>
-                      {!paymentProof ? (
-                        <div className="rounded-lg border-2 border-dashed border-border p-6 transition-colors hover:border-primary/50">
-                          <label
-                            htmlFor="payment_proof"
-                            className="flex flex-col items-center justify-center cursor-pointer"
+                        {/* Amount Input */}
+                        <div className="space-y-3">
+                          <Label
+                            htmlFor="amount"
+                            className="text-sm font-semibold text-foreground"
                           >
-                            <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                            <p className="text-sm text-foreground mb-1">
-                              Click to upload or drag and drop
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              PNG, JPG, WEBP up to 5MB
-                            </p>
-                          </label>
-                          <input
-                            id="payment_proof"
-                            type="file"
-                            accept="image/jpeg,image/jpg,image/png,image/webp"
-                            onChange={handlePaymentProofChange}
-                            className="hidden"
+                            Amount <span className="text-destructive">*</span>
+                          </Label>
+                          <div className="relative">
+                            <DollarSign className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                            <Input
+                              id="amount"
+                              type="number"
+                              step="1"
+                              min="1"
+                              value={amount}
+                              onChange={(e) => setAmount(e.target.value)}
+                              onWheel={(e) =>
+                                (e.target as HTMLInputElement).blur()
+                              }
+                              className="pl-10 h-12 border-2 border-border focus:border-primary rounded-xl"
+                              placeholder="100.00"
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            Enter the amount you transferred (minimum:{" "}
+                            {minimumAmountLabel})
+                          </p>
+                        </div>
+
+                        {/* Transaction Hash Input */}
+                        <div className="space-y-3">
+                          <Label
+                            htmlFor="txhash"
+                            className="text-sm font-semibold text-foreground"
+                          >
+                            Transaction Hash{" "}
+                            <span className="text-destructive">*</span>
+                          </Label>
+                          <div className="relative">
+                            <Hash className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                            <Input
+                              id="txhash"
+                              value={transactionHash}
+                              onChange={(e) =>
+                                setTransactionHash(e.target.value)
+                              }
+                              className="pl-10 h-12 border-2 border-border focus:border-primary rounded-xl"
+                              placeholder="Enter your transaction hash"
+                            />
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            You can find this in your wallet&apos;s transaction
+                            history or on the blockchain explorer
+                          </p>
+                        </div>
+
+                        {/* Comment */}
+                        <div className="space-y-3">
+                          <Label
+                            htmlFor="usdt-comment"
+                            className="text-sm font-semibold text-foreground"
+                          >
+                            Comment{" "}
+                            <span className="text-muted-foreground font-normal">
+                              (Optional)
+                            </span>
+                          </Label>
+                          <textarea
+                            id="usdt-comment"
+                            value={usdtComment}
+                            onChange={(e) => setUsdtComment(e.target.value)}
+                            rows={3}
+                            className="w-full rounded-xl border-2 border-border focus:border-primary bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none resize-none transition-colors"
+                            placeholder="Add any additional notes for this deposit (optional)"
                           />
                         </div>
-                      ) : (
-                        <div className="relative border-2 border-border rounded-xl p-4">
-                          <div className="flex items-center gap-4">
-                            {paymentProofPreview && (
-                              <img
-                                src={paymentProofPreview}
-                                alt="Payment proof preview"
-                                className="w-20 h-20 object-cover rounded-lg"
+
+                        {/* Payment Proof Upload */}
+                        <div className="space-y-3">
+                          <Label
+                            htmlFor="payment_proof"
+                            className="text-sm font-semibold text-foreground"
+                          >
+                            Payment Proof (Screenshot){" "}
+                            <span className="text-destructive">*</span>
+                          </Label>
+                          {!paymentProof ? (
+                            <div className="rounded-lg border-2 border-dashed border-border p-6 transition-colors hover:border-primary/50">
+                              <label
+                                htmlFor="payment_proof"
+                                className="flex flex-col items-center justify-center cursor-pointer"
+                              >
+                                <Upload className="h-8 w-8 text-muted-foreground mb-2" />
+                                <p className="text-sm text-foreground mb-1">
+                                  Click to upload or drag and drop
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  PNG, JPG, WEBP up to 5MB
+                                </p>
+                              </label>
+                              <input
+                                id="payment_proof"
+                                type="file"
+                                accept="image/jpeg,image/jpg,image/png,image/webp"
+                                onChange={handlePaymentProofChange}
+                                className="hidden"
                               />
-                            )}
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-foreground">
-                                {paymentProof.name}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {(paymentProof.size / 1024 / 1024).toFixed(2)} MB
-                              </p>
                             </div>
+                          ) : (
+                            <div className="relative border-2 border-border rounded-xl p-4">
+                              <div className="flex items-center gap-4">
+                                {paymentProofPreview && (
+                                  <img
+                                    src={paymentProofPreview}
+                                    alt="Payment proof preview"
+                                    className="w-20 h-20 object-cover rounded-lg"
+                                  />
+                                )}
+                                <div className="flex-1">
+                                  <p className="text-sm font-medium text-foreground">
+                                    {paymentProof.name}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {(paymentProof.size / 1024 / 1024).toFixed(
+                                      2,
+                                    )}{" "}
+                                    MB
+                                  </p>
+                                </div>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={handleRemovePaymentProof}
+                                  className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                >
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+                          <p className="text-xs text-muted-foreground">
+                            Upload a screenshot of your transaction (JPEG, PNG,
+                            or WebP, max 5MB)
+                          </p>
+                        </div>
+
+                        {/* Submit Button */}
+                        <Button
+                          onClick={handleSubmitHash}
+                          disabled={
+                            !canSubmit ||
+                            isSubmitting ||
+                            parseFloat(amount) < MINIMUM_DEPOSIT_AMOUNT
+                          }
+                          className="h-12 w-full rounded-xl bg-primary text-lg font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <Clock className="h-5 w-5 mr-2 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <ShieldCheck className="h-5 w-5 mr-2" />
+                              Submit Deposit Details
+                            </>
+                          )}
+                        </Button>
+                        {amount &&
+                          parseFloat(amount) > 0 &&
+                          parseFloat(amount) < MINIMUM_DEPOSIT_AMOUNT && (
+                            <p className="text-xs text-destructive font-medium">
+                              Minimum deposit amount is $
+                              {MINIMUM_DEPOSIT_AMOUNT} USD
+                            </p>
+                          )}
+                      </>
+                    )}
+
+                    {depositStatus === "submitted" && (
+                      <div className="py-8 text-center">
+                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                          <Clock className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                        <h3 className="mb-2 text-xl font-semibold text-foreground">
+                          Deposit Submitted
+                        </h3>
+                        <p className="mb-4 text-muted-foreground">
+                          Your deposit request is under review by the admin
+                          team. We&apos;ll verify the transaction details and
+                          process it soon.
+                        </p>
+                        <div className="mb-3 rounded-lg border border-border bg-muted/40 p-4">
+                          <p className="break-all text-sm text-foreground">
+                            Hash: {transactionHash}
+                          </p>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Once approved, the deposit will reflect in your wallet
+                          and account history.
+                        </p>
+                      </div>
+                    )}
+
+                    {depositStatus === "confirmed" && (
+                      <div className="py-8 text-center">
+                        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
+                          <CheckCircle className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <h3 className="mb-2 text-xl font-semibold text-foreground">
+                          Deposit Processed
+                        </h3>
+                        <p className="mb-4 text-muted-foreground">
+                          Your deposit is under review and will be credited
+                          soon!
+                        </p>
+                        <div className="space-y-3">
+                          <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/20">
+                            <p className="text-sm text-emerald-800 dark:text-emerald-200">
+                              The admin team is reviewing your deposit and will
+                              credit the funds to your wallet once approved.
+                            </p>
+                          </div>
+                          <div className="grid gap-3 sm:grid-cols-2">
                             <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              onClick={handleRemovePaymentProof}
-                              className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                              variant="outline"
+                              className="w-full border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
+                              onClick={() => {
+                                const url = getExplorerTxUrl(
+                                  selectedCryptoWallet?.network,
+                                  transactionHash,
+                                );
+                                if (url) {
+                                  window.open(url, "_blank");
+                                } else {
+                                  toast.error(
+                                    "Explorer URL not available for this network",
+                                  );
+                                }
+                              }}
                             >
-                              <X className="h-4 w-4" />
+                              <ExternalLink className="h-4 w-4 mr-2" />
+                              View on{" "}
+                              {selectedCryptoWallet?.network?.split(" ")[0] ||
+                                "Block"}{" "}
+                              Explorer
+                            </Button>
+                            <Button
+                              variant="default"
+                              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                              onClick={() => {
+                                // Reset form to make another deposit
+                                setDepositStatus("pending");
+                                setAmount("");
+                                setTransactionHash("");
+                                setPaymentProof(null);
+                                setPaymentProofPreview(null);
+                                setError(null);
+                              }}
+                            >
+                              <Plus className="h-4 w-4 mr-2" />
+                              Make Another Deposit
                             </Button>
                           </div>
                         </div>
-                      )}
-                      <p className="text-xs text-muted-foreground">
-                        Upload a screenshot of your transaction (JPEG, PNG, or WebP, max 5MB)
-                      </p>
-                    </div>
-
-                    {/* Submit Button */}
-                    <Button
-                      onClick={handleSubmitHash}
-                      disabled={!canSubmit || isSubmitting || parseFloat(amount) < MINIMUM_DEPOSIT_AMOUNT}
-                      className="h-12 w-full rounded-xl bg-primary text-lg font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Clock className="h-5 w-5 mr-2 animate-spin" />
-                          Processing...
-                        </>
-                        ) : (
-                          <>
-                            <ShieldCheck className="h-5 w-5 mr-2" />
-                            Submit Deposit Details
-                          </>
-                        )}
-                    </Button>
-                    {amount && parseFloat(amount) > 0 && parseFloat(amount) < MINIMUM_DEPOSIT_AMOUNT && (
-                      <p className="text-xs text-destructive font-medium">
-                        Minimum deposit amount is ${MINIMUM_DEPOSIT_AMOUNT} USD
-                      </p>
-                    )}
-                  </>
-                )}
-
-                {depositStatus === "submitted" && (
-                    <div className="py-8 text-center">
-                      <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-                        <Clock className="h-8 w-8 animate-spin text-primary" />
                       </div>
-                      <h3 className="mb-2 text-xl font-semibold text-foreground">
-                        Deposit Submitted
-                      </h3>
-                      <p className="mb-4 text-muted-foreground">
-                        Your deposit request is under review by the admin team. We&apos;ll verify the transaction details and process it soon.
-                      </p>
-                      <div className="mb-3 rounded-lg border border-border bg-muted/40 p-4">
-                        <p className="break-all text-sm text-foreground">
-                          Hash: {transactionHash}
-                        </p>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Once approved, the deposit will reflect in your wallet and account history.
-                      </p>
-                    </div>
-                )}
-
-                {depositStatus === "confirmed" && (
-                  <div className="py-8 text-center">
-                    <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
-                      <CheckCircle className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
-                    </div>
-                    <h3 className="mb-2 text-xl font-semibold text-foreground">
-                      Deposit Processed
-                    </h3>
-                    <p className="mb-4 text-muted-foreground">
-                      Your deposit is under review and will be credited soon!
-                    </p>
-                    <div className="space-y-3">
-                      <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/20">
-                        <p className="text-sm text-emerald-800 dark:text-emerald-200">
-                          The admin team is reviewing your deposit and will credit the funds to your wallet once approved.
-                        </p>
-                      </div>
-                      <div className="grid gap-3 sm:grid-cols-2">
-                        <Button
-                          variant="outline"
-                          className="w-full border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-900/20"
-                          onClick={() => {
-                            const url = getExplorerTxUrl(selectedCryptoWallet?.network, transactionHash);
-                            if (url) {
-                              window.open(url, '_blank');
-                            } else {
-                              toast.error('Explorer URL not available for this network');
-                            }
-                          }}
-                        >
-                          <ExternalLink className="h-4 w-4 mr-2" />
-                          View on {selectedCryptoWallet?.network?.split(' ')[0] || 'Block'} Explorer
-                        </Button>
-                        <Button
-                          variant="default"
-                          className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-                          onClick={() => {
-                            // Reset form to make another deposit
-                            setDepositStatus('pending');
-                            setAmount('');
-                            setTransactionHash('');
-                            setPaymentProof(null);
-                            setPaymentProofPreview(null);
-                            setError(null);
-                          }}
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Make Another Deposit
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* How it Works */}
-                {depositStatus === "pending" && (
-                  <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-                    <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 text-sm">
-                      How it works:
-                    </h4>
-                    <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
-                      <div className="flex items-start gap-2">
-                        <div className="w-5 h-5 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mt-0.5">
-                          <span className="text-blue-600 dark:text-blue-400 font-bold text-xs">1</span>
-                        </div>
-                        <span>Scan QR or copy the deposit address</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="w-5 h-5 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mt-0.5">
-                          <span className="text-blue-600 dark:text-blue-400 font-bold text-xs">2</span>
-                        </div>
-                        <span>Send funds using your preferred wallet</span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <div className="w-5 h-5 bg-emerald-100 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mt-0.5">
-                          <span className="text-blue-600 dark:text-blue-400 font-bold text-xs">3</span>
-                        </div>
-                        <span>Submit the transaction hash here</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-            </TabsContent>}
-
-            {/* â”€â”€ Binance Pay tab â”€â”€ */}
-            {hasBinance && <TabsContent value="binance_pay" className="space-y-8">
-              {/* Binance Pay Content */}
-              {(
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Left Column - Binance Info */}
-                <Card className="border border-border/60 bg-card shadow-sm">
-                  <CardHeader className="text-center pb-6 relative z-10">
-                    <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500/10 to-indigo-600/10 border border-blue-500/20">
-                        <WalletMinimal className="h-5 w-5 text-primary" />
-                      </div>
-                      Binance Pay
-                    </CardTitle>
-                    <CardDescription>
-                      Use Binance Pay to complete a deposit from your preferred funding source.
-                    </CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-6">
-                    <div className="flex justify-center">
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-2xl blur opacity-30 dark:opacity-20"></div>
-                        <div className="relative bg-card rounded-2xl p-6 shadow-lg">
-                          <img
-                            src="https://play-lh.googleusercontent.com/T1_WHAGs5WZePQejNSqqrxZah4uhBvYr698nTCFhXMjMZo5oSCoko5yW2wtmeO1ClRU"
-                            alt="Binance Logo"
-                            className="w-32 h-32 object-contain bg-white rounded-xl"
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="50">B</text></svg>';
-                            }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                      <div className="mb-2 text-xs font-medium text-muted-foreground">Processing Time</div>
-                      <div className="font-semibold text-foreground">Within 1 Business Day</div>
-                    </div>
-
-                    <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                      <div className="mb-2 text-xs font-medium text-muted-foreground">Minimum Deposit</div>
-                      <div className="font-semibold text-foreground">Provider dependent</div>
-                    </div>
-
-                    <div className="rounded-2xl border border-amber-300/40 bg-amber-50/70 p-4 dark:border-amber-800/50 dark:bg-amber-950/20">
-                      <div className="flex items-start gap-3">
-                        <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
-                        <div className="text-sm text-amber-900 dark:text-amber-100">
-                          <p className="font-medium mb-1">Important Information:</p>
-                          <p className="text-xs text-amber-800/90 dark:text-amber-200/90">
-                            After submitting your deposit request, you will be redirected to Binance Pay to complete the payment.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Right Column - Binance Deposit Form */}
-                <Card className="border border-border/60 bg-card shadow-sm">
-                  <CardHeader className="relative z-10">
-                    <CardTitle className="text-2xl font-bold flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-yellow-500/10 to-orange-600/10 border border-yellow-500/20">
-                        <DollarSign className="h-5 w-5 text-primary" />
-                      </div>
-                      Create Deposit
-                    </CardTitle>
-                    <CardDescription>
-                      Enter the amount you want to deposit via Binance Pay
-                    </CardDescription>
-                  </CardHeader>
-
-                  <CardContent className="space-y-6 relative z-10">
-                    {error && (
-                      <ApiErrorState
-                        message={error}
-                        audience="client"
-                        resource="Binance deposit"
-                        action="submit"
-                        variant="inline"
-                      />
                     )}
 
-                    {/* Amount Input */}
-                    <div className="space-y-3">
-                      <Label htmlFor="binance-amount" className="text-sm font-semibold text-foreground">
-                        Deposit Amount <span className="text-destructive">*</span>
-                      </Label>
-                      <div className="relative">
-                        <DollarSign className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                        <Input
-                          id="binance-amount"
-                          type="number"
-                          step="1"
-                          min="1"
-                          value={binanceAmount}
-                          onChange={(e) => setBinanceAmount(e.target.value)}
-                          onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                          className="pl-10 h-12 border-2 border-border focus:border-primary rounded-xl"
-                          placeholder="100.00"
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Enter the amount you want to deposit
-                      </p>
-                    </div>
-
-                    {/* User Comment Input */}
-                    <div className="space-y-3">
-                      <Label htmlFor="binance-comment" className="text-sm font-semibold text-foreground">
-                        User Comment <span className="text-muted-foreground text-xs">(Optional)</span>
-                      </Label>
-                      <Textarea
-                        id="binance-comment"
-                        value={binanceComment}
-                        onChange={(e) => setBinanceComment(e.target.value)}
-                        className="min-h-[100px] border-2 border-border focus:border-primary rounded-xl"
-                        placeholder="Add any comments about this deposit..."
-                      />
-                    </div>
-
-                    {/* Submit Button */}
-                    <Button
-                      onClick={handleBinanceSubmit}
-                      disabled={!binanceAmount.trim() || parseFloat(binanceAmount) < MINIMUM_DEPOSIT_AMOUNT || isSubmittingBinance}
-                      className="h-12 w-full rounded-xl bg-primary text-lg font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {isSubmittingBinance ? (
-                        <>
-                          <Clock className="h-5 w-5 mr-2 animate-spin" />
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          <ShieldCheck className="h-5 w-5 mr-2" />
-                          Proceed to Deposit
-                        </>
-                      )}
-                    </Button>
-                    {binanceAmount && parseFloat(binanceAmount) > 0 && parseFloat(binanceAmount) < MINIMUM_DEPOSIT_AMOUNT && (
-                      <p className="text-xs text-destructive font-medium">
-                        Minimum deposit amount is ${MINIMUM_DEPOSIT_AMOUNT} USD
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-              )}
-            </TabsContent>}
-
-            {/* â”€â”€ CoinsBuy tab â”€â”€ */}
-            {hasCoinsbuy && <TabsContent value="coinsbuy" className="space-y-8">
-              {/* CoinsBuy Content */}
-              {(
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Left Column - CoinsBuy Info */}
-                <Card className="border border-border/60 bg-card shadow-sm">
-                  <CardHeader className="text-center pb-6 relative z-10">
-                    <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500/10 to-indigo-600/10 border border-blue-500/20">
-                        <Wallet className="h-5 w-5 text-primary" />
-                      </div>
-                      CoinsBuy
-                    </CardTitle>
-                    <CardDescription>
-                      Use CoinsBuy to start a guided checkout deposit flow.
-                    </CardDescription>
-                  </CardHeader>
-                  
-                  <CardContent className="space-y-6 relative z-10">
-                    <div className="flex justify-center">
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl blur opacity-30 dark:opacity-20"></div>
-                        <div className="relative bg-card rounded-2xl p-6 shadow-lg">
-                          <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex flex-col items-center justify-center gap-2">
-                            <Wallet className="h-8 w-8 text-white" />
-                            <span className="text-lg font-semibold text-white">CoinsBuy</span>
+                    {/* How it Works */}
+                    {depositStatus === "pending" && (
+                      <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
+                        <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 text-sm">
+                          How it works:
+                        </h4>
+                        <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
+                          <div className="flex items-start gap-2">
+                            <div className="w-5 h-5 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mt-0.5">
+                              <span className="text-blue-600 dark:text-blue-400 font-bold text-xs">
+                                1
+                              </span>
+                            </div>
+                            <span>Scan QR or copy the deposit address</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <div className="w-5 h-5 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mt-0.5">
+                              <span className="text-blue-600 dark:text-blue-400 font-bold text-xs">
+                                2
+                              </span>
+                            </div>
+                            <span>Send funds using your preferred wallet</span>
+                          </div>
+                          <div className="flex items-start gap-2">
+                            <div className="w-5 h-5 bg-emerald-100 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mt-0.5">
+                              <span className="text-blue-600 dark:text-blue-400 font-bold text-xs">
+                                3
+                              </span>
+                            </div>
+                            <span>Submit the transaction hash here</span>
                           </div>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                      <div className="mb-2 text-xs font-medium text-muted-foreground">Processing Time</div>
-                      <div className="font-semibold text-foreground">Within 1 Business Day</div>
-                    </div>
-
-                    <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                      <div className="mb-2 text-xs font-medium text-muted-foreground">Minimum Deposit</div>
-                      <div className="font-semibold text-foreground">Provider dependent</div>
-                    </div>
-
-                    <div className="rounded-2xl border border-amber-300/40 bg-amber-50/70 p-4 dark:border-amber-800/50 dark:bg-amber-950/20">
-                      <div className="flex items-start gap-3">
-                        <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
-                        <div className="text-sm text-amber-900 dark:text-amber-100">
-                          <p className="font-medium mb-1">Important Information:</p>
-                          <p className="text-xs text-amber-800/90 dark:text-amber-200/90">
-                            After submitting your deposit request, you will be redirected to CoinsBuy to complete the payment.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* Right Column - CoinsBuy Deposit Form */}
-                <Card className="border border-border/60 bg-card shadow-sm">
-                  <CardHeader className="relative z-10">
-                    <CardTitle className="text-2xl font-bold flex items-center gap-2">
-                      <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500/10 to-indigo-600/10 border border-blue-500/20">
-                        <DollarSign className="h-5 w-5 text-primary" />
-                      </div>
-                      Create Deposit
-                    </CardTitle>
-                    <CardDescription>
-                      Enter the amount you want to deposit via CoinsBuy
-                    </CardDescription>
-                  </CardHeader>
-
-                  <CardContent className="space-y-6 relative z-10">
-                    {error && (
-                      <ApiErrorState
-                        message={error}
-                        audience="client"
-                        resource="CoinsBuy deposit"
-                        action="submit"
-                        variant="inline"
-                      />
-                    )}
-
-                    {/* Amount Input */}
-                    <div className="space-y-3">
-                      <Label htmlFor="coinsbuy-amount" className="text-sm font-semibold text-foreground">
-                        Deposit Amount <span className="text-destructive">*</span>
-                      </Label>
-                      <div className="relative">
-                        <DollarSign className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                        <Input
-                          id="coinsbuy-amount"
-                          type="number"
-                          step="1"
-                          min="1"
-                          value={coinsbuyAmount}
-                          onChange={(e) => setCoinsbuyAmount(e.target.value)}
-                          onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                          className="pl-10 h-12 border-2 border-border focus:border-primary rounded-xl"
-                          placeholder="100.00"
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        Enter the amount you want to deposit
-                      </p>
-                    </div>
-
-                    {/* Submit Button */}
-                    <Button
-                      onClick={handleCoinsbuySubmit}
-                      disabled={!coinsbuyAmount.trim() || parseFloat(coinsbuyAmount) < MINIMUM_DEPOSIT_AMOUNT || isSubmittingCoinsbuy}
-                      className="h-12 w-full rounded-xl bg-primary text-lg font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {isSubmittingCoinsbuy ? (
-                        <>
-                          <Clock className="h-5 w-5 mr-2 animate-spin" />
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          <ShieldCheck className="h-5 w-5 mr-2" />
-                          Proceed to Deposit
-                        </>
-                      )}
-                    </Button>
-                    {coinsbuyAmount && parseFloat(coinsbuyAmount) > 0 && parseFloat(coinsbuyAmount) < MINIMUM_DEPOSIT_AMOUNT && (
-                      <p className="text-xs text-destructive font-medium">
-                        Minimum deposit amount is ${MINIMUM_DEPOSIT_AMOUNT} USD
-                      </p>
                     )}
                   </CardContent>
                 </Card>
               </div>
-              )}
-            </TabsContent>}
-             {/* Cregis tab */}
-           {hasCregis && <TabsContent value="cregis" className="space-y-8">
+            </TabsContent>
+          )}
+
+          {/* â”€â”€ Binance Pay tab â”€â”€ */}
+          {hasBinance && (
+            <TabsContent value="binance_pay" className="space-y-8">
+              {/* Binance Pay Content */}
+              {
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Left Column - Binance Info */}
+                  <Card className="border border-border/60 bg-card shadow-sm">
+                    <CardHeader className="text-center pb-6 relative z-10">
+                      <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500/10 to-indigo-600/10 border border-blue-500/20">
+                          <WalletMinimal className="h-5 w-5 text-primary" />
+                        </div>
+                        Binance Pay
+                      </CardTitle>
+                      <CardDescription>
+                        Use Binance Pay to complete a deposit from your
+                        preferred funding source.
+                      </CardDescription>
+                    </CardHeader>
+
+                    <CardContent className="space-y-6">
+                      <div className="flex justify-center">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-2xl blur opacity-30 dark:opacity-20"></div>
+                          <div className="relative bg-card rounded-2xl p-6 shadow-lg">
+                            <img
+                              src="https://play-lh.googleusercontent.com/T1_WHAGs5WZePQejNSqqrxZah4uhBvYr698nTCFhXMjMZo5oSCoko5yW2wtmeO1ClRU"
+                              alt="Binance Logo"
+                              className="w-32 h-32 object-contain bg-white rounded-xl"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src =
+                                  'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="50">B</text></svg>';
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                        <div className="mb-2 text-xs font-medium text-muted-foreground">
+                          Processing Time
+                        </div>
+                        <div className="font-semibold text-foreground">
+                          Within 1 Business Day
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                        <div className="mb-2 text-xs font-medium text-muted-foreground">
+                          Minimum Deposit
+                        </div>
+                        <div className="font-semibold text-foreground">
+                          Provider dependent
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-amber-300/40 bg-amber-50/70 p-4 dark:border-amber-800/50 dark:bg-amber-950/20">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                          <div className="text-sm text-amber-900 dark:text-amber-100">
+                            <p className="font-medium mb-1">
+                              Important Information:
+                            </p>
+                            <p className="text-xs text-amber-800/90 dark:text-amber-200/90">
+                              After submitting your deposit request, you will be
+                              redirected to Binance Pay to complete the payment.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Right Column - Binance Deposit Form */}
+                  <Card className="border border-border/60 bg-card shadow-sm">
+                    <CardHeader className="relative z-10">
+                      <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-gradient-to-br from-yellow-500/10 to-orange-600/10 border border-yellow-500/20">
+                          <DollarSign className="h-5 w-5 text-primary" />
+                        </div>
+                        Create Deposit
+                      </CardTitle>
+                      <CardDescription>
+                        Enter the amount you want to deposit via Binance Pay
+                      </CardDescription>
+                    </CardHeader>
+
+                    <CardContent className="space-y-6 relative z-10">
+                      {error && (
+                        <ApiErrorState
+                          message={error}
+                          audience="client"
+                          resource="Binance deposit"
+                          action="submit"
+                          variant="inline"
+                        />
+                      )}
+
+                      {/* Amount Input */}
+                      <div className="space-y-3">
+                        <Label
+                          htmlFor="binance-amount"
+                          className="text-sm font-semibold text-foreground"
+                        >
+                          Deposit Amount{" "}
+                          <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="relative">
+                          <DollarSign className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                          <Input
+                            id="binance-amount"
+                            type="number"
+                            step="1"
+                            min="1"
+                            value={binanceAmount}
+                            onChange={(e) => setBinanceAmount(e.target.value)}
+                            onWheel={(e) =>
+                              (e.target as HTMLInputElement).blur()
+                            }
+                            className="pl-10 h-12 border-2 border-border focus:border-primary rounded-xl"
+                            placeholder="100.00"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Enter the amount you want to deposit
+                        </p>
+                      </div>
+
+                      {/* User Comment Input */}
+                      <div className="space-y-3">
+                        <Label
+                          htmlFor="binance-comment"
+                          className="text-sm font-semibold text-foreground"
+                        >
+                          User Comment{" "}
+                          <span className="text-muted-foreground text-xs">
+                            (Optional)
+                          </span>
+                        </Label>
+                        <Textarea
+                          id="binance-comment"
+                          value={binanceComment}
+                          onChange={(e) => setBinanceComment(e.target.value)}
+                          className="min-h-[100px] border-2 border-border focus:border-primary rounded-xl"
+                          placeholder="Add any comments about this deposit..."
+                        />
+                      </div>
+
+                      {/* Submit Button */}
+                      <Button
+                        onClick={handleBinanceSubmit}
+                        disabled={
+                          !binanceAmount.trim() ||
+                          parseFloat(binanceAmount) < MINIMUM_DEPOSIT_AMOUNT ||
+                          isSubmittingBinance
+                        }
+                        className="h-12 w-full rounded-xl bg-primary text-lg font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {isSubmittingBinance ? (
+                          <>
+                            <Clock className="h-5 w-5 mr-2 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <ShieldCheck className="h-5 w-5 mr-2" />
+                            Proceed to Deposit
+                          </>
+                        )}
+                      </Button>
+                      {binanceAmount &&
+                        parseFloat(binanceAmount) > 0 &&
+                        parseFloat(binanceAmount) < MINIMUM_DEPOSIT_AMOUNT && (
+                          <p className="text-xs text-destructive font-medium">
+                            Minimum deposit amount is ${MINIMUM_DEPOSIT_AMOUNT}{" "}
+                            USD
+                          </p>
+                        )}
+                    </CardContent>
+                  </Card>
+                </div>
+              }
+            </TabsContent>
+          )}
+
+          {/* â”€â”€ CoinsBuy tab â”€â”€ */}
+          {hasCoinsbuy && (
+            <TabsContent value="coinsbuy" className="space-y-8">
+              {/* CoinsBuy Content */}
+              {
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Left Column - CoinsBuy Info */}
+                  <Card className="border border-border/60 bg-card shadow-sm">
+                    <CardHeader className="text-center pb-6 relative z-10">
+                      <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500/10 to-indigo-600/10 border border-blue-500/20">
+                          <Wallet className="h-5 w-5 text-primary" />
+                        </div>
+                        CoinsBuy
+                      </CardTitle>
+                      <CardDescription>
+                        Use CoinsBuy to start a guided checkout deposit flow.
+                      </CardDescription>
+                    </CardHeader>
+
+                    <CardContent className="space-y-6 relative z-10">
+                      <div className="flex justify-center">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl blur opacity-30 dark:opacity-20"></div>
+                          <div className="relative bg-card rounded-2xl p-6 shadow-lg">
+                            <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex flex-col items-center justify-center gap-2">
+                              <Wallet className="h-8 w-8 text-white" />
+                              <span className="text-lg font-semibold text-white">
+                                CoinsBuy
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                        <div className="mb-2 text-xs font-medium text-muted-foreground">
+                          Processing Time
+                        </div>
+                        <div className="font-semibold text-foreground">
+                          Within 1 Business Day
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
+                        <div className="mb-2 text-xs font-medium text-muted-foreground">
+                          Minimum Deposit
+                        </div>
+                        <div className="font-semibold text-foreground">
+                          Provider dependent
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-amber-300/40 bg-amber-50/70 p-4 dark:border-amber-800/50 dark:bg-amber-950/20">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
+                          <div className="text-sm text-amber-900 dark:text-amber-100">
+                            <p className="font-medium mb-1">
+                              Important Information:
+                            </p>
+                            <p className="text-xs text-amber-800/90 dark:text-amber-200/90">
+                              After submitting your deposit request, you will be
+                              redirected to CoinsBuy to complete the payment.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Right Column - CoinsBuy Deposit Form */}
+                  <Card className="border border-border/60 bg-card shadow-sm">
+                    <CardHeader className="relative z-10">
+                      <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                        <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500/10 to-indigo-600/10 border border-blue-500/20">
+                          <DollarSign className="h-5 w-5 text-primary" />
+                        </div>
+                        Create Deposit
+                      </CardTitle>
+                      <CardDescription>
+                        Enter the amount you want to deposit via CoinsBuy
+                      </CardDescription>
+                    </CardHeader>
+
+                    <CardContent className="space-y-6 relative z-10">
+                      {error && (
+                        <ApiErrorState
+                          message={error}
+                          audience="client"
+                          resource="CoinsBuy deposit"
+                          action="submit"
+                          variant="inline"
+                        />
+                      )}
+
+                      {/* Amount Input */}
+                      <div className="space-y-3">
+                        <Label
+                          htmlFor="coinsbuy-amount"
+                          className="text-sm font-semibold text-foreground"
+                        >
+                          Deposit Amount{" "}
+                          <span className="text-destructive">*</span>
+                        </Label>
+                        <div className="relative">
+                          <DollarSign className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+                          <Input
+                            id="coinsbuy-amount"
+                            type="number"
+                            step="1"
+                            min="1"
+                            value={coinsbuyAmount}
+                            onChange={(e) => setCoinsbuyAmount(e.target.value)}
+                            onWheel={(e) =>
+                              (e.target as HTMLInputElement).blur()
+                            }
+                            className="pl-10 h-12 border-2 border-border focus:border-primary rounded-xl"
+                            placeholder="100.00"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Enter the amount you want to deposit
+                        </p>
+                      </div>
+
+                      {/* Submit Button */}
+                      <Button
+                        onClick={handleCoinsbuySubmit}
+                        disabled={
+                          !coinsbuyAmount.trim() ||
+                          parseFloat(coinsbuyAmount) < MINIMUM_DEPOSIT_AMOUNT ||
+                          isSubmittingCoinsbuy
+                        }
+                        className="h-12 w-full rounded-xl bg-primary text-lg font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {isSubmittingCoinsbuy ? (
+                          <>
+                            <Clock className="h-5 w-5 mr-2 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <ShieldCheck className="h-5 w-5 mr-2" />
+                            Proceed to Deposit
+                          </>
+                        )}
+                      </Button>
+                      {coinsbuyAmount &&
+                        parseFloat(coinsbuyAmount) > 0 &&
+                        parseFloat(coinsbuyAmount) < MINIMUM_DEPOSIT_AMOUNT && (
+                          <p className="text-xs text-destructive font-medium">
+                            Minimum deposit amount is ${MINIMUM_DEPOSIT_AMOUNT}{" "}
+                            USD
+                          </p>
+                        )}
+                    </CardContent>
+                  </Card>
+                </div>
+              }
+            </TabsContent>
+          )}
+          {/* Cregis tab */}
+          {hasCregis && (
+            <TabsContent value="cregis" className="space-y-8">
               {/* Main Deposit Form */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Left Column - Cregis Info */}
@@ -1944,7 +2478,7 @@ function USDTDepositContent() {
                       Fast, secure multi-blockchain payment solution
                     </CardDescription>
                   </CardHeader>
-                  
+
                   <CardContent className="space-y-6 relative z-10">
                     <div className="flex justify-center">
                       <div className="relative">
@@ -1952,7 +2486,9 @@ function USDTDepositContent() {
                         <div className="relative bg-card rounded-2xl p-6 shadow-lg border border-border/60">
                           <div className="w-32 h-32 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl flex flex-col items-center justify-center gap-2 border border-primary/30">
                             <Shield className="h-10 w-10 text-primary" />
-                            <span className="text-base font-semibold text-foreground text-center px-2">Crypto Pay</span>
+                            <span className="text-base font-semibold text-foreground text-center px-2">
+                              Crypto Pay
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -1961,28 +2497,49 @@ function USDTDepositContent() {
                     <div className="space-y-3">
                       <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
                         <div className="flex items-center justify-between">
-                          <div className="text-xs font-medium text-muted-foreground">Rate</div>
-                          <div className="font-semibold text-foreground">1USD = 1USDT</div>
+                          <div className="text-xs font-medium text-muted-foreground">
+                            Rate
+                          </div>
+                          <div className="font-semibold text-foreground">
+                            1USD = 1USDT
+                          </div>
                         </div>
                       </div>
 
                       <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
                         <div className="flex items-center justify-between">
-                          <div className="text-xs font-medium text-muted-foreground">Speed</div>
-                          <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                          <div className="text-xs font-medium text-muted-foreground">
+                            Speed
+                          </div>
+                          <Badge
+                            variant="secondary"
+                            className="bg-primary/10 text-primary border-primary/20"
+                          >
                             Instant
                           </Badge>
                         </div>
                       </div>
 
                       <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                        <div className="text-xs font-medium text-muted-foreground mb-2">Networks</div>
+                        <div className="text-xs font-medium text-muted-foreground mb-2">
+                          Networks
+                        </div>
                         <div className="flex flex-wrap gap-1.5">
-                          <Badge variant="default" className="text-xs">BTC</Badge>
-                          <Badge variant="default" className="text-xs">ETH</Badge>
-                          <Badge variant="default" className="text-xs">BSC</Badge>
-                          <Badge variant="default" className="text-xs">TRX</Badge>
-                          <Badge variant="default" className="text-xs">+More</Badge>
+                          <Badge variant="default" className="text-xs">
+                            BTC
+                          </Badge>
+                          <Badge variant="default" className="text-xs">
+                            ETH
+                          </Badge>
+                          <Badge variant="default" className="text-xs">
+                            BSC
+                          </Badge>
+                          <Badge variant="default" className="text-xs">
+                            TRX
+                          </Badge>
+                          <Badge variant="default" className="text-xs">
+                            +More
+                          </Badge>
                         </div>
                       </div>
                     </div>
@@ -2032,7 +2589,10 @@ function USDTDepositContent() {
 
                     {/* Amount Input */}
                     <div className="space-y-3">
-                      <Label htmlFor="cregis-amount" className="text-sm font-semibold text-foreground">
+                      <Label
+                        htmlFor="cregis-amount"
+                        className="text-sm font-semibold text-foreground"
+                      >
                         Amount (USD) <span className="text-destructive">*</span>
                       </Label>
                       <div className="relative">
@@ -2052,7 +2612,9 @@ function USDTDepositContent() {
                       {cregisAmount && parseFloat(cregisAmount) > 0 && (
                         <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
                           <div className="flex items-center justify-between text-sm">
-                            <span className="text-muted-foreground">You&apos;ll pay (USDT)</span>
+                            <span className="text-muted-foreground">
+                              You&apos;ll pay (USDT)
+                            </span>
                             <span className="text-foreground font-semibold">
                               {parseFloat(cregisAmount).toFixed(2)}
                             </span>
@@ -2064,7 +2626,11 @@ function USDTDepositContent() {
                     {/* Submit Button */}
                     <Button
                       onClick={handleCregisSubmit}
-                      disabled={!cregisAmount.trim() || parseFloat(cregisAmount) < MINIMUM_DEPOSIT_AMOUNT || isSubmittingCregis}
+                      disabled={
+                        !cregisAmount.trim() ||
+                        parseFloat(cregisAmount) < MINIMUM_DEPOSIT_AMOUNT ||
+                        isSubmittingCregis
+                      }
                       className="h-12 w-full rounded-xl bg-primary text-lg font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
                     >
                       {isSubmittingCregis ? (
@@ -2079,11 +2645,14 @@ function USDTDepositContent() {
                         </>
                       )}
                     </Button>
-                    {cregisAmount && parseFloat(cregisAmount) > 0 && parseFloat(cregisAmount) < MINIMUM_DEPOSIT_AMOUNT && (
-                      <p className="text-xs text-destructive font-medium">
-                        Minimum deposit amount is ${MINIMUM_DEPOSIT_AMOUNT} USD
-                      </p>
-                    )}
+                    {cregisAmount &&
+                      parseFloat(cregisAmount) > 0 &&
+                      parseFloat(cregisAmount) < MINIMUM_DEPOSIT_AMOUNT && (
+                        <p className="text-xs text-destructive font-medium">
+                          Minimum deposit amount is ${MINIMUM_DEPOSIT_AMOUNT}{" "}
+                          USD
+                        </p>
+                      )}
 
                     {/* How it Works */}
                     <div className="bg-muted/50 rounded-xl p-4 border border-border/50">
@@ -2094,19 +2663,25 @@ function USDTDepositContent() {
                       <div className="space-y-2 text-xs text-muted-foreground">
                         <div className="flex items-start gap-2">
                           <div className="w-5 h-5 bg-primary/10 rounded-full flex items-center justify-center mt-0.5 border border-primary/20">
-                            <span className="text-primary font-bold text-xs">1</span>
+                            <span className="text-primary font-bold text-xs">
+                              1
+                            </span>
                           </div>
                           <span>Enter deposit amount</span>
                         </div>
                         <div className="flex items-start gap-2">
                           <div className="w-5 h-5 bg-primary/10 rounded-full flex items-center justify-center mt-0.5 border border-primary/20">
-                            <span className="text-primary font-bold text-xs">2</span>
+                            <span className="text-primary font-bold text-xs">
+                              2
+                            </span>
                           </div>
                           <span>Choose your blockchain network</span>
                         </div>
                         <div className="flex items-start gap-2">
                           <div className="w-5 h-5 bg-primary/10 rounded-full flex items-center justify-center mt-0.5 border border-primary/20">
-                            <span className="text-primary font-bold text-xs">3</span>
+                            <span className="text-primary font-bold text-xs">
+                              3
+                            </span>
                           </div>
                           <span>Complete payment & return</span>
                         </div>
@@ -2117,249 +2692,292 @@ function USDTDepositContent() {
               </div>
 
               {/* Status Display - Show if there's a pending/completed status */}
-              {cregisDepositStatus && (() => {
-                const statusInfo = getCregisStatusInfo(cregisDepositStatus.cregis_status);
-                const StatusIcon = statusInfo.icon;
-                
-                return (
-                  <Card className={`relative overflow-hidden border-2 ${
-                    statusInfo.color === 'emerald'
-                      ? "border-emerald-500/30 bg-gradient-to-br from-emerald-50/50 to-background dark:from-emerald-950/20 dark:to-background"
-                      : statusInfo.color === 'red'
-                      ? "border-red-500/30 bg-gradient-to-br from-red-50/50 to-background dark:from-red-950/20 dark:to-background"
-                      : statusInfo.color === 'amber'
-                      ? "border-amber-500/30 bg-gradient-to-br from-amber-50/50 to-background dark:from-amber-950/20 dark:to-background"
-                      : "border-border/30 bg-gradient-to-br from-muted/50 to-background"
-                  }`}>
-                  <CardContent className="p-6">
-                    <div className="flex flex-col md:flex-row gap-6">
-                      {/* Left side - Icon and Status */}
-                      <div className="flex items-start gap-4 flex-1">
-                        {/* Icon */}
-                        <div className={`flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-4 ${
-                          statusInfo.color === 'emerald'
-                            ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-                            : statusInfo.color === 'red'
-                            ? "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400"
-                            : statusInfo.color === 'amber'
-                            ? "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400"
-                            : "border-border/20 bg-muted/10 text-muted-foreground"
-                        }`}>
-                          <StatusIcon className="h-10 w-10" />
-                        </div>
+              {cregisDepositStatus &&
+                (() => {
+                  const statusInfo = getCregisStatusInfo(
+                    cregisDepositStatus.cregis_status,
+                  );
+                  const StatusIcon = statusInfo.icon;
 
-                        {/* Status Info */}
-                        <div className="flex-1 space-y-2">
-                          <Badge variant={statusInfo.variant} className="text-xs uppercase tracking-wider">
-                            {statusInfo.label}
-                          </Badge>
-                          
-                          <h3 className="text-3xl font-bold text-foreground">
-                            ${cregisDepositStatus.amount.toFixed(2)}
-                          </h3>
-                          
-                          <p className="text-sm text-muted-foreground">
-                            Crypto Currency • {cregisDepositStatus.currency}
-                          </p>
-                          
-                          <div className="pt-2 space-y-1">
-                            <div className="flex items-center gap-2 text-sm">
-                              <span className="text-muted-foreground">Order ID</span>
-                              <code className="text-xs font-mono text-foreground bg-muted/50 px-2 py-1 rounded">
-                                {cregisDepositStatus.out_trade_no}
-                              </code>
+                  return (
+                    <Card
+                      className={`relative overflow-hidden border-2 ${
+                        statusInfo.color === "emerald"
+                          ? "border-emerald-500/30 bg-gradient-to-br from-emerald-50/50 to-background dark:from-emerald-950/20 dark:to-background"
+                          : statusInfo.color === "red"
+                            ? "border-red-500/30 bg-gradient-to-br from-red-50/50 to-background dark:from-red-950/20 dark:to-background"
+                            : statusInfo.color === "amber"
+                              ? "border-amber-500/30 bg-gradient-to-br from-amber-50/50 to-background dark:from-amber-950/20 dark:to-background"
+                              : "border-border/30 bg-gradient-to-br from-muted/50 to-background"
+                      }`}
+                    >
+                      <CardContent className="p-6">
+                        <div className="flex flex-col md:flex-row gap-6">
+                          {/* Left side - Icon and Status */}
+                          <div className="flex items-start gap-4 flex-1">
+                            {/* Icon */}
+                            <div
+                              className={`flex h-20 w-20 shrink-0 items-center justify-center rounded-full border-4 ${
+                                statusInfo.color === "emerald"
+                                  ? "border-emerald-500/20 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                                  : statusInfo.color === "red"
+                                    ? "border-red-500/20 bg-red-500/10 text-red-600 dark:text-red-400"
+                                    : statusInfo.color === "amber"
+                                      ? "border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                                      : "border-border/20 bg-muted/10 text-muted-foreground"
+                              }`}
+                            >
+                              <StatusIcon className="h-10 w-10" />
+                            </div>
+
+                            {/* Status Info */}
+                            <div className="flex-1 space-y-2">
+                              <Badge
+                                variant={statusInfo.variant}
+                                className="text-xs uppercase tracking-wider"
+                              >
+                                {statusInfo.label}
+                              </Badge>
+
+                              <h3 className="text-3xl font-bold text-foreground">
+                                ${cregisDepositStatus.amount.toFixed(2)}
+                              </h3>
+
+                              <p className="text-sm text-muted-foreground">
+                                Crypto Currency • {cregisDepositStatus.currency}
+                              </p>
+
+                              <div className="pt-2 space-y-1">
+                                <div className="flex items-center gap-2 text-sm">
+                                  <span className="text-muted-foreground">
+                                    Order ID
+                                  </span>
+                                  <code className="text-xs font-mono text-foreground bg-muted/50 px-2 py-1 rounded">
+                                    {cregisDepositStatus.out_trade_no}
+                                  </code>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 p-0"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(
+                                        cregisDepositStatus.out_trade_no,
+                                      );
+                                      toast.success("Transaction ID copied!");
+                                    }}
+                                  >
+                                    <Copy className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Right side - Details Grid */}
+                          <div className="flex flex-col gap-4 md:min-w-[280px]">
+                            <div className="rounded-xl border border-border/60 bg-card/50 p-4 space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <DollarSign className="h-4 w-4" />
+                                  <span className="text-sm">Amount</span>
+                                </div>
+                                <span className="text-sm font-semibold text-foreground">
+                                  ${cregisDepositStatus.amount.toFixed(2)}
+                                </span>
+                              </div>
+
+                              <div className="h-px bg-border" />
+
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <RefreshCw className="h-4 w-4" />
+                                  <span className="text-sm">Rate</span>
+                                </div>
+                                <span className="text-sm font-semibold text-foreground">
+                                  1 USD = 1 {cregisDepositStatus.currency}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            {statusInfo.canRefresh && (
                               <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-6 w-6 p-0"
+                                variant="outline"
+                                className="w-full"
+                                onClick={() =>
+                                  checkCregisStatus(
+                                    cregisDepositStatus.out_trade_no,
+                                  )
+                                }
+                                disabled={isPollingCregisStatus}
+                              >
+                                {isPollingCregisStatus ? (
+                                  <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Checking Status...
+                                  </>
+                                ) : (
+                                  <>
+                                    <RefreshCw className="mr-2 h-4 w-4" />
+                                    Refresh Status
+                                  </>
+                                )}
+                              </Button>
+                            )}
+
+                            {statusInfo.showNewDeposit && (
+                              <Button
+                                variant="default"
+                                className="w-full"
                                 onClick={() => {
-                                  navigator.clipboard.writeText(cregisDepositStatus.out_trade_no);
-                                  toast.success("Transaction ID copied!");
+                                  setCregisDepositStatus(null);
+                                  setCregisOutTradeNo(null);
+                                  setCregisAmount("");
+                                  localStorage.removeItem(
+                                    "cregis_pending_deposit",
+                                  );
                                 }}
                               >
-                                <Copy className="h-3 w-3" />
+                                New Deposit
                               </Button>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Right side - Details Grid */}
-                      <div className="flex flex-col gap-4 md:min-w-[280px]">
-                        <div className="rounded-xl border border-border/60 bg-card/50 p-4 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <DollarSign className="h-4 w-4" />
-                              <span className="text-sm">Amount</span>
-                            </div>
-                            <span className="text-sm font-semibold text-foreground">
-                              ${cregisDepositStatus.amount.toFixed(2)}
-                            </span>
-                          </div>
-                          
-                          <div className="h-px bg-border" />
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2 text-muted-foreground">
-                              <RefreshCw className="h-4 w-4" />
-                              <span className="text-sm">Rate</span>
-                            </div>
-                            <span className="text-sm font-semibold text-foreground">
-                              1 USD = 1 {cregisDepositStatus.currency}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        {statusInfo.canRefresh && (
-                          <Button
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => checkCregisStatus(cregisDepositStatus.out_trade_no)}
-                            disabled={isPollingCregisStatus}
-                          >
-                            {isPollingCregisStatus ? (
-                              <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Checking Status...
-                              </>
-                            ) : (
-                              <>
-                                <RefreshCw className="mr-2 h-4 w-4" />
-                                Refresh Status
-                              </>
                             )}
-                          </Button>
-                        )}
-                        
-                        {statusInfo.showNewDeposit && (
-                          <Button
-                            variant="default"
-                            className="w-full"
-                            onClick={() => {
-                              setCregisDepositStatus(null);
-                              setCregisOutTradeNo(null);
-                              setCregisAmount("");
-                              localStorage.removeItem('cregis_pending_deposit');
-                            }}
-                          >
-                            New Deposit
-                          </Button>
-                        )}
-                      </div>
-                    </div>
+                          </div>
+                        </div>
 
-                    {/* Bottom Message */}
-                    <div className={`mt-6 rounded-lg p-4 ${
-                      statusInfo.color === 'emerald'
-                        ? "bg-emerald-500/10 border border-emerald-500/20"
-                        : statusInfo.color === 'red'
-                        ? "bg-red-500/10 border border-red-500/20"
-                        : statusInfo.color === 'amber'
-                        ? "bg-amber-500/10 border border-amber-500/20"
-                        : "bg-muted/50 border border-border/50"
-                    }`}>
-                      <p className={`text-sm ${
-                        statusInfo.color === 'emerald'
-                          ? "text-emerald-900 dark:text-emerald-100"
-                          : statusInfo.color === 'red'
-                          ? "text-red-900 dark:text-red-100"
-                          : statusInfo.color === 'amber'
-                          ? "text-amber-900 dark:text-amber-100"
-                          : "text-foreground"
-                      }`}>
-                        {statusInfo.message}
-                      </p>
-                    </div>
-                  </CardContent>
-                </Card>
-                );
-              })()}
-            </TabsContent>}
-
-            {/* Cregis Deposit History */}
-            {hasCregis && cregisHistory.length > 0 && activeTab === 'cregis' && (
-              <Card className="border border-border/60 bg-card shadow-sm">
-                <CardHeader className="pb-4">
-                  <CardTitle className="text-base font-semibold flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    Recent Crypto Deposits
-                  </CardTitle>
-                  <CardDescription>Your last {cregisHistory.length} deposit order(s). Click &quot;Check Status&quot; to refresh any pending order.</CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="divide-y divide-border/50">
-                    {cregisHistory.map((entry) => {
-                      const isCurrent = entry.outTradeNo === cregisOutTradeNo;
-                      return (
+                        {/* Bottom Message */}
                         <div
-                          key={entry.outTradeNo}
-                          className={`flex items-center justify-between px-6 py-4 transition-colors ${
-                            isCurrent ? 'bg-primary/5' : 'hover:bg-muted/40'
+                          className={`mt-6 rounded-lg p-4 ${
+                            statusInfo.color === "emerald"
+                              ? "bg-emerald-500/10 border border-emerald-500/20"
+                              : statusInfo.color === "red"
+                                ? "bg-red-500/10 border border-red-500/20"
+                                : statusInfo.color === "amber"
+                                  ? "bg-amber-500/10 border border-amber-500/20"
+                                  : "bg-muted/50 border border-border/50"
                           }`}
                         >
-                          <div className="flex flex-col gap-1 min-w-0">
-                            <code className="text-xs font-mono text-foreground truncate">{entry.outTradeNo}</code>
-                            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                              <span className="font-medium text-foreground">${entry.amount.toFixed(2)}</span>
-                              <span>{formatDateTimeInIST(entry.timestamp)}</span>
-                            </div>
+                          <p
+                            className={`text-sm ${
+                              statusInfo.color === "emerald"
+                                ? "text-emerald-900 dark:text-emerald-100"
+                                : statusInfo.color === "red"
+                                  ? "text-red-900 dark:text-red-100"
+                                  : statusInfo.color === "amber"
+                                    ? "text-amber-900 dark:text-amber-100"
+                                    : "text-foreground"
+                            }`}
+                          >
+                            {statusInfo.message}
+                          </p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })()}
+            </TabsContent>
+          )}
+
+          {/* Cregis Deposit History */}
+          {hasCregis && cregisHistory.length > 0 && activeTab === "cregis" && (
+            <Card className="border border-border/60 bg-card shadow-sm">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  Recent Crypto Deposits
+                </CardTitle>
+                <CardDescription>
+                  Your last {cregisHistory.length} deposit order(s). Click
+                  &quot;Check Status&quot; to refresh any pending order.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y divide-border/50">
+                  {cregisHistory.map((entry) => {
+                    const isCurrent = entry.outTradeNo === cregisOutTradeNo;
+                    return (
+                      <div
+                        key={entry.outTradeNo}
+                        className={`flex items-center justify-between px-6 py-4 transition-colors ${
+                          isCurrent ? "bg-primary/5" : "hover:bg-muted/40"
+                        }`}
+                      >
+                        <div className="flex flex-col gap-1 min-w-0">
+                          <code className="text-xs font-mono text-foreground truncate">
+                            {entry.outTradeNo}
+                          </code>
+                          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                            <span className="font-medium text-foreground">
+                              ${entry.amount.toFixed(2)}
+                            </span>
+                            <span>{formatDateTime(entry.timestamp)}</span>
                           </div>
-                          <div className="flex items-center gap-2 ml-4 shrink-0">
-                            {entry.status ? (
-                              (() => {
-                                const statusInfo = getCregisStatusInfo(entry.status);
+                        </div>
+                        <div className="flex items-center gap-2 ml-4 shrink-0">
+                          {entry.status
+                            ? (() => {
+                                const statusInfo = getCregisStatusInfo(
+                                  entry.status,
+                                );
                                 return (
                                   <Badge
                                     variant={statusInfo.variant}
                                     className={`text-xs font-semibold ${
-                                      statusInfo.color === 'emerald'
-                                        ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
-                                        : statusInfo.color === 'red'
-                                        ? 'bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20'
-                                        : statusInfo.color === 'amber'
-                                        ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20'
-                                        : 'border-border'
+                                      statusInfo.color === "emerald"
+                                        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20"
+                                        : statusInfo.color === "red"
+                                          ? "bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20"
+                                          : statusInfo.color === "amber"
+                                            ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20"
+                                            : "border-border"
                                     }`}
                                   >
                                     {statusInfo.label}
                                   </Badge>
                                 );
                               })()
-                            ) : (
-                              isCurrent && (
-                                <Badge variant="outline" className="text-xs border-primary/30 text-primary">Current</Badge>
-                              )
-                            )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-7 text-xs"
-                              disabled={isPollingCregisStatus}
-                              onClick={() => {
-                                setCregisOutTradeNo(entry.outTradeNo);
-                                checkCregisStatus(entry.outTradeNo);
-                              }}
-                            >
-                              {isPollingCregisStatus && isCurrent ? (
-                                <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Checking...</>
-                              ) : (
-                                <><RefreshCw className="h-3 w-3 mr-1" />Check Status</>
+                            : isCurrent && (
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs border-primary/30 text-primary"
+                                >
+                                  Current
+                                </Badge>
                               )}
-                            </Button>
-                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-7 text-xs"
+                            disabled={isPollingCregisStatus}
+                            onClick={() => {
+                              setCregisOutTradeNo(entry.outTradeNo);
+                              checkCregisStatus(entry.outTradeNo);
+                            }}
+                          >
+                            {isPollingCregisStatus && isCurrent ? (
+                              <>
+                                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                                Checking...
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="h-3 w-3 mr-1" />
+                                Check Status
+                              </>
+                            )}
+                          </Button>
                         </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-            {/* â”€â”€ Bank Transfer tab â”€â”€ */}
-            {hasBank && <TabsContent value="bank" className="space-y-8">
+          {/* â”€â”€ Bank Transfer tab â”€â”€ */}
+          {hasBank && (
+            <TabsContent value="bank" className="space-y-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
                 {/* Left â€” Bank account details (dummy) */}
                 <div className="space-y-6">
                   <Card className="border border-border/60 bg-card shadow-sm">
@@ -2387,14 +3005,20 @@ function USDTDepositContent() {
                               `Bank: ${selectedBankDetail.bank_name}`,
                               `Account Name: ${selectedBankDetail.account_holder_name || "-"}`,
                               `Account Number: ${selectedBankDetail.account_number || "-"}`,
-                              selectedBankDetail.iban_number ? `IBAN: ${selectedBankDetail.iban_number}` : null,
+                              selectedBankDetail.iban_number
+                                ? `IBAN: ${selectedBankDetail.iban_number}`
+                                : null,
                               `IFSC / SWIFT: ${selectedBankDetail.swift_ifsc_code || "-"}`,
                               `Address: ${selectedBankDetail.address || "-"}`,
                               `Country: ${selectedBankDetail.country || "-"}`,
                             ].filter(Boolean);
-                            navigator.clipboard.writeText(lines.join("\n")).then(() => {
-                              toast.success("Bank details copied to clipboard");
-                            });
+                            navigator.clipboard
+                              .writeText(lines.join("\n"))
+                              .then(() => {
+                                toast.success(
+                                  "Bank details copied to clipboard",
+                                );
+                              });
                           }}
                           disabled={!selectedBankDetail}
                           aria-label="Copy bank details"
@@ -2444,33 +3068,41 @@ function USDTDepositContent() {
                         />
                       ) : visibleBrokerBankDetails.length === 0 ? (
                         <div className="rounded-xl border border-dashed border-border/60 bg-muted/10 px-4 py-8 text-center text-sm text-muted-foreground">
-                          Bank deposit details are not available right now. Please contact support before sending funds.
+                          Bank deposit details are not available right now.
+                          Please contact support before sending funds.
                         </div>
                       ) : (
                         <div className="space-y-4">
                           {/* Bank Selector - show if multiple accounts */}
                           {visibleBrokerBankDetails.length > 1 && (
                             <div className="space-y-2">
-                              <Label className="text-sm font-semibold text-foreground">Select Bank Account</Label>
+                              <Label className="text-sm font-semibold text-foreground">
+                                Select Bank Account
+                              </Label>
                               <div className="grid gap-2">
                                 {visibleBrokerBankDetails.map((detail) => {
-                                  const active = isBrokerBankDetailActive(detail);
+                                  const active =
+                                    isBrokerBankDetailActive(detail);
                                   return (
                                     <button
                                       key={detail.id}
                                       type="button"
-                                      onClick={() => setSelectedBankDetailId(detail.id)}
+                                      onClick={() =>
+                                        setSelectedBankDetailId(detail.id)
+                                      }
                                       className={`flex items-center gap-3 rounded-xl border-2 p-3 text-left transition-all ${
                                         selectedBankDetailId === detail.id
                                           ? "border-primary bg-primary/5"
                                           : "border-border/60 bg-muted/20 hover:border-primary/40"
                                       }`}
                                     >
-                                      <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
-                                        selectedBankDetailId === detail.id
-                                          ? "bg-primary/20 text-primary"
-                                          : "bg-muted/40 text-muted-foreground"
-                                      }`}>
+                                      <div
+                                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
+                                          selectedBankDetailId === detail.id
+                                            ? "bg-primary/20 text-primary"
+                                            : "bg-muted/40 text-muted-foreground"
+                                        }`}
+                                      >
                                         <Building2 className="h-4 w-4" />
                                       </div>
                                       <div className="min-w-0 flex-1">
@@ -2478,10 +3110,21 @@ function USDTDepositContent() {
                                           {detail.bank_name}
                                         </div>
                                         <div className="text-xs text-muted-foreground font-mono truncate">
-                                          {detail.account_number || detail.iban_number || "-"}
+                                          {detail.account_number ||
+                                            detail.iban_number ||
+                                            "-"}
                                         </div>
                                       </div>
-                                      <Badge variant={active ? (selectedBankDetailId === detail.id ? "default" : "secondary") : "outline"} className="shrink-0">
+                                      <Badge
+                                        variant={
+                                          active
+                                            ? selectedBankDetailId === detail.id
+                                              ? "default"
+                                              : "secondary"
+                                            : "outline"
+                                        }
+                                        className="shrink-0"
+                                      >
                                         {active ? "Active" : "Inactive"}
                                       </Badge>
                                     </button>
@@ -2504,19 +3147,47 @@ function USDTDepositContent() {
                                       {selectedBankDetail.country}
                                     </div>
                                   </div>
-                                  <Badge variant={isBrokerBankDetailActive(selectedBankDetail) ? "default" : "secondary"}>
-                                    {isBrokerBankDetailActive(selectedBankDetail) ? "Active" : "Inactive"}
+                                  <Badge
+                                    variant={
+                                      isBrokerBankDetailActive(
+                                        selectedBankDetail,
+                                      )
+                                        ? "default"
+                                        : "secondary"
+                                    }
+                                  >
+                                    {isBrokerBankDetailActive(
+                                      selectedBankDetail,
+                                    )
+                                      ? "Active"
+                                      : "Inactive"}
                                   </Badge>
                                 </div>
                               )}
 
                               <div className="grid gap-3 md:grid-cols-2">
                                 {[
-                                  { label: "Account Name", value: selectedBankDetail.account_holder_name },
-                                  { label: "Account Number", value: selectedBankDetail.account_number },
-                                  { label: "IBAN Number", value: selectedBankDetail.iban_number },
-                                  { label: "IFSC / SWIFT", value: selectedBankDetail.swift_ifsc_code },
-                                  { label: "Address", value: selectedBankDetail.address },
+                                  {
+                                    label: "Account Name",
+                                    value:
+                                      selectedBankDetail.account_holder_name,
+                                  },
+                                  {
+                                    label: "Account Number",
+                                    value: selectedBankDetail.account_number,
+                                  },
+                                  {
+                                    label: "IBAN Number",
+                                    value: selectedBankDetail.iban_number,
+                                  },
+                                  {
+                                    label: "IFSC / SWIFT",
+                                    value: selectedBankDetail.swift_ifsc_code,
+                                  },
+                                  {
+                                    label: "Address",
+                                    value: selectedBankDetail.address,
+                                  },
                                 ].map(({ label, value }) => (
                                   <div
                                     key={`${selectedBankDetail.id}-${label}`}
@@ -2540,11 +3211,21 @@ function USDTDepositContent() {
                         <div className="flex items-start gap-3">
                           <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
                           <div className="text-xs text-amber-800 dark:text-amber-200 space-y-1">
-                            <p className="font-semibold">Before transferring:</p>
+                            <p className="font-semibold">
+                              Before transferring:
+                            </p>
                             <ul className="space-y-0.5 list-none">
-                              <li>Keep a record of the Transaction / Reference ID</li>
-                              <li>Transfers typically reflect within 1-2 business days</li>
-                              <li>Minimum deposit: <strong>$10 USD</strong> equivalent</li>
+                              <li>
+                                Keep a record of the Transaction / Reference ID
+                              </li>
+                              <li>
+                                Transfers typically reflect within 1-2 business
+                                days
+                              </li>
+                              <li>
+                                Minimum deposit: <strong>$10 USD</strong>{" "}
+                                equivalent
+                              </li>
                             </ul>
                           </div>
                         </div>
@@ -2555,7 +3236,6 @@ function USDTDepositContent() {
 
                 {/* Right â€” Submit form + history */}
                 <div className="space-y-6">
-
                   {/* Submit form */}
                   <Card className="border border-border/60 bg-card shadow-sm">
                     <CardHeader>
@@ -2566,11 +3246,11 @@ function USDTDepositContent() {
                         Submit Transfer
                       </CardTitle>
                       <CardDescription>
-                        Select your transfer currency, enter amount, and transaction ID from your bank transfer.
+                        Select your transfer currency, enter amount, and
+                        transaction ID from your bank transfer.
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-5">
-
                       {bankSubmitResult ? (
                         <div className="py-8 text-center">
                           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10">
@@ -2580,12 +3260,15 @@ function USDTDepositContent() {
                             Deposit Submitted
                           </h3>
                           <p className="mb-4 text-muted-foreground">
-                            Your bank deposit request is under review and will be credited soon!.
+                            Your bank deposit request is under review and will
+                            be credited soon!.
                           </p>
                           <div className="space-y-3">
                             <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-900/20">
                               <p className="text-sm text-emerald-800 dark:text-emerald-200">
-                                The admin team is reviewing your deposit and will credit the funds to your wallet once approved.
+                                The admin team is reviewing your deposit and
+                                will credit the funds to your wallet once
+                                approved.
                               </p>
                             </div>
                             <Button
@@ -2600,204 +3283,245 @@ function USDTDepositContent() {
                         </div>
                       ) : (
                         <>
-
-                      {bankError && (
-                        <div className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                          {bankError}
-                        </div>
-                      )}
-
-                      <div className="space-y-2">
-                        <Label htmlFor="bank-currency" className="text-sm font-semibold">
-                          Deposit Currency <span className="text-destructive">*</span>
-                        </Label>
-                        <select
-                          id="bank-currency"
-                          value={bankCurrency}
-                          onChange={(e) => setBankCurrency(e.target.value)}
-                          disabled={isSubmittingBank || currencyRatesLoading || availableBankCurrencies.length === 0}
-                          className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                        >
-                          {availableBankCurrencies.length === 0 ? (
-                            <option value="INR">No currencies available</option>
-                          ) : (
-                            availableBankCurrencies.map((code) => (
-                              <option key={code} value={code}>
-                                {code}
-                              </option>
-                            ))
+                          {bankError && (
+                            <div className="rounded-xl border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+                              {bankError}
+                            </div>
                           )}
-                        </select>
-                      </div>
 
-                      {/* Amount */}
-                      <div className="space-y-2">
-                        <Label htmlFor="bank-amount" className="text-sm font-semibold">
-                          Amount ({bankCurrency.toUpperCase()}) <span className="text-destructive">*</span>
-                        </Label>
-                        <div className="relative">
-                          {/* <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /> */}
-                          <Banknote className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="bank-amount"
-                            type="number"
-                            step="1"
-                            min="1"
-                            value={bankAmount}
-                            onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                            onChange={(e) => setBankAmount(e.target.value)}
-                            className="pl-9 h-11 rounded-xl"
-                            placeholder="100.00"
-                            disabled={isSubmittingBank}
-                          />
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {selectedDepositRate > 0
-                            ? `Rate: 1 USD = ${selectedDepositRate.toFixed(2)} ${bankCurrency.toUpperCase()}`
-                            : "USD conversion rate is currently unavailable for this currency."}
-                        </p>
-                        {convertedUsdAmount !== null && (
-                          <p className="text-xs font-medium text-foreground">
-                            USD equivalent: ${convertedUsdAmount.toFixed(2)}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* Transaction ID */}
-                      <div className="space-y-2">
-                        <Label htmlFor="bank-txid" className="text-sm font-semibold">
-                          Transaction / Reference ID <span className="text-destructive">*</span>
-                        </Label>
-                        <div className="relative">
-                          <Hash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="bank-txid"
-                            value={bankTxId}
-                            onChange={(e) => setBankTxId(e.target.value)}
-                            className="pl-9 h-11 rounded-xl"
-                            placeholder="e.g. TXN1234567890"
-                            disabled={isSubmittingBank}
-                          />
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          Found on your bank statement or payment receipt.
-                        </p>
-                      </div>
-
-                      {/* Comment */}
-                      <div className="space-y-2">
-                        <Label htmlFor="bank-comment" className="text-sm font-semibold">
-                          Comment <span className="text-muted-foreground font-normal">(Optional)</span>
-                        </Label>
-                        <textarea
-                          id="bank-comment"
-                          value={bankComment}
-                          onChange={(e) => setBankComment(e.target.value)}
-                          rows={3}
-                          className="w-full rounded-xl border-2 border-border focus:border-primary bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none resize-none transition-colors"
-                          placeholder="Add any additional notes for this deposit (optional)"
-                          disabled={isSubmittingBank}
-                        />
-                      </div>
-
-                      {/* Bank Payment Proof Upload */}
-                      <div className="space-y-2">
-                        <Label htmlFor="bank-payment-proof" className="text-sm font-semibold">
-                          Payment Proof<span className="text-destructive">*</span>
-                        </Label>
-                        {!bankPaymentProof ? (
-                          <div className="rounded-lg border-2 border-dashed border-border p-4 transition-colors hover:border-primary/50">
-                            <label
-                              htmlFor="bank-payment-proof"
-                              className="flex flex-col items-center justify-center cursor-pointer"
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="bank-currency"
+                              className="text-sm font-semibold"
                             >
-                              <Upload className="h-6 w-6 text-muted-foreground mb-1" />
-                              <p className="text-xs text-foreground mb-1">
-                                Click to upload or drag and drop
+                              Deposit Currency{" "}
+                              <span className="text-destructive">*</span>
+                            </Label>
+                            <select
+                              id="bank-currency"
+                              value={bankCurrency}
+                              onChange={(e) => setBankCurrency(e.target.value)}
+                              disabled={
+                                isSubmittingBank ||
+                                currencyRatesLoading ||
+                                availableBankCurrencies.length === 0
+                              }
+                              className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              {availableBankCurrencies.length === 0 ? (
+                                <option value="INR">
+                                  No currencies available
+                                </option>
+                              ) : (
+                                availableBankCurrencies.map((code) => (
+                                  <option key={code} value={code}>
+                                    {code}
+                                  </option>
+                                ))
+                              )}
+                            </select>
+                          </div>
+
+                          {/* Amount */}
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="bank-amount"
+                              className="text-sm font-semibold"
+                            >
+                              Amount ({bankCurrency.toUpperCase()}){" "}
+                              <span className="text-destructive">*</span>
+                            </Label>
+                            <div className="relative">
+                              {/* <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" /> */}
+                              <Banknote className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                id="bank-amount"
+                                type="number"
+                                step="1"
+                                min="1"
+                                value={bankAmount}
+                                onWheel={(e) =>
+                                  (e.target as HTMLInputElement).blur()
+                                }
+                                onChange={(e) => setBankAmount(e.target.value)}
+                                className="pl-9 h-11 rounded-xl"
+                                placeholder="100.00"
+                                disabled={isSubmittingBank}
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              {selectedDepositRate > 0
+                                ? `Rate: 1 USD = ${selectedDepositRate.toFixed(2)} ${bankCurrency.toUpperCase()}`
+                                : "USD conversion rate is currently unavailable for this currency."}
+                            </p>
+                            {convertedUsdAmount !== null && (
+                              <p className="text-xs font-medium text-foreground">
+                                USD equivalent: ${convertedUsdAmount.toFixed(2)}
                               </p>
-                              <p className="text-xs text-muted-foreground">
-                                PNG, JPG, WEBP up to 5MB
-                              </p>
-                            </label>
-                            <input
-                              id="bank-payment-proof"
-                              type="file"
-                              accept="image/jpeg,image/jpg,image/png,image/webp"
-                              onChange={handleBankPaymentProofChange}
-                              className="hidden"
+                            )}
+                          </div>
+
+                          {/* Transaction ID */}
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="bank-txid"
+                              className="text-sm font-semibold"
+                            >
+                              Transaction / Reference ID{" "}
+                              <span className="text-destructive">*</span>
+                            </Label>
+                            <div className="relative">
+                              <Hash className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                              <Input
+                                id="bank-txid"
+                                value={bankTxId}
+                                onChange={(e) => setBankTxId(e.target.value)}
+                                className="pl-9 h-11 rounded-xl"
+                                placeholder="e.g. TXN1234567890"
+                                disabled={isSubmittingBank}
+                              />
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                              Found on your bank statement or payment receipt.
+                            </p>
+                          </div>
+
+                          {/* Comment */}
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="bank-comment"
+                              className="text-sm font-semibold"
+                            >
+                              Comment{" "}
+                              <span className="text-muted-foreground font-normal">
+                                (Optional)
+                              </span>
+                            </Label>
+                            <textarea
+                              id="bank-comment"
+                              value={bankComment}
+                              onChange={(e) => setBankComment(e.target.value)}
+                              rows={3}
+                              className="w-full rounded-xl border-2 border-border focus:border-primary bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none resize-none transition-colors"
+                              placeholder="Add any additional notes for this deposit (optional)"
                               disabled={isSubmittingBank}
                             />
                           </div>
-                        ) : (
-                          <div className="relative border-2 border-border rounded-xl p-3">
-                            <div className="flex items-center gap-3">
-                              {bankPaymentProofPreview && (
-                                <img
-                                  src={bankPaymentProofPreview}
-                                  alt="Payment proof preview"
-                                  className="w-16 h-16 object-cover rounded-lg"
-                                />
-                              )}
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-foreground truncate">
-                                  {bankPaymentProof.name}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {(bankPaymentProof.size / 1024 / 1024).toFixed(2)} MB
-                                </p>
-                              </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={handleBankRemovePaymentProof}
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                        <p className="text-xs text-muted-foreground">
-                          Upload a screenshot of your bank transfer receipt (JPEG, PNG, or WebP, max 5MB)
-                        </p>
-                      </div>
 
-                      <Button
-                        onClick={handleBankSubmit}
-                        disabled={
-                          isSubmittingBank ||
-                          !bankAmount.trim() ||
-                          !bankTxId.trim() ||
-                          !bankPaymentProof ||
-                          visibleBrokerBankDetails.length === 0 ||
-                          !convertedUsdAmount ||
-                          convertedUsdAmount < MINIMUM_DEPOSIT_AMOUNT
-                        }
-                        className="h-11 w-full rounded-xl text-base font-semibold"
-                      >
-                        {isSubmittingBank ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Submitting...
-                          </>
-                        ) : (
-                          <>
-                            <ShieldCheck className="mr-2 h-4 w-4" />
-                            Submit Deposit Request
-                          </>
-                        )}
-                      </Button>
-                      {convertedUsdAmount !== null && convertedUsdAmount > 0 && convertedUsdAmount < MINIMUM_DEPOSIT_AMOUNT && (
-                        <p className="text-xs text-destructive font-medium">
-                          Minimum deposit amount is ${MINIMUM_DEPOSIT_AMOUNT} USD (equivalent: {(MINIMUM_DEPOSIT_AMOUNT * selectedDepositRate).toFixed(2)} {bankCurrency.toUpperCase()})
-                        </p>
-                      )}
+                          {/* Bank Payment Proof Upload */}
+                          <div className="space-y-2">
+                            <Label
+                              htmlFor="bank-payment-proof"
+                              className="text-sm font-semibold"
+                            >
+                              Payment Proof
+                              <span className="text-destructive">*</span>
+                            </Label>
+                            {!bankPaymentProof ? (
+                              <div className="rounded-lg border-2 border-dashed border-border p-4 transition-colors hover:border-primary/50">
+                                <label
+                                  htmlFor="bank-payment-proof"
+                                  className="flex flex-col items-center justify-center cursor-pointer"
+                                >
+                                  <Upload className="h-6 w-6 text-muted-foreground mb-1" />
+                                  <p className="text-xs text-foreground mb-1">
+                                    Click to upload or drag and drop
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    PNG, JPG, WEBP up to 5MB
+                                  </p>
+                                </label>
+                                <input
+                                  id="bank-payment-proof"
+                                  type="file"
+                                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                                  onChange={handleBankPaymentProofChange}
+                                  className="hidden"
+                                  disabled={isSubmittingBank}
+                                />
+                              </div>
+                            ) : (
+                              <div className="relative border-2 border-border rounded-xl p-3">
+                                <div className="flex items-center gap-3">
+                                  {bankPaymentProofPreview && (
+                                    <img
+                                      src={bankPaymentProofPreview}
+                                      alt="Payment proof preview"
+                                      className="w-16 h-16 object-cover rounded-lg"
+                                    />
+                                  )}
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-foreground truncate">
+                                      {bankPaymentProof.name}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {(
+                                        bankPaymentProof.size /
+                                        1024 /
+                                        1024
+                                      ).toFixed(2)}{" "}
+                                      MB
+                                    </p>
+                                  </div>
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleBankRemovePaymentProof}
+                                    className="text-destructive hover:text-destructive hover:bg-destructive/10 shrink-0"
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                              Upload a screenshot of your bank transfer receipt
+                              (JPEG, PNG, or WebP, max 5MB)
+                            </p>
+                          </div>
+
+                          <Button
+                            onClick={handleBankSubmit}
+                            disabled={
+                              isSubmittingBank ||
+                              !bankAmount.trim() ||
+                              !bankTxId.trim() ||
+                              !bankPaymentProof ||
+                              visibleBrokerBankDetails.length === 0 ||
+                              !convertedUsdAmount ||
+                              convertedUsdAmount < MINIMUM_DEPOSIT_AMOUNT
+                            }
+                            className="h-11 w-full rounded-xl text-base font-semibold"
+                          >
+                            {isSubmittingBank ? (
+                              <>
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                Submitting...
+                              </>
+                            ) : (
+                              <>
+                                <ShieldCheck className="mr-2 h-4 w-4" />
+                                Submit Deposit Request
+                              </>
+                            )}
+                          </Button>
+                          {convertedUsdAmount !== null &&
+                            convertedUsdAmount > 0 &&
+                            convertedUsdAmount < MINIMUM_DEPOSIT_AMOUNT && (
+                              <p className="text-xs text-destructive font-medium">
+                                Minimum deposit amount is $
+                                {MINIMUM_DEPOSIT_AMOUNT} USD (equivalent:{" "}
+                                {(
+                                  MINIMUM_DEPOSIT_AMOUNT * selectedDepositRate
+                                ).toFixed(2)}{" "}
+                                {bankCurrency.toUpperCase()})
+                              </p>
+                            )}
                         </>
                       )}
                     </CardContent>
                   </Card>
-
                 </div>
               </div>
 
@@ -2805,13 +3529,19 @@ function USDTDepositContent() {
               <Card className="border border-border/60 bg-card shadow-sm">
                 <CardHeader className="flex flex-row items-center justify-between gap-4 pb-3">
                   <div>
-                    <CardTitle className="text-base font-semibold">Your Requests</CardTitle>
-                    <CardDescription className="text-xs">Recent bank deposit submissions</CardDescription>
+                    <CardTitle className="text-base font-semibold">
+                      Your Requests
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      Recent bank deposit submissions
+                    </CardDescription>
                   </div>
                   <div className="flex items-center gap-2">
                     <select
                       value={bankRequestStatusFilter}
-                      onChange={(e) => setBankRequestStatusFilter(e.target.value)}
+                      onChange={(e) =>
+                        setBankRequestStatusFilter(e.target.value)
+                      }
                       className="h-8 rounded-lg border border-input bg-background px-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                     >
                       <option value="all">All statuses</option>
@@ -2819,15 +3549,24 @@ function USDTDepositContent() {
                       <option value="approved">Approved</option>
                       <option value="rejected">Rejected</option>
                     </select>
-                    <Button variant="outline" size="sm" onClick={fetchBankRequests} disabled={bankRequestsLoading}>
-                      <RefreshCw className={`h-3.5 w-3.5 ${bankRequestsLoading ? "animate-spin" : ""}`} />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={fetchBankRequests}
+                      disabled={bankRequestsLoading}
+                    >
+                      <RefreshCw
+                        className={`h-3.5 w-3.5 ${bankRequestsLoading ? "animate-spin" : ""}`}
+                      />
                     </Button>
                   </div>
                 </CardHeader>
                 <CardContent className="p-0">
                   {bankRequestsLoading ? (
                     <div className="space-y-2 p-4">
-                      {[1, 2, 3].map((i) => <Skeleton key={i} className="h-10 w-full rounded-lg" />)}
+                      {[1, 2, 3].map((i) => (
+                        <Skeleton key={i} className="h-10 w-full rounded-lg" />
+                      ))}
                     </div>
                   ) : bankRequests.length === 0 ? (
                     <div className="flex flex-col items-center justify-center gap-2 py-10 text-center text-muted-foreground">
@@ -2840,33 +3579,43 @@ function USDTDepositContent() {
                         <TableHeader>
                           <TableRow className="bg-muted/30">
                             <TableHead className="text-xs">Sr. No.</TableHead>
-                            <TableHead className="text-xs">Amount (USD)</TableHead>
+                            <TableHead className="text-xs">
+                              Amount (USD)
+                            </TableHead>
                             <TableHead className="text-xs">Txn ID</TableHead>
                             <TableHead className="text-xs">Status</TableHead>
                             <TableHead className="text-xs">Date</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {bankRequests
-                            .map((req, index) => {
+                          {bankRequests.map((req, index) => {
                             const statusColor =
                               req.status === "approved"
                                 ? "border-emerald-500/40 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20"
                                 : req.status === "rejected"
-                                ? "border-red-500/40 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20"
-                                : "border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20";
+                                  ? "border-red-500/40 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20"
+                                  : "border-amber-500/40 text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/20";
                             return (
                               <TableRow key={req.id}>
-                                 <TableCell className="font-medium">{index + 1}</TableCell>
-                                <TableCell className="text-sm font-semibold">${Number(req.amount).toFixed(2)}</TableCell>
-                                <TableCell className="font-mono text-xs max-w-[80px] truncate">{req.transaction_id}</TableCell>
+                                <TableCell className="font-medium">
+                                  {index + 1}
+                                </TableCell>
+                                <TableCell className="text-sm font-semibold">
+                                  ${Number(req.amount).toFixed(2)}
+                                </TableCell>
+                                <TableCell className="font-mono text-xs max-w-[80px] truncate">
+                                  {req.transaction_id}
+                                </TableCell>
                                 <TableCell>
-                                  <Badge variant="outline" className={`text-xs capitalize ${statusColor}`}>
+                                  <Badge
+                                    variant="outline"
+                                    className={`text-xs capitalize ${statusColor}`}
+                                  >
                                     {req.status}
                                   </Badge>
                                 </TableCell>
                                 <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                                  {formatDateTimeInIST(req.created_at)}
+                                  {formatDateTime(req.created_at)}
                                 </TableCell>
                               </TableRow>
                             );
@@ -2877,24 +3626,21 @@ function USDTDepositContent() {
                   )}
                 </CardContent>
               </Card>
-            </TabsContent>}
+            </TabsContent>
+          )}
 
-            {/* â”€â”€ Coming-soon tabs for unrecognised payment method types â”€â”€ */}
-            {comingSoonMethods.map(p => (
-              <TabsContent key={p.type} value={p.type} className="space-y-8">
-                <ComingSoonTab name={p.name} description={p.description} />
-              </TabsContent>
-            ))}
-          </Tabs>
+          {/* â”€â”€ Coming-soon tabs for unrecognised payment method types â”€â”€ */}
+          {comingSoonMethods.map((p) => (
+            <TabsContent key={p.type} value={p.type} className="space-y-8">
+              <ComingSoonTab name={p.name} description={p.description} />
+            </TabsContent>
+          ))}
+        </Tabs>
       </div>
     </div>
   );
 }
 
 export function USDTDepositPageContent() {
-  return (
-    
-      <USDTDepositContent />
-    
-  );
+  return <USDTDepositContent />;
 }

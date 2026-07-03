@@ -20,6 +20,7 @@ import {
   UserRound,
   ZoomIn,
 } from "lucide-react";
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
 import { AuthenticatedImage } from "@/components/authenticated-image";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { ApiErrorState } from "@/components/errors/api-error-state";
@@ -61,9 +62,18 @@ import {
   type PaginationMeta,
 } from "@/lib/api";
 import { mt5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
-import { formatDateTimeInIST } from "@/lib/formatters";
+// import { formatDateTimeInIST } from "@/lib/formatters";
 
 const DEFAULT_PAGE_SIZE = 10;
+
+const formatDateTime = (value?: string | null): string => {
+  if (!value) return "-";
+  try {
+    return formatApiDateTimeAsIST(value);
+  } catch {
+    return String(value);
+  }
+};
 
 type TabKey =
   | "deposits"
@@ -135,15 +145,6 @@ const createCollectionState = <T,>(): CollectionState<T> => ({
   error: null,
   loaded: false,
 });
-
-const formatDateTime = (value?: string | null) => {
-  if (!value) return "-";
-  try {
-    return formatDateTimeInIST(value, "-");
-  } catch {
-    return value;
-  }
-};
 
 /** HTTP status when the API surfaced an error response (see ApiRequestError). */
 function getErrorHttpStatus(error: unknown): number | undefined {

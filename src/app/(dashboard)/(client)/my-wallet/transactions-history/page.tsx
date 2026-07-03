@@ -19,7 +19,7 @@ import {
   ExternalLink,
   Plus
 } from 'lucide-react'
-import { formatDateTimeInIST } from '@/lib/formatters'
+import { formatApiDateTimeAsIST, formatDateTimeInIST } from '@/lib/formatters'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -29,6 +29,15 @@ import { type ColumnDef } from '@tanstack/react-table'
 import { parseAsInteger } from 'nuqs'
 import { useQueryState } from 'nuqs'
 import { useRouter } from 'next/navigation'
+
+const formatDateTime = (value?: string | null): string => {
+  if (!value) return "-";
+  try {
+    return formatApiDateTimeAsIST(value);
+  } catch {
+    return String(value);
+  }
+};
 
 export default function TransactionsHistoryPage() {
   const { token } = useAuth()
@@ -303,7 +312,7 @@ export default function TransactionsHistoryPage() {
             <div className="flex items-center gap-2 text-sm">
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span className="text-foreground">
-                {formatDateTimeInIST(transaction.created_at)}
+                {formatDateTime(transaction.created_at)}
               </span>
             </div>
           )

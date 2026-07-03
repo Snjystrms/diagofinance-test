@@ -46,7 +46,11 @@ function NewsDetailDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
 }) {
-  const { data: item, isLoading, isError } = useQuery({
+  const {
+    data: item,
+    isLoading,
+    isError,
+  } = useQuery({
     queryKey: ["userNewsDetail", token, id],
     queryFn: async () => {
       const res = await userNewsApi.get(id!, token);
@@ -66,7 +70,9 @@ function NewsDetailDialog({
           </div>
         ) : isError || !item ? (
           <div className="flex flex-col items-center justify-center py-16 px-6 gap-3 text-center">
-            <p className="text-sm text-destructive font-medium">Failed to load article.</p>
+            <p className="text-sm text-destructive font-medium">
+              Failed to load article.
+            </p>
           </div>
         ) : (
           <>
@@ -170,7 +176,7 @@ function NewsDetailDialog({
 /* ─── Card ───────────────────────────────────────────────────────────────── */
 function NewsCard({ item, onView }: { item: NewsItem; onView: () => void }) {
   return (
-    <div 
+    <div
       onClick={onView}
       className="group relative flex flex-col rounded-xl border border-border/60 bg-card cursor-pointer overflow-hidden
         hover:border-[#FFB401]/40 hover:bg-[#FFB401]/[0.03] transition-all duration-200 shadow-sm hover:shadow-lg"
@@ -187,15 +193,29 @@ function NewsCard({ item, onView }: { item: NewsItem; onView: () => void }) {
             unoptimized
             onError={(e) => {
               const img = e.currentTarget;
-              img.style.display = 'none';
+              img.style.display = "none";
             }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
         </div>
       ) : (
         <div className="flex h-44 w-full items-center justify-center bg-[#FFB401]/8 border-b border-[#FFB401]/20">
-          <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FFB401" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-70">
-            <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="40"
+            height="40"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="#FFB401"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="opacity-70"
+          >
+            <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
+            <path d="M18 14h-8" />
+            <path d="M15 18h-5" />
+            <path d="M10 6h8v4h-8V6Z" />
           </svg>
         </div>
       )}
@@ -215,14 +235,18 @@ function NewsCard({ item, onView }: { item: NewsItem; onView: () => void }) {
             {item.title}
           </h4>
           <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
-            {item.short_description || item.description || "Click to read the full story..."}
+            {item.short_description ||
+              item.description ||
+              "Click to read the full story..."}
           </p>
         </div>
 
         <div className="flex items-center justify-between gap-2 pt-1">
           <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground/60">
             <Calendar className="h-2.5 w-2.5" />
-            <span className="font-mono">{fmtDate(item.updated_at || item.created_at)}</span>
+            <span className="font-mono">
+              {fmtDate(item.updated_at || item.created_at)}
+            </span>
           </div>
           <ArrowRight className="h-3.5 w-3.5 text-[#FFB401] opacity-0 group-hover:opacity-100 translate-x-[-4px] group-hover:translate-x-0 transition-all duration-200" />
         </div>
@@ -277,7 +301,7 @@ export default function UserNewsPage() {
     return rows.filter(
       (r) =>
         r.title?.toLowerCase().includes(q) ||
-        r.short_description?.toLowerCase().includes(q)
+        r.short_description?.toLowerCase().includes(q),
     );
   }, [rows, search]);
 
@@ -285,14 +309,27 @@ export default function UserNewsPage() {
     <ProtectedRoute>
       <div className="px-4 md:px-6 lg:px-8 py-10">
         {/* Header */}
-        <div className="mb-8 relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#0B1220] via-[#0B1220] to-[#1a1f2e] p-6 border border-[#FFB401]/20">
+        <div className="mb-8 relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/60 via-white to-slate-50 dark:from-[#0B1220] dark:via-[#0B1220] dark:to-[#1a1f2e] p-6 border border-[#FFB401]/20">
           {/* Decorative elements */}
           <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-[#FFB401] to-transparent opacity-80" />
           <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-            <svg className="absolute inset-0 w-full h-full opacity-[0.04]" xmlns="http://www.w3.org/2000/svg">
+            <svg
+              className="absolute inset-0 w-full h-full opacity-[0.04]"
+              xmlns="http://www.w3.org/2000/svg"
+            >
               <defs>
-                <pattern id="news-grid-page" width="40" height="40" patternUnits="userSpaceOnUse">
-                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="1"/>
+                <pattern
+                  id="news-grid-page"
+                  width="40"
+                  height="40"
+                  patternUnits="userSpaceOnUse"
+                >
+                  <path
+                    d="M 40 0 L 0 0 0 40"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="1"
+                  />
                 </pattern>
               </defs>
               <rect width="100%" height="100%" fill="url(#news-grid-page)" />
@@ -312,12 +349,20 @@ export default function UserNewsPage() {
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#FFB401]">Breaking</span>
+                <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#FFB401]">
+                  Breaking
+                </span>
                 <span className="w-1 h-1 rounded-full bg-[#FFB401]/50" />
-                <span className="text-[10px] tracking-widest uppercase text-white/40">Vinnexia Capital</span>
+                <span className="text-[10px] tracking-widest uppercase text-muted-foreground">
+                  Vinnexia Capital
+                </span>
               </div>
-              <h1 className="text-2xl font-bold text-white tracking-tight">Latest News</h1>
-              <p className="text-sm text-white/50 mt-0.5">Stay ahead with real-time updates &amp; announcements.</p>
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
+                Latest News
+              </h1>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                Stay ahead with real-time updates &amp; announcements.
+              </p>
             </div>
           </div>
         </div>
@@ -337,7 +382,10 @@ export default function UserNewsPage() {
         {isError && (
           <div className="mb-6 rounded-xl border border-destructive/50 bg-destructive/10 px-4 py-3 flex items-center justify-between text-sm text-destructive">
             <span>Failed to load news.</span>
-            <button onClick={() => refetch()} className="flex items-center gap-1.5 underline font-medium">
+            <button
+              onClick={() => refetch()}
+              className="flex items-center gap-1.5 underline font-medium"
+            >
               <RefreshCw className="h-3.5 w-3.5" /> Retry
             </button>
           </div>
@@ -382,7 +430,9 @@ export default function UserNewsPage() {
         id={selectedId}
         token={token ?? ""}
         open={Boolean(selectedId)}
-        onOpenChange={(v) => { if (!v) setSelectedId(null); }}
+        onOpenChange={(v) => {
+          if (!v) setSelectedId(null);
+        }}
       />
     </ProtectedRoute>
   );
