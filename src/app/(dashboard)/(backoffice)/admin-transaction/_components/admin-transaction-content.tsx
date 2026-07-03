@@ -483,7 +483,6 @@ export function AdminTransactionContent() {
             }}
             placeholder="Search by user email or name..."
             className="min-w-[220px] flex-1 max-w-full"
-            disabled={loading}
             minimumLength={3}
             delay={300}
           />
