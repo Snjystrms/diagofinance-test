@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '@/contexts/auth-context';
 import {
   authApi,
@@ -31,15 +31,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { AlertCircle, CheckCircle2, Upload, FileText, Link as LinkIcon } from 'lucide-react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { isImageName, isPdfName, type KycPhase } from '../_lib/kyc-files';
+import { AlertCircle, CheckCircle2, Upload, FileText } from 'lucide-react';
+import { AuthenticatedDocumentViewer } from '@/components/authenticated-document-viewer';
+import { type KycPhase } from '../_lib/kyc-files';
 
 export function KycVerificationPageContent() {
   const { token } = useAuth();
@@ -78,76 +72,6 @@ export function KycVerificationPageContent() {
   // Per-field re-upload stash for rejected docs: key = backend field name
   const [reuploadFiles, setReuploadFiles] = useState<Record<string, File | null>>({});
   const [reuploadingKey, setReuploadingKey] = useState<string | null>(null);
-  const [previewImage, setPreviewImage] = useState<{ url: string; label: string } | null>(null);
-  const [authorizedFileUrls, setAuthorizedFileUrls] = useState<Record<string, string>>({});
-  const createdObjectUrlsRef = useRef<string[]>([]);
-
-  const collectUploadUrls = (value: unknown, bucket: Set<string>) => {
-    if (!value) return;
-    if (typeof value === 'string') {
-      if (value.includes('/uploads/')) {
-        bucket.add(value);
-      }
-      return;
-    }
-    if (Array.isArray(value)) {
-      value.forEach((item) => collectUploadUrls(item, bucket));
-      return;
-    }
-    if (typeof value === 'object') {
-      Object.values(value as Record<string, unknown>).forEach((item) => collectUploadUrls(item, bucket));
-    }
-  };
-
-  const uploadUrls = useMemo(() => {
-    const bucket = new Set<string>();
-    collectUploadUrls(kycStatusData, bucket);
-    return Array.from(bucket);
-  }, [kycStatusData]);
-
-  useEffect(() => {
-    if (!token || uploadUrls.length === 0) return;
-    let cancelled = false;
-
-    const loadAuthorizedUrls = async () => {
-      await Promise.all(
-        uploadUrls.map(async (url) => {
-          if (authorizedFileUrls[url]) return;
-          try {
-            const response = await fetch(url, {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            });
-            if (!response.ok) return;
-            const blob = await response.blob();
-            const objectUrl = URL.createObjectURL(blob);
-            if (cancelled) {
-              URL.revokeObjectURL(objectUrl);
-              return;
-            }
-            createdObjectUrlsRef.current.push(objectUrl);
-            setAuthorizedFileUrls((prev) => ({ ...prev, [url]: objectUrl }));
-          } catch (error) {
-            console.error('Failed to fetch protected file:', error);
-          }
-        })
-      );
-    };
-
-    void loadAuthorizedUrls();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [token, uploadUrls, authorizedFileUrls]);
-
-  useEffect(() => {
-    return () => {
-      createdObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-      createdObjectUrlsRef.current = [];
-    };
-  }, []);
 
   const requiredSelectedCount = [poiFrontFile, poaFrontFile, poaBackFile].filter(Boolean).length;
   const hasOptionalOtherSelection = Boolean(otherFile || otherType);
@@ -319,71 +243,18 @@ export function KycVerificationPageContent() {
   }, [token]);
 
   const renderFilePreview = (label: string, fileUrl?: string | null, fileName?: string | null) => {
-    // Use URL directly if available, otherwise fallback to constructing from filename
     const url = fileUrl || (fileName ? kycFileUrl(fileName) : null);
     if (!url) return null;
-    const resolvedUrl = token ? authorizedFileUrls[url] : url;
-
-    // Determine file type from URL or filename
-    const displayFileName = fileName || url;
-    const isImage = isImageName(displayFileName);
-    const isPdf = isPdfName(displayFileName);
-
-    if (isImage) {
-      return (
-        <div className="mt-2">
-          {resolvedUrl ? (
-            <img
-              src={resolvedUrl}
-              alt={`${label} preview`}
-              className="max-h-40 rounded-md border border-border cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => setPreviewImage({ url: resolvedUrl, label })}
-            />
-          ) : (
-            <div className="text-xs text-muted-foreground">Loading preview...</div>
-          )}
-        </div>
-      );
-    }
-
-    if (isPdf) {
-      return (
-        <div className="mt-2 text-sm">
-          <a
-            href={resolvedUrl || '#'}
-            target="_blank"
-            rel="noreferrer"
-            onClick={(event) => {
-              if (!resolvedUrl) {
-                event.preventDefault();
-              }
-            }}
-            className="inline-flex items-center gap-1 text-primary underline hover:text-primary/80"
-          >
-            <LinkIcon className="w-4 h-4" />
-            View PDF
-          </a>
-        </div>
-      );
-    }
-
-    // Fallback: unknown file type
     return (
-      <div className="mt-2 text-sm">
-        <a
-          href={resolvedUrl || '#'}
-          target="_blank"
-          rel="noreferrer"
-          onClick={(event) => {
-            if (!resolvedUrl) {
-              event.preventDefault();
-            }
-          }}
-          className="inline-flex items-center gap-1 text-primary underline hover:text-primary/80"
-        >
-          <FileText className="w-4 h-4" />
-          View File
-        </a>
+      <div className="mt-2">
+        <AuthenticatedDocumentViewer
+          src={url}
+          fileName={fileName || url}
+          label={label}
+          mode="embedded"
+          previewClassName="h-40 w-full"
+          dialogClassName="max-w-6xl"
+        />
       </div>
     );
   };
@@ -1199,26 +1070,6 @@ export function KycVerificationPageContent() {
         </Card>
       </div>
 
-      {/* Image Preview Dialog */}
-      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
-          <DialogHeader>
-            <DialogTitle>{previewImage?.label}</DialogTitle>
-            <DialogDescription>
-              Click outside or press ESC to close
-            </DialogDescription>
-          </DialogHeader>
-          {previewImage && (
-            <div className="flex items-center justify-center p-4">
-              <img
-                src={previewImage.url}
-                alt={previewImage.label}
-                className="max-w-full max-h-[70vh] object-contain rounded-lg border border-border"
-              />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

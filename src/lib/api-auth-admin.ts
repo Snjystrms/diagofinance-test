@@ -2738,6 +2738,91 @@ const parseKycExportContentDispositionFilename = (
   return filename.trim();
 };
 
+export interface AdminKycDetailDocument {
+  status?: number | string;
+  comment?: string;
+  file?: string | null;
+  url?: string | null;
+}
+
+export interface AdminKycDetailResponseData {
+  user?: {
+    uuid?: string;
+    name?: string | null;
+    first_name?: string | null;
+    last_name?: string | null;
+    email?: string;
+    kyc_status?: string;
+    verification_status?: string;
+  };
+  submitted_at?: string;
+  summary?: Record<string, unknown>;
+  documents?: Record<string, AdminKycDetailDocument | number | null | undefined>;
+  document_files?: Record<string, string | null | undefined>;
+  document_urls?: Record<string, string | null | undefined>;
+  rejection_comments?: Record<string, string | undefined>;
+  kyc_status?: string;
+}
+
+const ADMIN_KYC_DOCUMENT_FILE_KEYS = {
+  poi_front_file_status: "poi_front_file",
+  poa_front_file_status: "poa_front_file",
+  poa_back_file_status: "poa_back_file",
+  other_file_status: "other_file",
+} as const;
+
+const normalizeAdminKycDetailResponse = (
+  data: AdminKycDetailResponseData,
+): AdminKycDetailResponseData => {
+  const normalizedDocuments: Record<
+    string,
+    AdminKycDetailDocument | number | null | undefined
+  > = {
+    ...(data.documents ?? {}),
+  };
+
+  (
+    Object.entries(ADMIN_KYC_DOCUMENT_FILE_KEYS) as Array<
+      [
+        keyof typeof ADMIN_KYC_DOCUMENT_FILE_KEYS,
+        (typeof ADMIN_KYC_DOCUMENT_FILE_KEYS)[keyof typeof ADMIN_KYC_DOCUMENT_FILE_KEYS],
+      ]
+    >
+  ).forEach(([statusKey, fileKey]) => {
+    const rawEntry = data.documents?.[statusKey];
+    const nestedEntry =
+      rawEntry && typeof rawEntry === "object"
+        ? (rawEntry as AdminKycDetailDocument)
+        : undefined;
+    const file = nestedEntry?.file ?? data.document_files?.[fileKey] ?? null;
+    const url =
+      nestedEntry?.url ??
+      data.document_urls?.[fileKey] ??
+      (file ? kycFileUrl(file) : null);
+
+    normalizedDocuments[statusKey] = {
+      status:
+        nestedEntry?.status ??
+        (typeof rawEntry === "number" || typeof rawEntry === "string"
+          ? rawEntry
+          : undefined),
+      comment:
+        nestedEntry?.comment ?? data.rejection_comments?.[statusKey] ?? "",
+      file,
+      url,
+    };
+  });
+
+  return {
+    ...data,
+    documents: normalizedDocuments,
+    kyc_status:
+      data.kyc_status ??
+      data.user?.verification_status ??
+      data.user?.kyc_status,
+  };
+};
+
 export const adminKycApi = {
   listPending: (
     status: string | number,
@@ -2768,14 +2853,22 @@ export const adminKycApi = {
     });
   },
 
-  getUserKyc: (userUuid: string, token: string) =>
-    apiCall(
+  getUserKyc: async (userUuid: string, token: string) => {
+    const response = await apiCall<AdminKycDetailResponseData>(
       `/admin/user-management/users/kyc/${encodeURIComponent(userUuid)}`,
       {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
       },
-    ),
+    );
+
+    return {
+      ...response,
+      data: normalizeAdminKycDetailResponse(
+        (response.data ?? {}) as AdminKycDetailResponseData,
+      ),
+    };
+  },
 
   uploadForUser: (
     userId: number | string,

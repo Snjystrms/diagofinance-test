@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback, useRef, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState, useCallback, type ChangeEvent } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { AuthenticatedDocumentViewer } from "@/components/authenticated-document-viewer";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { BackofficeDetailDialogSkeleton } from "@/components/loading/backoffice-page-skeletons";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
@@ -34,7 +35,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import {   Eye, CheckCircle2, XCircle, Calendar, FileText, User, Mail, Hash, Clock, AlertCircle, Shield, Image as ImageIcon, Plus, Upload, Download, ChevronDown, RefreshCw } from "lucide-react";
+import {   Eye, CheckCircle2, XCircle, Calendar, FileText, User, Mail, Clock, AlertCircle, Shield, Image as ImageIcon, Plus, Upload, Download, ChevronDown, RefreshCw } from "lucide-react";
 
 import { adminKycApi, adminUsersApi, kycFileUrl, type AdminUsersListApiData, type PendingUser } from "@/lib/api";
 import { formatDateTime, formatApiDateTimeAsIST } from "@/lib/formatters";
@@ -226,8 +227,6 @@ const primaryDocKeys: DocKey[] = [
 ];
 
 const numToWord = (n: DocStatusNum) => (n === 1 ? "approved" : n === 2 ? "rejected" : "pending");
-
-const wordToNum = (w: string): DocStatusNum => (w === "approved" ? 1 : w === "rejected" ? 2 : 0);
 
 const normalizeDocStatus = (value: unknown): DocStatusNum => {
   if (value === 1 || value === "1" || value === "approved") return 1;
@@ -509,9 +508,6 @@ export default function UserVerificationPage() {
     other_file_status: 0,
   });
   const [docComments, setDocComments] = useState<Partial<Record<DocKey, string>>>({});
-  const [previewImage, setPreviewImage] = useState<{ url: string; label: string } | null>(null);
-  const [authorizedFileUrls, setAuthorizedFileUrls] = useState<Record<string, string>>({});
-  const createdObjectUrlsRef = useRef<string[]>([]);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploadForm, setUploadForm] = useState<KycUploadFormState>(createEmptyKycUploadForm);
   const [uploadTarget, setUploadTarget] = useState<AdminUserOption | null>(null);
@@ -553,63 +549,6 @@ export default function UserVerificationPage() {
     },
     [isAdmin, isManager, allowedKycStatusesSet]
   );
-
-  const detailDocumentUrls = useMemo(() => {
-    const bucket = new Set<string>();
-    const docs = detail?.documents;
-    if (!docs) return [];
-    Object.values(docs as UserKycDetail["documents"]).forEach((doc) => {
-      const directUrl = typeof doc?.url === "string" ? doc.url : "";
-      const fileUrl = typeof doc?.file === "string" ? kycFileUrl(doc.file) : "";
-      if (directUrl && directUrl.includes("/uploads/")) bucket.add(directUrl);
-      if (fileUrl && fileUrl.includes("/uploads/")) bucket.add(fileUrl);
-    });
-    return Array.from(bucket);
-  }, [detail]);
-
-  useEffect(() => {
-    if (!token || detailDocumentUrls.length === 0) return;
-    let cancelled = false;
-
-    const loadAuthorizedUrls = async () => {
-      await Promise.all(
-        detailDocumentUrls.map(async (url) => {
-          if (authorizedFileUrls[url]) return;
-          try {
-            const response = await fetch(url, {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            });
-            if (!response.ok) return;
-            const blob = await response.blob();
-            const objectUrl = URL.createObjectURL(blob);
-            if (cancelled) {
-              URL.revokeObjectURL(objectUrl);
-              return;
-            }
-            createdObjectUrlsRef.current.push(objectUrl);
-            setAuthorizedFileUrls((prev) => ({ ...prev, [url]: objectUrl }));
-          } catch (error) {
-            console.error("Failed to fetch protected file:", error);
-          }
-        })
-      );
-    };
-
-    void loadAuthorizedUrls();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [token, detailDocumentUrls, authorizedFileUrls]);
-
-  useEffect(() => {
-    return () => {
-      createdObjectUrlsRef.current.forEach((url) => URL.revokeObjectURL(url));
-      createdObjectUrlsRef.current = [];
-    };
-  }, []);
 
   const loadList = useCallback(async () => {
     if (!token) return;
@@ -657,7 +596,7 @@ export default function UserVerificationPage() {
     if (!allowedStatusValues.includes(statusFilter)) {
       setStatusFilter(statusFeatureOptions[0].value);
     }
-  }, [isManager, statusFeatureOptions, allowedStatusValues, statusFilter]);
+  }, [isManager, statusFeatureOptions, allowedStatusValues, statusFilter, setStatusFilter]);
 
   useEffect(() => {
     if (!uploadOpen || !token || !canAddKyc) return;
@@ -842,10 +781,7 @@ export default function UserVerificationPage() {
             { label: "Rejected", value: "rejected" }
           ]
         },
-        filterFn: (row, id, value) => {
-          // Custom filter function if needed
-          return true;
-        }
+        filterFn: () => true
       },
       {
         id: "submitted_at",
@@ -882,7 +818,7 @@ export default function UserVerificationPage() {
         },
       },
     ],
-    [openDetail, canViewKycStatus]
+    [openDetail, canViewKycStatus, canReview]
   );
 
   const refreshRowInList = (user_uuid: string, next?: Partial<ListRow>) => {
@@ -1265,6 +1201,7 @@ const buildReviewPayload = () => {
                     return visibleDocKeys.map((k) => {
                     const doc = detail.documents?.[k];
                     const url = doc?.url || (doc?.file ? kycFileUrl(doc.file) : null);
+                    const sourceUrl = doc?.url || url || "";
                     const current = docStatuses[k];
                     const statusWord = numToWord(doc?.status ?? 0);
                     const isApproved = current === 1;
@@ -1307,20 +1244,40 @@ const buildReviewPayload = () => {
                             </div>
                           </div>
                           {(() => {
-                            const sourceUrl = doc?.url || url || "";
-                            const resolvedUrl = token ? authorizedFileUrls[sourceUrl] : sourceUrl;
-                            return resolvedUrl ? (
+                            return sourceUrl ? (
                               <Button
                                 type="button"
                                 variant="outline"
                                 size="sm"
-                                onClick={() => {
-                                  const link = document.createElement('a');
-                                  link.href = resolvedUrl;
-                                  link.download = `${docLabel[k]}-${detail?.user?.uuid || 'document'}.jpg`;
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  document.body.removeChild(link);
+                                onClick={async () => {
+                                  try {
+                                    const response = await fetch(sourceUrl, {
+                                      headers: token
+                                        ? { Authorization: `Bearer ${token}` }
+                                        : undefined,
+                                    });
+                                    if (!response.ok) {
+                                      throw new Error(`Failed to download document: ${response.status}`);
+                                    }
+                                    const blob = await response.blob();
+                                    const downloadUrl = URL.createObjectURL(blob);
+                                    const link = document.createElement("a");
+                                    const fallbackName = `${docLabel[k]}-${detail?.user?.uuid || "document"}`;
+                                    link.href = downloadUrl;
+                                    link.download = doc?.file || fallbackName;
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                    URL.revokeObjectURL(downloadUrl);
+                                  } catch (error) {
+                                    console.error("Failed to download KYC document:", error);
+                                    toast.error(
+                                      getAdminFriendlyErrorMessage(error, {
+                                        resource: docLabel[k],
+                                        action: "download",
+                                      })
+                                    );
+                                  }
                                 }}
                               >
                                 <Download className="mr-2 h-4 w-4" />
@@ -1331,36 +1288,15 @@ const buildReviewPayload = () => {
                         </div>
 
                         <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 p-4 flex items-center justify-center min-h-[200px]">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          {url || doc?.url ? (
-                            (() => {
-                              const sourceUrl = doc?.url || url || "";
-                              const resolvedUrl = token ? authorizedFileUrls[sourceUrl] : sourceUrl;
-                              return resolvedUrl ? (
-                            <img 
-                              src={resolvedUrl} 
-                              alt={doc?.file || ''} 
-                              className="max-h-64 w-auto object-contain rounded-md shadow-sm cursor-pointer hover:opacity-80 transition-opacity" 
-                              onClick={() => {
-                                const imageUrl = resolvedUrl;
-                                if (imageUrl) {
-                                  setPreviewImage({
-                                    url: imageUrl,
-                                    label: docLabel[k]
-                                  });
-                                }
-                              }}
-                            />
-                              ) : (
-                                <div className="text-xs text-muted-foreground">Loading preview...</div>
-                              );
-                            })()
-                          ) : (
-                            <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                              <ImageIcon className="h-12 w-12 opacity-50" />
-                              <span className="text-sm">No document uploaded</span>
-                            </div>
-                          )}
+                          <AuthenticatedDocumentViewer
+                            src={sourceUrl || undefined}
+                            fileName={doc?.file || sourceUrl || undefined}
+                            label={docLabel[k]}
+                            mode="embedded"
+                            previewClassName="h-64 w-full"
+                            dialogClassName="max-w-6xl"
+                            emptyText="No document uploaded"
+                          />
                         </div>
 
                         {canReview ? (
@@ -1573,26 +1509,6 @@ const buildReviewPayload = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Image Preview Dialog */}
-      <Dialog open={!!previewImage} onOpenChange={(open) => !open && setPreviewImage(null)}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
-          <DialogHeader>
-            <DialogTitle>{previewImage?.label}</DialogTitle>
-            <DialogDescription>
-              Click outside or press ESC to close
-            </DialogDescription>
-          </DialogHeader>
-          {previewImage && (
-            <div className="flex items-center justify-center p-4">
-              <img
-                src={previewImage.url}
-                alt={previewImage.label}
-                className="max-w-full max-h-[70vh] object-contain rounded-lg border border-border"
-              />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
     
   );

@@ -18,10 +18,9 @@ import {
   RefreshCw,
   ShieldCheck,
   UserRound,
-  ZoomIn,
 } from "lucide-react";
 import { formatApiDateTimeAsIST } from "@/lib/formatters";
-import { AuthenticatedImage } from "@/components/authenticated-image";
+import { AuthenticatedDocumentViewer } from "@/components/authenticated-document-viewer";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
@@ -35,7 +34,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -205,19 +203,6 @@ const getMt5DisplayBalance = (
   return isCentAccountTypeName(account.account_type_name)
     ? rawBalance * 100
     : rawBalance;
-};
-
-const normalizeBooleanLabel = (
-  value: unknown,
-  positive = "Yes",
-  negative = "No",
-) => {
-  if (value === null || value === undefined || value === "") return "-";
-  const normalized =
-    typeof value === "boolean"
-      ? value
-      : `${value}` === "1" || `${value}`.toLowerCase() === "true";
-  return normalized ? positive : negative;
 };
 
 const statusBadge = (
@@ -567,9 +552,6 @@ export default function NewUserDetailPage() {
   const [loadingPassword, setLoadingPassword] = useState(false);
   const [sendingWelcomeEmail, setSendingWelcomeEmail] = useState(false);
 
-  const [previewImageUrl, setPreviewImageUrl] = useState<string | null>(null);
-  const [previewImageOpen, setPreviewImageOpen] = useState(false);
-
   const [depositsState, setDepositsState] = useState(() =>
     createPaginatedState<AdminUserTransactionItem>(),
   );
@@ -636,7 +618,7 @@ export default function NewUserDetailPage() {
         );
       }
     },
-    [profileReloadToken, token, userUuid, id],
+    [token, userUuid, id],
   );
 
   const loadWithdrawalsPage = useCallback(
@@ -1527,33 +1509,14 @@ export default function NewUserDetailPage() {
                                   POI (Front)
                                 </span>
                                 <div className="flex items-center gap-2">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      setPreviewImageUrl(
-                                        kycData.document_urls?.poi_front_file ??
-                                          null,
-                                      );
-                                      setPreviewImageOpen(true);
-                                    }}
-                                    className="h-8 w-8 p-0"
-                                    title="Preview image"
-                                  >
-                                    <ZoomIn className="h-4 w-4" />
-                                  </Button>
-                                  <a
-                                    href={kycData.document_urls.poi_front_file}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <AuthenticatedImage
-                                      src={kycData.document_urls.poi_front_file}
-                                      alt="POI Front"
-                                      className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
-                                    />
-                                  </a>
+                                  <AuthenticatedDocumentViewer
+                                    src={kycData.document_urls.poi_front_file}
+                                    fileName={kycData.document_urls.poi_front_file}
+                                    label="POI Front"
+                                    mode="thumbnail"
+                                    previewClassName="h-12 w-16 rounded border border-border/60"
+                                    imageFit="cover"
+                                  />
                                 </div>
                               </div>
                             )}
@@ -1563,33 +1526,14 @@ export default function NewUserDetailPage() {
                                   POA (Front)
                                 </span>
                                 <div className="flex items-center gap-2">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      setPreviewImageUrl(
-                                        kycData.document_urls?.poa_front_file ??
-                                          null,
-                                      );
-                                      setPreviewImageOpen(true);
-                                    }}
-                                    className="h-8 w-8 p-0"
-                                    title="Preview image"
-                                  >
-                                    <ZoomIn className="h-4 w-4" />
-                                  </Button>
-                                  <a
-                                    href={kycData.document_urls.poa_front_file}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <AuthenticatedImage
-                                      src={kycData.document_urls.poa_front_file}
-                                      alt="POA Front"
-                                      className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
-                                    />
-                                  </a>
+                                  <AuthenticatedDocumentViewer
+                                    src={kycData.document_urls.poa_front_file}
+                                    fileName={kycData.document_urls.poa_front_file}
+                                    label="POA Front"
+                                    mode="thumbnail"
+                                    previewClassName="h-12 w-16 rounded border border-border/60"
+                                    imageFit="cover"
+                                  />
                                 </div>
                               </div>
                             )}
@@ -1599,33 +1543,14 @@ export default function NewUserDetailPage() {
                                   POA (Back)
                                 </span>
                                 <div className="flex items-center gap-2">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      setPreviewImageUrl(
-                                        kycData.document_urls?.poa_back_file ??
-                                          null,
-                                      );
-                                      setPreviewImageOpen(true);
-                                    }}
-                                    className="h-8 w-8 p-0"
-                                    title="Preview image"
-                                  >
-                                    <ZoomIn className="h-4 w-4" />
-                                  </Button>
-                                  <a
-                                    href={kycData.document_urls.poa_back_file}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <AuthenticatedImage
-                                      src={kycData.document_urls.poa_back_file}
-                                      alt="POA Back"
-                                      className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
-                                    />
-                                  </a>
+                                  <AuthenticatedDocumentViewer
+                                    src={kycData.document_urls.poa_back_file}
+                                    fileName={kycData.document_urls.poa_back_file}
+                                    label="POA Back"
+                                    mode="thumbnail"
+                                    previewClassName="h-12 w-16 rounded border border-border/60"
+                                    imageFit="cover"
+                                  />
                                 </div>
                               </div>
                             )}
@@ -1635,33 +1560,14 @@ export default function NewUserDetailPage() {
                                   Other
                                 </span>
                                 <div className="flex items-center gap-2">
-                                  <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => {
-                                      setPreviewImageUrl(
-                                        kycData.document_urls?.other_file ??
-                                          null,
-                                      );
-                                      setPreviewImageOpen(true);
-                                    }}
-                                    className="h-8 w-8 p-0"
-                                    title="Preview image"
-                                  >
-                                    <ZoomIn className="h-4 w-4" />
-                                  </Button>
-                                  <a
-                                    href={kycData.document_urls.other_file}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <AuthenticatedImage
-                                      src={kycData.document_urls.other_file}
-                                      alt="Other Document"
-                                      className="h-12 w-16 rounded border border-border/60 object-cover hover:opacity-80"
-                                    />
-                                  </a>
+                                  <AuthenticatedDocumentViewer
+                                    src={kycData.document_urls.other_file}
+                                    fileName={kycData.document_urls.other_file}
+                                    label="Other Document"
+                                    mode="thumbnail"
+                                    previewClassName="h-12 w-16 rounded border border-border/60"
+                                    imageFit="cover"
+                                  />
                                 </div>
                               </div>
                             )}
@@ -2371,20 +2277,6 @@ export default function NewUserDetailPage() {
         </div>
       </div>
 
-      {/* Image Preview Dialog */}
-      <Dialog open={previewImageOpen} onOpenChange={setPreviewImageOpen}>
-        <DialogContent className="max-w-4xl">
-          {previewImageUrl && (
-            <div className="flex items-center justify-center">
-              <AuthenticatedImage
-                src={previewImageUrl}
-                alt="Document Preview"
-                className="max-h-[80vh] w-auto rounded-lg"
-              />
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </ProtectedRoute>
   );
 }
