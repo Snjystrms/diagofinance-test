@@ -434,7 +434,7 @@ export default function AllPartnersReportPage() {
       },
       {
         id: "created_at",
-        header: "Created",
+        header: "Registered At",
         accessorKey: "created_at",
         cell: ({ row }) => (
           <div className="flex items-center gap-1 text-sm whitespace-nowrap">

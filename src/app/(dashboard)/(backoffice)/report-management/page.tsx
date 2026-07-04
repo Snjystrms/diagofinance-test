@@ -22,10 +22,10 @@ const reports = [
     description: "View and manage deposit transactions",
   },
   {
-    title: "IB Users Report",
+    title: "Partner Users Report",
     href: "/report-management/all-partners-report",
     icon: Users,
-    description: "View IB users, balances, and referral metrics",
+    description: "View partner users, balances, and referral metrics",
   },
   {
     title: "Withdrawal Report",

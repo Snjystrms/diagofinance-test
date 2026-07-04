@@ -719,7 +719,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "reports",
-    navLabel: "IB Users Report",
+    navLabel: "Partner Users Report",
     managerCategories: ["Report Management"],
   },
   {

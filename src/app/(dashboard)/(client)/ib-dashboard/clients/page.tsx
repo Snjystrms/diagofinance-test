@@ -38,6 +38,7 @@ const emptyPagination: PaginationState = {
 type ClientRow = {
   client_id: number | string;
   client_name: string;
+  client_email: string;
   lots_traded: number;
   pending_rebates: number;
   earned_rebates: number;
@@ -49,6 +50,7 @@ type SubIbRow = {
   sub_ib_user_id: number | string;
   sub_ib_id: string;
   name: string;
+  email: string;
   level: string;          // "Level 1", "Level 2", …
   lots_traded: number;
   pending_rebates: number;
@@ -69,6 +71,7 @@ type RebateDeal = {
   close_time: string;
   client_id: number | string;
   client_name: string;
+  client_email: string;
   rebate_status: string;
   created_at: string;
 };
@@ -210,7 +213,7 @@ function ClientsTable({ rows, startIndex }: { rows: ClientRow[]; startIndex: num
           {rows.map((row, index) => (
             <TableRow key={`${row.client_id}`}>
               <TableCell className="font-medium text-sm">{startIndex + index}</TableCell>
-              <TableCell className="font-medium">{row.client_name}</TableCell>
+              <TableCell className="font-medium">{row.client_name} ({row.client_email})</TableCell>
               <TableCell className="text-right hidden md:table-cell">
                 {toNum(row.lots_traded).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </TableCell>
@@ -249,7 +252,7 @@ function SubIbsTable({ rows, startIndex }: { rows: SubIbRow[]; startIndex: numbe
           {rows.map((row, index) => (
             <TableRow key={`${row.sub_ib_user_id}`}>
               <TableCell className="font-medium text-sm">{startIndex + index}</TableCell>
-              <TableCell className="font-medium">{row.name}</TableCell>
+              <TableCell className="font-medium">{row.name} ({row.email})</TableCell>
               <TableCell className="hidden md:table-cell">
                 <span className="inline-flex rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-xs font-medium">
                   {row.level}
@@ -311,7 +314,7 @@ function RebatesTable({ rows, startIndex }: { rows: RebateDeal[]; startIndex: nu
                 <TableCell className="font-medium text-sm">{startIndex + index}</TableCell>
                 <TableCell>
                   <div className="space-y-0.5">
-                    <div className="font-medium text-sm">{row.client_name}</div>
+                    <div className="font-medium text-sm">{row.client_name} ({row.client_email})</div>
                   </div>
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
