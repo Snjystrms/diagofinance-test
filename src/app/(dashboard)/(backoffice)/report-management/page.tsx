@@ -11,6 +11,7 @@ import {
   LineChart,
   ShieldCheck,
   Receipt,
+  Users,
 } from "lucide-react";
 
 const reports = [
@@ -19,6 +20,12 @@ const reports = [
     href: "/report-management/deposit-report",
     icon: ArrowDownToLine,
     description: "View and manage deposit transactions",
+  },
+  {
+    title: "IB Users Report",
+    href: "/report-management/all-partners-report",
+    icon: Users,
+    description: "View IB users, balances, and referral metrics",
   },
   {
     title: "Withdrawal Report",

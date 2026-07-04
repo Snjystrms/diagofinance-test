@@ -2232,3 +2232,145 @@ export const managerDashboardApi = {
     });
   },
 };
+
+export interface IbUsersReportItem {
+  sr_no: number;
+  uuid: string;
+  name: string;
+  email: string;
+  verification_status: string;
+  deposit: number;
+  team_deposit: number;
+  withdrawal: number;
+  team_withdrawal: number;
+  ib_commission: number;
+  main_wallet_balance: number;
+  partner_wallet_balance: number;
+  referred_by_name: string;
+  referred_by_email: string;
+  created_at: string;
+}
+
+export interface IbUsersReportListParams {
+  token: string;
+  page?: number;
+  per_page?: number;
+  from_date?: string;
+  to_date?: string;
+  verification_status?: string;
+  search?: string;
+  sort_column?: string;
+  sort_order?: "ASC" | "DESC" | string;
+}
+
+export interface IbUsersReportListPayload {
+  success: boolean;
+  message: string;
+  data: IbUsersReportItem[];
+  pagination?: {
+    total?: number;
+    count?: number;
+    per_page?: number;
+    current_page?: number;
+    total_pages?: number;
+    last_page?: number;
+  };
+}
+
+export interface IbUsersReportExportParams {
+  token: string;
+  format?: "xlsx" | "csv";
+  from_date?: string;
+  to_date?: string;
+  verification_status?: string;
+  search?: string;
+  sort_column?: string;
+  sort_order?: "ASC" | "DESC" | string;
+}
+
+export const adminIbUsersReportApi = {
+  list: (params: IbUsersReportListParams) => {
+    const { token, ...queryParams } = params;
+    if (!token) {
+      throw new Error("Token is required to fetch IB users report");
+    }
+
+    const qs = new URLSearchParams();
+    if (queryParams.page) qs.set("page", String(queryParams.page));
+    if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
+    if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
+    if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
+    if (queryParams.verification_status && queryParams.verification_status !== "all") {
+      qs.set("verification_status", queryParams.verification_status);
+    }
+    if (queryParams.search) qs.set("search", queryParams.search);
+    if (queryParams.sort_column) qs.set("sort_column", queryParams.sort_column);
+    if (queryParams.sort_order) qs.set("sort_order", queryParams.sort_order);
+
+    const endpoint = `/admin/reports/ib-users-report${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<IbUsersReportListPayload>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  export: async (params: IbUsersReportExportParams) => {
+    const { token, format = "xlsx", ...queryParams } = params;
+    if (!token) {
+      throw new Error("Token is required to export IB users report");
+    }
+
+    if (!API_BASE_URL) {
+      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("format", format);
+    if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
+    if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
+    if (queryParams.verification_status && queryParams.verification_status !== "all") {
+      qs.set("verification_status", queryParams.verification_status);
+    }
+    if (queryParams.search) qs.set("search", queryParams.search);
+    if (queryParams.sort_column) qs.set("sort_column", queryParams.sort_column);
+    if (queryParams.sort_order) qs.set("sort_order", queryParams.sort_order);
+
+    const endpoint = `/admin/reports/ib-users-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (handle401Redirect(response, !!token)) {
+      return { blob: new Blob(), filename: "" };
+    }
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message:
+          (payload &&
+          typeof payload === "object" &&
+          "message" in payload &&
+          typeof payload.message === "string"
+            ? payload.message
+            : null) || `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+
+    const blob = await response.blob();
+    return {
+      blob,
+      filename: parseContentDispositionFilename(
+        response.headers.get("content-disposition"),
+        `ib-users-report.${format === "csv" ? "csv" : "xlsx"}`
+      ),
+    };
+  },
+};
+

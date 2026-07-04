@@ -60,6 +60,7 @@ export const managerPermissionConfig: Record<string, ModuleFeatureMap> = {
   reportManagement: {
     depositReport: ["Deposit Report"],
     ibCommissionReport: ["IB Commission Report"],
+    ibUsersReport: ["IB Users Report"],
     historyReport: ["History Report"],
     ibWithdrawReport: ["IB Withdraw Report"],
     internalTransferReport: ["Internal Transfer Report"],

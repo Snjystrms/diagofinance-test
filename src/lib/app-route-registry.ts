@@ -715,6 +715,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     managerCategories: ["Report Management"],
   },
   {
+    path: "/report-management/all-partners-report",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "reports",
+    navLabel: "IB Users Report",
+    managerCategories: ["Report Management"],
+  },
+  {
     path: "/report-management/deposit-report",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
@@ -916,6 +924,7 @@ function hasManagerFeature(
 function hasAnyReportFeature(permissionNames: Set<string>) {
   return (
     hasManagerFeature(permissionNames, "reportManagement", "depositReport") ||
+    hasManagerFeature(permissionNames, "reportManagement", "ibUsersReport") ||
     hasManagerFeature(permissionNames, "reportManagement", "withdrawReport") ||
     hasManagerFeature(permissionNames, "reportManagement", "ibWithdrawReport") ||
     hasManagerFeature(permissionNames, "reportManagement", "ibCommissionReport") ||
@@ -930,10 +939,13 @@ function isManagerRouteFeatureAllowed(path: string, permissionNames: Set<string>
     return hasManagerFeature(permissionNames, "account-types", "accountTypesList");
   }
   if (path === "/report-management") {
-    return hasManagerFeature(permissionNames, "reportManagement", "depositReport");
+    return hasAnyReportFeature(permissionNames);
   }
-   if (path === "/report-management/all-transaction-report") {
+  if (path === "/report-management/all-transaction-report") {
     return hasManagerFeature(permissionNames, "reportManagement", "allTransactionReport");
+  }
+  if (path === "/report-management/all-partners-report") {
+    return hasManagerFeature(permissionNames, "reportManagement", "ibUsersReport");
   }
   if (path === "/report-management/withdrawal-report") {
     return hasManagerFeature(permissionNames, "reportManagement", "withdrawReport");
@@ -1095,6 +1107,7 @@ export function getManagerNavigation(groupedPermissions?: GroupedPermissions[]):
     featureKey:
       | "depositReport"
       | "allTransactionReport"
+      | "ibUsersReport"
       | "withdrawReport"
       | "ibWithdrawReport"
       | "ibCommissionReport"
@@ -1102,8 +1115,8 @@ export function getManagerNavigation(groupedPermissions?: GroupedPermissions[]):
       | "loginActivity"
       | "historyReport";
   }> = [
-    { path: "/report-management", featureKey: "depositReport" },
     { path: "/report-management/all-transaction-report", featureKey: "allTransactionReport" },
+    { path: "/report-management/all-partners-report", featureKey: "ibUsersReport" },
     { path: "/report-management/withdrawal-report", featureKey: "withdrawReport" },
     { path: "/report-management/ib-withdrawal-report", featureKey: "ibWithdrawReport" },
     { path: "/report-management/ib-commission-report", featureKey: "ibCommissionReport" },
