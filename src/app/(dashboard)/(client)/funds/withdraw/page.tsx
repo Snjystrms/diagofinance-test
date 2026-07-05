@@ -8,6 +8,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { withdrawalApi, type WithdrawalItem } from '@/lib/api'
 import { getFriendlyErrorMessage } from '@/lib/friendly-errors'
 import { CLIENT_WALLET_REFRESH_EVENT, notifyWalletRefresh } from '@/lib/client-events'
+import { authApi, type UserBankDetailsData } from '@/lib/api-auth-admin'
 import { type ColumnDef } from '@tanstack/react-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -194,8 +195,149 @@ const ChainBadge = ({ chainId }: { chainId?: string | null }) => {
   )
 }
 
+// Bank details cell for destination column
+const BankDestinationCell = ({ 
+  bankDetailId, 
+  token 
+}: { 
+  bankDetailId?: number | null
+  token: string | null
+}) => {
+  const [bankDetails, setBankDetails] = React.useState<UserBankDetailsData | null>(null)
+  const [loading, setLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    const fetchBankDetails = async () => {
+      if (!bankDetailId || !token) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        const response = await authApi.getBankDetails(token)
+        
+        // Handle response - check if data is directly an array or wrapped
+        let bankList: UserBankDetailsData[] = []
+        
+        if (Array.isArray(response)) {
+          bankList = response
+        } else if (response.success && response.data) {
+          if (Array.isArray(response.data)) {
+            bankList = response.data
+          }
+        } else if (response.data && Array.isArray(response.data)) {
+          bankList = response.data
+        }
+        
+        const foundBank = bankList.find((bank: UserBankDetailsData) => bank.id === bankDetailId)
+        
+        if (foundBank) {
+          setBankDetails(foundBank)
+        }
+      } catch (error) {
+        console.error('Error fetching bank details:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void fetchBankDetails()
+  }, [bankDetailId, token])
+
+  if (loading) {
+    return <span className="text-muted-foreground text-sm">Loading...</span>
+  }
+
+  if (!bankDetails) {
+    return <span className="text-muted-foreground text-sm">N/A</span>
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="font-medium text-sm">{bankDetails.account_holder_name}</span>
+      <span className="text-xs text-muted-foreground">{bankDetails.bank_name}</span>
+    </div>
+  )
+}
+
+// Bank account info cell for account info column
+const BankAccountInfoCell = ({ 
+  bankDetailId, 
+  token 
+}: { 
+  bankDetailId?: number | null
+  token: string | null
+}) => {
+  const [bankDetails, setBankDetails] = React.useState<UserBankDetailsData | null>(null)
+  const [loading, setLoading] = React.useState(true)
+
+  React.useEffect(() => {
+    const fetchBankDetails = async () => {
+      if (!bankDetailId || !token) {
+        setLoading(false)
+        return
+      }
+
+      try {
+        const response = await authApi.getBankDetails(token)
+        
+        // Handle response - check if data is directly an array or wrapped
+        let bankList: UserBankDetailsData[] = []
+        
+        if (Array.isArray(response)) {
+          bankList = response
+        } else if (response.success && response.data) {
+          if (Array.isArray(response.data)) {
+            bankList = response.data
+          }
+        } else if (response.data && Array.isArray(response.data)) {
+          bankList = response.data
+        }
+        
+        const foundBank = bankList.find((bank: UserBankDetailsData) => bank.id === bankDetailId)
+        
+        if (foundBank) {
+          setBankDetails(foundBank)
+        }
+      } catch (error) {
+        console.error('Error fetching bank details:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void fetchBankDetails()
+  }, [bankDetailId, token])
+
+  if (loading) {
+    return <span className="text-muted-foreground text-sm">Loading...</span>
+  }
+
+  if (!bankDetails) {
+    return <span className="text-muted-foreground text-sm">N/A</span>
+  }
+
+  return (
+    <div className="flex flex-col gap-1">
+      <div className="text-xs font-mono text-muted-foreground">
+        {bankDetails.account_number}
+      </div>
+      {bankDetails.swift_ifsc_code && (
+        <div className="text-xs text-muted-foreground">
+          SWIFT/IFSC: {bankDetails.swift_ifsc_code}
+        </div>
+      )}
+      {bankDetails.country && (
+        <div className="text-xs text-muted-foreground">
+          {bankDetails.country}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // Define columns
-const columns: ColumnDef<WithdrawalItem>[] = [
+const createColumns = (token: string | null): ColumnDef<WithdrawalItem>[] => [
       {
         id: "sr_no",
         header: "Sr. No.",
@@ -229,37 +371,59 @@ const columns: ColumnDef<WithdrawalItem>[] = [
       return value.includes(row.getValue(id))
     },
   },
-  {
-    id: 'chain_id',
-    accessorKey: 'chain_id',
-    meta: { mobileHidden: true },
+   {
+    id: 'payment_method_name',
+    accessorKey: 'payment_method_name',
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Network" />
+      <DataTableColumnHeader column={column} title="Payment Method" />
     ),
-    cell: ({ row }) => <ChainBadge chainId={row.original.chain_id} />,
+    cell: ({ row }) => (
+      <div className="flex items-center gap-2 text-sm whitespace-nowrap">
+        <Wallet className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+        <span>
+          {row.original.payment_method_name || '-'}
+        </span>
+      </div>
+    ),
   },
   {
-    id: 'wallet_address',
-    accessorKey: 'wallet_address',
+    id: 'destination_info',
+    accessorKey: 'destination_info',
     meta: { mobileHidden: true },
     header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Wallet Address" />
+      <DataTableColumnHeader column={column} title="Destination" />
     ),
-    cell: ({ row }) => <WalletAddressCell address={row.original.wallet_address} />,
+    cell: ({ row }) => {
+      const isBankTransfer = row.original.payment_method_name?.toLowerCase().includes('bank') || 
+                             row.original.bank_detail_id
+
+      if (isBankTransfer && row.original.bank_detail_id) {
+        return <BankDestinationCell bankDetailId={row.original.bank_detail_id} token={token} />
+      } else if (row.original.chain_id) {
+        return <ChainBadge chainId={row.original.chain_id} />
+      }
+      return <span className="text-muted-foreground text-sm">N/A</span>
+    },
   },
-  // {
-  //   id: 'transaction_hash',
-  //   accessorKey: 'transaction_hash',
-  //   header: ({ column }) => (
-  //     <DataTableColumnHeader column={column} title="Transaction Hash" />
-  //   ),
-  //   cell: ({ row }) => (
-  //     <TransactionHashCell 
-  //       hash={row.original.transaction_hash} 
-  //       chainId={row.original.chain_id}
-  //     />
-  //   ),
-  // },
+  {
+    id: 'account_info',
+    accessorKey: 'account_info',
+    meta: { mobileHidden: true },
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Account Info" />
+    ),
+    cell: ({ row }) => {
+      const isBankTransfer = row.original.payment_method_name?.toLowerCase().includes('bank') || 
+                             row.original.bank_detail_id
+
+      if (isBankTransfer && row.original.bank_detail_id) {
+        return <BankAccountInfoCell bankDetailId={row.original.bank_detail_id} token={token} />
+      } else if (!isBankTransfer && row.original.wallet_address) {
+        return <WalletAddressCell address={row.original.wallet_address} />
+      }
+      return <span className="text-muted-foreground text-sm">-</span>
+    },
+  },
   {
     id: 'created_at',
     accessorKey: 'created_at',
@@ -370,6 +534,9 @@ export default function WithdrawPage() {
     if (total > 0 && perPage) return Math.ceil(total / perPage)
     return 1
   }, [totalPages, total, perPage])
+
+  // Create columns with token
+  const columns = useMemo(() => createColumns(token), [token])
 
   // Validate wallet address - lenient validation
   const validateWalletAddress = (address: string, chain: string): boolean => {

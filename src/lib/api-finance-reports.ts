@@ -202,6 +202,7 @@ export interface WithdrawalItem {
   transaction_hash: string | null;
   created_at: string;
   updated_at?: string;
+  payment_method_name?: string | null;
 }
 
 export interface WithdrawalResponse {
