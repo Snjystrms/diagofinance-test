@@ -81,7 +81,7 @@ export function IbDashboardSidebar() {
     { icon: Wallet,          label: "Wallet",            path: "/ib-dashboard/wallet" },
     { icon: ArrowLeftRight,  label: "Internal Transfer", path: "/ib-dashboard/transfer" },
     { icon: Users,           label: "Client Summary",    path: "/ib-dashboard/clients" },
-    { icon: PieChart,        label: "Commissions",       path: "/ib-dashboard/commissions" },
+    // { icon: PieChart,        label: "Commissions",       path: "/ib-dashboard/commissions" },
   ]
 
   const displayUser   = dashboardData?.user || user

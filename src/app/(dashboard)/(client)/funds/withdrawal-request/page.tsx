@@ -38,6 +38,7 @@ import {
   ShieldCheck,
   ExternalLink,
   TrendingDown,
+  Plus,
 } from "lucide-react";
 import {
   Select,
@@ -662,56 +663,82 @@ function WithdrawalRequestContent() {
                         </Select>
                       )}
                       <div className="rounded-xl border border-border/60 bg-muted/20 p-4 text-sm">
-                        <div className="grid gap-3 md:grid-cols-2">
-                          <div>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                              Account Holder
+                        {userBankAccounts.length === 0 ? (
+                          <div className="flex flex-col items-center justify-center py-8 text-center">
+                            <p className="mb-4 text-sm text-muted-foreground">
+                              No bank account added yet. Please add a bank account to proceed with withdrawal.
                             </p>
-                            <p className="font-medium text-foreground">
-                              {bankDetails?.account_holder_name || "-"}
-                            </p>
+                            <Link href="/profile/view_profile?tab=bank">
+                              <Button variant="outline" size="sm" className="gap-2">
+                                <Plus className="h-3.5 w-3.5" />
+                                Add Bank Account
+                              </Button>
+                            </Link>
                           </div>
-                          <div>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                              Bank Name
-                            </p>
-                            <p className="font-medium text-foreground">
-                              {bankDetails?.bank_name || "-"}
-                            </p>
+                        ) : (
+                          <div className="grid gap-3 md:grid-cols-2">
+                            {bankDetails?.account_holder_name && (
+                              <div>
+                                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                                  Account Holder
+                                </p>
+                                <p className="font-medium text-foreground">
+                                  {bankDetails.account_holder_name}
+                                </p>
+                              </div>
+                            )}
+                            {bankDetails?.bank_name && (
+                              <div>
+                                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                                  Bank Name
+                                </p>
+                                <p className="font-medium text-foreground">
+                                  {bankDetails.bank_name}
+                                </p>
+                              </div>
+                            )}
+                            {bankDetails?.account_number && (
+                              <div>
+                                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                                  Account Number
+                                </p>
+                                <p className="font-mono text-foreground">
+                                  {bankDetails.account_number}
+                                </p>
+                              </div>
+                            )}
+                            {bankDetails?.iban_number && (
+                              <div>
+                                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                                  IBAN
+                                </p>
+                                <p className="font-mono text-foreground">
+                                  {bankDetails.iban_number}
+                                </p>
+                              </div>
+                            )}
+                            {bankDetails?.swift_ifsc_code && (
+                              <div>
+                                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                                  IFSC / SWIFT
+                                </p>
+                                <p className="font-mono text-foreground">
+                                  {bankDetails.swift_ifsc_code}
+                                </p>
+                              </div>
+                            )}
+                            {bankDetails?.country && (
+                              <div>
+                                <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                                  Country
+                                </p>
+                                <p className="font-medium text-foreground">
+                                  {bankDetails.country}
+                                </p>
+                              </div>
+                            )}
                           </div>
-                          <div>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                              Account Number
-                            </p>
-                            <p className="font-mono text-foreground">
-                              {bankDetails?.account_number || "-"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                              IBAN
-                            </p>
-                            <p className="font-mono text-foreground">
-                              {bankDetails?.iban_number || "-"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                              IFSC / SWIFT
-                            </p>
-                            <p className="font-mono text-foreground">
-                              {bankDetails?.swift_ifsc_code || "-"}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                              Country
-                            </p>
-                            <p className="font-medium text-foreground">
-                              {bankDetails?.country || "-"}
-                            </p>
-                          </div>
-                        </div>
+                        )}
                       </div>
                       {/* {!supportsBankWithdrawal && !bankDetailsLoading && (
                         <p className="text-xs text-destructive">

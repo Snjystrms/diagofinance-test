@@ -1,4 +1,6 @@
-import Link from "next/link";
+'use client';
+
+import { useState } from "react";
 import {
   ArrowRight,
   Circle,
@@ -13,6 +15,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/lib/format";
 import type { AccountType } from "@/lib/api";
+import { AccountCreationDialog } from "./account-creation-dialog";
 
 type AccountTypeCardGridProps = {
   accountTypes: AccountType[];
@@ -32,8 +35,19 @@ export function AccountTypeCardGrid({
   accountTypes,
   className,
 }: AccountTypeCardGridProps) {
+  const [selectedAccountType, setSelectedAccountType] = useState<AccountType | null>(null);
+  const [selectedMode, setSelectedMode] = useState<'live' | 'demo'>('live');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  const handleOpenDialog = (accountType: AccountType, mode: 'live' | 'demo') => {
+    setSelectedAccountType(accountType);
+    setSelectedMode(mode);
+    setIsDialogOpen(true);
+  };
+
   return (
-    <div className={cn("grid gap-6 md:grid-cols-2 lg:grid-cols-3", className)}>
+    <>
+      <div className={cn("grid gap-6 md:grid-cols-2 lg:grid-cols-3", className)}>
       {accountTypes.map((accountType) => {
         const Icon = getAccountIcon(accountType.name);
         const minimumDeposit = formatCurrency(accountType.minimum_deposit);
@@ -78,27 +92,26 @@ export function AccountTypeCardGrid({
 
               <div className="mt-auto space-y-2 border-t pt-4">
                 {accountType.groups?.demo && (
-                  <Button variant="outline" className="w-full" asChild>
-                    <Link
-                      href={`/my_accounts/open-trading-account?mode=demo&type=${encodeURIComponent(accountType.name)}`}
-                    >
-                      <span className="flex min-w-0 items-center justify-center gap-2">
-                        <span className="truncate">Create Demo Account</span>
-                        <ArrowRight className="h-4 w-4 shrink-0" />
-                      </span>
-                    </Link>
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => handleOpenDialog(accountType, 'demo')}
+                  >
+                    <span className="flex min-w-0 items-center justify-center gap-2">
+                      <span className="truncate">Create Demo Account</span>
+                      <ArrowRight className="h-4 w-4 shrink-0" />
+                    </span>
                   </Button>
                 )}
                 {accountType.groups?.live && (
-                  <Button className="w-full" asChild>
-                    <Link
-                      href={`/my_accounts/open-trading-account?mode=live&type=${encodeURIComponent(accountType.name)}`}
-                    >
-                      <span className="flex min-w-0 items-center justify-center gap-2">
-                        <span className="truncate">Create Live Account</span>
-                        <ArrowRight className="h-4 w-4 shrink-0" />
-                      </span>
-                    </Link>
+                  <Button 
+                    className="w-full"
+                    onClick={() => handleOpenDialog(accountType, 'live')}
+                  >
+                    <span className="flex min-w-0 items-center justify-center gap-2">
+                      <span className="truncate">Create Live Account</span>
+                      <ArrowRight className="h-4 w-4 shrink-0" />
+                    </span>
                   </Button>
                 )}
                 {!accountType.groups?.live && !accountType.groups?.demo && (
@@ -112,5 +125,16 @@ export function AccountTypeCardGrid({
         );
       })}
     </div>
+
+    {/* Account Creation Dialog */}
+    {selectedAccountType && (
+      <AccountCreationDialog
+        accountType={selectedAccountType}
+        mode={selectedMode}
+        open={isDialogOpen}
+        onOpenChange={setIsDialogOpen}
+      />
+    )}
+  </>
   );
 }

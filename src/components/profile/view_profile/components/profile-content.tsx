@@ -2,6 +2,7 @@
 
 import { Scale, Settings, FileText, Loader2, CalendarIcon, Pencil, X, User, FileCheck, Activity, Shield, Building2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import { GetCity, GetCountries, GetState } from "react-country-state-city";
 
@@ -126,6 +127,8 @@ const findLocationOptionByName = <T extends { name: string }>(options: T[], valu
 
 export default function ProfileContent() {
   const { token, user } = useAuth();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profileData, setProfileData] = useState<ProfileViewResponse | null>(null);
@@ -787,6 +790,22 @@ export default function ProfileContent() {
       setFinancialCurrency(storedCurrency);
     }
   }, []);
+
+  // Read tab from URL on mount
+  useEffect(() => {
+    const tabParam = searchParams.get("tab");
+    const validTabs = ["personal", "legal", "activity", "security", "bank"];
+    if (tabParam && validTabs.includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
+
+  // Update URL when tab changes
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    const currentPath = window.location.pathname;
+    router.push(`${currentPath}?tab=${value}`, { scroll: false });
+  };
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1548,14 +1567,14 @@ export default function ProfileContent() {
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="ib-portal-surface inline-flex h-auto w-full flex-wrap gap-1 rounded-2xl border p-1.5">
           <TabsTrigger 
             value="personal" 
             className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
           >
             <User className="h-4 w-4 mr-2" />
-            Personal
+            Personal Information
           </TabsTrigger>
           <TabsTrigger 
             value="account" 
