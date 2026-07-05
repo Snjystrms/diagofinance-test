@@ -126,12 +126,12 @@ export function AccountCreationDialog({
   });
 
   const maxLeverage = getMaximumLeverageValue(accountType);
-  const leverageOptions = maxLeverage
+  let leverageOptions: Array<{ value: number; label: string }> = maxLeverage
     ? LEVERAGE_CHOICES.filter((option) => option.value <= maxLeverage)
-    : LEVERAGE_CHOICES;
+    : [...LEVERAGE_CHOICES];
 
   if (leverageOptions.length > 0 && maxLeverage && !leverageOptions.some(o => o.value === maxLeverage)) {
-    leverageOptions.push({ value: maxLeverage, label: `1:${maxLeverage}` });
+    leverageOptions = [...leverageOptions, { value: maxLeverage, label: `1:${maxLeverage}` }];
   }
 
   const demoBalanceCurrency = isCentAccountType(accountType) ? 'USC' : 'USD';

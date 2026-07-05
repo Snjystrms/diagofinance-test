@@ -410,7 +410,7 @@ export default function IbWalletPage() {
 
       <IbSectionCard
         title="Transaction history"
-        description="Latest Partner wallet entries returned by the wallet ledger API."
+        description=""
       >
         {transactions.length > 0 ? (
           <div className="space-y-4">
