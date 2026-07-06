@@ -902,6 +902,8 @@ export interface AdminIbRequest {
   status?: number;
   notes?: string | null;
   admin_comment?: string | null;
+  approved_by?: string | null;
+  approved_at?: string | null;
   user_comment?: string | null;
   ib_name?: string | null;
   created_at?: string;

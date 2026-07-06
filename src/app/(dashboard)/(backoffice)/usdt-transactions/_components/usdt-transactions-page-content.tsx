@@ -524,6 +524,14 @@ export function USDTTransactionsPageContent() {
           </div>
         ),
       },
+       {
+        id: "admin_notes",
+        header: "Admin Note",
+        accessorKey: "admin_notes",
+        cell: ({ row }) => (
+          <span className="capitalize">{row.original.admin_notes || "—"}</span>
+        ),
+      },
       {
         id: "created_at",
         header: "Created",

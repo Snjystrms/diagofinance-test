@@ -455,6 +455,16 @@ export function WithdrawalRequestsPageContent() {
           </div>
         ),
       },
+        {
+        id: "admin_notes",
+        header: "Admin Note",
+        accessorKey: "admin_notes",
+        cell: ({ row }) => (
+          <span className="font-normal">
+            {row.original.admin_notes || "—"}
+          </span>
+        ),
+      },
       {
         id: "created_at",
         header: "Created",

@@ -65,7 +65,7 @@ export function AccountTypeCardGrid({
             <CardContent className="flex flex-1 flex-col space-y-4 px-6 py-6">
               <div className="border-b pb-2">
                 <div className="text-sm text-muted-foreground">
-                  Minimum Deposit
+                  First Time Deposit
                 </div>
                 <div className="text-xl font-bold">{minimumDeposit}</div>
               </div>

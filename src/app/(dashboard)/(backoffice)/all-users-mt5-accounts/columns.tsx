@@ -288,6 +288,7 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
       <Badge variant="outline">{deriveAccountType(row.original)}</Badge>
     ),
     enableColumnFilter: true,
+    enableSorting: false,
   },
   {
     id: "account_mode",
@@ -341,11 +342,11 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
   {
     id: "status",
     accessorKey: "status",
-    header: () => (
-      <ManualSortHeader sortKey="status" title="Status" />
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Status" />
     ),
     cell: ({ row }) => getStatusBadge(row.original.status),
-    enableColumnFilter: true,
+    enableColumnFilter: false,
     enableSorting: false,
   },
   {

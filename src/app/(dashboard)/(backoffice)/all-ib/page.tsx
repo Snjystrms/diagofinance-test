@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -12,6 +12,7 @@ import {
   RefreshCw,
   UserCheck,
   XCircle,
+  User
 } from "lucide-react";
 
 import { AppDataTable } from "@/components/app-data-table";
@@ -190,7 +191,7 @@ const deriveUserNotes = (request: AdminIbRequest) => {
   const candidate =
     request.notes ??
     (req.user_notes as string | undefined) ??
-    (req.request_notes as string | undefined) ??  
+    (req.request_notes as string | undefined) ??
     (req.user_comment as string | undefined) ??
     null;
   return candidate && String(candidate).trim().length > 0
@@ -210,8 +211,6 @@ const deriveAdminComment = (request: AdminIbRequest) => {
     ? String(candidate)
     : null;
 };
-
-
 
 export default function IbManagementPage() {
   const { token } = useAuth();
@@ -243,7 +242,6 @@ export default function IbManagementPage() {
     parseAsString.withDefault(""),
   );
 
-  // Local search state for immediate UI updates
   const [searchInput, setSearchInput] = useState(searchQuery ?? "");
 
   const loadRequests = useCallback(async () => {
@@ -296,8 +294,8 @@ export default function IbManagementPage() {
         (payload && ((payloadObj.meta as Record<string, unknown> | undefined)?.pagination as Record<string, unknown> | undefined)) ??
         ((payload &&
           payloadObj.data &&
-          !Array.isArray(payloadObj.data)) ? 
-          (((payloadObj.data as Record<string, unknown>).pagination as Record<string, unknown> | undefined) ?? 
+          !Array.isArray(payloadObj.data)) ?
+          (((payloadObj.data as Record<string, unknown>).pagination as Record<string, unknown> | undefined) ??
           ((payloadObj.data as Record<string, unknown>).meta as Record<string, unknown> | undefined)?.pagination as Record<string, unknown> | undefined) :
           undefined));
 
@@ -447,12 +445,14 @@ export default function IbManagementPage() {
           const ibName = request.ib_name;
 
           return (
-            <div className="space-y-1"> 
-              <div className="font-medium">
+            <div className="space-y-0.5">
+              <div className="text-sm font-medium leading-tight">
                 {(row.index ?? 0) + 1}
               </div>
               {ibName ? (
-                <div className="text-sm text-muted-foreground">{ibName}</div>
+                <div className="max-w-[120px] truncate text-xs leading-tight text-muted-foreground">
+                  {ibName}
+                </div>
               ) : null}
             </div>
           );
@@ -468,41 +468,45 @@ export default function IbManagementPage() {
           const phone = derivePhone(request);
 
           return (
-            <div className="space-y-1 text-sm">
+            <div className="space-y-0.5">
               <Link
                 href={`/new-users/${request.user_id ?? request.userId ?? request.id ?? ""}`}
-                className="font-medium hover:underline"
+                className="text-sm font-medium leading-tight hover:underline"
               >
                 {fullName}
               </Link>
-              <div className="text-xs text-muted-foreground">{email}</div>
-              <div className="text-xs text-muted-foreground">{phone}</div>
+              <div className="max-w-[180px] truncate text-xs leading-tight text-muted-foreground">
+                {email}
+              </div>
+              {phone !== "—" && (
+                <div className="text-xs leading-tight text-muted-foreground">{phone}</div>
+              )}
             </div>
           );
         },
       },
       {
         id: "notes",
-        header: "Notes By Client/Admin",
+        header: "Notes",
         cell: ({ row }) => {
           const request = row.original;
           const userNotes = deriveUserNotes(request);
           const adminComment = deriveAdminComment(request);
 
           if (!userNotes && !adminComment) {
-            return <span className="text-sm text-muted-foreground">—</span>;
+            return <span className="text-xs text-muted-foreground">—</span>;
           }
 
           return (
-            <div className="space-y-2 text-sm leading-relaxed">
+            <div className="max-w-[200px] space-y-0.5 text-xs">
               {userNotes ? (
-                <div>
+                <div className="line-clamp-1 leading-tight" title={userNotes}>
                   <span className="font-medium text-foreground">User:</span>{" "}
                   <span className="text-muted-foreground">{userNotes}</span>
                 </div>
               ) : null}
               {adminComment ? (
-                <div>
+                <div className="line-clamp-1 leading-tight" title={adminComment}>
                   <span className="font-medium text-foreground">Admin:</span>{" "}
                   <span className="text-muted-foreground">{adminComment}</span>
                 </div>
@@ -521,12 +525,28 @@ export default function IbManagementPage() {
           return getStatusBadge(statusCode);
         },
       },
-            {
+      {
+        id: "processed_by",
+        accessorKey: "processed_by",
+        header: "Processed By",
+        cell: ({ row }) => (
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5 text-sm leading-tight">
+              <User className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+              <span className="truncate">{row.original.approved_by || "-"}</span>
+            </div>
+            <div className="text-xs leading-tight text-muted-foreground">
+              {formatDateTime(row.original.approved_at)}
+            </div>
+          </div>
+        ),
+      },
+      {
         id: "created_at",
         header: "Created",
         cell: ({ row }) => {
           const request = row.original as Record<string, unknown>;
-          
+
           const createdAt =
             request.created_at_ist ??
             request.created_at ??
@@ -536,13 +556,12 @@ export default function IbManagementPage() {
             null;
 
           return (
-            <div className="text-sm text-muted-foreground">
+            <div className="whitespace-nowrap text-xs leading-tight text-muted-foreground">
               {formatDateTime(createdAt as string | null)}
             </div>
           );
         },
       },
-
       {
         id: "actions",
         header: "Actions",
@@ -669,7 +688,6 @@ export default function IbManagementPage() {
                 onSearch={(value) => {
                   void setPage(1);
                   const trimmed = value.trim();
-                  // Only update query state if 3+ chars or empty (to clear)
                   void setSearchQuery(trimmed.length === 0 || trimmed.length >= 3 ? trimmed || null : searchQuery);
                 }}
                 placeholder="Search by name, email, or phone"
@@ -738,6 +756,15 @@ export default function IbManagementPage() {
                 </div>
               ) : null}
 
+              {deriveUserNotes(actionRequest) ? (
+                <div className="space-y-2 rounded-md border border-border/60 bg-muted/30 p-3">
+                  <label className="text-sm font-medium text-foreground">User Comment</label>
+                  <p className="text-sm leading-relaxed text-muted-foreground">
+                    {deriveUserNotes(actionRequest)}
+                  </p>
+                </div>
+              ) : null}
+
               {currentStatusCode === 0 ? (
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">Decision</label>
@@ -787,8 +814,7 @@ export default function IbManagementPage() {
                   ) : null}
                 </div>
               ) : null}
-
-              </div>
+            </div>
           ) : null}
 
           <DialogFooter className="gap-3 pt-2 sm:justify-end">
