@@ -291,6 +291,10 @@ export default function NewUsersPage() {
   const [statusFilter, setStatusFilter] = useQueryState("status", parseAsString.withDefault("all"));
   const [search, setSearch] = useQueryState("search", parseAsString.withDefault(""));
   const [searchInput, setSearchInput] = useState(search ?? "");
+  const [sortBy, setSortBy] = useQueryState("sort_by", parseAsString);
+  const [sortOrder, setSortOrder] = useQueryState("sort_order", parseAsString);
+  const [dateFrom, setDateFrom] = useQueryState("date_from", parseAsString);
+  const [dateTo, setDateTo] = useQueryState("date_to", parseAsString);
 
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -398,6 +402,10 @@ export default function NewUsersPage() {
         limit: perPage,
         search: search?.trim() ? search : undefined,
         status: statusFilter !== "all" ? statusFilter : undefined,
+        sort_by: sortBy || undefined,
+        sort_order: sortOrder || undefined,
+        date_from: dateFrom || undefined,
+        date_to: dateTo || undefined,
       });
 
       const payload = response?.data ?? null;
@@ -416,7 +424,7 @@ export default function NewUsersPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, page, perPage, search, statusFilter, canViewUserList]);
+  }, [token, page, perPage, search, statusFilter, sortBy, sortOrder, dateFrom, dateTo, canViewUserList]);
 
   useEffect(() => {
     void loadUsers();
@@ -835,7 +843,7 @@ export default function NewUsersPage() {
             </div>
 
             <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:flex-wrap">
               <ApiSearchBar
                 value={searchInput}
                 onChange={setSearchInput}
@@ -865,6 +873,28 @@ export default function NewUsersPage() {
                     ))}
                   </SelectContent>
                 </Select>
+                
+                <Input
+                  type="date"
+                  value={dateFrom ?? ""}
+                  onChange={(e) => {
+                    void setDateFrom(e.target.value || null);
+                    void setPage(1);
+                  }}
+                  placeholder="From Date"
+                  className="h-9 w-[160px] text-sm"
+                />
+                
+                <Input
+                  type="date"
+                  value={dateTo ?? ""}
+                  onChange={(e) => {
+                    void setDateTo(e.target.value || null);
+                    void setPage(1);
+                  }}
+                  placeholder="To Date"
+                  className="h-9 w-[160px] text-sm"
+                />
               </div>
               <div className="text-sm text-muted-foreground">
                 Page {paginationMeta?.current_page ?? paginationMeta?.page ?? page} of {Math.max(1, totalPages)} - {perPage} users per page - {totalUsers} total users

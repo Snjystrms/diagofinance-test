@@ -24,6 +24,7 @@ import { mt5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
 import { formatApiDateTimeAsIST } from "@/lib/formatters";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/contexts/auth-context";
+import { ManualSortHeader } from "../../../../components/data-table/manual-sort-header";
 
 const formatDateTime = (value?: string) => {
   if (!value) return "-";
@@ -247,6 +248,7 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
       );
     },
     enableColumnFilter: true,
+    enableSorting: false,
   },
   {
     id: "user",
@@ -274,6 +276,7 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
       );
     },
     enableColumnFilter: false,
+    enableSorting: false,
   },
   {
     id: "account_type",
@@ -294,6 +297,7 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
     ),
     cell: ({ row }) => getModeBadge(row.original.account_mode),
     enableColumnFilter: true,
+    enableSorting: false,
   },
   {
     id: "group",
@@ -307,44 +311,48 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
       </div>
     ),
     enableColumnFilter: false,
+    enableSorting: false,
   },
   {
     id: "self_wallet",
     accessorKey: "self_wallet",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Wallet Balance" />
+    header: () => (
+      <ManualSortHeader sortKey="balance" title="Wallet Balance" />
     ),
     cell: ({ row }) => {
       return <BalanceButton account={row.original} />;
     },
     enableColumnFilter: true,
+    enableSorting: false,
   },
   {
     id: "leverage",
     accessorKey: "leverage",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Leverage" />
+    header: () => (
+      <ManualSortHeader sortKey="leverage" title="Leverage" />
     ),
     cell: ({ row }) => {
       const leverage = row.original.leverage;
       return leverage ? `1:${leverage}` : emptyValue;
     },
     enableColumnFilter: false,
+    enableSorting: false,
   },
   {
     id: "status",
     accessorKey: "status",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Status" />
+    header: () => (
+      <ManualSortHeader sortKey="status" title="Status" />
     ),
     cell: ({ row }) => getStatusBadge(row.original.status),
     enableColumnFilter: true,
+    enableSorting: false,
   },
   {
     id: "created_at",
     accessorKey: "created_at",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Created at" />
+    header: () => (
+      <ManualSortHeader sortKey="created_at" title="Created at" />
     ),
     cell: ({ row }) => (
       <div className="flex items-center gap-1 whitespace-nowrap">
@@ -355,6 +363,7 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
       </div>
     ),
     enableColumnFilter: false,
+    enableSorting: false,
   },
 ];
 

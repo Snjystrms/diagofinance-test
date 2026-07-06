@@ -95,6 +95,7 @@ function PaginationControls({
   pagination,
   isLoading,
   onPageChange,
+  onPerPageChange,
 }: {
   pagination: {
     current_page: number;
@@ -104,13 +105,34 @@ function PaginationControls({
   };
   isLoading: boolean;
   onPageChange: (page: number) => void;
+  onPerPageChange: (perPage: number) => void;
 }) {
-  if (pagination.total_pages <= 1) return null;
+  if (pagination.total === 0) return null;
+  
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-4 px-1">
-      <div className="text-xs text-muted-foreground tabular-nums">
-        Showing {(pagination.current_page - 1) * pagination.per_page + 1}–
-        {Math.min(pagination.current_page * pagination.per_page, pagination.total)} of {pagination.total}
+      <div className="flex items-center gap-4">
+        <div className="text-xs text-muted-foreground tabular-nums">
+          Showing {Math.min((pagination.current_page - 1) * pagination.per_page + 1, pagination.total)}–
+          {Math.min(pagination.current_page * pagination.per_page, pagination.total)} of {pagination.total}
+        </div>
+        <div className="flex items-center gap-2">
+          <label htmlFor="perPage" className="text-xs text-muted-foreground whitespace-nowrap">
+            Rows per page:
+          </label>
+          <select
+            id="perPage"
+            value={pagination.per_page}
+            onChange={(e) => onPerPageChange(Number(e.target.value))}
+            disabled={isLoading}
+            className="h-8 rounded-md border border-border bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={30}>30</option>
+            <option value={50}>50</option>
+          </select>
+        </div>
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <Button
@@ -155,15 +177,22 @@ function PaginationControls({
 function TransactionTable({
   transactions,
   currency,
+  currentPage,
+  perPage,
 }: {
   transactions: IbInternalTransferWalletTransaction[];
   currency: string;
+  currentPage: number;
+  perPage: number;
 }) {
   return (
     <div className="w-full overflow-x-auto rounded-2xl border border-border/50">
       <table className="w-full min-w-[640px] text-sm">
         <thead>
           <tr className="border-b border-border/50 bg-muted/20">
+            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Sr. No.
+            </th>
             <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Type
             </th>
@@ -191,6 +220,7 @@ function TransactionTable({
           {transactions.map((tx, index) => {
             const isOutflow = tx.direction === "debit";
             const amount = typeof tx.amount === "number" ? tx.amount : 0;
+            const serialNumber = (currentPage - 1) * perPage + index + 1;
 
             const displayType =
               tx.transaction_type === "transfer_out"
@@ -208,6 +238,11 @@ function TransactionTable({
                 key={index}
                 className="group transition-colors hover:bg-muted/20"
               >
+                {/* Serial Number */}
+                <td className="whitespace-nowrap px-4 py-3.5 text-center text-muted-foreground">
+                  {serialNumber}
+                </td>
+
                 {/* Type */}
                 <td className="whitespace-nowrap px-4 py-3.5">
                   <div className="flex items-center gap-2.5">
@@ -229,8 +264,10 @@ function TransactionTable({
                 </td>
 
                 {/* Description */}
-                <td className="max-w-[180px] truncate px-4 py-3.5 text-muted-foreground">
-                  {tx.description || <span className="text-border">—</span>}
+                <td className="px-4 py-3.5 text-muted-foreground">
+                  <div className="max-w-[220px] break-words">
+                    {tx.description || <span className="text-border">—</span>}
+                  </div>
                 </td>
 
                 {/* Status */}
@@ -286,6 +323,7 @@ export default function IbWalletPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<unknown | null>(null);
   const [page, setPage] = useState(1);
+  const [perPage, setPerPage] = useState(10);
   const [pagination, setPagination] = useState({
     current_page: 1,
     per_page: 10,
@@ -306,7 +344,7 @@ export default function IbWalletPage() {
 
       const [walletResponse, transactionsResponse] = await Promise.all([
         ibRequestsApi.getIbWallet(token),
-        ibRequestsApi.getIbWalletTransactions(token, { page, limit: 10 }),
+        ibRequestsApi.getIbWalletTransactions(token, { page, limit: perPage }),
       ]);
 
       const normalized = normalizeIbWalletData(walletResponse?.data);
@@ -327,7 +365,7 @@ export default function IbWalletPage() {
         if (pag) {
           setPagination({
             current_page: pag.current_page || page,
-            per_page: pag.per_page || 10,
+            per_page: pag.per_page || perPage,
             total: pag.total || 0,
             total_pages: pag.last_page || 1,
           });
@@ -343,13 +381,18 @@ export default function IbWalletPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [token, page]);
+  }, [token, page, perPage]);
 
   useEffect(() => {
     void fetchWalletData();
   }, [fetchWalletData]);
 
   const snapshot = useMemo(() => getIbWalletSnapshot(walletData), [walletData]);
+
+  const handlePerPageChange = (newPerPage: number) => {
+    setPerPage(newPerPage);
+    setPage(1); // Reset to first page when changing rows per page
+  };
 
   if (isLoading) {
     return <WalletLoadingState />;
@@ -414,11 +457,17 @@ export default function IbWalletPage() {
       >
         {transactions.length > 0 ? (
           <div className="space-y-4">
-            <TransactionTable transactions={transactions} currency={snapshot.currency} />
+            <TransactionTable 
+              transactions={transactions} 
+              currency={snapshot.currency} 
+              currentPage={pagination.current_page}
+              perPage={pagination.per_page}
+            />
             <PaginationControls
               pagination={pagination}
               isLoading={isLoading}
               onPageChange={setPage}
+              onPerPageChange={handlePerPageChange}
             />
           </div>
         ) : (

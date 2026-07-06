@@ -1825,6 +1825,10 @@ export interface AdminMT5AccountsListParams {
   user_id?: string | number;
   group_id?: string | number;
   manager_id?: string | number;
+  sort_by?: string;
+  sort_order?: string;
+  date_from?: string;
+  date_to?: string;
 }
 
 export interface UpdateMT5AccountRequest {
@@ -1912,6 +1916,10 @@ export const adminMT5AccountsApi = {
     user_id,
     group_id,
     manager_id,
+    sort_by,
+    sort_order,
+    date_from,
+    date_to,
   }: AdminMT5AccountsListParams) => {
     if (!token) {
       throw new Error("Token is required to fetch MT5 accounts");
@@ -1930,6 +1938,22 @@ export const adminMT5AccountsApi = {
     if (group_id !== undefined && group_id !== null && `${group_id}` !== "") qs.set("group_id", String(group_id));
     if (manager_id !== undefined && manager_id !== null && `${manager_id}` !== "") {
       qs.set("manager_id", String(manager_id));
+    }
+    
+    if (sort_by) {
+      qs.set("sort_by", sort_by);
+    }
+    
+    if (sort_order) {
+      qs.set("sort_order", sort_order);
+    }
+    
+    if (date_from) {
+      qs.set("date_from", date_from);
+    }
+    
+    if (date_to) {
+      qs.set("date_to", date_to);
     }
 
     const endpoint = `/admin/mt5-accounts${qs.toString() ? `?${qs.toString()}` : ""}`;

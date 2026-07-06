@@ -23,6 +23,7 @@ import toast from "react-hot-toast";
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -58,6 +59,7 @@ import {
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
+import { ManualSortHeader } from "@/components/data-table/manual-sort-header";
 import { fmtDateTime, fmtISTDateTime, formatAmount, statusBadge, transactionTypeLabel } from "../_lib/transaction-format";
 import { ClientDepositDialog } from "./client-deposit-dialog";
 import { ClientWithdrawalDialog } from "./client-withdrawal-dialog";
@@ -84,6 +86,10 @@ export function AdminTransactionContent() {
   const [searchInput, setSearchInput] = useState(searchUser || "");
   const [typeFilter, setTypeFilter] = useQueryState("type", parseAsString);
   const [statusFilter, setStatusFilter] = useQueryState("status", parseAsString);
+  const [dateFrom, setDateFrom] = useQueryState("date_from", parseAsString);
+  const [dateTo, setDateTo] = useQueryState("date_to", parseAsString);
+  const [sortBy, setSortBy] = useQueryState("sort_by", parseAsString.withDefault("created_at"));
+  const [sortOrder, setSortOrder] = useQueryState("sort_order", parseAsString.withDefault("desc"));
 
   const [depositDialogOpen, setDepositDialogOpen] = useState(false);
   const [withdrawalDialogOpen, setWithdrawalDialogOpen] = useState(false);
@@ -115,11 +121,13 @@ export function AdminTransactionContent() {
         token,
         page,
         limit: perPage,
-        sort_by: "created_at",
-        sort_order: "DESC",
+        sort_by: sortBy || "created_at",
+        sort_order: (sortOrder?.toUpperCase() as "ASC" | "DESC") || "DESC",
         search: searchTerm,
         transaction_type: (typeFilter as AdminTransactionItem["transaction_type"]) || undefined,
         status: (statusFilter as AdminTransactionItem["status"]) || undefined,
+        date_from: dateFrom || undefined,
+        date_to: dateTo || undefined,
       });
       if (currentRequestId !== requestIdRef.current) return;
       const txPayload = txRes.data;
@@ -138,7 +146,7 @@ export function AdminTransactionContent() {
         setLoading(false);
       }
     }
-  }, [page, perPage, searchUser, typeFilter, statusFilter, token, canView]);
+  }, [page, perPage, searchUser, typeFilter, statusFilter, dateFrom, dateTo, sortBy, sortOrder, token, canView]);
 
   useEffect(() => {
     void loadData();
@@ -239,14 +247,14 @@ export function AdminTransactionContent() {
     {
       id: "transaction_type",
       accessorKey: "transaction_type",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Transaction Type" />,
+      header: "Transaction Type",
       cell: ({ row }) => (
         <span className="text-sm capitalize">{transactionTypeLabel(row.original.transaction_label)}</span>
       ),
     },
     {
       id: "amount",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Amount" />,
+      header: () => <ManualSortHeader sortKey="amount" title="Amount" />,
       accessorKey: "amount",
       cell: ({ row }) => (
         <span className="font-medium tabular-nums whitespace-nowrap">
@@ -275,13 +283,13 @@ export function AdminTransactionContent() {
     {
       id: "status",
       accessorKey: "status",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+      header: "Status",
       cell: ({ row }) => statusBadge(row.original.status),
     },
        {
       id: "processed_by",
       accessorKey: "processed_by",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Processed By" />,
+      header: "Processed By",
       cell: ({ row }) => (
          <div className="space-y-0.5">
         <div className="font-normal">{row.original.processed_by || "-"} </div>
@@ -309,7 +317,7 @@ export function AdminTransactionContent() {
     },
     {
       id: "created_at",
-      header: ({ column }) => <DataTableColumnHeader column={column} title="Date" />,
+      header: () => <ManualSortHeader sortKey="created_at" title="Date" />,
       accessorKey: "created_at",
       cell: ({ row }) => (
         <div className="flex items-center gap-2 text-sm">
@@ -522,6 +530,26 @@ export function AdminTransactionContent() {
               <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
+          <Input
+            type="date"
+            value={dateFrom ?? ""}
+            onChange={(e) => {
+              setDateFrom(e.target.value || null);
+              setPage(1);
+            }}
+            placeholder="From Date"
+            className="h-10 w-[160px]"
+          />
+          <Input
+            type="date"
+            value={dateTo ?? ""}
+            onChange={(e) => {
+              setDateTo(e.target.value || null);
+              setPage(1);
+            }}
+            placeholder="To Date"
+            className="h-10 w-[160px]"
+          />
         </div>
       </div>
 

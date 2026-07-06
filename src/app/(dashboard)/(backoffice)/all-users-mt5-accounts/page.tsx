@@ -169,6 +169,10 @@ export default function AllUsersMT5AccountsPage() {
     "manager_id",
     parseAsString.withDefault(""),
   );
+  const [sortBy, setSortBy] = useQueryState("sort_by", parseAsString);
+  const [sortOrder, setSortOrder] = useQueryState("sort_order", parseAsString);
+  const [dateFrom, setDateFrom] = useQueryState("date_from", parseAsString);
+  const [dateTo, setDateTo] = useQueryState("date_to", parseAsString);
 
   const [searchInput, setSearchInput] = useState(search ?? "");
 
@@ -214,6 +218,10 @@ export default function AllUsersMT5AccountsPage() {
         user_id: userIdFilter?.trim() ? userIdFilter : undefined,
         group_id: groupIdFilter?.trim() ? groupIdFilter : undefined,
         manager_id: managerIdFilter?.trim() ? managerIdFilter : undefined,
+        sort_by: sortBy || undefined,
+        sort_order: sortOrder || undefined,
+        date_from: dateFrom || undefined,
+        date_to: dateTo || undefined,
       });
 
       // The API returns { success, message, data: { mt5_accounts: [...], pagination: {...} } }
@@ -279,7 +287,7 @@ export default function AllUsersMT5AccountsPage() {
     } finally {
       setLoading(false);
     }
-  }, [token, page, perPage, statusFilter, accountModeFilter, search, userIdFilter, groupIdFilter, managerIdFilter, canViewMt5List]);
+  }, [token, page, perPage, statusFilter, accountModeFilter, search, userIdFilter, groupIdFilter, managerIdFilter, sortBy, sortOrder, dateFrom, dateTo, canViewMt5List]);
 
   useEffect(() => {
     void loadAccounts();
@@ -594,7 +602,7 @@ export default function AllUsersMT5AccountsPage() {
 
           <div className="flex flex-col gap-3">
             {/* Search and Filters Row */}
-            <div className="flex flex-col gap-3 md:flex-row md:items-center">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:flex-wrap">
               <ApiSearchBar
                 value={searchInput}
                 onChange={setSearchInput}
@@ -641,6 +649,28 @@ export default function AllUsersMT5AccountsPage() {
                   ))}
                 </TabsList>
               </Tabs>
+              
+              <Input
+                type="date"
+                value={dateFrom ?? ""}
+                onChange={(e) => {
+                  void setDateFrom(e.target.value || null);
+                  void setPage(1);
+                }}
+                placeholder="From Date"
+                className="h-9 w-[160px] text-sm"
+              />
+              
+              <Input
+                type="date"
+                value={dateTo ?? ""}
+                onChange={(e) => {
+                  void setDateTo(e.target.value || null);
+                  void setPage(1);
+                }}
+                placeholder="To Date"
+                className="h-9 w-[160px] text-sm"
+              />
             </div>
 
             {/* Additional Filters Row */}

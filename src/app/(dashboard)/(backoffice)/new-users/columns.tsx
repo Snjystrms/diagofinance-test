@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { formatDateTimeInIST } from "@/lib/formatters";
+import { ManualSortHeader } from "@/components/data-table/manual-sort-header";
 
 const formatDateTime = (value?: string) => {
   if (!value) return "-";
@@ -305,6 +306,7 @@ export const getColumnsWithActions = (
         </div>
       );
     },
+    enableSorting: false,
   },
   {
     id: "contact",
@@ -328,6 +330,7 @@ export const getColumnsWithActions = (
         </div>
       );
     },
+    enableSorting: false,
   },
   {
     id: "status",
@@ -373,23 +376,26 @@ export const getColumnsWithActions = (
         </div>
       );
     },
+    enableSorting: false,
   },
   {
     id: "main_wallet_balance",
     accessorKey: "main_wallet_balance",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Main Wallet(USD)" />,
+    header: () => <ManualSortHeader sortKey="main_wallet_balance" title="Main Wallet(USD)" />,
     cell: ({ row }) => (
       <div className="flex items-center gap-1 text-sm">
         <Wallet className="h-4 w-4 text-muted-foreground" />
         <span>{row.original.main_wallet_balance?.toFixed(2) || "0.00"}</span>
       </div>
     ),
+    enableSorting: false,
   },
  {
     id: "password",
     accessorKey: "password",
     header: ({ column }) => <DataTableColumnHeader column={column} title="User Password" />,
     cell: ({ row }) => <DecryptedPassword userId={row.original.id} token={token} />,
+    enableSorting: false,
   },
   {
     id: "ib_status",
@@ -443,17 +449,19 @@ export const getColumnsWithActions = (
 </div>
       );
     },
+    enableSorting: false,
   },
   {
     id: "created_at",
     accessorKey: "created_at",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Registration Date" />,
+    header: () => <ManualSortHeader sortKey="created_at" title="Registration Date" />,
     cell: ({ row }) => (
       <div className="flex items-center gap-1 text-sm whitespace-nowrap">
         <Calendar className="h-4 w-4 text-muted-foreground flex-shrink-0" />
         <span>{formatDateTime(row.original.created_at)}</span>
       </div>
     ),
+    enableSorting: false,
   },
     {
     id: "approved_by",
@@ -470,6 +478,7 @@ export const getColumnsWithActions = (
           </div>
       </div>
     ),
+    enableSorting: false,
   },
     {
     id: "referred_by",
@@ -486,6 +495,7 @@ export const getColumnsWithActions = (
           </div>
       </div>
     ),
+    enableSorting: false,
   },
   ...(permissions?.showActionsColumn
     ? [{

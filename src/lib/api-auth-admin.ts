@@ -255,6 +255,10 @@ export type AdminUsersListParams = {
   search?: string;
   status?: string | number;
   isApproved?: string | number;
+  sort_by?: string;
+  sort_order?: string;
+  date_from?: string;
+  date_to?: string;
 };
 
 export type AdminUserCreateBody = {
@@ -1195,6 +1199,10 @@ export const adminUsersApi = {
     search,
     status,
     isApproved,
+    sort_by,
+    sort_order,
+    date_from,
+    date_to,
   }: AdminUsersListParams) => {
     ensureAdminUserToken(token, "fetch admin users");
 
@@ -1216,6 +1224,22 @@ export const adminUsersApi = {
       `${isApproved}` !== ""
     ) {
       qs.set("is_approved", String(isApproved));
+    }
+
+    if (sort_by) {
+      qs.set("sort_by", sort_by);
+    }
+
+    if (sort_order) {
+      qs.set("sort_order", sort_order);
+    }
+
+    if (date_from) {
+      qs.set("date_from", date_from);
+    }
+
+    if (date_to) {
+      qs.set("date_to", date_to);
     }
 
     const endpoint = `/admin/user-management/crud/users${qs.toString() ? `?${qs.toString()}` : ""}`;
