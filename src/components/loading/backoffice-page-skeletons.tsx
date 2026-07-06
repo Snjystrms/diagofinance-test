@@ -71,3 +71,60 @@ export function BackofficeStatsGridSkeleton({
     </div>
   );
 }
+
+interface TeamTreeSkeletonProps extends ComponentProps<"div"> {
+  nodeCount?: number;
+}
+
+function TreeNodeSkeleton({ level = 0 }: { level?: number }) {
+  return (
+    <div className="flex items-center gap-3 rounded-xl border border-border bg-card px-3 py-2 shadow-sm w-[220px] min-h-[100px]">
+      <Skeleton className="h-10 w-10 rounded-full flex-shrink-0" />
+      <div className="flex-1 min-w-0 space-y-2">
+        <Skeleton className="h-4 w-24 rounded-full" />
+        <Skeleton className="h-3 w-32 rounded-full" />
+        <div className="flex items-center gap-1.5">
+          <Skeleton className="h-5 w-14 rounded-full" />
+          <Skeleton className="h-5 w-16 rounded-full" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function TeamTreeSkeleton({
+  nodeCount = 7,
+  className,
+  ...props
+}: TeamTreeSkeletonProps) {
+  return (
+    <div className={cn("flex flex-col items-center gap-8 py-8", className)} {...props}>
+      {/* Root node */}
+      <div className="flex flex-col items-center gap-4">
+        <TreeNodeSkeleton level={0} />
+        
+        {/* Vertical connector */}
+        <div className="h-8 w-px bg-border" />
+      </div>
+
+      {/* Level 1 - 2 nodes */}
+      <div className="flex flex-col items-center gap-4">
+        <div className="flex items-start gap-12">
+          <TreeNodeSkeleton level={1} />
+          <TreeNodeSkeleton level={1} />
+        </div>
+        
+        {/* Vertical connectors */}
+        <div className="h-8 w-px bg-border" />
+      </div>
+
+      {/* Level 2 - 4 nodes */}
+      <div className="flex items-start gap-6">
+        <TreeNodeSkeleton level={2} />
+        <TreeNodeSkeleton level={2} />
+        <TreeNodeSkeleton level={2} />
+        <TreeNodeSkeleton level={2} />
+      </div>
+    </div>
+  );
+}

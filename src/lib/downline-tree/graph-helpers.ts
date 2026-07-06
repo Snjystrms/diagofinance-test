@@ -5,8 +5,8 @@ export const toastNoDownline = (who?: string) =>
     icon: "📭",
   });
 
-export const NODE_W = 220;
-export const NODE_H = 90;
+export const NODE_W = 240;
+export const NODE_H = 100;
 
 export const levelColor = (level: number | string = 1) => {
   const levelNum = typeof level === "string" ? parseInt(level.replace("Level-", "")) || 0 : level;

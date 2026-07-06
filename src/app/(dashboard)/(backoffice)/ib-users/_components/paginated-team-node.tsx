@@ -2,6 +2,7 @@
 
 import { Handle, Position, type NodeProps } from "@xyflow/react";
 import type { Node } from "@xyflow/react";
+import Link from "next/link";
 import clsx from "clsx";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import type { DirectRate } from "@/lib/downline-tree/types";
 export interface PaginatedTeamNodeData extends Record<string, unknown> {
   sponsorId: string;
   username: string;
+  email?: string;
   packageSum: number;
   totalBV?: number;
   level: number | string;
@@ -26,6 +28,7 @@ export interface PaginatedTeamNodeData extends Record<string, unknown> {
   currentPage?: number;
   totalPages?: number;
   onLoadMore?: (userId: number) => void;
+  onViewRates?: () => void;
 }
 
 const formatLevelLabel = (level: string) => {
@@ -71,13 +74,22 @@ const PaginatedTeamNode = ({ data }: NodeProps<Node<PaginatedTeamNodeData>>) => 
     }
   };
 
+  const handleViewRates = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (data.onViewRates) {
+      data.onViewRates();
+    }
+  };
+
+  const profileLink = data.userId ? (data.isIb ? `/ib-users/${data.userId}` : `/new-users/${data.userId}`) : null;
+
   return (
     <div className="relative">
       <div
         className={clsx(
-          "relative rounded-xl border shadow-sm px-3 py-2 w-[220px] min-h-[100px] flex items-center gap-3 backdrop-blur-sm cursor-pointer",
+          "relative rounded-xl border shadow-sm px-3 py-2.5 w-[240px] min-h-[110px] flex items-start gap-3 backdrop-blur-sm",
           "bg-card text-foreground",
-          "transition-shadow duration-150 hover:shadow-md hover:scale-[1.02]",
+          "transition-shadow duration-150 hover:shadow-md",
           getBorderColor(),
           highlightCls
         )}
@@ -93,26 +105,63 @@ const PaginatedTeamNode = ({ data }: NodeProps<Node<PaginatedTeamNodeData>>) => 
           <UserIcon className="h-4 w-4 opacity-90" />
         </div>
 
-        <div className="flex-1 min-w-0">
-          <div
-            className={clsx(
-              "text-[13px] leading-tight font-semibold truncate",
-              getUsernameColor()
-            )}
-            title={data.username}
-          >
-            {data.username}
-          </div>
+        <div className="flex-1 min-w-0 space-y-1">
+          {/* Name - Clickable */}
+          {profileLink ? (
+            <Link
+              href={profileLink}
+              className={clsx(
+                "text-[13px] leading-tight font-semibold truncate block hover:underline cursor-pointer",
+                getUsernameColor()
+              )}
+              style={{ pointerEvents: 'auto' }}
+              title={data.username}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {data.username}
+            </Link>
+          ) : (
+            <div
+              className={clsx(
+                "text-[13px] leading-tight font-semibold truncate",
+                getUsernameColor()
+              )}
+              title={data.username}
+            >
+              {data.username}
+            </div>
+          )}
 
+          {/* Email - Clickable */}
+          {data.email && profileLink ? (
+            <Link
+              href={profileLink}
+              className="text-[10px] leading-tight text-muted-foreground truncate block hover:underline hover:text-foreground cursor-pointer"
+              style={{ pointerEvents: 'auto' }}
+              title={data.email}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {data.email}
+            </Link>
+          ) : data.email ? (
+            <div
+              className="text-[10px] leading-tight text-muted-foreground truncate"
+              title={data.email}
+            >
+              {data.email}
+            </div>
+          ) : null}
+
+          {/* Badges and Status */}
           {data.isRoot ? (
-            <div className="mt-0.5 flex flex-wrap items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
               <Badge className="text-[9px] h-4 px-1 py-0 bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-700">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
                 Partner
               </Badge>
             </div>
           ) : (
-            <div className="mt-0.5 flex flex-wrap items-center gap-1">
+            <div className="flex flex-wrap items-center gap-1">
               {data.isIb ? (
                 <Badge variant="outline" className="text-[9px] h-4 px-1 py-0 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800">
                   Partner
@@ -137,22 +186,28 @@ const PaginatedTeamNode = ({ data }: NodeProps<Node<PaginatedTeamNodeData>>) => 
               </div>
             </div>
           )}
+
+          {/* View Rates Link */}
           {totalRates > 0 && (
-            <div className="mt-0.5 flex items-center gap-1 text-[9px] text-muted-foreground">
+            <button
+              onClick={handleViewRates}
+              className="mt-0.5 flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 hover:underline cursor-pointer"
+              style={{ pointerEvents: 'auto' }}
+            >
               <Landmark className="h-2.5 w-2.5" />
-              <span>{configuredRates}/{totalRates} rates</span>
-            </div>
+              <span>View Rates ({configuredRates}/{totalRates})</span>
+            </button>
           )}
         </div>
       </div>
 
       {/* Load More Button */}
       {(showLoadMoreButton || showExpandButton) && (
-        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 z-10">
+        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 z-10" style={{ pointerEvents: 'auto' }}>
           <Button
             size="sm"
             variant="outline"
-            className="h-6 px-2 py-0 text-[10px] rounded-full shadow-md bg-card hover:bg-muted border-primary/30 hover:border-primary"
+            className="h-6 px-2 py-0 text-[10px] rounded-full shadow-md bg-card hover:bg-muted border-primary/30 hover:border-primary cursor-pointer"
             onClick={handleLoadMore}
             disabled={data.isLoadingChildren}
           >

@@ -20,7 +20,7 @@ import '@xyflow/react/dist/style.css';
 import dagre from '@dagrejs/dagre';
 import toast from 'react-hot-toast';
 import { ApiErrorState } from '@/components/errors/api-error-state';
-import { BackofficeDetailDialogSkeleton } from '@/components/loading/backoffice-page-skeletons';
+import { TeamTreeSkeleton } from '@/components/loading/backoffice-page-skeletons';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
@@ -32,6 +32,7 @@ import { IbDirectRatesDialog } from './ib-direct-rates-dialog';
 type NodeRecord = {
   sponsorId: string;
   username: string;
+  email?: string;
   packageSum: number;
   totalBV?: number;
   status?: number;
@@ -139,6 +140,7 @@ export function PaginatedDownlineTree({
         const root: NodeRecord = {
           sponsorId: rootId,
           username: ibUser.name,
+          email: ibUser.email,
           packageSum: 0,
           totalBV: 0,
           status: 1,
@@ -186,6 +188,7 @@ export function PaginatedDownlineTree({
             nextNodes[userId] = {
               sponsorId: userId,
               username: user.name,
+              email: user.email,
               packageSum: 0,
               totalBV: 0,
               status: 1,
@@ -225,6 +228,7 @@ export function PaginatedDownlineTree({
                   nextNodes[parentId] = {
                     sponsorId: parentId,
                     username: parentUser.name,
+                    email: parentUser.email,
                     packageSum: 0,
                     totalBV: 0,
                     status: 1,
@@ -347,6 +351,7 @@ export function PaginatedDownlineTree({
               [userId]: {
                 sponsorId: userId,
                 username: user.name,
+                email: user.email,
                 packageSum: 0,
                 totalBV: 0,
                 status: 1,
@@ -427,6 +432,7 @@ export function PaginatedDownlineTree({
         data: {
           sponsorId: n.sponsorId,
           username: n.username,
+          email: n.email,
           packageSum: n.packageSum,
           totalBV: n.totalBV ?? 0,
           level: n.depth === 0 ? 'Level-IB' : `Level-${n.depth}`,
@@ -441,8 +447,16 @@ export function PaginatedDownlineTree({
           totalPages: n.totalPages,
           isLoadingChildren: n.userId ? (loadingChildren[n.userId] ?? false) : false,
           onLoadMore: handleLoadMoreChildren,
+          onViewRates: () => {
+            if (n.userId) {
+              handleOpenDirectRates({
+                id: n.userId,
+                name: n.username,
+              } as AdminIbUser);
+            }
+          },
         },
-        style: { width: NODE_W, height: NODE_H + 40 },
+        style: { width: NODE_W, height: NODE_H + 40, pointerEvents: 'all' },
         sourcePosition: Position.Bottom,
         targetPosition: Position.Top,
       };
@@ -538,15 +552,6 @@ export function PaginatedDownlineTree({
           nodesDraggable={false}
           elementsSelectable={false}
           defaultEdgeOptions={defaultEdgeOptions}
-          onNodeClick={(_, node) => {
-            const d = node.data;
-            if (d?.userId != null) {
-              handleOpenDirectRates({
-                id: d.userId,
-                name: d.username,
-              } as AdminIbUser);
-            }
-          }}
         >
           <Background
             variant={BackgroundVariant.Dots}
@@ -643,8 +648,8 @@ export function PaginatedDownlineTree({
 
   if (loading && Object.keys(nodesById).length === 0) {
     return (
-      <div className="p-8 flex items-center justify-center h-[70vh] bg-background">
-        <BackofficeDetailDialogSkeleton fieldCount={6} sectionCount={2} className="w-full max-w-3xl" />
+      <div className="p-8 flex items-center justify-center min-h-[70vh] bg-background">
+        <TeamTreeSkeleton nodeCount={7} className="w-full" />
       </div>
     );
   }
