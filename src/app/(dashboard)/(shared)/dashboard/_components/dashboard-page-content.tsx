@@ -434,8 +434,10 @@ export function DashboardPageContent() {
         );
       }
 
-      // Check for success: handle both success boolean and status code
-      const bankSuccess = bankDetailsResponse?.success === true || (bankDetailsResponse as any)?.status === 200;
+      // Check for success: handle both success boolean and status code (as number or string)
+      const hasStatusField = bankDetailsResponse && typeof bankDetailsResponse === 'object' && 'status' in bankDetailsResponse;
+      const statusValue = hasStatusField ? (bankDetailsResponse as unknown as Record<string, unknown>).status : undefined;
+      const bankSuccess = bankDetailsResponse?.success === true || statusValue === 200 || statusValue === '200';
       if (bankSuccess && bankDetailsResponse.data && Array.isArray(bankDetailsResponse.data)) {
         setHasBankDetails(bankDetailsResponse.data.length > 0);
       }
@@ -497,8 +499,10 @@ export function DashboardPageContent() {
         console.log("[BankDetails] Response.data isArray:", Array.isArray(response.data));
         
         // Check for success: response.success should be true, but API might return status code instead
-        // Handle both success boolean and status field
-        const isSuccess = response.success === true || (response as any).status === 200;
+        // Handle both success boolean and status field (as number or string)
+        const hasStatusField = response && typeof response === 'object' && 'status' in response;
+        const statusValue = hasStatusField ? (response as unknown as Record<string, unknown>).status : undefined;
+        const isSuccess = response.success === true || statusValue === 200 || statusValue === '200';
         
         if (isSuccess && response.data && Array.isArray(response.data)) {
           const hasBankAccounts = response.data.length > 0;
