@@ -281,6 +281,8 @@ const getColumns = (
         </div>
       );
     },
+    enableColumnFilter: false,
+    enableSorting: false,
   },
   {
     id: "created_at",
@@ -291,6 +293,8 @@ const getColumns = (
         {formatDateTime(row.original.created_at)}
       </span>
     ),
+    enableColumnFilter: false,
+    enableSorting: false,
   },
   {
     id: "account",
@@ -301,6 +305,8 @@ const getColumns = (
         {row.original.statusText}
       </Badge>
     ),
+    enableColumnFilter: false,
+    enableSorting: false,
   },
 ];
 

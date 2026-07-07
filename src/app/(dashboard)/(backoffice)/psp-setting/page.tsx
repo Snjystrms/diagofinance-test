@@ -255,16 +255,6 @@ export default function PspSettingPage() {
 
       {/* ── Table card ─────────────────────────────────────────────────────── */}
       <Card className="rounded-2xl border border-border/60 shadow-sm">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base font-semibold">
-            Payment Methods
-            {rows.length > 0 && (
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                {rows.length}
-              </span>
-            )}
-          </CardTitle>
-        </CardHeader>
         <CardContent className="p-0">
           {isLoading ? (
             <div className="flex items-center justify-center py-16">

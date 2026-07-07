@@ -244,6 +244,8 @@ export default function PromotionManagementPage() {
             </span>
           </div>
         ),
+        enableColumnFilter: false,
+        enableSorting: false,
       },
       {
         id: "description",
@@ -254,6 +256,8 @@ export default function PromotionManagementPage() {
             {row.original.description}
           </p>
         ),
+        enableColumnFilter: false,
+        enableSorting: false,
       },
       {
         id: "status",
@@ -281,6 +285,8 @@ export default function PromotionManagementPage() {
             </Badge> */}
           </div>
         ),
+        enableColumnFilter: false,
+        enableSorting: false,
       },
       // {
       //   id: "type",
@@ -301,6 +307,8 @@ export default function PromotionManagementPage() {
             {fmtDate(row.original.created_at)}
           </span>
         ),
+        enableColumnFilter: false,
+        enableSorting: false,
       },
       {
         id: "actions",

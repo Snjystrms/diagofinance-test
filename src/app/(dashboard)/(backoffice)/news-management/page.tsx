@@ -277,6 +277,8 @@ export default function NewsManagementPage() {
             </span>
           </div>
         ),
+        enableColumnFilter: false,
+        enableSorting: false,
       },
       {
         id: "description",
@@ -287,6 +289,8 @@ export default function NewsManagementPage() {
             {row.original.description}
           </p>
         ),
+        enableColumnFilter: false,
+        enableSorting: false,
       },
       {
         id: "status",
@@ -314,6 +318,8 @@ export default function NewsManagementPage() {
             </Badge> */}
           </div>
         ),
+        enableColumnFilter: false,
+        enableSorting: false,
       },
       {
         id: "created_at",
@@ -324,6 +330,8 @@ export default function NewsManagementPage() {
             {fmtDate(row.original.created_at)}
           </span>
         ),
+        enableColumnFilter: false,
+        enableSorting: false,
       },
     ];
 

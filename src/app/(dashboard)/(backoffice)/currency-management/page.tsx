@@ -410,21 +410,29 @@ export default function CurrencyManagementPage() {
         id: "from_currency",
         accessorKey: "from_currency",
         header: ({ column }) => <DataTableColumnHeader column={column} title="From" />,
+        enableColumnFilter: false,
+        enableSorting: false,
       },
       {
         id: "to_currency",
         accessorKey: "to_currency",
         header: ({ column }) => <DataTableColumnHeader column={column} title="To" />,
+        enableColumnFilter: false,
+        enableSorting: false,
       },
       {
         id: "deposit_rate",
         accessorKey: "deposit_rate",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Deposit Rate" />,
+        enableColumnFilter: false,
+        enableSorting: false,
       },
       {
         id: "withdrawal_rate",
         accessorKey: "withdrawal_rate",
         header: ({ column }) => <DataTableColumnHeader column={column} title="Withdrawal Rate" />,
+        enableColumnFilter: false,
+        enableSorting: false,
       },
       {
         id: "status",
@@ -438,6 +446,8 @@ export default function CurrencyManagementPage() {
             aria-label="Toggle status"
           />
         ),
+        enableColumnFilter: false,
+        enableSorting: false,
       },
       {
         id: "created_at",
@@ -446,6 +456,8 @@ export default function CurrencyManagementPage() {
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">{fmtDate(row.original.created_at)}</span>
         ),
+        enableColumnFilter: false,
+        enableSorting: false,
       },
             {
         id: "updated_at",
@@ -454,6 +466,8 @@ export default function CurrencyManagementPage() {
         cell: ({ row }) => (
           <span className="text-sm text-muted-foreground">{fmtDate(row.original.updated_at)}</span>
         ),
+        enableColumnFilter: false,
+        enableSorting: false,
       },
       {
         id: "actions",

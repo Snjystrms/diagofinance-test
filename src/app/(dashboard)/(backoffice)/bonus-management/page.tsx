@@ -390,6 +390,8 @@ export default function BonusManagementPage() {
             </Link>
           </div>
         ),
+        enableColumnFilter: false,
+        enableSorting: false,
       },
       {
         id: "email",
@@ -398,6 +400,8 @@ export default function BonusManagementPage() {
         ),
         accessorFn: (row) => row.user?.email ?? "",
         cell: ({ row }) => row.original.user?.email ?? "-",
+        enableColumnFilter: false,
+        enableSorting: false,
       },
       {
         id: "type",
@@ -427,6 +431,8 @@ export default function BonusManagementPage() {
             </Badge>
           );
         },
+        enableColumnFilter: false,
+        enableSorting: false,
       },
       {
         id: "amount",
@@ -439,6 +445,8 @@ export default function BonusManagementPage() {
             {formatMoney(row.original.amount)}
           </span>
         ),
+        enableColumnFilter: false,
+        enableSorting: false,
       },
       // {
       //   id: "equity",

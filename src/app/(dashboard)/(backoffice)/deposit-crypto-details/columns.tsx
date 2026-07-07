@@ -103,6 +103,8 @@ export const getColumns = (): ColumnDef<BrokerCryptoWallet>[] => [
         {getNetworkBadge(row.original.network)}
       </div>
     ),
+    enableColumnFilter: false,
+    enableSorting: false
   },
   {
     id: "currency",
@@ -114,6 +116,8 @@ export const getColumns = (): ColumnDef<BrokerCryptoWallet>[] => [
         {getCurrencyBadge(row.original.currency)}
       </div>
     ),
+    enableColumnFilter: false,
+    enableSorting: false
   },
   {
     id: "wallet_address",
@@ -127,6 +131,8 @@ export const getColumns = (): ColumnDef<BrokerCryptoWallet>[] => [
         </span>
       </div>
     ),
+    enableColumnFilter: false,
+    enableSorting: false
   },
   {
     id: "wallet_screenshot",
@@ -147,12 +153,16 @@ export const getColumns = (): ColumnDef<BrokerCryptoWallet>[] => [
         <span className="text-sm">{row.original.label ?? emptyValue}</span>
       </div>
     ),
+    enableColumnFilter: false,
+    enableSorting: false
   },
   {
     id: "is_active",
     accessorKey: "is_active",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
     cell: ({ row }) => getStatusBadge(row.original.is_active),
+    enableColumnFilter: false,
+    enableSorting: false
   },
   {
     id: "created_at",
@@ -164,6 +174,8 @@ export const getColumns = (): ColumnDef<BrokerCryptoWallet>[] => [
         <span className="text-sm">{fmtDate(row.original.created_at)}</span>
       </div>
     ),
+    enableColumnFilter: false,
+    enableSorting: false
   },
   {
     id: "updated_at",
@@ -175,6 +187,8 @@ export const getColumns = (): ColumnDef<BrokerCryptoWallet>[] => [
         <span className="text-sm">{fmtDate(row.original.updated_at)}</span>
       </div>
     ),
+    enableColumnFilter: false,
+    enableSorting: false
   },
 ];
 
