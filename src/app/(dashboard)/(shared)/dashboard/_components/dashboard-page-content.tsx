@@ -434,7 +434,9 @@ export function DashboardPageContent() {
         );
       }
 
-      if (bankDetailsResponse?.success && bankDetailsResponse.data) {
+      // Check for success: handle both success boolean and status code
+      const bankSuccess = bankDetailsResponse?.success === true || (bankDetailsResponse as any)?.status === 200;
+      if (bankSuccess && bankDetailsResponse.data && Array.isArray(bankDetailsResponse.data)) {
         setHasBankDetails(bankDetailsResponse.data.length > 0);
       }
     } catch (error) {
@@ -478,25 +480,48 @@ export function DashboardPageContent() {
 
   // Fetch bank details to check completion status
   useEffect(() => {
-    if (!isUser || !token) return;
+    if (!isUser || !token) {
+      console.log("[BankDetails] Skipping fetch - isUser:", isUser, "token:", !!token);
+      return;
+    }
 
     const fetchBankDetails = async () => {
       try {
+        console.log("[BankDetails] Fetching bank details...");
         const response = await authApi.getBankDetails(token);
-        console.log("Bank Details Response:", response);
-        if (response.success && response.data) {
+        console.log("[BankDetails] Full Response:", JSON.stringify(response, null, 2));
+        console.log("[BankDetails] Response.success:", response.success);
+        console.log("[BankDetails] Response.status:", response.status);
+        console.log("[BankDetails] Response.data:", response.data);
+        console.log("[BankDetails] Response.data type:", typeof response.data);
+        console.log("[BankDetails] Response.data isArray:", Array.isArray(response.data));
+        
+        // Check for success: response.success should be true, but API might return status code instead
+        // Handle both success boolean and status field
+        const isSuccess = response.success === true || (response as any).status === 200;
+        
+        if (isSuccess && response.data && Array.isArray(response.data)) {
           const hasBankAccounts = response.data.length > 0;
-          console.log("Has Bank Details:", hasBankAccounts, "Count:", response.data.length);
+          console.log("[BankDetails] Has Bank Details:", hasBankAccounts, "Count:", response.data.length);
+          console.log("[BankDetails] Setting hasBankDetails to:", hasBankAccounts);
           setHasBankDetails(hasBankAccounts);
+        } else {
+          console.log("[BankDetails] Response unsuccessful or no data - setting false");
+          setHasBankDetails(false);
         }
       } catch (error) {
-        console.error("Failed to fetch bank details:", error);
+        console.error("[BankDetails] Failed to fetch bank details:", error);
         setHasBankDetails(false);
       }
     };
 
     fetchBankDetails();
   }, [isUser, token]);
+
+  // Debug: Log hasBankDetails state changes
+  useEffect(() => {
+    console.log("[BankDetails] hasBankDetails state changed to:", hasBankDetails);
+  }, [hasBankDetails]);
 
   // Check if MT5 dialog should be shown (only if user has no MT5 accounts and profile is complete)
   useEffect(() => {
@@ -1876,7 +1901,7 @@ export function DashboardPageContent() {
                     <Card
                       ref={walletCardRef}
                       onClick={() => router.push("/my-wallet/wallet-overview")}
-                      className={`sm:col-span-1 lg:col-span-1 relative overflow-hidden border-none shadow-2xl rounded-3xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group cursor-pointer ${effectiveTheme ? "text-foreground bg-card" : "text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent"}`}
+                      className={`sm:col-span-1 lg:col-span-1 relative overflow-hidden shadow-2xl rounded-[28px] hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group cursor-pointer ib-portal-surface ib-portal-surface-primary ${effectiveTheme ? "text-foreground" : "text-primary-foreground"}`}
                     >
                       {effectiveTheme ? (
                         <div className="bull-theme-overlay bull-theme-wallet-overlay" />

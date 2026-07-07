@@ -2,15 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-// import {
-//   Stepper,
-//   StepperDescription,
-//   StepperIndicator,
-//   StepperItem,
-//   StepperSeparator,
-//   StepperTitle,
-//   StepperTrigger,
-// } from "@/components/ui/stepper";
 import { Stepper, StepperDescription, StepperIndicator, StepperItem, StepperSeparator, StepperTitle, StepperTrigger } from "./ui/stepper";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -53,12 +44,15 @@ export function ProfileStepper({
 
   // Debug logging
   useEffect(() => {
-    console.log("ProfileStepper - hasBankDetails prop:", hasBankDetails);
+    console.log("[ProfileStepper] hasBankDetails prop received:", hasBankDetails);
   }, [hasBankDetails]);
 
   // Calculate status for each step
   const steps = useMemo((): StepItem[] => {
-    if (!dashboardData) return [];
+    if (!dashboardData) {
+      console.log("[ProfileStepper] No dashboardData, returning empty steps");
+      return [];
+    }
 
     const profileStatus = dashboardData.profile_status?.checklist;
     const personalInfoComplete =
@@ -69,6 +63,14 @@ export function ProfileStepper({
     const hasMt5Account =
       (dashboardData.account_types?.total_accounts ?? 0) > 0 ||
       (dashboardData.mt5_users?.length ?? 0) > 0;
+
+    console.log("[ProfileStepper] Step statuses:", {
+      personalInfoComplete,
+      kycComplete,
+      hasDeposit,
+      hasMt5Account,
+      hasBankDetails,
+    });
 
     const stepsList: StepItem[] = [
       {
@@ -127,8 +129,10 @@ export function ProfileStepper({
       },
     ];
 
+    console.log("[ProfileStepper] Bank Details Step:", stepsList.find(s => s.id === "bank"));
+
     // Sort steps: completed items at top, pending items at bottom
-    return stepsList.sort((a, b) => {
+    const sortedSteps = stepsList.sort((a, b) => {
       const aCompleted = a.status === "completed";
       const bCompleted = b.status === "completed";
       
@@ -140,6 +144,15 @@ export function ProfileStepper({
       // Put completed items first (top), pending items last (bottom)
       return aCompleted ? -1 : 1;
     });
+
+    console.log("[ProfileStepper] Sorted steps:", sortedSteps.map(s => ({
+      id: s.id,
+      title: s.title,
+      status: s.status,
+      order: s.order,
+    })));
+
+    return sortedSteps;
   }, [dashboardData, hasBankDetails]);
 
   // Find the first non-completed step
@@ -169,7 +182,7 @@ export function ProfileStepper({
         return (
           <Badge
             variant="default"
-            className="bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
+            className="bg-gradient-to-br from-green-100 to-green-50 text-green-700 border border-green-200/50 shadow-sm dark:from-green-950/40 dark:to-green-950/20 dark:text-green-400 dark:border-green-800/50"
           >
             <CheckCircle2 className="mr-1 h-3 w-3" />
             Done
@@ -179,7 +192,7 @@ export function ProfileStepper({
         return (
           <Badge
             variant="default"
-            className="bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400"
+            className="bg-gradient-to-br from-blue-100 to-blue-50 text-blue-700 border border-blue-200/50 shadow-sm dark:from-blue-950/40 dark:to-blue-950/20 dark:text-blue-400 dark:border-blue-800/50"
           >
             <Clock className="mr-1 h-3 w-3" />
             Active
@@ -189,7 +202,7 @@ export function ProfileStepper({
         return (
           <Badge
             variant="outline"
-            className="bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400"
+            className="bg-gradient-to-br from-amber-100 to-amber-50 text-amber-700 border border-amber-200/50 shadow-sm dark:from-amber-950/40 dark:to-amber-950/20 dark:text-amber-400 dark:border-amber-800/50"
           >
             <Clock className="mr-1 h-3 w-3" />
             Pending
@@ -199,7 +212,7 @@ export function ProfileStepper({
         return (
           <Badge
             variant="destructive"
-            className="bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400"
+            className="bg-gradient-to-br from-red-100 to-red-50 text-red-700 border border-red-200/50 shadow-sm dark:from-red-950/40 dark:to-red-950/20 dark:text-red-400 dark:border-red-800/50"
           >
             <AlertCircle className="mr-1 h-3 w-3" />
             Action Needed
@@ -215,16 +228,15 @@ export function ProfileStepper({
   if (!dashboardData) return null;
 
   return (
-    <Card className="relative overflow-hidden border rounded-3xl shadow-sm backdrop-blur-sm ib-portal-surface h-full">
-      <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/8 to-purple-500/8 rounded-full blur-3xl opacity-40" />
-      <CardHeader className="relative z-10 pb-3 pt-5 px-5 border-b border-border/50">
+    <Card className="relative overflow-hidden rounded-[28px] shadow-sm backdrop-blur-sm ib-portal-surface ib-portal-surface-primary h-full hover:shadow-lg transition-all duration-300">
+      <CardHeader className="relative z-10 pb-3 pt-5 px-4 sm:px-5 border-b border-border/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm">
-              <FileCheck className="h-4 w-4 text-primary" />
+            <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl border border-border/60 bg-background/80 text-foreground shadow-sm backdrop-blur-sm">
+              <FileCheck className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-base font-bold">
+              <CardTitle className="text-base sm:text-lg font-bold">
                 Getting Started
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
@@ -233,19 +245,19 @@ export function ProfileStepper({
             </div>
           </div>
           <div className="text-right">
-            <div className="text-lg font-bold text-primary">
+            <div className="text-lg sm:text-xl font-bold bg-gradient-to-br from-primary to-primary/70 bg-clip-text text-transparent">
               {progressPercentage.toFixed(0)}%
             </div>
           </div>
         </div>
-        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted">
+        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted/50 backdrop-blur-sm">
           <div
-            className="h-full bg-primary transition-all duration-500"
+            className="h-full bg-gradient-to-r from-primary via-primary/90 to-primary transition-all duration-500 shadow-sm"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
       </CardHeader>
-      <CardContent className="relative z-10 px-5 pb-5 pt-4">
+      <CardContent className="relative z-10 px-4 sm:px-5 pb-5 pt-4">
         <Stepper
           value={activeStep}
           onValueChange={setActiveStep}
@@ -276,11 +288,11 @@ export function ProfileStepper({
                   {index < steps.length - 1 && <StepperSeparator />}
                 </div>
                 <div
-                  className="flex-1 pb-6 cursor-pointer hover:bg-muted/30 rounded-lg p-2 -ml-2 transition-colors group"
+                  className="flex-1 pb-6 cursor-pointer hover:bg-gradient-to-r hover:from-muted/40 hover:to-muted/20 rounded-xl p-2.5 -ml-2 transition-all duration-200 group border border-transparent hover:border-border/30 hover:shadow-sm"
                   onClick={() => handleStepClick(step)}
                 >
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <StepperTitle className="text-sm font-semibold group-hover:underline underline-offset-2 decoration-2 transition-all">
+                    <StepperTitle className="text-sm font-semibold group-hover:text-primary group-hover:translate-x-0.5 transition-all duration-200">
                       {step.title}
                     </StepperTitle>
                     {getStatusBadge(step.status)}
