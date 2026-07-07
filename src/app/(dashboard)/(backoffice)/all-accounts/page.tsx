@@ -53,6 +53,7 @@ export type AccountTypeRow = {
   demo_id?: string;
   name: string;
   maximum_leverage: string;
+  minimum_deposit: number;
   leverage_value: number;
   live_group_name: string;
   live_mt5_group_name: string;
@@ -209,6 +210,7 @@ const normalize = (a: AccountTypeItem): AccountTypeRow => {
       demo_id: a.groups.demo ? String(a.groups.demo.id) : undefined,
       name: a.name ?? "",
       maximum_leverage: toStringValue(a.maximum_leverage),
+      minimum_deposit: toNumericValue(a.minimum_deposit, 0),
       leverage_value: toNumericValue(a.leverage_value),
       live_group_name: a.groups.live?.name ?? "",
       live_mt5_group_name: a.groups.live?.mt5_group_name ?? "",
@@ -226,6 +228,7 @@ const normalize = (a: AccountTypeItem): AccountTypeRow => {
     demo_id: a.mode === "demo" ? String(a.id) : undefined,
     name: a.name ?? "",
     maximum_leverage: toStringValue(a.maximum_leverage),
+    minimum_deposit: toNumericValue(a.minimum_deposit, 0),
     leverage_value: toNumericValue(a.leverage_value),
     live_group_name: a.mode === "live" ? (a.group?.name ?? "") : "",
     live_mt5_group_name: a.mode === "live" ? (a.group?.mt5_group_name ?? "") : "",
@@ -272,6 +275,7 @@ const groupAccountTypes = (items: AccountTypeItem[]): AccountTypeRow[] => {
       demo_id: demo ? String(demo.id) : undefined,
       name: primary.name ?? "",
       maximum_leverage: toStringValue(primary.maximum_leverage),
+      minimum_deposit: toNumericValue(primary.minimum_deposit, 0),
       leverage_value: toNumericValue(primary.leverage_value),
       live_group_name: live?.group?.name ?? "",
       live_mt5_group_name: live?.group?.mt5_group_name ?? "",
@@ -364,6 +368,7 @@ const serialize = (r: Partial<AccountTypeRow>): AccountTypeUpsertBody => ({
   maximum_leverage: toNumericValue(r.maximum_leverage, 0, {
     preferLastMatch: true,
   }),
+  minimum_deposit: toNumericValue(r.minimum_deposit, 0),
   leverage_value: toNumericValue(r.leverage_value),
   status: coerceBoolean(r.status, true),
 });
@@ -582,6 +587,7 @@ export default function AllAccountsPage() {
         "Demo Group": accountType.demo_group_name || "-",
         "Demo MT5 Group": accountType.demo_mt5_group_name || "-",
         "Max Leverage": accountType.maximum_leverage || "-",
+        "First Time Deposit": accountType.minimum_deposit || "-",
         "Leverage Value": accountType.leverage_value || "-",
         Status: accountType.status ? "Active" : "Inactive",
         Updated: formatExportDateTime(accountType.updated_at),

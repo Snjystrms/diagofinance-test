@@ -532,7 +532,7 @@
     background-image: url('/wallet-balance-bull.png');
   }
 
-  @container (max-width: 880px) {
+  @container (max-width: 760px) {
     .bull-theme-welcome-overlay {
       display: none;
     }

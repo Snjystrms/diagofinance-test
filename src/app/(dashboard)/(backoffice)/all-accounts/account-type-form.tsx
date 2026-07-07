@@ -57,6 +57,7 @@ const extractEditableNumberString = (
 const createEmptyForm = (): FormValue => ({
   name: "",
   maximum_leverage: "2000",
+  minimum_deposit: 0,
   leverage_value: 2000,
   live_group_name: "",
   live_mt5_group_name: "",
@@ -90,6 +91,7 @@ export function AccountTypeForm({
           initialData.maximum_leverage,
           { preferLastMatch: true },
         ),
+        minimum_deposit: Number(initialData.minimum_deposit || 0),
         leverage_value: Number(initialData.leverage_value || 0),
         live_group_name: initialData.live_group_name ?? "",
         live_mt5_group_name: initialData.live_mt5_group_name ?? "",
@@ -168,6 +170,27 @@ export function AccountTypeForm({
                 }
                 onWheel={(e) => (e.target as HTMLInputElement).blur()}
                 placeholder="500"
+                disabled={disabled}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="minimum_deposit">First Time Deposit</Label>
+              <Input
+                id="minimum_deposit"
+                type="number"
+                step="0.01"
+                min="0"
+                value={numberStr(form.minimum_deposit)}
+                onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                onChange={(e) =>
+                  setForm({
+                    ...form,
+                    minimum_deposit: Number(e.target.value || 0),
+                  })
+                }
+                placeholder="0"
                 disabled={disabled}
                 required
               />

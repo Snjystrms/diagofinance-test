@@ -937,6 +937,7 @@ export type AccountTypeUpsertBody = {
   name: string;
   groups: AccountTypeGroupUpsert[];
   maximum_leverage: string | number;
+  minimum_deposit?: number;
   leverage_value: number;
   status: boolean;
 };
@@ -972,6 +973,7 @@ export interface AccountTypeItem {
   mode?: "live" | "demo" | string;
   spread_from?: string | number | null;
   maximum_leverage: string | number | null;
+  minimum_deposit?: number | null;
   leverage_type?: "fixed" | "dynamic" | string;
   leverage_value: number | string | null;
   base_currency?: string;

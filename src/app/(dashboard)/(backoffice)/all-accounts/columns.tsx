@@ -29,7 +29,8 @@ export const getColumns = (opts: {
         <span className="font-medium">{row.original.name}</span>
       </div>
     ),
-    enableColumnFilter: true,
+    enableColumnFilter: false,
+    enableSorting: false,
   },
   {
     id: "live_group",
@@ -66,6 +67,18 @@ export const getColumns = (opts: {
     enableColumnFilter: false,
   },
   {
+    id: "minimum_deposit",
+    accessorKey: "minimum_deposit",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="First Time Deposit" />,
+    cell: ({ row }) => (
+      <div className="flex flex-col">
+        <span className="font-medium">${row.original.minimum_deposit.toFixed(2)}</span>
+      </div>
+    ),
+    enableColumnFilter: false,
+    enableSorting: false,
+  },
+  {
     id: "status",
     accessorKey: "status",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
@@ -79,7 +92,8 @@ export const getColumns = (opts: {
         />
       </div>
     ),
-    enableColumnFilter: true,
+     enableColumnFilter: false,
+    enableSorting: false,
   },
   {
     id: "updated_at",
@@ -91,7 +105,8 @@ export const getColumns = (opts: {
         <span className="text-sm">{fmtDate(row.original.updated_at)}</span>
       </div>
     ),
-    enableColumnFilter: true,
+      enableColumnFilter: false,
+    enableSorting: false,
   },
 ];
 
