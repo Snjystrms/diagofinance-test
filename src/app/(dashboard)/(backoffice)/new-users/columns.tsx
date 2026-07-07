@@ -42,9 +42,9 @@ const getStatusBadge = (status: string) => {
     case "active":
     case "1":
       return <Badge variant="default">Active</Badge>;
-    case "blocked":
-    case "2":
-      return <Badge variant="destructive">Blocked</Badge>;
+    // case "blocked":
+    // case "2":
+    //   return <Badge variant="destructive">Blocked</Badge>;
     default:
       return <Badge variant="outline">{status || "Unknown"}</Badge>;
   }

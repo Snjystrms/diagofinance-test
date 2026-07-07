@@ -133,7 +133,6 @@ function WithdrawalRequestContent() {
   const [withdrawalCurrency, setWithdrawalCurrency] = useState("INR");
 
   const selectedChain = CHAIN_OPTIONS.find((chain) => chain.value === chainId);
-  const minimumAmount = 10.0;
 
   const fetchWalletSummary = async () => {
     if (!token) {
@@ -283,6 +282,7 @@ function WithdrawalRequestContent() {
   const supportsBankWithdrawal = !!bankTransferMethodId && !!bankDetails?.id;
   const isCryptoWithdrawal = withdrawalType === "crypto";
   const isBankWithdrawal = withdrawalType === "bank";
+  const minimumAmount = 25.0;
 
   const activeRatesFromUsd = useMemo(
     () =>
@@ -576,6 +576,9 @@ function WithdrawalRequestContent() {
                       className="text-sm font-semibold text-foreground"
                     >
                       Amount <span className="text-destructive">*</span>
+                      <span className="ml-2 text-xs font-normal text-muted-foreground">
+                        (Min: ${formatAmount(minimumAmount)} USD)
+                      </span>
                     </Label>
                     <div className="relative">
                       <DollarSign className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
@@ -588,13 +591,28 @@ function WithdrawalRequestContent() {
                         onWheel={(e) => (e.target as HTMLInputElement).blur()}
                         onChange={(event) => setAmount(event.target.value)}
                         className="h-12 rounded-xl border-2 border-border bg-background pl-10 focus:border-primary"
-                        placeholder="10.00"
+                        placeholder={`${minimumAmount.toFixed(2)}`}
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground">
-                      Minimum withdrawal amount: {formatAmount(minimumAmount)}{" "}
-                      {currency}
-                    </p>
+                    {amount.trim() !== "" && !isNaN(amountNum) && amountNum > 0 && amountNum < minimumAmount && (
+                      <div className="flex items-start gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-3 py-2.5 text-xs text-destructive">
+                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                        <p>
+                          Minimum withdrawal amount is ${formatAmount(minimumAmount)} USD. Please enter at least ${formatAmount(minimumAmount)} USD to proceed.
+                        </p>
+                      </div>
+                    )}
+                    {(!amount.trim() || isNaN(amountNum) || amountNum === 0) && (
+                      <p className="text-xs text-muted-foreground">
+                        Enter an amount between ${formatAmount(minimumAmount)} USD and ${formatAmount(mainWalletBalance)} USD
+                      </p>
+                    )}
+                    {amount.trim() !== "" && !isNaN(amountNum) && amountNum >= minimumAmount && (
+                      <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                        <CheckCircle className="h-3 w-3" />
+                        Valid withdrawal amount
+                      </p>
+                    )}
                     {isBankWithdrawal && (
                       <div className="space-y-3">
                         <Label
