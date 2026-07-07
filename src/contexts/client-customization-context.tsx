@@ -186,8 +186,8 @@ const [themePairId, setThemePairIdState] = useState<string>(() => {
   );
 
   const getDashboardMode = useCallback(
-    (area: DashboardArea) => dashboardModes[area] ?? activePreset.dashboards[area]?.mode ?? "normal",
-    [dashboardModes]
+    (area: DashboardArea): DashboardMode => dashboardModes[area] ?? activePreset.dashboards[area]?.mode ?? "normal",
+    [dashboardModes, activePreset.dashboards]
   );
 
   const getDashboardPreset = useCallback(

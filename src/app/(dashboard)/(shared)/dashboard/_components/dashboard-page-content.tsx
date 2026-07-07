@@ -88,6 +88,8 @@ import { ProfileCompletionDialog } from "@/components/profile-completion-dialog"
 import { Mt5AccountCreationDialog } from "@/components/mt5-account-creation-dialog";
 import { NewsDialog } from "@/components/news-dialog";
 import { PromotionDialog } from "@/components/promotion-dialog";
+import { ProfileStepper } from "@/components/profile-stepper";
+import type { DashboardMode } from "@/lib/client-presets";
 import {
   authApi,
   ibRequestsApi,
@@ -278,6 +280,7 @@ export function DashboardPageContent() {
   const [withdrawalStatisticsPeriod, setWithdrawalStatisticsPeriod] = useState<
     7 | 30
   >(30);
+  const [hasBankDetails, setHasBankDetails] = useState(false);
 
   // Track wallet card width for responsive theme switching
   const [walletCardWidth, setWalletCardWidth] = useState<number>(0);
@@ -359,7 +362,7 @@ export function DashboardPageContent() {
   const [isSubmittingDeposit, setIsSubmittingDeposit] = useState(false);
   const [dateRange] = useState<{ start_date?: string; end_date?: string }>({});
   const dashboardArea = isAdmin ? "admin" : "client";
-  const isCustomDashboard = getDashboardMode(dashboardArea);
+  const isCustomDashboard: DashboardMode = getDashboardMode(dashboardArea);
   const dashboardPreset = getDashboardPreset(dashboardArea);
   const hasIbWalletData = Boolean(
     ibWalletData?.wallet_balance &&
@@ -383,6 +386,7 @@ export function DashboardPageContent() {
         ibWalletResponse,
         depositsStatsResponse,
         withdrawalsStatsResponse,
+        bankDetailsResponse,
       ] = await Promise.all([
         authApi.getUserDashboard(token),
         authApi.getTradingAccountsSummary(token).catch((err) => {
@@ -400,6 +404,10 @@ export function DashboardPageContent() {
           "withdrawals",
           withdrawalStatisticsPeriod,
         ),
+        authApi.getBankDetails(token).catch((err) => {
+          console.error("Failed to fetch bank details:", err);
+          return { success: false, data: null };
+        }),
       ]);
 
       if (userDashboardResult.success && userDashboardResult.data) {
@@ -424,6 +432,10 @@ export function DashboardPageContent() {
         setWithdrawalsStatistics(
           withdrawalsStatsResponse.data.statistics ?? [],
         );
+      }
+
+      if (bankDetailsResponse?.success && bankDetailsResponse.data) {
+        setHasBankDetails(bankDetailsResponse.data.length > 0);
       }
     } catch (error) {
       console.error("Failed to refresh dashboard after transaction:", error);
@@ -463,6 +475,28 @@ export function DashboardPageContent() {
 
     return () => clearTimeout(timer);
   }, []);
+
+  // Fetch bank details to check completion status
+  useEffect(() => {
+    if (!isUser || !token) return;
+
+    const fetchBankDetails = async () => {
+      try {
+        const response = await authApi.getBankDetails(token);
+        console.log("Bank Details Response:", response);
+        if (response.success && response.data) {
+          const hasBankAccounts = response.data.length > 0;
+          console.log("Has Bank Details:", hasBankAccounts, "Count:", response.data.length);
+          setHasBankDetails(hasBankAccounts);
+        }
+      } catch (error) {
+        console.error("Failed to fetch bank details:", error);
+        setHasBankDetails(false);
+      }
+    };
+
+    fetchBankDetails();
+  }, [isUser, token]);
 
   // Check if MT5 dialog should be shown (only if user has no MT5 accounts and profile is complete)
   useEffect(() => {
@@ -1638,40 +1672,27 @@ export function DashboardPageContent() {
               background: hsl(var(--muted-foreground) / 0.5);
             }
           `}</style>
-          {/* Header Section */}
-          <div className="mb-8 ib-portal-hero rounded-[28px] border px-6 py-6 sm:px-7">
-            {isBullTheme && (
-              <div className="bull-theme-overlay bull-theme-welcome-overlay" />
-            )}
-            <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="space-y-2">
-                <div className="ib-portal-kicker inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.22em]">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Client Portal
-                </div>
-                <div className="space-y-1">
-                  <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2.15rem]">
-                    {(() => {
-                      const h = new Date().getHours();
-                      const greeting =
-                        h < 12
-                          ? "Good morning"
-                          : h < 17
-                            ? "Good afternoon"
-                            : "Good evening";
-                      const fullName = utilityFunctions.formatName(user?.name);
-                      const firstName = fullName?.split(" ")[0];
-                      return firstName ? `${greeting}, ${firstName}` : greeting;
-                    })()}
-                  </h1>
-                  <p className="max-w-3xl text-sm text-muted-foreground sm:text-base">
-                    Welcome back! Here&apos;s what&apos;s happening with your
-                    account today.
-                  </p>
-                </div>
-              </div>
-              <div className="flex flex-wrap items-center gap-3">
-                {canCustomizeDashboard ? (
+          {isDashboardLoading ? (
+            <ClientDashboardSkeleton />
+          ) : dashboardError ? (
+            <ApiErrorState
+              error={dashboardError}
+              audience="client"
+              resource="dashboard"
+              action="load"
+              variant="panel"
+            />
+          ) : (
+            <div className="space-y-6">
+              {/* Dashboard Mode Toggle */}
+              {canCustomizeDashboard && (
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-bold text-foreground">Dashboard</h2>
+                    <p className="text-sm text-muted-foreground">
+                      Switch between normal and custom dashboard layouts
+                    </p>
+                  </div>
                   <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/50 p-1">
                     <Button
                       variant={
@@ -1696,154 +1717,161 @@ export function DashboardPageContent() {
                       <span className="hidden sm:inline">Custom</span>
                     </Button>
                   </div>
-                ) : null}
-              </div>
-            </div>
-          </div>
+                </div>
+              )}
 
-          {isDashboardLoading ? (
-            <ClientDashboardSkeleton />
-          ) : dashboardError ? (
-            <ApiErrorState
-              error={dashboardError}
-              audience="client"
-              resource="dashboard"
-              action="load"
-              variant="panel"
-            />
-          ) : (
-            <div className="space-y-6">
               {/* Normal Dashboard View */}
               {isCustomDashboard === "normal" ? (
                 <>
-                  {/* Key Metrics Summary Row */}
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 mb-6">
-                    {/* Total Deposits Card */}
-                    <Link
-                      href="/funds/my_deposit"
-                      aria-label="View deposits"
-                      className="block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    >
-                      <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/8 to-blue-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
-                        <CardContent className="relative z-10 pt-6 pb-6 px-6">
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex-1">
-                              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-                                Total Deposits
-                              </div>
-                              <p className="text-2xl font-bold text-foreground tabular-nums">
-                                {formatCurrency(
-                                  dashboardData?.deposits?.total ?? 0,
-                                  depositsCurrency,
-                                )}
+                  {/* Header + Key Metrics (75%) and Stepper (25%) - Side by Side */}
+                  <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
+                    {/* Left Side: Header + Key Metrics (75%) */}
+                    <div className="xl:col-span-3 space-y-6">
+                      {/* Header Section */}
+                      <div className="ib-portal-hero rounded-[28px] border px-6 py-6 sm:px-7">
+                        {isBullTheme && (
+                          <div className="bull-theme-overlay bull-theme-welcome-overlay" />
+                        )}
+                        <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                          <div className="space-y-2">
+                            <div className="ib-portal-kicker inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.22em]">
+                              <Sparkles className="h-3.5 w-3.5" />
+                              Client Portal
+                            </div>
+                            <div className="space-y-1">
+                              <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2.15rem]">
+                                {(() => {
+                                  const h = new Date().getHours();
+                                  const greeting =
+                                    h < 12
+                                      ? "Good morning"
+                                      : h < 17
+                                        ? "Good afternoon"
+                                        : "Good evening";
+                                  const fullName = utilityFunctions.formatName(user?.name);
+                                  const firstName = fullName?.split(" ")[0];
+                                  return firstName ? `${greeting}, ${firstName}` : greeting;
+                                })()}
+                              </h1>
+                              <p className="max-w-3xl text-sm text-muted-foreground sm:text-base">
+                                Welcome back! Here&apos;s what&apos;s happening with your
+                                account today.
                               </p>
                             </div>
-                            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
-                              <TrendingUp className="h-5 w-5 text-foreground" />
-                            </div>
                           </div>
-                          <div className="pt-3 border-t border-border/50">
-                            <p className="text-xs text-muted-foreground">
-                              All time deposits
-                            </p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
+                        </div>
+                      </div>
 
-                    {/* Total Withdrawals Card */}
-                    <Link
-                      href="/funds/withdraw"
-                      aria-label="View withdrawals"
-                      className="block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    >
-                      <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-amber">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/8 to-orange-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
-                        <CardContent className="relative z-10 pt-6 pb-6 px-6">
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex-1">
-                              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                                Total Withdrawals
+                      {/* Key Metrics Summary Row */}
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {/* Total Deposits Card */}
+                        <Link
+                          href="/funds/my_deposit"
+                          aria-label="View deposits"
+                          className="block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        >
+                          <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/8 to-blue-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
+                            <CardContent className="relative z-10 pt-6 pb-6 px-6">
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="flex-1">
+                                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                                    Total Deposits
+                                  </div>
+                                  <p className="text-2xl font-bold text-foreground tabular-nums">
+                                    {formatCurrency(
+                                      dashboardData?.deposits?.total ?? 0,
+                                      depositsCurrency,
+                                    )}
+                                  </p>
+                                </div>
+                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                                  <TrendingUp className="h-5 w-5 text-foreground" />
+                                </div>
                               </div>
-                              <p className="text-2xl font-bold text-foreground tabular-nums">
-                                {formatCurrency(
-                                  dashboardData?.withdrawals?.total ?? 0,
-                                  withdrawalsCurrency,
-                                )}
-                              </p>
-                            </div>
-                            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
-                              <TrendingDown className="h-5 w-5 text-foreground" />
-                            </div>
-                          </div>
-                          <div className="pt-3 border-t border-border/50">
-                            <p className="text-xs text-muted-foreground">
-                              All time withdrawals
-                            </p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-
-                    {/* Trading Accounts Card */}
-                    <Link
-                      href="/my_accounts/accounts-overview"
-                      aria-label="View trading accounts"
-                      className="block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                    >
-                      <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-emerald">
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-500/8 to-purple-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
-                        <CardContent className="relative z-10 pt-6 pb-6 px-6">
-                          <div className="flex items-center justify-between mb-4">
-                            <div className="flex-1">
-                              <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
-                                Trading Accounts
+                              <div className="pt-3 border-t border-border/50">
+                                <p className="text-xs text-muted-foreground">
+                                  All time deposits
+                                </p>
                               </div>
-                              <p className="text-2xl font-bold text-foreground tabular-nums">
-                                {overallAccounts?.total_accounts ??
-                                  dashboardData?.account_types
-                                    ?.total_accounts ??
-                                  0}
-                              </p>
-                            </div>
-                            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
-                              <Building2 className="h-5 w-5 text-foreground" />
-                            </div>
-                          </div>
-                          <div className="pt-3 border-t border-border/50">
-                            <p className="text-xs text-muted-foreground">
-                              Active MT5 accounts
-                            </p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </Link>
-                  </div>
+                            </CardContent>
+                          </Card>
+                        </Link>
 
-                  {/* News & Promotions Carousel Row */}
-                  {/* {dashboardNewsPromotionItems.length > 0 && (
-                <section className="rounded-3xl border border-border/60 bg-card/80 p-4 shadow-sm sm:p-5">
-                  <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-base font-bold tracking-tight text-foreground sm:text-lg">
-                      News & Promotions
-                    </h2>
-                  </div>
-                  <div className="grid grid-cols-1 gap-4">
-                    <NewsPromotionCarousel
-                      items={dashboardNewsPromotionItems}
-                      type="mixed"
-                      viewAllHref="/user-news"
-                    />
-                  </div>
-                </section>
-              )} */}
+                        {/* Total Withdrawals Card */}
+                        <Link
+                          href="/funds/withdraw"
+                          aria-label="View withdrawals"
+                          className="block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        >
+                          <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-amber">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/8 to-orange-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
+                            <CardContent className="relative z-10 pt-6 pb-6 px-6">
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="flex-1">
+                                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                    Total Withdrawals
+                                  </div>
+                                  <p className="text-2xl font-bold text-foreground tabular-nums">
+                                    {formatCurrency(
+                                      dashboardData?.withdrawals?.total ?? 0,
+                                      withdrawalsCurrency,
+                                    )}
+                                  </p>
+                                </div>
+                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                                  <TrendingDown className="h-5 w-5 text-foreground" />
+                                </div>
+                              </div>
+                              <div className="pt-3 border-t border-border/50">
+                                <p className="text-xs text-muted-foreground">
+                                  All time withdrawals
+                                </p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </Link>
 
-                  {/* Top Cards Row - Enhanced grid */}
-                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {/* Trading Accounts Card */}
+                        <Link
+                          href="/my_accounts/accounts-overview"
+                          aria-label="View trading accounts"
+                          className="block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        >
+                          <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-emerald">
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-500/8 to-purple-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
+                            <CardContent className="relative z-10 pt-6 pb-6 px-6">
+                              <div className="flex items-center justify-between mb-4">
+                                <div className="flex-1">
+                                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
+                                    Trading Accounts
+                                  </div>
+                                  <p className="text-2xl font-bold text-foreground tabular-nums">
+                                    {overallAccounts?.total_accounts ??
+                                      dashboardData?.account_types
+                                        ?.total_accounts ??
+                                      0}
+                                  </p>
+                                </div>
+                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                                  <Building2 className="h-5 w-5 text-foreground" />
+                                </div>
+                              </div>
+                              <div className="pt-3 border-t border-border/50">
+                                <p className="text-xs text-muted-foreground">
+                                  Active MT5 accounts
+                                </p>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </Link>
+                      </div>
+
+                      {/* Top Cards Row - Wallet, IB Wallet, Profile Progress */}
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {/* Wallet Balance Card - Enhanced */}
                     <Card
                       ref={walletCardRef}
@@ -2240,10 +2268,20 @@ export function DashboardPageContent() {
                       </Card>
                     </div>
                   </div>
+                    </div>
 
-                  {/* Deposits and Withdrawals Charts */}
-                  <div className="grid gap-4 xl:grid-cols-2">
-                    {isDepositsStatisticsLoading ? (
+                    {/* Profile Stepper - 20% width on XL screens */}
+                    <div className="xl:col-span-1">
+                      <ProfileStepper
+                        dashboardData={dashboardData}
+                        hasBankDetails={hasBankDetails}
+                      />
+                    </div>
+                  </div>
+
+              {/* Deposits and Withdrawals Charts */}
+              <div className="grid gap-4 xl:grid-cols-2">
+                {isDepositsStatisticsLoading ? (
                       <Card className="relative flex w-full max-w-full flex-col gap-6 overflow-hidden rounded-2xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-muted/20 shadow-lg md:p-6">
                         <CardHeader className="relative flex flex-col items-start gap-4.5 space-y-0 p-0 md:flex-row md:items-center md:justify-between md:gap-0">
                           <div className="flex items-center gap-2.5">
@@ -2310,7 +2348,7 @@ export function DashboardPageContent() {
                       />
                     )}
 
-                    {isWithdrawalsStatisticsLoading ? (
+                {isWithdrawalsStatisticsLoading ? (
                       <Card className="relative flex w-full max-w-full flex-col gap-6 overflow-hidden rounded-2xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-muted/20 shadow-lg md:p-6">
                         <CardHeader className="relative flex flex-col items-start gap-4.5 space-y-0 p-0 md:flex-row md:items-center md:justify-between md:gap-0">
                           <div className="flex items-center gap-2.5">
@@ -2377,8 +2415,8 @@ export function DashboardPageContent() {
                           )
                         }
                       />
-                    )}
-                  </div>
+                )}
+              </div>
                 </>
               ) : (
                 /* Custom Dashboard View with Drag and Drop */
