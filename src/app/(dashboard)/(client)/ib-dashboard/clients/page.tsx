@@ -3,12 +3,14 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
 import { ArrowLeftRight, DollarSign, RefreshCw, Search, Users } from "lucide-react";
+import { format, parse } from "date-fns";
 
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { IbMetricCard, IbPageHeader, IbPageShell, IbSectionCard } from "@/components/ib/ib-page-primitives";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -442,6 +444,29 @@ export default function IbClientsPage() {
   const [fromDate, setFromDate] = useQueryState("from_date", parseAsString);
   const [toDate, setToDate] = useQueryState("to_date", parseAsString);
 
+  // Date state for DateRangePicker
+  const [fromDateObj, setFromDateObj] = useState<Date | undefined>(undefined);
+  const [toDateObj, setToDateObj] = useState<Date | undefined>(undefined);
+
+  // Sync date objects with query params
+  useEffect(() => {
+    if (fromDate) {
+      const parsed = parse(fromDate, "yyyy-MM-dd", new Date());
+      if (!isNaN(parsed.getTime())) setFromDateObj(parsed);
+    } else {
+      setFromDateObj(undefined);
+    }
+  }, [fromDate]);
+
+  useEffect(() => {
+    if (toDate) {
+      const parsed = parse(toDate, "yyyy-MM-dd", new Date());
+      if (!isNaN(parsed.getTime())) setToDateObj(parsed);
+    } else {
+      setToDateObj(undefined);
+    }
+  }, [toDate]);
+
   const [clientsSearch, setClientsSearch] = useState({ query: "", input: "" });
   const [subIbsSearch, setSubIbsSearch] = useState({ query: "", input: "" });
   const [rebatesSearch, setRebatesSearch] = useState({ query: "", input: "" });
@@ -664,36 +689,20 @@ export default function IbClientsPage() {
 
           {/* Date Filters */}
           <div className="flex flex-wrap items-center gap-4 rounded-[20px] border border-border/60 bg-muted/20 p-4">
-            <div className="flex items-center gap-2">
-              <label htmlFor="from-date" className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
-                From Date
-              </label>
-              <input
-                id="from-date"
-                type="date"
-                value={fromDate || ""}
-                onChange={(e) => {
-                  setPage(1);
-                  setFromDate(e.target.value || null);
-                }}
-                className="h-9 w-36 rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <label htmlFor="to-date" className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
-                To Date
-              </label>
-              <input
-                id="to-date"
-                type="date"
-                value={toDate || ""}
-                onChange={(e) => {
-                  setPage(1);
-                  setToDate(e.target.value || null);
-                }}
-                className="h-9 w-36 rounded-xl border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
-              />
-            </div>
+            <DateRangePicker
+              fromDate={fromDateObj}
+              toDate={toDateObj}
+              onFromDateChange={(date) => {
+                setFromDateObj(date);
+                setPage(1);
+                setFromDate(date ? format(date, "yyyy-MM-dd") : null);
+              }}
+              onToDateChange={(date) => {
+                setToDateObj(date);
+                setPage(1);
+                setToDate(date ? format(date, "yyyy-MM-dd") : null);
+              }}
+            />
             {(fromDate || toDate) && (
               <Button
                 variant="ghost"

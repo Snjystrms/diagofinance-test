@@ -20,8 +20,10 @@ import {
   Plus
 } from 'lucide-react'
 import { formatApiDateTimeAsIST, formatDateTimeInIST } from '@/lib/formatters'
+import { format, parse } from "date-fns";
 import { Skeleton } from '@/components/ui/skeleton'
 import { Label } from '@/components/ui/label'
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { AppDataTable } from '@/components/app-data-table'
 import { SerialNumberCell } from '@/components/data-table/serial-number-cell'
@@ -56,6 +58,29 @@ export default function TransactionsHistoryPage() {
   const [period, setPeriod] = useState<string>('all')
   const [startDate, setStartDate] = useState<string>('')
   const [endDate, setEndDate] = useState<string>('')
+
+  // Date state for DateRangePicker
+  const [startDateObj, setStartDateObj] = useState<Date | undefined>(undefined);
+  const [endDateObj, setEndDateObj] = useState<Date | undefined>(undefined);
+
+  // Sync date objects with string dates
+  useEffect(() => {
+    if (startDate) {
+      const parsed = parse(startDate, "yyyy-MM-dd", new Date());
+      if (!isNaN(parsed.getTime())) setStartDateObj(parsed);
+    } else {
+      setStartDateObj(undefined);
+    }
+  }, [startDate]);
+
+  useEffect(() => {
+    if (endDate) {
+      const parsed = parse(endDate, "yyyy-MM-dd", new Date());
+      if (!isNaN(parsed.getTime())) setEndDateObj(parsed);
+    } else {
+      setEndDateObj(undefined);
+    }
+  }, [endDate]);
 
   const fetchTransactions = useCallback(async () => {
     if (!token) {
@@ -453,33 +478,25 @@ export default function TransactionsHistoryPage() {
       </Select>
     </div>
 
-    {/* From */}
-    <div className="flex items-center gap-2">
-      <Label htmlFor="start-date" className="text-sm font-medium whitespace-nowrap">
-        From
-      </Label>
-      <input
-        id="start-date"
-        type="date"
-        value={startDate}
-        onChange={(e) => { setStartDate(e.target.value); if (e.target.value) setPeriod('all'); handleFilterChange() }}
-        className="h-9 w-36 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
-      />
-    </div>
-
-    {/* To */}
-    <div className="flex items-center gap-2">
-      <Label htmlFor="end-date" className="text-sm font-medium whitespace-nowrap">
-        To
-      </Label>
-      <input
-        id="end-date"
-        type="date"
-        value={endDate}
-        onChange={(e) => { setEndDate(e.target.value); if (e.target.value) setPeriod('all'); handleFilterChange() }}
-        className="h-9 w-36 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus:outline-none focus:ring-1 focus:ring-ring"
-      />
-    </div>
+    {/* Date Range */}
+    <DateRangePicker
+      fromDate={startDateObj}
+      toDate={endDateObj}
+      fromLabel="From"
+      toLabel="To"
+      onFromDateChange={(date) => {
+        setStartDateObj(date);
+        setStartDate(date ? format(date, "yyyy-MM-dd") : "");
+        if (date) setPeriod('all');
+        handleFilterChange();
+      }}
+      onToDateChange={(date) => {
+        setEndDateObj(date);
+        setEndDate(date ? format(date, "yyyy-MM-dd") : "");
+        if (date) setPeriod('all');
+        handleFilterChange();
+      }}
+    />
 
     {/* Reset */}
     {hasActiveFilters && (

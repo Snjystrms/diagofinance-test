@@ -37,7 +37,7 @@ import {
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -55,11 +55,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import {
@@ -857,42 +852,13 @@ function NetworkTab({
           }
         >
           {/* Clients Date Filters */}
-          <div className="mb-4 grid gap-4 md:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn("h-9 w-full justify-start text-left font-normal", !clientsDateFrom && "text-muted-foreground")}
-                  >
-                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                    {clientsDateFrom ? format(clientsDateFrom, "MMM dd, yyyy") : <span>Select date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={clientsDateFrom} onSelect={onClientsDateFromChange} initialFocus captionLayout="dropdown" />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">To Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn("h-9 w-full justify-start text-left font-normal", !clientsDateTo && "text-muted-foreground")}
-                  >
-                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                    {clientsDateTo ? format(clientsDateTo, "MMM dd, yyyy") : <span>Select date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={clientsDateTo} onSelect={onClientsDateToChange} initialFocus captionLayout="dropdown" />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
+          <DateRangePicker
+            fromDate={clientsDateFrom}
+            toDate={clientsDateTo}
+            onFromDateChange={onClientsDateFromChange}
+            onToDateChange={onClientsDateToChange}
+            className="mb-4"
+          />
           
           {loading ? (
             <TabSkeleton rows={4} />
@@ -983,42 +949,13 @@ function NetworkTab({
           }
         >
           {/* Sub-IBs Date Filters */}
-          <div className="mb-4 grid gap-4 md:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn("h-9 w-full justify-start text-left font-normal", !subIbsDateFrom && "text-muted-foreground")}
-                  >
-                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                    {subIbsDateFrom ? format(subIbsDateFrom, "MMM dd, yyyy") : <span>Select date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={subIbsDateFrom} onSelect={onSubIbsDateFromChange} initialFocus captionLayout="dropdown" />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">To Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn("h-9 w-full justify-start text-left font-normal", !subIbsDateTo && "text-muted-foreground")}
-                  >
-                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                    {subIbsDateTo ? format(subIbsDateTo, "MMM dd, yyyy") : <span>Select date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={subIbsDateTo} onSelect={onSubIbsDateToChange} initialFocus captionLayout="dropdown" />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
+          <DateRangePicker
+            fromDate={subIbsDateFrom}
+            toDate={subIbsDateTo}
+            onFromDateChange={onSubIbsDateFromChange}
+            onToDateChange={onSubIbsDateToChange}
+            className="mb-4"
+          />
           
           {loading ? (
             <TabSkeleton rows={4} />
@@ -1229,42 +1166,12 @@ function CommissionTab({
             ) : null
           }
         >
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn("h-9 w-full justify-start text-left font-normal", !fromDate && "text-muted-foreground")}
-                  >
-                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                    {fromDate ? format(fromDate, "MMM dd, yyyy") : <span>Select date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={fromDate} onSelect={setFromDate} initialFocus captionLayout="dropdown" />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">To Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn("h-9 w-full justify-start text-left font-normal", !toDate && "text-muted-foreground")}
-                  >
-                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                    {toDate ? format(toDate, "MMM dd, yyyy") : <span>Select date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar mode="single" selected={toDate} onSelect={setToDate} initialFocus captionLayout="dropdown" />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
+          <DateRangePicker
+            fromDate={fromDate}
+            toDate={toDate}
+            onFromDateChange={setFromDate}
+            onToDateChange={setToDate}
+          />
         </IbSectionCard>
 
         {reportLoading ? (

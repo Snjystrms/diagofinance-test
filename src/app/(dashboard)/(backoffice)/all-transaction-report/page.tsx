@@ -12,10 +12,7 @@ import { AppDataTable } from "@/components/app-data-table";
 import { ReportPageWrapper } from "@/components/report-page-wrapper";
 import type { ReportExportFormat } from "@/components/report-page-wrapper";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Label } from "@/components/ui/label";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useAuth } from "@/contexts/auth-context";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
@@ -25,7 +22,6 @@ import {
   type TransactionReportListPayload,
 } from "@/lib/api";
 import { fmtDateTime, formatAmount } from "@/lib/formatters";
-import { cn } from "@/lib/utils";
 
 export default function AllTransactionReportPage() {
   const authCtx = useAuth?.();
@@ -295,66 +291,18 @@ export default function AllTransactionReportPage() {
               delay={300}
             />
           </div>
-          <div className="flex gap-2">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full h-9 justify-start text-left font-normal",
-                      !fromDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                    {fromDate ? format(fromDate, "MMM dd, yyyy") : <span>Select date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={fromDate}
-                    onSelect={(date) => {
-                      handleDateChange(date, "from");
-                      setPage(1);
-                    }}
-                    initialFocus
-                    captionLayout="dropdown"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">To Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full h-9 justify-start text-left font-normal",
-                      !toDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                    {toDate ? format(toDate, "MMM dd, yyyy") : <span>Select date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={toDate}
-                    onSelect={(date) => {
-                      handleDateChange(date, "to");
-                      setPage(1);
-                    }}
-                    initialFocus
-                    captionLayout="dropdown"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
+          <DateRangePicker
+            fromDate={fromDate}
+            toDate={toDate}
+            onFromDateChange={(date) => {
+              handleDateChange(date, "from");
+              setPage(1);
+            }}
+            onToDateChange={(date) => {
+              handleDateChange(date, "to");
+              setPage(1);
+            }}
+          />
         </div>
 
         <div className="rounded-lg border bg-card">

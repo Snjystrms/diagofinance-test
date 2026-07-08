@@ -27,12 +27,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { CalendarIcon, RefreshCw, Download, ChevronDown, BarChart3, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -573,65 +568,18 @@ export default function AllPartnersReportPage() {
             </Select>
           </div>
           
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full h-9 justify-start text-left font-normal",
-                    !fromDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                  {fromDate ? format(fromDate, "MMM dd, yyyy") : <span>Select date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={fromDate}
-                  onSelect={(date) => {
-                    handleDateChange(date, "from");
-                    setPage(1);
-                  }}
-                  initialFocus
-                  captionLayout="dropdown"
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label className="text-xs font-medium text-muted-foreground">To Date</Label>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full h-9 justify-start text-left font-normal",
-                    !toDate && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                  {toDate ? format(toDate, "MMM dd, yyyy") : <span>Select date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={toDate}
-                  onSelect={(date) => {
-                    handleDateChange(date, "to");
-                    setPage(1);
-                  }}
-                  initialFocus
-                  captionLayout="dropdown"
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
+          <DateRangePicker
+            fromDate={fromDate}
+            toDate={toDate}
+            onFromDateChange={(date) => {
+              handleDateChange(date, "from");
+              setPage(1);
+            }}
+            onToDateChange={(date) => {
+              handleDateChange(date, "to");
+              setPage(1);
+            }}
+          />
 
           <div className="space-y-1.5">
             <Label htmlFor="sort-column" className="text-xs font-medium text-muted-foreground">Sort By</Label>

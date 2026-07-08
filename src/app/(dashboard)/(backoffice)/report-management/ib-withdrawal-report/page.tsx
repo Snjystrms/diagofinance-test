@@ -11,15 +11,8 @@ import { AppDataTable } from "@/components/app-data-table";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { CalendarIcon, Search, Landmark } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 import {
   adminIbWithdrawalReportApi,
@@ -420,92 +413,46 @@ export default function IbWithdrawalReportPage() {
       isRefreshing={loading}
     >
       <div className="space-y-4">
-        <div className="rounded-lg border bg-card p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-base font-semibold">
-              <Search className="h-4 w-4" />
-              Filters
-            </h2>
-            {activeFilterCount > 0 ? (
-              <Button variant="ghost" size="sm" onClick={handleResetFilters}>
-                Reset
-              </Button>
-            ) : null}
-          </div>
-          <div className="mb-4">
-            <ApiSearchBar
-              value={searchInput}
-              onChange={(value) => setSearchInput(value)}
-              onSearch={(value) => {
-                setPage(1);
-                setSearchQuery(value.trim() || null);
-              }}
-              placeholder="Search by IB name, partner ID..."
-              minimumLength={3}
-              delay={300}
-            />
-          </div>
-          <div className="grid gap-3 md:grid-cols-4 xl:grid-cols-4">
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full h-9 justify-start text-left font-normal",
-                      !fromDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                    {fromDate ? format(fromDate, "MMM dd, yyyy") : <span>Select date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={fromDate}
-                    onSelect={(date) => {
-                      handleDateChange(date, "from");
-                      setPage(1);
-                    }}
-                    initialFocus
-                    captionLayout="dropdown"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">To Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full h-9 justify-start text-left font-normal",
-                      !toDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                    {toDate ? format(toDate, "MMM dd, yyyy") : <span>Select date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={toDate}
-                    onSelect={(date) => {
-                      handleDateChange(date, "to");
-                      setPage(1);
-                    }}
-                    initialFocus
-                    captionLayout="dropdown"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-          </div>
-        </div>
+       <div className="rounded-lg border bg-card p-5">
+  <div className="mb-4 flex items-center justify-between">
+    <h2 className="flex items-center gap-2 text-base font-semibold">
+      <Search className="h-4 w-4" />
+      Filters
+    </h2>
+    {activeFilterCount > 0 ? (
+      <Button variant="ghost" size="sm" onClick={handleResetFilters}>
+        Reset
+      </Button>
+    ) : null}
+  </div>
+  <div className="flex flex-col gap-3 md:flex-row md:items-end">
+    <div className="flex-1">
+      <ApiSearchBar
+        value={searchInput}
+        onChange={(value) => setSearchInput(value)}
+        onSearch={(value) => {
+          setPage(1);
+          setSearchQuery(value.trim() || null);
+        }}
+        placeholder="Search by IB name, partner ID..."
+        minimumLength={3}
+        delay={300}
+      />
+    </div>
+    <DateRangePicker
+      fromDate={fromDate}
+      toDate={toDate}
+      onFromDateChange={(date) => {
+        handleDateChange(date, "from");
+        setPage(1);
+      }}
+      onToDateChange={(date) => {
+        handleDateChange(date, "to");
+        setPage(1);
+      }}
+    />
+  </div>
+</div>
 
         {/* Results Section */}
         <div className="rounded-lg border bg-card">

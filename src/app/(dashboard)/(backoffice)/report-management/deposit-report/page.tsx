@@ -27,14 +27,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { CalendarIcon, RefreshCw, Download, ChevronDown, BarChart3, Search } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 import {
   adminDepositReportApi,
@@ -563,188 +557,120 @@ export default function ReportManagementPage() {
           </div>
         </div>
 
-        <div className="rounded-lg border bg-card p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-base font-semibold">
-              <Search className="h-4 w-4" />
-              Filters
-            </h2>
-            {activeFilterCount > 0 ? (
-              <Button variant="ghost" size="sm" onClick={handleResetFilters}>
-                Reset
-              </Button>
-            ) : null}
-          </div>
-          <div className="mb-4">
-            <ApiSearchBar
-              value={searchInput}
-              onChange={(value) => setSearchInput(value)}
-              onSearch={(value) => {
-                setPage(1);
-                setSearchQuery(value.trim() || null);
-              }}
-              placeholder="Search by name, email..."
-              minimumLength={3}
-              delay={300}
-            />
-          </div>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-7">
-            <div className="space-y-1.5">
-              <Label htmlFor="status-filter" className="text-xs font-medium text-muted-foreground">Status</Label>
-              <Select
-                value={statusFilter || "all"}
-                onValueChange={(value) => {
-                  setStatusFilter(value === "all" ? null : value);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger id="status-filter" className="h-9 w-full">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="0">Pending</SelectItem>
-                  <SelectItem value="1">Approved</SelectItem>
-                  <SelectItem value="2">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="source-filter" className="text-xs font-medium text-muted-foreground">Source</Label>
-              <Select
-                value={sourceFilter || "all"}
-                onValueChange={(value) => {
-                  setSourceFilter(value === "all" ? null : value);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger id="source-filter" className="h-9 w-full">
-                  <SelectValue placeholder="All Sources" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Sources</SelectItem>
-                  <SelectItem value="online">Online</SelectItem>
-                  <SelectItem value="bank">Bank</SelectItem>
-                  <SelectItem value="usdt">USDT</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="ib-filter" className="text-xs font-medium text-muted-foreground">Partner (IB)</Label>
-              <Select
-                value={isIbFilter || "all"}
-                onValueChange={(value) => {
-                  setIsIbFilter(value === "all" ? null : value);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger id="ib-filter" className="h-9 w-full">
-                  <SelectValue placeholder="All Users" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Users</SelectItem>
-                  <SelectItem value="1">Only Partner (IB)</SelectItem>
-                  <SelectItem value="0">Only Clients</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full h-9 justify-start text-left font-normal",
-                      !fromDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                    {fromDate ? format(fromDate, "MMM dd, yyyy") : <span>Select date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={fromDate}
-                    onSelect={(date) => {
-                      handleDateChange(date, "from");
-                      setPage(1);
-                    }}
-                    initialFocus
-                    captionLayout="dropdown"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">To Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full h-9 justify-start text-left font-normal",
-                      !toDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                    {toDate ? format(toDate, "MMM dd, yyyy") : <span>Select date</span>}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={toDate}
-                    onSelect={(date) => {
-                      handleDateChange(date, "to");
-                      setPage(1);
-                    }}
-                    initialFocus
-                    captionLayout="dropdown"
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="sort-column" className="text-xs font-medium text-muted-foreground">Sort By</Label>
-              <Select
-                value={sortColumn || undefined}
-                onValueChange={(value) => {
-                  setSortColumn(value);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger id="sort-column" className="h-9 w-full">
-                  <SelectValue placeholder="Select column" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="created_at">Created At</SelectItem>
-                  <SelectItem value="amount">Amount</SelectItem>
-                  <SelectItem value="status">Status</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="sort-order" className="text-xs font-medium text-muted-foreground">Order</Label>
-              <Select
-                value={sortOrder || undefined}
-                onValueChange={(value: "ASC" | "DESC") => {
-                  setSortOrder(value);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger id="sort-order" className="h-9 w-full">
-                  <SelectValue placeholder="Select order" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="ASC">Ascending</SelectItem>
-                  <SelectItem value="DESC">Descending</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
+  <div className="space-y-1.5">
+    <Label htmlFor="status-filter" className="text-xs font-medium text-muted-foreground">Status</Label>
+    <Select
+      value={statusFilter || "all"}
+      onValueChange={(value) => {
+        setStatusFilter(value === "all" ? null : value);
+        setPage(1);
+      }}
+    >
+      <SelectTrigger id="status-filter" className="h-9 w-full">
+        <SelectValue placeholder="All Status" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All Status</SelectItem>
+        <SelectItem value="0">Pending</SelectItem>
+        <SelectItem value="1">Approved</SelectItem>
+        <SelectItem value="2">Rejected</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+  <div className="space-y-1.5">
+    <Label htmlFor="source-filter" className="text-xs font-medium text-muted-foreground">Source</Label>
+    <Select
+      value={sourceFilter || "all"}
+      onValueChange={(value) => {
+        setSourceFilter(value === "all" ? null : value);
+        setPage(1);
+      }}
+    >
+      <SelectTrigger id="source-filter" className="h-9 w-full">
+        <SelectValue placeholder="All Sources" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All Sources</SelectItem>
+        <SelectItem value="online">Online</SelectItem>
+        <SelectItem value="bank">Bank</SelectItem>
+        <SelectItem value="usdt">USDT</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+  <div className="space-y-1.5">
+    <Label htmlFor="ib-filter" className="text-xs font-medium text-muted-foreground">Partner (IB)</Label>
+    <Select
+      value={isIbFilter || "all"}
+      onValueChange={(value) => {
+        setIsIbFilter(value === "all" ? null : value);
+        setPage(1);
+      }}
+    >
+      <SelectTrigger id="ib-filter" className="h-9 w-full">
+        <SelectValue placeholder="All Users" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All Users</SelectItem>
+        <SelectItem value="1">Only Partner (IB)</SelectItem>
+        <SelectItem value="0">Only Clients</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+
+  <div className="md:col-span-2 xl:col-span-2">
+    <DateRangePicker
+      fromDate={fromDate}
+      toDate={toDate}
+      onFromDateChange={(date) => {
+        handleDateChange(date, "from");
+        setPage(1);
+      }}
+      onToDateChange={(date) => {
+        handleDateChange(date, "to");
+        setPage(1);
+      }}
+    />
+  </div>
+
+  <div className="space-y-1.5">
+    <Label htmlFor="sort-column" className="text-xs font-medium text-muted-foreground">Sort By</Label>
+    <Select
+      value={sortColumn || undefined}
+      onValueChange={(value) => {
+        setSortColumn(value);
+        setPage(1);
+      }}
+    >
+      <SelectTrigger id="sort-column" className="h-9 w-full">
+        <SelectValue placeholder="Select column" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="created_at">Created At</SelectItem>
+        <SelectItem value="amount">Amount</SelectItem>
+        <SelectItem value="status">Status</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+  <div className="space-y-1.5">
+    <Label htmlFor="sort-order" className="text-xs font-medium text-muted-foreground">Order</Label>
+    <Select
+      value={sortOrder || undefined}
+      onValueChange={(value: "ASC" | "DESC") => {
+        setSortOrder(value);
+        setPage(1);
+      }}
+    >
+      <SelectTrigger id="sort-order" className="h-9 w-full">
+        <SelectValue placeholder="Select order" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="ASC">Ascending</SelectItem>
+        <SelectItem value="DESC">Descending</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+</div>
 
         {/* Results Section */}
         <div className="rounded-lg border bg-card">

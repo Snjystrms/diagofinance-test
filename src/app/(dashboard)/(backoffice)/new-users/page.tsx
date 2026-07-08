@@ -17,6 +17,7 @@ import {
   ShieldPlus,
   ShieldMinus,
 } from "lucide-react";
+import { format, parse } from "date-fns";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { DeleteDialog } from "@/components/dialogs/delete-dialog";
@@ -42,7 +43,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -55,38 +63,59 @@ import {
   type PendingUser,
 } from "@/lib/api";
 import { COUNTRIES } from "@/lib/countries";
-import { adminUserCreateSchema, type AdminUserCreateFormData } from "@/lib/validations";
+import {
+  adminUserCreateSchema,
+  type AdminUserCreateFormData,
+} from "@/lib/validations";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
-import { useCrudCapabilities, useModuleCapabilities } from "@/hooks/use-permission-capabilities";
+import {
+  useCrudCapabilities,
+  useModuleCapabilities,
+} from "@/hooks/use-permission-capabilities";
 
 import { getColumnsWithActions } from "./columns";
 import { UserFormDialog } from "./user-form-dialog";
 
 const updateUserSchema = z
   .object({
-    first_name: z.string().trim().min(2, "First name must be at least 2 characters"),
-    last_name: z.string().trim().min(2, "Last name must be at least 2 characters"),
+    first_name: z
+      .string()
+      .trim()
+      .min(2, "First name must be at least 2 characters"),
+    last_name: z
+      .string()
+      .trim()
+      .min(2, "Last name must be at least 2 characters"),
     email: z.string().trim().email("Invalid email address"),
     mobile: z
       .string()
       .trim()
       .optional()
       .or(z.literal(""))
-      .refine((value) => !value || /^\d+$/.test(value), "Mobile number must contain only digits")
-      .refine((value) => !value || value.length === 10, "Mobile number must be exactly 10 digits"),
+      .refine(
+        (value) => !value || /^\d+$/.test(value),
+        "Mobile number must contain only digits",
+      )
+      .refine(
+        (value) => !value || value.length === 10,
+        "Mobile number must be exactly 10 digits",
+      ),
     country: z.string().trim().optional().or(z.literal("")),
     country_code: z.string().trim(),
     password: z.string().optional().or(z.literal("")),
     confirm_password: z.string().optional().or(z.literal("")),
     referral_code: z.string().trim().optional().or(z.literal("")),
   })
-  .refine((data) => {
-    if (!data.password && !data.confirm_password) return true;
-    return data.password === data.confirm_password;
-  }, {
-    message: "Passwords don't match",
-    path: ["confirm_password"],
-  });
+  .refine(
+    (data) => {
+      if (!data.password && !data.confirm_password) return true;
+      return data.password === data.confirm_password;
+    },
+    {
+      message: "Passwords don't match",
+      path: ["confirm_password"],
+    },
+  );
 
 type UpdateUserFormData = z.infer<typeof updateUserSchema>;
 
@@ -139,7 +168,9 @@ const transformUser = (raw: Record<string, unknown>): PendingUser => {
     uuid: String(raw.uuid ?? ""),
     first_name: String(raw.first_name ?? ""),
     last_name: String(raw.last_name ?? ""),
-    name: `${String(raw.first_name ?? "")} ${String(raw.last_name ?? "")}`.trim() || String(raw.name ?? "-"),
+    name:
+      `${String(raw.first_name ?? "")} ${String(raw.last_name ?? "")}`.trim() ||
+      String(raw.name ?? "-"),
     email,
     username,
     mobile: String(raw.mobile ?? ""),
@@ -147,7 +178,8 @@ const transformUser = (raw: Record<string, unknown>): PendingUser => {
     country_code: String(raw.country_code ?? ""),
     sponsor_id: String(raw.sponsor_id ?? ""),
     sponsor_by: raw.sponsor_by == null ? null : String(raw.sponsor_by),
-    sponsor_by_email: raw.sponsor_by_email == null ? null : String(raw.sponsor_by_email),
+    sponsor_by_email:
+      raw.sponsor_by_email == null ? null : String(raw.sponsor_by_email),
     referral_code: String(raw.referral_code ?? ""),
     ib_plan_id: (() => {
       const v = raw.ib_plan_id;
@@ -155,8 +187,14 @@ const transformUser = (raw: Record<string, unknown>): PendingUser => {
       return typeof v === "number" || typeof v === "string" ? v : null;
     })(),
     status: String(raw.status ?? ""),
-    email_verified: typeof raw.email_verified === "number" ? raw.email_verified : Number(raw.email_verified ?? 0) || 0,
-    payment_verified: typeof raw.payment_verified === "number" ? raw.payment_verified : Number(raw.payment_verified ?? 0) || 0,
+    email_verified:
+      typeof raw.email_verified === "number"
+        ? raw.email_verified
+        : Number(raw.email_verified ?? 0) || 0,
+    payment_verified:
+      typeof raw.payment_verified === "number"
+        ? raw.payment_verified
+        : Number(raw.payment_verified ?? 0) || 0,
     main_wallet_balance: toNullableNumber(raw.main_wallet_balance),
     created_at: String(raw.created_at ?? ""),
     approved_by: String(raw.approved_by ?? ""),
@@ -164,9 +202,12 @@ const transformUser = (raw: Record<string, unknown>): PendingUser => {
   };
 };
 
-const extractUsers = (payload?: AdminUsersListApiData | null): PendingUser[] => {
+const extractUsers = (
+  payload?: AdminUsersListApiData | null,
+): PendingUser[] => {
   if (!payload) return [];
-  const pick = (value: unknown) => (Array.isArray(value) ? value as Array<Record<string, unknown>> : []);
+  const pick = (value: unknown) =>
+    Array.isArray(value) ? (value as Array<Record<string, unknown>>) : [];
 
   const directUsers = pick(payload.users);
   if (directUsers.length) return directUsers.map(transformUser);
@@ -175,7 +216,9 @@ const extractUsers = (payload?: AdminUsersListApiData | null): PendingUser[] => 
   if (directItems.length) return directItems.map(transformUser);
 
   if (Array.isArray(payload.data)) {
-    return (payload.data as unknown as Array<Record<string, unknown>>).map(transformUser);
+    return (payload.data as unknown as Array<Record<string, unknown>>).map(
+      transformUser,
+    );
   }
 
   if (payload.data && typeof payload.data === "object") {
@@ -193,17 +236,28 @@ const extractUsers = (payload?: AdminUsersListApiData | null): PendingUser[] => 
 
 const extractPagination = (
   payload?: AdminUsersListApiData | null,
-  response?: { pagination?: PaginationMeta; data?: { pagination?: PaginationMeta } } | null,
+  response?: {
+    pagination?: PaginationMeta;
+    data?: { pagination?: PaginationMeta };
+  } | null,
 ): PaginationMeta | undefined => {
   if (!payload) return undefined;
   if (payload.pagination) return payload.pagination;
-  if (payload.data && typeof payload.data === "object" && !Array.isArray(payload.data)) {
+  if (
+    payload.data &&
+    typeof payload.data === "object" &&
+    !Array.isArray(payload.data)
+  ) {
     const nested = payload.data as Record<string, unknown>;
     if (nested.pagination && typeof nested.pagination === "object") {
       return nested.pagination as PaginationMeta;
     }
   }
-  return payload.meta?.pagination ?? response?.pagination ?? response?.data?.pagination;
+  return (
+    payload.meta?.pagination ??
+    response?.pagination ??
+    response?.data?.pagination
+  );
 };
 
 type UserSummaryCounts = {
@@ -221,7 +275,9 @@ const toNullableNumber = (value: unknown): number | null => {
   return null;
 };
 
-const extractUserSummaryCounts = (payload?: AdminUsersListApiData | null): UserSummaryCounts => {
+const extractUserSummaryCounts = (
+  payload?: AdminUsersListApiData | null,
+): UserSummaryCounts => {
   if (!payload) {
     return { newToday: null, activeCount: null, inactiveCount: null };
   }
@@ -235,13 +291,18 @@ const extractUserSummaryCounts = (payload?: AdminUsersListApiData | null): UserS
   return {
     newToday: toNullableNumber(root.new_today ?? nested?.new_today),
     activeCount: toNullableNumber(root.active_count ?? nested?.active_count),
-    inactiveCount: toNullableNumber(root.inactive_count ?? nested?.inactive_count),
+    inactiveCount: toNullableNumber(
+      root.inactive_count ?? nested?.inactive_count,
+    ),
   };
 };
 
-const extractSingleUser = (payload?: AdminUserDetailApiData | null): PendingUser | null => {
+const extractSingleUser = (
+  payload?: AdminUserDetailApiData | null,
+): PendingUser | null => {
   if (!payload) return null;
-  if ("id" in payload) return transformUser(payload as unknown as Record<string, unknown>);
+  if ("id" in payload)
+    return transformUser(payload as unknown as Record<string, unknown>);
 
   const payloadObj = payload as Record<string, unknown>;
   if (payloadObj.user && typeof payloadObj.user === "object") {
@@ -279,77 +340,130 @@ export default function NewUsersPage() {
   const [users, setUsers] = useState<PendingUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
-  const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(null);
-  const [userSummaryCounts, setUserSummaryCounts] = useState<UserSummaryCounts>({
-    newToday: null,
-    activeCount: null,
-    inactiveCount: null,
-  });
+  const [paginationMeta, setPaginationMeta] = useState<PaginationMeta | null>(
+    null,
+  );
+  const [userSummaryCounts, setUserSummaryCounts] = useState<UserSummaryCounts>(
+    {
+      newToday: null,
+      activeCount: null,
+      inactiveCount: null,
+    },
+  );
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
-  const [statusFilter, setStatusFilter] = useQueryState("status", parseAsString.withDefault("all"));
-  const [search, setSearch] = useQueryState("search", parseAsString.withDefault(""));
+  const [statusFilter, setStatusFilter] = useQueryState(
+    "status",
+    parseAsString.withDefault("all"),
+  );
+  const [search, setSearch] = useQueryState(
+    "search",
+    parseAsString.withDefault(""),
+  );
   const [searchInput, setSearchInput] = useState(search ?? "");
   const [sortBy, setSortBy] = useQueryState("sort_by", parseAsString);
   const [sortOrder, setSortOrder] = useQueryState("sort_order", parseAsString);
   const [dateFrom, setDateFrom] = useQueryState("date_from", parseAsString);
   const [dateTo, setDateTo] = useQueryState("date_to", parseAsString);
 
+  // Date state for DateRangePicker
+  const [fromDateObj, setFromDateObj] = useState<Date | undefined>(undefined);
+  const [toDateObj, setToDateObj] = useState<Date | undefined>(undefined);
+
+  // Sync date objects with query params
+  useEffect(() => {
+    if (dateFrom) {
+      const parsed = parse(dateFrom, "yyyy-MM-dd", new Date());
+      if (!isNaN(parsed.getTime())) setFromDateObj(parsed);
+    } else {
+      setFromDateObj(undefined);
+    }
+  }, [dateFrom]);
+
+  useEffect(() => {
+    if (dateTo) {
+      const parsed = parse(dateTo, "yyyy-MM-dd", new Date());
+      if (!isNaN(parsed.getTime())) setToDateObj(parsed);
+    } else {
+      setToDateObj(undefined);
+    }
+  }, [dateTo]);
+
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [creatingUser, setCreatingUser] = useState(false);
   const [updatingUser, setUpdatingUser] = useState(false);
   const [loadingUserDetails, setLoadingUserDetails] = useState(false);
-  const [promotingUserIds, setPromotingUserIds] = useState<Set<number>>(new Set());
+  const [promotingUserIds, setPromotingUserIds] = useState<Set<number>>(
+    new Set(),
+  );
   const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null);
   const [userToDelete, setUserToDelete] = useState<PendingUser | null>(null);
   const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
-  const [promoteTargetUser, setPromoteTargetUser] = useState<PendingUser | null>(null);
+  const [promoteTargetUser, setPromoteTargetUser] =
+    useState<PendingUser | null>(null);
   const [promoteSubmitting, setPromoteSubmitting] = useState(false);
   const [manageSponsorDialogOpen, setManageSponsorDialogOpen] = useState(false);
-  const [manageSponsorTargetUser, setManageSponsorTargetUser] = useState<PendingUser | null>(null);
-  const [manageSponsorTab, setManageSponsorTab] = useState<"transfer" | "remove">("transfer");
+  const [manageSponsorTargetUser, setManageSponsorTargetUser] =
+    useState<PendingUser | null>(null);
+  const [manageSponsorTab, setManageSponsorTab] = useState<
+    "transfer" | "remove"
+  >("transfer");
   const [selectedNewSponsorId, setSelectedNewSponsorId] = useState("");
   const [manageSponsorSubmitting, setManageSponsorSubmitting] = useState(false);
 
   const [sponsorSearchQuery, setSponsorSearchQuery] = useState("");
-  const [sponsorSearchResults, setSponsorSearchResults] = useState<SponsorOption[]>([]);
+  const [sponsorSearchResults, setSponsorSearchResults] = useState<
+    SponsorOption[]
+  >([]);
   const [sponsorSearching, setSponsorSearching] = useState(false);
 
-  const handleSponsorSearch = useCallback(async (query: string) => {
-    if (!token || !manageSponsorTargetUser || !query.trim() || query.trim().length < 3) {
-      setSponsorSearchResults([]);
-      return;
-    }
-    try {
-      setSponsorSearching(true);
-      const response = await adminUsersApi.list({
-        token,
-        page: 1,
-        limit: 50,
-        search: query.trim(),
-      });
-      const results = extractUsers(response?.data ?? null)
-        .filter((user) => user.id !== manageSponsorTargetUser.id && Boolean(String(user.sponsor_id ?? "").trim()))
-        .map((user) => ({
-          id: user.id,
-          name:
-            user.name?.trim() ||
-            `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() ||
-            user.username ||
-            user.email ||
-            `User ${user.id}`,
-          uuid: user.uuid,
-          email: user.email,
-        }));
-      setSponsorSearchResults(results);
-    } catch {
-      setSponsorSearchResults([]);
-    } finally {
-      setSponsorSearching(false);
-    }
-  }, [token, manageSponsorTargetUser]);
+  const handleSponsorSearch = useCallback(
+    async (query: string) => {
+      if (
+        !token ||
+        !manageSponsorTargetUser ||
+        !query.trim() ||
+        query.trim().length < 3
+      ) {
+        setSponsorSearchResults([]);
+        return;
+      }
+      try {
+        setSponsorSearching(true);
+        const response = await adminUsersApi.list({
+          token,
+          page: 1,
+          limit: 50,
+          search: query.trim(),
+        });
+        const results = extractUsers(response?.data ?? null)
+          .filter(
+            (user) =>
+              user.id !== manageSponsorTargetUser.id &&
+              Boolean(String(user.sponsor_id ?? "").trim()),
+          )
+          .map((user) => ({
+            id: user.id,
+            name:
+              user.name?.trim() ||
+              `${user.first_name ?? ""} ${user.last_name ?? ""}`.trim() ||
+              user.username ||
+              user.email ||
+              `User ${user.id}`,
+            uuid: user.uuid,
+            email: user.email,
+          }));
+        setSponsorSearchResults(results);
+      } catch {
+        setSponsorSearchResults([]);
+      } finally {
+        setSponsorSearching(false);
+      }
+    },
+    [token, manageSponsorTargetUser],
+  );
 
   const createUserForm = useForm<AdminUserCreateFormData>({
     resolver: zodResolver(adminUserCreateSchema),
@@ -364,23 +478,38 @@ export default function NewUsersPage() {
     setSearchInput(search ?? "");
   }, [search]);
 
-  const setCountryValues = useCallback((countryName: string, mode: "create" | "edit") => {
-    const countryData = COUNTRIES.find((country) => country.name === countryName);
-    if (!countryData) return;
-    if (mode === "create") {
-      createUserForm.setValue("country", countryName, { shouldValidate: true });
-      createUserForm.setValue("country_code", countryData.code, { shouldValidate: true });
-    } else {
-      editUserForm.setValue("country", countryName, { shouldValidate: true });
-      editUserForm.setValue("country_code", countryData.code, { shouldValidate: true });
-    }
-  }, [createUserForm, editUserForm]);
+  const setCountryValues = useCallback(
+    (countryName: string, mode: "create" | "edit") => {
+      const countryData = COUNTRIES.find(
+        (country) => country.name === countryName,
+      );
+      if (!countryData) return;
+      if (mode === "create") {
+        createUserForm.setValue("country", countryName, {
+          shouldValidate: true,
+        });
+        createUserForm.setValue("country_code", countryData.code, {
+          shouldValidate: true,
+        });
+      } else {
+        editUserForm.setValue("country", countryName, { shouldValidate: true });
+        editUserForm.setValue("country_code", countryData.code, {
+          shouldValidate: true,
+        });
+      }
+    },
+    [createUserForm, editUserForm],
+  );
 
   const loadUsers = useCallback(async () => {
     if (!canViewUserList) {
       setUsers([]);
       setPaginationMeta(null);
-      setUserSummaryCounts({ newToday: null, activeCount: null, inactiveCount: null });
+      setUserSummaryCounts({
+        newToday: null,
+        activeCount: null,
+        inactiveCount: null,
+      });
       setLoadError(null);
       setLoading(false);
       return;
@@ -388,7 +517,11 @@ export default function NewUsersPage() {
     if (!token) {
       setUsers([]);
       setPaginationMeta(null);
-      setUserSummaryCounts({ newToday: null, activeCount: null, inactiveCount: null });
+      setUserSummaryCounts({
+        newToday: null,
+        activeCount: null,
+        inactiveCount: null,
+      });
       setLoading(false);
       return;
     }
@@ -411,69 +544,103 @@ export default function NewUsersPage() {
       const payload = response?.data ?? null;
       setUsers(extractUsers(payload));
       setUserSummaryCounts(extractUserSummaryCounts(payload));
-      setPaginationMeta(extractPagination(payload, response as { pagination?: PaginationMeta; data?: { pagination?: PaginationMeta } }) ?? null);
+      setPaginationMeta(
+        extractPagination(
+          payload,
+          response as {
+            pagination?: PaginationMeta;
+            data?: { pagination?: PaginationMeta };
+          },
+        ) ?? null,
+      );
     } catch (err) {
       console.error("Failed to load users:", err);
       setLoadError(err);
       toast.error(
-        getAdminFriendlyErrorMessage(err, { resource: "users", action: "load" })
+        getAdminFriendlyErrorMessage(err, {
+          resource: "users",
+          action: "load",
+        }),
       );
       setUsers([]);
       setPaginationMeta(null);
-      setUserSummaryCounts({ newToday: null, activeCount: null, inactiveCount: null });
+      setUserSummaryCounts({
+        newToday: null,
+        activeCount: null,
+        inactiveCount: null,
+      });
     } finally {
       setLoading(false);
     }
-  }, [token, page, perPage, search, statusFilter, sortBy, sortOrder, dateFrom, dateTo, canViewUserList]);
+  }, [
+    token,
+    page,
+    perPage,
+    search,
+    statusFilter,
+    sortBy,
+    sortOrder,
+    dateFrom,
+    dateTo,
+    canViewUserList,
+  ]);
 
   useEffect(() => {
     void loadUsers();
   }, [loadUsers]);
 
-  const handleExport = useCallback(async (formatType: "xlsx" | "csv") => {
-    if (!canViewUserList) {
-      toast.error("You do not have permission to export users");
-      return;
-    }
-    if (!token) {
-      toast.error("Authentication required to export data");
-      return;
-    }
-
-    const exportToastId = `users-export-${formatType}`;
-    try {
-      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
-
-      const { blob, filename } = await adminAllUsersReportApi.export({
-        token,
-        format: formatType,
-        search: search?.trim() ? search : undefined,
-        status: statusFilter !== "all" ? statusFilter : undefined,
-      });
-
-      if (!blob.size) {
-        toast.error("No data returned for export", { id: exportToastId });
+  const handleExport = useCallback(
+    async (formatType: "xlsx" | "csv") => {
+      if (!canViewUserList) {
+        toast.error("You do not have permission to export users");
+        return;
+      }
+      if (!token) {
+        toast.error("Authentication required to export data");
         return;
       }
 
-      const downloadUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(downloadUrl);
+      const exportToastId = `users-export-${formatType}`;
+      try {
+        toast.loading(`Preparing ${formatType.toUpperCase()} export...`, {
+          id: exportToastId,
+        });
 
-      toast.success(`Downloaded ${filename}`, { id: exportToastId });
-    } catch (err) {
-      console.error(`Failed to export ${formatType}:`, err);
-      toast.error(
-        getAdminFriendlyErrorMessage(err, { resource: "users", action: "export" }),
-        { id: exportToastId },
-      );
-    }
-  }, [canViewUserList, token, search, statusFilter]);
+        const { blob, filename } = await adminAllUsersReportApi.export({
+          token,
+          format: formatType,
+          search: search?.trim() ? search : undefined,
+          status: statusFilter !== "all" ? statusFilter : undefined,
+        });
+
+        if (!blob.size) {
+          toast.error("No data returned for export", { id: exportToastId });
+          return;
+        }
+
+        const downloadUrl = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = downloadUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(downloadUrl);
+
+        toast.success(`Downloaded ${filename}`, { id: exportToastId });
+      } catch (err) {
+        console.error(`Failed to export ${formatType}:`, err);
+        toast.error(
+          getAdminFriendlyErrorMessage(err, {
+            resource: "users",
+            action: "export",
+          }),
+          { id: exportToastId },
+        );
+      }
+    },
+    [canViewUserList, token, search, statusFilter],
+  );
 
   const handleCreate = async (values: AdminUserCreateFormData) => {
     if (!token) return;
@@ -481,57 +648,78 @@ export default function NewUsersPage() {
       setCreatingUser(true);
       const { confirm_password: _confirmPassword, ...rest } = values;
       const response = await adminUsersApi.create(rest, token);
-      toast.success((response as { message?: string })?.message || "User created successfully");
+      toast.success(
+        (response as { message?: string })?.message ||
+          "User created successfully",
+      );
       setCreateDialogOpen(false);
       createUserForm.reset(createInitialCreateFormState());
       await loadUsers();
     } catch (err) {
       console.error("Failed to create user:", err);
       toast.error(
-        getAdminFriendlyErrorMessage(err, { resource: "users", action: "create" })
+        getAdminFriendlyErrorMessage(err, {
+          resource: "users",
+          action: "create",
+        }),
       );
     } finally {
       setCreatingUser(false);
     }
   };
 
-  const handleEdit = useCallback(async (user: PendingUser) => {
-    if (!token) return;
-    try {
-      setLoadingUserDetails(true);
-      const response = await adminUsersApi.detail(user.id, token);
-      const detailUser = extractSingleUser(response?.data ?? null) ?? user;
-      setSelectedUser(detailUser);
-      editUserForm.reset({
-        first_name: detailUser.first_name ?? "",
-        last_name: detailUser.last_name ?? "",
-        email: detailUser.email ?? "",
-        mobile: detailUser.mobile ?? "",
-        country: detailUser.country ?? "",
-        country_code: detailUser.country_code ?? "",
-        password: "",
-        confirm_password: "",
-        referral_code: detailUser.referral_code ?? "",
-      });
-      setEditDialogOpen(true);
-    } catch (err) {
-      console.error("Failed to load user detail:", err);
-      toast.error(
-        getAdminFriendlyErrorMessage(err, { resource: "user details", action: "load" })
-      );
-    } finally {
-      setLoadingUserDetails(false);
-    }
-  }, [token, editUserForm]);
+  const handleEdit = useCallback(
+    async (user: PendingUser) => {
+      if (!token) return;
+      try {
+        setLoadingUserDetails(true);
+        const response = await adminUsersApi.detail(user.id, token);
+        const detailUser = extractSingleUser(response?.data ?? null) ?? user;
+        setSelectedUser(detailUser);
+        editUserForm.reset({
+          first_name: detailUser.first_name ?? "",
+          last_name: detailUser.last_name ?? "",
+          email: detailUser.email ?? "",
+          mobile: detailUser.mobile ?? "",
+          country: detailUser.country ?? "",
+          country_code: detailUser.country_code ?? "",
+          password: "",
+          confirm_password: "",
+          referral_code: detailUser.referral_code ?? "",
+        });
+        setEditDialogOpen(true);
+      } catch (err) {
+        console.error("Failed to load user detail:", err);
+        toast.error(
+          getAdminFriendlyErrorMessage(err, {
+            resource: "user details",
+            action: "load",
+          }),
+        );
+      } finally {
+        setLoadingUserDetails(false);
+      }
+    },
+    [token, editUserForm],
+  );
 
   const handleUpdate = async (values: UpdateUserFormData) => {
     if (!token || !selectedUser) return;
     try {
       setUpdatingUser(true);
       const { confirm_password: _confirmPassword, ...rest } = values;
-      const basePayload = rest.password ? rest : { ...rest, password: undefined };
-      const response = await adminUsersApi.update(selectedUser.id, basePayload, token);
-      toast.success((response as { message?: string })?.message || "User updated successfully");
+      const basePayload = rest.password
+        ? rest
+        : { ...rest, password: undefined };
+      const response = await adminUsersApi.update(
+        selectedUser.id,
+        basePayload,
+        token,
+      );
+      toast.success(
+        (response as { message?: string })?.message ||
+          "User updated successfully",
+      );
       setEditDialogOpen(false);
       setSelectedUser(null);
       editUserForm.reset(createInitialUpdateFormState());
@@ -539,7 +727,10 @@ export default function NewUsersPage() {
     } catch (err) {
       console.error("Failed to update user:", err);
       toast.error(
-        getAdminFriendlyErrorMessage(err, { resource: "users", action: "update" })
+        getAdminFriendlyErrorMessage(err, {
+          resource: "users",
+          action: "update",
+        }),
       );
     } finally {
       setUpdatingUser(false);
@@ -560,25 +751,38 @@ export default function NewUsersPage() {
     } catch (err) {
       console.error("Failed to delete user:", err);
       toast.error(
-        getAdminFriendlyErrorMessage(err, { resource: "users", action: "delete" })
+        getAdminFriendlyErrorMessage(err, {
+          resource: "users",
+          action: "delete",
+        }),
       );
     }
   }, [token, userToDelete, loadUsers]);
 
-  const handleToggleStatus = useCallback(async (user: PendingUser, newStatus: number) => {
-    if (!token) return;
-    try {
-      await adminUsersApi.updateStatus(user.id, newStatus, token);
-      toast.success(newStatus === 1 ? "User activated successfully" : "User deactivated successfully");
-      await loadUsers();
-    } catch (err) {
-      console.error("Failed to toggle user status:", err);
-      toast.error(
-        getAdminFriendlyErrorMessage(err, { resource: "user status", action: "update" })
-      );
-      throw err;
-    }
-  }, [token, loadUsers]);
+  const handleToggleStatus = useCallback(
+    async (user: PendingUser, newStatus: number) => {
+      if (!token) return;
+      try {
+        await adminUsersApi.updateStatus(user.id, newStatus, token);
+        toast.success(
+          newStatus === 1
+            ? "User activated successfully"
+            : "User deactivated successfully",
+        );
+        await loadUsers();
+      } catch (err) {
+        console.error("Failed to toggle user status:", err);
+        toast.error(
+          getAdminFriendlyErrorMessage(err, {
+            resource: "user status",
+            action: "update",
+          }),
+        );
+        throw err;
+      }
+    },
+    [token, loadUsers],
+  );
 
   const handlePromoteDialogOpen = useCallback((user: PendingUser) => {
     const hasSponsorId = Boolean(String(user.sponsor_id ?? "").trim());
@@ -620,14 +824,20 @@ export default function NewUsersPage() {
         token,
       );
 
-      toast.success((response as { message?: string })?.message || "Client has been successfully promoted to Partner");
+      toast.success(
+        (response as { message?: string })?.message ||
+          "Client has been successfully promoted to Partner",
+      );
       setPromoteDialogOpen(false);
       setPromoteTargetUser(null);
       await loadUsers();
     } catch (err) {
       console.error("Failed to promote user to Partner:", err);
       toast.error(
-        getAdminFriendlyErrorMessage(err, { resource: "Partner promotion", action: "create" })
+        getAdminFriendlyErrorMessage(err, {
+          resource: "Partner promotion",
+          action: "create",
+        }),
       );
     } finally {
       setPromoteSubmitting(false);
@@ -686,19 +896,36 @@ export default function NewUsersPage() {
     } catch (err) {
       console.error("Failed to update sponsor:", err);
       toast.error(
-        getAdminFriendlyErrorMessage(err, { resource: "sponsor", action: "update" })
+        getAdminFriendlyErrorMessage(err, {
+          resource: "sponsor",
+          action: "update",
+        }),
       );
     } finally {
       setManageSponsorSubmitting(false);
     }
-  }, [token, manageSponsorTargetUser, manageSponsorTab, selectedNewSponsorId, loadUsers]);
+  }, [
+    token,
+    manageSponsorTargetUser,
+    manageSponsorTab,
+    selectedNewSponsorId,
+    loadUsers,
+  ]);
 
   const totalUsers = paginationMeta?.total ?? users.length;
-  const activeUsersCount = userSummaryCounts.activeCount ?? users.filter((user) => user.status === "1").length;
-  const inactiveUsersCount = userSummaryCounts.inactiveCount ?? users.filter((user) => user.status !== "1").length;
+  const activeUsersCount =
+    userSummaryCounts.activeCount ??
+    users.filter((user) => user.status === "1").length;
+  const inactiveUsersCount =
+    userSummaryCounts.inactiveCount ??
+    users.filter((user) => user.status !== "1").length;
   const newTodayCount =
     userSummaryCounts.newToday ??
-    users.filter((user) => user.created_at && new Date(user.created_at).toDateString() === new Date().toDateString()).length;
+    users.filter(
+      (user) =>
+        user.created_at &&
+        new Date(user.created_at).toDateString() === new Date().toDateString(),
+    ).length;
   const totalPages =
     paginationMeta?.total_pages ??
     paginationMeta?.last_page ??
@@ -724,7 +951,20 @@ export default function NewUsersPage() {
         },
         token,
       ),
-    [handleEdit, handleDelete, handleToggleStatus, handlePromoteDialogOpen, handleManageSponsorOpen, promotingUserIds, canEditUser, canDeleteUser, canPromoteToIb, canViewUser, showActionsColumn, token],
+    [
+      handleEdit,
+      handleDelete,
+      handleToggleStatus,
+      handlePromoteDialogOpen,
+      handleManageSponsorOpen,
+      promotingUserIds,
+      canEditUser,
+      canDeleteUser,
+      canPromoteToIb,
+      canViewUser,
+      showActionsColumn,
+      token,
+    ],
   );
 
   if (!canViewUserList && !canAddUser) {
@@ -787,10 +1027,14 @@ export default function NewUsersPage() {
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => void handleExport("xlsx")}>
+                      <DropdownMenuItem
+                        onClick={() => void handleExport("xlsx")}
+                      >
                         Export Excel (.xlsx)
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => void handleExport("csv")}>
+                      <DropdownMenuItem
+                        onClick={() => void handleExport("csv")}
+                      >
                         Export CSV (.csv)
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -802,8 +1046,14 @@ export default function NewUsersPage() {
                     Create User
                   </Button>
                 ) : null}
-                <Button variant="outline" onClick={() => void loadUsers()} disabled={loading}>
-                  <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                <Button
+                  variant="outline"
+                  onClick={() => void loadUsers()}
+                  disabled={loading}
+                >
+                  <RefreshCw
+                    className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
+                  />
                   Refresh
                 </Button>
               </div>
@@ -812,28 +1062,42 @@ export default function NewUsersPage() {
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Users</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Total Users
+                  </CardTitle>
                   <Users className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
-                <CardContent><div className="text-2xl font-bold">{totalUsers}</div></CardContent>
+                <CardContent>
+                  <div className="text-2xl font-bold">{totalUsers}</div>
+                </CardContent>
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Users</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Active Users
+                  </CardTitle>
                   <ShieldPlus className="h-4 w-4 text-green-600" />
                 </CardHeader>
-                <CardContent><div className="text-2xl font-bold">{activeUsersCount}</div></CardContent>
+                <CardContent>
+                  <div className="text-2xl font-bold">{activeUsersCount}</div>
+                </CardContent>
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Inactive Users</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    Inactive Users
+                  </CardTitle>
                   <ShieldMinus className="h-4 w-4 text-blue-600" />
                 </CardHeader>
-                <CardContent><div className="text-2xl font-bold">{inactiveUsersCount}</div></CardContent>
+                <CardContent>
+                  <div className="text-2xl font-bold">{inactiveUsersCount}</div>
+                </CardContent>
               </Card>
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">New Today</CardTitle>
+                  <CardTitle className="text-sm font-medium">
+                    New Today
+                  </CardTitle>
                   <Calendar className="h-4 w-4 text-orange-600" />
                 </CardHeader>
                 <CardContent>
@@ -843,18 +1107,18 @@ export default function NewUsersPage() {
             </div>
 
             <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-3 md:flex-row md:items-center md:flex-wrap">
-              <ApiSearchBar
-                value={searchInput}
-                onChange={setSearchInput}
-                onSearch={(value) => {
-                  void setSearch(value || null);
-                  void setPage(1);
-                }}
-                placeholder="Search by name, email, or mobile"
-                minimumLength={3}
-                delay={300}
-              />
+              <div className="flex flex-col gap-3 md:flex-row md:items-end md:flex-wrap">
+                <ApiSearchBar
+                  value={searchInput}
+                  onChange={setSearchInput}
+                  onSearch={(value) => {
+                    void setSearch(value || null);
+                    void setPage(1);
+                  }}
+                  placeholder="Search by name, email, or mobile"
+                  minimumLength={3}
+                  delay={300}
+                />
                 <Select
                   value={statusFilter ?? "all"}
                   onValueChange={(value) => {
@@ -873,31 +1137,27 @@ export default function NewUsersPage() {
                     ))}
                   </SelectContent>
                 </Select>
-                
-                <Input
-                  type="date"
-                  value={dateFrom ?? ""}
-                  onChange={(e) => {
-                    void setDateFrom(e.target.value || null);
+
+                <DateRangePicker
+                  fromDate={fromDateObj}
+                  toDate={toDateObj}
+                  onFromDateChange={(date) => {
+                    setFromDateObj(date);
+                    void setDateFrom(date ? format(date, "yyyy-MM-dd") : null);
                     void setPage(1);
                   }}
-                  placeholder="From Date"
-                  className="h-9 w-[160px] text-sm"
-                />
-                
-                <Input
-                  type="date"
-                  value={dateTo ?? ""}
-                  onChange={(e) => {
-                    void setDateTo(e.target.value || null);
+                  onToDateChange={(date) => {
+                    setToDateObj(date);
+                    void setDateTo(date ? format(date, "yyyy-MM-dd") : null);
                     void setPage(1);
                   }}
-                  placeholder="To Date"
-                  className="h-9 w-[160px] text-sm"
                 />
               </div>
               <div className="text-sm text-muted-foreground">
-                Page {paginationMeta?.current_page ?? paginationMeta?.page ?? page} of {Math.max(1, totalPages)} - {perPage} users per page - {totalUsers} total users
+                Page{" "}
+                {paginationMeta?.current_page ?? paginationMeta?.page ?? page}{" "}
+                of {Math.max(1, totalPages)} - {perPage} users per page -{" "}
+                {totalUsers} total users
               </div>
             </div>
 
@@ -915,7 +1175,8 @@ export default function NewUsersPage() {
                 )
               ) : (
                 <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-                  You can add users, but your account is not allowed to view the user list.
+                  You can add users, but your account is not allowed to view the
+                  user list.
                 </div>
               )}
             </div>
@@ -996,13 +1257,16 @@ export default function NewUsersPage() {
             <DialogHeader>
               <DialogTitle>Manage Parent</DialogTitle>
               <DialogDescription>
-                Update or remove parent for {manageSponsorTargetUser?.name || "this client"}.
+                Update or remove parent for{" "}
+                {manageSponsorTargetUser?.name || "this client"}.
               </DialogDescription>
             </DialogHeader>
 
             <Tabs
               value={manageSponsorTab}
-              onValueChange={(value) => setManageSponsorTab(value as "transfer" | "remove")}
+              onValueChange={(value) =>
+                setManageSponsorTab(value as "transfer" | "remove")
+              }
               className="space-y-4"
             >
               <TabsList className="grid w-full grid-cols-2">
@@ -1024,10 +1288,16 @@ export default function NewUsersPage() {
                     delay={300}
                   />
                   {sponsorSearching ? (
-                    <p className="text-xs text-muted-foreground">Searching...</p>
+                    <p className="text-xs text-muted-foreground">
+                      Searching...
+                    </p>
                   ) : null}
-                  {!sponsorSearching && sponsorSearchQuery.length >= 3 && sponsorSearchResults.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">No parent users found.</p>
+                  {!sponsorSearching &&
+                  sponsorSearchQuery.length >= 3 &&
+                  sponsorSearchResults.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      No parent users found.
+                    </p>
                   ) : null}
                   {sponsorSearchResults.length > 0 ? (
                     <div className="max-h-48 overflow-auto rounded-md border">
@@ -1036,15 +1306,21 @@ export default function NewUsersPage() {
                           key={option.id}
                           type="button"
                           className={`w-full px-3 py-2 text-left text-sm hover:bg-accent ${
-                            selectedNewSponsorId === String(option.id) ? "bg-accent font-medium" : ""
+                            selectedNewSponsorId === String(option.id)
+                              ? "bg-accent font-medium"
+                              : ""
                           }`}
-                          onClick={() => setSelectedNewSponsorId(String(option.id))}
+                          onClick={() =>
+                            setSelectedNewSponsorId(String(option.id))
+                          }
                         >
                           <div>
                             <p className="font-medium">{option.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {option.uuid ? `UUID: ${option.uuid}` : `ID: ${option.id}`}
-                              {option.email ? ` • ${option.email}` : ''}
+                              {option.uuid
+                                ? `UUID: ${option.uuid}`
+                                : `ID: ${option.id}`}
+                              {option.email ? ` • ${option.email}` : ""}
                             </p>
                           </div>
                         </button>
@@ -1053,7 +1329,10 @@ export default function NewUsersPage() {
                   ) : null}
                   {selectedNewSponsorId ? (
                     <p className="text-xs text-muted-foreground">
-                      Selected: {sponsorSearchResults.find((o) => String(o.id) === selectedNewSponsorId)?.name ?? `Sponsor #${selectedNewSponsorId}`}
+                      Selected:{" "}
+                      {sponsorSearchResults.find(
+                        (o) => String(o.id) === selectedNewSponsorId,
+                      )?.name ?? `Sponsor #${selectedNewSponsorId}`}
                     </p>
                   ) : null}
                 </div>
@@ -1061,7 +1340,8 @@ export default function NewUsersPage() {
 
               <TabsContent value="remove" className="space-y-3">
                 <p className="text-sm text-muted-foreground">
-                  This will remove the current parent and keep this client out of partner tree structure.
+                  This will remove the current parent and keep this client out
+                  of partner tree structure.
                 </p>
               </TabsContent>
             </Tabs>
@@ -1085,7 +1365,10 @@ export default function NewUsersPage() {
               <Button
                 type="button"
                 onClick={() => void handleManageSponsorSubmit()}
-                disabled={manageSponsorSubmitting || (manageSponsorTab === "transfer" && !selectedNewSponsorId)}
+                disabled={
+                  manageSponsorSubmitting ||
+                  (manageSponsorTab === "transfer" && !selectedNewSponsorId)
+                }
               >
                 {manageSponsorSubmitting
                   ? manageSponsorTab === "transfer"
@@ -1112,7 +1395,9 @@ export default function NewUsersPage() {
             <DialogHeader>
               <DialogTitle>Promote to Partner</DialogTitle>
               <DialogDescription>
-                This action will promote {promoteTargetUser?.name || "this user"} to a Partner. Please confirm the details before proceeding.
+                This action will promote{" "}
+                {promoteTargetUser?.name || "this user"} to a Partner. Please
+                confirm the details before proceeding.
               </DialogDescription>
             </DialogHeader>
 

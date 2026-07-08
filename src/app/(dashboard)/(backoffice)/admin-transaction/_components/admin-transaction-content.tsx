@@ -19,11 +19,13 @@ import {
   ChevronDown,
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { format, parse } from "date-fns";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import {
   Select,
   SelectContent,
@@ -90,6 +92,29 @@ export function AdminTransactionContent() {
   const [dateTo, setDateTo] = useQueryState("date_to", parseAsString);
   const [sortBy, setSortBy] = useQueryState("sort_by", parseAsString.withDefault("created_at"));
   const [sortOrder, setSortOrder] = useQueryState("sort_order", parseAsString.withDefault("desc"));
+
+  // Date state for DateRangePicker
+  const [fromDateObj, setFromDateObj] = useState<Date | undefined>(undefined);
+  const [toDateObj, setToDateObj] = useState<Date | undefined>(undefined);
+
+  // Sync date objects with query params
+  useEffect(() => {
+    if (dateFrom) {
+      const parsed = parse(dateFrom, "yyyy-MM-dd", new Date());
+      if (!isNaN(parsed.getTime())) setFromDateObj(parsed);
+    } else {
+      setFromDateObj(undefined);
+    }
+  }, [dateFrom]);
+
+  useEffect(() => {
+    if (dateTo) {
+      const parsed = parse(dateTo, "yyyy-MM-dd", new Date());
+      if (!isNaN(parsed.getTime())) setToDateObj(parsed);
+    } else {
+      setToDateObj(undefined);
+    }
+  }, [dateTo]);
 
   const [depositDialogOpen, setDepositDialogOpen] = useState(false);
   const [withdrawalDialogOpen, setWithdrawalDialogOpen] = useState(false);
@@ -481,7 +506,7 @@ export function AdminTransactionContent() {
 
       {/* Filters */}
       <div className="rounded-lg border bg-card p-5">
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-end gap-3">
           <ApiSearchBar
             value={searchInput}
             onChange={setSearchInput}
@@ -530,25 +555,19 @@ export function AdminTransactionContent() {
               <SelectItem value="cancelled">Cancelled</SelectItem>
             </SelectContent>
           </Select>
-          <Input
-            type="date"
-            value={dateFrom ?? ""}
-            onChange={(e) => {
-              setDateFrom(e.target.value || null);
+          <DateRangePicker
+            fromDate={fromDateObj}
+            toDate={toDateObj}
+            onFromDateChange={(date) => {
+              setFromDateObj(date);
+              setDateFrom(date ? format(date, "yyyy-MM-dd") : null);
               setPage(1);
             }}
-            placeholder="From Date"
-            className="h-10 w-[160px]"
-          />
-          <Input
-            type="date"
-            value={dateTo ?? ""}
-            onChange={(e) => {
-              setDateTo(e.target.value || null);
+            onToDateChange={(date) => {
+              setToDateObj(date);
+              setDateTo(date ? format(date, "yyyy-MM-dd") : null);
               setPage(1);
             }}
-            placeholder="To Date"
-            className="h-10 w-[160px]"
           />
         </div>
       </div>

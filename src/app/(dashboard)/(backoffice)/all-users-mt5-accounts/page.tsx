@@ -10,6 +10,7 @@ import {
   Download,
   RefreshCw,
 } from "lucide-react";
+import { format, parse } from "date-fns";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
@@ -23,6 +24,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/auth-context";
@@ -173,6 +175,29 @@ export default function AllUsersMT5AccountsPage() {
   const [sortOrder, setSortOrder] = useQueryState("sort_order", parseAsString);
   const [dateFrom, setDateFrom] = useQueryState("date_from", parseAsString);
   const [dateTo, setDateTo] = useQueryState("date_to", parseAsString);
+
+  // Date state for DateRangePicker
+  const [fromDateObj, setFromDateObj] = useState<Date | undefined>(undefined);
+  const [toDateObj, setToDateObj] = useState<Date | undefined>(undefined);
+
+  // Sync date objects with query params
+  useEffect(() => {
+    if (dateFrom) {
+      const parsed = parse(dateFrom, "yyyy-MM-dd", new Date());
+      if (!isNaN(parsed.getTime())) setFromDateObj(parsed);
+    } else {
+      setFromDateObj(undefined);
+    }
+  }, [dateFrom]);
+
+  useEffect(() => {
+    if (dateTo) {
+      const parsed = parse(dateTo, "yyyy-MM-dd", new Date());
+      if (!isNaN(parsed.getTime())) setToDateObj(parsed);
+    } else {
+      setToDateObj(undefined);
+    }
+  }, [dateTo]);
 
   const [searchInput, setSearchInput] = useState(search ?? "");
 
@@ -602,7 +627,7 @@ export default function AllUsersMT5AccountsPage() {
 
           <div className="flex flex-col gap-3">
             {/* Search and Filters Row */}
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:flex-wrap">
+            <div className="flex flex-col gap-3 md:flex-row md:items-end md:flex-wrap">
               <ApiSearchBar
                 value={searchInput}
                 onChange={setSearchInput}
@@ -650,26 +675,19 @@ export default function AllUsersMT5AccountsPage() {
                 </TabsList>
               </Tabs>
               
-              <Input
-                type="date"
-                value={dateFrom ?? ""}
-                onChange={(e) => {
-                  void setDateFrom(e.target.value || null);
+              <DateRangePicker
+                fromDate={fromDateObj}
+                toDate={toDateObj}
+                onFromDateChange={(date) => {
+                  setFromDateObj(date);
+                  void setDateFrom(date ? format(date, "yyyy-MM-dd") : null);
                   void setPage(1);
                 }}
-                placeholder="From Date"
-                className="h-9 w-[160px] text-sm"
-              />
-              
-              <Input
-                type="date"
-                value={dateTo ?? ""}
-                onChange={(e) => {
-                  void setDateTo(e.target.value || null);
+                onToDateChange={(date) => {
+                  setToDateObj(date);
+                  void setDateTo(date ? format(date, "yyyy-MM-dd") : null);
                   void setPage(1);
                 }}
-                placeholder="To Date"
-                className="h-9 w-[160px] text-sm"
               />
             </div>
 
