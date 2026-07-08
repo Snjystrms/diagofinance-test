@@ -680,44 +680,12 @@ export default function IbClientsPage() {
         title="Partner activity ledger"
         description="Filter and review client-side trading and rebate records."
       >
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabType)} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabType)} className="space-y-6">
           <TabsList className="grid h-auto w-full grid-cols-1 sm:grid-cols-3 rounded-2xl bg-muted/40 p-1">
             <TabsTrigger value="clients">Clients</TabsTrigger>
             <TabsTrigger value="sub-ibs">Sub Partners</TabsTrigger>
             <TabsTrigger value="rebates">Rebates</TabsTrigger>
           </TabsList>
-
-          {/* Date Filters */}
-          <div className="flex flex-wrap items-center gap-4 rounded-[20px] border border-border/60 bg-muted/20 p-4">
-            <DateRangePicker
-              fromDate={fromDateObj}
-              toDate={toDateObj}
-              onFromDateChange={(date) => {
-                setFromDateObj(date);
-                setPage(1);
-                setFromDate(date ? format(date, "yyyy-MM-dd") : null);
-              }}
-              onToDateChange={(date) => {
-                setToDateObj(date);
-                setPage(1);
-                setToDate(date ? format(date, "yyyy-MM-dd") : null);
-              }}
-            />
-            {(fromDate || toDate) && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setPage(1);
-                  setFromDate(null);
-                  setToDate(null);
-                }}
-                className="h-9 text-muted-foreground hover:text-foreground text-xs font-medium"
-              >
-                Clear Dates
-              </Button>
-            )}
-          </div>
 
           {/* Error state */}
           {!!currentError && (
@@ -733,13 +701,46 @@ export default function IbClientsPage() {
 
           {/* ── Clients ── */}
           <TabsContent value="clients" className="space-y-5">
-            <TabSearchBar
-              inputValue={clientsSearch.input}
-              onInputChange={(v) => setClientsSearch((s) => ({ ...s, input: v }))}
-              onSearch={() => handleSearchForTab("clients")}
-              onClear={() => handleClearSearchForTab("clients")}
-              isLoading={clientsLoading}
-            />
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <TabSearchBar
+                inputValue={clientsSearch.input}
+                onInputChange={(v) => setClientsSearch((s) => ({ ...s, input: v }))}
+                onSearch={() => handleSearchForTab("clients")}
+                onClear={() => handleClearSearchForTab("clients")}
+                isLoading={clientsLoading}
+              />
+              {/* Date Filters */}
+              <div className="flex flex-wrap items-center gap-3 lg:ml-auto">
+                <DateRangePicker
+                  fromDate={fromDateObj}
+                  toDate={toDateObj}
+                  onFromDateChange={(date) => {
+                    setFromDateObj(date);
+                    setPage(1);
+                    setFromDate(date ? format(date, "yyyy-MM-dd") : null);
+                  }}
+                  onToDateChange={(date) => {
+                    setToDateObj(date);
+                    setPage(1);
+                    setToDate(date ? format(date, "yyyy-MM-dd") : null);
+                  }}
+                />
+                {(fromDate || toDate) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setPage(1);
+                      setFromDate(null);
+                      setToDate(null);
+                    }}
+                    className="h-9 text-muted-foreground hover:text-foreground text-xs font-medium"
+                  >
+                    Clear Dates
+                  </Button>
+                )}
+              </div>
+            </div>
             {clientsLoading && clients.length === 0 ? <TableSkeleton /> :
              clients.length > 0 ? (
               <>
@@ -757,13 +758,46 @@ export default function IbClientsPage() {
 
           {/* ── Sub IBs ── */}
           <TabsContent value="sub-ibs" className="space-y-5">
-            <TabSearchBar
-              inputValue={subIbsSearch.input}
-              onInputChange={(v) => setSubIbsSearch((s) => ({ ...s, input: v }))}
-              onSearch={() => handleSearchForTab("sub-ibs")}
-              onClear={() => handleClearSearchForTab("sub-ibs")}
-              isLoading={subIbsLoading}
-            />
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <TabSearchBar
+                inputValue={subIbsSearch.input}
+                onInputChange={(v) => setSubIbsSearch((s) => ({ ...s, input: v }))}
+                onSearch={() => handleSearchForTab("sub-ibs")}
+                onClear={() => handleClearSearchForTab("sub-ibs")}
+                isLoading={subIbsLoading}
+              />
+              {/* Date Filters */}
+              <div className="flex flex-wrap items-center gap-3 lg:ml-auto">
+                <DateRangePicker
+                  fromDate={fromDateObj}
+                  toDate={toDateObj}
+                  onFromDateChange={(date) => {
+                    setFromDateObj(date);
+                    setPage(1);
+                    setFromDate(date ? format(date, "yyyy-MM-dd") : null);
+                  }}
+                  onToDateChange={(date) => {
+                    setToDateObj(date);
+                    setPage(1);
+                    setToDate(date ? format(date, "yyyy-MM-dd") : null);
+                  }}
+                />
+                {(fromDate || toDate) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setPage(1);
+                      setFromDate(null);
+                      setToDate(null);
+                    }}
+                    className="h-9 text-muted-foreground hover:text-foreground text-xs font-medium"
+                  >
+                    Clear Dates
+                  </Button>
+                )}
+              </div>
+            </div>
             {subIbsLoading && subIbs.length === 0 ? <TableSkeleton /> :
              subIbs.length > 0 ? (
               <>
@@ -781,13 +815,46 @@ export default function IbClientsPage() {
 
           {/* ── Rebates ── */}
           <TabsContent value="rebates" className="space-y-5">
-            <TabSearchBar
-              inputValue={rebatesSearch.input}
-              onInputChange={(v) => setRebatesSearch((s) => ({ ...s, input: v }))}
-              onSearch={() => handleSearchForTab("rebates")}
-              onClear={() => handleClearSearchForTab("rebates")}
-              isLoading={rebatesLoading}
-            />
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <TabSearchBar
+                inputValue={rebatesSearch.input}
+                onInputChange={(v) => setRebatesSearch((s) => ({ ...s, input: v }))}
+                onSearch={() => handleSearchForTab("rebates")}
+                onClear={() => handleClearSearchForTab("rebates")}
+                isLoading={rebatesLoading}
+              />
+              {/* Date Filters */}
+              <div className="flex flex-wrap items-center gap-3 lg:ml-auto">
+                <DateRangePicker
+                  fromDate={fromDateObj}
+                  toDate={toDateObj}
+                  onFromDateChange={(date) => {
+                    setFromDateObj(date);
+                    setPage(1);
+                    setFromDate(date ? format(date, "yyyy-MM-dd") : null);
+                  }}
+                  onToDateChange={(date) => {
+                    setToDateObj(date);
+                    setPage(1);
+                    setToDate(date ? format(date, "yyyy-MM-dd") : null);
+                  }}
+                />
+                {(fromDate || toDate) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      setPage(1);
+                      setFromDate(null);
+                      setToDate(null);
+                    }}
+                    className="h-9 text-muted-foreground hover:text-foreground text-xs font-medium"
+                  >
+                    Clear Dates
+                  </Button>
+                )}
+              </div>
+            </div>
             {rebatesLoading && rebates.length === 0 ? <TableSkeleton /> :
              rebates.length > 0 ? (
               <>

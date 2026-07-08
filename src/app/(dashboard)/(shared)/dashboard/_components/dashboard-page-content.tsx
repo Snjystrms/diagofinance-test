@@ -1904,8 +1904,8 @@ export function DashboardPageContent() {
                     {/* Wallet Balance Card - Enhanced */}
                     <Card
                       ref={walletCardRef}
-                      onClick={() => router.push("/my-wallet/wallet-overview")}
-                      className={`sm:col-span-1 lg:col-span-1 relative overflow-hidden shadow-2xl rounded-[28px] hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group cursor-pointer ib-portal-surface ib-portal-surface-primary ${effectiveTheme ? "text-foreground" : "text-primary-foreground"}`}
+                      // onClick={() => router.push("/my-wallet/wallet-overview")}
+                      className={`sm:col-span-1 lg:col-span-1 relative overflow-hidden border-none shadow-2xl rounded-3xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group cursor-pointer ${effectiveTheme ? "text-foreground bg-card" : "text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent"}`}
                     >
                       {effectiveTheme ? (
                         <div className="bull-theme-overlay bull-theme-wallet-overlay" />

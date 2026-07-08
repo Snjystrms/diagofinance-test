@@ -287,6 +287,8 @@ const columns: ColumnDef<DepositListItem>[] = [
         </div>
       )
     },
+    enableColumnFilter: false,
+    enableSorting: false,
   },
   {
     id: 'status',
@@ -298,6 +300,8 @@ const columns: ColumnDef<DepositListItem>[] = [
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id))
     },
+    enableColumnFilter: false,
+    enableSorting: false,
   },
   {
     id: 'paymentMethod',
@@ -308,6 +312,8 @@ const columns: ColumnDef<DepositListItem>[] = [
     cell: ({ row }) => (
       <Badge variant="outline">{row.original.paymentMethod?.name || row.original.paymentMethod?.type || 'N/A'}</Badge>
     ),
+    enableColumnFilter: false,
+    enableSorting: false,
   },
   {
     id: 'source',
@@ -319,6 +325,8 @@ const columns: ColumnDef<DepositListItem>[] = [
     cell: ({ row }) => (
       <span className="text-sm capitalize">{row.original.source?.replace(/_/g, ' ') || '-'}</span>
     ),
+    enableColumnFilter: false,
+    enableSorting: false,
   },
   {
     id: 'transaction_hash',
@@ -328,6 +336,8 @@ const columns: ColumnDef<DepositListItem>[] = [
       <DataTableColumnHeader column={column} title="Transaction Hash" />
     ),
     cell: ({ row }) => <TransactionHashCell hash={row.original.transaction_hash} />,
+    enableColumnFilter: false,
+    enableSorting: false,
   },
   {
     id: 'file',
@@ -339,6 +349,8 @@ const columns: ColumnDef<DepositListItem>[] = [
     cell: ({ row }) => (
       <PaymentProofDialog paymentProofUrl={row.original.file} />
     ),
+    enableColumnFilter: false,
+    enableSorting: false,
   },
   {
     id: 'admin_comment',
@@ -348,6 +360,8 @@ const columns: ColumnDef<DepositListItem>[] = [
       <DataTableColumnHeader column={column} title="Admin Notes" />
     ),
     cell: ({ row }) => <AdminNotesCell notes={row.original.admin_comment} />,
+    enableColumnFilter: false,
+    enableSorting: false,
   },
   {
     id: 'created_at',
@@ -363,6 +377,8 @@ const columns: ColumnDef<DepositListItem>[] = [
         </span>
       </div>
     ),
+    enableColumnFilter: false,
+    enableSorting: false,
   },
 ]
 

@@ -358,7 +358,9 @@ const createColumns = (token: string | null): ColumnDef<WithdrawalItem>[] => [
           maximumFractionDigits: 8 
         })}</span>
       </div>
-    ),
+    ), 
+    enableColumnFilter: false,
+    enableSorting: false,
   },
   {
     id: 'status',
@@ -370,6 +372,8 @@ const createColumns = (token: string | null): ColumnDef<WithdrawalItem>[] => [
     filterFn: (row, id, value) => {
       return value.includes(row.getValue(id))
     },
+    enableColumnFilter: false,
+    enableSorting: false,
   },
    {
     id: 'payment_method_name',
@@ -385,6 +389,8 @@ const createColumns = (token: string | null): ColumnDef<WithdrawalItem>[] => [
         </span>
       </div>
     ),
+    enableColumnFilter: false,
+    enableSorting: false,
   },
   {
     id: 'destination_info',
@@ -404,6 +410,8 @@ const createColumns = (token: string | null): ColumnDef<WithdrawalItem>[] => [
       }
       return <span className="text-muted-foreground text-sm">N/A</span>
     },
+    enableColumnFilter: false,
+    enableSorting: false,
   },
   {
     id: 'account_info',
@@ -423,6 +431,8 @@ const createColumns = (token: string | null): ColumnDef<WithdrawalItem>[] => [
       }
       return <span className="text-muted-foreground text-sm">-</span>
     },
+    enableColumnFilter: false,
+    enableSorting: false,
   },
   {
     id: 'created_at',
@@ -438,6 +448,8 @@ const createColumns = (token: string | null): ColumnDef<WithdrawalItem>[] => [
         </span>
       </div>
     ),
+    enableColumnFilter: false,
+    enableSorting: false,
   },
 ]
 

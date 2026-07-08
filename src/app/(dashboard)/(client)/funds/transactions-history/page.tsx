@@ -415,7 +415,7 @@ export default function TransactionsHistoryPage() {
   </div>
 
   {/* Row 2: All filters — wraps naturally */}
-  <div className="flex flex-wrap gap-x-4 gap-y-3 items-center">
+  <div className="flex flex-wrap gap-x-4 gap-y-3 items-end">
 
     {/* Transaction Type */}
     <div className="flex items-center gap-2">
