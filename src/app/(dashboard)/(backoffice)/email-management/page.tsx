@@ -372,31 +372,39 @@ export default function EmailManagementPage() {
           </Button>
         </div>
       </div>
-
-      <Tabs
-        value={activeTab}
-        onValueChange={(v) => setActiveTab(v as "broadcast" | "history" | "exclusions")}
-        className="space-y-6"
-      >
-        <TabsList className="grid w-full max-w-md grid-cols-3">
-          <TabsTrigger value="broadcast" className="gap-2">
-            <Send className="h-3.5 w-3.5" />
-            Broadcast
-          </TabsTrigger>
-          <TabsTrigger value="history" className="gap-2">
-            <Clock className="h-3.5 w-3.5" />
-            History
-          </TabsTrigger>
-          <TabsTrigger value="exclusions" className="gap-2">
-            <Ban className="h-3.5 w-3.5" />
-            Exclusions
-            {exclusions.length > 0 && (
-              <span className="ml-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                {exclusions.length}
-              </span>
-            )}
-          </TabsTrigger>
-        </TabsList>
+     <Tabs
+  value={activeTab}
+  onValueChange={(v) => setActiveTab(v as "broadcast" | "history" | "exclusions")}
+  className="space-y-6"
+>
+  <TabsList className="grid w-full max-w-md grid-cols-3 h-11 p-1 gap-1 rounded-lg">
+    <TabsTrigger
+      value="broadcast"
+      className="flex items-center justify-center gap-1.5 min-w-0 h-full rounded-md data-[state=active]:shadow-sm"
+    >
+      <Send className="h-3.5 w-3.5 shrink-0" />
+      <span className="truncate">Broadcast</span>
+    </TabsTrigger>
+    <TabsTrigger
+      value="history"
+      className="flex items-center justify-center gap-1.5 min-w-0 h-full rounded-md data-[state=active]:shadow-sm"
+    >
+      <Clock className="h-3.5 w-3.5 shrink-0" />
+      <span className="truncate">History</span>
+    </TabsTrigger>
+    <TabsTrigger
+      value="exclusions"
+      className="flex items-center justify-center gap-1.5 min-w-0 h-full rounded-md data-[state=active]:shadow-sm"
+    >
+      <Ban className="h-3.5 w-3.5 shrink-0" />
+      <span className="truncate">Exclusions</span>
+      {exclusions.length > 0 && (
+        <span className="ml-0.5 shrink-0 rounded-full bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+          {exclusions.length}
+        </span>
+      )}
+    </TabsTrigger>
+</TabsList>
 
         <TabsContent value="broadcast" className="m-0">
           <div className="grid gap-6 lg:grid-cols-3">

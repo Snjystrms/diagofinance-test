@@ -98,6 +98,23 @@ export function IbDashboardSidebar() {
       "linear-gradient(135deg, color-mix(in srgb, var(--sidebar-primary) 86%, white 14%) 0%, color-mix(in srgb, var(--accent) 62%, var(--sidebar-primary) 38%) 100%)",
   }
 
+  const activeCardStyle = {
+    backgroundImage:
+      "linear-gradient(160deg, color-mix(in srgb, var(--sidebar-primary) 18%, transparent) 0%, color-mix(in srgb, var(--sidebar-primary) 5%, transparent) 100%)",
+    borderColor: "color-mix(in srgb, var(--sidebar-primary) 45%, transparent)",
+    boxShadow: "0 6px 18px -8px color-mix(in srgb, var(--sidebar-primary) 55%, transparent)",
+  }
+
+  const activeIconStyle = {
+    backgroundImage:
+      "linear-gradient(135deg, var(--sidebar-primary) 0%, color-mix(in srgb, var(--sidebar-primary) 65%, white 35%) 100%)",
+    boxShadow: "0 4px 12px -2px color-mix(in srgb, var(--sidebar-primary) 60%, transparent)",
+  }
+
+  const walletGlow = {
+    backgroundColor: "color-mix(in srgb, var(--sidebar-primary) 32%, transparent)",
+  }
+
   const isActive = (path: string) =>
     path === "/ib-dashboard"
       ? pathname === "/ib-dashboard" || (pathname?.startsWith("/ib-dashboard") && pathname.split("/").length === 2)
@@ -116,13 +133,13 @@ export function IbDashboardSidebar() {
     return (
       <div className="flex h-full flex-col items-center gap-3 bg-sidebar px-2.5 py-5 text-sidebar-foreground">
         {/* Avatar only — logo hidden in collapsed state */}
-        <Avatar className="h-10 w-10 border border-sidebar-border shadow-sm mb-1">
+        <Avatar className="h-10 w-10 border-2 border-sidebar-border shadow-md ring-2 ring-sidebar-primary/10 mb-1">
           <AvatarFallback className="text-sidebar-primary-foreground text-xs font-bold" style={avatarGradient}>
             {getInitials(userName)}
           </AvatarFallback>
         </Avatar>
 
-        <div className="w-full h-px bg-sidebar-border/50 my-1" />
+        <div className="w-full h-px bg-gradient-to-r from-transparent via-sidebar-border to-transparent my-1" />
 
         <div className="flex flex-col items-center gap-2 w-full">
           {navItems.map((item) => {
@@ -132,10 +149,11 @@ export function IbDashboardSidebar() {
               <button
                 key={item.path}
                 onClick={() => { handleMobileNav(); router.push(item.path) }}
+                style={active ? activeCardStyle : undefined}
                 className={cn(
                   "w-full flex items-center justify-center rounded-2xl border p-2.5 transition-all duration-200",
                   active
-                    ? "border-sidebar-primary/30 bg-sidebar-primary/10 text-sidebar-primary"
+                    ? "text-sidebar-primary"
                     : "border-transparent bg-sidebar-accent/40 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                 )}
                 title={item.label}
@@ -173,7 +191,7 @@ export function IbDashboardSidebar() {
       {/* ── Hero ── */}
       <div className="ib-sidebar-hero relative px-5 pt-6 pb-5 space-y-4">
 
-        <div className="flex items-center gap-3 rounded-2xl border border-sidebar-border/60 px-3 py-2 ib-portal-hero">
+        <div className="flex items-center gap-3 rounded-2xl border border-sidebar-border/60 px-3 py-2 shadow-sm ib-portal-hero">
           <div className="relative h-10 w-10 shrink-0">
             <Image
               src="/vinnexia-logo.svg"
@@ -208,7 +226,7 @@ export function IbDashboardSidebar() {
         </div>
 
         {/* Divider */}
-        <div className="h-px bg-sidebar-border/40" />
+        <div className="h-px bg-gradient-to-r from-transparent via-sidebar-border/60 to-transparent" />
 
         {/* Avatar + identity */}
         <div className="flex items-center gap-3.5">
@@ -227,17 +245,44 @@ export function IbDashboardSidebar() {
         </div>
 
         {/* Wallet balances */}
-        <div className="ib-sidebar-balance relative rounded-2xl border border-sidebar-border/60 px-4 py-3.5">
-          <div className="grid grid-cols-2 gap-x-4">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.18em] text-sidebar-foreground/50 mb-1">Main Wallet</p>
-              <p className="text-sidebar-foreground font-bold text-base tabular-nums">
+        <div className="grid grid-cols-2 gap-2.5">
+          <div className="ib-wallet-card relative overflow-hidden rounded-2xl border border-sidebar-border/60 px-3.5 py-3 shadow-sm">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -right-5 -top-5 h-16 w-16 rounded-full blur-xl opacity-70"
+              style={walletGlow}
+            />
+            <div className="relative z-10">
+              <div className="mb-2 flex items-center gap-2">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary/15 text-sidebar-primary">
+                  <Wallet className="h-3.5 w-3.5" />
+                </div>
+                <p className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-sidebar-foreground/55">
+                  Main Wallet
+                </p>
+              </div>
+              <p className="text-sidebar-foreground font-bold text-[15px] tabular-nums leading-none">
                 {formatCurrency(clientWallet, currency)}
               </p>
             </div>
-            <div className="pl-4 border-l border-sidebar-border/60">
-              <p className="text-[10px] uppercase tracking-[0.18em] text-sidebar-foreground/50 mb-1">Partner Wallet</p>
-              <p className="text-sidebar-foreground font-bold text-base tabular-nums">
+          </div>
+
+          <div className="ib-wallet-card relative overflow-hidden rounded-2xl border border-sidebar-border/60 px-3.5 py-3 shadow-sm">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -right-5 -top-5 h-16 w-16 rounded-full blur-xl opacity-70"
+              style={walletGlow}
+            />
+            <div className="relative z-10">
+              <div className="mb-2 flex items-center gap-2">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary/15 text-sidebar-primary">
+                  <PieChart className="h-3.5 w-3.5" />
+                </div>
+                <p className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-sidebar-foreground/55">
+                  Partner Wallet
+                </p>
+              </div>
+              <p className="text-sidebar-foreground font-bold text-[15px] tabular-nums leading-none">
                 {formatCurrency(partnerWallet, currency)}
               </p>
             </div>
@@ -257,34 +302,33 @@ export function IbDashboardSidebar() {
               <button
                 key={item.path}
                 onClick={() => { handleMobileNav(); router.push(item.path) }}
+                style={active ? activeCardStyle : undefined}
                 className={cn(
-                  "ib-sidebar-nav-card group relative flex flex-col items-center justify-center gap-2.5 rounded-[20px] px-3 py-5 transition-all duration-200 text-center",
+                  "ib-sidebar-nav-card group relative flex flex-col items-center justify-center gap-2.5 rounded-[20px] border px-3 py-5 transition-all duration-200 text-center",
                   isLastOdd && "col-span-2 flex-row gap-3 py-3.5 justify-start px-5",
                   active
-                    ? "ib-sidebar-nav-card-active"
-                    : "bg-sidebar-accent/35 hover:bg-sidebar-accent/65 text-sidebar-foreground/70 hover:text-sidebar-foreground"
+                    ? "border-transparent"
+                    : "border-transparent bg-sidebar-accent/35 hover:bg-sidebar-accent/65 text-sidebar-foreground/70 hover:text-sidebar-foreground"
                 )}
               >
                 {/* Icon container */}
-                <div className={cn(
-                  "flex items-center justify-center rounded-xl p-2 transition-colors duration-200",
-                  active
-                    ? "bg-sidebar-primary/15 text-sidebar-primary"
-                    : "bg-sidebar-accent/60 text-sidebar-foreground/60 group-hover:text-sidebar-foreground"
-                )}>
+                <div
+                  style={active ? activeIconStyle : undefined}
+                  className={cn(
+                    "flex items-center justify-center rounded-xl p-2 transition-colors duration-200",
+                    active
+                      ? "text-sidebar-primary-foreground"
+                      : "bg-sidebar-accent/60 text-sidebar-foreground/60 group-hover:text-sidebar-foreground"
+                  )}
+                >
                   <Icon className="h-[18px] w-[18px]" />
                 </div>
                 <span className={cn(
                   "text-[11px] font-medium leading-tight",
-                  active ? "text-sidebar-foreground font-semibold" : ""
+                  active ? "text-sidebar-primary font-semibold" : ""
                 )}>
                   {item.label}
                 </span>
-
-                {/* Active indicator dot */}
-                {active && (
-                  <span className="absolute top-2.5 right-2.5 h-1.5 w-1.5 rounded-full bg-sidebar-primary" />
-                )}
               </button>
             )
           })}
@@ -293,7 +337,7 @@ export function IbDashboardSidebar() {
 
       {/* ── Footer actions ── */}
       <div className="shrink-0 px-4 pb-5 pt-2 space-y-2">
-        <div className="h-px bg-sidebar-border/40 mb-3" />
+        <div className="h-px bg-gradient-to-r from-transparent via-sidebar-border/60 to-transparent mb-3" />
         <button
           onClick={() => { handleMobileNav(); router.push("/dashboard") }}
           className="group flex w-full items-center gap-3 rounded-2xl border border-sidebar-border/50 px-4 py-2.5 text-[12.5px] font-medium text-sidebar-foreground/60 transition-all duration-200 hover:border-destructive/30 hover:bg-destructive/8 hover:text-destructive"
