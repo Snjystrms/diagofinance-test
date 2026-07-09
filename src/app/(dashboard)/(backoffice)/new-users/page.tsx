@@ -128,9 +128,9 @@ type SponsorOption = {
 
 const statusFilters = [
   { label: "All statuses", value: "all" },
-  { label: "Pending", value: "0" },
+  { label: "Inactive", value: "0" },
   { label: "Active", value: "1" },
-  { label: "Blocked", value: "2" },
+  // { label: "Blocked", value: "2" },
 ];
 
 const createInitialCreateFormState = (): AdminUserCreateFormData => ({
