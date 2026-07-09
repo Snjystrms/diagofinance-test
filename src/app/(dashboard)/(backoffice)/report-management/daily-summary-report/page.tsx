@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
+import { ManualSortHeader } from "@/components/data-table/manual-sort-header";
 import { CalendarIcon, RefreshCw, Download, ChevronDown, BarChart3, TrendingUp, TrendingDown, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -89,25 +89,6 @@ export default function DailySummaryReportPage() {
     "sort_order",
     parseAsString
   );
-
-  // Listen to table's sort query param and sync with API params
-  const [tableSort] = useQueryState("sort", parseAsString);
-
-  useEffect(() => {
-    if (tableSort && typeof tableSort === 'string') {
-      // Parse format: "column.direction" e.g., "date.asc" or "date.desc"
-      const parts = tableSort.split(".");
-      if (parts.length === 2) {
-        const [col, dir] = parts;
-        setSortBy(col || null);
-        setSortOrderParam(dir || null);
-      }
-    } else {
-      // No sorting
-      setSortBy(null);
-      setSortOrderParam(null);
-    }
-  }, [tableSort, setSortBy, setSortOrderParam]);
 
   // Sync date state with query params
   useEffect(() => {
@@ -305,9 +286,7 @@ export default function DailySummaryReportPage() {
       },
       {
         id: "date",
-        header: ({ column }) => (
-          <DataTableColumnHeader column={column} title="Date" />
-        ),
+        header: () => <ManualSortHeader sortKey="date" title="Date" />,
         accessorKey: "date",
         cell: ({ row }) => (
           <div className="flex items-center gap-1 text-sm whitespace-nowrap">
@@ -315,7 +294,7 @@ export default function DailySummaryReportPage() {
             <span className="font-medium">{fmtDate(row.original.date)}</span>
           </div>
         ),
-        enableSorting: true,
+        enableSorting: false,
         enableColumnFilter: false,
       },
       {
