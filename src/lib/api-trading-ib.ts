@@ -788,8 +788,6 @@ export const ibRequestsApi = {
     }),
 
   getStatus: (token: string) => {
-    console.log("[API] ibRequestsApi.getStatus called with endpoint: /user/ib-requests/status");
-    console.log("[API] Full URL will be:", `${API_BASE_URL}/user/ib-requests/status`);
     return apiCall<IbRequestStatusResponse>(`/user/ib-requests/status`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },

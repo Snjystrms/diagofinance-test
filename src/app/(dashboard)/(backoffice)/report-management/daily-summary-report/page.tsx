@@ -81,34 +81,33 @@ export default function DailySummaryReportPage() {
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [toDateStr, setToDateStr] = useQueryState("to_date", parseAsString);
   
-  const [sortColumn, setSortColumn] = useQueryState(
-    "sort_column",
+  const [sortBy, setSortBy] = useQueryState(
+    "sort_by",
     parseAsString
   );
-  const [sortOrder, setSortOrder] = useQueryState<"ASC" | "DESC">(
+  const [sortOrderParam, setSortOrderParam] = useQueryState(
     "sort_order",
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    parseAsString.withDefault("DESC") as any
+    parseAsString
   );
 
-  // Sync table sorting state with API sort params
-  const [sortState] = useQueryState("sort", parseAsString);
+  // Listen to table's sort query param and sync with API params
+  const [tableSort] = useQueryState("sort", parseAsString);
 
   useEffect(() => {
-    if (sortState && typeof sortState === 'string') {
-      // Parse sort state: format is "column.direction"
-      const parts = sortState.split(".");
+    if (tableSort && typeof tableSort === 'string') {
+      // Parse format: "column.direction" e.g., "date.asc" or "date.desc"
+      const parts = tableSort.split(".");
       if (parts.length === 2) {
         const [col, dir] = parts;
-        setSortColumn(col || null);
-        setSortOrder((dir === "asc" ? "ASC" : "DESC") as "ASC" | "DESC");
+        setSortBy(col || null);
+        setSortOrderParam(dir || null);
       }
     } else {
-      // No sorting applied
-      setSortColumn(null);
-      setSortOrder(null);
+      // No sorting
+      setSortBy(null);
+      setSortOrderParam(null);
     }
-  }, [sortState, setSortColumn, setSortOrder]);
+  }, [tableSort, setSortBy, setSortOrderParam]);
 
   // Sync date state with query params
   useEffect(() => {
@@ -167,8 +166,8 @@ export default function DailySummaryReportPage() {
         per_page: perPage,
         from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
         to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
-        sort_column: sortColumn || undefined,
-        sort_order: sortOrder || undefined,
+        sort_column: sortBy || undefined,
+        sort_order: sortOrderParam || undefined,
       });
 
       if (requestId !== requestIdRef.current) return;
@@ -208,8 +207,8 @@ export default function DailySummaryReportPage() {
     perPage,
     fromDate,
     toDate,
-    sortColumn,
-    sortOrder,
+    sortBy,
+    sortOrderParam,
   ]);
 
   useEffect(() => {
@@ -230,12 +229,12 @@ export default function DailySummaryReportPage() {
   const handleResetFilters = useCallback(() => {
     setFromDate(undefined);
     setToDate(undefined);
-    setSortColumn(null);
-    setSortOrder(null);
+    setSortBy(null);
+    setSortOrderParam(null);
     setPage(1);
   }, [
-    setSortColumn,
-    setSortOrder,
+    setSortBy,
+    setSortOrderParam,
     setPage,
   ]);
 
@@ -257,8 +256,8 @@ export default function DailySummaryReportPage() {
         format: formatType,
         from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
         to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
-        sort_column: sortColumn || undefined,
-        sort_order: sortOrder || undefined,
+        sort_column: sortBy || undefined,
+        sort_order: sortOrderParam || undefined,
       });
 
       if (blob.size === 0) {
@@ -284,7 +283,7 @@ export default function DailySummaryReportPage() {
         { id: exportToastId }
       );
     }
-  }, [canViewReport, token, fromDate, toDate, sortColumn, sortOrder]);
+  }, [canViewReport, token, fromDate, toDate, sortBy, sortOrderParam]);
 
   // Count active filters
   const activeFilterCount = useMemo(() => {
@@ -317,7 +316,7 @@ export default function DailySummaryReportPage() {
           </div>
         ),
         enableSorting: true,
-        enableColumnFilter: true,
+        enableColumnFilter: false,
       },
       {
         id: "total_deposits",

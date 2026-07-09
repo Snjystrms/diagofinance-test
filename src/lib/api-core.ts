@@ -243,14 +243,11 @@ export async function apiCall<T>(
   }
 
   if (endpoint.includes("ib-requests/status")) {
-    console.log("[apiCall] Making fetch request to:", url);
-    console.log("[apiCall] Config:", { method: config.method, headers: config.headers });
   }
 
   let response = await fetchWithConfig(url, config, endpoint);
 
   if (endpoint.includes("ib-requests/status")) {
-    console.log("[apiCall] Response status:", response.status, response.statusText);
   }
 
   const authorizationHeader = getAuthorizationHeader(finalHeaders);
@@ -288,7 +285,6 @@ export async function apiCall<T>(
   const json = await response.json().catch(() => ({}));
 
   if (endpoint.includes("ib-requests/status")) {
-    console.log("[apiCall] Response JSON:", json);
   }
 
   if (!response.ok || (json && json.success === false)) {

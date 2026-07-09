@@ -96,7 +96,6 @@ export async function safeDecryptPassword(
 
   try {
     const result = await decryptPassword(encrypted, keyString);
-    console.log("✅ Password decrypted successfully");
     return result;
   } catch (error) {
     console.error("❌ Password decryption error:", error);
