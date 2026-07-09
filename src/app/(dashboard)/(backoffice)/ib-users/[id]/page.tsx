@@ -130,14 +130,15 @@ const Cell = dynamic(
   { ssr: false },
 );
 
-type TabKey = "overview" | "wallet" | "network" | "profile" | "commission";
+type TabKey = "overview" | "wallet" | "network" | "profile" ;
+//  | "commission";
 
 const TAB_LABELS: Record<TabKey, string> = {
   overview: "Overview",
   wallet: "Wallet",
   network: "Network",
   profile: "Profile",
-  commission: "Commission",
+  // commission: "Commission",
 };
 
 type PreviewUser = Pick<
