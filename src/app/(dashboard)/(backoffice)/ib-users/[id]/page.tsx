@@ -912,17 +912,17 @@ function NetworkTab({
   };
 
   const clientsPagination = {
-    current_page: clientsPage,
-    per_page: clientsPerPage,
-    total: clients.length,
-    total_pages: Math.ceil(clients.length / clientsPerPage),
+    current_page: clientsData?.pagination?.current_page ?? clientsPage,
+    per_page: clientsData?.pagination?.per_page ?? clientsPerPage,
+    total: clientsData?.pagination?.total ?? 0,
+    total_pages: clientsData?.pagination?.last_page ?? 1,
   };
 
   const subIbsPagination = {
-    current_page: subIbsPage,
-    per_page: subIbsPerPage,
-    total: subIbs.length,
-    total_pages: Math.ceil(subIbs.length / subIbsPerPage),
+    current_page: subIbsData?.pagination?.current_page ?? subIbsPage,
+    per_page: subIbsData?.pagination?.per_page ?? subIbsPerPage,
+    total: subIbsData?.pagination?.total ?? 0,
+    total_pages: subIbsData?.pagination?.last_page ?? 1,
   };
   
   return (
@@ -1538,27 +1538,17 @@ export default function IbUserDetailPage() {
           break;
         }
         case "network": {
-          const clientsDateFromStr = clientsDateFrom ? format(clientsDateFrom, "yyyy-MM-dd") : undefined;
-          const clientsDateToStr = clientsDateTo ? format(clientsDateTo, "yyyy-MM-dd") : undefined;
-          const subIbsDateFromStr = subIbsDateFrom ? format(subIbsDateFrom, "yyyy-MM-dd") : undefined;
-          const subIbsDateToStr = subIbsDateTo ? format(subIbsDateTo, "yyyy-MM-dd") : undefined;
-          
-          const [netRes, cliRes, subRes] = await Promise.all([
-            networkLoaded ? null : adminIbUsersApi.network(userId, token),
-            clientsLoaded ? null : adminIbUsersApi.clients(userId, token, 1, 100, clientsDateFromStr, clientsDateToStr),
-            subIbsLoaded ? null : adminIbUsersApi.subIbs(userId, token, 1, 100, subIbsDateFromStr, subIbsDateToStr),
-          ]);
-          if (netRes) { setNetworkData(netRes.data ?? null); setNetworkLoaded(true); }
-          if (cliRes) {
-            const raw = cliRes as unknown as { data: AdminIbClient[]; pagination: AdminIbClientsResponse["pagination"] };
-            setClientsData({ data: raw.data ?? [], pagination: raw.pagination ?? { total: 0, per_page: 20, current_page: 1, last_page: 1 }, success: cliRes.success });
-            setClientsLoaded(true);
+          // Only load network overview data once
+          if (!networkLoaded) {
+            setNetworkLoading(true);
+            const netRes = await adminIbUsersApi.network(userId, token);
+            setNetworkData(netRes.data ?? null);
+            setNetworkLoaded(true);
+            setNetworkLoading(false);
           }
-          if (subRes) {
-            const raw = subRes as unknown as { data: AdminIbSubIb[]; pagination: AdminIbSubIbsResponse["pagination"] };
-            setSubIbsData({ data: raw.data ?? [], pagination: raw.pagination ?? { total: 0, per_page: 20, current_page: 1, last_page: 1 }, success: subRes.success });
-            setSubIbsLoaded(true);
-          }
+          // Load clients and subIbs with proper pagination
+          await loadClientsData();
+          await loadSubIbsData();
           break;
         }
         default:
@@ -1576,11 +1566,84 @@ export default function IbUserDetailPage() {
       switch (tab) {
         case "overview": setWorkspaceLoading(false); break;
         case "wallet": setWalletLoading(false); break;
-        case "network": setNetworkLoading(false); break;
         default: break;
       }
     }
-  }, [token, userId, workspaceLoaded, walletLoaded, networkLoaded, clientsLoaded, subIbsLoaded, walletPage, walletPerPage, clientsDateFrom, clientsDateTo, subIbsDateFrom, subIbsDateTo]);
+  }, [token, userId, workspaceLoaded, walletLoaded, networkLoaded, walletPage, walletPerPage]);
+
+  const loadClientsData = useCallback(async () => {
+    if (!token || !userId) return;
+    
+    try {
+      setClientsLoading(true);
+      const clientsDateFromStr = clientsDateFrom ? format(clientsDateFrom, "yyyy-MM-dd") : undefined;
+      const clientsDateToStr = clientsDateTo ? format(clientsDateTo, "yyyy-MM-dd") : undefined;
+      
+      const cliRes = await adminIbUsersApi.clients(
+        userId, 
+        token, 
+        clientsPage, 
+        clientsPerPage, 
+        clientsDateFromStr, 
+        clientsDateToStr
+      );
+      
+      const raw = cliRes as unknown as { data: AdminIbClient[]; pagination: AdminIbClientsResponse["pagination"] };
+      setClientsData({ 
+        data: raw.data ?? [], 
+        pagination: raw.pagination ?? { total: 0, per_page: clientsPerPage, current_page: clientsPage, last_page: 1 }, 
+        success: cliRes.success 
+      });
+      setClientsLoaded(true);
+    } catch (err: unknown) {
+      console.error(`Failed to load clients data:`, err);
+      toast.error(
+        getAdminFriendlyErrorMessage(err, {
+          resource: "clients data",
+          action: "load",
+        }),
+      );
+    } finally {
+      setClientsLoading(false);
+    }
+  }, [token, userId, clientsPage, clientsPerPage, clientsDateFrom, clientsDateTo]);
+
+  const loadSubIbsData = useCallback(async () => {
+    if (!token || !userId) return;
+    
+    try {
+      setSubIbsLoading(true);
+      const subIbsDateFromStr = subIbsDateFrom ? format(subIbsDateFrom, "yyyy-MM-dd") : undefined;
+      const subIbsDateToStr = subIbsDateTo ? format(subIbsDateTo, "yyyy-MM-dd") : undefined;
+      
+      const subRes = await adminIbUsersApi.subIbs(
+        userId, 
+        token, 
+        subIbsPage, 
+        subIbsPerPage, 
+        subIbsDateFromStr, 
+        subIbsDateToStr
+      );
+      
+      const raw = subRes as unknown as { data: AdminIbSubIb[]; pagination: AdminIbSubIbsResponse["pagination"] };
+      setSubIbsData({ 
+        data: raw.data ?? [], 
+        pagination: raw.pagination ?? { total: 0, per_page: subIbsPerPage, current_page: subIbsPage, last_page: 1 }, 
+        success: subRes.success 
+      });
+      setSubIbsLoaded(true);
+    } catch (err: unknown) {
+      console.error(`Failed to load sub-IBs data:`, err);
+      toast.error(
+        getAdminFriendlyErrorMessage(err, {
+          resource: "sub-IBs data",
+          action: "load",
+        }),
+      );
+    } finally {
+      setSubIbsLoading(false);
+    }
+  }, [token, userId, subIbsPage, subIbsPerPage, subIbsDateFrom, subIbsDateTo]);
 
   useEffect(() => {
     if (activeTab !== "profile") {
@@ -1588,21 +1651,19 @@ export default function IbUserDetailPage() {
     }
   }, [activeTab, loadTabData]);
 
-  // Reload clients data when clients date filters change
+  // Reload clients data when pagination or filters change
   useEffect(() => {
-    if (activeTab === "network" && (clientsDateFrom || clientsDateTo)) {
-      setClientsLoaded(false);
-      void loadTabData("network");
+    if (activeTab === "network" && clientsLoaded) {
+      void loadClientsData();
     }
-  }, [activeTab, clientsDateFrom, clientsDateTo]);
+  }, [activeTab, clientsPage, clientsPerPage, clientsDateFrom, clientsDateTo, loadClientsData]);
 
-  // Reload sub-IBs data when sub-IBs date filters change
+  // Reload sub-IBs data when pagination or filters change
   useEffect(() => {
-    if (activeTab === "network" && (subIbsDateFrom || subIbsDateTo)) {
-      setSubIbsLoaded(false);
-      void loadTabData("network");
+    if (activeTab === "network" && subIbsLoaded) {
+      void loadSubIbsData();
     }
-  }, [activeTab, subIbsDateFrom, subIbsDateTo]);
+  }, [activeTab, subIbsPage, subIbsPerPage, subIbsDateFrom, subIbsDateTo, loadSubIbsData]);
 
   // const handleUpdatePlan = useCallback(async () => {
   //   if (!token || !user || !selectedIbPlanId) return;
@@ -1871,13 +1932,23 @@ export default function IbUserDetailPage() {
                   businessPerPage={businessPerPage}
                   onBusinessPerPageChange={setBusinessPerPage}
                   clientsPage={clientsPage}
-                  onClientsPageChange={setClientsPage}
+                  onClientsPageChange={(page) => {
+                    setClientsPage(page);
+                  }}
                   clientsPerPage={clientsPerPage}
-                  onClientsPerPageChange={setClientsPerPage}
+                  onClientsPerPageChange={(perPage) => {
+                    setClientsPerPage(perPage);
+                    setClientsPage(1); // Reset to first page
+                  }}
                   subIbsPage={subIbsPage}
-                  onSubIbsPageChange={setSubIbsPage}
+                  onSubIbsPageChange={(page) => {
+                    setSubIbsPage(page);
+                  }}
                   subIbsPerPage={subIbsPerPage}
-                  onSubIbsPerPageChange={setSubIbsPerPage}
+                  onSubIbsPerPageChange={(perPage) => {
+                    setSubIbsPerPage(perPage);
+                    setSubIbsPage(1); // Reset to first page
+                  }}
                   clientsDateFrom={clientsDateFrom}
                   clientsDateTo={clientsDateTo}
                   onClientsDateFromChange={setClientsDateFrom}
