@@ -716,6 +716,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     managerCategories: ["Report Management"],
   },
   {
+    path: "/report-management/daily-summary-report",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "reports",
+    navLabel: "Daily Summary Report",
+    managerCategories: ["Report Management"],
+  },
+  {
     path: "/report-management/all-partners-report",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
@@ -945,6 +953,9 @@ function isManagerRouteFeatureAllowed(path: string, permissionNames: Set<string>
   if (path === "/report-management/all-transaction-report") {
     return hasManagerFeature(permissionNames, "reportManagement", "allTransactionReport");
   }
+   if (path === "/report-management/daily-summary-report") {
+    return hasManagerFeature(permissionNames, "reportManagement", "dailySummaryReport");
+  }
   if (path === "/report-management/all-partners-report") {
     return hasManagerFeature(permissionNames, "reportManagement", "ibUsersReport");
   }
@@ -1108,6 +1119,7 @@ export function getManagerNavigation(groupedPermissions?: GroupedPermissions[]):
     featureKey:
       | "depositReport"
       | "allTransactionReport"
+      | "dailySummaryReport"
       | "ibUsersReport"
       | "withdrawReport"
       | "ibWithdrawReport"
@@ -1117,6 +1129,7 @@ export function getManagerNavigation(groupedPermissions?: GroupedPermissions[]):
       | "historyReport";
   }> = [
     { path: "/report-management/all-transaction-report", featureKey: "allTransactionReport" },
+    { path: "/report-management/daily-summary-report", featureKey: "dailySummaryReport" },
     { path: "/report-management/all-partners-report", featureKey: "ibUsersReport" },
     { path: "/report-management/withdrawal-report", featureKey: "withdrawReport" },
     { path: "/report-management/ib-withdrawal-report", featureKey: "ibWithdrawReport" },
