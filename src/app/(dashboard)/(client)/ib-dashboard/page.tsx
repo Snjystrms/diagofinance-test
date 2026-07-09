@@ -447,7 +447,7 @@ export default function IbDashboardPage() {
             earning_summary.total_earned,
             earning_summary.currency,
           )}
-          // description={''}
+          description="Total Partner Commission accumulated."
           icon={<DollarSign className="h-5 w-5" />}
           accent="slate"
         />
