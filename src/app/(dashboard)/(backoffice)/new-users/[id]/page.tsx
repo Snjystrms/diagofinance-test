@@ -18,6 +18,7 @@ import {
   RefreshCw,
   ShieldCheck,
   UserRound,
+  Wallet,
 } from "lucide-react";
 import { formatApiDateTimeAsIST } from "@/lib/formatters";
 import { AuthenticatedDocumentViewer } from "@/components/authenticated-document-viewer";
@@ -205,6 +206,101 @@ const getMt5DisplayBalance = (
     ? rawBalance * 100
     : rawBalance;
 };
+
+// Balance button component for MT5 accounts
+function Mt5BalanceButton({ account }: { account: AdminUserMt5AccountItem }) {
+  const { token } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
+  const [liveBalance, setLiveBalance] = useState<number | null>(null);
+  const [hasError, setHasError] = useState(false);
+
+  const fetchBalance = async () => {
+    if (!token) return;
+    const mt5Login = account.mt5_id ?? account.id;
+    if (!mt5Login) return;
+
+    setIsLoading(true);
+    setHasError(false);
+
+    try {
+      const response = (await mt5AccountsApi.getAdminBalance(
+        String(mt5Login),
+        token,
+      )) as unknown as MT5AccountBalance;
+      if (response.success && response.equity !== undefined) {
+        setLiveBalance(response.equity);
+      } else {
+        setHasError(true);
+      }
+    } catch (error) {
+      console.error("Failed to fetch MT5 balance:", error);
+      setHasError(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (liveBalance !== null) {
+    const displayBalance = getMt5DisplayBalance(account, liveBalance);
+    return (
+      <div className="flex items-center gap-2">
+        <Wallet className="h-4 w-4 text-muted-foreground" />
+        <span className="font-medium">
+          {formatValueWithCurrency(displayBalance, getUserMt5BalanceCurrency(account))}
+        </span>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6"
+          onClick={fetchBalance}
+          disabled={isLoading}
+        >
+          <RefreshCw className={`h-3 w-3 ${isLoading ? "animate-spin" : ""}`} />
+        </Button>
+      </div>
+    );
+  }
+
+  if (hasError) {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={fetchBalance}
+        disabled={isLoading}
+        className="text-red-600"
+      >
+        {isLoading ? (
+          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+        ) : (
+          <RefreshCw className="h-3 w-3 mr-1" />
+        )}
+        Retry
+      </Button>
+    );
+  }
+
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={fetchBalance}
+      disabled={isLoading}
+    >
+      {isLoading ? (
+        <>
+          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+          Loading...
+        </>
+      ) : (
+        <>
+          <Eye className="h-3 w-3 mr-1" />
+          Show Balance
+        </>
+      )}
+    </Button>
+  );
+}
 
 const statusBadge = (
   value: unknown,
@@ -2173,14 +2269,7 @@ export default function NewUserDetailPage() {
                                       {item.account_type_name || "-"}
                                     </TableCell>
                                     <TableCell className="font-mono text-xs">
-                                      {displayContent === "loading" ? (
-                                        <span className="flex items-center gap-2">
-                                          <Loader2 className="h-3 w-3 animate-spin" />
-                                          Loading...
-                                        </span>
-                                      ) : (
-                                        displayContent
-                                      )}
+                                      <Mt5BalanceButton account={item} />
                                     </TableCell>
                                     {/* <TableCell className="font-mono text-xs">{item.investor_password || "-"}</TableCell>
                                     <TableCell className="font-mono text-xs">{item.main_password || "-"}</TableCell> */}
