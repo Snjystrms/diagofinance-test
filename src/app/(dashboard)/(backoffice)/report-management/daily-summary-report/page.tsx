@@ -11,14 +11,6 @@ import { AppDataTable } from "@/components/app-data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -279,10 +271,8 @@ export default function DailySummaryReportPage() {
     let count = 0;
     if (fromDate) count++;
     if (toDate) count++;
-    if (sortColumn) count++;
-    if (sortOrder) count++;
     return count;
-  }, [fromDate, toDate, sortColumn, sortOrder]);
+  }, [fromDate, toDate]);
 
   const columns: ColumnDef<DailySummaryReportItem>[] = useMemo(
     () => [
@@ -304,6 +294,8 @@ export default function DailySummaryReportPage() {
             <span className="font-medium">{fmtDate(row.original.date)}</span>
           </div>
         ),
+        enableSorting: true,
+        enableColumnFilter: true,
       },
       {
         id: "total_deposits",
@@ -465,7 +457,7 @@ export default function DailySummaryReportPage() {
             </Button>
           ) : null}
         </div>
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 md:grid-cols-2">
           <DateRangePicker
             fromDate={fromDate}
             toDate={toDate}
@@ -478,49 +470,6 @@ export default function DailySummaryReportPage() {
               setPage(1);
             }}
           />
-
-          <div className="space-y-1.5">
-            <Label htmlFor="sort-column" className="text-xs font-medium text-muted-foreground">Sort By</Label>
-            <Select
-              value={sortColumn || undefined}
-              onValueChange={(value) => {
-                setSortColumn(value);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger id="sort-column" className="h-9 w-full">
-                <SelectValue placeholder="Select column" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="date">Date</SelectItem>
-                <SelectItem value="total_deposits">Total Deposits</SelectItem>
-                <SelectItem value="total_withdrawals">Total Withdrawals</SelectItem>
-                <SelectItem value="ib_rewards">IB Rewards</SelectItem>
-                <SelectItem value="credit_deposits">Credit Deposits</SelectItem>
-                <SelectItem value="credit_withdrawals">Credit Withdrawals</SelectItem>
-                <SelectItem value="new_registrations">New Registrations</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="sort-order" className="text-xs font-medium text-muted-foreground">Order</Label>
-            <Select
-              value={sortOrder || undefined}
-              onValueChange={(value: "ASC" | "DESC") => {
-                setSortOrder(value);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger id="sort-order" className="h-9 w-full">
-                <SelectValue placeholder="Select order" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ASC">Ascending</SelectItem>
-                <SelectItem value="DESC">Descending</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
         </div>
       </div>
 
