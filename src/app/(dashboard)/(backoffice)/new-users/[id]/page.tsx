@@ -22,6 +22,7 @@ import {
 import { formatApiDateTimeAsIST } from "@/lib/formatters";
 import { AuthenticatedDocumentViewer } from "@/components/authenticated-document-viewer";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
+import { ReusableDataTable, getStatusBadge as getCommonStatusBadge, type ColumnDef, type PaginationState as ReusablePaginationState } from "@/components/data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ProtectedRoute } from "@/components/protected-route";
@@ -335,6 +336,295 @@ const getPaginatedSerialNumber = (
     pagination?.per_page ?? pagination?.limit ?? DEFAULT_PAGE_SIZE;
   return (Math.max(1, currentPage) - 1) * Math.max(1, pageSize) + index + 1;
 };
+
+const convertToReusablePagination = (
+  pagination: PaginationMeta | null,
+): ReusablePaginationState => {
+  return {
+    current_page: pagination?.current_page ?? pagination?.page ?? 1,
+    per_page: pagination?.per_page ?? pagination?.limit ?? DEFAULT_PAGE_SIZE,
+    total: pagination?.total ?? 0,
+    total_pages: pagination?.total_pages ?? pagination?.last_page ?? 1,
+  };
+};
+
+/* ─── Column Definitions ─────────────────────────────────────────────────── */
+
+// Deposits Columns
+const depositsColumns: ColumnDef<AdminUserTransactionItem>[] = [
+  {
+    header: "Amount (USD)",
+    key: "amount",
+    render: (item) => formatNumericValue(item.amount),
+  },
+  {
+    header: "Transaction Hash",
+    key: "transaction_hash",
+    render: (item) => (
+      <span className="max-w-[200px] truncate block">
+        {item.transaction_hash || "-"}
+      </span>
+    ),
+  },
+  {
+    header: "Deposit Type",
+    key: "deposit_type",
+    render: (item) => (
+      <span className="max-w-[220px] truncate block">
+        {item.deposit_type || "-"}
+      </span>
+    ),
+  },
+  {
+    header: "Status",
+    key: "status",
+    render: (item) => statusBadge(item.status, "transaction"),
+  },
+  {
+    header: "Date",
+    key: "created_at",
+    render: (item) => formatDateTime(item.created_at),
+  },
+];
+
+// Withdrawals Columns
+const withdrawalsColumns: ColumnDef<AdminUserTransactionItem>[] = [
+  {
+    header: "Amount (USD)",
+    key: "amount",
+    render: (item) => formatNumericValue(item.amount),
+  },
+  {
+    header: "Payment Method",
+    key: "payment_method",
+    render: (item) => item.payment_method?.name || "-",
+  },
+  {
+    header: "Payment Details",
+    key: "payment_details",
+    render: (item) => {
+      const raw = item as Record<string, unknown>;
+      const isCrypto = item.payment_method?.type === "local";
+      const isBank = item.payment_method?.type === "bank_transfer";
+      
+      if (isCrypto) {
+        return (
+          <div className="max-w-[220px] whitespace-normal text-xs space-y-0.5">
+            <div className="break-all">
+              <span className="text-muted-foreground">Wallet: </span>
+              {String(raw.wallet_address ?? "-")}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Chain: </span>
+              {String(raw.chain_id ?? "-")}
+            </div>
+          </div>
+        );
+      }
+      
+      if (isBank) {
+        const bd = raw.bank_detail as Record<string, unknown> | null | undefined;
+        if (!bd) return "-";
+        return (
+          <div className="max-w-[220px] whitespace-normal text-xs space-y-0.5">
+            <div>
+              <span className="text-muted-foreground">Bank: </span>
+              {String(bd.bank_name ?? "-")}
+            </div>
+            <div>
+              <span className="text-muted-foreground">Holder: </span>
+              {String(bd.account_holder_name ?? "-")}
+            </div>
+            <div>
+              <span className="text-muted-foreground">A/c: </span>
+              {String(bd.account_number ?? "-")}
+            </div>
+            <div>
+              <span className="text-muted-foreground">IFSC: </span>
+              {String(bd.swift_ifsc_code ?? bd.iban_number ?? "-")}
+            </div>
+          </div>
+        );
+      }
+      
+      return "-";
+    },
+  },
+  {
+    header: "User Comment",
+    key: "user_comment",
+    render: (item) => (
+      <span className="max-w-[220px] truncate block">
+        {item.user_comment || "-"}
+      </span>
+    ),
+  },
+  {
+    header: "Status",
+    key: "status",
+    render: (item) => statusBadge(item.status, "transaction"),
+  },
+  {
+    header: "Date",
+    key: "created_at",
+    render: (item) => formatDateTime(item.created_at),
+  },
+];
+
+// Bank Details Columns
+const bankDetailsColumns: ColumnDef<AdminUserBankDetailItem>[] = [
+  {
+    header: "Account Holder",
+    key: "account_holder_name",
+    render: (item) => item.account_holder_name || "-",
+  },
+  {
+    header: "Bank",
+    key: "bank_name",
+    render: (item) => item.bank_name || "-",
+  },
+  {
+    header: "Account Number",
+    key: "account_number",
+    render: (item) => item.account_number || "-",
+  },
+  {
+    header: "IBAN / IFSC",
+    key: "iban_ifsc",
+    render: (item) => item.iban_number || item.swift_ifsc_code || "-",
+  },
+  {
+    header: "Country",
+    key: "country",
+    render: (item) => item.country || "-",
+  },
+  {
+    header: "Contact",
+    key: "contact",
+    render: (item) => (
+      <div className="max-w-[220px] whitespace-normal">
+        <div>{item.user?.email || "-"}</div>
+        <div className="text-xs text-muted-foreground">
+          {item.user?.mobile || "-"}
+        </div>
+      </div>
+    ),
+  },
+  {
+    header: "Status",
+    key: "status",
+    render: (item) => (
+      <Badge variant={item.status === "active" ? "default" : "secondary"}>
+        {item.status || "-"}
+      </Badge>
+    ),
+  },
+];
+
+// Activity Log Columns
+const activityLogColumns: ColumnDef<AdminUserActivityLogItem>[] = [
+  {
+    header: "Timestamp",
+    key: "created_at",
+    render: (item) => formatDateTime(item.created_at),
+  },
+  {
+    header: "IP Address",
+    key: "ip_address",
+    render: (item) => item.ip_address || "-",
+  },
+  {
+    header: "Browser",
+    key: "browser",
+    render: (item) => [item.browser_name, item.browser_version].filter(Boolean).join(" ") || "-",
+  },
+  {
+    header: "Device",
+    key: "device_name",
+    render: (item) => item.device_name || "-",
+  },
+  {
+    header: "OS",
+    key: "os_name",
+    render: (item) => item.os_name || "-",
+  },
+  {
+    header: "Status",
+    key: "status",
+    render: (item) => statusBadge(item.status, "activity"),
+  },
+];
+
+// Wallet History Columns
+const walletHistoryColumns: ColumnDef<AdminUserWalletHistoryItem>[] = [
+  {
+    header: "Payment Type",
+    key: "payment_type",
+    render: (item) => item.payment_type || "-",
+  },
+  {
+    header: "Amount",
+    key: "amount",
+    render: (item) => {
+      const isNegative = ["withdrawal", "transfer_out"].includes(
+        String(item.payment_type ?? "").toLowerCase(),
+      ) || Number(item.amount ?? 0) < 0;
+      
+      return (
+        <span
+          className={
+            isNegative
+              ? "text-rose-600"
+              : "text-emerald-700 dark:text-emerald-300"
+          }
+        >
+          {[
+            formatSignedValue(
+              isNegative ? -Math.abs(Number(item.amount ?? 0)) : item.amount,
+            ),
+            item.currency,
+          ]
+            .filter(Boolean)
+            .join(" ")}
+        </span>
+      );
+    },
+  },
+  {
+    header: "Wallet",
+    key: "wallet_type",
+    render: (item) => item.wallet_type || "-",
+  },
+  {
+    header: "Before",
+    key: "balance_before",
+    render: (item) => formatNumericValue(item.balance_before),
+  },
+  {
+    header: "After",
+    key: "balance_after",
+    render: (item) => formatNumericValue(item.balance_after),
+  },
+  {
+    header: "Status",
+    key: "status",
+    render: (item) => statusBadge(item.status, "wallet"),
+  },
+  {
+    header: "Remark",
+    key: "remark",
+    render: (item) => (
+      <span className="max-w-[260px] truncate block">
+        {item.remark || "-"}
+      </span>
+    ),
+  },
+  {
+    header: "Date",
+    key: "created_at",
+    render: (item) => formatDateTime(item.created_at),
+  },
+];
 
 const extractCrudUserFromDetailPayload = (
   payload: unknown,
@@ -1370,7 +1660,21 @@ export default function NewUserDetailPage() {
                           label="Registered"
                           value={formatDateTime(crudUser?.created_at)}
                         />
-                        <div className="rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm sm:col-span-2">
+                        {crudUser?.sponsor_id && (
+                          <Link
+                            href={`/ib-users/${crudUser.id}`}
+                            className="group rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm transition-all hover:border-primary/50 hover:bg-primary/5 hover:shadow-md"
+                          >
+                            <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                              Partner Portal
+                            </div>
+                            <div className="mt-2 flex items-center gap-2 text-sm font-medium text-foreground group-hover:text-primary">
+                              <ShieldCheck className="h-4 w-4" />
+                              <span className="group-hover:underline">View Partner Details</span>
+                            </div>
+                          </Link>
+                        )}
+                        <div className={`rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm ${crudUser?.sponsor_id ? "sm:col-span-1" : "sm:col-span-2"}`}>
                           <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                             Password
                           </div>
@@ -1686,56 +1990,21 @@ export default function NewUserDetailPage() {
                         "No deposits found",
                         "This user does not have any deposit records yet.",
                         "deposits",
-                        <div className="space-y-4">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Sr. No.</TableHead>
-                                <TableHead>Amount (USD)</TableHead>
-                                <TableHead>Transaction Hash</TableHead>
-                                <TableHead>Deposit Type</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Date</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {depositsState.rows.map((item, index) => (
-                                <TableRow key={item.id}>
-                                  <TableCell className="font-medium">
-                                    <SerialNumberCell
-                                      serialNumber={getPaginatedSerialNumber(
-                                        index,
-                                        walletHistoryState.pagination,
-                                      )}
-                                    />
-                                  </TableCell>
-                                  <TableCell>
-                                    {formatNumericValue(item.amount)}
-                                  </TableCell>
-                                  <TableCell className="max-w-[200px] truncate">
-                                    {item.transaction_hash || "-"}
-                                  </TableCell>
-                                  <TableCell className="max-w-[220px] truncate">
-                                    {item.deposit_type || "-"}
-                                  </TableCell>
-                                  <TableCell>
-                                    {statusBadge(item.status, "transaction")}
-                                  </TableCell>
-                                  <TableCell>
-                                    {formatDateTime(item.created_at)}
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                          <PaginationControls
-                            pagination={depositsState.pagination}
-                            loading={depositsState.loading}
-                            onPageChange={(page) => {
-                              void loadDepositsPage(page);
-                            }}
-                          />
-                        </div>,
+                        <ReusableDataTable
+                          data={depositsState.rows}
+                          columns={depositsColumns}
+                          pagination={convertToReusablePagination(depositsState.pagination)}
+                          isLoading={depositsState.loading}
+                          showSerialNumber={true}
+                          serialNumberStart={(depositsState.pagination?.current_page ?? 1 - 1) * (depositsState.pagination?.per_page ?? DEFAULT_PAGE_SIZE) + 1}
+                          onPageChange={(page) => void loadDepositsPage(page)}
+                          emptyState={
+                            <EmptySectionState
+                              title="No deposits found"
+                              description="This user does not have any deposit records yet."
+                            />
+                          }
+                        />,
                       )}
                     </TabsContent>
 
@@ -1750,126 +2019,21 @@ export default function NewUserDetailPage() {
                         "No withdrawals found",
                         "This user does not have any withdrawal records yet.",
                         "withdrawals",
-                        <div className="space-y-4">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Sr. No.</TableHead>
-                                <TableHead>Amount (USD)</TableHead>
-                                <TableHead>Payment Method</TableHead>
-                                <TableHead>Payment Details</TableHead>
-                                <TableHead>User Comment</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Date</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {withdrawalsState.rows.map((item, index) => {
-                                const raw = item as Record<string, unknown>;
-                                const isCrypto =
-                                  item.payment_method?.type === "local";
-                                const isBank =
-                                  item.payment_method?.type === "bank_transfer";
-                                return (
-                                  <TableRow key={item.id}>
-                                    <TableCell className="font-medium">
-                                      <SerialNumberCell
-                                        serialNumber={index + 1}
-                                      />
-                                    </TableCell>
-                                    <TableCell>
-                                      {formatNumericValue(item.amount)}
-                                    </TableCell>
-                                    <TableCell>
-                                      {item.payment_method?.name || "-"}
-                                    </TableCell>
-                                    <TableCell className="max-w-[220px] whitespace-normal text-xs">
-                                      {isCrypto ? (
-                                        <div className="space-y-0.5">
-                                          <div className="break-all">
-                                            <span className="text-muted-foreground">
-                                              Wallet:{" "}
-                                            </span>
-                                            {String(raw.wallet_address ?? "-")}
-                                          </div>
-                                          <div>
-                                            <span className="text-muted-foreground">
-                                              Chain:{" "}
-                                            </span>
-                                            {String(raw.chain_id ?? "-")}
-                                          </div>
-                                        </div>
-                                      ) : isBank ? (
-                                        (() => {
-                                          const bd = raw.bank_detail as
-                                            | Record<string, unknown>
-                                            | null
-                                            | undefined;
-                                          return bd ? (
-                                            <div className="space-y-0.5">
-                                              <div>
-                                                <span className="text-muted-foreground">
-                                                  Bank:{" "}
-                                                </span>
-                                                {String(bd.bank_name ?? "-")}
-                                              </div>
-                                              <div>
-                                                <span className="text-muted-foreground">
-                                                  Holder:{" "}
-                                                </span>
-                                                {String(
-                                                  bd.account_holder_name ?? "-",
-                                                )}
-                                              </div>
-                                              <div>
-                                                <span className="text-muted-foreground">
-                                                  A/c:{" "}
-                                                </span>
-                                                {String(
-                                                  bd.account_number ?? "-",
-                                                )}
-                                              </div>
-                                              <div>
-                                                <span className="text-muted-foreground">
-                                                  IFSC:{" "}
-                                                </span>
-                                                {String(
-                                                  bd.swift_ifsc_code ??
-                                                    bd.iban_number ??
-                                                    "-",
-                                                )}
-                                              </div>
-                                            </div>
-                                          ) : (
-                                            "-"
-                                          );
-                                        })()
-                                      ) : (
-                                        "-"
-                                      )}
-                                    </TableCell>
-                                    <TableCell className="max-w-[220px] truncate">
-                                      {item.user_comment || "-"}
-                                    </TableCell>
-                                    <TableCell>
-                                      {statusBadge(item.status, "transaction")}
-                                    </TableCell>
-                                    <TableCell>
-                                      {formatDateTime(item.created_at)}
-                                    </TableCell>
-                                  </TableRow>
-                                );
-                              })}
-                            </TableBody>
-                          </Table>
-                          <PaginationControls
-                            pagination={withdrawalsState.pagination}
-                            loading={withdrawalsState.loading}
-                            onPageChange={(page) => {
-                              void loadWithdrawalsPage(page);
-                            }}
-                          />
-                        </div>,
+                        <ReusableDataTable
+                          data={withdrawalsState.rows}
+                          columns={withdrawalsColumns}
+                          pagination={convertToReusablePagination(withdrawalsState.pagination)}
+                          isLoading={withdrawalsState.loading}
+                          showSerialNumber={true}
+                          serialNumberStart={((withdrawalsState.pagination?.current_page ?? 1) - 1) * (withdrawalsState.pagination?.per_page ?? DEFAULT_PAGE_SIZE) + 1}
+                          onPageChange={(page) => void loadWithdrawalsPage(page)}
+                          emptyState={
+                            <EmptySectionState
+                              title="No withdrawals found"
+                              description="This user does not have any withdrawal records yet."
+                            />
+                          }
+                        />,
                       )}
                     </TabsContent>
 
@@ -1991,64 +2155,19 @@ export default function NewUserDetailPage() {
                         "No bank details found",
                         "The user has not added any withdrawal bank accounts yet.",
                         "bank details",
-                        <div className="space-y-4">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Account Holder</TableHead>
-                                <TableHead>Bank</TableHead>
-                                <TableHead>Account Number</TableHead>
-                                <TableHead>IBAN / IFSC</TableHead>
-                                <TableHead>Country</TableHead>
-                                <TableHead>Contact</TableHead>
-                                <TableHead>Status</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {bankDetailsState.rows.map((item) => (
-                                <TableRow key={item.id}>
-                                  <TableCell className="font-medium">
-                                    {item.account_holder_name || "-"}
-                                  </TableCell>
-                                  <TableCell>{item.bank_name || "-"}</TableCell>
-                                  <TableCell>
-                                    {item.account_number || "-"}
-                                  </TableCell>
-                                  <TableCell>
-                                    {item.iban_number ||
-                                      item.swift_ifsc_code ||
-                                      "-"}
-                                  </TableCell>
-                                  <TableCell>{item.country || "-"}</TableCell>
-                                  <TableCell className="max-w-[220px] whitespace-normal">
-                                    <div>{item.user?.email || "-"}</div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {item.user?.mobile || "-"}
-                                    </div>
-                                  </TableCell>
-                                  <TableCell>
-                                    <Badge
-                                      variant={
-                                        item.status === "active"
-                                          ? "default"
-                                          : "secondary"
-                                      }
-                                    >
-                                      {item.status || "-"}
-                                    </Badge>
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                          <PaginationControls
-                            pagination={bankDetailsState.pagination}
-                            loading={bankDetailsState.loading}
-                            onPageChange={(page) => {
-                              void loadBankDetailsPage(page);
-                            }}
-                          />
-                        </div>,
+                        <ReusableDataTable
+                          data={bankDetailsState.rows}
+                          columns={bankDetailsColumns}
+                          pagination={convertToReusablePagination(bankDetailsState.pagination)}
+                          isLoading={bankDetailsState.loading}
+                          onPageChange={(page) => void loadBankDetailsPage(page)}
+                          emptyState={
+                            <EmptySectionState
+                              title="No bank details found"
+                              description="The user has not added any withdrawal bank accounts yet."
+                            />
+                          }
+                        />,
                       )}
                     </TabsContent>
 
@@ -2063,60 +2182,21 @@ export default function NewUserDetailPage() {
                         "No activity found",
                         "No login activity has been recorded for this user yet.",
                         "activity log",
-                        <div className="space-y-4">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Sr. No.</TableHead>
-                                <TableHead>Timestamp</TableHead>
-                                <TableHead>IP Address</TableHead>
-                                <TableHead>Browser</TableHead>
-                                <TableHead>Device</TableHead>
-                                <TableHead>OS</TableHead>
-                                <TableHead>Status</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {activityState.rows.map((item, index) => (
-                                <TableRow
-                                  key={`${item.ip_address ?? "activity"}-${item.created_at ?? index}`}
-                                >
-                                  <TableCell>
-                                    <SerialNumberCell
-                                      serialNumber={index + 1}
-                                      className=""
-                                    />
-                                  </TableCell>
-                                  <TableCell>
-                                    {formatDateTime(item.created_at)}
-                                  </TableCell>
-                                  <TableCell>
-                                    {item.ip_address || "-"}
-                                  </TableCell>
-                                  <TableCell>
-                                    {[item.browser_name, item.browser_version]
-                                      .filter(Boolean)
-                                      .join(" ") || "-"}
-                                  </TableCell>
-                                  <TableCell>
-                                    {item.device_name || "-"}
-                                  </TableCell>
-                                  <TableCell>{item.os_name || "-"}</TableCell>
-                                  <TableCell>
-                                    {statusBadge(item.status, "activity")}
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                          <PaginationControls
-                            pagination={activityState.pagination}
-                            loading={activityState.loading}
-                            onPageChange={(page) => {
-                              void loadActivityPage(page);
-                            }}
-                          />
-                        </div>,
+                        <ReusableDataTable
+                          data={activityState.rows}
+                          columns={activityLogColumns}
+                          pagination={convertToReusablePagination(activityState.pagination)}
+                          isLoading={activityState.loading}
+                          showSerialNumber={true}
+                          serialNumberStart={((activityState.pagination?.current_page ?? 1) - 1) * (activityState.pagination?.per_page ?? DEFAULT_PAGE_SIZE) + 1}
+                          onPageChange={(page) => void loadActivityPage(page)}
+                          emptyState={
+                            <EmptySectionState
+                              title="No activity found"
+                              description="No login activity has been recorded for this user yet."
+                            />
+                          }
+                        />,
                       )}
                     </TabsContent>
 
@@ -2182,91 +2262,21 @@ export default function NewUserDetailPage() {
                         "No wallet history found",
                         "There are no wallet balance mutations recorded for this user yet.",
                         "wallet history",
-                        <div className="space-y-4">
-                          <Table>
-                            <TableHeader>
-                              <TableRow>
-                                <TableHead>Sr. No.</TableHead>
-                                <TableHead>Payment Type</TableHead>
-                                <TableHead>Amount</TableHead>
-                                <TableHead>Wallet</TableHead>
-                                <TableHead>Before</TableHead>
-                                <TableHead>After</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Remark</TableHead>
-                                <TableHead>Date</TableHead>
-                              </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                              {walletHistoryState.rows.map((item, index) => (
-                                <TableRow key={item.id}>
-                                  <TableCell className="font-medium">
-                                    <SerialNumberCell
-                                      serialNumber={getPaginatedSerialNumber(
-                                        index,
-                                        walletHistoryState.pagination,
-                                      )}
-                                    />
-                                  </TableCell>
-                                  <TableCell className="font-medium">
-                                    {item.payment_type || "-"}
-                                  </TableCell>
-                                  <TableCell
-                                    className={
-                                      ["withdrawal", "transfer_out"].includes(
-                                        String(
-                                          item.payment_type ?? "",
-                                        ).toLowerCase(),
-                                      ) || Number(item.amount ?? 0) < 0
-                                        ? "text-rose-600"
-                                        : "text-emerald-700 dark:text-emerald-300"
-                                    }
-                                  >
-                                    {[
-                                      formatSignedValue(
-                                        ["withdrawal", "transfer_out"].includes(
-                                          String(
-                                            item.payment_type ?? "",
-                                          ).toLowerCase(),
-                                        )
-                                          ? -Math.abs(Number(item.amount ?? 0))
-                                          : item.amount,
-                                      ),
-                                      item.currency,
-                                    ]
-                                      .filter(Boolean)
-                                      .join(" ")}
-                                  </TableCell>
-                                  <TableCell>
-                                    {item.wallet_type || "-"}
-                                  </TableCell>
-                                  <TableCell>
-                                    {formatNumericValue(item.balance_before)}
-                                  </TableCell>
-                                  <TableCell>
-                                    {formatNumericValue(item.balance_after)}
-                                  </TableCell>
-                                  <TableCell>
-                                    {statusBadge(item.status, "wallet")}
-                                  </TableCell>
-                                  <TableCell className="max-w-[260px] truncate">
-                                    {item.remark || "-"}
-                                  </TableCell>
-                                  <TableCell>
-                                    {formatDateTime(item.created_at)}
-                                  </TableCell>
-                                </TableRow>
-                              ))}
-                            </TableBody>
-                          </Table>
-                          <PaginationControls
-                            pagination={walletHistoryState.pagination}
-                            loading={walletHistoryState.loading}
-                            onPageChange={(page) => {
-                              void loadWalletHistoryPage(page);
-                            }}
-                          />
-                        </div>,
+                        <ReusableDataTable
+                          data={walletHistoryState.rows}
+                          columns={walletHistoryColumns}
+                          pagination={convertToReusablePagination(walletHistoryState.pagination)}
+                          isLoading={walletHistoryState.loading}
+                          showSerialNumber={true}
+                          serialNumberStart={((walletHistoryState.pagination?.current_page ?? 1) - 1) * (walletHistoryState.pagination?.per_page ?? DEFAULT_PAGE_SIZE) + 1}
+                          onPageChange={(page) => void loadWalletHistoryPage(page)}
+                          emptyState={
+                            <EmptySectionState
+                              title="No wallet history found"
+                              description="There are no wallet balance mutations recorded for this user yet."
+                            />
+                          }
+                        />,
                       )}
                     </TabsContent>
                   </Tabs>

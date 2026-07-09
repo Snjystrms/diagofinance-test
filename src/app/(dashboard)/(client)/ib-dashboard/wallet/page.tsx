@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  ArrowDownRight,
-  ArrowUpRight,
   Clock,
   RefreshCw,
   TrendingUp,
@@ -13,7 +11,6 @@ import {
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { IbMetricCard, IbPageHeader, IbPageShell, IbSectionCard } from "@/components/ib/ib-page-primitives";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/contexts/auth-context";
 import { type IbWalletData, ibRequestsApi, type IbInternalTransferWalletTransaction } from "@/lib/api";
@@ -21,6 +18,12 @@ import { type IbInternalTransferWalletTransactionsResponse } from "@/lib/api-tra
 import { formatCurrency } from "@/lib/format";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { getIbWalletSnapshot, normalizeIbWalletData } from "@/lib/ib";
+import { 
+  ReusableDataTable, 
+  getStatusBadge, 
+  getTransactionTypeIcon,
+  type ColumnDef 
+} from "@/components/data-table/reusable-data-table";
 
 function WalletLoadingState() {
   return (
@@ -54,267 +57,106 @@ function WalletLoadingState() {
   );
 }
 
-function getStatusBadge(status?: string) {
-  if (!status) {
-    return <Badge variant="outline">Unknown</Badge>;
-  }
+/* ─── Column Definitions ────────────────────────────────────────────────── */
 
-  const normalized = status.toLowerCase();
-
-  if (["completed", "success", "approved"].includes(normalized)) {
-    return (
-      <span className="inline-flex items-center gap-1.5">
-        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400">{status}</span>
-      </span>
-    );
-  }
-
-  if (["pending", "processing"].includes(normalized)) {
-    return (
-      <span className="inline-flex items-center gap-1.5">
-        <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-        <span className="text-xs font-medium text-amber-600 dark:text-amber-400">{status}</span>
-      </span>
-    );
-  }
-
-  if (["failed", "rejected", "cancelled"].includes(normalized)) {
-    return (
-      <span className="inline-flex items-center gap-1.5">
-        <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
-        <span className="text-xs font-medium text-rose-600 dark:text-rose-400">{status}</span>
-      </span>
-    );
-  }
-
-  return <Badge variant="outline">{status}</Badge>;
-}
-
-function PaginationControls({
-  pagination,
-  isLoading,
-  onPageChange,
-  onPerPageChange,
-}: {
-  pagination: {
-    current_page: number;
-    per_page: number;
-    total: number;
-    total_pages: number;
-  };
-  isLoading: boolean;
-  onPageChange: (page: number) => void;
-  onPerPageChange: (perPage: number) => void;
-}) {
-  if (pagination.total === 0) return null;
-  
-  return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mt-4 px-1">
-      <div className="flex items-center gap-4">
-        <div className="text-xs text-muted-foreground tabular-nums">
-          Showing {Math.min((pagination.current_page - 1) * pagination.per_page + 1, pagination.total)}–
-          {Math.min(pagination.current_page * pagination.per_page, pagination.total)} of {pagination.total}
-        </div>
-        <div className="flex items-center gap-2">
-          <label htmlFor="perPage" className="text-xs text-muted-foreground whitespace-nowrap">
-            Rows per page:
-          </label>
-          <select
-            id="perPage"
-            value={pagination.per_page}
-            onChange={(e) => onPerPageChange(Number(e.target.value))}
-            disabled={isLoading}
-            className="h-8 rounded-md border border-border bg-background px-2 text-xs focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <option value={10}>10</option>
-            <option value={20}>20</option>
-            <option value={30}>30</option>
-            <option value={50}>50</option>
-          </select>
-        </div>
+const getTransactionColumns = (currency: string): ColumnDef<IbInternalTransferWalletTransaction>[] => [
+  {
+    header: "Type",
+    key: "type",
+    render: (tx) => {
+      const isOutflow = tx.direction === "debit";
+      const displayType =
+        tx.transaction_type === "transfer_out"
+          ? "Transfer Out"
+          : tx.transaction_type === "ib_withdrawal"
+            ? "IB Withdrawal"
+            : tx.transaction_type === "credit"
+              ? "Credit"
+              : tx.transaction_type === "ib_commission"
+                ? "Commission"
+                : tx.transaction_type || "Transaction";
+      
+      return getTransactionTypeIcon(isOutflow, displayType);
+    },
+    className: "whitespace-nowrap",
+  },
+  {
+    header: "Description",
+    key: "description",
+    render: (tx) => (
+      <div className="max-w-[220px] break-words text-muted-foreground">
+        {tx.description || <span className="text-border">—</span>}
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onPageChange(pagination.current_page - 1)}
-          disabled={pagination.current_page === 1 || isLoading}
+    ),
+  },
+  {
+    header: "Status",
+    key: "status",
+    render: (tx) => getStatusBadge(tx.status),
+    className: "whitespace-nowrap",
+  },
+  {
+    header: "Date",
+    key: "date",
+    render: (tx) => (
+      <span className="tabular-nums text-xs text-muted-foreground">
+        {tx.created_at ? formatDateTimeInIST(tx.created_at) : "—"}
+      </span>
+    ),
+    className: "whitespace-nowrap",
+  },
+  {
+    header: "Before",
+    key: "balance_before",
+    align: "right",
+    render: (tx) => (
+      <span className="tabular-nums text-xs text-muted-foreground">
+        {typeof tx.balance_before === "number"
+          ? formatCurrency(tx.balance_before, "USD")
+          : <span className="text-border">—</span>}
+      </span>
+    ),
+    className: "whitespace-nowrap",
+    hideOnMobile: true,
+  },
+  {
+    header: "After",
+    key: "balance_after",
+    align: "right",
+    render: (tx) => (
+      <span className="tabular-nums text-xs text-muted-foreground">
+        {typeof tx.balance_after === "number"
+          ? formatCurrency(tx.balance_after, "USD")
+          : <span className="text-border">—</span>}
+      </span>
+    ),
+    className: "whitespace-nowrap",
+    hideOnMobile: true,
+  },
+  {
+    header: "Amount",
+    key: "amount",
+    align: "right",
+    render: (tx) => {
+      const isOutflow = tx.direction === "debit";
+      const amount = typeof tx.amount === "number" ? tx.amount : 0;
+      
+      return (
+        <span
+          className={`font-semibold tabular-nums ${
+            isOutflow
+              ? "text-rose-600 dark:text-rose-300"
+              : "text-emerald-600 dark:text-emerald-300"
+          }`}
         >
-          Previous
-        </Button>
-        {Array.from({ length: pagination.total_pages }, (_, i) => i + 1)
-          .filter((p) => p === 1 || p === pagination.total_pages || Math.abs(p - pagination.current_page) <= 1)
-          .map((p, idx, arr) => (
-            <div key={p} className="flex items-center gap-2">
-              {idx > 0 && arr[idx - 1] !== p - 1 && (
-                <span className="px-1 text-muted-foreground">…</span>
-              )}
-              <Button
-                variant={p === pagination.current_page ? "default" : "outline"}
-                size="sm"
-                onClick={() => onPageChange(p)}
-                disabled={isLoading}
-                className="min-w-[2.5rem]"
-              >
-                {p}
-              </Button>
-            </div>
-          ))}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onPageChange(pagination.current_page + 1)}
-          disabled={pagination.current_page === pagination.total_pages || isLoading}
-        >
-          Next
-        </Button>
-      </div>
-    </div>
-  );
-}
-
-function TransactionTable({
-  transactions,
-  currency,
-  currentPage,
-  perPage,
-}: {
-  transactions: IbInternalTransferWalletTransaction[];
-  currency: string;
-  currentPage: number;
-  perPage: number;
-}) {
-  return (
-    <div className="w-full overflow-x-auto rounded-2xl border border-border/50">
-      <table className="w-full min-w-[640px] text-sm">
-        <thead>
-          <tr className="border-b border-border/50 bg-muted/20">
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Sr. No.
-            </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Type
-            </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Description
-            </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Status
-            </th>
-            <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Date
-            </th>
-            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Before
-            </th>
-            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              After
-            </th>
-            <th className="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Amount
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border/40">
-          {transactions.map((tx, index) => {
-            const isOutflow = tx.direction === "debit";
-            const amount = typeof tx.amount === "number" ? tx.amount : 0;
-            const serialNumber = (currentPage - 1) * perPage + index + 1;
-
-            const displayType =
-              tx.transaction_type === "transfer_out"
-                ? "Transfer Out"
-                : tx.transaction_type === "ib_withdrawal"
-                  ? "IB Withdrawal"
-                  : tx.transaction_type === "credit"
-                    ? "Credit"
-                    : tx.transaction_type === "ib_commission"
-                      ? "Commission"
-                      : tx.transaction_type || "Transaction";
-
-            return (
-              <tr
-                key={index}
-                className="group transition-colors hover:bg-muted/20"
-              >
-                {/* Serial Number */}
-                <td className="whitespace-nowrap px-4 py-3.5 text-center text-muted-foreground">
-                  {serialNumber}
-                </td>
-
-                {/* Type */}
-                <td className="whitespace-nowrap px-4 py-3.5">
-                  <div className="flex items-center gap-2.5">
-                    <span
-                      className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-[13px] ${
-                        isOutflow
-                          ? "bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300"
-                          : "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300"
-                      }`}
-                    >
-                      {isOutflow ? (
-                        <ArrowUpRight className="h-3.5 w-3.5" />
-                      ) : (
-                        <ArrowDownRight className="h-3.5 w-3.5" />
-                      )}
-                    </span>
-                    <span className="font-medium text-foreground">{displayType}</span>
-                  </div>
-                </td>
-
-                {/* Description */}
-                <td className="px-4 py-3.5 text-muted-foreground">
-                  <div className="max-w-[220px] break-words">
-                    {tx.description || <span className="text-border">—</span>}
-                  </div>
-                </td>
-
-                {/* Status */}
-                <td className="whitespace-nowrap px-4 py-3.5">
-                  {getStatusBadge(tx.status)}
-                </td>
-
-                {/* Date */}
-                <td className="whitespace-nowrap px-4 py-3.5 tabular-nums text-xs text-muted-foreground">
-                  {tx.created_at ? formatDateTimeInIST(tx.created_at) : "—"}
-                </td>
-
-                {/* Balance Before */}
-                <td className="whitespace-nowrap px-4 py-3.5 text-right tabular-nums text-xs text-muted-foreground">
-                  {typeof tx.balance_before === "number"
-                    ? formatCurrency(tx.balance_before, "USD")
-                    : <span className="text-border">—</span>}
-                </td>
-
-                {/* Balance After */}
-                <td className="whitespace-nowrap px-4 py-3.5 text-right tabular-nums text-xs text-muted-foreground">
-                  {typeof tx.balance_after === "number"
-                    ? formatCurrency(tx.balance_after, "USD")
-                    : <span className="text-border">—</span>}
-                </td>
-
-                {/* Amount */}
-                <td className="whitespace-nowrap px-4 py-3.5 text-right">
-                  <span
-                    className={`font-semibold tabular-nums ${
-                      isOutflow
-                        ? "text-rose-600 dark:text-rose-300"
-                        : "text-emerald-600 dark:text-emerald-300"
-                    }`}
-                  >
-                    {isOutflow ? "−" : "+"}
-                    {formatCurrency(Math.abs(amount), currency)}
-                  </span>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-  );
-}
+          {isOutflow ? "−" : "+"}
+          {formatCurrency(Math.abs(amount), currency)}
+        </span>
+      );
+    },
+    className: "whitespace-nowrap",
+  },
+];
 
 export default function IbWalletPage() {
   const { token } = useAuth();
@@ -455,30 +297,25 @@ export default function IbWalletPage() {
         title="Transaction history"
         description=""
       >
-        {transactions.length > 0 ? (
-          <div className="space-y-4">
-            <TransactionTable 
-              transactions={transactions} 
-              currency={snapshot.currency} 
-              currentPage={pagination.current_page}
-              perPage={pagination.per_page}
-            />
-            <PaginationControls
-              pagination={pagination}
-              isLoading={isLoading}
-              onPageChange={setPage}
-              onPerPageChange={handlePerPageChange}
-            />
-          </div>
-        ) : (
-          <div className="flex min-h-[220px] flex-col items-center justify-center rounded-[24px] border border-dashed border-border/60 bg-muted/10 px-6 text-center">
-            <Clock className="mb-4 h-10 w-10 text-muted-foreground" />
-            <h3 className="text-lg font-semibold text-foreground">No transactions yet</h3>
-            <p className="mt-2 max-w-md text-sm text-muted-foreground">
-              Your Partner wallet ledger is empty right now. Transfers and earnings will appear here once activity starts.
-            </p>
-          </div>
-        )}
+        <ReusableDataTable
+          data={transactions}
+          columns={getTransactionColumns(snapshot.currency)}
+          pagination={pagination}
+          isLoading={isLoading}
+          showSerialNumber={true}
+          serialNumberStart={(pagination.current_page - 1) * pagination.per_page + 1}
+          onPageChange={setPage}
+          onPerPageChange={handlePerPageChange}
+          emptyState={
+            <div className="flex min-h-[220px] flex-col items-center justify-center rounded-[24px] border border-dashed border-border/60 bg-muted/10 px-6 text-center">
+              <Clock className="mb-4 h-10 w-10 text-muted-foreground" />
+              <h3 className="text-lg font-semibold text-foreground">No transactions yet</h3>
+              <p className="mt-2 max-w-md text-sm text-muted-foreground">
+                Your Partner wallet ledger is empty right now. Transfers and earnings will appear here once activity starts.
+              </p>
+            </div>
+          }
+        />
       </IbSectionCard>
     </IbPageShell>
   );
