@@ -36,8 +36,6 @@ export async function POST(request: NextRequest) {
     // For now, we'll simulate a successful response
     // In production, replace this with actual database operations
     
-    console.log('Transaction hash submitted:', transaction_hash);
-    
     // Simulate processing delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 

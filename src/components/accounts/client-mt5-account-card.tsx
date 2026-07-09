@@ -225,11 +225,6 @@ export function ClientMt5AccountCard({
           mt5Login,
           token,
         )) as unknown as MT5AccountBalance;
-        console.log(`[MT5 Card] Response properties:`, {
-          success: response.success,
-          hasEquityOnRoot: response.equity !== undefined,
-          equityOnRoot: response.equity,
-        });
 
         // API returns equity at root level directly
         if (response.success && response.equity !== undefined) {

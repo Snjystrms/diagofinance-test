@@ -95,7 +95,7 @@ export default function DailySummaryReportPage() {
   const [sortState] = useQueryState("sort", parseAsString);
 
   useEffect(() => {
-    if (sortState) {
+    if (sortState && typeof sortState === 'string') {
       // Parse sort state: format is "column.direction"
       const parts = sortState.split(".");
       if (parts.length === 2) {

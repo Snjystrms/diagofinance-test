@@ -93,16 +93,6 @@ export async function POST(request: NextRequest) {
     // For now, we'll simulate a successful response
     // In production, replace this with actual database operations
     
-    console.log('USDT deposit submitted:', {
-      amount: amountNum,
-      transaction_hash: transaction_hash || null,
-      payment_proof: payment_proof ? {
-        name: payment_proof.name,
-        size: payment_proof.size,
-        type: payment_proof.type
-      } : null
-    });
-    
     // Simulate processing delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 

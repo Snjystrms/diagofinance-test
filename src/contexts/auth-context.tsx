@@ -64,7 +64,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     try {
       isRefreshingRef.current = true;
-      console.log('🔄 Refreshing auth token...');
       
       const newToken = await refreshCurrentAuthToken(token);
       
@@ -72,8 +71,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Update token in state and localStorage only if we got a NEW token
         setToken(newToken);
         localStorage.setItem('auth_token', newToken);
-        
-        console.log('✅ Token refreshed successfully with new token');
         return true;
       } else if (newToken === token) {
         // Refresh returned the same token (refresh endpoint returned 401)
@@ -389,8 +386,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       return;
     }
-
-    console.log('Setting up token auto-refresh (every 30 minutes)');
     let lastRefreshTime = Date.now();
 
     refreshIntervalRef.current = setInterval(() => {

@@ -66,13 +66,11 @@ export const getColumns = (opts: {
     cell: ({ row }) => {
       const isBusy = opts.actionLoadingId === row.original.id;
       const next = !row.original.status; // ✅ force flip based on current value
-      console.log(`Manager ${row.original.id} current status:`, row.original.status, "Next status:", next); // Debug log
       return (
         <div className="flex items-center">
           <Switch
             checked={!!row.original.status}
             onCheckedChange={() => {
-              console.log(`Calling onToggleStatus with id: ${row.original.id}, next: ${next}`); // Debug log
               opts.onToggleStatus(row.original.id, next);
             }}
             disabled={isBusy}

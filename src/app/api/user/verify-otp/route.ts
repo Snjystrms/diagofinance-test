@@ -38,7 +38,6 @@ export async function POST(request: NextRequest) {
     // 5. Generate authentication token if needed
 
     // For demo purposes, we'll simulate OTP verification
-    console.log('OTP verification request:', { email, otp });
 
     // Simulate processing delay
     await new Promise(resolve => setTimeout(resolve, 1000));

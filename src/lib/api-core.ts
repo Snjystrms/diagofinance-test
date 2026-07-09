@@ -1,9 +1,6 @@
 // API base URL is configured via .env only
 export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/+$/, "");
 
-// Debug: Log the API base URL being used
-console.log("API_BASE_URL:", API_BASE_URL);
-
 export interface ApiResponse<T = unknown> {
   success: boolean;
   message: string;
@@ -206,10 +203,6 @@ export async function apiCall<T>(
   const url = `${API_BASE_URL}${endpoint}`;
 
   if (endpoint.includes("ib-requests/status")) {
-    console.log("[apiCall] IB Status endpoint detected:", endpoint);
-    console.log("[apiCall] Full URL:", url);
-    console.log("[apiCall] Method:", options.method || "GET");
-    console.log("[apiCall] Headers:", options.headers);
   }
 
   const { headers: optionHeaders, skipAuthRedirect = false, ...restOptions } = options;
@@ -245,9 +238,7 @@ export async function apiCall<T>(
     endpoint.startsWith("/user/internal-transfer/")
   ) {
     try {
-      console.log("apiCall payload:", endpoint, JSON.parse(config.body));
     } catch {
-      console.log("apiCall payload (raw):", endpoint, config.body);
     }
   }
 

@@ -72,9 +72,6 @@ export default function InternalTransferReportPage() {
       const payload = (response as unknown) as InternalTransferReportListPayload;
       const reportItems = Array.isArray(payload?.data) ? payload.data : [];
       
-      console.log("Internal transfer report items:", reportItems);
-      console.log("Pagination:", payload?.pagination);
-      
       setRows(reportItems);
 
       const paginationData = payload?.pagination;

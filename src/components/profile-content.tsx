@@ -37,7 +37,6 @@ export default function ProfileContent() {
   const handleEditToggle = () => {
     if (isEditing) {
       // Save changes
-      console.log("Saving changes:", formData);
       // Here you would typically make an API call to save the data
     }
     setIsEditing(!isEditing);

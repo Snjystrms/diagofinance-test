@@ -304,13 +304,10 @@ export default function AllManagersPage() {
     async (id: string, desiredStatus: boolean) => {
       if (!token) return;
 
-      console.log(`[Toggle] Manager ${id} -> ${desiredStatus}`);
-
       try {
         setActionLoadingId(id);
 
         const res = await adminManagersApi.patchStatus(id, desiredStatus, token);
-        console.log("[Toggle] Response:", res);
 
         if (!res.success || !res.data?.manager) {
           throw new Error(res.message || "Invalid response from server");

@@ -177,7 +177,6 @@ function DecryptedPassword({
     setError(null);
 
     try {
-      console.log("🔐 Fetching decrypted password for user:", userId);
       const response = await adminUsersApi.decryptPassword(userId, token);
       
       if (response.success && response.data?.password) {

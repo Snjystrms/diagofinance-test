@@ -31,13 +31,6 @@ export default async function TransactionVerificationDynamicPage({ params, searc
   // Extract additional parameters if they exist
   const additionalParams = resolvedParams.slug?.slice(1) || [];
   
-  console.log('URL Parameters:', {
-    slug: resolvedParams.slug,
-    searchParams: resolvedSearchParams,
-    verificationCode,
-    additionalParams
-  });
-  
   return (
     <div>
       <TransactionVerification 

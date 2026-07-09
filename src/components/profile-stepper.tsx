@@ -44,13 +44,11 @@ export function ProfileStepper({
 
   // Debug logging
   useEffect(() => {
-    console.log("[ProfileStepper] hasBankDetails prop received:", hasBankDetails);
   }, [hasBankDetails]);
 
   // Calculate status for each step
   const steps = useMemo((): StepItem[] => {
     if (!dashboardData) {
-      console.log("[ProfileStepper] No dashboardData, returning empty steps");
       return [];
     }
 
@@ -63,14 +61,6 @@ export function ProfileStepper({
     const hasMt5Account =
       (dashboardData.account_types?.total_accounts ?? 0) > 0 ||
       (dashboardData.mt5_users?.length ?? 0) > 0;
-
-    console.log("[ProfileStepper] Step statuses:", {
-      personalInfoComplete,
-      kycComplete,
-      hasDeposit,
-      hasMt5Account,
-      hasBankDetails,
-    });
 
     const stepsList: StepItem[] = [
       {
@@ -129,8 +119,6 @@ export function ProfileStepper({
       },
     ];
 
-    console.log("[ProfileStepper] Bank Details Step:", stepsList.find(s => s.id === "bank"));
-
     // Sort steps: completed items at top, pending items at bottom
     const sortedSteps = stepsList.sort((a, b) => {
       const aCompleted = a.status === "completed";
@@ -144,13 +132,6 @@ export function ProfileStepper({
       // Put completed items first (top), pending items last (bottom)
       return aCompleted ? -1 : 1;
     });
-
-    console.log("[ProfileStepper] Sorted steps:", sortedSteps.map(s => ({
-      id: s.id,
-      title: s.title,
-      status: s.status,
-      order: s.order,
-    })));
 
     return sortedSteps;
   }, [dashboardData, hasBankDetails]);

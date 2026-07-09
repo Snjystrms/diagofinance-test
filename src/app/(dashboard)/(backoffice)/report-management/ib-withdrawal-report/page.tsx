@@ -149,9 +149,6 @@ export default function IbWithdrawalReportPage() {
       const payload = (response as unknown) as IbWithdrawalReportListPayload;
       const reportItems = Array.isArray(payload?.data) ? payload.data : [];
       
-      console.log("IB Withdrawal report items:", reportItems);
-      console.log("Pagination:", payload?.pagination);
-      
       setRows(reportItems);
 
       const paginationData = payload?.pagination;

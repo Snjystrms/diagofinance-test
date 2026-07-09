@@ -187,9 +187,6 @@ export default function WithdrawalReportPage() {
       const payload = (response as unknown) as WithdrawalReportListPayload;
       const reportItems = Array.isArray(payload?.data) ? payload.data : [];
       
-      console.log("Withdrawal report items:", reportItems);
-      console.log("Pagination:", payload?.pagination);
-      
       setRows(reportItems);
 
       const paginationData = payload?.pagination;

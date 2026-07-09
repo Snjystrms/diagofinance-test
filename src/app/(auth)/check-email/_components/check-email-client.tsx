@@ -120,8 +120,6 @@ export function CheckEmailClient() {
             return prev - 1;
           });
         }, 1000);
-
-        console.log('OTP resent successfully');
       } else {
         setError(result.message || 'Failed to resend OTP. Please try again.');
       }

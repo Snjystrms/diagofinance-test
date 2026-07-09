@@ -20,7 +20,6 @@ export async function POST(request: NextRequest) {
     // 4. Send confirmation email
 
     // For demo purposes, we'll just log and return success
-    console.log('Verification request:', { hashcode, txHash });
 
     // Simulate processing delay
     await new Promise(resolve => setTimeout(resolve, 1000));

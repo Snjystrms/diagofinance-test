@@ -72,9 +72,6 @@ export default function LoginActivityReportPage() {
       const payload = (response as unknown) as LoginActivityReportListPayload;
       const reportItems = Array.isArray(payload?.data) ? payload.data : [];
       
-      console.log("Login activity report items:", reportItems);
-      console.log("Pagination:", payload?.pagination);
-      
       setRows(reportItems);
 
       const paginationData = payload?.pagination;

@@ -29,7 +29,6 @@ export async function POST(request: NextRequest) {
     // 4. Update any existing OTP records for this email
 
     // For now, we'll simulate the process
-    console.log(`Resending OTP to: ${email}`);
     
     // Simulate API delay
     await new Promise(resolve => setTimeout(resolve, 1000));

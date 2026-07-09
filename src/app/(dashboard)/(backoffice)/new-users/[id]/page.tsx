@@ -1507,12 +1507,6 @@ export default function NewUserDetailPage() {
       setLoadingMt5Balances(true);
       const newBalances = new Map<string, number | null>();
 
-      console.log(
-        "[MT5 Balance Fetch] Starting to fetch balances for",
-        mt5AccountsState.rows.length,
-        "accounts",
-      );
-
       await Promise.all(
         mt5AccountsState.rows.map(async (account) => {
           const mt5Login = account.mt5_id ?? account.id;
@@ -1525,29 +1519,13 @@ export default function NewUserDetailPage() {
           }
 
           try {
-            console.log(
-              "[MT5 Balance Fetch] Fetching equity for MT5 login:",
-              mt5Login,
-            );
             const response = (await mt5AccountsApi.getAdminBalance(
               mt5Login,
               token,
             )) as unknown as MT5AccountBalance;
-            console.log(
-              "[MT5 Balance Fetch] Response for",
-              mt5Login,
-              ":",
-              response,
-            );
 
             if (response.success && response.equity !== undefined) {
               newBalances.set(String(mt5Login), response.equity);
-              console.log(
-                "[MT5 Balance Fetch] ✓ Stored equity for",
-                mt5Login,
-                ":",
-                response.equity,
-              );
             } else {
               newBalances.set(String(mt5Login), null);
               console.warn(
@@ -1569,11 +1547,6 @@ export default function NewUserDetailPage() {
             );
           }
         }),
-      );
-
-      console.log(
-        "[MT5 Balance Fetch] Completed. Total balances fetched:",
-        newBalances.size,
       );
       setMt5LiveBalances(newBalances);
       setLoadingMt5Balances(false);

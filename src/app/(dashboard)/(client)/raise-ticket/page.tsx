@@ -234,8 +234,6 @@ export default function RaiseTicketPage() {
 
       const response = await ticketApi.list(token, page, perPage);
 
-      console.log("Ticket API Response:", response);
-
       // Handle different response structures
       let ticketsData: TicketItem[] = [];
       let paginationData: { current_page?: number; per_page?: number; total?: number; total_pages?: number; last_page?: number } | null = null;
@@ -262,9 +260,6 @@ export default function RaiseTicketPage() {
           }
         }
       }
-
-      console.log("Extracted tickets:", ticketsData);
-      console.log("Extracted pagination:", paginationData);
 
       // Apply status filter
       if (statusFilter && statusFilter !== "all") {

@@ -395,7 +395,6 @@ export function DashboardPageContent() {
           return { success: false, data: null };
         }),
         ibRequestsApi.getIbWallet(token).catch((err) => {
-          console.log("IB Wallet not available (user may not be IB):", err);
           return null;
         }),
         authApi.getWalletStatistics(token, "deposits", depositStatisticsPeriod),
@@ -483,20 +482,12 @@ export function DashboardPageContent() {
   // Fetch bank details to check completion status
   useEffect(() => {
     if (!isUser || !token) {
-      console.log("[BankDetails] Skipping fetch - isUser:", isUser, "token:", !!token);
       return;
     }
 
     const fetchBankDetails = async () => {
       try {
-        console.log("[BankDetails] Fetching bank details...");
         const response = await authApi.getBankDetails(token);
-        console.log("[BankDetails] Full Response:", JSON.stringify(response, null, 2));
-        console.log("[BankDetails] Response.success:", response.success);
-        console.log("[BankDetails] Response.status:", response.status);
-        console.log("[BankDetails] Response.data:", response.data);
-        console.log("[BankDetails] Response.data type:", typeof response.data);
-        console.log("[BankDetails] Response.data isArray:", Array.isArray(response.data));
         
         // Check for success: response.success should be true, but API might return status code instead
         // Handle both success boolean and status field (as number or string)
@@ -506,11 +497,8 @@ export function DashboardPageContent() {
         
         if (isSuccess && response.data && Array.isArray(response.data)) {
           const hasBankAccounts = response.data.length > 0;
-          console.log("[BankDetails] Has Bank Details:", hasBankAccounts, "Count:", response.data.length);
-          console.log("[BankDetails] Setting hasBankDetails to:", hasBankAccounts);
           setHasBankDetails(hasBankAccounts);
         } else {
-          console.log("[BankDetails] Response unsuccessful or no data - setting false");
           setHasBankDetails(false);
         }
       } catch (error) {
@@ -524,7 +512,6 @@ export function DashboardPageContent() {
 
   // Debug: Log hasBankDetails state changes
   useEffect(() => {
-    console.log("[BankDetails] hasBankDetails state changed to:", hasBankDetails);
   }, [hasBankDetails]);
 
   // Check if MT5 dialog should be shown (only if user has no MT5 accounts and profile is complete)
@@ -632,7 +619,6 @@ export function DashboardPageContent() {
             return { success: false, data: null };
           }),
           ibRequestsApi.getIbWallet(token).catch((err) => {
-            console.log("IB Wallet not available (user may not be IB):", err);
             return null;
           }),
         ]);

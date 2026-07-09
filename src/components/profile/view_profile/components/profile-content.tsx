@@ -1153,9 +1153,6 @@ export default function ProfileContent() {
       if (Object.keys(errors).length > 0) {
         setValidationErrors(errors);
         
-        // Log errors for debugging
-        console.log("Validation errors:", errors);
-        
         // Create a detailed error message with the first few errors
         const errorFields = Object.entries(errors).slice(0, 3);
         const errorMessage = errorFields.length === 1 
