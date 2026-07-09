@@ -688,9 +688,9 @@ export default function AllAccountsPage() {
                   <DropdownMenuItem onClick={() => handleExport("xlsx")}>
                     Export Excel (.xlsx)
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport("csv")}>
+                  {/* <DropdownMenuItem onClick={() => handleExport("csv")}>
                     Export CSV (.csv)
-                  </DropdownMenuItem>
+                  </DropdownMenuItem> */}
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button onClick={() => setIsCreateDialogOpen(true)}>

@@ -419,9 +419,9 @@ export function AdminTransactionContent() {
               <DropdownMenuItem onClick={() => void handleExport("xlsx")}>
                 Export Excel (.xlsx)
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => void handleExport("csv")}>
+              {/* <DropdownMenuItem onClick={() => void handleExport("csv")}>
                 Export CSV (.csv)
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
             </DropdownMenuContent>
           </DropdownMenu>
           <Button onClick={() => setDepositDialogOpen(true)}>

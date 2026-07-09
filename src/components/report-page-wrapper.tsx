@@ -55,7 +55,7 @@ export function ReportPageWrapper({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => onExport("xlsx")}>Export Excel (.xlsx)</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onExport("csv")}>Export CSV (.csv)</DropdownMenuItem>
+        {/* <DropdownMenuItem onClick={() => onExport("csv")}>Export CSV (.csv)</DropdownMenuItem> */}
       </DropdownMenuContent>
     </DropdownMenu>
   ) : null;

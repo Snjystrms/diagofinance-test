@@ -37,6 +37,10 @@ import {
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { 
+  ReusableDataTable,
+  type ColumnDef,
+} from "@/components/data-table";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -58,8 +62,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import {
-  adminIbCommissionReportApi,
-  // adminIbPlansApi,
   adminIbUsersApi,
   type AdminIbPlanItem,
   type AdminIbUser,
@@ -72,8 +74,12 @@ import {
   type AdminIbSubIb,
   type AdminIbWalletTransaction,
   type AdminIbNetworkBusinessBreakdown,
-  type IbCommissionReportPayload,
 } from "@/lib/api";
+import {
+  adminIbCommissionReportApi,
+  type IbCommissionReportPayload,
+  type IbCommissionReportUser,
+} from "@/lib/api-trading-ib";
 import { formatCurrency } from "@/lib/format";
 import { formatAmount, formatDateTimeInIST } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
@@ -512,15 +518,143 @@ function WalletTab({
   onPageChange,
   currentPage,
   totalPages,
+  perPage,
+  onPerPageChange,
 }: TabShellProps & { 
   data: AdminIbWalletData | null;
   onPageChange: (page: number) => void;
   currentPage: number;
   totalPages: number;
+  perPage: number;
+  onPerPageChange: (perPage: number) => void;
 }) {
   const partnerWallet = data?.partner_wallet;
   const clientWallet = data?.client_wallet;
   const transactions = data?.recent_transactions ?? [];
+  const totalTransactions = data?.pagination?.total ?? transactions.length;
+
+  const walletTransactionColumns: ColumnDef<AdminIbWalletTransaction>[] = [
+    {
+      header: "Type",
+      key: "type",
+      render: (tx) => {
+        const isOutflow = ["withdrawal", "transfer_out", "debit"].some(type =>
+          String(tx.type).toLowerCase().includes(type)
+        );
+        const displayType = tx.type ? String(tx.type).replace(/_/g, " ") : "Transaction";
+        
+        return (
+          <div className="flex items-center gap-2.5">
+            <span
+              className={cn(
+                "flex h-7 w-7 shrink-0 items-center justify-center rounded-xl text-[13px]",
+                isOutflow
+                  ? "bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300"
+                  : "bg-emerald-100 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300"
+              )}
+            >
+              {isOutflow ? (
+                <ArrowUpRight className="h-3.5 w-3.5" />
+              ) : (
+                <ArrowDownRight className="h-3.5 w-3.5" />
+              )}
+            </span>
+            <span className="font-medium text-foreground capitalize">{displayType}</span>
+          </div>
+        );
+      },
+      className: "whitespace-nowrap",
+    },
+    {
+      header: "Description",
+      key: "description",
+      render: (tx) => (
+        <span className="max-w-[220px] truncate block text-muted-foreground">
+          {tx.description || "—"}
+        </span>
+      ),
+    },
+    {
+      header: "Amount",
+      key: "amount",
+      align: "right",
+      render: (tx) => {
+        const amount = tx.net_amount ?? tx.amount ?? 0;
+        const isOutflow = ["withdrawal", "transfer_out", "debit"].some(type =>
+          String(tx.type).toLowerCase().includes(type)
+        );
+        
+        return (
+          <span
+            className={cn(
+              "font-semibold tabular-nums",
+              isOutflow
+                ? "text-rose-600 dark:text-rose-300"
+                : "text-emerald-600 dark:text-emerald-300"
+            )}
+          >
+            {isOutflow ? "−" : "+"}
+            {formatCurrency(Math.abs(amount))}
+          </span>
+        );
+      },
+      className: "whitespace-nowrap",
+    },
+    {
+      header: "Status",
+      key: "status",
+      render: (tx) => {
+        const status = tx.status?.toLowerCase() ?? "";
+        
+        if (["completed", "success", "approved"].includes(status)) {
+          return (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 capitalize">{tx.status}</span>
+            </span>
+          );
+        }
+        
+        if (["pending", "processing"].includes(status)) {
+          return (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+              <span className="text-xs font-medium text-amber-600 dark:text-amber-400 capitalize">{tx.status}</span>
+            </span>
+          );
+        }
+        
+        if (["failed", "rejected", "cancelled"].includes(status)) {
+          return (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-rose-500" />
+              <span className="text-xs font-medium text-rose-600 dark:text-rose-400 capitalize">{tx.status}</span>
+            </span>
+          );
+        }
+        
+        return <Badge variant="outline" className="capitalize">{tx.status || "Unknown"}</Badge>;
+      },
+      className: "whitespace-nowrap",
+    },
+    {
+      header: "Date",
+      key: "date",
+      render: (tx) => (
+        <span className="tabular-nums text-xs text-muted-foreground">
+          {tx.date ? formatDateTimeInIST(tx.date, "—") : "—"}
+        </span>
+      ),
+      className: "whitespace-nowrap",
+    },
+  ];
+
+  const pagination = {
+    current_page: currentPage,
+    per_page: perPage,
+    total: totalTransactions,
+    total_pages: totalPages,
+  };
 
   return (
     <>
@@ -551,83 +685,22 @@ function WalletTab({
         title="Recent wallet transactions"
         description="Latest movements across both wallets."
       >
-        {loading ? (
-          <TabSkeleton rows={5} />
-        ) : transactions.length > 0 ? (
-          <>
-            <div className="overflow-hidden rounded-2xl border border-border/60">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Sr. No.</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Description</TableHead>
-                    <TableHead>Date</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {transactions.map((tx, index) => (
-                    <TableRow key={tx.id}>
-                      <TableCell className="capitalize">{(currentPage - 1) * 10 + index + 1}</TableCell>
-                      <TableCell className="capitalize">{tx.type}</TableCell>
-                      <TableCell className="font-medium tabular-nums">
-                        {formatCurrency(tx.net_amount ?? tx.amount)}
-                      </TableCell>
-                      <TableCell>
-                        <span className={cn(
-                          "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium",
-                          tx.status === "completed"
-                            ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
-                            : "bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300",
-                        )}>
-                          {tx.status}
-                        </span>
-                      </TableCell>
-                      <TableCell className="max-w-[200px] truncate text-muted-foreground">
-                        {tx.description}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {tx.date ? formatDateTimeInIST(tx.date, "\u2014") : "\u2014"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+        <ReusableDataTable
+          data={transactions}
+          columns={walletTransactionColumns}
+          pagination={pagination}
+          isLoading={loading}
+          showSerialNumber={true}
+          serialNumberStart={(currentPage - 1) * perPage + 1}
+          onPageChange={onPageChange}
+          onPerPageChange={onPerPageChange}
+          emptyState={
+            <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
+              <Wallet className="h-6 w-6" />
+              No transactions yet.
             </div>
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between gap-2 pt-4">
-                <p className="text-sm text-muted-foreground">
-                  Page {currentPage} of {totalPages}
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onPageChange(currentPage - 1)}
-                    disabled={currentPage <= 1}
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onPageChange(currentPage + 1)}
-                    disabled={currentPage >= totalPages}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
-            <Wallet className="h-6 w-6" />
-            No transactions yet.
-          </div>
-        )}
+          }
+        />
       </IbSectionCard>
     </>
   );
@@ -640,10 +713,16 @@ function NetworkTab({
   subIbsData,
   businessPage,
   onBusinessPageChange,
+  businessPerPage,
+  onBusinessPerPageChange,
   clientsPage,
   onClientsPageChange,
+  clientsPerPage,
+  onClientsPerPageChange,
   subIbsPage,
   onSubIbsPageChange,
+  subIbsPerPage,
+  onSubIbsPerPageChange,
   clientsDateFrom,
   clientsDateTo,
   onClientsDateFromChange,
@@ -660,10 +739,16 @@ function NetworkTab({
   subIbsData: AdminIbSubIbsResponse | null;
   businessPage: number;
   onBusinessPageChange: (page: number) => void;
+  businessPerPage: number;
+  onBusinessPerPageChange: (perPage: number) => void;
   clientsPage: number;
   onClientsPageChange: (page: number) => void;
+  clientsPerPage: number;
+  onClientsPerPageChange: (perPage: number) => void;
   subIbsPage: number;
   onSubIbsPageChange: (page: number) => void;
+  subIbsPerPage: number;
+  onSubIbsPerPageChange: (perPage: number) => void;
   clientsDateFrom: Date | undefined;
   clientsDateTo: Date | undefined;
   onClientsDateFromChange: (date: Date | undefined) => void;
@@ -675,28 +760,170 @@ function NetworkTab({
   onSubIbsDateToChange: (date: Date | undefined) => void;
   onResetSubIbsFilters: () => void;
 }) {
-  const ITEMS_PER_PAGE = 10;
-  
-  const paginatedBusinessBreakdown = networkData?.business_breakdown?.slice(
-    (businessPage - 1) * ITEMS_PER_PAGE,
-    businessPage * ITEMS_PER_PAGE
-  ) ?? [];
-  const businessTotalPages = Math.ceil((networkData?.business_breakdown?.length ?? 0) / ITEMS_PER_PAGE);
-  
-  const paginatedClients = clientsData?.data?.slice(
-    (clientsPage - 1) * ITEMS_PER_PAGE,
-    clientsPage * ITEMS_PER_PAGE
-  ) ?? [];
-  const clientsTotalPages = Math.ceil((clientsData?.data?.length ?? 0) / ITEMS_PER_PAGE);
-  
-  const paginatedSubIbs = subIbsData?.data?.slice(
-    (subIbsPage - 1) * ITEMS_PER_PAGE,
-    subIbsPage * ITEMS_PER_PAGE
-  ) ?? [];
-  const subIbsTotalPages = Math.ceil((subIbsData?.data?.length ?? 0) / ITEMS_PER_PAGE);
+  const businessBreakdown = networkData?.business_breakdown ?? [];
+  const clients = clientsData?.data ?? [];
+  const subIbs = subIbsData?.data ?? [];
   
   const clientsActiveFilterCount = (clientsDateFrom ? 1 : 0) + (clientsDateTo ? 1 : 0);
   const subIbsActiveFilterCount = (subIbsDateFrom ? 1 : 0) + (subIbsDateTo ? 1 : 0);
+
+  // Column definitions
+  const businessColumns: ColumnDef<AdminIbNetworkBusinessBreakdown>[] = [
+    {
+      header: "Level",
+      key: "level",
+      render: (b) => (
+        <span className="font-medium">
+          {b.level_label === "IB" ? "Partner" : b.level_label}
+        </span>
+      ),
+    },
+    {
+      header: "Source",
+      key: "source",
+      render: (b) => (
+        <span className="text-muted-foreground">
+          {b.source === "Sub-IBs" ? "Sub-Partner" : b.source}
+        </span>
+      ),
+    },
+    {
+      header: "Lots",
+      key: "lots",
+      align: "right",
+      render: (b) => <span className="tabular-nums">{b.lots}</span>,
+    },
+    {
+      header: "Commission Earned",
+      key: "commission_earned",
+      align: "right",
+      render: (b) => (
+        <span className="tabular-nums">{formatCurrency(b.commission_earned)}</span>
+      ),
+    },
+    {
+      header: "Clients / Sub-Partners",
+      key: "clients_sub_ibs",
+      align: "right",
+      render: (b) => (
+        <span className="tabular-nums">
+          {b.clients > 0 ? `${b.clients} clients` : ""}
+          {b.sub_ibs > 0 ? `${b.clients > 0 ? " / " : ""}${b.sub_ibs} sub-partners` : ""}
+          {b.clients === 0 && b.sub_ibs === 0 ? "—" : ""}
+        </span>
+      ),
+    },
+  ];
+
+  const clientsColumns: ColumnDef<AdminIbClient>[] = [
+    {
+      header: "Client",
+      key: "name",
+      render: (client) => (
+        <div>
+          <p className="font-medium">{client.name}</p>
+          <p className="text-xs text-muted-foreground">{client.email}</p>
+        </div>
+      ),
+    },
+    {
+      header: "Lots",
+      key: "lots",
+      align: "right",
+      render: (client) => <span className="tabular-nums">{client.lots}</span>,
+    },
+    {
+      header: "Earned",
+      key: "earned",
+      align: "right",
+      render: (client) => (
+        <span className="tabular-nums">{formatCurrency(client.earned)}</span>
+      ),
+    },
+    {
+      header: "Pending",
+      key: "pending",
+      align: "right",
+      render: (client) => (
+        <span className="tabular-nums">{formatCurrency(client.pending)}</span>
+      ),
+    },
+    {
+      header: "Registered",
+      key: "registered",
+      render: (client) => (
+        <span className="text-muted-foreground">
+          {client.registered ? formatDateTimeInIST(client.registered, "—") : "—"}
+        </span>
+      ),
+      hideOnMobile: true,
+    },
+  ];
+
+  const subIbsColumns: ColumnDef<AdminIbSubIb>[] = [
+    {
+      header: "Sub-Partner",
+      key: "name",
+      render: (sub) => (
+        <div>
+          <p className="font-medium">{sub.name}</p>
+          <p className="text-xs text-muted-foreground">{sub.email}</p>
+        </div>
+      ),
+    },
+    {
+      header: "Level",
+      key: "level_label",
+      render: (sub) => (
+        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
+          {sub.level_label}
+        </span>
+      ),
+    },
+    {
+      header: "Lots",
+      key: "lots",
+      align: "right",
+      render: (sub) => <span className="tabular-nums">{sub.lots}</span>,
+    },
+    {
+      header: "Earned",
+      key: "earned",
+      align: "right",
+      render: (sub) => (
+        <span className="tabular-nums">{formatCurrency(sub.earned)}</span>
+      ),
+    },
+    {
+      header: "Pending",
+      key: "pending",
+      align: "right",
+      render: (sub) => (
+        <span className="tabular-nums">{formatCurrency(sub.pending)}</span>
+      ),
+    },
+  ];
+
+  const businessPagination = {
+    current_page: businessPage,
+    per_page: businessPerPage,
+    total: businessBreakdown.length,
+    total_pages: Math.ceil(businessBreakdown.length / businessPerPage),
+  };
+
+  const clientsPagination = {
+    current_page: clientsPage,
+    per_page: clientsPerPage,
+    total: clients.length,
+    total_pages: Math.ceil(clients.length / clientsPerPage),
+  };
+
+  const subIbsPagination = {
+    current_page: subIbsPage,
+    per_page: subIbsPerPage,
+    total: subIbs.length,
+    total_pages: Math.ceil(subIbs.length / subIbsPerPage),
+  };
   
   return (
     <>
@@ -765,74 +992,22 @@ function NetworkTab({
         title="Business breakdown"
         description="lots contributed by each level of your downline."
       >
-        {loading ? (
-          <TabSkeleton rows={5} />
-        ) : (networkData?.business_breakdown?.length ?? 0) > 0 ? (
-          <>
-            <div className="overflow-hidden rounded-2xl border border-border/60">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Sr. No.</TableHead>
-                    <TableHead>Level</TableHead>
-                    <TableHead>Source</TableHead>
-                    {/* <TableHead className="text-right">Volume</TableHead> */}
-                    <TableHead className="text-right">Lots</TableHead>
-                    <TableHead className="text-right">Commission Earned</TableHead>
-                    <TableHead className="text-right">Clients / Sub-Partners</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {paginatedBusinessBreakdown.map((b, index) => (
-                    <TableRow key={b.level}>
-                      <TableCell>{(businessPage - 1) * ITEMS_PER_PAGE + index + 1}</TableCell>
-                      <TableCell className="font-medium">{b.level_label === "IB" ? "Partner" : b.level_label}</TableCell>
-                      <TableCell className="text-muted-foreground">{b.source === "Sub-IBs" ? "Sub-Partner" : b.source}</TableCell>
-                      {/* <TableCell className="text-right tabular-nums">{b.volume}</TableCell> */}
-                      <TableCell className="text-right tabular-nums">{b.lots}</TableCell>
-                      <TableCell className="text-right tabular-nums">{formatCurrency(b.commission_earned)}</TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {b.clients > 0 ? `${b.clients} clients` : ""}
-                        {b.sub_ibs > 0 ? `${b.clients > 0 ? " / " : ""}${b.sub_ibs} sub-partners` : ""}
-                        {b.clients === 0 && b.sub_ibs === 0 ? "\u2014" : ""}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+        <ReusableDataTable
+          data={businessBreakdown}
+          columns={businessColumns}
+          pagination={businessPagination}
+          isLoading={loading}
+          showSerialNumber={true}
+          serialNumberStart={(businessPage - 1) * businessPerPage + 1}
+          onPageChange={onBusinessPageChange}
+          onPerPageChange={onBusinessPerPageChange}
+          emptyState={
+            <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
+              <BarChart3 className="h-6 w-6" />
+              No business breakdown data yet.
             </div>
-            {businessTotalPages > 1 && (
-              <div className="flex items-center justify-between gap-2 pt-4">
-                <p className="text-sm text-muted-foreground">
-                  Page {businessPage} of {businessTotalPages}
-                </p>
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onBusinessPageChange(businessPage - 1)}
-                    disabled={businessPage <= 1}
-                  >
-                    Previous
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onBusinessPageChange(businessPage + 1)}
-                    disabled={businessPage >= businessTotalPages}
-                  >
-                    Next
-                  </Button>
-                </div>
-              </div>
-            )}
-          </>
-        ) : (
-          <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
-            <BarChart3 className="h-6 w-6" />
-            No business breakdown data yet.
-          </div>
-        )}
+          }
+        />
       </IbSectionCard>
 
       <div className="grid gap-4 xl:grid-cols-2">
@@ -851,7 +1026,6 @@ function NetworkTab({
             ) : null
           }
         >
-          {/* Clients Date Filters */}
           <DateRangePicker
             fromDate={clientsDateFrom}
             toDate={clientsDateTo}
@@ -860,77 +1034,22 @@ function NetworkTab({
             className="mb-4"
           />
           
-          {loading ? (
-            <TabSkeleton rows={4} />
-          ) : (clientsData?.data?.length ?? 0) > 0 ? (
-            <>
-              <div className="overflow-hidden rounded-2xl border border-border/60">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Sr. No.</TableHead>  
-                      <TableHead>Client</TableHead>
-                      <TableHead className="text-right">Lots</TableHead>
-                      {/* <TableHead className="text-right">Volume</TableHead> */}
-                      <TableHead className="text-right">Earned</TableHead>
-                      <TableHead className="text-right">Pending</TableHead>
-                      <TableHead>Registered</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedClients.map((client, index) => (
-                      <TableRow key={client.id}>
-                        <TableCell>{(clientsPage - 1) * ITEMS_PER_PAGE + index + 1}</TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{client.name}</p>
-                            <p className="text-xs text-muted-foreground">{client.email}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">{client.lots}</TableCell>
-                        {/* <TableCell className="text-right tabular-nums">{client.volume}</TableCell> */}
-                        <TableCell className="text-right tabular-nums">{formatCurrency(client.earned)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{formatCurrency(client.pending)}</TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {client.registered ? formatDateTimeInIST(client.registered, "\u2014") : "\u2014"}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+          <ReusableDataTable
+            data={clients}
+            columns={clientsColumns}
+            pagination={clientsPagination}
+            isLoading={loading}
+            showSerialNumber={true}
+            serialNumberStart={(clientsPage - 1) * clientsPerPage + 1}
+            onPageChange={onClientsPageChange}
+            onPerPageChange={onClientsPerPageChange}
+            emptyState={
+              <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
+                <Users className="h-6 w-6" />
+                No direct clients yet.
               </div>
-              {clientsTotalPages > 1 && (
-                <div className="flex items-center justify-between gap-2 pt-4">
-                  <p className="text-sm text-muted-foreground">
-                    Page {clientsPage} of {clientsTotalPages}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onClientsPageChange(clientsPage - 1)}
-                      disabled={clientsPage <= 1}
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onClientsPageChange(clientsPage + 1)}
-                      disabled={clientsPage >= clientsTotalPages}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
-              <Users className="h-6 w-6" />
-              No direct clients yet.
-            </div>
-          )}
+            }
+          />
         </IbSectionCard>
 
         <IbSectionCard
@@ -948,7 +1067,6 @@ function NetworkTab({
             ) : null
           }
         >
-          {/* Sub-IBs Date Filters */}
           <DateRangePicker
             fromDate={subIbsDateFrom}
             toDate={subIbsDateTo}
@@ -957,79 +1075,22 @@ function NetworkTab({
             className="mb-4"
           />
           
-          {loading ? (
-            <TabSkeleton rows={4} />
-          ) : (subIbsData?.data?.length ?? 0) > 0 ? (
-            <>
-              <div className="overflow-hidden rounded-2xl border border-border/60">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Sr. No.</TableHead>
-                      <TableHead>Sub-Partner</TableHead>
-                      <TableHead>Level</TableHead>
-                      <TableHead className="text-right">Lots</TableHead>
-                      {/* <TableHead className="text-right">Volume</TableHead> */}
-                      <TableHead className="text-right">Earned</TableHead>
-                      <TableHead className="text-right">Pending</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {paginatedSubIbs.map((sub, index) => (
-                      <TableRow key={sub.id}>
-                        <TableCell>{(subIbsPage - 1) * ITEMS_PER_PAGE + index + 1}</TableCell>
-                        <TableCell>
-                          <div>
-                            <p className="font-medium">{sub.name}</p>
-                            <p className="text-xs text-muted-foreground">{sub.email}</p>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
-                            {sub.level_label}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right tabular-nums">{sub.lots}</TableCell>
-                        {/* <TableCell className="text-right tabular-nums">{sub.volume}</TableCell> */}
-                        <TableCell className="text-right tabular-nums">{formatCurrency(sub.earned)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{formatCurrency(sub.pending)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+          <ReusableDataTable
+            data={subIbs}
+            columns={subIbsColumns}
+            pagination={subIbsPagination}
+            isLoading={loading}
+            showSerialNumber={true}
+            serialNumberStart={(subIbsPage - 1) * subIbsPerPage + 1}
+            onPageChange={onSubIbsPageChange}
+            onPerPageChange={onSubIbsPerPageChange}
+            emptyState={
+              <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
+                <Network className="h-6 w-6" />
+                No sub-partners yet.
               </div>
-              {subIbsTotalPages > 1 && (
-                <div className="flex items-center justify-between gap-2 pt-4">
-                  <p className="text-sm text-muted-foreground">
-                    Page {subIbsPage} of {subIbsTotalPages}
-                  </p>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onSubIbsPageChange(subIbsPage - 1)}
-                      disabled={subIbsPage <= 1}
-                    >
-                      Previous
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onSubIbsPageChange(subIbsPage + 1)}
-                      disabled={subIbsPage >= subIbsTotalPages}
-                    >
-                      Next
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
-              <Network className="h-6 w-6" />
-              No sub-partners yet.
-            </div>
-          )}
+            }
+          />
         </IbSectionCard>
       </div>
     </>
@@ -1098,9 +1159,13 @@ function CommissionTab({
   loading,
   commissionPages,
   onCommissionPageChange,
+  commissionPerPages,
+  onCommissionPerPageChange,
 }: TabShellProps & {
   commissionPages: Record<number, number>;
   onCommissionPageChange: (level: number, page: number) => void;
+  commissionPerPages: Record<number, number>;
+  onCommissionPerPageChange: (level: number, perPage: number) => void;
 }) {
   const { token } = useAuth();
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
@@ -1108,8 +1173,6 @@ function CommissionTab({
   const [report, setReport] = useState<IbCommissionReportPayload | null>(null);
   const [reportLoading, setReportLoading] = useState(false);
   const [loadError, setLoadError] = useState<unknown | null>(null);
-
-  const ITEMS_PER_PAGE = 10;
 
   const userId = user.user.id ?? user.user.uuid;
   const activeFilterCount = (fromDate ? 1 : 0) + (toDate ? 1 : 0);
@@ -1141,6 +1204,49 @@ function CommissionTab({
   useEffect(() => {
     void loadReport();
   }, [loadReport]);
+
+  // Column definition for commission users
+  const commissionUsersColumns: ColumnDef<IbCommissionReportUser>[] = [
+    {
+      header: "User",
+      key: "name",
+      render: (u) => (
+        <div>
+          <div className="font-medium">{u.name}</div>
+          <div className="text-xs text-muted-foreground">{u.email}</div>
+        </div>
+      ),
+    },
+    {
+      header: "Sponsor ID",
+      key: "sponsor_id",
+      render: (u) => u.sponsor_id || "—",
+    },
+    {
+      header: "Volume",
+      key: "volume",
+      align: "right",
+      render: (u) => <span className="tabular-nums">{formatAmount(u.volume)}</span>,
+    },
+    {
+      header: "Commission",
+      key: "commission",
+      align: "right",
+      render: (u) => <span className="tabular-nums">{formatAmount(u.commission)}</span>,
+    },
+    {
+      header: "Trades",
+      key: "trade_count",
+      align: "right",
+      render: (u) => <span className="tabular-nums">{u.trade_count}</span>,
+    },
+    {
+      header: "Trade Days",
+      key: "trade_days",
+      align: "right",
+      render: (u) => <span className="tabular-nums">{u.trade_days}</span>,
+    },
+  ];
 
   return (
     <>
@@ -1211,11 +1317,14 @@ function CommissionTab({
 
             {report.levels.map((level) => {
               const currentPage = commissionPages[level.level] ?? 1;
-              const paginatedUsers = level.users.slice(
-                (currentPage - 1) * ITEMS_PER_PAGE,
-                currentPage * ITEMS_PER_PAGE
-              );
-              const totalPages = Math.ceil(level.users.length / ITEMS_PER_PAGE);
+              const currentPerPage = commissionPerPages[level.level] ?? 10;
+              
+              const pagination = {
+                current_page: currentPage,
+                per_page: currentPerPage,
+                total: level.users.length,
+                total_pages: Math.ceil(level.users.length / currentPerPage),
+              };
               
               return (
               <IbSectionCard
@@ -1228,70 +1337,22 @@ function CommissionTab({
                   </Badge>
                 }
               >
-                <div className="overflow-hidden rounded-2xl border border-border/60">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Sr. No.</TableHead>
-                        <TableHead>User</TableHead>
-                        <TableHead>Sponsor ID</TableHead>
-                        <TableHead className="text-right">Volume</TableHead>
-                        <TableHead className="text-right">Commission</TableHead>
-                        <TableHead className="text-right">Trades</TableHead>
-                        <TableHead className="text-right">Trade Days</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {level.users.length === 0 ? (
-                        <TableRow>
-                          <TableCell colSpan={7} className="text-center text-muted-foreground py-6">
-                            No users at this level.
-                          </TableCell>
-                        </TableRow>
-                      ) : (
-                        paginatedUsers.map((u, index) => (
-                          <TableRow key={u.user_id}>
-                            <TableCell>{(currentPage - 1) * ITEMS_PER_PAGE + index + 1}</TableCell>
-                            <TableCell>
-                              <div className="font-medium">{u.name}</div>
-                              <div className="text-xs text-muted-foreground">{u.email}</div>
-                            </TableCell>
-                            <TableCell>{u.sponsor_id || "\u2014"}</TableCell>
-                            <TableCell className="text-right tabular-nums">{formatAmount(u.volume)}</TableCell>
-                            <TableCell className="text-right tabular-nums">{formatAmount(u.commission)}</TableCell>
-                            <TableCell className="text-right tabular-nums">{u.trade_count}</TableCell>
-                            <TableCell className="text-right tabular-nums">{u.trade_days}</TableCell>
-                          </TableRow>
-                        ))
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
-                {totalPages > 1 && (
-                  <div className="flex items-center justify-between gap-2 pt-4">
-                    <p className="text-sm text-muted-foreground">
-                      Page {currentPage} of {totalPages}
-                    </p>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onCommissionPageChange(level.level, currentPage - 1)}
-                        disabled={currentPage <= 1}
-                      >
-                        Previous
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => onCommissionPageChange(level.level, currentPage + 1)}
-                        disabled={currentPage >= totalPages}
-                      >
-                        Next
-                      </Button>
+                <ReusableDataTable
+                  data={level.users}
+                  columns={commissionUsersColumns}
+                  pagination={pagination}
+                  isLoading={false}
+                  showSerialNumber={true}
+                  serialNumberStart={(currentPage - 1) * currentPerPage + 1}
+                  onPageChange={(page) => onCommissionPageChange(level.level, page)}
+                  onPerPageChange={(perPage) => onCommissionPerPageChange(level.level, perPage)}
+                  emptyState={
+                    <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
+                      <Users className="h-6 w-6" />
+                      No users at this level.
                     </div>
-                  </div>
-                )}
+                  }
+                />
               </IbSectionCard>
             )})}
           </>
@@ -1330,6 +1391,7 @@ export default function IbUserDetailPage() {
   const [walletLoading, setWalletLoading] = useState(false);
   const [walletLoaded, setWalletLoaded] = useState(false);
   const [walletPage, setWalletPage] = useState(1);
+  const [walletPerPage, setWalletPerPage] = useState(10);
 
   const [networkData, setNetworkData] = useState<AdminIbNetworkData | null>(null);
   const [networkLoading, setNetworkLoading] = useState(false);
@@ -1346,7 +1408,11 @@ export default function IbUserDetailPage() {
   const [subIbsPage, setSubIbsPage] = useState(1);
 
   const [businessPage, setBusinessPage] = useState(1);
+  const [businessPerPage, setBusinessPerPage] = useState(10);
+  const [clientsPerPage, setClientsPerPage] = useState(10);
+  const [subIbsPerPage, setSubIbsPerPage] = useState(10);
   const [commissionPages, setCommissionPages] = useState<Record<number, number>>({});
+  const [commissionPerPages, setCommissionPerPages] = useState<Record<number, number>>({});
 
   // Date filter states for clients
   const [clientsDateFrom, setClientsDateFrom] = useState<Date | undefined>(undefined);
@@ -1466,7 +1532,7 @@ export default function IbUserDetailPage() {
         case "wallet": {
           if (walletLoaded) return;
           setWalletLoading(true);
-          const res = await adminIbUsersApi.wallet(userId, token, walletPage, 10);
+          const res = await adminIbUsersApi.wallet(userId, token, walletPage, walletPerPage);
           setWalletData(res.data ?? null);
           setWalletLoaded(true);
           break;
@@ -1514,7 +1580,7 @@ export default function IbUserDetailPage() {
         default: break;
       }
     }
-  }, [token, userId, workspaceLoaded, walletLoaded, networkLoaded, clientsLoaded, subIbsLoaded, walletPage, clientsDateFrom, clientsDateTo, subIbsDateFrom, subIbsDateTo]);
+  }, [token, userId, workspaceLoaded, walletLoaded, networkLoaded, clientsLoaded, subIbsLoaded, walletPage, walletPerPage, clientsDateFrom, clientsDateTo, subIbsDateFrom, subIbsDateTo]);
 
   useEffect(() => {
     if (activeTab !== "profile") {
@@ -1780,8 +1846,14 @@ export default function IbUserDetailPage() {
                   data={walletData}
                   currentPage={walletPage}
                   totalPages={walletData?.pagination?.last_page ?? 1}
+                  perPage={walletPerPage}
                   onPageChange={(page) => {
                     setWalletPage(page);
+                    setWalletLoaded(false); // Trigger reload
+                  }}
+                  onPerPageChange={(perPage) => {
+                    setWalletPerPage(perPage);
+                    setWalletPage(1); // Reset to first page
                     setWalletLoaded(false); // Trigger reload
                   }}
                 />
@@ -1796,10 +1868,16 @@ export default function IbUserDetailPage() {
                   subIbsData={subIbsData}
                   businessPage={businessPage}
                   onBusinessPageChange={setBusinessPage}
+                  businessPerPage={businessPerPage}
+                  onBusinessPerPageChange={setBusinessPerPage}
                   clientsPage={clientsPage}
                   onClientsPageChange={setClientsPage}
+                  clientsPerPage={clientsPerPage}
+                  onClientsPerPageChange={setClientsPerPage}
                   subIbsPage={subIbsPage}
                   onSubIbsPageChange={setSubIbsPage}
+                  subIbsPerPage={subIbsPerPage}
+                  onSubIbsPerPageChange={setSubIbsPerPage}
                   clientsDateFrom={clientsDateFrom}
                   clientsDateTo={clientsDateTo}
                   onClientsDateFromChange={setClientsDateFrom}
@@ -1831,6 +1909,11 @@ export default function IbUserDetailPage() {
                     commissionPages={commissionPages}
                     onCommissionPageChange={(level, page) => {
                       setCommissionPages(prev => ({ ...prev, [level]: page }));
+                    }}
+                    commissionPerPages={commissionPerPages}
+                    onCommissionPerPageChange={(level, perPage) => {
+                      setCommissionPerPages(prev => ({ ...prev, [level]: perPage }));
+                      setCommissionPages(prev => ({ ...prev, [level]: 1 })); // Reset to page 1
                     }}
                   />
                 ) : null}

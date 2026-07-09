@@ -1032,11 +1032,11 @@ export default function NewUsersPage() {
                       >
                         Export Excel (.xlsx)
                       </DropdownMenuItem>
-                      <DropdownMenuItem
+                      {/* <DropdownMenuItem
                         onClick={() => void handleExport("csv")}
                       >
                         Export CSV (.csv)
-                      </DropdownMenuItem>
+                      </DropdownMenuItem> */}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : null}

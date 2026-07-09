@@ -778,9 +778,9 @@ export default function IbUsersPage() {
                 <DropdownMenuItem onClick={() => void handleExport("xlsx")}>
                   Export Excel (.xlsx)
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => void handleExport("csv")}>
+                {/* <DropdownMenuItem onClick={() => void handleExport("csv")}>
                   Export CSV (.csv)
-                </DropdownMenuItem>
+                </DropdownMenuItem> */}
               </DropdownMenuContent>
             </DropdownMenu>
             <Button variant="outline" onClick={loadUsers} disabled={loading}>
@@ -838,9 +838,9 @@ export default function IbUsersPage() {
       <DropdownMenuItem onClick={() => void handleExport("xlsx")}>
         Export Excel (.xlsx)
       </DropdownMenuItem>
-      <DropdownMenuItem onClick={() => void handleExport("csv")}>
+      {/* <DropdownMenuItem onClick={() => void handleExport("csv")}>
         Export CSV (.csv)
-      </DropdownMenuItem>
+      </DropdownMenuItem> */}
     </DropdownMenuContent>
   </DropdownMenu>
 
