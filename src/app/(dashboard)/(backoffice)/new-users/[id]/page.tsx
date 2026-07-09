@@ -845,22 +845,32 @@ export default function NewUserDetailPage() {
   const [depositsState, setDepositsState] = useState(() =>
     createPaginatedState<AdminUserTransactionItem>(),
   );
+  const [depositsPerPage, setDepositsPerPage] = useState(DEFAULT_PAGE_SIZE);
+  
   const [withdrawalsState, setWithdrawalsState] = useState(() =>
     createPaginatedState<AdminUserTransactionItem>(),
   );
+  const [withdrawalsPerPage, setWithdrawalsPerPage] = useState(DEFAULT_PAGE_SIZE);
+  
   const [bankDetailsState, setBankDetailsState] = useState(() =>
     createPaginatedState<AdminUserBankDetailItem>(),
   );
+  const [bankDetailsPerPage, setBankDetailsPerPage] = useState(DEFAULT_PAGE_SIZE);
+  
   const [activityState, setActivityState] = useState(() =>
     createPaginatedState<AdminUserActivityLogItem>(),
   );
+  const [activityPerPage, setActivityPerPage] = useState(DEFAULT_PAGE_SIZE);
+  
   const [referrer, setReferrer] = useState<AdminUserReferralItem | null>(null);
   const [referralLoading, setReferralLoading] = useState(false);
   const [referralError, setReferralError] = useState<unknown | null>(null);
   const [referralLoaded, setReferralLoaded] = useState(false);
+  
   const [walletHistoryState, setWalletHistoryState] = useState(() =>
     createPaginatedState<AdminUserWalletHistoryItem>(),
   );
+  const [walletHistoryPerPage, setWalletHistoryPerPage] = useState(DEFAULT_PAGE_SIZE);
   const [mt5AccountsState, setMt5AccountsState] = useState(() =>
     createCollectionState<AdminUserMt5AccountItem>(),
   );
@@ -878,7 +888,7 @@ export default function NewUserDetailPage() {
           userUuid,
           token,
           page,
-          DEFAULT_PAGE_SIZE,
+          depositsPerPage,
         );
         const normalized = normalizePaginatedRows(response.data);
         setDepositsState({
@@ -908,7 +918,7 @@ export default function NewUserDetailPage() {
         );
       }
     },
-    [token, userUuid, id],
+    [token, userUuid, id, depositsPerPage],
   );
 
   const loadWithdrawalsPage = useCallback(
@@ -924,7 +934,7 @@ export default function NewUserDetailPage() {
           userUuid,
           token,
           page,
-          DEFAULT_PAGE_SIZE,
+          withdrawalsPerPage,
         );
         const normalized = normalizePaginatedRows(response.data);
         setWithdrawalsState({
@@ -954,7 +964,7 @@ export default function NewUserDetailPage() {
         );
       }
     },
-    [token, userUuid, id],
+    [token, userUuid, id, withdrawalsPerPage],
   );
 
   const loadBankDetailsPage = useCallback(
@@ -970,7 +980,7 @@ export default function NewUserDetailPage() {
           userUuid,
           token,
           page,
-          DEFAULT_PAGE_SIZE,
+          bankDetailsPerPage,
         );
         const normalized = normalizePaginatedRows(response.data);
         setBankDetailsState({
@@ -1000,7 +1010,7 @@ export default function NewUserDetailPage() {
         );
       }
     },
-    [token, userUuid, id],
+    [token, userUuid, id, bankDetailsPerPage],
   );
 
   const loadActivityPage = useCallback(
@@ -1012,7 +1022,7 @@ export default function NewUserDetailPage() {
           userUuid,
           token,
           page,
-          DEFAULT_PAGE_SIZE,
+          activityPerPage,
         );
         const normalized = normalizePaginatedRows(response.data);
         setActivityState({
@@ -1042,7 +1052,7 @@ export default function NewUserDetailPage() {
         );
       }
     },
-    [token, userUuid, id],
+    [token, userUuid, id, activityPerPage],
   );
 
   const loadReferral = useCallback(async () => {
@@ -1090,7 +1100,7 @@ export default function NewUserDetailPage() {
           userUuid,
           token,
           page,
-          DEFAULT_PAGE_SIZE,
+          walletHistoryPerPage,
         );
         const normalized = normalizePaginatedRows(
           response.data,
@@ -1123,7 +1133,7 @@ export default function NewUserDetailPage() {
         );
       }
     },
-    [token, userUuid, id],
+    [token, userUuid, id, walletHistoryPerPage],
   );
 
   const handleDecryptPassword = useCallback(async () => {
@@ -1168,6 +1178,42 @@ export default function NewUserDetailPage() {
       setSendingWelcomeEmail(false);
     }
   }, [token, id]);
+
+  // Reload page 1 when perPage changes for any tab
+  useEffect(() => {
+    if (depositsState.loaded && !depositsState.loading) {
+      void loadDepositsPage(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [depositsPerPage]);
+
+  useEffect(() => {
+    if (withdrawalsState.loaded && !withdrawalsState.loading) {
+      void loadWithdrawalsPage(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [withdrawalsPerPage]);
+
+  useEffect(() => {
+    if (bankDetailsState.loaded && !bankDetailsState.loading) {
+      void loadBankDetailsPage(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bankDetailsPerPage]);
+
+  useEffect(() => {
+    if (activityState.loaded && !activityState.loading) {
+      void loadActivityPage(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activityPerPage]);
+
+  useEffect(() => {
+    if (walletHistoryState.loaded && !walletHistoryState.loading) {
+      void loadWalletHistoryPage(1);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [walletHistoryPerPage]);
 
   useEffect(() => {
     setActiveTab("deposits");
@@ -1996,8 +2042,11 @@ export default function NewUserDetailPage() {
                           pagination={convertToReusablePagination(depositsState.pagination)}
                           isLoading={depositsState.loading}
                           showSerialNumber={true}
-                          serialNumberStart={(depositsState.pagination?.current_page ?? 1 - 1) * (depositsState.pagination?.per_page ?? DEFAULT_PAGE_SIZE) + 1}
+                          serialNumberStart={((depositsState.pagination?.current_page ?? 1) - 1) * (depositsState.pagination?.per_page ?? DEFAULT_PAGE_SIZE) + 1}
                           onPageChange={(page) => void loadDepositsPage(page)}
+                          onPerPageChange={(perPage) => {
+                            setDepositsPerPage(perPage);
+                          }}
                           emptyState={
                             <EmptySectionState
                               title="No deposits found"
@@ -2027,6 +2076,9 @@ export default function NewUserDetailPage() {
                           showSerialNumber={true}
                           serialNumberStart={((withdrawalsState.pagination?.current_page ?? 1) - 1) * (withdrawalsState.pagination?.per_page ?? DEFAULT_PAGE_SIZE) + 1}
                           onPageChange={(page) => void loadWithdrawalsPage(page)}
+                          onPerPageChange={(perPage) => {
+                            setWithdrawalsPerPage(perPage);
+                          }}
                           emptyState={
                             <EmptySectionState
                               title="No withdrawals found"
@@ -2161,6 +2213,9 @@ export default function NewUserDetailPage() {
                           pagination={convertToReusablePagination(bankDetailsState.pagination)}
                           isLoading={bankDetailsState.loading}
                           onPageChange={(page) => void loadBankDetailsPage(page)}
+                          onPerPageChange={(perPage) => {
+                            setBankDetailsPerPage(perPage);
+                          }}
                           emptyState={
                             <EmptySectionState
                               title="No bank details found"
@@ -2190,6 +2245,9 @@ export default function NewUserDetailPage() {
                           showSerialNumber={true}
                           serialNumberStart={((activityState.pagination?.current_page ?? 1) - 1) * (activityState.pagination?.per_page ?? DEFAULT_PAGE_SIZE) + 1}
                           onPageChange={(page) => void loadActivityPage(page)}
+                          onPerPageChange={(perPage) => {
+                            setActivityPerPage(perPage);
+                          }}
                           emptyState={
                             <EmptySectionState
                               title="No activity found"
@@ -2270,6 +2328,9 @@ export default function NewUserDetailPage() {
                           showSerialNumber={true}
                           serialNumberStart={((walletHistoryState.pagination?.current_page ?? 1) - 1) * (walletHistoryState.pagination?.per_page ?? DEFAULT_PAGE_SIZE) + 1}
                           onPageChange={(page) => void loadWalletHistoryPage(page)}
+                          onPerPageChange={(perPage) => {
+                            setWalletHistoryPerPage(perPage);
+                          }}
                           emptyState={
                             <EmptySectionState
                               title="No wallet history found"
