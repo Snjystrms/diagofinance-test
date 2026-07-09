@@ -652,7 +652,7 @@ export default function IbClientsPage() {
       />
 
       {/* Metric cards */}
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+      {/* <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
         <IbMetricCard
           title="Current View"
           value={activeTab === "clients" ? "Clients" : activeTab === "sub-ibs" ? "Sub Partners" : "Rebates"}
@@ -674,7 +674,7 @@ export default function IbClientsPage() {
           icon={<DollarSign className="h-5 w-5" />}
           accent="emerald"
         />
-      </div>
+      </div> */}
 
       <IbSectionCard
         title="Partner activity ledger"

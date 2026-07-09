@@ -269,7 +269,7 @@ export default function IbWalletPage() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <IbMetricCard
           title="Partner Wallet"
           value={formatCurrency(snapshot.partnerWallet.amount, snapshot.partnerWallet.currency)}
@@ -287,9 +287,16 @@ export default function IbWalletPage() {
         <IbMetricCard
           title="Total Earned"
           value={formatCurrency(snapshot.earningSummary.total_earned, snapshot.earningSummary.currency)}
-          description={`Internal transfers: ${formatCurrency(snapshot.earningSummary.total_internal_transfers, snapshot.earningSummary.currency)}`}
+          description="Total earnings accumulated."
           icon={<TrendingUp className="h-5 w-5" />}
           accent="slate"
+        />
+        <IbMetricCard
+          title="Total Internal Transfers"
+          value={formatCurrency(snapshot.earningSummary.total_internal_transfers, snapshot.earningSummary.currency)}
+          description="Total internal transfers made."
+          icon={<TrendingUp className="h-5 w-5" />}
+          accent="amber"
         />
       </div>
 

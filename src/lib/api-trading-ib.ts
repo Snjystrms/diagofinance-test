@@ -627,11 +627,10 @@ export interface IbWalletData {
 }
 
 export interface IbWalletApiData {
-  partner_wallet?: number | string | IbWalletBalance;
-  wallet_balance?: number | string | IbWalletBalance;
-  client_wallet?: number | string | IbWalletBalance;
-  earning_summary?: Partial<IbWalletEarningSummary> | Record<string, unknown>;
-  transactions?: unknown;
+  partner_wallet: number;
+  client_wallet: number;
+  total_earned: number;
+  total_internal_transfers: number;
 }
 
 export interface IbWalletResponse {

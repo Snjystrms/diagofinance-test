@@ -240,31 +240,46 @@ export function normalizeIbWalletData(raw: unknown): IbWalletData | null {
     return null;
   }
 
-  const walletBalance = raw.wallet_balance ?? raw.partner_wallet;
+  const partnerWallet = raw.partner_wallet;
   const clientWallet = raw.client_wallet;
-  const earningSummary = raw.earning_summary;
-  const transactions = raw.transactions;
+  const totalEarned = raw.total_earned;
+  const totalInternalTransfers = raw.total_internal_transfers;
 
-  const hasWalletBalance = walletBalance !== undefined && walletBalance !== null;
+  const hasPartnerWallet = partnerWallet !== undefined && partnerWallet !== null;
   const hasClientWallet = clientWallet !== undefined && clientWallet !== null;
-  const hasEarningSummary = earningSummary !== undefined && earningSummary !== null;
-  const hasTransactions = transactions !== undefined && transactions !== null;
 
-  if (!hasWalletBalance && !hasClientWallet && !hasEarningSummary && !hasTransactions) {
+  if (!hasPartnerWallet && !hasClientWallet) {
     return null;
   }
 
-  const currency =
-    (isRecord(walletBalance) ? toString(walletBalance.currency) : "") ||
-    (isRecord(clientWallet) ? toString(clientWallet.currency) : "") ||
-    (isRecord(earningSummary) ? toString(earningSummary.currency) : "") ||
-    "USD";
+  const currency = "USD"; // Default currency
+
+  // Create earning summary from the new fields
+  const earningSummary = {
+    total_earned: typeof totalEarned === 'number' ? totalEarned : 0,
+    total_internal_transfers: typeof totalInternalTransfers === 'number' ? totalInternalTransfers : 0,
+    currency,
+  };
 
   return {
-    wallet_balance: normalizeWalletBalance(walletBalance, currency),
-    client_wallet: normalizeWalletBalance(clientWallet, currency),
-    earning_summary: normalizeEarningSummary(earningSummary, currency),
-    transactions: normalizeTransactions(transactions, currency),
+    wallet_balance: {
+      amount: typeof partnerWallet === 'number' ? partnerWallet : 0,
+      currency,
+    },
+    client_wallet: {
+      amount: typeof clientWallet === 'number' ? clientWallet : 0,
+      currency,
+    },
+    earning_summary: earningSummary,
+    transactions: {
+      data: [],
+      pagination: {
+        current_page: 1,
+        per_page: 10,
+        total: 0,
+        total_pages: 1,
+      },
+    },
   };
 }
 
