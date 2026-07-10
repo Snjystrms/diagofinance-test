@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import toast from "react-hot-toast";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
-import { RefreshCw, Search, Users } from "lucide-react";
+import { RefreshCw, Search, Users, Eye, EyeOff } from "lucide-react";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
@@ -116,6 +116,8 @@ export default function TempUsersPage() {
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<TempUser | null>(null);
   const [submittingRegistration, setSubmittingRegistration] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const completeRegistrationForm = useForm<CompleteRegistrationFormData>({
     resolver: zodResolver(completeRegistrationSchema),
@@ -393,8 +395,8 @@ export default function TempUsersPage() {
               className="space-y-4"
             >
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="first_name">
+                <div className="space-y-2">
+                  <Label htmlFor="first_name" className="mb-2 block">
                     First Name <span className="text-destructive">*</span>
                   </Label>
                   <Input
@@ -410,8 +412,8 @@ export default function TempUsersPage() {
                     </p>
                   )}
                 </div>
-                <div>
-                  <Label htmlFor="last_name">
+                <div className="space-y-2">
+                  <Label htmlFor="last_name" className="mb-2 block">
                     Last Name <span className="text-destructive">*</span>
                   </Label>
                   <Input
@@ -429,8 +431,8 @@ export default function TempUsersPage() {
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="email">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="mb-2 block">
                   Email <span className="text-destructive">*</span>
                 </Label>
                 <Input
@@ -446,8 +448,8 @@ export default function TempUsersPage() {
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="mobile">
+                <div className="space-y-2">
+                  <Label htmlFor="mobile" className="mb-2 block">
                     Mobile <span className="text-destructive">*</span>
                   </Label>
                   <Input
@@ -460,8 +462,8 @@ export default function TempUsersPage() {
                     </p>
                   )}
                 </div>
-                <div>
-                  <Label htmlFor="country">
+                <div className="space-y-2">
+                  <Label htmlFor="country" className="mb-2 block">
                     Country <span className="text-destructive">*</span>
                   </Label>
                   <Select
@@ -488,15 +490,29 @@ export default function TempUsersPage() {
               </div>
 
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div>
-                  <Label htmlFor="password">
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="mb-2 block">
                     Password <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    {...completeRegistrationForm.register("password")}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      {...completeRegistrationForm.register("password")}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                   {completeRegistrationForm.formState.errors.password && (
                     <p className="mt-1 text-sm text-destructive">
                       {
@@ -506,15 +522,29 @@ export default function TempUsersPage() {
                     </p>
                   )}
                 </div>
-                <div>
-                  <Label htmlFor="confirm_password">
+                <div className="space-y-2">
+                  <Label htmlFor="confirm_password" className="mb-2 block">
                     Confirm Password <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    id="confirm_password"
-                    type="password"
-                    {...completeRegistrationForm.register("confirm_password")}
-                  />
+                  <div className="relative">
+                    <Input
+                      id="confirm_password"
+                      type={showConfirmPassword ? "text" : "password"}
+                      {...completeRegistrationForm.register("confirm_password")}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                   {completeRegistrationForm.formState.errors
                     .confirm_password && (
                     <p className="mt-1 text-sm text-destructive">
@@ -527,8 +557,8 @@ export default function TempUsersPage() {
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="referral_code">Referral Code (Optional)</Label>
+              <div className="space-y-2">
+                <Label htmlFor="referral_code" className="mb-2 block">Referral Code (Optional)</Label>
                 <Input
                   id="referral_code"
                   {...completeRegistrationForm.register("referral_code")}

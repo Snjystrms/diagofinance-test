@@ -557,7 +557,7 @@ export default function ReportManagementPage() {
           </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-8">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
   <div className="space-y-1.5">
     <Label htmlFor="status-filter" className="text-xs font-medium text-muted-foreground">Status</Label>
     <Select
@@ -618,21 +618,6 @@ export default function ReportManagementPage() {
     </Select>
   </div>
 
-  <div className="md:col-span-2 xl:col-span-2">
-    <DateRangePicker
-      fromDate={fromDate}
-      toDate={toDate}
-      onFromDateChange={(date) => {
-        handleDateChange(date, "from");
-        setPage(1);
-      }}
-      onToDateChange={(date) => {
-        handleDateChange(date, "to");
-        setPage(1);
-      }}
-    />
-  </div>
-
   <div className="space-y-1.5">
     <Label htmlFor="sort-column" className="text-xs font-medium text-muted-foreground">Sort By</Label>
     <Select
@@ -669,6 +654,21 @@ export default function ReportManagementPage() {
         <SelectItem value="DESC">Descending</SelectItem>
       </SelectContent>
     </Select>
+  </div>
+
+  <div className="md:col-span-2 lg:col-span-3 xl:col-span-2">
+    <DateRangePicker
+      fromDate={fromDate}
+      toDate={toDate}
+      onFromDateChange={(date) => {
+        handleDateChange(date, "from");
+        setPage(1);
+      }}
+      onToDateChange={(date) => {
+        handleDateChange(date, "to");
+        setPage(1);
+      }}
+    />
   </div>
 </div>
 

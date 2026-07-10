@@ -854,6 +854,8 @@ export default function IbClientsPage() {
                 showSerialNumber
                 serialNumberStart={(rebatesPagination.current_page - 1) * rebatesPagination.per_page + 1}
                 onPageChange={setPage}
+                // onPerPageChange={handlePerPageChange}
+                perPageOptions={[10, 20, 30, 50, 100]}
               />
             ) : !rebatesError ? (
               <EmptyState

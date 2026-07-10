@@ -546,7 +546,7 @@ export default function AllPartnersReportPage() {
             delay={300}
           />
         </div>
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <div className="space-y-1.5">
             <Label htmlFor="verification-status-filter" className="text-xs font-medium text-muted-foreground">Verification Status</Label>
             <Select
@@ -567,19 +567,6 @@ export default function AllPartnersReportPage() {
               </SelectContent>
             </Select>
           </div>
-          
-          <DateRangePicker
-            fromDate={fromDate}
-            toDate={toDate}
-            onFromDateChange={(date) => {
-              handleDateChange(date, "from");
-              setPage(1);
-            }}
-            onToDateChange={(date) => {
-              handleDateChange(date, "to");
-              setPage(1);
-            }}
-          />
 
           <div className="space-y-1.5">
             <Label htmlFor="sort-column" className="text-xs font-medium text-muted-foreground">Sort By</Label>
@@ -627,6 +614,21 @@ export default function AllPartnersReportPage() {
                 <SelectItem value="DESC">Descending</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          
+          <div className="md:col-span-2 lg:col-span-3 xl:col-span-4">
+            <DateRangePicker
+              fromDate={fromDate}
+              toDate={toDate}
+              onFromDateChange={(date) => {
+                handleDateChange(date, "from");
+                setPage(1);
+              }}
+              onToDateChange={(date) => {
+                handleDateChange(date, "to");
+                setPage(1);
+              }}
+            />
           </div>
         </div>
       </div>
