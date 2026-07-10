@@ -698,7 +698,7 @@ export default function IbClientsPage() {
                 isLoading={clientsLoading}
               />
               {/* Date Filters */}
-              <div className="flex flex-wrap items-center gap-3 lg:ml-auto">
+              <div className="flex flex-wrap items-end gap-3 lg:ml-auto">
                 <DateRangePicker
                   fromDate={fromDateObj}
                   toDate={toDateObj}
@@ -762,7 +762,7 @@ export default function IbClientsPage() {
                 isLoading={subIbsLoading}
               />
               {/* Date Filters & Level Filter */}
-              <div className="flex flex-wrap items-center gap-3 lg:ml-auto">
+              <div className="flex flex-wrap items-end gap-3 lg:ml-auto">
                 <Select
                   value={levelFilter?.toString() || "all"}
                   onValueChange={(value) => {
@@ -846,7 +846,7 @@ export default function IbClientsPage() {
                 isLoading={rebatesLoading}
               />
               {/* Date Filters */}
-              <div className="flex flex-wrap items-center gap-3 lg:ml-auto">
+              <div className="flex flex-wrap items-end gap-3 lg:ml-auto">
                 <DateRangePicker
                   fromDate={fromDateObj}
                   toDate={toDateObj}
