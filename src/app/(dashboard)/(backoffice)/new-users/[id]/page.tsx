@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import type { ComponentType, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
@@ -27,7 +26,13 @@ import { ReusableDataTable, getStatusBadge as getCommonStatusBadge, type ColumnD
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ProtectedRoute } from "@/components/protected-route";
+import { StatePreservingLink } from "@/components/state-preserving-link";
 import { Badge } from "@/components/ui/badge";
+import {
+  IB_PROFILE_RETURN_STORAGE_KEY,
+  tableStateStorage,
+  USER_PROFILE_RETURN_STORAGE_KEY,
+} from "@/lib/table-state-storage";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -917,9 +922,34 @@ function PaginationControls({
 
 export default function NewUserDetailPage() {
   const params = useParams<{ id: string }>();
+  const router = useRouter();
   const { token, user } = useAuth();
   const idParam = Array.isArray(params.id) ? params.id[0] : params.id;
   const id = typeof idParam === "string" ? decodeURIComponent(idParam) : "";
+
+  const handleBackNavigation = () => {
+    const possibleStorageKeys = [
+      USER_PROFILE_RETURN_STORAGE_KEY,
+      "new-users",
+      "all-users-mt5-accounts",
+      "user-verification",
+      "add-bank-details",
+      "admin-transaction",
+      "usdt-transactions",
+      "withdrawal-requests",
+    ];
+    
+    for (const key of possibleStorageKeys) {
+      const returnUrl = tableStateStorage.getReturnUrl(key, false);
+      if (returnUrl) {
+        tableStateStorage.clearReturnUrl(key);
+        router.push(returnUrl);
+        return;
+      }
+    }
+    
+    router.push("/new-users");
+  };
 
   const [activeTab, setActiveTab] = useState<TabKey>("deposits");
   const [userUuid, setUserUuid] = useState<string>("");
@@ -1666,14 +1696,13 @@ export default function NewUserDetailPage() {
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-2">
               <Button
-                asChild
+                type="button"
                 variant="ghost"
                 className="w-fit px-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
+                onClick={handleBackNavigation}
               >
-                <Link href="/new-users">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to New Users
-                </Link>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back to New Users
               </Button>
               <div>
                 <h1 className="text-3xl font-semibold tracking-tight text-foreground">
@@ -1776,7 +1805,8 @@ export default function NewUserDetailPage() {
                           value={formatDateTime(crudUser?.created_at)}
                         />
                         {crudUser?.sponsor_id && (
-                          <Link
+                          <StatePreservingLink
+                            storageKey={IB_PROFILE_RETURN_STORAGE_KEY}
                             href={`/ib-users/${crudUser.id}`}
                             className="group rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm transition-all hover:border-primary/50 hover:bg-primary/5 hover:shadow-md"
                           >
@@ -1787,7 +1817,7 @@ export default function NewUserDetailPage() {
                               <ShieldCheck className="h-4 w-4" />
                               <span className="group-hover:underline">View Partner Details</span>
                             </div>
-                          </Link>
+                          </StatePreservingLink>
                         )}
                         <div className={`rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm ${crudUser?.sponsor_id ? "sm:col-span-1" : "sm:col-span-2"}`}>
                           <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">

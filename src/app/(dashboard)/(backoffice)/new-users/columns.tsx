@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
 import { Calendar, Eye, Globe, Mail, Pencil, Phone, Trash2, User, Plus, RefreshCw, Wallet, KeyRound, UserPlus } from "lucide-react";
 import toast from "react-hot-toast";
@@ -12,6 +11,7 @@ import { DataTableColumnHeader } from "@/components/data-table/data-table-column
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatePreservingLink } from "@/components/state-preserving-link";
 import { Switch } from "@/components/ui/switch";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { ManualSortHeader } from "@/components/data-table/manual-sort-header";
@@ -83,9 +83,9 @@ function RowActions({
             size="icon"
             className="h-8 w-8"
           >
-            <Link href={detailHref} aria-label={`View details for ${row.original.name || "user"}`}>
+            <StatePreservingLink storageKey="new-users" href={detailHref} aria-label={`View details for ${row.original.name || "user"}`}>
               <Eye className="h-4 w-4" />
-            </Link>
+            </StatePreservingLink>
           </Button>
         ) : canViewDetail ? (
           <Button
@@ -291,12 +291,13 @@ export const getColumnsWithActions = (
         <div className="space-y-1">
           <div className="flex items-center gap-1">
             <User className="h-3 w-3 text-muted-foreground" />
-            <Link
+            <StatePreservingLink
+              storageKey="new-users"
               href={`/new-users/${user.id}`}
               className="font-medium hover:underline"
             >
               {user.name || "-"}
-            </Link>
+            </StatePreservingLink>
           </div>
           <div className="text-xs text-muted-foreground">@{user.username || "-"}</div>
           <div className="text-xs text-muted-foreground">

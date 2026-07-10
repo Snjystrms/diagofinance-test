@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
@@ -10,6 +9,7 @@ import { ChevronDown, Copy, Download, Eye, Landmark, Network, RefreshCw, Users }
 import * as XLSX from "xlsx";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { StatePreservingLink } from "@/components/state-preserving-link";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
@@ -460,12 +460,13 @@ export default function IbUsersPage() {
 
           return (
             <div className="space-y-1">
-              <Link
+              <StatePreservingLink
+                storageKey="ib-users"
                 href={`/ib-users/${user.id ?? user.uuid ?? ""}`}
                 className="font-medium hover:underline"
               >
                 {deriveFullName(user)}
-              </Link>
+              </StatePreservingLink>
               <div className="text-sm text-muted-foreground">
                 {deriveEmail(user)}
               </div>
@@ -661,13 +662,14 @@ export default function IbUsersPage() {
                 variant="outline"
                 className="h-8 w-8 rounded-md border-slate-200 bg-background p-0 text-slate-600 shadow-sm transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-300"
               >
-                <Link
+                <StatePreservingLink
+                  storageKey="ib-users"
                   href={`/ib-users/${user.id ?? user.uuid ?? ""}`}
                   aria-label={`View Partner portal for ${deriveFullName(user)}`}
                   title="View Partner portal"
                 >
                   <Eye className="h-3.5 w-3.5" />
-                </Link>
+                </StatePreservingLink>
               </Button>
               {/* <Button
                 size="sm"

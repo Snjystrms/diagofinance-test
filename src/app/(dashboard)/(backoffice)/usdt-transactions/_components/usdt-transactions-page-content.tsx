@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import toast from "react-hot-toast";
 import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { StatePreservingLink } from "@/components/state-preserving-link";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
@@ -434,14 +434,15 @@ export function USDTTransactionsPageContent() {
             return <span className="text-muted-foreground">—</span>;
           return (
             <div className="space-y-0.5">
-              <Link
+              <StatePreservingLink
+                storageKey="usdt-transactions"
                 href={`/new-users/${userInfo.id ?? ""}`}
                 className="font-medium hover:underline"
               >
                 {userInfo.first_name || userInfo.last_name
                   ? `${userInfo.first_name || ""} ${userInfo.last_name || ""}`.trim()
                   : "—"}
-              </Link>
+              </StatePreservingLink>
               <div className="text-xs text-muted-foreground">
                 {userInfo.email}
               </div>

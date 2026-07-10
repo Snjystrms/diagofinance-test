@@ -489,8 +489,11 @@ export default function UserVerificationPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
   const [statusFilter, setStatusFilter] = useQueryState("status", parseAsString.withDefault("0"));
-  const [search, setSearch] = useState<string>("");
-  const [searchInput, setSearchInput] = useState<string>("");
+  const [search, setSearch] = useQueryState(
+    "search",
+    parseAsString.withDefault(""),
+  );
+  const [searchInput, setSearchInput] = useState<string>(search ?? "");
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
   const [paginationMeta, setPaginationMeta] = useState<{ current_page: number; per_page: number; total: number; total_pages: number } | null>(null);
@@ -1054,7 +1057,7 @@ const buildReviewPayload = () => {
             value={searchInput}
             onChange={setSearchInput}
             onSearch={(value) => {
-              setSearch(value || "");
+              void setSearch(value || null);
               void setPage(1);
             }}
             placeholder="Search by name, email, or user details"

@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useDeferredValue, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
-import { parseAsInteger, useQueryState } from "nuqs";
+import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
 import {
@@ -22,6 +21,7 @@ import {
 import * as XLSX from "xlsx";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { StatePreservingLink } from "@/components/state-preserving-link";
 import { DeleteDialog } from "@/components/dialogs/delete-dialog";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
@@ -99,11 +99,17 @@ export function AdminBankDetailsPageContent() {
   const canList = hasFeature("userManagement", "bankDetailsList");
   const canMutate = hasFeature("userManagement", "addBankDetails");
 
-  const [search, setSearch] = useState("");
-  const [searchInput, setSearchInput] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [search, setSearch] = useQueryState("search", parseAsString.withDefault(""));
+  const [searchInput, setSearchInput] = useState(search ?? "");
+  const [statusFilter, setStatusFilter] = useQueryState(
+    "status",
+    parseAsString.withDefault("all"),
+  );
   // const [sortColumn, setSortColumn] = useState("id");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [sortOrder, setSortOrder] = useQueryState(
+    "sort_order",
+    parseAsString.withDefault("desc"),
+  );
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [formValues, setFormValues] =
     useState<BankDetailFormValues>(emptyBankDetailForm);
@@ -128,7 +134,7 @@ export function AdminBankDetailsPageContent() {
         perPage,
         statusFilter,
         // sortColumn,
-        sortOrder,
+        sortOrder as "asc" | "desc",
       ] as const,
     [token, search, page, perPage, statusFilter, sortOrder],
   );
@@ -459,12 +465,13 @@ export function AdminBankDetailsPageContent() {
         header: "User",
         cell: ({ row }) => (
           <div className="space-y-0.5">
-            <Link
+            <StatePreservingLink
+              storageKey="add-bank-details"
               href={`/new-users/${row.original.user?.id ?? ""}`}
               className="font-medium hover:underline"
             >
               {row.original.user?.name || "-"}
-            </Link>
+            </StatePreservingLink>
             <div className="text-xs text-muted-foreground">
               {row.original.user?.email || "-"}
             </div>
@@ -670,8 +677,8 @@ export function AdminBankDetailsPageContent() {
                       value={searchInput}
                       onChange={setSearchInput}
                       onSearch={(value) => {
-                        setPage(1);
-                        setSearch(value);
+                        void setPage(1);
+                        void setSearch(value || null);
                       }}
                       placeholder="Search by user, account holder, bank name..."
                       minimumLength={3}
@@ -684,8 +691,8 @@ export function AdminBankDetailsPageContent() {
                       <Select
                         value={statusFilter}
                         onValueChange={(value) => {
-                          setStatusFilter(value);
-                          setPage(1);
+                          void setStatusFilter(value === "all" ? null : value);
+                          void setPage(1);
                         }}
                       >
                         <SelectTrigger>
@@ -721,8 +728,8 @@ export function AdminBankDetailsPageContent() {
                       <Select
                         value={sortOrder}
                         onValueChange={(value) => {
-                          setSortOrder(value as "asc" | "desc");
-                          setPage(1);
+                          void setSortOrder(value);
+                          void setPage(1);
                         }}
                       >
                         <SelectTrigger>

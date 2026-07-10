@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
@@ -34,6 +33,7 @@ import {
   IbPageHeader,
   IbSectionCard,
 } from "@/components/ib/ib-page-primitives";
+import { StatePreservingLink } from "@/components/state-preserving-link";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -83,6 +83,11 @@ import {
 import { formatCurrency } from "@/lib/format";
 import { formatAmount, formatDateTimeInIST } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
+import {
+  IB_PROFILE_RETURN_STORAGE_KEY,
+  tableStateStorage,
+  USER_PROFILE_RETURN_STORAGE_KEY,
+} from "@/lib/table-state-storage";
 import dynamic from "next/dynamic";
 import type { ChartConfig } from "@/components/ui/chart";
 
@@ -1128,10 +1133,13 @@ function ProfileTab({ user, loading }: TabShellProps) {
             size="sm"
             className="h-9 rounded-full"
           >
-            <Link href={`/new-users/${user.user.id ?? user.user.uuid ?? ""}`}>
+            <StatePreservingLink
+              storageKey={USER_PROFILE_RETURN_STORAGE_KEY}
+              href={`/new-users/${user.user.id ?? user.user.uuid ?? ""}`}
+            >
               <ExternalLink className="mr-2 h-3.5 w-3.5" />
               Open full user record
-            </Link>
+            </StatePreservingLink>
           </Button>
         }
       />
@@ -1719,6 +1727,14 @@ export default function IbUserDetailPage() {
     };
   }, [user]);
 
+  const handleBackNavigation = () => {
+    const returnUrl = tableStateStorage.getReturnUrl(
+      IB_PROFILE_RETURN_STORAGE_KEY,
+      true,
+    );
+    router.push(returnUrl || "/ib-users");
+  };
+
   if (error && !user) {
     return (
       <div className="min-h-screen bg-background">
@@ -1726,7 +1742,7 @@ export default function IbUserDetailPage() {
           <Button
             variant="ghost"
             className="w-fit px-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
-            onClick={() => router.push("/ib-users")}
+            onClick={handleBackNavigation}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Partner Users
@@ -1786,10 +1802,13 @@ export default function IbUserDetailPage() {
                   size="sm"
                   className="h-9 rounded-full"
                 >
-                  <Link href={`/new-users/${previewData.user.id ?? previewData.user.uuid ?? ""}`}>
+                  <StatePreservingLink
+                    storageKey={USER_PROFILE_RETURN_STORAGE_KEY}
+                    href={`/new-users/${previewData.user.id ?? previewData.user.uuid ?? ""}`}
+                  >
                     <ExternalLink className="mr-2 h-3.5 w-3.5" />
                     Full Profile
-                  </Link>
+                  </StatePreservingLink>
                 </Button>
               </>
             ) : null}
@@ -1855,14 +1874,12 @@ export default function IbUserDetailPage() {
         <div className="flex flex-col gap-6 px-4 py-6 sm:px-6 lg:px-8">
           <div>
             <Button
-              asChild
               variant="ghost"
               className="w-fit px-0 text-muted-foreground hover:bg-transparent hover:text-foreground"
+              onClick={handleBackNavigation}
             >
-                <Link href="/ib-users">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Partner Users
-                </Link>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Partner Users
             </Button>
           </div>
 

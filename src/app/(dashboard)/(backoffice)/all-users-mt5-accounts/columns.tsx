@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   Calendar,
@@ -14,6 +13,8 @@ import {
   User,
   Wallet,
 } from "lucide-react";
+
+import { StatePreservingLink } from "@/components/state-preserving-link";
 
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
@@ -262,12 +263,13 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
         <div className="space-y-1">
           <div className="flex items-center gap-1">
             <User className="h-3 w-3 text-muted-foreground" />
-            <Link
+            <StatePreservingLink
+              storageKey="all-users-mt5-accounts"
               href={`/new-users/${(account.user ?? account.User)?.id ?? account.user_id ?? account.userId ?? ""}`}
               className="font-medium hover:underline"
             >
               {deriveUserName(account)}
-            </Link>
+            </StatePreservingLink>
           </div>
           <div className="text-xs text-muted-foreground">
             {deriveUserEmail(account)}

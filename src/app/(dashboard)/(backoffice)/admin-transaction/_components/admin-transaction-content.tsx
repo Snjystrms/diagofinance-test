@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
@@ -22,6 +21,7 @@ import toast from "react-hot-toast";
 import { format, parse } from "date-fns";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { StatePreservingLink } from "@/components/state-preserving-link";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -258,12 +258,13 @@ export function AdminTransactionContent() {
         const user = row.original.user;
         return (
           <div className="space-y-0.5">
-            <Link
+            <StatePreservingLink
+              storageKey="admin-transaction"
               href={`/new-users/${user?.id ?? ""}`}
               className="font-medium hover:underline"
             >
               {user?.name || "—"}
-            </Link>
+            </StatePreservingLink>
             <div className="text-xs text-muted-foreground">{user?.email || user?.username || "—"}</div>
           </div>
         );
