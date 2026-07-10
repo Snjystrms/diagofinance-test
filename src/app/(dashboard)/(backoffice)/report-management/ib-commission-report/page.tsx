@@ -25,6 +25,13 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -57,7 +64,7 @@ export default function IbCommissionReportPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
-  const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
+  const [perPage, setPerPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
 
@@ -287,8 +294,31 @@ export default function IbCommissionReportPage() {
 
             {totalPages > 1 && (
               <div className="mt-4 flex w-full flex-col-reverse items-center justify-between gap-4 border-t pt-4 sm:flex-row sm:gap-8">
-                <div className="flex-1 whitespace-nowrap text-sm text-muted-foreground">
-                  Showing {groups.length} of {total} results
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">Rows per page:</span>
+                    <Select
+                      value={String(perPage)}
+                      onValueChange={(value) => {
+                        setPerPage(Number(value));
+                        setPage(1);
+                      }}
+                    >
+                      <SelectTrigger className="h-8 w-[70px]">
+                        <SelectValue placeholder={String(perPage)} />
+                      </SelectTrigger>
+                      <SelectContent side="top">
+                        {[10, 20, 30, 40, 50].map((pageSize) => (
+                          <SelectItem key={pageSize} value={String(pageSize)}>
+                            {pageSize}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="whitespace-nowrap text-sm text-muted-foreground">
+                    Showing {groups.length} of {total} results
+                  </div>
                 </div>
                 <div className="flex flex-col-reverse items-center gap-4 sm:flex-row sm:gap-6 lg:gap-8">
                   <div className="flex items-center justify-center text-sm font-medium">

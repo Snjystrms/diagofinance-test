@@ -1998,7 +1998,7 @@ export default function NewUserDetailPage() {
                 </CardContent>
               </Card>
 
-              {mt5AccountsState.error ? (
+              {/* {mt5AccountsState.error ? (
                 <ApiErrorState
                   error={mt5AccountsState.error}
                   audience="admin"
@@ -2019,7 +2019,8 @@ export default function NewUserDetailPage() {
                       : undefined
                   }
                 />
-              ) : (
+              ) :
+               (
                 <div className="grid gap-4 md:grid-cols-3">
                   {summaryCards.map((card) => (
                     <SummaryMetric
@@ -2031,7 +2032,8 @@ export default function NewUserDetailPage() {
                     />
                   ))}
                 </div>
-              )}
+              )
+              } */}
 
               <Card className="border-border/70 shadow-sm">
                 <CardHeader className="space-y-4">

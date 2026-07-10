@@ -429,6 +429,18 @@ export default function AllNotificationsPage() {
         {/* Filters and Actions */}
         <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
           <div className="flex flex-col md:flex-row gap-4 mb-6">
+            
+            {/* Search */}
+            <div className="flex-1 flex items-center gap-2">
+              <ApiSearchBar
+                value={searchTerm}
+                onChange={setSearchTerm}
+                onSearch={handleSearch}
+                placeholder="Search notifications..."
+                minimumLength={3}
+                className="max-w-sm"
+              />
+            </div>
             {/* Status Filter */}
             <div className="flex items-center gap-2">
               <label htmlFor="status-filter" className="text-sm font-medium whitespace-nowrap">
@@ -446,17 +458,6 @@ export default function AllNotificationsPage() {
               </Select>
             </div>
 
-            {/* Search */}
-            <div className="flex-1 flex items-center gap-2">
-              <ApiSearchBar
-                value={searchTerm}
-                onChange={setSearchTerm}
-                onSearch={handleSearch}
-                placeholder="Search notifications..."
-                minimumLength={3}
-                className="max-w-sm"
-              />
-            </div>
 
             {/* Actions */}
             <div className="flex gap-2">
