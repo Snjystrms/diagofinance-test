@@ -6,6 +6,7 @@ import { ArrowLeftRight, DollarSign, RefreshCw, Search, Users } from "lucide-rea
 import { format, parse } from "date-fns";
 
 import { ApiErrorState } from "@/components/errors/api-error-state";
+import { ReusableDataTable, type ColumnDef, type PaginationState } from "@/components/data-table/reusable-data-table";
 import { IbMetricCard, IbPageHeader, IbPageShell, IbSectionCard } from "@/components/ib/ib-page-primitives";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useAuth } from "@/contexts/auth-context";
 import { ibRequestsApi } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
@@ -21,13 +21,6 @@ import { formatCurrency } from "@/lib/format";
 /* ─── Local types that match the actual API shapes ──────────────────────── */
 
 type TabType = "clients" | "sub-ibs" | "rebates";
-
-type PaginationState = {
-  current_page: number;
-  per_page: number;
-  total: number;
-  total_pages: number;
-};
 
 const emptyPagination: PaginationState = {
   current_page: 1,
@@ -139,149 +132,115 @@ function EmptyState({ title, description, icon }: { title: string; description: 
   );
 }
 
-/* ─── Pagination controls ─────────────────────────────────────────────────── */
+/* ─── Column Definitions ────────────────────────────────────────────────────── */
 
-function PaginationControls({
-  pagination,
-  isLoading,
-  onPageChange,
-}: {
-  pagination: PaginationState;
-  isLoading: boolean;
-  onPageChange: (page: number) => void;
-}) {
-  if (pagination.total_pages <= 1) return null;
-  return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="text-sm text-muted-foreground">
-        Showing {(pagination.current_page - 1) * pagination.per_page + 1}–
-        {Math.min(pagination.current_page * pagination.per_page, pagination.total)} of {pagination.total} results
+// Clients columns
+const clientsColumns: ColumnDef<ClientRow>[] = [
+  {
+    key: "name",
+    header: "Name",
+    render: (row) => (
+      <div className="font-medium">
+        {row.client_name}
+        <div className="text-xs text-muted-foreground">({row.client_email})</div>
       </div>
-      <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onPageChange(pagination.current_page - 1)}
-          disabled={pagination.current_page === 1 || isLoading}
-        >
-          Previous
-        </Button>
-        {Array.from({ length: pagination.total_pages }, (_, i) => i + 1)
-          .filter((p) => p === 1 || p === pagination.total_pages || Math.abs(p - pagination.current_page) <= 1)
-          .map((p, idx, arr) => (
-            <div key={p} className="flex items-center gap-2">
-              {idx > 0 && arr[idx - 1] !== p - 1 && <span className="px-1 text-muted-foreground">…</span>}
-              <Button
-                variant={p === pagination.current_page ? "default" : "outline"}
-                size="sm"
-                onClick={() => onPageChange(p)}
-                disabled={isLoading}
-                className="min-w-[2.5rem]"
-              >
-                {p}
-              </Button>
-            </div>
-          ))}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onPageChange(pagination.current_page + 1)}
-          disabled={pagination.current_page === pagination.total_pages || isLoading}
-        >
-          Next
-        </Button>
+    ),
+  },
+  {
+    key: "lots_traded",
+    header: "Lots Traded",
+    align: "right",
+    render: (row) => toNum(row.lots_traded).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    hideOnMobile: true,
+  },
+  {
+    key: "pending_rebates",
+    header: "Pending Rebates",
+    align: "right",
+    render: (row) => formatCurrency(toNum(row.pending_rebates), "USD"),
+    hideOnMobile: true,
+  },
+  {
+    key: "earned_rebates",
+    header: "Earned Rebates",
+    align: "right",
+    render: (row) => (
+      <span className="font-semibold text-emerald-600 dark:text-emerald-300">
+        {formatCurrency(toNum(row.earned_rebates), "USD")}
+      </span>
+    ),
+  },
+  {
+    key: "registration_date",
+    header: "Registration Date",
+    render: (row) => <span className="text-sm text-muted-foreground">{formatDate(row.registration_date)}</span>,
+    hideOnMobile: true,
+  },
+];
+
+// Sub-IBs columns
+const subIbsColumns: ColumnDef<SubIbRow>[] = [
+  {
+    key: "name",
+    header: "Name",
+    render: (row) => (
+      <div className="font-medium">
+        {row.name}
+        <div className="text-xs text-muted-foreground">({row.email})</div>
       </div>
-    </div>
-  );
-}
-
-/* ─── Clients table ────────────────────────────────────────────────────────── */
-
-function ClientsTable({ rows, startIndex }: { rows: ClientRow[]; startIndex: number }) {
-  return (
-    <div className="overflow-x-auto rounded-[24px] border border-border/60">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-muted/30">
-            <TableHead className="w-[60px]">Sr. No.</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead className="text-right hidden md:table-cell">Lots Traded</TableHead>
-            <TableHead className="text-right hidden md:table-cell">Pending Rebates</TableHead>
-            <TableHead className="text-right">Earned Rebates</TableHead>
-            <TableHead className="hidden md:table-cell">Registration Date</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((row, index) => (
-            <TableRow key={`${row.client_id}`}>
-              <TableCell className="font-medium text-sm">{startIndex + index}</TableCell>
-              <TableCell className="font-medium">{row.client_name} ({row.client_email})</TableCell>
-              <TableCell className="text-right hidden md:table-cell">
-                {toNum(row.lots_traded).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </TableCell>
-              <TableCell className="text-right hidden md:table-cell">{formatCurrency(toNum(row.pending_rebates), "USD")}</TableCell>
-              <TableCell className="text-right font-semibold text-emerald-600 dark:text-emerald-300">
-                {formatCurrency(toNum(row.earned_rebates), "USD")}
-              </TableCell>
-              <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{formatDate(row.registration_date)}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
-
-/* ─── Sub-IBs table ────────────────────────────────────────────────────────── */
-
-function SubIbsTable({ rows, startIndex }: { rows: SubIbRow[]; startIndex: number }) {
-  return (
-    <div className="overflow-x-auto rounded-[24px] border border-border/60">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-muted/30">
-            <TableHead className="w-[60px]">Sr. No.</TableHead>
-            <TableHead>Name</TableHead>
-            <TableHead className="hidden md:table-cell">Level</TableHead>
-            <TableHead className="hidden md:table-cell">Partner ID</TableHead>
-            <TableHead className="text-right hidden md:table-cell">Lots Traded</TableHead>
-            <TableHead className="text-right hidden md:table-cell">Pending Rebates</TableHead>
-            <TableHead className="text-right">Earned Rebates</TableHead>
-            <TableHead className="hidden md:table-cell">Registration Date</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((row, index) => (
-            <TableRow key={`${row.sub_ib_user_id}`}>
-              <TableCell className="font-medium text-sm">{startIndex + index}</TableCell>
-              <TableCell className="font-medium">{row.name} ({row.email})</TableCell>
-              <TableCell className="hidden md:table-cell">
-                <span className="inline-flex rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-xs font-medium">
-                  {row.level}
-                </span>
-              </TableCell>
-              <TableCell className="hidden md:table-cell">
-                <span className="inline-flex rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-xs font-medium">
-                  {row.sub_ib_id}
-                </span>
-              </TableCell>
-              <TableCell className="text-right hidden md:table-cell">
-                {toNum(row.lots_traded).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </TableCell>
-              <TableCell className="text-right hidden md:table-cell">{formatCurrency(toNum(row.pending_rebates), "USD")}</TableCell>
-              <TableCell className="text-right font-semibold text-emerald-600 dark:text-emerald-300">
-                {formatCurrency(toNum(row.earned_rebates), "USD")}
-              </TableCell>
-              <TableCell className="text-sm text-muted-foreground hidden md:table-cell">{formatDate(row.registration_date)}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
-
-/* ─── Rebates table ────────────────────────────────────────────────────────── */
+    ),
+  },
+  {
+    key: "level",
+    header: "Level",
+    render: (row) => (
+      <span className="inline-flex rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-xs font-medium">
+        {row.level}
+      </span>
+    ),
+    hideOnMobile: true,
+  },
+  {
+    key: "sub_ib_id",
+    header: "Partner ID",
+    render: (row) => (
+      <span className="inline-flex rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-xs font-medium">
+        {row.sub_ib_id}
+      </span>
+    ),
+    hideOnMobile: true,
+  },
+  {
+    key: "lots_traded",
+    header: "Lots Traded",
+    align: "right",
+    render: (row) => toNum(row.lots_traded).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    hideOnMobile: true,
+  },
+  {
+    key: "pending_rebates",
+    header: "Pending Rebates",
+    align: "right",
+    render: (row) => formatCurrency(toNum(row.pending_rebates), "USD"),
+    hideOnMobile: true,
+  },
+  {
+    key: "earned_rebates",
+    header: "Earned Rebates",
+    align: "right",
+    render: (row) => (
+      <span className="font-semibold text-emerald-600 dark:text-emerald-300">
+        {formatCurrency(toNum(row.earned_rebates), "USD")}
+      </span>
+    ),
+  },
+  {
+    key: "registration_date",
+    header: "Registration Date",
+    render: (row) => <span className="text-sm text-muted-foreground">{formatDate(row.registration_date)}</span>,
+    hideOnMobile: true,
+  },
+];
 
 const STATUS_STYLE: Record<string, string> = {
   pending:  "bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300",
@@ -290,73 +249,93 @@ const STATUS_STYLE: Record<string, string> = {
   rejected: "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300",
 };
 
-function RebatesTable({ rows, startIndex }: { rows: RebateDeal[]; startIndex: number }) {
-  return (
-    <div className="overflow-x-auto rounded-[24px] border border-border/60">
-      <Table>
-        <TableHeader>
-          <TableRow className="bg-muted/30">
-            <TableHead className="w-[60px]">Sr. No.</TableHead>
-            <TableHead>Client</TableHead>
-            <TableHead className="hidden md:table-cell">Account</TableHead>
-            <TableHead>Symbol</TableHead>
-            <TableHead className="hidden md:table-cell">Side</TableHead>
-            <TableHead className="text-right">Volume</TableHead>
-            <TableHead className="text-right">Commission</TableHead>
-            <TableHead className="hidden md:table-cell">Status</TableHead>
-            <TableHead className="hidden md:table-cell">Open Time</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((row, index) => {
-            const statusKey = toStr(row.rebate_status).toLowerCase();
-            const statusClass = STATUS_STYLE[statusKey] ?? "bg-muted/40 text-muted-foreground";
-            return (
-              <TableRow key={`${row.deal}`}>
-                <TableCell className="font-medium text-sm">{startIndex + index}</TableCell>
-                <TableCell>
-                  <div className="space-y-0.5">
-                    <div className="font-medium text-sm">{row.client_name} ({row.client_email})</div>
-                  </div>
-                </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  <div className="space-y-0.5">
-                    <div className="font-mono text-xs">{row.trading_account}</div>
-                    <div className="text-xs text-muted-foreground">{row.account_type}</div>
-                  </div>
-                </TableCell>
-                <TableCell className="font-medium">{row.symbol}</TableCell>
-                <TableCell className="hidden md:table-cell">
-                  <Badge
-                    variant="outline"
-                    className={row.side === "BUY"
-                      ? "border-emerald-500/40 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20"
-                      : "border-red-500/40 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20"
-                    }
-                  >
-                    {row.side}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right font-mono text-sm">
-                  {toNum(row.volume).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 5 })}
-                </TableCell>
-                <TableCell className="text-right font-semibold text-emerald-600 dark:text-emerald-300">
-                  {toNum(row.commission).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 5 })}
-                </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  <Badge className={`border-0 text-xs font-semibold ${statusClass}`}>
-                    {row.rebate_status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-xs text-muted-foreground whitespace-nowrap hidden md:table-cell">{row.open_time}</TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
-    </div>
-  );
-}
+// Rebates columns
+const rebatesColumns: ColumnDef<RebateDeal>[] = [
+  {
+    key: "client",
+    header: "Client",
+    render: (row) => (
+      <div>
+        <div className="font-medium text-sm">{row.client_name}</div>
+        <div className="text-xs text-muted-foreground">({row.client_email})</div>
+      </div>
+    ),
+  },
+  {
+    key: "account",
+    header: "Account",
+    render: (row) => (
+      <div>
+        <div className="font-mono text-xs">{row.trading_account}</div>
+        <div className="text-xs text-muted-foreground">{row.account_type}</div>
+      </div>
+    ),
+    hideOnMobile: true,
+  },
+  {
+    key: "symbol",
+    header: "Symbol",
+    render: (row) => <span className="font-medium">{row.symbol}</span>,
+  },
+  {
+    key: "side",
+    header: "Side",
+    render: (row) => (
+      <Badge
+        variant="outline"
+        className={row.side === "BUY"
+          ? "border-emerald-500/40 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20"
+          : "border-red-500/40 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20"
+        }
+      >
+        {row.side}
+      </Badge>
+    ),
+    hideOnMobile: true,
+  },
+  {
+    key: "volume",
+    header: "Volume",
+    align: "right",
+    render: (row) => (
+      <span className="font-mono text-sm">
+        {toNum(row.volume).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 5 })}
+      </span>
+    ),
+  },
+  {
+    key: "commission",
+    header: "Commission",
+    align: "right",
+    render: (row) => (
+      <span className="font-semibold text-emerald-600 dark:text-emerald-300">
+        {toNum(row.commission).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 5 })}
+      </span>
+    ),
+  },
+  {
+    key: "status",
+    header: "Status",
+    render: (row) => {
+      const statusKey = toStr(row.rebate_status).toLowerCase();
+      const statusClass = STATUS_STYLE[statusKey] ?? "bg-muted/40 text-muted-foreground";
+      return (
+        <Badge className={`border-0 text-xs font-semibold ${statusClass}`}>
+          {row.rebate_status}
+        </Badge>
+      );
+    },
+    hideOnMobile: true,
+  },
+  {
+    key: "open_time",
+    header: "Open Time",
+    render: (row) => <span className="text-xs text-muted-foreground whitespace-nowrap">{row.open_time}</span>,
+    hideOnMobile: true,
+  },
+];
+
+/* ─── Column Definitions End ────────────────────────────────────────────────── */
 
 /* ─── Search bar for each tab ──────────────────────────────────────────────── */
 
@@ -743,10 +722,15 @@ export default function IbClientsPage() {
             </div>
             {clientsLoading && clients.length === 0 ? <TableSkeleton /> :
              clients.length > 0 ? (
-              <>
-                <ClientsTable rows={clients} startIndex={(clientsPagination.current_page - 1) * clientsPagination.per_page + 1} />
-                <PaginationControls pagination={clientsPagination} isLoading={isLoading} onPageChange={setPage} />
-              </>
+              <ReusableDataTable
+                data={clients}
+                columns={clientsColumns}
+                pagination={clientsPagination}
+                isLoading={clientsLoading}
+                showSerialNumber
+                serialNumberStart={(clientsPagination.current_page - 1) * clientsPagination.per_page + 1}
+                onPageChange={setPage}
+              />
             ) : !clientsError ? (
               <EmptyState
                 title="No clients found"
@@ -800,10 +784,15 @@ export default function IbClientsPage() {
             </div>
             {subIbsLoading && subIbs.length === 0 ? <TableSkeleton /> :
              subIbs.length > 0 ? (
-              <>
-                <SubIbsTable rows={subIbs} startIndex={(subIbsPagination.current_page - 1) * subIbsPagination.per_page + 1} />
-                <PaginationControls pagination={subIbsPagination} isLoading={isLoading} onPageChange={setPage} />
-              </>
+              <ReusableDataTable
+                data={subIbs}
+                columns={subIbsColumns}
+                pagination={subIbsPagination}
+                isLoading={subIbsLoading}
+                showSerialNumber
+                serialNumberStart={(subIbsPagination.current_page - 1) * subIbsPagination.per_page + 1}
+                onPageChange={setPage}
+              />
             ) : !subIbsError ? (
               <EmptyState
                 title="No sub Partners records found"
@@ -857,10 +846,15 @@ export default function IbClientsPage() {
             </div>
             {rebatesLoading && rebates.length === 0 ? <TableSkeleton /> :
              rebates.length > 0 ? (
-              <>
-                <RebatesTable rows={rebates} startIndex={(rebatesPagination.current_page - 1) * rebatesPagination.per_page + 1} />
-                <PaginationControls pagination={rebatesPagination} isLoading={isLoading} onPageChange={setPage} />
-              </>
+              <ReusableDataTable
+                data={rebates}
+                columns={rebatesColumns}
+                pagination={rebatesPagination}
+                isLoading={rebatesLoading}
+                showSerialNumber
+                serialNumberStart={(rebatesPagination.current_page - 1) * rebatesPagination.per_page + 1}
+                onPageChange={setPage}
+              />
             ) : !rebatesError ? (
               <EmptyState
                 title="No rebate entries found"

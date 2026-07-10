@@ -570,6 +570,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     navLabel: "All Users",
     managerCategories: ["User Management"],
   },
+   {
+    path: "/temp-users",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "user-management",
+    navLabel: "Temporary Users",
+    managerCategories: ["User Management"],
+  },
   {
     path: "/all-users-mt5-accounts",
     audience: "backoffice",
