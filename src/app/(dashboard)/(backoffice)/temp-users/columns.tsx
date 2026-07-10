@@ -1,7 +1,7 @@
 "use client";
 
 import type { ColumnDef } from "@tanstack/react-table";
-import { Eye, Mail, Phone, Globe, User, Calendar } from "lucide-react";
+import { Eye, Mail, Phone, Globe, User, Calendar, UserPlus } from "lucide-react";
 
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
@@ -48,7 +48,7 @@ function RowActions({
         onClick={() => onViewDetails(row.original)}
         title={`View details for ${row.original.first_name} ${row.original.last_name}`}
       >
-        <Eye className="h-4 w-4" />
+        <UserPlus className="h-4 w-4" />
       </Button>
     </div>
   );
@@ -148,7 +148,9 @@ export const getColumnsWithActions = (
     id: "actions",
     header: "Actions",
     cell: ({ row }) => (
+      <div className="flex items-center gap-1 text-sm whitespace-nowrap">
       <RowActions row={row} onViewDetails={onViewDetails} />
+      </div>
     ),
     enableSorting: false,
   },

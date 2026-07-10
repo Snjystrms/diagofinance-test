@@ -418,7 +418,7 @@ export default function IbClientsPage() {
     defaultValue: "clients",
   });
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
-  const [limit] = useQueryState("limit", parseAsInteger.withDefault(10));
+  const [limit, setLimit] = useQueryState("limit", parseAsInteger.withDefault(10));
 
   const [fromDate, setFromDate] = useQueryState("from_date", parseAsString);
   const [toDate, setToDate] = useQueryState("to_date", parseAsString);
@@ -467,6 +467,12 @@ export default function IbClientsPage() {
   const [rebatesPagination, setRebatesPagination] = useState<PaginationState>(emptyPagination);
   const [rebatesLoading, setRebatesLoading] = useState(false);
   const [rebatesError, setRebatesError] = useState<unknown | null>(null);
+
+  /* ── Handle per page change ─────────────────────────────────────────────── */
+  const handlePerPageChange = (newPerPage: number) => {
+    setLimit(newPerPage);
+    setPage(1); // Reset to first page when changing rows per page
+  };
 
   /* ── Fetch clients ─────────────────────────────────────────────────────── */
   const fetchClients = useCallback(async () => {
@@ -854,7 +860,7 @@ export default function IbClientsPage() {
                 showSerialNumber
                 serialNumberStart={(rebatesPagination.current_page - 1) * rebatesPagination.per_page + 1}
                 onPageChange={setPage}
-                // onPerPageChange={handlePerPageChange}
+                onPerPageChange={handlePerPageChange}
                 perPageOptions={[10, 20, 30, 50, 100]}
               />
             ) : !rebatesError ? (
