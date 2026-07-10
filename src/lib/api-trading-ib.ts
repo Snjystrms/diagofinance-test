@@ -832,7 +832,7 @@ export const ibRequestsApi = {
     });
   },
 
-  getSubIbs: (token: string, params?: { page?: number; limit?: number; search?: string; from_date?: string | null; to_date?: string | null; sort_by?: string | null; sort_order?: string | null }) => {
+  getSubIbs: (token: string, params?: { page?: number; limit?: number; search?: string; from_date?: string | null; to_date?: string | null; sort_by?: string | null; sort_order?: string | null; level?: number | null; }) => {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", String(params.page));
     if (params?.limit) queryParams.append("limit", String(params.limit));
@@ -841,6 +841,7 @@ export const ibRequestsApi = {
     if (params?.to_date) queryParams.append("to_date", params.to_date);
     if (params?.sort_by) queryParams.append("sort_by", params.sort_by);
     if (params?.sort_order) queryParams.append("sort_order", params.sort_order);
+    if (params?.level) queryParams.append("level", String(params.level));
     const queryString = queryParams.toString();
     const url = `/user/ib-client-summary/sub-ibs${queryString ? `?${queryString}` : ""}`;
 
