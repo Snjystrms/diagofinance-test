@@ -7,6 +7,7 @@ import { format, parse } from "date-fns";
 
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ReusableDataTable, type ColumnDef, type PaginationState } from "@/components/data-table/reusable-data-table";
+import { ManualSortHeader } from "@/components/data-table/manual-sort-header";
 import { IbMetricCard, IbPageHeader, IbPageShell, IbSectionCard } from "@/components/ib/ib-page-primitives";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -178,6 +179,50 @@ const clientsColumns: ColumnDef<ClientRow>[] = [
   },
 ];
 
+// Clients columns with sorting
+const getClientsColumnsWithSort = (): ColumnDef<ClientRow>[] => [
+  {
+    key: "name",
+    header: "Name",
+    render: (row) => (
+      <div className="font-medium">
+        {row.client_name}
+        <div className="text-xs text-muted-foreground">({row.client_email})</div>
+      </div>
+    ),
+  },
+  {
+    key: "lots_traded",
+    header: <ManualSortHeader sortKey="lots_traded" title="Lots Traded" /> as unknown as string,
+    align: "right",
+    render: (row) => toNum(row.lots_traded).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    hideOnMobile: true,
+  },
+  {
+    key: "pending_rebates",
+    header: <ManualSortHeader sortKey="pending_rebates" title="Pending Rebates" /> as unknown as string,
+    align: "right",
+    render: (row) => formatCurrency(toNum(row.pending_rebates), "USD"),
+    hideOnMobile: true,
+  },
+  {
+    key: "earned_rebates",
+    header: <ManualSortHeader sortKey="earned_rebates" title="Earned Rebates" /> as unknown as string,
+    align: "right",
+    render: (row) => (
+      <span className="font-semibold text-emerald-600 dark:text-emerald-300">
+        {formatCurrency(toNum(row.earned_rebates), "USD")}
+      </span>
+    ),
+  },
+  {
+    key: "registration_date",
+    header: <ManualSortHeader sortKey="registration_date" title="Registration Date" /> as unknown as string,
+    render: (row) => <span className="text-sm text-muted-foreground">{formatDate(row.registration_date)}</span>,
+    hideOnMobile: true,
+  },
+];
+
 // Sub-IBs columns
 const subIbsColumns: ColumnDef<SubIbRow>[] = [
   {
@@ -237,6 +282,70 @@ const subIbsColumns: ColumnDef<SubIbRow>[] = [
   {
     key: "registration_date",
     header: "Registration Date",
+    render: (row) => <span className="text-sm text-muted-foreground">{formatDate(row.registration_date)}</span>,
+    hideOnMobile: true,
+  },
+];
+
+// Sub-IBs columns with sorting
+const getSubIbsColumnsWithSort = (): ColumnDef<SubIbRow>[] => [
+  {
+    key: "name",
+    header: "Name",
+    render: (row) => (
+      <div className="font-medium">
+        {row.name}
+        <div className="text-xs text-muted-foreground">({row.email})</div>
+      </div>
+    ),
+  },
+  {
+    key: "level",
+    header: <ManualSortHeader sortKey="level" title="Level" /> as unknown as string,
+    render: (row) => (
+      <span className="inline-flex rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-xs font-medium">
+        {row.level}
+      </span>
+    ),
+    hideOnMobile: true,
+  },
+  {
+    key: "sub_ib_id",
+    header: "Partner ID",
+    render: (row) => (
+      <span className="inline-flex rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-xs font-medium">
+        {row.sub_ib_id}
+      </span>
+    ),
+    hideOnMobile: true,
+  },
+  {
+    key: "lots_traded",
+    header: <ManualSortHeader sortKey="lots_traded" title="Lots Traded" /> as unknown as string,
+    align: "right",
+    render: (row) => toNum(row.lots_traded).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    hideOnMobile: true,
+  },
+  {
+    key: "pending_rebates",
+    header: <ManualSortHeader sortKey="pending_rebates" title="Pending Rebates" /> as unknown as string,
+    align: "right",
+    render: (row) => formatCurrency(toNum(row.pending_rebates), "USD"),
+    hideOnMobile: true,
+  },
+  {
+    key: "earned_rebates",
+    header: <ManualSortHeader sortKey="earned_rebates" title="Earned Rebates" /> as unknown as string,
+    align: "right",
+    render: (row) => (
+      <span className="font-semibold text-emerald-600 dark:text-emerald-300">
+        {formatCurrency(toNum(row.earned_rebates), "USD")}
+      </span>
+    ),
+  },
+  {
+    key: "registration_date",
+    header: <ManualSortHeader sortKey="registration_date" title="Registration Date" /> as unknown as string,
     render: (row) => <span className="text-sm text-muted-foreground">{formatDate(row.registration_date)}</span>,
     hideOnMobile: true,
   },
@@ -335,6 +444,92 @@ const rebatesColumns: ColumnDef<RebateDeal>[] = [
   },
 ];
 
+// Rebates columns with sorting
+const getRebatesColumnsWithSort = (): ColumnDef<RebateDeal>[] => [
+  {
+    key: "client",
+    header: "Client",
+    render: (row) => (
+      <div>
+        <div className="font-medium text-sm">{row.client_name}</div>
+        <div className="text-xs text-muted-foreground">({row.client_email})</div>
+      </div>
+    ),
+  },
+  {
+    key: "account",
+    header: "Account",
+    render: (row) => (
+      <div>
+        <div className="font-mono text-xs">{row.trading_account}</div>
+        <div className="text-xs text-muted-foreground">{row.account_type}</div>
+      </div>
+    ),
+    hideOnMobile: true,
+  },
+  {
+    key: "symbol",
+    header: <ManualSortHeader sortKey="symbol" title="Symbol" /> as unknown as string,
+    render: (row) => <span className="font-medium">{row.symbol}</span>,
+  },
+  {
+    key: "side",
+    header: "Side",
+    render: (row) => (
+      <Badge
+        variant="outline"
+        className={row.side === "BUY"
+          ? "border-emerald-500/40 text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/20"
+          : "border-red-500/40 text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-950/20"
+        }
+      >
+        {row.side}
+      </Badge>
+    ),
+    hideOnMobile: true,
+  },
+  {
+    key: "volume",
+    header: <ManualSortHeader sortKey="volume" title="Volume" /> as unknown as string,
+    align: "right",
+    render: (row) => (
+      <span className="font-mono text-sm">
+        {toNum(row.volume).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 5 })}
+      </span>
+    ),
+  },
+  {
+    key: "commission",
+    header: <ManualSortHeader sortKey="commission" title="Commission" /> as unknown as string,
+    align: "right",
+    render: (row) => (
+      <span className="font-semibold text-emerald-600 dark:text-emerald-300">
+        {toNum(row.commission).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 5 })}
+      </span>
+    ),
+  },
+  {
+    key: "status",
+    header: <ManualSortHeader sortKey="rebate_status" title="Status" /> as unknown as string,
+    render: (row) => {
+      const statusKey = toStr(row.rebate_status).toLowerCase();
+      const statusClass = STATUS_STYLE[statusKey] ?? "bg-muted/40 text-muted-foreground";
+      return (
+        <Badge className={`border-0 text-xs font-semibold ${statusClass}`}>
+          {row.rebate_status}
+        </Badge>
+      );
+    },
+    hideOnMobile: true,
+  },
+  {
+    key: "open_time",
+    header: <ManualSortHeader sortKey="open_time" title="Open Time" /> as unknown as string,
+    render: (row) => <span className="text-xs text-muted-foreground whitespace-nowrap">{row.open_time}</span>,
+    hideOnMobile: true,
+  },
+];
+
 /* ─── Column Definitions End ────────────────────────────────────────────────── */
 
 /* ─── Search bar for each tab ──────────────────────────────────────────────── */
@@ -419,6 +614,9 @@ export default function IbClientsPage() {
   });
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [limit, setLimit] = useQueryState("limit", parseAsInteger.withDefault(10));
+  
+  const [sortBy] = useQueryState("sort_by", parseAsString);
+  const [sortOrder] = useQueryState("sort_order", parseAsString);
 
   const [fromDate, setFromDate] = useQueryState("from_date", parseAsString);
   const [toDate, setToDate] = useQueryState("to_date", parseAsString);
@@ -486,6 +684,8 @@ export default function IbClientsPage() {
         search: clientsSearch.query || undefined,
         from_date: fromDate || undefined,
         to_date: toDate || undefined,
+        sort_by: sortBy || undefined,
+        sort_order: sortOrder || undefined,
       });
       // apiCall returns raw JSON → { success, message, data: [...], pagination: {...} }
       const raw = res as unknown as { data: ClientRow[]; pagination: unknown };
@@ -499,7 +699,7 @@ export default function IbClientsPage() {
     } finally {
       setClientsLoading(false);
     }
-  }, [token, page, limit, clientsSearch.query, fromDate, toDate]);
+  }, [token, page, limit, clientsSearch.query, fromDate, toDate, sortBy, sortOrder]);
 
   /* ── Fetch sub-IBs ─────────────────────────────────────────────────────── */
   const fetchSubIbs = useCallback(async () => {
@@ -513,6 +713,8 @@ export default function IbClientsPage() {
         search: subIbsSearch.query || undefined,
         from_date: fromDate || undefined,
         to_date: toDate || undefined,
+        sort_by: sortBy || undefined,
+        sort_order: sortOrder || undefined,
       });
       // apiCall returns raw JSON → { success, message, data: [...], pagination: {...} }
       const raw = res as unknown as { data: SubIbRow[]; pagination: unknown };
@@ -526,7 +728,7 @@ export default function IbClientsPage() {
     } finally {
       setSubIbsLoading(false);
     }
-  }, [token, page, limit, subIbsSearch.query, fromDate, toDate]);
+  }, [token, page, limit, subIbsSearch.query, fromDate, toDate, sortBy, sortOrder]);
 
   const fetchRebates = useCallback(async () => {
     if (!token) { setRebatesError("Authentication required"); return; }
@@ -539,6 +741,8 @@ export default function IbClientsPage() {
         search: rebatesSearch.query || undefined,
         from_date: fromDate || undefined,
         to_date: toDate || undefined,
+        sort_by: sortBy || undefined,
+        sort_order: sortOrder || undefined,
       });
       // apiCall returns raw JSON → { success, message, data: { summary: [...], total, pagination: {...} } }
       const raw = res as unknown as { data: { summary: RebateDeal[]; total: number; pagination: unknown } };
@@ -557,7 +761,7 @@ export default function IbClientsPage() {
     } finally {
       setRebatesLoading(false);
     }
-  }, [token, page, limit, rebatesSearch.query, fromDate, toDate]);
+  }, [token, page, limit, rebatesSearch.query, fromDate, toDate, sortBy, sortOrder]);
 
   useEffect(() => {
     if (activeTab === "clients") void fetchClients();
@@ -730,12 +934,14 @@ export default function IbClientsPage() {
              clients.length > 0 ? (
               <ReusableDataTable
                 data={clients}
-                columns={clientsColumns}
+                columns={getClientsColumnsWithSort()}
                 pagination={clientsPagination}
                 isLoading={clientsLoading}
                 showSerialNumber
                 serialNumberStart={(clientsPagination.current_page - 1) * clientsPagination.per_page + 1}
                 onPageChange={setPage}
+                onPerPageChange={handlePerPageChange}
+                perPageOptions={[10, 20, 30, 50, 100]}
               />
             ) : !clientsError ? (
               <EmptyState
@@ -792,12 +998,14 @@ export default function IbClientsPage() {
              subIbs.length > 0 ? (
               <ReusableDataTable
                 data={subIbs}
-                columns={subIbsColumns}
+                columns={getSubIbsColumnsWithSort()}
                 pagination={subIbsPagination}
                 isLoading={subIbsLoading}
                 showSerialNumber
                 serialNumberStart={(subIbsPagination.current_page - 1) * subIbsPagination.per_page + 1}
                 onPageChange={setPage}
+                onPerPageChange={handlePerPageChange}
+                perPageOptions={[10, 20, 30, 50, 100]}
               />
             ) : !subIbsError ? (
               <EmptyState
@@ -854,7 +1062,7 @@ export default function IbClientsPage() {
              rebates.length > 0 ? (
               <ReusableDataTable
                 data={rebates}
-                columns={rebatesColumns}
+                columns={getRebatesColumnsWithSort()}
                 pagination={rebatesPagination}
                 isLoading={rebatesLoading}
                 showSerialNumber

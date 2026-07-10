@@ -832,13 +832,15 @@ export const ibRequestsApi = {
     });
   },
 
-  getSubIbs: (token: string, params?: { page?: number; limit?: number; search?: string; from_date?: string | null; to_date?: string | null }) => {
+  getSubIbs: (token: string, params?: { page?: number; limit?: number; search?: string; from_date?: string | null; to_date?: string | null; sort_by?: string | null; sort_order?: string | null }) => {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", String(params.page));
     if (params?.limit) queryParams.append("limit", String(params.limit));
     if (params?.search) queryParams.append("search", params.search);
     if (params?.from_date) queryParams.append("from_date", params.from_date);
     if (params?.to_date) queryParams.append("to_date", params.to_date);
+    if (params?.sort_by) queryParams.append("sort_by", params.sort_by);
+    if (params?.sort_order) queryParams.append("sort_order", params.sort_order);
     const queryString = queryParams.toString();
     const url = `/user/ib-client-summary/sub-ibs${queryString ? `?${queryString}` : ""}`;
 
@@ -848,13 +850,15 @@ export const ibRequestsApi = {
     });
   },
 
-  getClients: (token: string, params?: { page?: number; limit?: number; search?: string; from_date?: string | null; to_date?: string | null }) => {
+  getClients: (token: string, params?: { page?: number; limit?: number; search?: string; from_date?: string | null; to_date?: string | null; sort_by?: string | null; sort_order?: string | null }) => {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", String(params.page));
     if (params?.limit) queryParams.append("limit", String(params.limit));
     if (params?.search) queryParams.append("search", params.search);
     if (params?.from_date) queryParams.append("from_date", params.from_date);
     if (params?.to_date) queryParams.append("to_date", params.to_date);
+    if (params?.sort_by) queryParams.append("sort_by", params.sort_by);
+    if (params?.sort_order) queryParams.append("sort_order", params.sort_order);
     const queryString = queryParams.toString();
     const url = `/user/ib-client-summary/clients${queryString ? `?${queryString}` : ""}`;
 
@@ -864,13 +868,15 @@ export const ibRequestsApi = {
     });
   },
 
-  getRebates: (token: string, params?: { page?: number; limit?: number; search?: string; from_date?: string | null; to_date?: string | null }) => {
+  getRebates: (token: string, params?: { page?: number; limit?: number; search?: string; from_date?: string | null; to_date?: string | null; sort_by?: string | null; sort_order?: string | null }) => {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", String(params.page));
     if (params?.limit) queryParams.append("limit", String(params.limit));
     if (params?.search) queryParams.append("search", params.search);
     if (params?.from_date) queryParams.append("from_date", params.from_date);
     if (params?.to_date) queryParams.append("to_date", params.to_date);
+    if (params?.sort_by) queryParams.append("sort_by", params.sort_by);
+    if (params?.sort_order) queryParams.append("sort_order", params.sort_order);
     const queryString = queryParams.toString();
     const url = `/user/ib-client-summary/rebates${queryString ? `?${queryString}` : ""}`;
 
