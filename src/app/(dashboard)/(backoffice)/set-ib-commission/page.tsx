@@ -786,7 +786,7 @@ export default function SetIbCommissionPage() {
             </div>
 
             <div className="text-sm text-muted-foreground">
-              Showing page {pagination.current_page} of {pagination.total_pages} |
+              Showing Page {pagination.current_page} of {pagination.total_pages} |
               {" "}{pagination.total} total users
             </div>
           </div>
