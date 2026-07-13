@@ -694,7 +694,7 @@ const walletHistoryColumns: ColumnDef<AdminUserWalletHistoryItem>[] = [
   {
     header: "Wallet",
     key: "wallet_type",
-    render: (item) => item.wallet_type || "-",
+    render: (item) => item.wallet_type === "ib" ? "Partner" : (item.wallet_type || "-"),
   },
   {
     header: "Before",

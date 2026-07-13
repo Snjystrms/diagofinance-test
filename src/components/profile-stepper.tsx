@@ -108,15 +108,6 @@ export function ProfileStepper({
         route: "/profile/view_profile?tab=bank",
         order: hasBankDetails ? 14 : 5,
       },
-      {
-        id: "metatrader",
-        title: "Install MetaTrader",
-        description: "Download the trading platform",
-        status: "pending",
-        icon: <Download className="h-4 w-4" />,
-        route: "https://www.metatrader5.com/en/download",
-        order: 6,
-      },
     ];
 
     // Sort steps: completed items at top, pending items at bottom
@@ -135,6 +126,15 @@ export function ProfileStepper({
 
     return sortedSteps;
   }, [dashboardData, hasBankDetails]);
+
+  // Optional action (not counted in steps)
+  const optionalAction = {
+    id: "metatrader",
+    title: "Install MetaTrader",
+    description: "Download the trading platform",
+    icon: <Download className="h-4 w-4" />,
+    route: "https://www.metatrader5.com/en/download",
+  };
 
   // Find the first non-completed step
   useEffect(() => {
@@ -221,7 +221,7 @@ export function ProfileStepper({
                 Getting Started
               </CardTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                {completedSteps} of {totalSteps} steps completed
+                {completedSteps} of {totalSteps} required steps completed
               </p>
             </div>
           </div>
@@ -286,6 +286,26 @@ export function ProfileStepper({
             </StepperItem>
           ))}
         </Stepper>
+
+        {/* Optional Action - MetaTrader Installation */}
+        <div className="mt-6 pt-5 border-t border-border/50">
+          <div
+            className="flex items-center gap-3 cursor-pointer hover:bg-gradient-to-r hover:from-muted/40 hover:to-muted/20 rounded-xl p-3 transition-all duration-200 group border border-border/30 hover:border-border/50 hover:shadow-sm bg-muted/10"
+            onClick={() => window.open(optionalAction.route, "_blank")}
+          >
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background/80 text-foreground shadow-sm backdrop-blur-sm group-hover:scale-105 transition-transform duration-200">
+              {optionalAction.icon}
+            </div>
+            <div className="flex-1">
+              <div className="text-sm font-semibold group-hover:text-primary transition-colors duration-200">
+                {optionalAction.title}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {optionalAction.description}
+              </div>
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
