@@ -2301,6 +2301,41 @@ export const adminBankDetailsApi = {
       headers: { Authorization: `Bearer ${token}` },
     });
   },
+
+  export: (
+    token: string,
+    search?: string | null,
+    status?: string | null,
+    sortOrder?: string | null,
+  ) => {
+    if (!token) {
+      throw new Error("Token is required to export bank details");
+    }
+
+    const qs = new URLSearchParams();
+    if (search && search.trim()) {
+      qs.set("search", search.trim());
+    }
+
+    const normalizedStatus = status?.trim();
+    if (normalizedStatus && normalizedStatus !== "all") {
+      qs.set("status", normalizedStatus);
+    }
+
+    const normalizedSortOrder = sortOrder?.trim().toLowerCase();
+    if (normalizedSortOrder === "asc" || normalizedSortOrder === "desc") {
+      qs.set("sort_order", normalizedSortOrder);
+    }
+
+    const endpoint = `/admin/bank-details/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { 
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
 };
 
 export const userBrokerBankDetailsApi = {

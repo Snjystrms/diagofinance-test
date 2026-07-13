@@ -5,8 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import toast from "react-hot-toast";
-import { ChevronDown, Copy, Download, Eye, Landmark, Network, RefreshCw, Users } from "lucide-react";
-import * as XLSX from "xlsx";
+import { Copy, Download, Eye, Landmark, Network, RefreshCw, Users } from "lucide-react";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { StatePreservingLink } from "@/components/state-preserving-link";
@@ -15,12 +14,6 @@ import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/contexts/auth-context";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
@@ -326,94 +319,58 @@ export default function IbUsersPage() {
     void loadUsers();
   }, [loadUsers]);
 
-  const handleExport = useCallback(async (formatType: "xlsx" | "csv") => {
+  const handleExport = useCallback(async () => {
     if (!token) {
       toast.error("Authentication required to export data");
       return;
     }
 
-    const exportToastId = `ib-users-export-${formatType}`;
+    const exportToastId = "ib-users-export";
     try {
-      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
+      toast.loading("Preparing export...", { id: exportToastId });
       
       const trimmedSearch = searchQuery?.trim() || "";
       const validSearch = trimmedSearch.length >= 3 ? trimmedSearch : undefined;
       
-      const response = await adminIbUsersApi.list({
-        token,
-        page: 1,
-        per_page: Math.max(pagination.total, users.length, 10000),
-        search: validSearch,
+      const qs = new URLSearchParams();
+      if (validSearch) {
+        qs.set("search", validSearch);
+      }
+
+      const endpoint = `/admin/reports/ib-users-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      const payload = response?.data;
-      const dataObj = payload as Record<string, unknown>;
-      const exportUsers = (() => {
-        if (!payload) return [];
-        if (Array.isArray(payload)) return payload as AdminIbUser[];
-        if (Array.isArray(dataObj.items)) return dataObj.items as AdminIbUser[];
-        if (Array.isArray(dataObj.users)) return dataObj.users as AdminIbUser[];
-        if (Array.isArray(dataObj.data)) return dataObj.data as AdminIbUser[];
-        if (dataObj.data && Array.isArray((dataObj.data as Record<string, unknown>).items)) {
-          return (dataObj.data as Record<string, unknown>).items as AdminIbUser[];
-        }
-        if (dataObj.data && Array.isArray((dataObj.data as Record<string, unknown>).data)) {
-          return (dataObj.data as Record<string, unknown>).data as AdminIbUser[];
-        }
-        if (Array.isArray(dataObj.results)) return dataObj.results as AdminIbUser[];
-        return [];
-      })();
-
-      if (exportUsers.length === 0) {
-        toast.error("No data to export", { id: exportToastId });
-        return;
+      if (!response.ok) {
+        throw new Error("Failed to export IB users");
       }
 
-      const exportData = exportUsers.map((user, index) => ({
-        "Sr. No.": index + 1,
-        Name: deriveFullName(user),
-        Email: deriveEmail(user),
-        Phone: derivePhone(user),
-        "Total Commission": deriveTotalCommission(user),
-        "Partner ID": derivePartnerId(user),
-        "Referred By": user.referred_by?.name ?? "-",
-        // "Sponsor ID": deriveSponsorId(user),
-        "Partner Plan Name": user.ib_plan_name || "-",
-        Status: getIbStatusLabel(user.status ?? user.is_ib_user),
-        Created: formatDateTime(user.created_at),
-        "Referral Link": deriveReferralLink(user) || "-",
-      }));
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get("Content-Disposition");
+      const filenameMatch = contentDisposition?.match(/filename="?(.+)"?/);
+      const filename = filenameMatch
+        ? filenameMatch[1]
+        : `ib-users-${getExportTimestamp()}.xlsx`;
 
-      const worksheet = XLSX.utils.json_to_sheet(exportData);
-      const filenameBase = `ib-users-${getExportTimestamp()}`;
-      let filename = `${filenameBase}.xlsx`;
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
 
-      if (formatType === "xlsx") {
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "IB Users");
-        XLSX.writeFile(workbook, filename);
-      } else {
-        const csv = XLSX.utils.sheet_to_csv(worksheet);
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-        const link = document.createElement("a");
-        filename = `${filenameBase}.csv`;
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(link.href);
-      }
-
-      toast.success(`Exported ${exportUsers.length} IB users to ${filename}`, { id: exportToastId });
+      toast.success(`Exported IB users to ${filename}`, { id: exportToastId });
     } catch (error: unknown) {
-      console.error(`Failed to export ${formatType}:`, error);
+      console.error("Failed to export:", error);
       toast.error(
         getAdminFriendlyErrorMessage(error, { resource: "IB users", action: "export" }),
         { id: exportToastId },
       );
     }
-  }, [token, pagination.total, users.length, searchQuery]);
+  }, [token, searchQuery]);
 
   const handleOpenTreeChart = useCallback(
     async (user: AdminIbUser) => {
@@ -768,23 +725,14 @@ export default function IbUsersPage() {
             filters or refresh to check for new users.
           </p>
           <div className="flex flex-wrap gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <Download className="h-4 w-4" />
-                  Export
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => void handleExport("xlsx")}>
-                  Export Excel (.xlsx)
-                </DropdownMenuItem>
-                {/* <DropdownMenuItem onClick={() => void handleExport("csv")}>
-                  Export CSV (.csv)
-                </DropdownMenuItem> */}
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              variant="outline"
+              onClick={() => void handleExport()}
+              className="gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
             <Button variant="outline" onClick={loadUsers} disabled={loading}>
               <RefreshCw
                 className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
@@ -828,23 +776,14 @@ export default function IbUsersPage() {
             </p>
           </div>
          <div className="flex items-center gap-2">
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <Button variant="outline" className="gap-2">
-        <Download className="h-4 w-4" />
-        Export
-        <ChevronDown className="h-4 w-4" />
-      </Button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end">
-      <DropdownMenuItem onClick={() => void handleExport("xlsx")}>
-        Export Excel (.xlsx)
-      </DropdownMenuItem>
-      {/* <DropdownMenuItem onClick={() => void handleExport("csv")}>
-        Export CSV (.csv)
-      </DropdownMenuItem> */}
-    </DropdownMenuContent>
-  </DropdownMenu>
+  <Button
+    variant="outline"
+    onClick={() => void handleExport()}
+    className="gap-2"
+  >
+    <Download className="h-4 w-4" />
+    Export
+  </Button>
 
   <Button variant="outline" onClick={loadUsers} disabled={loading}>
     <RefreshCw
