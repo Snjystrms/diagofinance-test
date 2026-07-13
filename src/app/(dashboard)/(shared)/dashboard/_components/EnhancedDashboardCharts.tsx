@@ -7,6 +7,7 @@ import {
   CartesianGrid,
   XAxis,
   YAxis,
+  Tooltip,
 } from "recharts";
 import { TrendingUp, TrendingDown, Users, Activity } from "lucide-react";
 import type { AdminDashboardData } from "@/lib/api";
@@ -17,8 +18,6 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
 
@@ -30,7 +29,9 @@ type TransactionChartPoint = {
   date: string;
   deposit: number;
   withdraw: number;
-  ib_withdraw: number;
+  partner_commission: number;
+  pending_commission: number;
+  isLatest?: boolean;
 };
 
 type ClientChartPoint = {
@@ -41,12 +42,62 @@ type ClientChartPoint = {
 const transactionChartConfig = {
   deposit: { label: "Deposit", color: "var(--primary)" },
   withdraw: { label: "Withdraw", color: "var(--accent)" },
-  ib_withdraw: { label: "Partner Withdraw", color: "var(--secondary)" },
+  partner_commission: { label: "Partner Commission", color: "var(--secondary)" },
+  pending_commission: { label: "Pending Commission", color: "var(--secondary)" },
 } satisfies ChartConfig;
 
 const clientChartConfig = {
   clients: { label: "Clients", color: "var(--primary)" },
 } satisfies ChartConfig;
+
+// Custom tooltip for transaction chart
+function TransactionTooltip({ active, payload }: any) {
+  if (!active || !payload || !payload.length) return null;
+
+  const data = payload[0].payload as TransactionChartPoint;
+  const isLatest = data.isLatest;
+
+  return (
+    <div className="rounded-lg border bg-background p-3 shadow-lg">
+      <p className="mb-2 text-sm font-semibold">{data.date}</p>
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between gap-8">
+          <span className="text-xs text-muted-foreground">Deposit</span>
+          <span className="text-sm font-medium">{formatCurrency(data.deposit)}</span>
+        </div>
+        <div className="flex items-center justify-between gap-8">
+          <span className="text-xs text-muted-foreground">Withdraw</span>
+          <span className="text-sm font-medium">{formatCurrency(data.withdraw)}</span>
+        </div>
+        <div className="flex items-center justify-between gap-8">
+          <span className="text-xs text-muted-foreground">
+            {isLatest ? "Pending Commission" : "Partner Commission"}
+          </span>
+          <span className="text-sm font-medium">
+            {formatCurrency(isLatest ? data.pending_commission : data.partner_commission)}
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Custom tooltip for clients chart
+function ClientsTooltip({ active, payload }: any) {
+  if (!active || !payload || !payload.length) return null;
+
+  const data = payload[0].payload as ClientChartPoint;
+
+  return (
+    <div className="rounded-lg border bg-background p-3 shadow-lg">
+      <p className="mb-2 text-sm font-semibold">{data.date}</p>
+      <div className="flex items-center justify-between gap-8">
+        <span className="text-xs text-muted-foreground">Clients</span>
+        <span className="text-sm font-medium">{data.clients.toLocaleString()}</span>
+      </div>
+    </div>
+  );
+}
 
 export function EnhancedDashboardCharts({ adminDashboardData }: EnhancedChartsProps) {
   const transactionGraph = adminDashboardData?.transaction_graph;
@@ -54,11 +105,13 @@ export function EnhancedDashboardCharts({ adminDashboardData }: EnhancedChartsPr
 
   const transactionChartData = useMemo<TransactionChartPoint[]>(() => {
     if (!transactionGraph?.data) return [];
-    return transactionGraph.data.map((item) => ({
+    return transactionGraph.data.map((item, index, array) => ({
       date: new Date(item.date).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
       deposit: Number(item.deposit ?? 0),
       withdraw: Number(item.withdraw ?? 0),
-      ib_withdraw: Number(item.ib_withdraw ?? 0),
+      partner_commission: Number(item.partner_commission ?? 0),
+      pending_commission: Number(item.pending_commission ?? 0),
+      isLatest: index === array.length - 1,
     }));
   }, [transactionGraph]);
 
@@ -71,16 +124,44 @@ export function EnhancedDashboardCharts({ adminDashboardData }: EnhancedChartsPr
   }, [clientsGraph]);
 
   const transactionSummary = useMemo(() => {
-    if (!transactionChartData.length) return { total: 0, growthPercent: 0, deposit: 0, withdraw: 0, ibWithdraw: 0, depositChange: 0, withdrawChange: 0, ibWithdrawChange: 0 };
-    const last = transactionChartData[transactionChartData.length - 1];
-    const first = transactionChartData[0];
-    const lastTotal = last.deposit + last.withdraw + last.ib_withdraw;
-    const firstTotal = first.deposit + first.withdraw + first.ib_withdraw;
-    const growthPercent = firstTotal > 0 ? ((lastTotal - firstTotal) / firstTotal) * 100 : 0;
-    const depositChange = first.deposit > 0 ? ((last.deposit - first.deposit) / first.deposit) * 100 : 0;
-    const withdrawChange = first.withdraw > 0 ? ((last.withdraw - first.withdraw) / first.withdraw) * 100 : 0;
-    const ibWithdrawChange = first.ib_withdraw > 0 ? ((last.ib_withdraw - first.ib_withdraw) / first.ib_withdraw) * 100 : 0;
-    return { total: lastTotal, growthPercent, deposit: last.deposit, withdraw: last.withdraw, ibWithdraw: last.ib_withdraw, depositChange, withdrawChange, ibWithdrawChange };
+    if (!transactionChartData.length) return { 
+      total: 0, 
+      growthPercent: 0, 
+      deposit: 0, 
+      withdraw: 0, 
+      partnerCommission: 0, 
+      pendingCommission: 0,
+      depositChange: 0, 
+      withdrawChange: 0, 
+      partnerCommissionChange: 0,
+      pendingCommissionChange: 0
+    };
+    
+    const today = transactionChartData[transactionChartData.length - 1];
+    const yesterday = transactionChartData.length > 1 ? transactionChartData[transactionChartData.length - 2] : transactionChartData[0];
+    
+    // Calculate percentage changes (today vs yesterday)
+    const depositChange = yesterday.deposit > 0 ? ((today.deposit - yesterday.deposit) / yesterday.deposit) * 100 : 0;
+    const withdrawChange = yesterday.withdraw > 0 ? ((today.withdraw - yesterday.withdraw) / yesterday.withdraw) * 100 : 0;
+    const partnerCommissionChange = yesterday.partner_commission > 0 ? ((today.partner_commission - yesterday.partner_commission) / yesterday.partner_commission) * 100 : 0;
+    const pendingCommissionChange = yesterday.pending_commission > 0 ? ((today.pending_commission - yesterday.pending_commission) / yesterday.pending_commission) * 100 : 0;
+    
+    const todayTotal = today.deposit + today.withdraw + today.partner_commission + today.pending_commission;
+    const yesterdayTotal = yesterday.deposit + yesterday.withdraw + yesterday.partner_commission + yesterday.pending_commission;
+    const growthPercent = yesterdayTotal > 0 ? ((todayTotal - yesterdayTotal) / yesterdayTotal) * 100 : 0;
+    
+    return { 
+      total: todayTotal, 
+      growthPercent, 
+      deposit: today.deposit, 
+      withdraw: today.withdraw, 
+      partnerCommission: today.partner_commission,
+      pendingCommission: today.pending_commission,
+      depositChange, 
+      withdrawChange, 
+      partnerCommissionChange,
+      pendingCommissionChange
+    };
   }, [transactionChartData]);
 
   const clientsSummary = useMemo(() => {
@@ -92,7 +173,7 @@ export function EnhancedDashboardCharts({ adminDashboardData }: EnhancedChartsPr
   }, [clientsChartData]);
 
   const transactionHasVariation = useMemo(
-    () => transactionChartData.some((p) => p.deposit !== 0 || p.withdraw !== 0 || p.ib_withdraw !== 0),
+    () => transactionChartData.some((p) => p.deposit !== 0 || p.withdraw !== 0 || p.partner_commission !== 0 || p.pending_commission !== 0),
     [transactionChartData]
   );
   const clientsHasVariation = useMemo(
@@ -108,7 +189,8 @@ export function EnhancedDashboardCharts({ adminDashboardData }: EnhancedChartsPr
   const transactionMetrics: { name: string; amount: number; change: number; colorVar: string }[] = [
     { name: "Deposit", amount: transactionSummary.deposit, change: transactionSummary.depositChange, colorVar: "var(--primary)" },
     { name: "Withdraw", amount: transactionSummary.withdraw, change: transactionSummary.withdrawChange, colorVar: "var(--accent)" },
-    { name: "Partner Withdraw", amount: transactionSummary.ibWithdraw, change: transactionSummary.ibWithdrawChange, colorVar: "var(--secondary)" },
+    { name: "Partner Commission", amount: transactionSummary.partnerCommission, change: transactionSummary.partnerCommissionChange, colorVar: "var(--secondary)" },
+    { name: "Pending Commission", amount: transactionSummary.pendingCommission, change: transactionSummary.pendingCommissionChange, colorVar: "var(--secondary)" },
   ];
 
   return (
@@ -135,7 +217,7 @@ export function EnhancedDashboardCharts({ adminDashboardData }: EnhancedChartsPr
           </CardHeader>
 
           <CardContent className="flex flex-col gap-4 p-0">
-            <div className="flex items-center gap-2 pb-2">
+            {/* <div className="flex items-center gap-2 pb-2">
               <span className="text-3xl font-medium tracking-tight tabular-nums">
                 {formatCurrency(transactionSummary.total)}
               </span>
@@ -151,7 +233,7 @@ export function EnhancedDashboardCharts({ adminDashboardData }: EnhancedChartsPr
                 {transactionSummary.growthPercent >= 0 ? "+" : ""}
                 {transactionSummary.growthPercent.toFixed(1)}%
               </Badge>
-            </div>
+            </div> */}
 
             {transactionChartData.length > 0 ? (
               <ChartContainer
@@ -173,13 +255,7 @@ export function EnhancedDashboardCharts({ adminDashboardData }: EnhancedChartsPr
                         : [-1, 1]
                     }
                   />
-                  <ChartTooltip
-                    content={<ChartTooltipContent />}
-                    cursor={{
-                      stroke: "var(--color-deposit)",
-                      strokeWidth: 1,
-                    }}
-                  />
+                  <Tooltip content={<TransactionTooltip />} cursor={{ stroke: "var(--color-deposit)", strokeWidth: 1 }} />
                   <Line
                     type="monotone"
                     dataKey="deposit"
@@ -208,13 +284,26 @@ export function EnhancedDashboardCharts({ adminDashboardData }: EnhancedChartsPr
                   />
                   <Line
                     type="monotone"
-                    dataKey="ib_withdraw"
-                    stroke="var(--color-ib_withdraw)"
+                    dataKey="partner_commission"
+                    stroke="var(--color-partner_commission)"
                     strokeWidth={2}
                     dot={false}
                     activeDot={{
                       r: 4,
-                      fill: "var(--color-ib_withdraw)",
+                      fill: "var(--color-partner_commission)",
+                      stroke: "var(--background)",
+                      strokeWidth: 2,
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="pending_commission"
+                    stroke="var(--color-pending_commission)"
+                    strokeWidth={2}
+                    dot={false}
+                    activeDot={{
+                      r: 4,
+                      fill: "var(--color-pending_commission)",
                       stroke: "var(--background)",
                       strokeWidth: 2,
                     }}
@@ -351,13 +440,7 @@ export function EnhancedDashboardCharts({ adminDashboardData }: EnhancedChartsPr
                         : [-1, 1]
                     }
                   />
-                  <ChartTooltip
-                    content={<ChartTooltipContent />}
-                    cursor={{
-                      stroke: "var(--color-clients)",
-                      strokeWidth: 1,
-                    }}
-                  />
+                  <Tooltip content={<ClientsTooltip />} cursor={{ stroke: "var(--color-clients)", strokeWidth: 1 }} />
                   <Line
                     type="monotone"
                     dataKey="clients"

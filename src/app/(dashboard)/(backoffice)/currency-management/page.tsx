@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import toast from "react-hot-toast";
-import { CircleDollarSign, Loader2, Pencil, Plus, RefreshCw, Trash2, Search } from "lucide-react";
+import { CircleDollarSign, Loader2, Pencil, Plus, RefreshCw, Trash2, Search, Eye, History } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { ProtectedRoute } from "@/components/protected-route";
 import { AppDataTable } from "@/components/app-data-table";
@@ -12,8 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DeleteDialog } from "@/components/dialogs/delete-dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Dialog,
   DialogContent,
@@ -281,6 +283,140 @@ function CurrencyRateFormDialog({
   );
 }
 
+type HistoryItem = {
+  id: number;
+  currency_rate_id: number;
+  from_currency: string;
+  to_currency: string;
+  deposit_rate: number;
+  withdrawal_rate: number;
+  status: boolean;
+  rate_date: string;
+  changed_by: string;
+  changed_by_name: string;
+  created_at: string;
+};
+
+function CurrencyRateHistoryDialog({
+  open,
+  onOpenChange,
+  currencyRateId,
+  currencyPair,
+  token,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  currencyRateId: string | null;
+  currencyPair: string;
+  token: string;
+}) {
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (open && currencyRateId && token) {
+      setLoading(true);
+      adminCurrencyRatesApi
+        .history({ id: currencyRateId, token, per_page: 100 })
+        .then((res) => {
+          if (res?.data?.history) {
+            setHistory(res.data.history);
+          }
+        })
+        .catch((error) => {
+          toast.error(getAdminFriendlyErrorMessage(error, { resource: "currency rate history", action: "load" }));
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      setHistory([]);
+    }
+  }, [open, currencyRateId, token]);
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-4xl max-h-[80vh]">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <History className="h-5 w-5" />
+            Rate Change History - {currencyPair}
+          </DialogTitle>
+          <DialogDescription>
+            View historical changes to this currency rate conversion
+          </DialogDescription>
+        </DialogHeader>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </div>
+        ) : history.length === 0 ? (
+          <div className="py-8 text-center text-sm text-muted-foreground">
+            No history records found
+          </div>
+        ) : (
+          <ScrollArea className="h-[400px] pr-4">
+            <div className="space-y-3">
+              {history.map((item, index) => (
+                <div
+                  key={item.id}
+                  className="rounded-lg border bg-card p-4 shadow-sm"
+                >
+                  <div className="mb-2 flex items-start justify-between">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-muted-foreground">
+                        Change #{history.length - index}
+                      </span>
+                      <Badge variant={item.status ? "default" : "secondary"}>
+                        {item.status ? "Active" : "Inactive"}
+                      </Badge>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {fmtDate(item.created_at)}
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
+                    <div>
+                      <div className="text-xs text-muted-foreground">From</div>
+                      <div className="font-medium">{item.from_currency}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">To</div>
+                      <div className="font-medium">{item.to_currency}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Deposit Rate</div>
+                      <div className="font-medium">{item.deposit_rate}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-muted-foreground">Withdrawal Rate</div>
+                      <div className="font-medium">{item.withdrawal_rate}</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-2 border-t pt-3 text-xs text-muted-foreground">
+                    <span>Changed by:</span>
+                    <span className="font-medium text-foreground">{item.changed_by_name}</span>
+                    <span className="ml-auto">Date: {item.rate_date}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </ScrollArea>
+        )}
+
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Close
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function CurrencyManagementPage() {
   const { token } = useAuth();
   const queryClient = useQueryClient();
@@ -292,6 +428,9 @@ export default function CurrencyManagementPage() {
   const [editingItem, setEditingItem] = useState<CurrencyRateRow | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [historyRateId, setHistoryRateId] = useState<string | null>(null);
+  const [historyCurrencyPair, setHistoryCurrencyPair] = useState("");
 
   const {
     data: rows = [],
@@ -478,6 +617,19 @@ export default function CurrencyManagementPage() {
               variant="outline"
               size="icon"
               className="h-8 w-8"
+              onClick={() => {
+                setHistoryRateId(row.original.id);
+                setHistoryCurrencyPair(`${row.original.from_currency}/${row.original.to_currency}`);
+                setIsHistoryOpen(true);
+              }}
+              title="View History"
+            >
+              <Eye className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              className="h-8 w-8"
               onClick={() => handleEdit(row.original.id)}
               title="Edit"
             >
@@ -610,6 +762,20 @@ export default function CurrencyManagementPage() {
           onConfirm={handleDelete}
           title="Delete Currency Rate"
           description="Are you sure you want to delete this currency rate? This action cannot be undone."
+        />
+
+        <CurrencyRateHistoryDialog
+          open={isHistoryOpen}
+          onOpenChange={(open) => {
+            setIsHistoryOpen(open);
+            if (!open) {
+              setHistoryRateId(null);
+              setHistoryCurrencyPair("");
+            }
+          }}
+          currencyRateId={historyRateId}
+          currencyPair={historyCurrencyPair}
+          token={token || ""}
         />
       </div>
     </ProtectedRoute>

@@ -113,7 +113,8 @@ export function AdminDashboardView({
       }),
       deposit: item.deposit,
       withdraw: item.withdraw,
-      ib_withdraw: item.ib_withdraw,
+      partner_commission: item.partner_commission,
+      pending_commission: item.pending_commission,
     }));
   }, [transactionGraph]);
 
@@ -147,9 +148,9 @@ export function AdminDashboardView({
     const firstTotal =
       Number(first.deposit) +
       Number(first.withdraw) +
-      Number(first.ib_withdraw);
+      Number(first.partner_commission);
     const lastTotal =
-      Number(last.deposit) + Number(last.withdraw) + Number(last.ib_withdraw);
+      Number(last.deposit) + Number(last.withdraw) + Number(last.partner_commission);
     const growthPercent =
       firstTotal > 0 ? ((lastTotal - firstTotal) / firstTotal) * 100 : 0;
     return { total: lastTotal, growthPercent };
@@ -350,7 +351,7 @@ export function AdminDashboardView({
 
       {/* Summary Metrics */}
       {summaryMetrics && (
-        <Card>
+        <Card className="relative overflow-hidden border rounded-[28px] shadow-lg backdrop-blur-sm ib-portal-surface">
           <CardHeader>
             <CardTitle className="text-lg font-bold">Summary Metrics</CardTitle>
             <CardDescription>Financial overview by period</CardDescription>
@@ -368,36 +369,61 @@ export function AdminDashboardView({
                         <h4 className="text-sm font-semibold text-muted-foreground">
                           {SUMMARY_PERIOD_LABELS[period] ?? period}
                         </h4>
-                        <span className="rounded-full border border-border/50 bg-background/80 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                        <span className="rounded-full border border-border/50 bg-background/80 px-2.5 py-1 text-[11px] font-medium text-muted-foreground backdrop-blur-sm">
                           {metricRange}
                         </span>
                       </div>
                       <p className="text-[11px] text-muted-foreground">
                         Range: {metricRange}
                       </p>
-                      <div className="grid grid-cols-3 gap-2">
-                        <div className="p-3 rounded-lg bg-muted/50">
-                          <p className="text-xs text-muted-foreground">
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                        <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
+                          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <p className="relative text-xs text-muted-foreground mb-1">
                             Deposit
                           </p>
-                          <p className="text-sm font-bold">
+                          <p className="relative text-sm font-bold">
                             {formatCurrency(metric?.deposit ?? 0)}
                           </p>
                         </div>
-                        <div className="p-3 rounded-lg bg-muted/50">
-                          <p className="text-xs text-muted-foreground">
+                        <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
+                          <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <p className="relative text-xs text-muted-foreground mb-1">
                             Withdraw
                           </p>
-                          <p className="text-sm font-bold">
+                          <p className="relative text-sm font-bold">
                             {formatCurrency(metric?.withdraw ?? 0)}
                           </p>
                         </div>
-                        <div className="p-3 rounded-lg bg-muted/50">
-                          <p className="text-xs text-muted-foreground">
-                            Partner Withdraw
+                        <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
+                          <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <p className="relative text-xs text-muted-foreground mb-1">
+                            {period === "daily" ? "Pending Commission" : "Partner Commission"}
                           </p>
-                          <p className="text-sm font-bold">
-                            {formatCurrency(metric?.ib_withdraw ?? 0)}
+                          <p className="relative text-sm font-bold">
+                            {formatCurrency(
+                              period === "daily"
+                                ? (metric?.pending_commission ?? 0)
+                                : (metric?.partner_commission ?? 0)
+                            )}
+                          </p>
+                        </div>
+                        <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
+                          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <p className="relative text-xs text-muted-foreground mb-1">
+                            Bonus Given
+                          </p>
+                          <p className="relative text-sm font-bold">
+                            {formatCurrency(metric?.add_bonus ?? 0)}
+                          </p>
+                        </div>
+                        <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
+                          <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <p className="relative text-xs text-muted-foreground mb-1">
+                            Bonus Removed
+                          </p>
+                          <p className="relative text-sm font-bold">
+                            {formatCurrency(metric?.remove_bonus ?? 0)}
                           </p>
                         </div>
                       </div>
@@ -405,35 +431,56 @@ export function AdminDashboardView({
                   );
                 },
               )}
-              <div className="space-y-2 pt-2 border-t">
+              <div className="space-y-2 pt-2 border-t border-border/40">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h4 className="text-sm font-semibold">Total</h4>
-                  <span className="rounded-full border border-border/50 bg-background/80 px-2.5 py-1 text-[11px] font-medium text-muted-foreground">
+                  <span className="rounded-full border border-primary/30 bg-primary/5 px-2.5 py-1 text-[11px] font-medium text-primary backdrop-blur-sm">
                     {formatSummaryDateRange(summaryMetrics?.total)}
                   </span>
                 </div>
                 <p className="text-[11px] text-muted-foreground">
                   Range: {formatSummaryDateRange(summaryMetrics?.total)}
                 </p>
-                <div className="grid grid-cols-3 gap-2">
-                  <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
-                    <p className="text-xs text-muted-foreground">Deposit</p>
-                    <p className="text-sm font-bold text-primary">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                  <div className="group relative overflow-hidden p-3 rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-md backdrop-blur-sm hover:shadow-lg hover:border-primary/50 transition-all duration-300">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <p className="relative text-xs text-muted-foreground mb-1">Deposit</p>
+                    <p className="relative text-sm font-bold text-primary">
                       {formatCurrency(summaryMetrics?.total.deposit ?? 0)}
                     </p>
                   </div>
-                  <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
-                    <p className="text-xs text-muted-foreground">Withdraw</p>
-                    <p className="text-sm font-bold text-primary">
+                  <div className="group relative overflow-hidden p-3 rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-md backdrop-blur-sm hover:shadow-lg hover:border-primary/50 transition-all duration-300">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <p className="relative text-xs text-muted-foreground mb-1">Withdraw</p>
+                    <p className="relative text-sm font-bold text-primary">
                       {formatCurrency(summaryMetrics?.total.withdraw ?? 0)}
                     </p>
                   </div>
-                  <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
-                    <p className="text-xs text-muted-foreground">
-                      Partner Withdraw
+                  <div className="group relative overflow-hidden p-3 rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-md backdrop-blur-sm hover:shadow-lg hover:border-primary/50 transition-all duration-300">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <p className="relative text-xs text-muted-foreground mb-1">
+                      Partner Commission
                     </p>
-                    <p className="text-sm font-bold text-primary">
-                      {formatCurrency(summaryMetrics?.total.ib_withdraw ?? 0)}
+                    <p className="relative text-sm font-bold text-primary">
+                      {formatCurrency(summaryMetrics?.total.partner_commission ?? 0)}
+                    </p>
+                  </div>
+                  <div className="group relative overflow-hidden p-3 rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-md backdrop-blur-sm hover:shadow-lg hover:border-primary/50 transition-all duration-300">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <p className="relative text-xs text-muted-foreground mb-1">
+                      Bonus Given
+                    </p>
+                    <p className="relative text-sm font-bold text-primary">
+                      {formatCurrency(summaryMetrics?.total.add_bonus ?? 0)}
+                    </p>
+                  </div>
+                  <div className="group relative overflow-hidden p-3 rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-md backdrop-blur-sm hover:shadow-lg hover:border-primary/50 transition-all duration-300">
+                    <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <p className="relative text-xs text-muted-foreground mb-1">
+                      Bonus Removed
+                    </p>
+                    <p className="relative text-sm font-bold text-primary">
+                      {formatCurrency(summaryMetrics?.total.remove_bonus ?? 0)}
                     </p>
                   </div>
                 </div>

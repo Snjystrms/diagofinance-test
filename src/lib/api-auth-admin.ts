@@ -1789,6 +1789,41 @@ export const adminCurrencyRatesApi = {
     );
   },
 
+  history: (params: { id: string; token: string; page?: number; per_page?: number }) => {
+    const { id, token, page = 1, per_page = 10 } = params;
+    const query = new URLSearchParams({
+      page: String(page),
+      per_page: String(per_page),
+    });
+    return apiCall<{
+      history: Array<{
+        id: number;
+        currency_rate_id: number;
+        from_currency: string;
+        to_currency: string;
+        deposit_rate: number;
+        withdrawal_rate: number;
+        status: boolean;
+        rate_date: string;
+        changed_by: string;
+        changed_by_name: string;
+        created_at: string;
+      }>;
+      pagination: {
+        current_page: number;
+        total_pages: number;
+        total_records: number;
+        per_page: number;
+      };
+    }>(
+      `/admin/currency-rates/${id}/history?${query.toString()}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+  },
+
   get: (id: string | number, token: string) =>
     apiCall<CurrencyRateItem>(`/admin/currency-rates/${id}`, {
       method: "GET",

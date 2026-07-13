@@ -2089,7 +2089,8 @@ export interface AdminDashboardTransactionGraphData {
   date: string;
   deposit: number;
   withdraw: number;
-  ib_withdraw: number;
+  partner_commission: number;
+  pending_commission: number;
 }
 
 export interface AdminDashboardTransactionGraph {
@@ -2114,7 +2115,10 @@ export interface AdminDashboardSummaryMetricItem {
   end_date: string | null;
   deposit: number;
   withdraw: number;
-  ib_withdraw: number;
+  add_bonus: number;
+  remove_bonus: number;
+  partner_commission?: number;
+  pending_commission?: number;
 }
 
 export interface AdminDashboardSummaryMetrics {

@@ -535,7 +535,7 @@ export default function AllPartnersReportPage() {
               setPage(1);
               setSearchQuery(value.trim() || null);
             }}
-            placeholder="Search by name, email, or UUID..."
+            placeholder="Search by name or email..."
             minimumLength={3}
             delay={300}
           />
