@@ -1891,7 +1891,7 @@ export function DashboardPageContent() {
                     <Card
                       ref={walletCardRef}
                       // onClick={() => router.push("/my-wallet/wallet-overview")}
-                      className={`sm:col-span-1 lg:col-span-1 relative overflow-hidden border-none shadow-2xl rounded-3xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group cursor-pointer ${effectiveTheme ? "text-foreground bg-card" : "text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent"}`}
+                      className={`sm:col-span-1 lg:col-span-1 relative overflow-hidden shadow-2xl rounded-3xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group cursor-pointer ${effectiveTheme ? "text-foreground bg-card ib-portal-surface ib-portal-surface-primary" : "text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent border-none"}`}
                     >
                       {effectiveTheme ? (
                         <div className="bull-theme-overlay bull-theme-wallet-overlay" />
