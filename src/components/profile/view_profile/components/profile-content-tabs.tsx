@@ -208,10 +208,10 @@ export function ProfileActivityTab({
                     {paginatedHistory.map((log, index) => (
                       <TableRow key={`${log.date}-${log.time}-${index}`}>
                         <TableCell className="font-medium">
-                          {utcToIST(log.date, log.time).date}
+                           {log.date}
                         </TableCell>
                         <TableCell>
-                          {utcToIST(log.date, log.time).time}
+                           {log.time}
                         </TableCell>
                         <TableCell className="font-mono text-sm">
                           {log.ip_address}

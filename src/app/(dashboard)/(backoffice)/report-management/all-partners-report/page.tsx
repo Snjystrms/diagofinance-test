@@ -40,6 +40,7 @@ import { formatDateTimeInIST } from "@/lib/formatters";
 import { useAuth } from "@/contexts/auth-context";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
+import { ManualSortHeader } from "@/components/data-table/manual-sort-header";
 
 /* ---------------- Helpers ---------------- */
 const fmtDateTime = (s?: string | null) => {
@@ -94,15 +95,8 @@ export default function AllPartnersReportPage() {
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [toDateStr, setToDateStr] = useQueryState("to_date", parseAsString);
   
-  const [sortColumn, setSortColumn] = useQueryState(
-    "sort_column",
-    parseAsString
-  );
-  const [sortOrder, setSortOrder] = useQueryState<"ASC" | "DESC">(
-    "sort_order",
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    parseAsString.withDefault("DESC") as any
-  );
+  const [sortBy, setSortBy] = useQueryState("sort_by", parseAsString);
+  const [sortOrder, setSortOrder] = useQueryState("sort_order", parseAsString);
 
   // Search
   const [searchQuery, setSearchQuery] = useQueryState("search", parseAsString);
@@ -174,8 +168,8 @@ export default function AllPartnersReportPage() {
             ? verificationStatusFilter
             : undefined,
         search: searchQuery || undefined,
-        sort_column: sortColumn || undefined,
-        sort_order: sortOrder || undefined,
+        sort_column: sortBy || undefined,
+        sort_order: sortOrder ? (sortOrder.toUpperCase() as "ASC" | "DESC") : undefined,
       });
 
       if (requestId !== requestIdRef.current) return;
@@ -217,7 +211,7 @@ export default function AllPartnersReportPage() {
     toDate,
     verificationStatusFilter,
     searchQuery,
-    sortColumn,
+    sortBy,
     sortOrder,
   ]);
 
@@ -240,14 +234,14 @@ export default function AllPartnersReportPage() {
     setVerificationStatusFilter(null);
     setFromDate(undefined);
     setToDate(undefined);
-    setSortColumn(null);
+    setSortBy(null);
     setSortOrder(null);
     setSearchInput("");
     setSearchQuery(null);
     setPage(1);
   }, [
     setVerificationStatusFilter,
-    setSortColumn,
+    setSortBy,
     setSortOrder,
     setSearchQuery,
     setPage,
@@ -276,8 +270,8 @@ export default function AllPartnersReportPage() {
             ? verificationStatusFilter
             : undefined,
         search: searchQuery || undefined,
-        sort_column: sortColumn || undefined,
-        sort_order: sortOrder || undefined,
+        sort_column: sortBy || undefined,
+        sort_order: sortOrder ? (sortOrder.toUpperCase() as "ASC" | "DESC") : undefined,
       });
 
       if (blob.size === 0) {
@@ -303,7 +297,7 @@ export default function AllPartnersReportPage() {
         { id: exportToastId }
       );
     }
-  }, [canViewReport, token, fromDate, toDate, verificationStatusFilter, searchQuery, sortColumn, sortOrder]);
+  }, [canViewReport, token, fromDate, toDate, verificationStatusFilter, searchQuery, sortBy, sortOrder]);
 
   // Count active filters
   const activeFilterCount = useMemo(() => {
@@ -311,11 +305,11 @@ export default function AllPartnersReportPage() {
     if (verificationStatusFilter) count++;
     if (fromDate) count++;
     if (toDate) count++;
-    if (sortColumn) count++;
+    if (sortBy) count++;
     if (sortOrder) count++;
     if (searchQuery) count++;
     return count;
-  }, [verificationStatusFilter, fromDate, toDate, sortColumn, sortOrder, searchQuery]);
+  }, [verificationStatusFilter, fromDate, toDate, sortBy, sortOrder, searchQuery]);
 
   const columns: ColumnDef<IbUsersReportItem>[] = useMemo(
     () => [
@@ -357,7 +351,7 @@ export default function AllPartnersReportPage() {
       },
       {
         id: "deposit",
-        header: "Personal Deposit",
+        header: () => <ManualSortHeader sortKey="deposit" title="Personal Deposit" />,
         accessorKey: "deposit",
         cell: ({ row }) => (
           <span className="font-medium whitespace-nowrap">${formatAmount(row.original.deposit)}</span>
@@ -365,7 +359,7 @@ export default function AllPartnersReportPage() {
       },
       {
         id: "team_deposit",
-        header: "Team Deposit",
+        header: () => <ManualSortHeader sortKey="team_deposit" title="Team Deposit" />,
         accessorKey: "team_deposit",
         cell: ({ row }) => (
           <span className="font-medium whitespace-nowrap">${formatAmount(row.original.team_deposit)}</span>
@@ -373,7 +367,7 @@ export default function AllPartnersReportPage() {
       },
       {
         id: "withdrawal",
-        header: "Personal Withdrawal",
+        header: () => <ManualSortHeader sortKey="withdrawal" title="Personal Withdrawal" />,
         accessorKey: "withdrawal",
         cell: ({ row }) => (
           <span className="font-medium whitespace-nowrap">${formatAmount(row.original.withdrawal)}</span>
@@ -381,7 +375,7 @@ export default function AllPartnersReportPage() {
       },
       {
         id: "team_withdrawal",
-        header: "Team Withdrawal",
+        header: () => <ManualSortHeader sortKey="team_withdrawal" title="Team Withdrawal" />,
         accessorKey: "team_withdrawal",
         cell: ({ row }) => (
           <span className="font-medium whitespace-nowrap">${formatAmount(row.original.team_withdrawal)}</span>
@@ -389,7 +383,7 @@ export default function AllPartnersReportPage() {
       },
       {
         id: "ib_commission",
-        header: "Partner Commission",
+        header: () => <ManualSortHeader sortKey="ib_commission" title="Partner Commission" />,
         accessorKey: "ib_commission",
         cell: ({ row }) => (
           <span className="font-semibold text-primary whitespace-nowrap">${formatAmount(row.original.ib_commission)}</span>
@@ -397,7 +391,7 @@ export default function AllPartnersReportPage() {
       },
       {
         id: "main_wallet",
-        header: "Main Wallet",
+        header: () => <ManualSortHeader sortKey="main_wallet_balance" title="Main Wallet" />,
         accessorKey: "main_wallet_balance",
         cell: ({ row }) => (
           <span className="font-medium whitespace-nowrap">${formatAmount(row.original.main_wallet_balance)}</span>
@@ -405,7 +399,7 @@ export default function AllPartnersReportPage() {
       },
       {
         id: "partner_wallet",
-        header: "Partner Wallet",
+        header: () => <ManualSortHeader sortKey="partner_wallet_balance" title="Partner Wallet" />,
         accessorKey: "partner_wallet_balance",
         cell: ({ row }) => (
           <span className="font-medium whitespace-nowrap">${formatAmount(row.original.partner_wallet_balance)}</span>
@@ -429,7 +423,7 @@ export default function AllPartnersReportPage() {
       },
       {
         id: "created_at",
-        header: "Registered At",
+        header: () => <ManualSortHeader sortKey="created_at" title="Registered At" />,
         accessorKey: "created_at",
         cell: ({ row }) => (
           <div className="flex items-center gap-1 text-sm whitespace-nowrap">
@@ -546,7 +540,7 @@ export default function AllPartnersReportPage() {
             delay={300}
           />
         </div>
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1.5">
             <Label htmlFor="verification-status-filter" className="text-xs font-medium text-muted-foreground">Verification Status</Label>
             <Select
@@ -567,56 +561,8 @@ export default function AllPartnersReportPage() {
               </SelectContent>
             </Select>
           </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="sort-column" className="text-xs font-medium text-muted-foreground">Sort By</Label>
-            <Select
-              value={sortColumn || undefined}
-              onValueChange={(value) => {
-                setSortColumn(value);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger id="sort-column" className="h-9 w-full">
-                <SelectValue placeholder="Select column" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="email">Email</SelectItem>
-                <SelectItem value="verification_status">Verification Status</SelectItem>
-                <SelectItem value="created_at">Created At</SelectItem>
-                <SelectItem value="deposit">Deposit</SelectItem>
-                <SelectItem value="team_deposit">Team Deposit</SelectItem>
-                <SelectItem value="withdrawal">Withdrawal</SelectItem>
-                <SelectItem value="team_withdrawal">Team Withdrawal</SelectItem>
-                <SelectItem value="ib_commission">IB Commission</SelectItem>
-                <SelectItem value="main_wallet_balance">Main Wallet Balance</SelectItem>
-                <SelectItem value="partner_wallet_balance">Partner Wallet Balance</SelectItem>
-                <SelectItem value="referred_by_name">Referred By Name</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-1.5">
-            <Label htmlFor="sort-order" className="text-xs font-medium text-muted-foreground">Order</Label>
-            <Select
-              value={sortOrder || undefined}
-              onValueChange={(value: "ASC" | "DESC") => {
-                setSortOrder(value);
-                setPage(1);
-              }}
-            >
-              <SelectTrigger id="sort-order" className="h-9 w-full">
-                <SelectValue placeholder="Select order" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ASC">Ascending</SelectItem>
-                <SelectItem value="DESC">Descending</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
           
-          <div className="md:col-span-2 lg:col-span-3 xl:col-span-4">
+          <div className="md:col-span-1 lg:col-span-3">
             <DateRangePicker
               fromDate={fromDate}
               toDate={toDate}

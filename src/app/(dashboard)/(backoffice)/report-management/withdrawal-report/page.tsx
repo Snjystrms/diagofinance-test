@@ -33,6 +33,7 @@ import type { ReportExportFormat } from "@/components/report-page-wrapper";
 import { fmtDateTime, formatAmount } from "@/lib/formatters";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
+import { ManualSortHeader } from "@/components/data-table/manual-sort-header";
 
 const statusBadge = (status: string | number) => {
   const statusStr = String(status);
@@ -89,6 +90,10 @@ export default function WithdrawalReportPage() {
     "payment_method_id",
     parseAsString
   );
+  const [isIbFilter, setIsIbFilter] = useQueryState(
+    "is_ib",
+    parseAsString
+  );
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [fromDateStr, setFromDateStr] = useQueryState(
     "from_date",
@@ -96,15 +101,8 @@ export default function WithdrawalReportPage() {
   );
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [toDateStr, setToDateStr] = useQueryState("to_date", parseAsString);
-  const [sortColumn, setSortColumn] = useQueryState(
-    "sort_column",
-    parseAsString
-  );
-  const [sortOrder, setSortOrder] = useQueryState<"ASC" | "DESC">(
-    "sort_order",
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    parseAsString.withDefault("ASC") as any
-  );
+  const [sortBy, setSortBy] = useQueryState("sort_by", parseAsString);
+  const [sortOrder, setSortOrder] = useQueryState("sort_order", parseAsString);
 
   // Search
   const [searchQuery, setSearchQuery] = useQueryState("search", parseAsString);
@@ -174,13 +172,17 @@ export default function WithdrawalReportPage() {
             : paymentMethodFilter === "all"
               ? "all"
               : undefined,
+        is_ib:
+          isIbFilter && isIbFilter !== "all"
+            ? isIbFilter
+            : undefined,
         from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
         to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
         page,
         per_page: perPage,
         search: searchQuery || undefined,
-        sort_column: sortColumn || undefined,
-        sort_order: sortOrder || undefined,
+        sort_column: sortBy || undefined,
+        sort_order: sortOrder ? (sortOrder.toUpperCase() as "ASC" | "DESC") : undefined,
       });
 
       // The API response structure: { success, message, data: [...], pagination: {...}, filters: {...} }
@@ -216,9 +218,10 @@ export default function WithdrawalReportPage() {
     perPage,
     statusFilter,
     paymentMethodFilter,
+    isIbFilter,
     fromDate,
     toDate,
-    sortColumn,
+    sortBy,
     sortOrder,
     searchQuery,
   ]);
@@ -241,9 +244,10 @@ export default function WithdrawalReportPage() {
   const handleResetFilters = useCallback(() => {
     setStatusFilter(null);
     setPaymentMethodFilter(null);
+    setIsIbFilter(null);
     setFromDate(undefined);
     setToDate(undefined);
-    setSortColumn(null);
+    setSortBy(null);
     setSortOrder(null);
     setSearchInput("");
     setSearchQuery(null);
@@ -251,7 +255,8 @@ export default function WithdrawalReportPage() {
   }, [
     setStatusFilter,
     setPaymentMethodFilter,
-    setSortColumn,
+    setIsIbFilter,
+    setSortBy,
     setSortOrder,
     setSearchQuery,
     setPage,
@@ -283,6 +288,10 @@ export default function WithdrawalReportPage() {
             : paymentMethodFilter === "all"
               ? "all"
               : undefined,
+        is_ib:
+          isIbFilter && isIbFilter !== "all"
+            ? isIbFilter
+            : undefined,
         from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
         to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
         search: searchQuery || undefined,
@@ -316,6 +325,7 @@ export default function WithdrawalReportPage() {
     token,
     statusFilter,
     paymentMethodFilter,
+    isIbFilter,
     fromDate,
     toDate,
     searchQuery,
@@ -326,13 +336,14 @@ export default function WithdrawalReportPage() {
     let count = 0;
     if (statusFilter) count++;
     if (paymentMethodFilter) count++;
+    if (isIbFilter) count++;
     if (fromDate) count++;
     if (toDate) count++;
-    if (sortColumn) count++;
+    if (sortBy) count++;
     if (sortOrder) count++;
     if (searchQuery) count++;
     return count;
-  }, [statusFilter, paymentMethodFilter, fromDate, toDate, sortColumn, sortOrder, searchQuery]);
+  }, [statusFilter, paymentMethodFilter, isIbFilter, fromDate, toDate, sortBy, sortOrder, searchQuery]);
 
   const columns: ColumnDef<WithdrawalReportItem>[] = useMemo(
     () => [
@@ -362,7 +373,7 @@ export default function WithdrawalReportPage() {
       },
       {
         id: "amount",
-        header: "Amount (USD)",
+        header: () => <ManualSortHeader sortKey="amount" title="Amount (USD)" />,
         accessorKey: "amount",
         cell: ({ row }) => (
           <span className="font-medium whitespace-nowrap">{formatAmount(row.original.amount)}</span>
@@ -424,7 +435,7 @@ export default function WithdrawalReportPage() {
       // },
       {
         id: "status",
-        header: "Status",
+        header: () => <ManualSortHeader sortKey="status" title="Status" />,
         accessorKey: "status",
         cell: ({ row }) => statusBadge(row.original.status),
       },
@@ -436,7 +447,7 @@ export default function WithdrawalReportPage() {
       },
       {
         id: "created_at",
-        header: "Created",
+        header: () => <ManualSortHeader sortKey="created_at" title="Created" />,
         accessorKey: "created_at",
         cell: ({ row }) => (
           <div className="flex items-center gap-1 text-sm whitespace-nowrap">
@@ -496,7 +507,7 @@ export default function WithdrawalReportPage() {
               delay={300}
             />
           </div>
-         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
+         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
   <div className="space-y-1.5">
     <Label htmlFor="status-filter" className="text-xs font-medium text-muted-foreground">Status</Label>
     <Select
@@ -518,6 +529,25 @@ export default function WithdrawalReportPage() {
     </Select>
   </div>
   <div className="space-y-1.5">
+    <Label htmlFor="user-type-filter" className="text-xs font-medium text-muted-foreground">User Type</Label>
+    <Select
+      value={isIbFilter || undefined}
+      onValueChange={(value) => {
+        setIsIbFilter(value === "all" ? null : value);
+        setPage(1);
+      }}
+    >
+      <SelectTrigger id="user-type-filter" className="h-9 w-full">
+        <SelectValue placeholder="All Users" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All Users</SelectItem>
+        <SelectItem value="1">Partners Only</SelectItem>
+        <SelectItem value="0">Non-Partners Only</SelectItem>
+      </SelectContent>
+    </Select>
+  </div>
+  <div className="space-y-1.5">
     <Label htmlFor="payment-method-filter" className="text-xs font-medium text-muted-foreground">Payment Method</Label>
     <Select
       value={paymentMethodFilter || undefined}
@@ -535,7 +565,7 @@ export default function WithdrawalReportPage() {
     </Select>
   </div>
 
-  <div className="md:col-span-2">
+  <div className="md:col-span-2 xl:col-span-1">
     <DateRangePicker
       fromDate={fromDate}
       toDate={toDate}
@@ -548,44 +578,6 @@ export default function WithdrawalReportPage() {
         setPage(1);
       }}
     />
-  </div>
-
-  <div className="space-y-1.5">
-    <Label htmlFor="sort-column" className="text-xs font-medium text-muted-foreground">Sort By</Label>
-    <Select
-      value={sortColumn || undefined}
-      onValueChange={(value) => {
-        setSortColumn(value);
-        setPage(1);
-      }}
-    >
-      <SelectTrigger id="sort-column" className="h-9 w-full">
-        <SelectValue placeholder="Select column" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="created_at">Created At</SelectItem>
-        <SelectItem value="amount">Amount</SelectItem>
-        <SelectItem value="status">Status</SelectItem>
-      </SelectContent>
-    </Select>
-  </div>
-  <div className="space-y-1.5">
-    <Label htmlFor="sort-order" className="text-xs font-medium text-muted-foreground">Order</Label>
-    <Select
-      value={sortOrder || undefined}
-      onValueChange={(value: "ASC" | "DESC") => {
-        setSortOrder(value);
-        setPage(1);
-      }}
-    >
-      <SelectTrigger id="sort-order" className="h-9 w-full">
-        <SelectValue placeholder="Select order" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="ASC">Ascending</SelectItem>
-        <SelectItem value="DESC">Descending</SelectItem>
-      </SelectContent>
-    </Select>
   </div>
 </div>
         </div>

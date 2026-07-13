@@ -39,6 +39,7 @@ import { formatDateTimeInIST } from "@/lib/formatters";
 import { useAuth } from "@/contexts/auth-context";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
+import { ManualSortHeader } from "@/components/data-table/manual-sort-header";
 
 /* ---------------- Helpers ---------------- */
 const fmtDateTime = (s?: string | null) => {
@@ -132,15 +133,8 @@ export default function ReportManagementPage() {
   );
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [toDateStr, setToDateStr] = useQueryState("to_date", parseAsString);
-  const [sortColumn, setSortColumn] = useQueryState(
-    "sort_column",
-    parseAsString
-  );
-  const [sortOrder, setSortOrder] = useQueryState<"ASC" | "DESC">(
-    "sort_order",
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    parseAsString.withDefault("ASC") as any
-  );
+  const [sortBy, setSortBy] = useQueryState("sort_by", parseAsString);
+  const [sortOrder, setSortOrder] = useQueryState("sort_order", parseAsString);
 
   // Search
   const [searchQuery, setSearchQuery] = useQueryState("search", parseAsString);
@@ -219,8 +213,8 @@ export default function ReportManagementPage() {
         page,
         per_page: perPage,
         search: searchQuery || undefined,
-        sort_column: sortColumn || undefined,
-        sort_order: sortOrder || undefined,
+        sort_column: sortBy || undefined,
+        sort_order: sortOrder ? (sortOrder.toUpperCase() as "ASC" | "DESC") : undefined,
         source: sourceFilter && sourceFilter !== "all" ? sourceFilter : undefined,
         is_ib: isIbFilter && isIbFilter !== "all" ? Number(isIbFilter) : undefined,
       });
@@ -264,7 +258,7 @@ export default function ReportManagementPage() {
     paymentMethodFilter,
     fromDate,
     toDate,
-    sortColumn,
+    sortBy,
     sortOrder,
     searchQuery,
     sourceFilter,
@@ -293,7 +287,7 @@ export default function ReportManagementPage() {
     setIsIbFilter(null);
     setFromDate(undefined);
     setToDate(undefined);
-    setSortColumn(null);
+    setSortBy(null);
     setSortOrder(null);
     setSearchInput("");
     setSearchQuery(null);
@@ -303,7 +297,7 @@ export default function ReportManagementPage() {
     setPaymentMethodFilter,
     setSourceFilter,
     setIsIbFilter,
-    setSortColumn,
+    setSortBy,
     setSortOrder,
     setSearchQuery,
     setPage,
@@ -373,11 +367,11 @@ export default function ReportManagementPage() {
     if (isIbFilter) count++;
     if (fromDate) count++;
     if (toDate) count++;
-    if (sortColumn) count++;
+    if (sortBy) count++;
     if (sortOrder) count++;
     if (searchQuery) count++;
     return count;
-  }, [statusFilter, paymentMethodFilter, sourceFilter, isIbFilter, fromDate, toDate, sortColumn, sortOrder, searchQuery]);
+  }, [statusFilter, paymentMethodFilter, sourceFilter, isIbFilter, fromDate, toDate, sortBy, sortOrder, searchQuery]);
 
   const columns: ColumnDef<DepositReportItem>[] = useMemo(
     () => [
@@ -407,7 +401,7 @@ export default function ReportManagementPage() {
       },
       {
         id: "amount",
-        header: "Amount (USD)",
+        header: () => <ManualSortHeader sortKey="amount" title="Amount (USD)" />,
         accessorKey: "amount",
         cell: ({ row }) => (
           <span className="font-medium whitespace-nowrap">{formatAmount(row.original.amount)}</span>
@@ -452,7 +446,7 @@ export default function ReportManagementPage() {
       },
       {
         id: "status",
-        header: "Status",
+        header: () => <ManualSortHeader sortKey="status" title="Status" />,
         accessorKey: "status",
         cell: ({ row }) => statusBadge(row.original.status),
       },
@@ -464,7 +458,7 @@ export default function ReportManagementPage() {
       },
       {
         id: "created_at",
-        header: "Created",
+        header: () => <ManualSortHeader sortKey="created_at" title="Created" />,
         accessorKey: "created_at",
         cell: ({ row }) => (
           <div className="flex items-center gap-1 text-sm whitespace-nowrap">
@@ -618,45 +612,7 @@ export default function ReportManagementPage() {
     </Select>
   </div>
 
-  <div className="space-y-1.5">
-    <Label htmlFor="sort-column" className="text-xs font-medium text-muted-foreground">Sort By</Label>
-    <Select
-      value={sortColumn || undefined}
-      onValueChange={(value) => {
-        setSortColumn(value);
-        setPage(1);
-      }}
-    >
-      <SelectTrigger id="sort-column" className="h-9 w-full">
-        <SelectValue placeholder="Select column" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="created_at">Created At</SelectItem>
-        <SelectItem value="amount">Amount</SelectItem>
-        <SelectItem value="status">Status</SelectItem>
-      </SelectContent>
-    </Select>
-  </div>
-  <div className="space-y-1.5">
-    <Label htmlFor="sort-order" className="text-xs font-medium text-muted-foreground">Order</Label>
-    <Select
-      value={sortOrder || undefined}
-      onValueChange={(value: "ASC" | "DESC") => {
-        setSortOrder(value);
-        setPage(1);
-      }}
-    >
-      <SelectTrigger id="sort-order" className="h-9 w-full">
-        <SelectValue placeholder="Select order" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="ASC">Ascending</SelectItem>
-        <SelectItem value="DESC">Descending</SelectItem>
-      </SelectContent>
-    </Select>
-  </div>
-
-  <div className="md:col-span-2 lg:col-span-3 xl:col-span-2">
+  <div className="md:col-span-2 lg:col-span-3 xl:col-span-1">
     <DateRangePicker
       fromDate={fromDate}
       toDate={toDate}
