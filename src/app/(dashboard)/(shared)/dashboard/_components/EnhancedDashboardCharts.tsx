@@ -51,10 +51,19 @@ const clientChartConfig = {
 } satisfies ChartConfig;
 
 // Custom tooltip for transaction chart
-function TransactionTooltip({ active, payload }: any) {
+interface TooltipPayload {
+  payload: TransactionChartPoint;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayload[];
+}
+
+function TransactionTooltip({ active, payload }: CustomTooltipProps) {
   if (!active || !payload || !payload.length) return null;
 
-  const data = payload[0].payload as TransactionChartPoint;
+  const data = payload[0].payload;
   const isLatest = data.isLatest;
 
   return (
@@ -83,10 +92,19 @@ function TransactionTooltip({ active, payload }: any) {
 }
 
 // Custom tooltip for clients chart
-function ClientsTooltip({ active, payload }: any) {
+interface ClientTooltipPayload {
+  payload: ClientChartPoint;
+}
+
+interface ClientCustomTooltipProps {
+  active?: boolean;
+  payload?: ClientTooltipPayload[];
+}
+
+function ClientsTooltip({ active, payload }: ClientCustomTooltipProps) {
   if (!active || !payload || !payload.length) return null;
 
-  const data = payload[0].payload as ClientChartPoint;
+  const data = payload[0].payload;
 
   return (
     <div className="rounded-lg border bg-background p-3 shadow-lg">
