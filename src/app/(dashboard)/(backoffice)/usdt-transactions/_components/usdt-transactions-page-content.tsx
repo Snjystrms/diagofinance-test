@@ -12,6 +12,7 @@ import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { AuthenticatedDocumentViewer } from "@/components/authenticated-document-viewer";
 import {
   Dialog,
   DialogContent,
@@ -168,9 +169,6 @@ export function USDTTransactionsPageContent() {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [viewingDepositRequest, setViewingDepositRequest] =
     useState<AdminUSDTDepositRequest | null>(null);
-  const [proofBlobUrl, setProofBlobUrl] = useState<string>("");
-  const [proofLoading, setProofLoading] = useState(false);
-  const [proofError, setProofError] = useState(false);
   const [verifyDecision, setVerifyDecision] = useState<"approve" | "reject">(
     "approve",
   );
@@ -251,49 +249,6 @@ export function USDTTransactionsPageContent() {
   useEffect(() => {
     void setPage(1);
   }, [statusFilter, depositTypeFilter, setPage]);
-
-  useEffect(() => {
-    const proofUrl = viewingDepositRequest?.payment_proof_url;
-    if (!viewDialogOpen || !proofUrl || !token) {
-      setProofBlobUrl("");
-      setProofError(false);
-      return;
-    }
-
-    let cancelled = false;
-    const fullUrl = depositProofUrl(proofUrl);
-    setProofLoading(true);
-    setProofError(false);
-
-    fetch(fullUrl, { headers: { Authorization: `Bearer ${token}` } })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.blob();
-      })
-      .then((blob) => {
-        if (cancelled) return;
-        const objectUrl = URL.createObjectURL(blob);
-        setProofBlobUrl(objectUrl);
-      })
-      .catch(() => {
-        if (cancelled) return;
-        setProofError(true);
-        setProofBlobUrl("");
-      })
-      .finally(() => {
-        if (!cancelled) setProofLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [viewDialogOpen, viewingDepositRequest, token]);
-
-  useEffect(() => {
-    return () => {
-      if (proofBlobUrl) URL.revokeObjectURL(proofBlobUrl);
-    };
-  }, [proofBlobUrl]);
 
   useEffect(() => {
     if (!isManager) return;
@@ -795,36 +750,14 @@ export function USDTTransactionsPageContent() {
                   <FileImage className="h-4 w-4" />
                   Payment Proof
                 </p>
-                {viewingDepositRequest.payment_proof_url ? (
-                  <div className="rounded-md border bg-background p-4 flex items-center justify-center min-h-[120px]">
-                    {proofLoading && !proofBlobUrl && (
-                      <Spinner className="h-6 w-6" />
-                    )}
-                    {proofError && (
-                      <span className="text-sm text-muted-foreground">
-                        Unable to load payment proof.
-                      </span>
-                    )}
-                    {proofBlobUrl && (
-                      <img
-                        src={proofBlobUrl}
-                        alt="Payment proof"
-                        className="max-h-96 w-auto object-contain"
-                      />
-                    )}
-                  </div>
-                ) : (
-                  <div className="rounded-md border border-dashed bg-muted/30 p-4 flex flex-col items-center justify-center gap-1 min-h-[120px] text-center">
-                    <FileImage className="h-8 w-8 text-muted-foreground opacity-60" />
-                    <span className="text-sm font-medium text-muted-foreground">
-                      No deposit image provided
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      The user has not uploaded a payment proof for this deposit
-                      request.
-                    </span>
-                  </div>
-                )}
+                <AuthenticatedDocumentViewer
+                  src={viewingDepositRequest.payment_proof_url ? depositProofUrl(viewingDepositRequest.payment_proof_url) : null}
+                  label="Payment Proof"
+                  mode="embedded"
+                  previewClassName="min-h-[120px]"
+                  emptyText="No deposit image provided"
+                  allowDialog={true}
+                />
               </div>
 
               {(viewingDepositRequest.admin_notes ||

@@ -37,7 +37,7 @@ const advantages = [
 ];
 
 const stats = [
-  { value: "Up to $15", label: "Rebate per lot*", icon: CircleDollarSign },
+  { value: "Up to $12", label: "Rebate per lot*", icon: CircleDollarSign },
   { value: "24h", label: "Onboarding time", icon: Zap },
   { value: "100%", label: "Transparent reporting", icon: ShieldCheck },
 ];
@@ -190,7 +190,7 @@ export default function BecomePartnerPage() {
 
                   <div className="inline-flex w-fit items-center gap-3 rounded-full bg-primary-foreground/15 px-4 py-2 text-sm font-semibold text-primary-foreground backdrop-blur">
                     <span className="flex items-center justify-center rounded-full bg-primary-foreground/20 px-3 py-1 text-sm font-extrabold">
-                      Up to $15
+                      Up to $12
                     </span>
                     Rebate per lot*
                   </div>
@@ -238,7 +238,7 @@ export default function BecomePartnerPage() {
 
                     <div>
                       <p className="text-3xl font-extrabold tracking-tight text-foreground">
-                        Up to $15
+                        Up to $12
                       </p>
                       <p className="mt-1 text-sm font-medium text-muted-foreground">
                         rebate per lot*
