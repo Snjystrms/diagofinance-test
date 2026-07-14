@@ -2200,26 +2200,6 @@ export default function NewUserDetailPage() {
                         "No MT5 trading accounts are linked to this user.",
                         "MT5 accounts",
                         <div className="space-y-4">
-                          <div className="grid gap-3 md:grid-cols-3">
-                            <DetailItem
-                              label="Total Deposit"
-                              value={formatNumericValue(
-                                mt5Summary?.totalDeposit ?? 0,
-                              )}
-                            />
-                            <DetailItem
-                              label="Total Withdraw"
-                              value={formatNumericValue(
-                                mt5Summary?.totalWithdraw ?? 0,
-                              )}
-                            />
-                            <DetailItem
-                              label="Accounts"
-                              value={formatNumericValue(
-                                mt5Summary?.totalMt5Account ?? 0,
-                              )}
-                            />
-                          </div>
                           <Table>
                             <TableHeader>
                               <TableRow>
