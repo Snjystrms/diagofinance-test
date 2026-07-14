@@ -2226,6 +2226,7 @@ export default function NewUserDetailPage() {
                                 <TableHead>Sr. No.</TableHead>
                                 <TableHead>MT5 Login</TableHead>
                                 <TableHead>Account Type</TableHead>
+                                 <TableHead>Mode</TableHead>
                                 <TableHead>Balance</TableHead>
                                 {/* <TableHead>Investor Password</TableHead>
                                 <TableHead>Main Password</TableHead> */}
@@ -2272,6 +2273,9 @@ export default function NewUserDetailPage() {
                                     <TableCell>{item.mt5_id || "-"}</TableCell>
                                     <TableCell className="max-w-[220px] truncate">
                                       {item.account_type_name || "-"}
+                                    </TableCell>
+                                     <TableCell className="max-w-[220px] truncate">
+                                      {item.account_mode || "-"}
                                     </TableCell>
                                     <TableCell className="font-mono text-xs">
                                       <Mt5BalanceButton account={item} />

@@ -25,6 +25,7 @@ import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ProtectedRoute } from "@/components/protected-route";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import {
   Command,
   CommandEmpty,
@@ -148,6 +149,10 @@ export default function BonusManagementPage() {
     parseAsString.withDefault("all"),
   );
 
+  // Date range state
+  const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
+  const [toDate, setToDate] = useState<Date | undefined>(undefined);
+
   // Get page and perPage from URL (managed by useDataTable)
   const [urlPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [urlPerPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
@@ -167,8 +172,10 @@ export default function BonusManagementPage() {
         urlPerPage,
         searchTerm,
         typeFilter,
+        fromDate?.toISOString(),
+        toDate?.toISOString(),
       ] as const,
-    [token, urlPage, urlPerPage, searchTerm, typeFilter],
+    [token, urlPage, urlPerPage, searchTerm, typeFilter, fromDate, toDate],
   );
   const bonusUsersQueryKey = useMemo(
     () =>
@@ -202,6 +209,14 @@ export default function BonusManagementPage() {
       // Add type filter if not "all"
       if (typeFilter && typeFilter !== "all") {
         params.type = typeFilter;
+      }
+
+      // Add date range if selected
+      if (fromDate) {
+        params.from_date = fromDate.toISOString().split('T')[0];
+      }
+      if (toDate) {
+        params.to_date = toDate.toISOString().split('T')[0];
       }
 
       const response = await adminBonusApi.list(params, token!);
@@ -641,39 +656,49 @@ export default function BonusManagementPage() {
           <div>
             <Card className="border-border/70">
               <CardHeader className="gap-4 border-b border-border/60">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                  <div className="flex flex-col gap-3 sm:flex-row">
-                    <ApiSearchBar
-                      value={historySearch}
-                      onChange={setHistorySearch}
-                      onSearch={(value) => {
-                        // Only update if empty (clearing) or if 3+ characters
-                        if (!value || value.trim().length >= 3) {
-                          void setHistorySearch(value);
-                        }
-                      }}
-                      placeholder="Search account, user, email, comment"
-                      minimumLength={3}
-                      delay={500}
-                    />
-                    <Select
-                      value={typeFilter}
-                      onValueChange={(value) => {
-                        void setTypeFilter(value as "all" | "IN" | "OUT");
-                      }}
-                    >
-                      <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Filter type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="IN">Given Bonus</SelectItem>
-                        <SelectItem value="OUT">Removed Bonus</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </CardHeader>
+  <div className="flex flex-row items-center gap-3 overflow-x-auto">
+    <ApiSearchBar
+      value={historySearch}
+      onChange={setHistorySearch}
+      onSearch={(value) => {
+        // Only update if empty (clearing) or if 3+ characters
+        if (!value || value.trim().length >= 3) {
+          void setHistorySearch(value);
+        }
+      }}
+      placeholder="Search account, user, email, comment"
+      minimumLength={3}
+      delay={500}
+      className="min-w-[240px] shrink-0"
+    />
+
+    <Select
+      value={typeFilter}
+      onValueChange={(value) => {
+        void setTypeFilter(value as "all" | "IN" | "OUT");
+      }}
+    >
+      <SelectTrigger className="w-[180px] shrink-0">
+        <SelectValue placeholder="Filter type" />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="all">All Types</SelectItem>
+        <SelectItem value="IN">Given Bonus</SelectItem>
+        <SelectItem value="OUT">Removed Bonus</SelectItem>
+      </SelectContent>
+    </Select>
+
+    <DateRangePicker
+      fromDate={fromDate}
+      toDate={toDate}
+      onFromDateChange={setFromDate}
+      onToDateChange={setToDate}
+      fromLabel="From"
+      toLabel="To"
+      className="w-auto shrink-0"
+    />
+  </div>
+</CardHeader>
               <CardContent className="p-5">
                 {!canList ? (
                   <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">

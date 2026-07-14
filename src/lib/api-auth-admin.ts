@@ -404,6 +404,7 @@ export interface AdminUserMt5AccountItem {
   group_name?: string | null;
   account_type_id?: number | string | null;
   account_type_name?: string | null;
+  account_mode?: string | null;
   investor_password?: string | null;
   main_password?: string | null;
   date?: string | null;

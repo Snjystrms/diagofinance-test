@@ -1269,12 +1269,22 @@ export default function NewUsersPage() {
               }
               className="space-y-4"
             >
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="transfer">Update Parent</TabsTrigger>
-                <TabsTrigger value="remove">Remove Parent</TabsTrigger>
+              <TabsList className="grid w-full grid-cols-2 h-11 p-1 gap-1 rounded-lg">
+                <TabsTrigger 
+                  value="transfer"
+                  className="h-full rounded-md data-[state=active]:shadow-sm"
+                >
+                  Update Parent
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="remove"
+                  className="h-full rounded-md data-[state=active]:shadow-sm"
+                >
+                  Remove Parent
+                </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="transfer" className="space-y-3">
+              <TabsContent value="transfer" className="m-0 space-y-3">
                 <div className="space-y-2">
                   <Label htmlFor="sponsor-search">New Partner</Label>
                   <ApiSearchBar
@@ -1300,31 +1310,33 @@ export default function NewUsersPage() {
                     </p>
                   ) : null}
                   {sponsorSearchResults.length > 0 ? (
-                    <div className="max-h-48 overflow-auto rounded-md border">
-                      {sponsorSearchResults.map((option) => (
-                        <button
-                          key={option.id}
-                          type="button"
-                          className={`w-full px-3 py-2 text-left text-sm hover:bg-accent ${
-                            selectedNewSponsorId === String(option.id)
-                              ? "bg-accent font-medium"
-                              : ""
-                          }`}
-                          onClick={() =>
-                            setSelectedNewSponsorId(String(option.id))
-                          }
-                        >
-                          <div>
-                            <p className="font-medium">{option.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {option.uuid
-                                ? `UUID: ${option.uuid}`
-                                : `ID: ${option.id}`}
-                              {option.email ? ` • ${option.email}` : ""}
-                            </p>
-                          </div>
-                        </button>
-                      ))}
+                    <div className="max-h-48 overflow-auto rounded-xl border border-border/60 bg-background shadow-md">
+                      <div className="divide-y divide-border/50">
+                        {sponsorSearchResults.map((option) => (
+                          <button
+                            key={option.id}
+                            type="button"
+                            className={`w-full px-3 py-2.5 text-left text-sm transition-colors ${
+                              selectedNewSponsorId === String(option.id)
+                                ? "bg-primary/10 font-medium"
+                                : "hover:bg-muted/50"
+                            }`}
+                            onClick={() =>
+                              setSelectedNewSponsorId(String(option.id))
+                            }
+                          >
+                            <div>
+                              <p className="font-medium text-foreground">{option.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {option.uuid
+                                  ? `UUID: ${option.uuid}`
+                                  : `ID: ${option.id}`}
+                                {option.email ? ` • ${option.email}` : ""}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   ) : null}
                   {selectedNewSponsorId ? (
@@ -1338,11 +1350,13 @@ export default function NewUsersPage() {
                 </div>
               </TabsContent>
 
-              <TabsContent value="remove" className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  This will remove the current parent and keep this client out
-                  of partner tree structure.
-                </p>
+              <TabsContent value="remove" className="m-0 space-y-3">
+                <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
+                  <p className="text-sm text-muted-foreground">
+                    This will remove the current parent and keep this client out
+                    of partner tree structure.
+                  </p>
+                </div>
               </TabsContent>
             </Tabs>
 

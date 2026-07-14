@@ -670,7 +670,7 @@ export default function IbClientsPage() {
       >
       <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabType)} className="space-y-6">
           <TabsList className="grid h-auto w-full grid-cols-1 sm:grid-cols-3 rounded-2xl bg-muted/40 p-1">
-            <TabsTrigger value="clients">Clients</TabsTrigger>
+            <TabsTrigger value="clients">Referred Users</TabsTrigger>
             <TabsTrigger value="sub-ibs">Sub Partners</TabsTrigger>
             <TabsTrigger value="rebates">Rebates</TabsTrigger>
           </TabsList>
