@@ -1233,7 +1233,7 @@ export function DashboardPageContent() {
                 <div className="space-y-3">
                   <div>
                     <p className="text-foreground text-sm font-semibold mb-1">
-                      Your Safe Wallet
+                      Your Main Wallet
                     </p>
                     <p className="text-muted-foreground text-sm leading-relaxed">
                       Securely manage balances across deposits and transfers.
@@ -1941,7 +1941,7 @@ export function DashboardPageContent() {
                               <p
                                 className={`text-sm font-semibold mb-1 ${effectiveTheme ? "text-foreground" : "text-primary-foreground"}`}
                               >
-                                Your Safe Wallet
+                                Your Main Wallet
                               </p>
                               <p
                                 className={`text-xs leading-relaxed ${effectiveTheme ? "text-muted-foreground" : "text-primary-foreground/80"}`}

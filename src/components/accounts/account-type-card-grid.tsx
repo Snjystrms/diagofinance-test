@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from "react";
+import Image from "next/image";
 import {
   ArrowRight,
   Circle,
@@ -53,11 +54,16 @@ export function AccountTypeCardGrid({
         const minimumDeposit = formatCurrency(accountType.minimum_deposit);
 
         return (
-          <Card key={accountType.id} className="flex flex-col">
-            <CardHeader className="rounded-t-xl bg-primary/10 px-6 py-4 dark:bg-primary/20">
+         <Card key={accountType.id} className="flex flex-col overflow-hidden">
+           <CardHeader className="bg-primary/10 px-6 py-4 dark:bg-primary/20">
               <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <Icon className="h-5 w-5" />
+                  <Image 
+                    src="/metatrader-5.svg" 
+                    alt="MetaTrader 5" 
+                    width={40} 
+                    height={40}
+                  />
                 </div>
                 <h3 className="text-lg font-semibold">{accountType.name}</h3>
               </div>

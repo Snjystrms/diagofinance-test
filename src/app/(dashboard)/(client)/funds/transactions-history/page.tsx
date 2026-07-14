@@ -311,22 +311,22 @@ export default function TransactionsHistoryPage() {
           )
         },
       },
-      {
-        id: 'deposited_by',
-        header: 'Processed By',
-        accessorKey: 'deposited_by',
-        meta: { mobileHidden: true },
-        cell: ({ row }) => {
-          const transaction = row.original
-          return transaction.deposited_by ? (
-            <span className="text-sm font-medium text-foreground">
-              {transaction.deposited_by}
-            </span>
-          ) : (
-            <span className="text-muted-foreground text-sm">—</span>
-          )
-        },
-      },
+      // {
+      //   id: 'deposited_by',
+      //   header: 'Processed By',
+      //   accessorKey: 'deposited_by',
+      //   meta: { mobileHidden: true },
+      //   cell: ({ row }) => {
+      //     const transaction = row.original
+      //     return transaction.deposited_by ? (
+      //       <span className="text-sm font-medium text-foreground">
+      //         {transaction.deposited_by}
+      //       </span>
+      //     ) : (
+      //       <span className="text-muted-foreground text-sm">—</span>
+      //     )
+      //   },
+      // },
       {
         id: 'created_at',
         header: 'Created At',
