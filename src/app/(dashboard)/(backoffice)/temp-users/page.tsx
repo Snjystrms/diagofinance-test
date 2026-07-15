@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/auth-context";
 import { apiCall, type PaginationMeta } from "@/lib/api-core";
-import { COUNTRIES } from "@/lib/countries";
+import { FALLBACK_COUNTRY_OPTIONS } from "@/lib/country-options";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import {
   useCrudCapabilities,
@@ -140,14 +140,14 @@ export default function TempUsersPage() {
 
   const setCountryValues = useCallback(
     (countryName: string) => {
-      const countryData = COUNTRIES.find(
+      const countryData = FALLBACK_COUNTRY_OPTIONS.find(
         (country) => country.name === countryName,
       );
       if (!countryData) return;
       completeRegistrationForm.setValue("country", countryName, {
         shouldValidate: true,
       });
-      completeRegistrationForm.setValue("country_code", countryData.code, {
+      completeRegistrationForm.setValue("country_code", countryData.phone_code, {
         shouldValidate: true,
       });
     },
@@ -475,7 +475,7 @@ export default function TempUsersPage() {
                       <SelectValue placeholder="Select country" />
                     </SelectTrigger>
                     <SelectContent>
-                      {COUNTRIES.map((country) => (
+                      {FALLBACK_COUNTRY_OPTIONS.map((country) => (
                         <SelectItem key={country.name} value={country.name}>
                           {country.name}
                         </SelectItem>

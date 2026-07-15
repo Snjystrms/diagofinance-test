@@ -230,3 +230,7 @@ export const FALLBACK_COUNTRY_OPTIONS: LocationCountryOption[] = RAW_COUNTRIES.m
     hasStates: COUNTRIES_WITH_STATES.has(country.iso2),
   })
 );
+
+export const COUNTRY_CODES = [
+  ...new Set(FALLBACK_COUNTRY_OPTIONS.map((country) => country.phone_code))
+];

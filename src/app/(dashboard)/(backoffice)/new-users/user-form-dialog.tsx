@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { COUNTRIES } from "@/lib/countries";
+import { FALLBACK_COUNTRY_OPTIONS } from "@/lib/country-options";
 
 type UserFormDialogValues = FieldValues & {
   first_name: string;
@@ -167,10 +167,10 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
                         <SelectValue placeholder="Select country" />
                       </SelectTrigger>
                       <SelectContent side="bottom" avoidCollisions={false}>
-                        {COUNTRIES.map((country) => (
+                        {FALLBACK_COUNTRY_OPTIONS.map((country) => (
                           <SelectItem key={country.name} value={country.name}>
                             {country.name}
-                             {/* ({country.code}) */}
+                             {/* ({country.phone_code}) */}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -189,8 +189,8 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
                       value={field.value}
                       onValueChange={(value) => {
                         field.onChange(value);
-                        const matchedCountry = COUNTRIES.find(
-                          (country) => country.code === value,
+                        const matchedCountry = FALLBACK_COUNTRY_OPTIONS.find(
+                          (country) => country.phone_code === value,
                         );
                         if (matchedCountry) {
                           form.setValue(
@@ -205,12 +205,12 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
                         <SelectValue placeholder="Select country code" />
                       </SelectTrigger>
                       <SelectContent side="bottom" avoidCollisions={false}>
-                        {COUNTRIES.map((country) => (
+                        {FALLBACK_COUNTRY_OPTIONS.map((country) => (
                           <SelectItem
-                            key={`${country.name}-${country.code}`}
-                            value={country.code}
+                            key={`${country.name}-${country.phone_code}`}
+                            value={country.phone_code}
                           >
-                            {country.code} ({country.name})
+                            {country.phone_code} ({country.name})
                           </SelectItem>
                         ))}
                       </SelectContent>

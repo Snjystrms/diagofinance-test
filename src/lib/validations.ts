@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { COUNTRY_CODES } from '@/lib/countries';
+import { COUNTRY_CODES } from '@/lib/country-options';
 
 const personNameSchema = (label: string) =>
   z

@@ -62,7 +62,7 @@ import {
   type PaginationMeta,
   type PendingUser,
 } from "@/lib/api";
-import { COUNTRIES } from "@/lib/countries";
+import { FALLBACK_COUNTRY_OPTIONS } from "@/lib/country-options";
 import {
   adminUserCreateSchema,
   type AdminUserCreateFormData,
@@ -480,7 +480,7 @@ export default function NewUsersPage() {
 
   const setCountryValues = useCallback(
     (countryName: string, mode: "create" | "edit") => {
-      const countryData = COUNTRIES.find(
+      const countryData = FALLBACK_COUNTRY_OPTIONS.find(
         (country) => country.name === countryName,
       );
       if (!countryData) return;
@@ -488,12 +488,12 @@ export default function NewUsersPage() {
         createUserForm.setValue("country", countryName, {
           shouldValidate: true,
         });
-        createUserForm.setValue("country_code", countryData.code, {
+        createUserForm.setValue("country_code", countryData.phone_code, {
           shouldValidate: true,
         });
       } else {
         editUserForm.setValue("country", countryName, { shouldValidate: true });
-        editUserForm.setValue("country_code", countryData.code, {
+        editUserForm.setValue("country_code", countryData.phone_code, {
           shouldValidate: true,
         });
       }

@@ -1760,57 +1760,11 @@ export default function ProfileContent() {
                           <SelectValue placeholder="Select nationality" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="IN">Indian</SelectItem>
-                          <SelectItem value="US">American</SelectItem>
-                          <SelectItem value="GB">British</SelectItem>
-                          <SelectItem value="CA">Canadian</SelectItem>
-                          <SelectItem value="AU">Australian</SelectItem>
-                          <SelectItem value="AE">Emirati</SelectItem>
-                          <SelectItem value="SA">Saudi Arabian</SelectItem>
-                          <SelectItem value="SG">Singaporean</SelectItem>
-                          <SelectItem value="MY">Malaysian</SelectItem>
-                          <SelectItem value="PH">Filipino</SelectItem>
-                          <SelectItem value="ID">Indonesian</SelectItem>
-                          <SelectItem value="TH">Thai</SelectItem>
-                          <SelectItem value="VN">Vietnamese</SelectItem>
-                          <SelectItem value="BD">Bangladeshi</SelectItem>
-                          <SelectItem value="PK">Pakistani</SelectItem>
-                          <SelectItem value="NP">Nepalese</SelectItem>
-                          <SelectItem value="LK">Sri Lankan</SelectItem>
-                          <SelectItem value="CN">Chinese</SelectItem>
-                          <SelectItem value="JP">Japanese</SelectItem>
-                          <SelectItem value="KR">South Korean</SelectItem>
-                          <SelectItem value="DE">German</SelectItem>
-                          <SelectItem value="FR">French</SelectItem>
-                          <SelectItem value="IT">Italian</SelectItem>
-                          <SelectItem value="ES">Spanish</SelectItem>
-                          <SelectItem value="NL">Dutch</SelectItem>
-                          <SelectItem value="BE">Belgian</SelectItem>
-                          <SelectItem value="CH">Swiss</SelectItem>
-                          <SelectItem value="AT">Austrian</SelectItem>
-                          <SelectItem value="SE">Swedish</SelectItem>
-                          <SelectItem value="NO">Norwegian</SelectItem>
-                          <SelectItem value="DK">Danish</SelectItem>
-                          <SelectItem value="FI">Finnish</SelectItem>
-                          <SelectItem value="PL">Polish</SelectItem>
-                          <SelectItem value="RO">Romanian</SelectItem>
-                          <SelectItem value="GR">Greek</SelectItem>
-                          <SelectItem value="PT">Portuguese</SelectItem>
-                          <SelectItem value="BR">Brazilian</SelectItem>
-                          <SelectItem value="MX">Mexican</SelectItem>
-                          <SelectItem value="AR">Argentine</SelectItem>
-                          <SelectItem value="CL">Chilean</SelectItem>
-                          <SelectItem value="CO">Colombian</SelectItem>
-                          <SelectItem value="ZA">South African</SelectItem>
-                          <SelectItem value="NG">Nigerian</SelectItem>
-                          <SelectItem value="EG">Egyptian</SelectItem>
-                          <SelectItem value="KE">Kenyan</SelectItem>
-                          <SelectItem value="GH">Ghanaian</SelectItem>
-                          <SelectItem value="NZ">New Zealander</SelectItem>
-                          <SelectItem value="RU">Russian</SelectItem>
-                          <SelectItem value="TR">Turkish</SelectItem>
-                          <SelectItem value="IL">Israeli</SelectItem>
-                          <SelectItem value="OTHER">Other</SelectItem>
+                          {FALLBACK_COUNTRY_OPTIONS.map((country) => (
+                            <SelectItem key={country.iso2} value={country.iso2}>
+                              {country.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       {getFieldError("nationality") ? (

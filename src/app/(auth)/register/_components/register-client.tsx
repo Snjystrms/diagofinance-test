@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
-import { COUNTRIES } from '@/lib/countries';
+import { FALLBACK_COUNTRY_OPTIONS } from '@/lib/country-options';
 import { registerSchema, type RegisterFormData } from '@/lib/validations';
 import { useAuthMutations } from '@/hooks/use-auth-mutations';
 import {
@@ -89,11 +89,11 @@ export function RegisterClient() {
   });
 
   const handleCountryChange = (selectedCountry: string) => {
-    const countryData = COUNTRIES.find((country) => country.name === selectedCountry);
+    const countryData = FALLBACK_COUNTRY_OPTIONS.find((country) => country.name === selectedCountry);
     if (!countryData) return;
 
     form.setValue('country', selectedCountry, { shouldValidate: true });
-    form.setValue('country_code', countryData.code, { shouldValidate: true });
+    form.setValue('country_code', countryData.phone_code, { shouldValidate: true });
   };
 
   useEffect(() => {
@@ -208,10 +208,10 @@ export function RegisterClient() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent side="bottom" avoidCollisions={false}>
-                          {COUNTRIES.map((country) => (
+                          {FALLBACK_COUNTRY_OPTIONS.map((country) => (
                             <SelectItem key={country.name} value={country.name}>
                               {country.name}
-                               {/* ({country.code}) */}
+                               {/* ({country.phone_code}) */}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -231,7 +231,7 @@ export function RegisterClient() {
                         value={field.value}
                         onValueChange={(value) => {
                           field.onChange(value);
-                          const matchedCountry = COUNTRIES.find((country) => country.code === value);
+                          const matchedCountry = FALLBACK_COUNTRY_OPTIONS.find((country) => country.phone_code === value);
                           if (matchedCountry) {
                             form.setValue('country', matchedCountry.name, { shouldValidate: true });
                           }
@@ -241,9 +241,9 @@ export function RegisterClient() {
                             <SelectValue placeholder="Select country code" />
                         </SelectTrigger>
                         <SelectContent side="bottom" avoidCollisions={false}>
-                          {COUNTRIES.map((country) => (
-                            <SelectItem key={`${country.name}-${country.code}`} value={country.code}>
-                              {country.code} ({country.name})
+                          {FALLBACK_COUNTRY_OPTIONS.map((country) => (
+                            <SelectItem key={`${country.name}-${country.phone_code}`} value={country.phone_code}>
+                              {country.phone_code} ({country.name})
                             </SelectItem>
                           ))}
                         </SelectContent>
