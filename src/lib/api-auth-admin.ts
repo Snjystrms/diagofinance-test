@@ -2550,6 +2550,45 @@ export const adminBonusApi = {
     });
   },
 
+  export: async (
+    token: string,
+    search?: string | null,
+    type?: string | null,
+    fromDate?: string | null,
+    toDate?: string | null,
+  ) => {
+    if (!token) {
+      throw new Error("Token is required to export bonus ledger");
+    }
+
+    if (!API_BASE_URL) {
+      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    }
+
+    const qs = new URLSearchParams();
+    if (search && search.trim()) {
+      qs.set("search", search.trim());
+    }
+    if (type && type !== "all") {
+      qs.set("type", type);
+    }
+    if (fromDate && fromDate.trim()) {
+      qs.set("from_date", fromDate.trim());
+    }
+    if (toDate && toDate.trim()) {
+      qs.set("to_date", toDate.trim());
+    }
+
+    const endpoint = `/admin/bonus/list/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+  },
+
   listMt5Users: (token: string, search?: string) => {
     if (!token) {
       throw new Error("Token is required to fetch MT5 users");
@@ -4158,6 +4197,74 @@ export interface BroadcastEmailResponse {
   };
 }
 
+// ─── Campaign-based Broadcast Email ───────────────────────────────────────────
+
+export interface BroadcastCampaignChunkResult {
+  campaign_id: number;
+  chunk_index: number;
+  chunk_sent: number;
+  chunk_failed: number;
+  chunk_total: number;
+  cumulative_sent: number;
+  total_recipients: number;
+  remaining: number;
+  status: "in_progress" | "completed" | "failed";
+}
+
+export interface BroadcastCampaignChunkResponse {
+  success: boolean;
+  message: string;
+  data: BroadcastCampaignChunkResult;
+}
+
+export interface BroadcastCampaignStatus {
+  campaign_id: number;
+  subject: string;
+  recipient_type: "all" | "specific";
+  chunk_size: number;
+  total_recipients: number;
+  cumulative_sent: number;
+  chunks_sent: number;
+  remaining: number;
+  status: "in_progress" | "completed" | "failed";
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface BroadcastCampaignStatusResponse {
+  success: boolean;
+  data: BroadcastCampaignStatus;
+}
+
+export interface BroadcastCampaignItem {
+  id: number;
+  uuid: string;
+  subject: string;
+  recipient_type: "all" | "specific";
+  chunk_size: number;
+  total_recipients: number;
+  cumulative_sent: number;
+  chunks_sent: number;
+  status: "in_progress" | "completed" | "failed";
+  created_at: string;
+  updated_at: string;
+}
+
+export interface BroadcastCampaignsListResponse {
+  success: boolean;
+  data: BroadcastCampaignItem[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
+export interface BroadcastCampaignCreateRequest {
+  subject: string;
+  body: string;
+  emails?: string[];
+  chunk_size?: number;
+}
+
 export const adminBroadcastEmailApi = {
   send: (data: BroadcastEmailRequest | FormData, token: string) => {
     const isFormData = data instanceof FormData;
@@ -4183,6 +4290,64 @@ export const adminBroadcastEmailApi = {
     return apiCall<BroadcastEmailHistoryResponse>(
       `/admin/user-management/broadcast-email/history?${qs.toString()}`,
       { method: "GET", headers: { Authorization: `Bearer ${token}` } },
+    );
+  },
+
+  // Campaign-based broadcast APIs
+  createCampaign: (data: BroadcastCampaignCreateRequest, token: string) => {
+    return apiCall<BroadcastCampaignChunkResult>(
+      "/admin/user-management/broadcast-email/campaign",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      },
+    );
+  },
+
+  sendNextChunk: (
+    campaignId: number,
+    chunkSize: number,
+    token: string,
+  ) => {
+    return apiCall<BroadcastCampaignChunkResult>(
+      `/admin/user-management/broadcast-email/campaign/${campaignId}/send-next-chunk`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ chunk_size: chunkSize }),
+      },
+    );
+  },
+
+  getCampaignStatus: (campaignId: number, token: string) => {
+    return apiCall<BroadcastCampaignStatus>(
+      `/admin/user-management/broadcast-email/campaign/${campaignId}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+  },
+
+  listCampaigns: (params: { token: string; page?: number; limit?: number }) => {
+    const { token, page = 1, limit = 10 } = params;
+    const qs = new URLSearchParams({
+      page: String(page),
+      limit: String(limit),
+    });
+    return apiCall<BroadcastCampaignsListResponse>(
+      `/admin/user-management/broadcast-email/campaigns?${qs.toString()}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
     );
   },
 };

@@ -13,6 +13,8 @@ import {
   type BroadcastEmailHistoryResponse,
   type EmailExclusion,
   type PendingUser,
+  type BroadcastCampaignChunkResult,
+  type BroadcastCampaignStatus,
 } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -86,6 +88,10 @@ export default function EmailManagementPage() {
   const [isBroadcastAll, setIsBroadcastAll] = useState(true);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<BroadcastEmailResponse["data"] | null>(null);
+
+  // Campaign state
+  const [activeCampaign, setActiveCampaign] = useState<BroadcastCampaignStatus | null>(null);
+  const [sendingChunk, setSendingChunk] = useState(false);
 
   // ---- Email exclusion list ----
   const [exclusionInput, setExclusionInput] = useState("");
@@ -298,34 +304,112 @@ export default function EmailManagementPage() {
     }
     setLoading(true);
     setResult(null);
+    setActiveCampaign(null);
+    
     try {
-      const hasFiles = attachments.some((f) => f !== null);
-      let res: ApiResponse<BroadcastEmailResponse["data"]>;
-      if (hasFiles) {
-        const fd = new FormData();
-        fd.append("subject", subject.trim());
-        fd.append("body", body.trim());
-        if (!isBroadcastAll) {
-          emails.forEach((email) => fd.append("emails[]", email));
-        }
-        attachments.forEach((file, i) => {
-          if (file) fd.append(`attachment_${i + 1}`, file);
-        });
-        res = await adminBroadcastEmailApi.send(fd, token);
-      } else {
-        const payload = isBroadcastAll
-          ? { subject: subject.trim(), body: body.trim() }
-          : { subject: subject.trim(), body: body.trim(), emails };
-        res = await adminBroadcastEmailApi.send(payload, token);
+      const payload: {
+        subject: string;
+        body: string;
+        emails?: string[];
+        chunk_size?: number;
+      } = {
+        subject: subject.trim(),
+        body: body.trim(),
+      };
+      
+      if (!isBroadcastAll) {
+        payload.emails = emails;
       }
-      setResult(res.data ?? null);
-      toast.success(res.message || "Broadcast sent successfully");
+      
+      console.log("Creating campaign with payload:", payload);
+      
+      // Create campaign and send first chunk
+      const res = await adminBroadcastEmailApi.createCampaign(payload, token);
+      
+      console.log("Campaign API response:", res);
+      
+      const responseData = res as unknown as ApiResponse<BroadcastCampaignChunkResult>;
+      const campaignData = responseData.data ?? (res as unknown as BroadcastCampaignChunkResult);
+      
+      console.log("Extracted campaign data:", campaignData);
+      
+      // Set up campaign status
+      setActiveCampaign({
+        campaign_id: campaignData.campaign_id,
+        subject: subject.trim(),
+        recipient_type: isBroadcastAll ? "all" : "specific",
+        chunk_size: campaignData.chunk_total || 200,
+        total_recipients: campaignData.total_recipients,
+        cumulative_sent: campaignData.cumulative_sent,
+        chunks_sent: campaignData.chunk_index,
+        remaining: campaignData.remaining,
+        status: campaignData.status || "in_progress",
+      });
+      
+      // Set initial result
+      setResult({
+        total: campaignData.total_recipients,
+        sent: campaignData.cumulative_sent,
+        failed: 0, // Track failed separately if needed
+      });
+      
+      toast.success(responseData.message || `Chunk 1 sent. ${campaignData.remaining} emails remaining.`);
     } catch (error) {
+      console.error("Campaign creation error:", error);
       toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "broadcast email", action: "send" })
+        getAdminFriendlyErrorMessage(error, { resource: "broadcast campaign", action: "create" })
       );
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSendNextChunk = async () => {
+    if (!activeCampaign || !token) return;
+    if (activeCampaign.status === "completed") {
+      toast("Campaign already completed", { icon: "✅" });
+      return;
+    }
+    
+    setSendingChunk(true);
+    try {
+      const res = await adminBroadcastEmailApi.sendNextChunk(
+        activeCampaign.campaign_id,
+        activeCampaign.chunk_size,
+        token
+      );
+      const responseData = res as unknown as ApiResponse<BroadcastCampaignChunkResult>;
+      const chunkData = responseData.data ?? (res as unknown as BroadcastCampaignChunkResult);
+      
+      // Update campaign status
+      setActiveCampaign({
+        ...activeCampaign,
+        cumulative_sent: chunkData.cumulative_sent,
+        chunks_sent: chunkData.chunk_index,
+        remaining: chunkData.remaining,
+        status: chunkData.status || "in_progress",
+      });
+      
+      // Update result
+      setResult({
+        total: chunkData.total_recipients,
+        sent: chunkData.cumulative_sent,
+        failed: 0,
+      });
+      
+      if (chunkData.status === "completed") {
+        toast.success("Campaign completed! All emails sent.");
+      } else {
+        toast.success(
+          responseData.message || `Chunk ${chunkData.chunk_index} sent. ${chunkData.remaining} emails remaining.`
+        );
+      }
+    } catch (error) {
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "broadcast chunk", action: "send" })
+      );
+    } finally {
+      setSendingChunk(false);
     }
   };
 
@@ -336,6 +420,7 @@ export default function EmailManagementPage() {
     setEmailInput("");
     setUserSearch("");
     setResult(null);
+    setActiveCampaign(null);
     setIsBroadcastAll(true);
     setAttachments([null, null, null]);
     setVisibleSlots(1);
@@ -653,15 +738,34 @@ export default function EmailManagementPage() {
 
           {/* Actions */}
           <div className="flex items-center gap-3">
-            <Button onClick={handleSend} disabled={loading || (isManager && !canSendBroadcast)} className="gap-2">
+            <Button 
+              onClick={handleSend} 
+              disabled={loading || (isManager && !canSendBroadcast) || (activeCampaign !== null && activeCampaign.status !== "completed")} 
+              className="gap-2"
+            >
               {loading ? (
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
               ) : (
                 <Send className="h-4 w-4" />
               )}
-              {loading ? "Sending…" : "Send Broadcast"}
+              {loading ? "Creating Campaign…" : activeCampaign ? "Campaign Active" : "Start Campaign"}
             </Button>
-            <Button variant="outline" onClick={handleReset} disabled={loading}>
+            {activeCampaign && activeCampaign.remaining > 0 && activeCampaign.status !== "completed" && (
+              <Button
+                onClick={handleSendNextChunk}
+                disabled={sendingChunk}
+                variant="default"
+                className="gap-2"
+              >
+                {sendingChunk ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+                {sendingChunk ? "Sending…" : `Send Next ${Math.min(activeCampaign.chunk_size, activeCampaign.remaining)}`}
+              </Button>
+            )}
+            <Button variant="outline" onClick={handleReset} disabled={loading || sendingChunk}>
               Reset
             </Button>
           </div>
@@ -673,8 +777,12 @@ export default function EmailManagementPage() {
             <Card className="border rounded-2xl shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  Broadcast Result
+                  {activeCampaign?.status === "completed" ? (
+                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Clock className="h-4 w-4 text-amber-500" />
+                  )}
+                  {activeCampaign?.status === "completed" ? "Campaign Complete" : "Campaign Progress"}
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
@@ -687,15 +795,46 @@ export default function EmailManagementPage() {
                     <p className="text-xs text-muted-foreground mb-1">Sent</p>
                     <p className="text-2xl font-semibold text-green-600 dark:text-green-400">{result.sent}</p>
                   </div>
-                  <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-3">
-                    <p className="text-xs text-muted-foreground mb-1">Failed</p>
-                    <p className="text-2xl font-semibold text-red-600 dark:text-red-400">{result.failed}</p>
+                  <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-3">
+                    <p className="text-xs text-muted-foreground mb-1">Remaining</p>
+                    <p className="text-2xl font-semibold text-amber-600 dark:text-amber-400">
+                      {activeCampaign?.remaining ?? (result.total - result.sent)}
+                    </p>
                   </div>
                 </div>
+                
+                {activeCampaign && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-muted-foreground">Progress</span>
+                      <span className="font-medium">
+                        {Math.round((result.sent / result.total) * 100)}%
+                      </span>
+                    </div>
+                    <div className="h-2 rounded-full bg-muted overflow-hidden">
+                      <div 
+                        className="h-full bg-primary transition-all duration-500"
+                        style={{ width: `${(result.sent / result.total) * 100}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Chunks sent: {activeCampaign.chunks_sent}</span>
+                      <span>Status: {activeCampaign.status}</span>
+                    </div>
+                  </div>
+                )}
+                
                 {result.failed > 0 && (
                   <div className="flex items-center gap-2 rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
                     <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
                     {result.failed} email{result.failed !== 1 ? "s" : ""} failed to deliver.
+                  </div>
+                )}
+                
+                {activeCampaign?.status === "completed" && (
+                  <div className="flex items-center gap-2 rounded-lg border border-green-500/20 bg-green-500/5 px-3 py-2 text-xs text-green-700 dark:text-green-400">
+                    <CheckCircle2 className="h-3.5 w-3.5 flex-shrink-0" />
+                    All emails have been delivered successfully!
                   </div>
                 )}
               </CardContent>
@@ -709,7 +848,8 @@ export default function EmailManagementPage() {
             <CardContent className="space-y-2 text-sm text-muted-foreground">
               <p>• Use <strong className="text-foreground">All Clients</strong> to reach every registered user.</p>
               <p>• Use <strong className="text-foreground">Specific Emails</strong> to target individual clients.</p>
-              <p>• Search clients by name or email and click to add them.</p>
+              <p>• Emails are sent in <strong className="text-foreground">chunks</strong> to ensure reliable delivery.</p>
+              <p>• Click <strong className="text-foreground">Send Next</strong> to continue sending remaining emails.</p>
               <p>• You can also enter emails manually and press <kbd className="rounded border border-border/60 bg-muted px-1 py-0.5 text-xs">Enter</kbd>.</p>
               <p>• Addresses on the <strong className="text-foreground">Exclusions</strong> tab will be skipped for every broadcast.</p>
             </CardContent>

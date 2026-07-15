@@ -496,54 +496,48 @@ export default function BonusManagementPage() {
   );
 
   const handleExport = useCallback(
-    (formatType: "xlsx" | "csv") => {
+    async (formatType: "xlsx" | "csv") => {
+      if (!canList || !token) {
+        toast.error("You do not have permission to export bonus ledger");
+        return;
+      }
+
       const exportToastId = `bonus-ledger-export-${formatType}`;
       try {
-        if (allBonuses.length === 0) {
-          toast.error("No data to export", { id: exportToastId });
-          return;
-        }
-
         toast.loading(`Preparing ${formatType.toUpperCase()} export...`, {
           id: exportToastId,
         });
-        const exportData = allBonuses.map((bonus, index) => ({
-          "Sr. No.": index + 1,
-          "MT5 Account": bonus.mt5User?.account_id ?? "-",
-          Name: bonus.mt5User?.name ?? "-",
-          Email: bonus.user?.email ?? "-",
-          Type: isBonusIn(bonus.type) ? "Given" : "Removed",
-          Amount: Number(bonus.amount ?? 0),
-          "Equity Ref.": Number(bonus.equity ?? 0),
-          Comment: bonus.comment || "-",
-          Created: formatExportDateTime(bonus.created_at),
-        }));
 
-        const worksheet = XLSX.utils.json_to_sheet(exportData);
-        const filenameBase = `bonus-ledger-${getExportTimestamp()}`;
-        let filename = `${filenameBase}.xlsx`;
+        const response = await adminBonusApi.export(
+          token,
+          searchTerm || null,
+          typeFilter === "all" ? null : typeFilter,
+          fromDate ? fromDate.toISOString().split('T')[0] : null,
+          toDate ? toDate.toISOString().split('T')[0] : null,
+        );
 
-        if (formatType === "xlsx") {
-          const workbook = XLSX.utils.book_new();
-          XLSX.utils.book_append_sheet(workbook, worksheet, "Bonus Ledger");
-          XLSX.writeFile(workbook, filename);
-        } else {
-          const csv = XLSX.utils.sheet_to_csv(worksheet);
-          const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-          const link = document.createElement("a");
-          filename = `${filenameBase}.csv`;
-          link.href = URL.createObjectURL(blob);
-          link.download = filename;
-          document.body.appendChild(link);
-          link.click();
-          link.remove();
-          URL.revokeObjectURL(link.href);
+        if (!response.ok) {
+          throw new Error("Failed to export bonus ledger");
         }
 
-        toast.success(
-          `Exported ${allBonuses.length} bonus records to ${filename}`,
-          { id: exportToastId },
-        );
+        const blob = await response.blob();
+        const contentDisposition = response.headers.get("Content-Disposition");
+        const filenameMatch = contentDisposition?.match(/filename="?(.+)"?/);
+        const filename = filenameMatch
+          ? filenameMatch[1]
+          : `bonus-ledger-${getExportTimestamp()}.xlsx`;
+
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+
+        toast.success(`Exported bonus ledger to ${filename}`, {
+          id: exportToastId,
+        });
       } catch (error: unknown) {
         console.error(`Failed to export ${formatType}:`, error);
         toast.error(
@@ -555,7 +549,7 @@ export default function BonusManagementPage() {
         );
       }
     },
-    [allBonuses],
+    [canList, token, searchTerm, typeFilter, fromDate, toDate],
   );
 
   const handleSubmit = () => {
