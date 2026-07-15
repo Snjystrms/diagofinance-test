@@ -611,6 +611,8 @@ export default function NewUsersPage() {
           format: formatType,
           search: search?.trim() ? search : undefined,
           status: statusFilter !== "all" ? statusFilter : undefined,
+          from_date: dateFrom || undefined,
+          to_date: dateTo || undefined,
         });
 
         if (!blob.size) {
@@ -639,7 +641,7 @@ export default function NewUsersPage() {
         );
       }
     },
-    [canViewUserList, token, search, statusFilter],
+    [canViewUserList, token, search, statusFilter, dateFrom, dateTo],
   );
 
   const handleCreate = async (values: AdminUserCreateFormData) => {

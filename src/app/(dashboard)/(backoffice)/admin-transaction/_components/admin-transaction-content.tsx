@@ -212,6 +212,8 @@ export function AdminTransactionContent() {
         search: typeof searchUser === "string" && searchUser.trim().length >= 3 ? searchUser.trim() : null,
         transaction_type: (typeFilter as AdminTransactionItem["transaction_type"]) || null,
         status: (statusFilter as AdminTransactionItem["status"]) || null,
+        from_date: dateFrom || null,
+        to_date: dateTo || null,
       });
 
       if (!blob.size) {
@@ -236,7 +238,7 @@ export function AdminTransactionContent() {
         { id: exportToastId },
       );
     }
-  }, [canView, token, searchUser, typeFilter, statusFilter]);
+  }, [canView, token, searchUser, typeFilter, statusFilter, dateFrom, dateTo]);
 
   const handleViewDetails = useCallback((transaction: AdminTransactionItem) => {
     setSelectedTransaction(transaction);

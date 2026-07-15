@@ -1265,6 +1265,8 @@ export interface InternalTransferReportExportParams {
   token: string;
   format?: "xlsx" | "csv";
   search?: string;
+  from_date?: string;
+  to_date?: string;
 }
 
 export const adminInternalTransferReportApi = {
@@ -1290,7 +1292,7 @@ export const adminInternalTransferReportApi = {
   },
 
   export: async (params: InternalTransferReportExportParams) => {
-    const { token, format = "xlsx", search } = params;
+    const { token, format = "xlsx", search, from_date, to_date } = params;
     if (!token) {
       throw new Error("Token is required to export internal transfer report");
     }
@@ -1303,6 +1305,12 @@ export const adminInternalTransferReportApi = {
     qs.set("format", format);
     if (search && search.trim()) {
       qs.set("search", search.trim());
+    }
+    if (from_date && from_date.trim()) {
+      qs.set("from_date", from_date.trim());
+    }
+    if (to_date && to_date.trim()) {
+      qs.set("to_date", to_date.trim());
     }
 
     const endpoint = `/admin/reports/internal-transfer-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
@@ -1676,6 +1684,8 @@ export interface LoginActivityReportExportParams {
   token: string;
   format?: "xlsx" | "csv";
   search?: string;
+  from_date?: string;
+  to_date?: string;
 }
 
 export const adminLoginActivityReportApi = {
@@ -1701,7 +1711,7 @@ export const adminLoginActivityReportApi = {
   },
 
   export: async (params: LoginActivityReportExportParams) => {
-    const { token, format = "xlsx", search } = params;
+    const { token, format = "xlsx", search, from_date, to_date } = params;
     if (!token) {
       throw new Error("Token is required to export login activity report");
     }
@@ -1714,6 +1724,12 @@ export const adminLoginActivityReportApi = {
     qs.set("format", format);
     if (search && search.trim()) {
       qs.set("search", search.trim());
+    }
+    if (from_date && from_date.trim()) {
+      qs.set("from_date", from_date.trim());
+    }
+    if (to_date && to_date.trim()) {
+      qs.set("to_date", to_date.trim());
     }
 
     const endpoint = `/admin/reports/login-activity-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
@@ -1906,6 +1922,8 @@ export interface AllUsersReportExportParams {
   format?: "xlsx" | "csv";
   search?: string;
   status?: string;
+  from_date?: string;
+  to_date?: string;
 }
 
 export const adminAllUsersReportApi = {
@@ -1914,6 +1932,8 @@ export const adminAllUsersReportApi = {
     format = "xlsx",
     search,
     status,
+    from_date,
+    to_date,
   }: AllUsersReportExportParams) => {
     if (!token) {
       throw new Error("Token is required to export all users report");
@@ -1933,6 +1953,12 @@ export const adminAllUsersReportApi = {
       status !== "all"
     ) {
       qs.set("status", String(status));
+    }
+    if (from_date && from_date.trim()) {
+      qs.set("from_date", from_date.trim());
+    }
+    if (to_date && to_date.trim()) {
+      qs.set("to_date", to_date.trim());
     }
 
     const endpoint = `/admin/reports/all-users-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
@@ -1982,6 +2008,8 @@ export interface Mt5UsersReportExportParams {
   user_id?: string;
   group_id?: string;
   manager_id?: string;
+  from_date?: string;
+  to_date?: string;
 }
 
 export const adminMt5UsersReportApi = {
@@ -1994,6 +2022,8 @@ export const adminMt5UsersReportApi = {
     user_id,
     group_id,
     manager_id,
+    from_date,
+    to_date,
   }: Mt5UsersReportExportParams) => {
     if (!token) {
       throw new Error("Token is required to export MT5 users report");
@@ -2032,6 +2062,12 @@ export const adminMt5UsersReportApi = {
       `${manager_id}` !== ""
     ) {
       qs.set("manager_id", String(manager_id));
+    }
+    if (from_date && from_date.trim()) {
+      qs.set("from_date", from_date.trim());
+    }
+    if (to_date && to_date.trim()) {
+      qs.set("to_date", to_date.trim());
     }
 
     const endpoint = `/admin/reports/mt5-users-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;

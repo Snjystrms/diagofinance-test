@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useDeferredValue, useMemo, useState } from "react";
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
+import { format, parse } from "date-fns";
 import {
   Building2,
   Download,
@@ -27,6 +28,7 @@ import { ProtectedRoute } from "@/components/protected-route";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import {
   Card,
   CardContent,
@@ -102,6 +104,32 @@ export function AdminBankDetailsPageContent() {
     "sort_order",
     parseAsString.withDefault("desc"),
   );
+  const [dateFrom, setDateFrom] = useQueryState("date_from", parseAsString);
+  const [dateTo, setDateTo] = useQueryState("date_to", parseAsString);
+
+  // Date state for DateRangePicker
+  const [fromDateObj, setFromDateObj] = useState<Date | undefined>(undefined);
+  const [toDateObj, setToDateObj] = useState<Date | undefined>(undefined);
+
+  // Sync date objects with query params
+  useEffect(() => {
+    if (dateFrom) {
+      const parsed = parse(dateFrom, "yyyy-MM-dd", new Date());
+      if (!isNaN(parsed.getTime())) setFromDateObj(parsed);
+    } else {
+      setFromDateObj(undefined);
+    }
+  }, [dateFrom]);
+
+  useEffect(() => {
+    if (dateTo) {
+      const parsed = parse(dateTo, "yyyy-MM-dd", new Date());
+      if (!isNaN(parsed.getTime())) setToDateObj(parsed);
+    } else {
+      setToDateObj(undefined);
+    }
+  }, [dateTo]);
+
   const [dialogMode, setDialogMode] = useState<DialogMode>(null);
   const [formValues, setFormValues] =
     useState<BankDetailFormValues>(emptyBankDetailForm);
@@ -389,6 +417,8 @@ export function AdminBankDetailsPageContent() {
           search || null,
           statusFilter === "all" ? null : statusFilter,
           sortOrder,
+          dateFrom || null,
+          dateTo || null,
         );
 
         if (!response.ok) {
@@ -424,7 +454,7 @@ export function AdminBankDetailsPageContent() {
         );
       }
     },
-    [canList, token, search, statusFilter, sortOrder],
+    [canList, token, search, statusFilter, sortOrder, dateFrom, dateTo],
   );
 
   const columns = useMemo<ColumnDef<AdminBankDetailItem>[]>(
@@ -637,78 +667,74 @@ export function AdminBankDetailsPageContent() {
           <CardContent className="space-y-4">
             {canList ? (
               <>
-                <div className="flex flex-col gap-3 pt-4 md:flex-row md:items-center">
-                  <div className="w-full max-w-md">
-                    <ApiSearchBar
-                      value={searchInput}
-                      onChange={setSearchInput}
-                      onSearch={(value) => {
-                        void setPage(1);
-                        void setSearch(value || null);
-                      }}
-                      placeholder="Search by user, account holder, bank name..."
-                      minimumLength={3}
-                      delay={300}
-                    />
-                  </div>
+        <div className="flex flex-col flex-wrap items-stretch gap-3 pt-4 sm:flex-row sm:items-end">
+  <div className="w-full sm:max-w-md sm:flex-1">
+    <ApiSearchBar
+      value={searchInput}
+      onChange={setSearchInput}
+      onSearch={(value) => {
+        void setPage(1);
+        void setSearch(value || null);
+      }}
+      placeholder="Search by user, account holder, bank name..."
+      minimumLength={3}
+      delay={300}
+    />
+  </div>
 
-                  <div className="flex flex-col gap-3 sm:flex-row">
-                    <div className="w-full min-w-[180px] sm:w-[180px]">
-                      <Select
-                        value={statusFilter}
-                        onValueChange={(value) => {
-                          void setStatusFilter(value === "all" ? null : value);
-                          void setPage(1);
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Filter status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All statuses</SelectItem>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="approved">Approved</SelectItem>
-                          <SelectItem value="rejected">Rejected</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-{/* 
-                    <div className="w-full min-w-[180px] sm:w-[180px]">
-                      <Select
-                        value={sortColumn}
-                        onValueChange={(value) => {
-                          setSortColumn(value);
-                          setPage(1);
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Sort by" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="id">Sort by ID</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div> */}
+ <div className="w-full sm:w-[180px]">
+  <Select
+    value={statusFilter}
+    onValueChange={(value) => {
+      void setStatusFilter(value === "all" ? null : value);
+      void setPage(1);
+    }}
+  >
+    <SelectTrigger className="w-full">
+      <SelectValue placeholder="Filter status" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="all">All statuses</SelectItem>
+      <SelectItem value="pending">Pending</SelectItem>
+      <SelectItem value="approved">Approved</SelectItem>
+      <SelectItem value="rejected">Rejected</SelectItem>
+    </SelectContent>
+  </Select>
+</div>
 
-                    <div className="w-full min-w-[140px] sm:w-[140px]">
-                      <Select
-                        value={sortOrder}
-                        onValueChange={(value) => {
-                          void setSortOrder(value);
-                          void setPage(1);
-                        }}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Order" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="asc">Ascending</SelectItem>
-                          <SelectItem value="desc">Descending</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
+<div className="w-full sm:w-[140px]">
+  <Select
+    value={sortOrder}
+    onValueChange={(value) => {
+      void setSortOrder(value);
+      void setPage(1);
+    }}
+  >
+    <SelectTrigger className="w-full">
+      <SelectValue placeholder="Order" />
+    </SelectTrigger>
+    <SelectContent>
+      <SelectItem value="asc">Ascending</SelectItem>
+      <SelectItem value="desc">Descending</SelectItem>
+    </SelectContent>
+  </Select>
+</div>
+
+  <DateRangePicker
+    fromDate={fromDateObj}
+    toDate={toDateObj}
+    onFromDateChange={(date) => {
+      setFromDateObj(date);
+      void setDateFrom(date ? format(date, "yyyy-MM-dd") : null);
+      void setPage(1);
+    }}
+    onToDateChange={(date) => {
+      setToDateObj(date);
+      void setDateTo(date ? format(date, "yyyy-MM-dd") : null);
+      void setPage(1);
+    }}
+  />
+</div>
 
                 {isLoading ? (
                   <TableSectionSkeleton columnCount={6} rowCount={8} />

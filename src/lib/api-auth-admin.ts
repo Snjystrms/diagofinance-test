@@ -2343,6 +2343,8 @@ export const adminBankDetailsApi = {
     search?: string | null,
     status?: string | null,
     sortOrder?: string | null,
+    dateFrom?: string | null,
+    dateTo?: string | null,
   ) => {
     if (!token) {
       throw new Error("Token is required to export bank details");
@@ -2361,6 +2363,14 @@ export const adminBankDetailsApi = {
     const normalizedSortOrder = sortOrder?.trim().toLowerCase();
     if (normalizedSortOrder === "asc" || normalizedSortOrder === "desc") {
       qs.set("sort_order", normalizedSortOrder);
+    }
+
+    if (dateFrom && dateFrom.trim()) {
+      qs.set("from_date", dateFrom.trim());
+    }
+
+    if (dateTo && dateTo.trim()) {
+      qs.set("to_date", dateTo.trim());
     }
 
     const endpoint = `/admin/bank-details/export${qs.toString() ? `?${qs.toString()}` : ""}`;

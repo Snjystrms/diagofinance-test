@@ -177,6 +177,8 @@ export interface AdminTransactionExportParams {
   search?: string | null;
   transaction_type?: string | null;
   status?: string | null;
+  from_date?: string | null;
+  to_date?: string | null;
 }
 
 const parseContentDispositionFilename = (contentDisposition: string | null, fallback: string) => {
@@ -309,7 +311,7 @@ export const adminTransactionsApi = {
     });
   },
 
-  export: async ({ token, format = "xlsx", search, transaction_type, status }: AdminTransactionExportParams) => {
+  export: async ({ token, format = "xlsx", search, transaction_type, status, from_date, to_date }: AdminTransactionExportParams) => {
     if (!token) {
       throw new Error("Token is required to export transactions");
     }
@@ -323,6 +325,12 @@ export const adminTransactionsApi = {
     if (search && search.trim()) qs.set("search", search.trim());
     if (transaction_type) qs.set("transaction_type", transaction_type);
     if (status) qs.set("status", status);
+    if (from_date && from_date.trim()) {
+      qs.set("from_date", from_date.trim());
+    }
+    if (to_date && to_date.trim()) {
+      qs.set("to_date", to_date.trim());
+    }
 
     const endpoint = `/admin/transactions/export${qs.toString() ? `?${qs.toString()}` : ""}`;
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {

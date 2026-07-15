@@ -5,6 +5,7 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import toast from "react-hot-toast";
+import { format, parse } from "date-fns";
 import { Copy, Download, Eye, Landmark, Network, RefreshCw, Users } from "lucide-react";
 
 import { AppDataTable } from "@/components/app-data-table";
@@ -15,11 +16,12 @@ import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { useAuth } from "@/contexts/auth-context";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import {
-  API_BASE_URL,
   adminIbUsersApi,
+  adminIbUsersReportApi,
   type AdminIbUser,
 } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
@@ -39,20 +41,6 @@ const formatDateTime = (value?: string | null) => {
   }
 
   return formatDateTimeInIST(value);
-};
-
-const getExportTimestamp = () => {
-  const date = new Date();
-  const pad = (value: number) => String(value).padStart(2, "0");
-  return [
-    date.getFullYear(),
-    pad(date.getMonth() + 1),
-    pad(date.getDate()),
-    "-",
-    pad(date.getHours()),
-    pad(date.getMinutes()),
-    pad(date.getSeconds()),
-  ].join("");
 };
 
 const getIbStatusLabel = (status: number | string | boolean | undefined) => {
@@ -200,6 +188,31 @@ export default function IbUsersPage() {
     "search",
     parseAsString.withDefault(""),
   );
+  const [dateFrom, setDateFrom] = useQueryState("date_from", parseAsString);
+  const [dateTo, setDateTo] = useQueryState("date_to", parseAsString);
+
+  // Date state for DateRangePicker
+  const [fromDateObj, setFromDateObj] = useState<Date | undefined>(undefined);
+  const [toDateObj, setToDateObj] = useState<Date | undefined>(undefined);
+
+  // Sync date objects with query params
+  useEffect(() => {
+    if (dateFrom) {
+      const parsed = parse(dateFrom, "yyyy-MM-dd", new Date());
+      if (!isNaN(parsed.getTime())) setFromDateObj(parsed);
+    } else {
+      setFromDateObj(undefined);
+    }
+  }, [dateFrom]);
+
+  useEffect(() => {
+    if (dateTo) {
+      const parsed = parse(dateTo, "yyyy-MM-dd", new Date());
+      if (!isNaN(parsed.getTime())) setToDateObj(parsed);
+    } else {
+      setToDateObj(undefined);
+    }
+  }, [dateTo]);
 
   // Local search state for immediate UI updates
   const [searchInput, setSearchInput] = useState(searchQuery ?? "");
@@ -332,27 +345,18 @@ export default function IbUsersPage() {
       const trimmedSearch = searchQuery?.trim() || "";
       const validSearch = trimmedSearch.length >= 3 ? trimmedSearch : undefined;
       
-      const qs = new URLSearchParams();
-      if (validSearch) {
-        qs.set("search", validSearch);
-      }
-
-      const endpoint = `/admin/reports/ib-users-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
+      const { blob, filename } = await adminIbUsersReportApi.export({
+        token,
+        format: "xlsx",
+        search: validSearch,
+        from_date: dateFrom || undefined,
+        to_date: dateTo || undefined,
       });
 
-      if (!response.ok) {
-        throw new Error("Failed to export IB users");
+      if (!blob.size) {
+        toast.error("No data returned for export", { id: exportToastId });
+        return;
       }
-
-      const blob = await response.blob();
-      const contentDisposition = response.headers.get("Content-Disposition");
-      const filenameMatch = contentDisposition?.match(/filename="?(.+)"?/);
-      const filename = filenameMatch
-        ? filenameMatch[1]
-        : `ib-users-${getExportTimestamp()}.xlsx`;
 
       const link = document.createElement("a");
       link.href = URL.createObjectURL(blob);
@@ -370,7 +374,7 @@ export default function IbUsersPage() {
         { id: exportToastId },
       );
     }
-  }, [token, searchQuery]);
+  }, [token, searchQuery, dateFrom, dateTo]);
 
   const handleOpenTreeChart = useCallback(
     async (user: AdminIbUser) => {
@@ -795,7 +799,7 @@ export default function IbUsersPage() {
         </div>
 
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end">
             <ApiSearchBar
               value={searchInput}
               onChange={(value) => setSearchInput(value)}
@@ -808,6 +812,21 @@ export default function IbUsersPage() {
               placeholder="Search by name, email, mobile, or sponsor ID"
               minimumLength={3}
               delay={300}
+            />
+
+            <DateRangePicker
+              fromDate={fromDateObj}
+              toDate={toDateObj}
+              onFromDateChange={(date) => {
+                setFromDateObj(date);
+                void setDateFrom(date ? format(date, "yyyy-MM-dd") : null);
+                void setPage(1);
+              }}
+              onToDateChange={(date) => {
+                setToDateObj(date);
+                void setDateTo(date ? format(date, "yyyy-MM-dd") : null);
+                void setPage(1);
+              }}
             />
           </div>
 

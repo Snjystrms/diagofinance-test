@@ -342,6 +342,8 @@ export default function AllUsersMT5AccountsPage() {
         user_id: userIdFilter?.trim() ? userIdFilter : undefined,
         group_id: groupIdFilter?.trim() ? groupIdFilter : undefined,
         manager_id: managerIdFilter?.trim() ? managerIdFilter : undefined,
+        from_date: dateFrom || undefined,
+        to_date: dateTo || undefined,
       });
 
       if (!blob.size) {
@@ -375,6 +377,8 @@ export default function AllUsersMT5AccountsPage() {
     userIdFilter,
     groupIdFilter,
     managerIdFilter,
+    dateFrom,
+    dateTo,
   ]);
 
   // Create handler
