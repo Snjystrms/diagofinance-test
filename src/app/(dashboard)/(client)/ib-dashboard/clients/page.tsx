@@ -463,6 +463,7 @@ export default function IbClientsPage() {
   const [subIbsPagination, setSubIbsPagination] = useState<PaginationState>(emptyPagination);
   const [subIbsLoading, setSubIbsLoading] = useState(false);
   const [subIbsError, setSubIbsError] = useState<unknown | null>(null);
+  const [levelCount, setLevelCount] = useState<number>(5); // Track max levels from API
 
   // ── Rebates state ──
   const [rebates, setRebates] = useState<RebateDeal[]>([]);
@@ -517,11 +518,16 @@ export default function IbClientsPage() {
         to_date: toDate || undefined,
         level: levelFilter || undefined,
       });
-      // apiCall returns raw JSON → { success, message, data: [...], pagination: {...} }
-      const raw = res as unknown as { data: SubIbRow[]; pagination: unknown };
+      // apiCall returns raw JSON → { success, message, data: [...], pagination: {...}, level_count: number }
+      const raw = res as unknown as { data: SubIbRow[]; pagination: unknown; level_count?: number };
       const rows: SubIbRow[] = Array.isArray(raw.data) ? raw.data : [];
       setSubIbs(rows);
       setSubIbsPagination(parsePagination(raw.pagination, rows.length));
+      
+      // Update level count from API response
+      if (typeof raw.level_count === 'number' && raw.level_count > 0) {
+        setLevelCount(raw.level_count);
+      }
     } catch (e) {
       console.error("fetchSubIbs:", e);
       setSubIbsError(e);
@@ -775,11 +781,11 @@ export default function IbClientsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All Levels</SelectItem>
-                    <SelectItem value="1">Level 1</SelectItem>
-                    <SelectItem value="2">Level 2</SelectItem>
-                    <SelectItem value="3">Level 3</SelectItem>
-                    <SelectItem value="4">Level 4</SelectItem>
-                    <SelectItem value="5">Level 5</SelectItem>
+                    {Array.from({ length: levelCount }, (_, i) => i + 1).map((level) => (
+                      <SelectItem key={level} value={level.toString()}>
+                        Level {level}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
                 <DateRangePicker
