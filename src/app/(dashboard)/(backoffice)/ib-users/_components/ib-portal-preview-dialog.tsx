@@ -863,7 +863,7 @@ function NetworkTab({
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <IbMetricCard
-          title="Direct Users"
+          title="Reffered Users"
           value={loading ? <Skeleton className="h-7 w-20" /> : String(networkData?.overview.direct_clients ?? 0)}
           description="Clients directly referred"
           icon={<Users className="h-5 w-5" />}
@@ -896,7 +896,7 @@ function NetworkTab({
         <IbMetricCard
           title="Your Business"
           value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(networkData?.overview.your_business ?? 0)}
-          description="Volume from your own direct Users"
+          description="Volume from your own Reffered Users"
           icon={<DollarSign className="h-5 w-5" />}
           accent="emerald"
         />
@@ -963,7 +963,7 @@ function NetworkTab({
 
       <div className="grid gap-4 xl:grid-cols-2">
         <IbSectionCard
-          title="Direct Users"
+          title="Reffered Users"
           description="Clients registered via the partner's referral link."
         >
           {loading ? (
@@ -1007,7 +1007,7 @@ function NetworkTab({
           ) : (
             <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
               <Users className="h-6 w-6" />
-              No direct users yet.
+              No Reffered Users yet.
             </div>
           )}
         </IbSectionCard>
