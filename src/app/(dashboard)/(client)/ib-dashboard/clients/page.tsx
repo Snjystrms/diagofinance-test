@@ -636,7 +636,7 @@ export default function IbClientsPage() {
       <IbPageHeader
         eyebrow="Partner's Clients"
         title="Client summary and rebate activity"
-        description="Browse direct clients, sub Partners, and rebate records from the same reporting surface."
+        description="Browse direct users, sub Partners, and rebate records from the same reporting surface."
         actions={
           <Button variant="outline" onClick={handleRefresh} disabled={isLoading}>
             <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
@@ -751,7 +751,7 @@ export default function IbClientsPage() {
             ) : !clientsError ? (
               <EmptyState
                 title="No clients found"
-                description={clientsSearch.query ? "No direct clients match your search." : "Direct client registrations will appear here when activity starts."}
+                description={clientsSearch.query ? "No direct users match your search." : "Direct user registrations will appear here when activity starts."}
                 icon={<Users className="h-5 w-5" />}
               />
             ) : null}
