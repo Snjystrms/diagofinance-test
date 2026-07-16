@@ -11,6 +11,7 @@ import {
   EyeOff,
   Globe,
   Loader2,
+  LogIn,
   Mail,
   MapPin,
   Phone,
@@ -67,6 +68,7 @@ import {
   type PaginationMeta,
 } from "@/lib/api";
 import { mt5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
+import { AdminLoginAsClientDialog } from "@/components/admin-login-as-client-dialog";
 // import { formatDateTimeInIST } from "@/lib/formatters";
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -967,6 +969,7 @@ export default function NewUserDetailPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loadingPassword, setLoadingPassword] = useState(false);
   const [sendingWelcomeEmail, setSendingWelcomeEmail] = useState(false);
+  const [showLoginAsClientDialog, setShowLoginAsClientDialog] = useState(false);
 
   const [depositsState, setDepositsState] = useState(() =>
     createPaginatedState<AdminUserTransactionItem>(),
@@ -1892,6 +1895,21 @@ export default function NewUserDetailPage() {
                           </div>
                         </div>
                       </div>
+
+                      {/* Login to Client Portal Button */}
+                      <div className="flex justify-end pt-4">
+                        <Button
+                          type="button"
+                          variant="default"
+                          size="sm"
+                          onClick={() => setShowLoginAsClientDialog(true)}
+                          disabled={!crudUser?.email || !token}
+                          className="bg-gradient-to-r from-primary to-amber-500 hover:from-primary/90 hover:to-amber-500/90"
+                        >
+                          <LogIn className="mr-2 h-4 w-4" />
+                          Login to Client Portal
+                        </Button>
+                      </div>
                     </div>
 
                     <Card className="border-border/70 bg-background/80 shadow-none">
@@ -2426,6 +2444,17 @@ export default function NewUserDetailPage() {
         </div>
       </div>
 
+      {/* Login as Client Dialog */}
+      {crudUser && (
+        <AdminLoginAsClientDialog
+          open={showLoginAsClientDialog}
+          onOpenChange={setShowLoginAsClientDialog}
+          userId={crudUser.id}
+          userEmail={crudUser.email || ""}
+          userPassword={decryptedPassword}
+          adminToken={token || ""}
+        />
+      )}
     </ProtectedRoute>
   );
 }

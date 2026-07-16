@@ -38,6 +38,11 @@ type ClientRow = {
   lots_traded: number;
   pending_rebates: number;
   earned_rebates: number;
+  personal_deposit: number;
+  personal_withdrawal: number;
+  team_deposit: number;
+  team_withdrawal: number;
+  main_wallet_balance: number;
   registration_date: string;
 };
 
@@ -165,11 +170,43 @@ const clientsColumns: ColumnDef<ClientRow>[] = [
     key: "earned_rebates",
     header: "Earned Rebates",
     align: "right",
-    render: (row) => (
-      <span className="font-semibold text-emerald-600 dark:text-emerald-300">
-        {formatCurrency(toNum(row.earned_rebates), "USD")}
-      </span>
-    ),
+    render: (row) => formatCurrency(toNum(row.earned_rebates), "USD"),
+    hideOnMobile: true,
+  },
+  {
+    key: "personal_deposit",
+    header: "Personal Deposit",
+    align: "right",
+    render: (row) => formatCurrency(toNum(row.personal_deposit), "USD"),
+    hideOnMobile: true,
+  },
+  {
+    key: "personal_withdrawal",
+    header: "Personal Withdrawal",
+    align: "right",
+    render: (row) => formatCurrency(toNum(row.personal_withdrawal), "USD"),
+    hideOnMobile: true,
+  },
+  {
+    key: "team_deposit",
+    header: "Team Deposit",
+    align: "right",
+    render: (row) => formatCurrency(toNum(row.team_deposit), "USD"),
+    hideOnMobile: true,
+  },
+  {
+    key: "team_withdrawal",
+    header: "Team Withdrawal",
+    align: "right",
+    render: (row) => formatCurrency(toNum(row.team_withdrawal), "USD"),
+    hideOnMobile: true,
+  },
+  {
+    key: "main_wallet_balance",
+    header: "Main Wallet Balance",
+    align: "right",
+    render: (row) => formatCurrency(toNum(row.main_wallet_balance), "USD"),
+    hideOnMobile: true,
   },
   {
     key: "registration_date",

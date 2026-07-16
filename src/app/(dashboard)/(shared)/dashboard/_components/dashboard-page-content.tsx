@@ -295,7 +295,7 @@ export function DashboardPageContent() {
     // No cleanup needed — the observer is scoped to this node's lifetime
   }, []);
   // When card is too narrow (<=235px), force the gradient theme (without bull image)
-  const forceGradientTheme = walletCardWidth > 0 && walletCardWidth <= 260;
+  const forceGradientTheme = walletCardWidth > 0 && walletCardWidth <= 262;
   const effectiveTheme = forceGradientTheme ? false : isBullTheme;
 
   // Get news and promotions from userDashboard data

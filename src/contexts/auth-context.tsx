@@ -1,9 +1,15 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { GroupedPermissions, API_BASE_URL, AUTH_TOKEN_REFRESH_INTERVAL_MS, refreshCurrentAuthToken } from '@/lib/api';
+import { authApi, GroupedPermissions, AUTH_TOKEN_REFRESH_INTERVAL_MS, refreshCurrentAuthToken } from '@/lib/api';
 import { Permission } from '@/types/permissions';
 import toast from 'react-hot-toast';
+
+const LOCAL_TOKEN_KEY = 'auth_token';
+const LOCAL_USER_KEY = 'auth_user';
+const SESSION_TOKEN_KEY = 'authToken';
+const SESSION_USER_KEY = 'user';
+const SESSION_ADMIN_FLAG_KEY = 'isAdminSession';
 
 interface User {
   id: string | number;
@@ -45,6 +51,60 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
+const isAdminSessionActive = () =>
+  typeof window !== 'undefined' &&
+  sessionStorage.getItem(SESSION_ADMIN_FLAG_KEY) === 'true';
+
+const clearAdminSessionStorage = () => {
+  sessionStorage.removeItem(SESSION_TOKEN_KEY);
+  sessionStorage.removeItem(SESSION_USER_KEY);
+  sessionStorage.removeItem(SESSION_ADMIN_FLAG_KEY);
+};
+
+const normalizeClientProfileUser = (profileUser: {
+  id?: string | number;
+  name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
+  mobile?: string | null;
+  status?: boolean | number;
+  requires_usdt_transaction?: boolean;
+  sponsor_id?: string | null;
+  is_ib_user?: boolean | number;
+}): User | null => {
+  if (!profileUser.id || !profileUser.email) return null;
+
+  const fullName =
+    profileUser.name ||
+    [profileUser.first_name, profileUser.last_name].filter(Boolean).join(' ').trim();
+
+  return {
+    id: profileUser.id,
+    name: fullName || undefined,
+    email: profileUser.email,
+    type: 'user',
+    mobile: profileUser.mobile || undefined,
+    status:
+      typeof profileUser.status === 'number'
+        ? Boolean(profileUser.status)
+        : profileUser.status,
+    requires_usdt_transaction: profileUser.requires_usdt_transaction,
+    sponsor_id: profileUser.sponsor_id || undefined,
+    is_ib_user:
+      typeof profileUser.is_ib_user === 'number'
+        ? Boolean(profileUser.is_ib_user)
+        : profileUser.is_ib_user,
+  };
+};
+
+const cleanAdminTokenFromUrl = () => {
+  const url = new URL(window.location.href);
+  url.searchParams.delete('adminToken');
+  const nextUrl = `${url.pathname}${url.search}${url.hash}`;
+  window.history.replaceState(window.history.state, '', nextUrl || '/dashboard');
+};
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -62,27 +122,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       return false;
     }
 
+    // Don't refresh tokens from admin sessions (they should be temporary)
+    if (isAdminSessionActive()) {
+      console.log('Skipping token refresh for admin-initiated session');
+      return false;
+    }
+
     try {
       isRefreshingRef.current = true;
       
       const newToken = await refreshCurrentAuthToken(token);
       
       if (newToken && newToken !== token) {
-        // Update token in state and localStorage only if we got a NEW token
+        // Update token in state and localStorage only if we got a new token.
         setToken(newToken);
-        localStorage.setItem('auth_token', newToken);
+        localStorage.setItem(LOCAL_TOKEN_KEY, newToken);
         return true;
       } else if (newToken === token) {
         // Refresh returned the same token (refresh endpoint returned 401)
         // Keep using the old token - don't logout yet
-        console.warn('⚠️ Token refresh returned 401 - continuing with existing token');
+        console.warn('Token refresh returned 401 - continuing with existing token');
         return false;
       } else {
-        console.error('❌ Token refresh failed: Invalid response');
+        console.error('Token refresh failed: Invalid response');
         return false;
       }
     } catch (error) {
-      console.error('❌ Token refresh error:', error);
+      console.error('Token refresh error:', error);
       return false;
     } finally {
       isRefreshingRef.current = false;
@@ -210,47 +276,76 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     return { isValid: true, shouldLogout: false };
   };
 
-  // Load auth state from localStorage on mount
+  // Load auth state from sessionStorage first, then localStorage.
   useEffect(() => {
     const initializeAuth = async () => {
-      const storedToken = localStorage.getItem('auth_token');
-      const storedUser = localStorage.getItem('auth_user');
-      
-      if (storedToken && storedUser) {
+      const adminToken = new URLSearchParams(window.location.search).get('adminToken');
+
+      if (adminToken) {
         try {
-          const userData = JSON.parse(storedUser);
+          sessionStorage.setItem(SESSION_TOKEN_KEY, adminToken);
+          sessionStorage.setItem(SESSION_ADMIN_FLAG_KEY, 'true');
+
+          const profileResponse = await authApi.getProfileView(adminToken);
+          const clientUser = normalizeClientProfileUser(profileResponse.data?.user ?? {});
+
+          if (!clientUser) {
+            throw new Error('Client profile response did not include a valid user');
+          }
+
+          sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(clientUser));
+          setToken(adminToken);
+          setUser(clientUser);
+          setIsAuthenticated(true);
+          console.log('Admin-initiated client session loaded from URL token');
+        } catch (error) {
+          console.error('Failed to initialize admin-initiated client session:', error);
+          clearAdminSessionStorage();
+          setToken(null);
+          setUser(null);
+          setIsAuthenticated(false);
+          toast.error('Unable to open client session. Please try again from the admin portal.');
+        } finally {
+          cleanAdminTokenFromUrl();
+          setIsLoading(false);
+        }
+        return;
+      }
+
+      const sessionToken = sessionStorage.getItem(SESSION_TOKEN_KEY);
+      const sessionUser = sessionStorage.getItem(SESSION_USER_KEY);
+      const hasCompleteAdminSession =
+        sessionStorage.getItem(SESSION_ADMIN_FLAG_KEY) === 'true' &&
+        Boolean(sessionToken) &&
+        Boolean(sessionUser);
+
+      const storedToken = localStorage.getItem(LOCAL_TOKEN_KEY);
+      const storedUser = localStorage.getItem(LOCAL_USER_KEY);
+
+      const activeToken = hasCompleteAdminSession ? sessionToken : storedToken;
+      const activeUserStr = hasCompleteAdminSession ? sessionUser : storedUser;
+
+      if (activeToken && activeUserStr) {
+        try {
+          const userData = JSON.parse(activeUserStr);
           
           // Immediately restore session for better UX
-          setToken(storedToken);
+          setToken(activeToken);
           setUser(userData);
           setIsAuthenticated(true);
           setIsLoading(false);
           
-          // Validate token in background without blocking UI
-          // setTimeout(async () => {
-          //   const { isValid, shouldLogout } = await validateToken(storedToken, userData?.type);
-          //   
-          //   if (shouldLogout) {
-          //     console.log('Token validation failed during initialization - logging out');
-          //     // Clear stored data and logout
-          //     localStorage.removeItem('auth_token');
-          //     localStorage.removeItem('auth_user');
-          //     setToken(null);
-          //     setUser(null);
-          //     setIsAuthenticated(false);
-          //     // Redirect to login page
-          //     window.location.href = '/login';
-          //   } else if (isValid) {
-          //     console.log('Token validation successful for', userData?.type);
-          //   } else {
-          //     console.log('Token validation inconclusive for', userData?.type, '- keeping session');
-          //   }
-          // }, 100); // Small delay to avoid blocking initial render
+          if (hasCompleteAdminSession) {
+            console.log('Admin-initiated client session loaded from sessionStorage');
+          } else {
+            console.log('Regular user session loaded from localStorage');
+          }
           
         } catch (error) {
           console.error('Error parsing stored auth data:', error);
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('auth_user');
+          localStorage.removeItem(LOCAL_TOKEN_KEY);
+          localStorage.removeItem(LOCAL_USER_KEY);
+          clearAdminSessionStorage();
           setToken(null);
           setUser(null);
           setIsAuthenticated(false);
@@ -268,8 +363,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(userData);
     setToken(authToken);
     setIsAuthenticated(true);
-    localStorage.setItem('auth_token', authToken);
-    localStorage.setItem('auth_user', JSON.stringify(userData));
+    localStorage.setItem(LOCAL_TOKEN_KEY, authToken);
+    localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(userData));
   };
 
   useEffect(() => {
@@ -297,16 +392,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setUser(null);
     setToken(null);
     setIsAuthenticated(false);
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
+    
+    if (isAdminSessionActive()) {
+      clearAdminSessionStorage();
+    } else {
+      localStorage.removeItem(LOCAL_TOKEN_KEY);
+      localStorage.removeItem(LOCAL_USER_KEY);
+    }
   };
 
   const setUserData = (userData: User | null) => {
     setUser(userData);
-    if (userData) {
-      localStorage.setItem('auth_user', JSON.stringify(userData));
+    if (isAdminSessionActive()) {
+      if (userData) {
+        sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(userData));
+      } else {
+        sessionStorage.removeItem(SESSION_USER_KEY);
+      }
+    } else if (userData) {
+      localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(userData));
     } else {
-      localStorage.removeItem('auth_user');
+      localStorage.removeItem(LOCAL_USER_KEY);
     }
   };
 

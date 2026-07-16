@@ -1419,7 +1419,7 @@ export default function NewUsersPage() {
 
             <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label>IB Name</Label>
+                <Label>Partner Name</Label>
                 <Input
                   value={
                     promoteTargetUser
