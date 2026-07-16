@@ -40,6 +40,7 @@ import {
   Calendar,
   RefreshCw,
   TrendingDown,
+  AlertCircle,
 } from "lucide-react";
 
 import { adminWithdrawalApi, type AdminWithdrawalRequest } from "@/lib/api";
@@ -846,19 +847,36 @@ export function WithdrawalRequestsPageContent() {
 
               {(() => {
                 const isPending = viewingWithdrawalRequest.status === "pending";
+                const isApproved = viewingWithdrawalRequest.status === "approved";
                 const canVerify =
                   canTakeWithdrawalAction &&
                   isPending &&
                   canViewStatus("pending");
-                if (!canVerify) return null;
+                const canRejectApproved =
+                  canTakeWithdrawalAction &&
+                  isApproved &&
+                  canViewStatus("approved");
+                
+                if (!canVerify && !canRejectApproved) return null;
 
                 return (
                   <>
                     <Separator />
                     <div className="space-y-4">
+                      {viewingWithdrawalRequest.status === "approved" && (
+                        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-sm text-amber-700 dark:text-amber-400">
+                          <div className="flex items-start gap-2">
+                            <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                            <div>
+                              <p className="font-semibold">One-time Reversal</p>
+                              <p className="text-xs mt-1">This withdrawal was already approved. You can reject it once in case of accidental approval. This action cannot be undone.</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold">
-                          Verification Decision
+                          {viewingWithdrawalRequest.status === "approved" ? "Reversal Decision" : "Verification Decision"}
                         </Label>
                         <Tabs
                           value={verifyDecision}
@@ -869,14 +887,16 @@ export function WithdrawalRequestsPageContent() {
                           }}
                           className="w-full"
                         >
-                          <TabsList className="grid h-auto w-full grid-cols-2 rounded-2xl bg-muted/50 p-1">
-                            <TabsTrigger value="approve" className="rounded-xl">
-                              <CheckCircle2 className="mr-2 h-4 w-4" />
-                              Approve
-                            </TabsTrigger>
+                          <TabsList className={`grid h-auto w-full ${viewingWithdrawalRequest.status === "approved" ? 'grid-cols-1' : 'grid-cols-2'} rounded-2xl bg-muted/50 p-1`}>
+                            {viewingWithdrawalRequest.status !== "approved" && (
+                              <TabsTrigger value="approve" className="rounded-xl">
+                                <CheckCircle2 className="mr-2 h-4 w-4" />
+                                Approve
+                              </TabsTrigger>
+                            )}
                             <TabsTrigger value="reject" className="rounded-xl">
                               <XCircle className="mr-2 h-4 w-4" />
-                              Reject
+                              {viewingWithdrawalRequest.status === "approved" ? "Reject (Reverse Approval)" : "Reject"}
                             </TabsTrigger>
                           </TabsList>
                         </Tabs>
@@ -898,14 +918,18 @@ export function WithdrawalRequestsPageContent() {
                           onChange={(e) => setAdminNotes(e.target.value)}
                           placeholder={
                             verifyDecision === "reject"
-                              ? "Please provide a reason for rejection..."
+                              ? viewingWithdrawalRequest.status === "approved"
+                                ? "Please provide a detailed reason for reversing this approval..."
+                                : "Please provide a reason for rejection..."
                               : "Optional notes about this verification..."
                           }
                           className="min-h-[100px]"
                         />
                         {verifyDecision === "reject" && (
                           <p className="text-xs text-muted-foreground">
-                            Rejection reason is required
+                            {viewingWithdrawalRequest.status === "approved" 
+                              ? "Reversal reason is required and will be logged" 
+                              : "Rejection reason is required"}
                           </p>
                         )}
                       </div>
@@ -928,8 +952,8 @@ export function WithdrawalRequestsPageContent() {
             </Button>
             {viewingWithdrawalRequest &&
               canTakeWithdrawalAction &&
-              viewingWithdrawalRequest.status === "pending" &&
-              canViewStatus("pending") && (
+              ((viewingWithdrawalRequest.status === "pending" && canViewStatus("pending")) ||
+               (viewingWithdrawalRequest.status === "approved" && canViewStatus("approved"))) && (
                 <Button
                   type="button"
                   onClick={submitAction}
@@ -956,7 +980,7 @@ export function WithdrawalRequestsPageContent() {
                   ) : (
                     <>
                       <XCircle className="mr-2 h-4 w-4" />
-                      Reject
+                      {viewingWithdrawalRequest.status === "approved" ? "Reject (Reverse)" : "Reject"}
                     </>
                   )}
                 </Button>
