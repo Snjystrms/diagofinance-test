@@ -1930,6 +1930,12 @@ export const authApi = {
       body: JSON.stringify(data),
     }),
 
+  adminLoginAsClient: (userId: number | string, token: string) =>
+    apiCall<LoginResponse>(`/admin/user-management/crud/users/${userId}/login-as-client`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
   refreshToken: (token: string) =>
     apiCall<{ token?: string; access_token?: string }>("/auth/refresh", {
       method: "POST",

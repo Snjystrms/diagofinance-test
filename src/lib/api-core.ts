@@ -13,14 +13,25 @@ export interface ApiResponse<T = unknown> {
 
 const AUTH_TOKEN_STORAGE_KEY = "auth_token";
 const AUTH_USER_STORAGE_KEY = "auth_user";
+const ADMIN_SESSION_TOKEN_STORAGE_KEY = "authToken";
+const ADMIN_SESSION_USER_STORAGE_KEY = "user";
+const ADMIN_SESSION_FLAG_STORAGE_KEY = "isAdminSession";
 const AUTH_TOKEN_REFRESHED_EVENT = "auth-token-refreshed";
 export const AUTH_TOKEN_REFRESH_INTERVAL_MS = 30 * 60 * 1000;
 
 let refreshTokenPromise: Promise<string | null> | null = null;
 
+const isAdminSession = () => {
+  if (typeof window === "undefined") return false;
+  return sessionStorage.getItem(ADMIN_SESSION_FLAG_STORAGE_KEY) === "true";
+};
+
 const getStoredAuthToken = () => {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(AUTH_TOKEN_STORAGE_KEY);
+  return (
+    sessionStorage.getItem(ADMIN_SESSION_TOKEN_STORAGE_KEY) ||
+    localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
+  );
 };
 
 const extractBearerToken = (authorization?: string | null) => {
@@ -66,6 +77,7 @@ const getTokenFromRefreshResponse = (json: unknown) => {
 
 export async function refreshCurrentAuthToken(tokenOverride?: string | null) {
   if (!API_BASE_URL || typeof window === "undefined") return null;
+  if (isAdminSession()) return tokenOverride ?? getStoredAuthToken();
 
   const token = tokenOverride ?? getStoredAuthToken();
   if (!token) return null;
@@ -96,7 +108,11 @@ export async function refreshCurrentAuthToken(tokenOverride?: string | null) {
         return currentStoredToken && currentStoredToken !== token ? currentStoredToken : token;
       }
 
-      localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, newToken);
+      if (isAdminSession()) {
+        sessionStorage.setItem(ADMIN_SESSION_TOKEN_STORAGE_KEY, newToken);
+      } else {
+        localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, newToken);
+      }
       window.dispatchEvent(
         new CustomEvent(AUTH_TOKEN_REFRESHED_EVENT, { detail: { token: newToken } })
       );
@@ -116,8 +132,14 @@ export async function refreshCurrentAuthToken(tokenOverride?: string | null) {
 export function handle401Redirect(response: Response, hasAuth: boolean): boolean {
   if (response.status === 401 && hasAuth) {
     if (typeof window !== "undefined") {
-      localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
-      localStorage.removeItem(AUTH_USER_STORAGE_KEY);
+      if (isAdminSession()) {
+        sessionStorage.removeItem(ADMIN_SESSION_TOKEN_STORAGE_KEY);
+        sessionStorage.removeItem(ADMIN_SESSION_USER_STORAGE_KEY);
+        sessionStorage.removeItem(ADMIN_SESSION_FLAG_STORAGE_KEY);
+      } else {
+        localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY);
+        localStorage.removeItem(AUTH_USER_STORAGE_KEY);
+      }
       window.location.replace("/login");
     }
     return true;
