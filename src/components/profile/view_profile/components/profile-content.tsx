@@ -666,6 +666,11 @@ export default function ProfileContent() {
       errors.country = "Country is required.";
     }
 
+    // Validate passbook photo - required for new entries or if not already uploaded
+    if (!passbookPhotoFile && !bankDetails.bookBankFileName) {
+      errors.bookBankFileName = "Passbook photo is required.";
+    }
+
     return errors;
   };
 
