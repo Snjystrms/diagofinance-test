@@ -200,11 +200,6 @@ export function AdminLoginAsClientDialog({
                 <Label>User Email</Label>
                 <Input value={userEmail} disabled className="bg-muted" />
               </div>
-
-              <div className="space-y-2">
-                <Label>User ID</Label>
-                <Input value={userId} disabled className="bg-muted" />
-              </div>
             </>
           ) : (
             <>

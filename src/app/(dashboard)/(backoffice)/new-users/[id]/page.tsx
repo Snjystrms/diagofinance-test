@@ -1717,7 +1717,20 @@ export default function NewUserDetailPage() {
                 </p>
               </div>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-end gap-2">
+                {/* Login to Client Portal Button */}
+                      <div className="flex justify-end pt-4">
+                        <Button
+                          type="button"
+                          variant="default"
+                          onClick={() => setShowLoginAsClientDialog(true)}
+                          disabled={!crudUser?.email || !token}
+                          className="bg-gradient-to-r from-primary to-amber-500 hover:from-primary/90 hover:to-amber-500/90"
+                        >
+                          <LogIn className="mr-2 h-4 w-4" />
+                          Login to Client Portal
+                        </Button>
+                      </div>
               <Button
                 type="button"
                 variant="outline"
@@ -1896,20 +1909,7 @@ export default function NewUserDetailPage() {
                         </div>
                       </div>
 
-                      {/* Login to Client Portal Button */}
-                      <div className="flex justify-end pt-4">
-                        <Button
-                          type="button"
-                          variant="default"
-                          size="sm"
-                          onClick={() => setShowLoginAsClientDialog(true)}
-                          disabled={!crudUser?.email || !token}
-                          className="bg-gradient-to-r from-primary to-amber-500 hover:from-primary/90 hover:to-amber-500/90"
-                        >
-                          <LogIn className="mr-2 h-4 w-4" />
-                          Login to Client Portal
-                        </Button>
-                      </div>
+                    
                     </div>
 
                     <Card className="border-border/70 bg-background/80 shadow-none">
