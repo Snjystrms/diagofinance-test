@@ -21,33 +21,6 @@ const getProfitClasses = (profit: number | null) => {
   return 'text-muted-foreground';
 };
 
-// Convert time to IST by adding 4:30 hours
-const convertToIST = (timeString: string | null | undefined) => {
-  if (!timeString) return '-';
-  
-  try {
-    // Parse the incoming time string
-    const date = new Date(timeString);
-    
-    // Add 4 hours and 30 minutes (270 minutes = 16200000 milliseconds)
-    date.setTime(date.getTime() + (4.5 * 60 * 60 * 1000));
-    
-    // Format the date as a readable string
-    return date.toLocaleString('en-IN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false,
-    });
-  } catch (error) {
-    console.error('Error converting time to IST:', error);
-    return timeString;
-  }
-};
-
 export const livePositionsColumns: ColumnDef<PositionRow>[] = [
   {
     id: "sr_no",
@@ -69,7 +42,6 @@ export const livePositionsColumns: ColumnDef<PositionRow>[] = [
     header: 'Opened (IST)',
     accessorKey: 'time_ist',
     meta: { mobileHidden: true },
-    cell: ({ row }) => convertToIST(row.original.time_ist),
   },
   {
     id: 'symbol',

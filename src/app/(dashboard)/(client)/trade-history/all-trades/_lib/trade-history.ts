@@ -30,11 +30,19 @@ export const formatTradeNumber = (value?: number | null, max = 8) => {
 const formatUnixToIst = (value?: number) => {
   if (!value) return '-';
 
+  // Convert Unix timestamp (seconds) to milliseconds
+  const timestampMs = value * 1000;
+  
+  // Add 4.5 hours (4 hours 30 minutes) to get IST from the API's timezone
+  // 4.5 hours = 4.5 * 60 * 60 * 1000 milliseconds
+  const adjustedTimestamp = timestampMs + (4.5 * 60 * 60 * 1000);
+
+  // Format without timezone conversion (use UTC as base, since we already adjusted)
   return new Intl.DateTimeFormat('en-IN', {
     dateStyle: 'medium',
     timeStyle: 'short',
-    timeZone: 'Asia/Kolkata',
-  }).format(new Date(value * 1000));
+    timeZone: 'UTC',
+  }).format(new Date(adjustedTimestamp));
 };
 
 const getPositionSide = (action?: number) => {
