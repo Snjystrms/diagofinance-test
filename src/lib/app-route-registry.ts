@@ -1103,6 +1103,8 @@ export function getAdminNavigation(): NavItem[] {
 export function getUserNavigation(isIbUser = false): NavItem[] {
   const items = cloneNavItems(DEFAULT_ROLE_NAVIGATION.user);
 
+  console.log('[getUserNavigation] isIbUser:', isIbUser);
+
   if (!isIbUser) {
     return items;
   }

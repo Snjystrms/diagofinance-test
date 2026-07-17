@@ -287,17 +287,42 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           sessionStorage.setItem(SESSION_ADMIN_FLAG_KEY, 'true');
 
           const profileResponse = await authApi.getProfileView(adminToken);
-          const clientUser = normalizeClientProfileUser(profileResponse.data?.user ?? {});
+          const rawUser = profileResponse.data?.user ?? {};
+          let clientUser = normalizeClientProfileUser(rawUser);
 
           if (!clientUser) {
             throw new Error('Client profile response did not include a valid user');
+          }
+
+          console.log('[AUTH] Admin session - Profile user data:', {
+            raw_is_ib_user: (rawUser as { is_ib_user?: boolean | number }).is_ib_user,
+            normalized_is_ib_user: clientUser.is_ib_user,
+          });
+
+          // If is_ib_user is not set, check IB status via API
+          if (clientUser.is_ib_user === undefined || clientUser.is_ib_user === null) {
+            try {
+              const { ibRequestsApi } = await import('@/lib/api');
+              const ibStatusResponse = await ibRequestsApi.getStatus(adminToken);
+              if (ibStatusResponse?.data) {
+                const isIbUser = 
+                  ibStatusResponse.data.is_ib_user === true || 
+                  ibStatusResponse.data.is_ib_user === 1 ||
+                  (ibStatusResponse.data.ib_request?.status === 1);
+                
+                clientUser = { ...clientUser, is_ib_user: isIbUser };
+                console.log('[AUTH] Fetched IB status from API:', { is_ib_user: isIbUser });
+              }
+            } catch (ibError) {
+              console.warn('[AUTH] Failed to fetch IB status:', ibError);
+            }
           }
 
           sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(clientUser));
           setToken(adminToken);
           setUser(clientUser);
           setIsAuthenticated(true);
-          console.log('Admin-initiated client session loaded from URL token');
+          console.log('Admin-initiated client session loaded from URL token', { is_ib_user: clientUser.is_ib_user });
         } catch (error) {
           console.error('Failed to initialize admin-initiated client session:', error);
           clearAdminSessionStorage();
@@ -336,9 +361,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setIsLoading(false);
           
           if (hasCompleteAdminSession) {
-            console.log('Admin-initiated client session loaded from sessionStorage');
+            console.log('Admin-initiated client session loaded from sessionStorage', { 
+              is_ib_user: userData.is_ib_user,
+              userData 
+            });
           } else {
-            console.log('Regular user session loaded from localStorage');
+            console.log('Regular user session loaded from localStorage', { 
+              is_ib_user: userData.is_ib_user,
+              userData 
+            });
           }
           
         } catch (error) {

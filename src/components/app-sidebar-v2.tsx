@@ -193,6 +193,12 @@ export function AppSidebarV2({ ...props }: React.ComponentProps<typeof Sidebar>)
 
   // Get navigation items based on user type
   const navItems = React.useMemo(() => {
+    console.log('[SIDEBAR] Generating navigation for user:', {
+      type: user?.type,
+      is_ib_user: user?.is_ib_user,
+      user: user
+    });
+
     if (user?.type === "subadmin") {
       return generateSubadminNavigation(user.permissions || []);
     }
