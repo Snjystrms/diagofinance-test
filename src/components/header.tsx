@@ -284,8 +284,8 @@ export function Header() {
               {user?.type === "user" ? (
                 <div className="flex cursor-pointer">
                   {/* Icon only on small screens */}
-                  <div className="flex sm:hidden h-8 w-8 items-center justify-center rounded-full border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md">
-                    <div className="relative flex-shrink-0">
+                  <div className="flex sm:hidden h-8 w-8 items-center justify-center rounded-full border border-yellow-500/70 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:border-yellow-500/70 p-1">
+                    <div className="relative flex-shrink-0 rounded-full border border-yellow-500/70 p-1">
                       <User className="h-4 w-4 text-foreground" />
                       {profileStatus && (
                         <div className={`absolute -bottom-0.5 -right-0.5 h-2 w-2 rounded-full border-2 border-background ${
@@ -297,9 +297,9 @@ export function Header() {
                     </div>
                   </div>
                   {/* Full pill on sm+ screens */}
-                  <div className="hidden sm:flex items-center gap-2.5 rounded-full border border-border/60 bg-background/80 px-3 py-1.5 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background">
+                  <div className="hidden sm:flex items-center gap-2.5 rounded-full border border-yellow-500/70 bg-background/80 px-3 py-1.5 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background hover:border-yellow-500/70 p-1">
                     <div className="relative flex-shrink-0">
-                      <div className="flex h-7 w-7 items-center justify-center rounded-full border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm">
+                      <div className="flex h-7 w-7 items-center justify-center rounded-full border border-yellow-500/70 bg-background/80 shadow-sm backdrop-blur-sm">
                         <User className="h-3.5 w-3.5 text-foreground" />
                       </div>
                       {profileStatus && (
@@ -323,7 +323,7 @@ export function Header() {
                   </div>
                 </div>
               ) : (
-                <button className="flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center rounded-full border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background">
+                <button className="flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center rounded-full border border-yellow-500/70 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background hover:border-yellow-500/70 p-1">
                   <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
                     <AvatarFallback className="text-xs font-semibold bg-transparent">
                       {user?.name ? user.name.charAt(0).toUpperCase() : <User className="h-4 w-4" />}
