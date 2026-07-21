@@ -183,7 +183,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   {
     id: "announcements",
     title: "Announcements",
-    url: "/announcements",
+    url: "/user-news",
     icon: Megaphone,
     audience: "client",
     roles: CLIENT_ROLES,

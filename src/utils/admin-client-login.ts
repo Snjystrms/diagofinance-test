@@ -68,23 +68,13 @@ export async function adminLoginAsClient(
   options: AdminLoginAsClientOptions
 ): Promise<AdminLoginAsClientResult> {
   try {
-    let response: LoginLikeResponse | null = null;
-
-    try {
-      response = await authApi.adminLoginAsClient(options.userId, options.adminToken);
-    } catch (error) {
-      console.warn("Admin login-as-client endpoint failed; falling back to credential login.", error);
-    }
-
-    let token = response ? extractLoginToken(response) : null;
-
-    if (!token) {
-      response = await authApi.login({
-        email: options.email,
-        password: options.password,
-      }) as LoginLikeResponse;
-      token = extractLoginToken(response);
-    }
+    // Use credential-based login directly (adminLoginAsClient API endpoint doesn't exist)
+    const response = await authApi.login({
+      email: options.email,
+      password: options.password,
+    }) as LoginLikeResponse;
+    
+    const token = extractLoginToken(response);
 
     // Check if 2FA is required
     if (response?.requires_2fa || response?.data?.requires_2fa) {
