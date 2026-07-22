@@ -793,6 +793,7 @@ export interface BrokerBankDetailPayload {
   country: string;
   iban_number: string;
   swift_ifsc_code: string;
+  upi_qr_code_url: string;
   is_active: boolean;
 }
 
@@ -804,6 +805,7 @@ export interface BrokerBankDetailItem extends Omit<
   is_active: number | boolean;
   created_at: string;
   updated_at: string;
+  upi_qr_code_url: string;
 }
 
 export interface AdminBrokerBankDetailsListData {
@@ -2444,6 +2446,51 @@ export const adminBrokerBankDetailsApi = {
       throw new Error("Token is required to create broker bank details");
     }
 
+    // Use FormData if QR code is base64 image - convert to file
+    const isBase64Image = body.upi_qr_code_url && body.upi_qr_code_url.startsWith('data:image');
+    
+    if (isBase64Image) {
+      const formData = new FormData();
+      formData.append('account_holder_name', body.account_holder_name);
+      formData.append('account_number', body.account_number);
+      formData.append('address', body.address);
+      formData.append('bank_name', body.bank_name);
+      formData.append('country', body.country);
+      formData.append('iban_number', body.iban_number);
+      formData.append('swift_ifsc_code', body.swift_ifsc_code);
+      formData.append('is_active', body.is_active ? '1' : '0');
+
+      // Convert base64 to File object
+      try {
+        const base64Data = body.upi_qr_code_url.split(',')[1];
+        const mimeType = body.upi_qr_code_url.split(';')[0].split(':')[1];
+        const byteString = atob(base64Data);
+        const arrayBuffer = new ArrayBuffer(byteString.length);
+        const uint8Array = new Uint8Array(arrayBuffer);
+        
+        for (let i = 0; i < byteString.length; i++) {
+          uint8Array[i] = byteString.charCodeAt(i);
+        }
+        
+        const blob = new Blob([uint8Array], { type: mimeType });
+        const file = new File([blob], 'qr-code.png', { type: mimeType });
+        formData.append('upi_qr_code', file);
+      } catch (error) {
+        console.error('Failed to convert base64 to file:', error);
+        // Fallback: send as base64 string
+        formData.append('upi_qr_code_url', body.upi_qr_code_url);
+      }
+
+      return apiCall<BrokerBankDetailItem>(`/admin/broker-bank-details`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          // Don't set Content-Type for FormData - browser sets it with boundary
+        },
+        body: formData,
+      });
+    }
+
     return apiCall<BrokerBankDetailItem>(`/admin/broker-bank-details`, {
       method: "POST",
       headers: {
@@ -2485,6 +2532,54 @@ export const adminBrokerBankDetailsApi = {
     const detailId = String(id).trim();
     if (!detailId) {
       throw new Error("Broker bank detail ID is required");
+    }
+
+    // Use FormData if QR code is base64 image - convert to file
+    const isBase64Image = body.upi_qr_code_url && body.upi_qr_code_url.startsWith('data:image');
+    
+    if (isBase64Image) {
+      const formData = new FormData();
+      formData.append('account_holder_name', body.account_holder_name);
+      formData.append('account_number', body.account_number);
+      formData.append('address', body.address);
+      formData.append('bank_name', body.bank_name);
+      formData.append('country', body.country);
+      formData.append('iban_number', body.iban_number);
+      formData.append('swift_ifsc_code', body.swift_ifsc_code);
+      formData.append('is_active', body.is_active ? '1' : '0');
+
+      // Convert base64 to File object
+      try {
+        const base64Data = body.upi_qr_code_url.split(',')[1];
+        const mimeType = body.upi_qr_code_url.split(';')[0].split(':')[1];
+        const byteString = atob(base64Data);
+        const arrayBuffer = new ArrayBuffer(byteString.length);
+        const uint8Array = new Uint8Array(arrayBuffer);
+        
+        for (let i = 0; i < byteString.length; i++) {
+          uint8Array[i] = byteString.charCodeAt(i);
+        }
+        
+        const blob = new Blob([uint8Array], { type: mimeType });
+        const file = new File([blob], 'qr-code.png', { type: mimeType });
+        formData.append('upi_qr_code', file);
+      } catch (error) {
+        console.error('Failed to convert base64 to file:', error);
+        // Fallback: send as base64 string
+        formData.append('upi_qr_code_url', body.upi_qr_code_url);
+      }
+
+      return apiCall<BrokerBankDetailItem>(
+        `/admin/broker-bank-details/${detailId}`,
+        {
+          method: "PUT",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            // Don't set Content-Type for FormData - browser sets it with boundary
+          },
+          body: formData,
+        },
+      );
     }
 
     return apiCall<BrokerBankDetailItem>(
