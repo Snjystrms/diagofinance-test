@@ -9,6 +9,7 @@ import {
   DollarSign,
   Key,
   Settings,
+  SlidersHorizontal,
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ApiErrorState } from '@/components/errors/api-error-state';
@@ -273,6 +274,11 @@ export default function ManageAccountsPage() {
     const isDemoAccount = detail?.account_mode?.toLowerCase() === 'demo';
     const accountTypeName = detail?.accountType?.name ?? 'MT5 Account';
     const menuActions = [
+      {
+        label: 'Edit Leverage',
+        icon: SlidersHorizontal,
+        onSelect: () => {},
+      },
       {
         label: 'Reset Password',
         icon: Key,

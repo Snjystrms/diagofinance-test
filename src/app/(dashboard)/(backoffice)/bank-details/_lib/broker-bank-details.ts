@@ -27,7 +27,7 @@ export const toBrokerBankDetailPayload = (
   country: values.country.trim(),
   iban_number: values.iban_number.trim(),
   swift_ifsc_code: values.swift_ifsc_code.trim(),
-  upi_qr_code_url: values.upi_qr_code_url ?? "",
+  upi_qr_code_url: values.upi_qr_code_url, // Don't trim - could be base64
   is_active: values.is_active,
 });
 
@@ -120,6 +120,7 @@ export const filterBrokerBankDetails = (
       row.country,
       row.iban_number,
       row.swift_ifsc_code,
+      row.upi_qr_code_url,
       String(row.id),
     ]
       .filter(Boolean)

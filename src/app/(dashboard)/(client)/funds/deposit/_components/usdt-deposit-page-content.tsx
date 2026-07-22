@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import React, {
   useState,
   useEffect,
@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ApiErrorState } from "@/components/errors/api-error-state";
+import { AuthenticatedDocumentViewer } from "@/components/authenticated-document-viewer";
 import {
   Card,
   CardContent,
@@ -89,6 +90,7 @@ import {
   Banknote,
   Plus,
 } from "lucide-react";
+import Image from "next/image";
 
 const formatDateTime = (value?: string | null): string => {
   if (!value) return "-";
@@ -2993,6 +2995,11 @@ function USDTDepositContent() {
                           {visibleBrokerBankDetails.length > 1
                             ? "Select a bank account and transfer funds, then submit the Transaction ID."
                             : "Transfer funds to the approved account below, then submit the Transaction ID."}
+                          {selectedBankDetail?.upi_qr_code_url && (
+                            <span className="block mt-1 text-primary font-medium">
+                              UPI payments are available for this bank account.
+                            </span>
+                          )}
                         </CardDescription>
                       </div>
                       <div className="flex items-center gap-2">
@@ -3201,6 +3208,51 @@ function USDTDepositContent() {
                                     </div>
                                   </div>
                                 ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* UPI QR Code Section */}
+                          {selectedBankDetail?.upi_qr_code_url && (
+                            <div className="rounded-2xl border border-primary/30 bg-primary/5 p-4 shadow-sm">
+                              <div className="mb-3 flex items-center gap-2">
+                                <div className="rounded-lg border border-primary/20 bg-primary/10 p-1.5">
+                                  <QrCode className="h-4 w-4 text-primary" />
+                                </div>
+                                <h3 className="text-base font-semibold text-foreground">
+                                  Make UPI Payment
+                                </h3>
+                              </div>
+                              
+                              <p className="mb-4 text-sm text-muted-foreground">
+                                You can make your payment using UPI by scanning the QR code below with any UPI app (Google Pay, PhonePe, Paytm, etc.)
+                              </p>
+
+                              <div className="flex justify-center mb-4">
+                                <div className="relative rounded-xl border-2 border-primary/30 bg-white p-4 shadow-lg">
+                                  <UPIQRCodeDisplay
+                                    qrCodeUrl={selectedBankDetail.upi_qr_code_url}
+                                    bankName={selectedBankDetail.bank_name}
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="rounded-lg border border-primary/20 bg-background/80 px-4 py-3">
+                                <div className="flex items-start gap-2">
+                                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                                  <div className="text-xs text-foreground space-y-1">
+                                    <p className="font-semibold">
+                                      How to pay using UPI:
+                                    </p>
+                                    <ul className="space-y-0.5 list-none ml-0">
+                                      <li>1. Open your UPI app (GPay, PhonePe, Paytm, etc.)</li>
+                                      <li>2. Scan the QR code above</li>
+                                      <li>3. Enter the amount and complete the payment</li>
+                                      <li>4. Note down the Transaction ID from your app</li>
+                                      <li>5. Submit the Transaction ID in the form on the right</li>
+                                    </ul>
+                                  </div>
+                                </div>
                               </div>
                             </div>
                           )}
@@ -3638,6 +3690,25 @@ function USDTDepositContent() {
         </Tabs>
       </div>
     </div>
+  );
+}
+
+// Helper component to display UPI QR Code with authentication support
+function UPIQRCodeDisplay({
+  qrCodeUrl,
+  bankName,
+}: {
+  qrCodeUrl: string;
+  bankName: string;
+}) {
+  return (
+    <AuthenticatedDocumentViewer
+      src={qrCodeUrl}
+      label={`UPI QR Code for ${bankName}`}
+      mode="thumbnail"
+      previewClassName="h-48 w-48"
+      imageFit="contain"
+    />
   );
 }
 

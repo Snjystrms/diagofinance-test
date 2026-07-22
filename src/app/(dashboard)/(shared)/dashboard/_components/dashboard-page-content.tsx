@@ -82,6 +82,7 @@ import {
   DollarSign,
   Key,
   RefreshCw,
+  SlidersHorizontal,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { ProfileCompletionDialog } from "@/components/profile-completion-dialog";
@@ -202,7 +203,6 @@ export function DashboardPageContent() {
     Array<{
       key:
         | "personal_information"
-        | "legal_information"
         | "documents_verification";
       title: string;
       message: string;
@@ -1341,17 +1341,10 @@ export function DashboardPageContent() {
                   item.id === "personal_information" &&
                   item.status === "Pending",
               );
-              const pendingLegal = profileTimeline.some(
-                (item) =>
-                  item.id === "legal_information" &&
-                  item.status === "Pending",
-              );
               if (pendingDocs) {
                 router.push("/profile/kyc-verification");
               } else if (pendingPersonal) {
                 router.push("/profile/view_profile#personal");
-              } else if (pendingLegal) {
-                router.push("/profile/view_profile#account");
               } else {
                 router.push("/profile/view_profile");
               }
@@ -2143,17 +2136,10 @@ export function DashboardPageContent() {
                               item.id === "personal_information" &&
                               item.status === "Pending",
                           );
-                          const pendingLegal = profileTimeline.some(
-                            (item) =>
-                              item.id === "legal_information" &&
-                              item.status === "Pending",
-                          );
                           if (pendingDocs) {
                             router.push("/profile/kyc-verification");
                           } else if (pendingPersonal) {
                             router.push("/profile/view_profile#personal");
-                          } else if (pendingLegal) {
-                            router.push("/profile/view_profile#account");
                           } else {
                             router.push("/profile/view_profile");
                           }
@@ -2587,6 +2573,11 @@ export function DashboardPageContent() {
                           .includes("demo");
                         const menuActions = [
                           {
+                            label: "Edit Leverage",
+                            icon: SlidersHorizontal,
+                            onSelect: () => {},
+                          },
+                          {
                             label: "Reset Password",
                             icon: Key,
                             onSelect: () => setResetPasswordAccount(account),
@@ -2839,8 +2830,6 @@ export function DashboardPageContent() {
             icon:
               section.key === "personal_information" ? (
                 <Settings className="h-5 w-5 text-orange-600" />
-              ) : section.key === "legal_information" ? (
-                <Scale className="h-5 w-5 text-orange-600" />
               ) : (
                 <FileText className="h-5 w-5 text-orange-600" />
               ),

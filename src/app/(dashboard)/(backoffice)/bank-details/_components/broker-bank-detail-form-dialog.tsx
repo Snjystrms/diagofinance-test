@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { GetCountries } from "react-country-state-city";
+import Image from "next/image";
+import { Upload, X, ImageIcon } from "lucide-react";
 
 import {
   Dialog,
@@ -112,6 +114,8 @@ export function BrokerBankDetailFormDialog({
 }: BrokerBankDetailFormDialogProps) {
   const isCreateMode = mode === "create";
   const [countryOptions, setCountryOptions] = useState<CountryOption[]>([]);
+  const [qrImagePreview, setQrImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -133,6 +137,46 @@ export function BrokerBankDetailFormDialog({
       isMounted = false;
     };
   }, []);
+
+  // Set initial preview when editing and URL exists
+  useEffect(() => {
+    if (mode === "edit" && values.upi_qr_code_url && !qrImagePreview) {
+      setQrImagePreview(values.upi_qr_code_url);
+    }
+  }, [mode, values.upi_qr_code_url, qrImagePreview]);
+
+  const handleQrImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        return;
+      }
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const dataUrl = reader.result as string;
+        setQrImagePreview(dataUrl);
+        onValuesChange({
+          ...values,
+          upi_qr_code_url: dataUrl,
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveQrImage = () => {
+    setQrImagePreview(null);
+    onValuesChange({
+      ...values,
+      upi_qr_code_url: "",
+    });
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   const countryValue = useMemo(() => {
     const matched = countryOptions.find(
@@ -277,6 +321,68 @@ export function BrokerBankDetailFormDialog({
               disabled={submitting}
               error={validationErrors.swift_ifsc_code}
             />
+
+            <div className="space-y-2">
+              <Label htmlFor="upi-qr-code" className="inline">
+                UPI QR Code <span className="text-muted-foreground">(Provide it in case you want to enable UPI payments)</span>
+              </Label>
+              <div className="space-y-3">
+                {qrImagePreview ? (
+                  <div className="relative inline-block">
+                    <div className="relative h-32 w-32 overflow-hidden rounded border bg-muted">
+                      <Image
+                        src={qrImagePreview}
+                        alt="QR Code Preview"
+                        fill
+                        className="object-cover"
+                        sizes="128px"
+                        unoptimized
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="destructive"
+                      size="icon"
+                      className="absolute -right-2 -top-2 h-6 w-6 rounded-full"
+                      onClick={handleRemoveQrImage}
+                      disabled={submitting}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex h-32 w-32 items-center justify-center rounded border border-dashed bg-muted">
+                    <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                )}
+                <div>
+                  <input
+                    ref={fileInputRef}
+                    id="upi-qr-code"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleQrImageChange}
+                    disabled={submitting}
+                    className="hidden"
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={submitting}
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {qrImagePreview ? "Change Image" : "Upload Image"}
+                  </Button>
+                </div>
+              </div>
+              {validationErrors.upi_qr_code_url ? (
+                <p className="text-sm text-destructive">
+                  {validationErrors.upi_qr_code_url}
+                </p>
+              ) : null}
+            </div>
 
             <div className="space-y-2 md:col-span-2">
               <Label htmlFor="bank-address">Address</Label>

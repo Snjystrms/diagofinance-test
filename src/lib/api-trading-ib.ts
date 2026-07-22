@@ -345,6 +345,17 @@ export const userMT5AccountsApi = {
       headers: { Authorization: `Bearer ${token}` },
     });
   },
+
+  updateLeverage: (
+    id: string | number,
+    leverage: number,
+    token: string
+  ) =>
+    apiCall<{ accountId: number; leverage: number }>(`/user/mt5-account/${id}/leverage`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ leverage }),
+    }),
 };
 
 export interface Mt5SdkPosition {

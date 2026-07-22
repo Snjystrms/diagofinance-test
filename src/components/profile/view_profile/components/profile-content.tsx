@@ -47,7 +47,7 @@ import {
   ProfileSecurityTab,
 } from "@/components/profile/view_profile/components/profile-content-tabs";
 
-type ProfileFormSection = "personal" | "legal" | "bank";
+type ProfileFormSection = "personal" | "bank";
 
 type ProfileFormField =
   | "first_name"
@@ -288,10 +288,6 @@ export default function ProfileContent() {
       country_code: normalizeCountryCodeForInput(data.user.country_code),
       google_2FA_status: Boolean(data.user.google_2FA_status),
     },
-    legal_information: {
-      ...data.legal_information,
-      politically_exposed: Boolean(data.legal_information.politically_exposed),
-    },
   });
 
   const clearValidationError = (field: ProfileFormField) => {
@@ -312,7 +308,7 @@ export default function ProfileContent() {
     }
 
     const errors: Partial<Record<ProfileFormField, string>> = {};
-    const { user: profileUser, personal_information, legal_information } = profileData;
+    const { user: profileUser, personal_information } = profileData;
 
     const requireText = (field: ProfileFormField, value: string | null | undefined, label: string) => {
       if (!value || !value.trim()) {
@@ -363,23 +359,6 @@ export default function ProfileContent() {
 
       if (personal_information.pin_code?.trim() && !/^[A-Za-z0-9-]{4,12}$/.test(personal_information.pin_code.trim())) {
         errors.pin_code = "PIN code must be 4 to 12 letters or digits.";
-      }
-    }
-
-    if (section === "legal") {
-      requireText("source_of_income", legal_information.source_of_income, "Source of income");
-      requireText("purpose_of_opening_account", legal_information.purpose_of_opening_account, "Purpose of opening account");
-
-      if (legal_information.annual_income === null || Number(legal_information.annual_income) <= 0) {
-        errors.annual_income = "Annual income must be greater than 0.";
-      }
-
-      if (legal_information.estimated_net_worth === null || Number(legal_information.estimated_net_worth) <= 0) {
-        errors.estimated_net_worth = "Estimated net worth must be greater than 0.";
-      }
-
-      if (legal_information.estimated_annual_amount === null || Number(legal_information.estimated_annual_amount) <= 0) {
-        errors.estimated_annual_amount = "Estimated annual amount must be greater than 0.";
       }
     }
 
@@ -799,7 +778,7 @@ export default function ProfileContent() {
   // Read tab from URL on mount
   useEffect(() => {
     const tabParam = searchParams.get("tab");
-    const validTabs = ["personal", "legal", "activity", "security", "bank"];
+    const validTabs = ["personal", "activity", "security", "bank"];
     if (tabParam && validTabs.includes(tabParam)) {
       setActiveTab(tabParam);
     }
@@ -1092,7 +1071,7 @@ export default function ProfileContent() {
       return null;
     }
 
-    const { user: profileUser, personal_information, legal_information } = profileData;
+    const { user: profileUser, personal_information } = profileData;
     const basicProfilePayload: UserProfileUpdatePayload = {
       first_name: profileUser.first_name || "",
       last_name: profileUser.last_name || "",
@@ -1120,15 +1099,6 @@ export default function ProfileContent() {
       personalInformationPayload.other_id_number = documentId;
     }
 
-    const legalInformationPayload: UserProfileUpdatePayload = {
-      politically_exposed: Boolean(legal_information.politically_exposed),
-      annual_income: Number(legal_information.annual_income ?? 0),
-      source_of_income: legal_information.source_of_income || "",
-      estimated_net_worth: Number(legal_information.estimated_net_worth ?? 0),
-      purpose_of_opening_account: legal_information.purpose_of_opening_account || "",
-      estimated_annual_amount: Number(legal_information.estimated_annual_amount ?? 0),
-    };
-
     if (section === "personal") {
       return {
         ...basicProfilePayload,
@@ -1136,14 +1106,9 @@ export default function ProfileContent() {
       };
     }
 
-    if (section === "legal") {
-      return legalInformationPayload;
-    }
-
     return {
       ...basicProfilePayload,
       ...personalInformationPayload,
-      ...legalInformationPayload,
     };
   };
 
@@ -1192,18 +1157,12 @@ export default function ProfileContent() {
           setBankEditSnapshot(null);
         }
         toast.success(
-          response.message ||
-            (section === "legal"
-              ? "Legal information updated successfully"
-              : "Profile updated successfully")
+          response.message || "Profile updated successfully"
         );
         window.dispatchEvent(new CustomEvent("profile-updated"));
       } else {
         toast.error(
-          response.message ||
-            (section === "legal"
-              ? "Failed to update legal information"
-              : "Failed to update profile")
+          response.message || "Failed to update profile"
         );
       }
     } catch (error) {
@@ -1211,9 +1170,7 @@ export default function ProfileContent() {
       toast.error(
         error instanceof Error
           ? error.message
-          : section === "legal"
-            ? "Failed to update legal information"
-            : "Failed to update profile"
+          : "Failed to update profile"
       );
     } finally {
       setSaving(false);
@@ -1243,19 +1200,6 @@ export default function ProfileContent() {
       ...profileData,
       user: {
         ...profileData.user,
-        [field]: value,
-      },
-    });
-  };
-
-  // Handle input changes for legal information
-  const handleLegalInfoChange = (field: keyof ProfileViewResponse["legal_information"], value: string | number | boolean | null) => {
-    if (!profileData) return;
-    clearValidationError(field as ProfileFormField);
-    setProfileData({
-      ...profileData,
-      legal_information: {
-        ...profileData.legal_information,
         [field]: value,
       },
     });
@@ -1500,39 +1444,6 @@ export default function ProfileContent() {
               </CardContent>
             </Card>
 
-            {/* Legal Information Status */}
-            <Card className={`relative overflow-hidden rounded-2xl border shadow-sm ${
-              verificationStatus.legal_information.status === "completed"
-                ? "border-emerald-500/35 bg-card/80 shadow-emerald-950/5 dark:border-emerald-500/35 dark:bg-black/20"
-                : "border-amber-500/40 bg-card/80 shadow-amber-950/5 dark:border-amber-500/35 dark:bg-black/20"
-            }`}>
-              <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-foreground/5 blur-2xl" />
-              <CardContent className="p-3.5 sm:p-4">
-                <div className="flex items-start gap-2.5 sm:gap-3">
-                  <div className={`shrink-0 rounded-xl border p-2 sm:p-2.5 shadow-sm ${
-                    verificationStatus.legal_information.status === "completed"
-                      ? "border-emerald-500/30 bg-emerald-500/10"
-                      : "border-amber-500/35 bg-amber-500/10"
-                  }`}>
-                    <Settings className={`h-4 w-4 sm:h-5 sm:w-5 ${
-                      verificationStatus.legal_information.status === "completed"
-                        ? "text-emerald-600 dark:text-emerald-300"
-                        : "text-amber-600 dark:text-amber-300"
-                    }`} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="mb-1 text-xs sm:text-sm font-semibold break-words">Legal Information</h4>
-                    <p className="text-[11px] sm:text-xs text-muted-foreground break-words line-clamp-2">
-                      {verificationStatus.legal_information.message}
-                    </p>
-                    <div className="mt-2">
-                      {getStatusBadge(verificationStatus.legal_information.status)}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Documents Verification Status */}
             <Card className={`relative overflow-hidden rounded-2xl border shadow-sm ${
               verificationStatus.documents_verification.status === "completed"
@@ -1577,13 +1488,6 @@ export default function ProfileContent() {
           >
             <User className="h-4 w-4 mr-2" />
             Personal Information
-          </TabsTrigger>
-          <TabsTrigger 
-            value="account" 
-            className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
-          >
-            <FileCheck className="h-4 w-4 mr-2" />
-            Legal Information
           </TabsTrigger>
           <TabsTrigger 
             value="activity" 
@@ -2070,189 +1974,6 @@ export default function ProfileContent() {
               )}
             </Button>
           </div>
-        </TabsContent>
-
-        {/* Legal Information */}
-        <TabsContent value="account" className="space-y-6">
-          <Card className="mx-auto w-full max-w-5xl border-border/70 shadow-sm">
-            <CardHeader>
-              <CardTitle>Legal Information</CardTitle>
-              <CardDescription>Provide your legal and financial information for account verification.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid gap-4 lg:grid-cols-[minmax(0,1.1fr)_minmax(280px,0.9fr)]">
-                <div className="rounded-2xl border border-border/60 bg-muted/15 p-5">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="space-y-1">
-                      <Label htmlFor="politically_exposed" className="text-sm font-semibold">Politically Exposed Person</Label>
-                      <p className="text-sm text-muted-foreground">
-                        Tell us whether you currently qualify as a politically exposed person.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-5 flex items-center gap-3 rounded-xl border border-border/60 bg-background/90 px-4 py-3">
-                    <Switch
-                      id="politically_exposed"
-                      checked={profileData.legal_information.politically_exposed}
-                      onCheckedChange={(checked) =>
-                        handleLegalInfoChange("politically_exposed", checked)
-                      }
-                    />
-                    <span className="text-sm font-medium text-foreground">
-                      {profileData.legal_information.politically_exposed ? "Marked as politically exposed" : "Marked as not politically exposed"}
-                    </span>
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-primary/15 bg-primary/5 p-5">
-                  <div className="space-y-2">
-                    <Label htmlFor="financial_currency" className="text-sm font-semibold">Financial Currency</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Choose the currency context for the income and net-worth values below.
-                    </p>
-                    <Select value={financialCurrency} onValueChange={setFinancialCurrency}>
-                      <SelectTrigger id="financial_currency" className="w-full bg-background">
-                        <SelectValue placeholder="Select currency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {FINANCIAL_CURRENCY_OPTIONS.map((currency) => (
-                          <SelectItem key={currency.value} value={currency.value}>
-                            {`${currency.value} - ${currency.label}`}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2 rounded-2xl border border-border/60 p-4">
-                  <Label htmlFor="annual_income">Annual Income</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Your total annual income in {financialCurrency}.
-                  </p>
-                  <div className="relative">
-                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 rounded-md bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground">
-                      {financialCurrency}
-                    </span>
-                    <Input
-                      id="annual_income"
-                      inputMode="decimal"
-                      value={profileData.legal_information.annual_income ?? ""}
-                      onChange={(e) =>
-                        handleLegalInfoChange("annual_income", parseOptionalMoneyValue(e.target.value))
-                      }
-                      className={getFieldError("annual_income") ? "w-full border-destructive pl-20" : "w-full pl-20"}
-                      placeholder={formatMoneyPlaceholder("Annual income")}
-                    />
-                  </div>
-                  {getFieldError("annual_income") ? (
-                    <p className="text-sm text-destructive">{getFieldError("annual_income")}</p>
-                  ) : null}
-                </div>
-                <div className="space-y-2 rounded-2xl border border-border/60 p-4">
-                  <Label htmlFor="source_of_income">Source of Income</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Primary source of the income you reported.
-                  </p>
-                  <Input
-                    id="source_of_income"
-                    value={profileData.legal_information.source_of_income || ""}
-                    onChange={(e) =>
-                      handleLegalInfoChange("source_of_income", sanitizePersonText(e.target.value) || null)
-                    }
-                    className={getFieldError("source_of_income") ? "w-full border-destructive" : "w-full"}
-                    placeholder="e.g. Salary"
-                  />
-                  {getFieldError("source_of_income") ? (
-                    <p className="text-sm text-destructive">{getFieldError("source_of_income")}</p>
-                  ) : null}
-                </div>
-                <div className="space-y-2 rounded-2xl border border-border/60 p-4">
-                  <Label htmlFor="estimated_net_worth">Estimated Net Worth</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Approximate total net worth in {financialCurrency}.
-                  </p>
-                  <div className="relative">
-                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 rounded-md bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground">
-                      {financialCurrency}
-                    </span>
-                    <Input
-                      id="estimated_net_worth"
-                      inputMode="decimal"
-                      value={profileData.legal_information.estimated_net_worth ?? ""}
-                      onChange={(e) =>
-                        handleLegalInfoChange("estimated_net_worth", parseOptionalMoneyValue(e.target.value))
-                      }
-                      className={getFieldError("estimated_net_worth") ? "w-full border-destructive pl-20" : "w-full pl-20"}
-                      placeholder={formatMoneyPlaceholder("Estimated net worth")}
-                    />
-                  </div>
-                  {getFieldError("estimated_net_worth") ? (
-                    <p className="text-sm text-destructive">{getFieldError("estimated_net_worth")}</p>
-                  ) : null}
-                </div>
-                <div className="space-y-2 rounded-2xl border border-border/60 p-4">
-                  <Label htmlFor="estimated_annual_amount">Estimated Annual Amount</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Estimated yearly transaction volume in {financialCurrency}.
-                  </p>
-                  <div className="relative">
-                    <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 rounded-md bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground">
-                      {financialCurrency}
-                    </span>
-                    <Input
-                      id="estimated_annual_amount"
-                      inputMode="decimal"
-                      value={profileData.legal_information.estimated_annual_amount ?? ""}
-                      onChange={(e) =>
-                        handleLegalInfoChange("estimated_annual_amount", parseOptionalMoneyValue(e.target.value))
-                      }
-                      className={getFieldError("estimated_annual_amount") ? "w-full border-destructive pl-20" : "w-full pl-20"}
-                      placeholder={formatMoneyPlaceholder("Estimated annual amount")}
-                    />
-                  </div>
-                  {getFieldError("estimated_annual_amount") ? (
-                    <p className="text-sm text-destructive">{getFieldError("estimated_annual_amount")}</p>
-                  ) : null}
-                </div>
-                <div className="space-y-2 rounded-2xl border border-border/60 p-4 md:col-span-2">
-                  <Label htmlFor="purpose_of_opening_account">Purpose of Opening Account</Label>
-                  <p className="text-sm text-muted-foreground">
-                    Tell us the main reason you want to use this account.
-                  </p>
-                  <Textarea
-                    id="purpose_of_opening_account"
-                    value={profileData.legal_information.purpose_of_opening_account || ""}
-                    onChange={(e) =>
-                      handleLegalInfoChange("purpose_of_opening_account", e.target.value || null)
-                    }
-                    className={getFieldError("purpose_of_opening_account") ? "min-h-28 w-full resize-none border-destructive" : "min-h-28 w-full resize-none"}
-                    placeholder="e.g. Trading and investment"
-                    rows={4}
-                  />
-                  {getFieldError("purpose_of_opening_account") ? (
-                    <p className="text-sm text-destructive">{getFieldError("purpose_of_opening_account")}</p>
-                  ) : null}
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="justify-end border-t border-border/60 pt-6">
-              <Button 
-                onClick={() => handleSubmit("legal")}
-                disabled={saving}
-                size="lg"
-              >
-                {saving ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  "Save Legal Information"
-                )}
-              </Button>
-            </CardFooter>
-          </Card>
         </TabsContent>
 
         <ProfileActivityTab

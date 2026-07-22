@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
+import Image from "next/image";
 import {
   Building2,
   Eye,
@@ -16,9 +17,11 @@ import {
   Search,
   ShieldCheck,
   Trash2,
+  ImageIcon
 } from "lucide-react";
 
 import { AppDataTable } from "@/components/app-data-table";
+import { AuthenticatedDocumentViewer } from "@/components/authenticated-document-viewer";
 import { DeleteDialog } from "@/components/dialogs/delete-dialog";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
@@ -303,6 +306,51 @@ export function AdminBrokerBankDetailsPageContent() {
           </span>
         ),
       },
+       {
+              id: "upi_qr_code_url",
+              header: "QR Code",
+              cell: ({ row }) => {
+                const qrUrl = row.original.upi_qr_code_url;
+                if (!qrUrl) {
+                  return (
+                    <div className="flex h-10 w-16 items-center justify-center text-muted-foreground text-xs">
+      -
+    </div>
+                  );
+                }
+                
+                // Base64 image
+                if (qrUrl.startsWith('data:image')) {
+                  return (
+                    <div className="relative h-10 w-16 overflow-hidden rounded border bg-muted flex-shrink-0">
+                      <Image
+                        src={qrUrl}
+                        alt={row.original.account_number}
+                        fill
+                        className="object-cover"
+                        sizes="64px"
+                        unoptimized
+                      />
+                    </div>
+                  );
+                }
+                
+                // Server URL - use AuthenticatedDocumentViewer
+                return (
+                  <div className="h-10 w-16">
+                    <AuthenticatedDocumentViewer
+                      src={qrUrl}
+                      label="QR"
+                      mode="thumbnail"
+                      imageFit="cover"
+                      previewClassName="h-10 w-16"
+                      allowDialog={false}
+                    />
+                  </div>
+                );
+              },
+              enableSorting: false,
+            },
       {
         id: "status",
         header: "Status",

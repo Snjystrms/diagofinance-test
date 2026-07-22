@@ -27,10 +27,6 @@ export default function ProfileHeader() {
         : `+${data.user.country_code}`,
       google_2FA_status: Boolean(data.user.google_2FA_status),
     },
-    legal_information: {
-      ...data.legal_information,
-      politically_exposed: Boolean(data.legal_information.politically_exposed),
-    },
   });
 
   useEffect(() => {

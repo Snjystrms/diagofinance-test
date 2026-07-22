@@ -9,8 +9,11 @@ import {
   Clock,
   Copy,
   DollarSign,
+  Loader2,
   MoreVertical,
+  SlidersHorizontal,
   Wallet,
+  X,
   XCircle,
   Zap,
 } from "lucide-react";
@@ -25,9 +28,43 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { mt5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
+import { mt5AccountsApi, userMT5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
 import { useAuth } from "@/contexts/auth-context";
+
+export const LEVERAGE_OPTIONS = [
+  "1 : 5000",
+  "1 : 1000",
+  "1 : 500",
+  "1 : 400",
+  "1 : 300",
+  "1 : 200",
+  "1 : 175",
+  "1 : 150",
+  "1 : 125",
+  "1 : 100",
+  "1 : 80",
+  "1 : 75",
+  "1 : 66",
+  "1 : 50",
+  "1 : 40",
+  "1 : 33",
+  "1 : 25",
+  "1 : 20",
+  "1 : 15",
+  "1 : 10",
+  "1 : 5",
+  "1 : 3",
+  "1 : 2",
+  "1 : 1",
+] as const;
 
 type ClientMt5AccountMenuAction = {
   icon: LucideIcon;
@@ -50,6 +87,7 @@ export type ClientMt5AccountCardProps = {
   server?: string | null;
   depositHref?: string;
   onDeposit?: () => void;
+  onLeverageChange?: (newLeverage: string) => void;
   menuActions?: ClientMt5AccountMenuAction[];
   className?: string;
 };
@@ -98,6 +136,22 @@ function formatLeverage(value?: number | string | null) {
   return normalizedValue.includes(":")
     ? normalizedValue
     : `1:${normalizedValue}`;
+}
+
+function normalizeLeverageOption(value?: number | string | null): string {
+  if (value === undefined || value === null || `${value}`.trim() === "") {
+    return "1 : 100";
+  }
+  const str = String(value).trim();
+  const numMatch = str.match(/\d+/g);
+  if (numMatch && numMatch.length > 0) {
+    const lastNum = numMatch[numMatch.length - 1];
+    const candidate = `1 : ${lastNum}`;
+    if ((LEVERAGE_OPTIONS as readonly string[]).includes(candidate)) {
+      return candidate;
+    }
+  }
+  return str.includes(":") ? str : `1 : ${str}`;
 }
 
 function getStatusBadge(status: string | number | undefined) {
@@ -198,12 +252,22 @@ export function ClientMt5AccountCard({
   server,
   depositHref,
   onDeposit,
+  onLeverageChange,
   menuActions = [],
   className,
 }: ClientMt5AccountCardProps) {
   const { token } = useAuth();
   const [liveBalance, setLiveBalance] = useState<number | null>(null);
   const [isLoadingBalance, setIsLoadingBalance] = useState(false);
+  const [isEditingLeverage, setIsEditingLeverage] = useState(false);
+  const [isUpdatingLeverage, setIsUpdatingLeverage] = useState(false);
+  const [currentLeverage, setCurrentLeverage] = useState<number | string | null>(
+    leverage ?? null,
+  );
+
+  useEffect(() => {
+    setCurrentLeverage(leverage ?? null);
+  }, [leverage]);
 
   const isCentAccount = accountTypeName?.trim().toUpperCase() === "CENT";
   const normalizedCurrency = isCentAccount
@@ -249,6 +313,31 @@ export function ClientMt5AccountCard({
   // Use live balance ONLY - show "-" if null
   const displayBalance = liveBalance;
 
+  const hasEditLeverageInProps = menuActions.some(
+    (action) => action.label.toLowerCase() === "edit leverage",
+  );
+
+  const effectiveMenuActions: ClientMt5AccountMenuAction[] = hasEditLeverageInProps
+    ? menuActions.map((action) =>
+        action.label.toLowerCase() === "edit leverage"
+          ? {
+              ...action,
+              onSelect: () => {
+                action.onSelect?.();
+                setIsEditingLeverage(true);
+              },
+            }
+          : action,
+      )
+    : [
+        {
+          label: "Edit Leverage",
+          icon: SlidersHorizontal,
+          onSelect: () => setIsEditingLeverage(true),
+        },
+        ...menuActions,
+      ];
+
   return (
     <Card
       className={cn(
@@ -285,7 +374,7 @@ export function ClientMt5AccountCard({
             </div>
           </div>
 
-          {menuActions.length > 0 ? (
+          {effectiveMenuActions.length > 0 ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -298,7 +387,7 @@ export function ClientMt5AccountCard({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                {menuActions.map((action) => {
+                {effectiveMenuActions.map((action) => {
                   const ActionIcon = action.icon;
 
                   return (
@@ -358,14 +447,92 @@ export function ClientMt5AccountCard({
           </div>
 
           <div className="space-y-3">
-            <div className="flex items-center justify-between gap-3 rounded-xl border border-border/50 bg-muted/30 p-3.5">
-              {/* <div className="space-y-1"> */}
+            <div
+              className={cn(
+                "flex items-center justify-between gap-3 rounded-xl border p-3.5 transition-all duration-200",
+                isEditingLeverage
+                  ? "border-primary/50 bg-primary/5 shadow-xs"
+                  : "border-border/50 bg-muted/30",
+              )}
+            >
               <span className="text-xs text-muted-foreground">Leverage</span>
-              <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                <Zap className="h-3 w-3 text-primary" />
-                {formatLeverage(leverage)}
-                {/* </div> */}
-              </div>
+              {isEditingLeverage ? (
+                <div className="flex items-center gap-2">
+                  <Select
+                    value={normalizeLeverageOption(currentLeverage)}
+                    onValueChange={async (val) => {
+                      if (!token) {
+                        toast.error("Authentication required");
+                        return;
+                      }
+                      // Extract numeric value from "1 : 500" → 500
+                      const numericMatch = val.match(/(\d+)\s*$/);
+                      const leverageNum = numericMatch ? Number(numericMatch[1]) : null;
+                      if (!leverageNum) {
+                        toast.error("Invalid leverage value");
+                        return;
+                      }
+                      if (!mt5Login) {
+                        toast.error("Account login is missing");
+                        return;
+                      }
+                      const prevLeverage = currentLeverage;
+                      setCurrentLeverage(val);
+                      setIsEditingLeverage(false);
+                      setIsUpdatingLeverage(true);
+                      try {
+                        await userMT5AccountsApi.updateLeverage(mt5Login, leverageNum, token);
+                        toast.success(`Leverage updated to ${val}`);
+                        onLeverageChange?.(val);
+                      } catch (err) {
+                        console.error("[MT5 Card] Failed to update leverage:", err);
+                        toast.error("Failed to update leverage. Please try again.");
+                        // Roll back optimistic update
+                        setCurrentLeverage(prevLeverage);
+                      } finally {
+                        setIsUpdatingLeverage(false);
+                      }
+                    }}
+                  >
+                    <SelectTrigger disabled={isUpdatingLeverage} className="h-8 w-[130px] border-primary/40 bg-background text-xs font-semibold shadow-xs focus:ring-1 focus:ring-primary">
+                      <SelectValue placeholder="Select leverage" />
+                    </SelectTrigger>
+                    <SelectContent align="end" className="max-h-60 z-50">
+                      {LEVERAGE_OPTIONS.map((opt) => (
+                        <SelectItem
+                          key={opt}
+                          value={opt}
+                          className="cursor-pointer text-xs font-medium"
+                        >
+                          {opt}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 shrink-0 rounded-lg text-muted-foreground hover:bg-muted hover:text-foreground"
+                    onClick={() => setIsEditingLeverage(false)}
+                    title="Cancel"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                  {isUpdatingLeverage ? (
+                    <Loader2 className="h-3 w-3 animate-spin text-primary" />
+                  ) : (
+                    <Zap className="h-3 w-3 text-primary" />
+                  )}
+                  {formatLeverage(currentLeverage)}
+                  {isUpdatingLeverage && (
+                    <span className="text-xs font-normal text-muted-foreground">Saving...</span>
+                  )}
+                </div>
+              )}
             </div>
             {/* <div className="rounded-xl border border-border/30 bg-muted/20 p-3">
               <div className="space-y-1">

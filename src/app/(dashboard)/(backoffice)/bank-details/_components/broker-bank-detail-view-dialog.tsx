@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { AuthenticatedDocumentViewer } from "@/components/authenticated-document-viewer";
 
 import type { BrokerBankDetailItem } from "@/lib/api";
 import { formatApiDateTimeAsIST } from "@/lib/formatters";
@@ -74,6 +76,42 @@ export function BrokerBankDetailViewDialog({
               <DetailRow label="IBAN number" value={detail.iban_number} />
               <DetailRow label="Swift / IFSC code" value={detail.swift_ifsc_code} />
             </div>
+
+            {detail.upi_qr_code_url && (
+              <>
+                <Separator />
+                <div className="space-y-2">
+                  <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    UPI QR Code
+                  </div>
+                  {detail.upi_qr_code_url.startsWith('data:image') ? (
+                    <div className="flex items-start gap-4">
+                      <div className="relative h-32 w-32 overflow-hidden rounded border bg-muted flex-shrink-0">
+                        <Image
+                          src={detail.upi_qr_code_url}
+                          alt="UPI QR Code"
+                          fill
+                          className="object-cover"
+                          sizes="128px"
+                          unoptimized
+                        />
+                      </div>
+                      <div className="flex-1 space-y-1 min-w-0">
+                        <div className="text-sm text-muted-foreground">Base64 Image</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <AuthenticatedDocumentViewer
+                      src={detail.upi_qr_code_url}
+                      label="UPI QR Code"
+                      mode="thumbnail"
+                      imageFit="contain"
+                      previewClassName="h-32 w-32"
+                    />
+                  )}
+                </div>
+              </>
+            )}
 
             <Separator />
 
