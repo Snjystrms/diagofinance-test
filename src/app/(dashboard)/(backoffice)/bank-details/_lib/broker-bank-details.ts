@@ -10,6 +10,7 @@ export const emptyBrokerBankDetailForm = (): BrokerBankDetailFormValues => ({
   country: "",
   iban_number: "",
   swift_ifsc_code: "",
+  upi_qr_code_url: "",
   is_active: true,
 });
 
@@ -26,6 +27,7 @@ export const toBrokerBankDetailPayload = (
   country: values.country.trim(),
   iban_number: values.iban_number.trim(),
   swift_ifsc_code: values.swift_ifsc_code.trim(),
+  upi_qr_code_url: values.upi_qr_code_url ?? "",
   is_active: values.is_active,
 });
 
@@ -39,6 +41,7 @@ export const mapBrokerBankDetailToForm = (
   country: detail.country ?? "",
   iban_number: detail.iban_number ?? "",
   swift_ifsc_code: detail.swift_ifsc_code ?? "",
+  upi_qr_code_url: detail.upi_qr_code_url ?? "",
   is_active: isBrokerBankDetailActive(detail),
 });
 
