@@ -1,4 +1,11 @@
-import { API_BASE_URL, ApiResponse, PaginationMeta, apiCall } from "./api-core";
+import {
+  API_BASE_URL,
+  ApiRequestError,
+  ApiResponse,
+  PaginationMeta,
+  apiCall,
+  handle401Redirect,
+} from "./api-core";
 
 export interface AccountTypeGroup {
   id: number;
@@ -790,6 +797,35 @@ export interface IbInternalTransferWalletTransactionsResponse {
   };
 }
 
+const parseContentDispositionFilename = (
+  contentDisposition: string | null,
+  fallback: string,
+) => {
+  if (!contentDisposition) return fallback;
+
+  const utf8Match = contentDisposition.match(
+    /filename\*\s*=\s*UTF-8''([^;]+)/i,
+  );
+  if (utf8Match?.[1]) {
+    try {
+      return decodeURIComponent(utf8Match[1]);
+    } catch {
+      return utf8Match[1];
+    }
+  }
+
+  const filenameMatch = contentDisposition.match(
+    /filename\s*=\s*"([^"]+)"|filename\s*=\s*([^;]+)/i,
+  );
+  const filename = filenameMatch?.[1] ?? filenameMatch?.[2];
+
+  if (!filename) {
+    return fallback;
+  }
+
+  return filename.trim();
+};
+
 export const ibRequestsApi = {
   overview: (token: string) =>
     apiCall<IbRequestStatusResponse>(`/user/ib-requests/status`, {
@@ -878,6 +914,105 @@ export const ibRequestsApi = {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     });
+  },
+
+  exportClients: async (token: string, params?: { search?: string; from_date?: string | null; to_date?: string | null }) => {
+    if (!token) {
+      throw new Error("Token is required to export clients");
+    }
+
+    if (!API_BASE_URL) {
+      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    }
+
+    const queryParams = new URLSearchParams();
+    if (params?.search) queryParams.append("search", params.search);
+    if (params?.from_date) queryParams.append("from_date", params.from_date);
+    if (params?.to_date) queryParams.append("to_date", params.to_date);
+
+    const queryString = queryParams.toString();
+    const endpoint = `/user/ib-client-summary/clients/export${queryString ? `?${queryString}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (handle401Redirect(response, !!token)) {
+      return { blob: new Blob(), filename: "" };
+    }
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message:
+          (payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string"
+            ? payload.message
+            : null) || `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+
+    const blob = await response.blob();
+    return {
+      blob,
+      filename: parseContentDispositionFilename(
+        response.headers.get("content-disposition"),
+        "ib_direct_clients.xlsx",
+      ),
+    };
+  },
+
+  exportSubIbs: async (token: string, params?: { search?: string; level?: number | null; from_date?: string | null; to_date?: string | null }) => {
+    if (!token) {
+      throw new Error("Token is required to export sub-IBs");
+    }
+
+    if (!API_BASE_URL) {
+      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    }
+
+    const queryParams = new URLSearchParams();
+    if (params?.search) queryParams.append("search", params.search);
+    if (params?.level) queryParams.append("level", String(params.level));
+    if (params?.from_date) queryParams.append("from_date", params.from_date);
+    if (params?.to_date) queryParams.append("to_date", params.to_date);
+
+    const queryString = queryParams.toString();
+    const endpoint = `/user/ib-client-summary/sub-ibs/export${queryString ? `?${queryString}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (handle401Redirect(response, !!token)) {
+      return { blob: new Blob(), filename: "" };
+    }
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message:
+          (payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string"
+            ? payload.message
+            : null) || `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+
+    const blob = await response.blob();
+    return {
+      blob,
+      filename: parseContentDispositionFilename(
+        response.headers.get("content-disposition"),
+        "ib_sub_ibs.xlsx",
+      ),
+    };
   },
 
   getRebates: (token: string, params?: { page?: number; limit?: number; search?: string; from_date?: string | null; to_date?: string | null; sort_by?: string | null; sort_order?: string | null }) => {

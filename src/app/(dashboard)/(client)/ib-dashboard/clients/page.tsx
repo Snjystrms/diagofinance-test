@@ -12,11 +12,13 @@ import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
 import {
   ArrowLeftRight,
   DollarSign,
+  Download,
   RefreshCw,
   Search,
   Users,
 } from "lucide-react";
 import { format, parse, startOfMonth } from "date-fns";
+import toast from "react-hot-toast";
 
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import {
@@ -44,6 +46,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useAuth } from "@/contexts/auth-context";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { ibRequestsApi } from "@/lib/api";
 import { formatCurrency } from "@/lib/format";
 
@@ -601,6 +604,8 @@ export default function IbClientsPage() {
   const [clientsSearch, setClientsSearch] = useState({ query: "", input: "" });
   const [subIbsSearch, setSubIbsSearch] = useState({ query: "", input: "" });
   const [rebatesSearch, setRebatesSearch] = useState({ query: "", input: "" });
+  const [exportingClients, setExportingClients] = useState(false);
+  const [exportingSubIbs, setExportingSubIbs] = useState(false);
 
   // ── Clients state ──
   const [clients, setClients] = useState<ClientRow[]>([]);
@@ -779,6 +784,97 @@ export default function IbClientsPage() {
     else void fetchRebates();
   }, [activeTab, fetchClients, fetchSubIbs, fetchRebates]);
 
+  const handleExportClients = useCallback(async () => {
+    if (!token) {
+      toast.error("Authentication required to export data");
+      return;
+    }
+
+    const exportToastId = "clients-export";
+    try {
+      setExportingClients(true);
+      toast.loading("Preparing export...", { id: exportToastId });
+
+      const { blob, filename } = await ibRequestsApi.exportClients(token, {
+        search: clientsSearch.query || undefined,
+        from_date: fromDate || undefined,
+        to_date: toDate || undefined,
+      });
+
+      if (!blob.size) {
+        toast.error("No data returned for export", { id: exportToastId });
+        return;
+      }
+
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename || "ib_direct_clients.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
+
+      toast.success(`Downloaded ${filename || "ib_direct_clients.xlsx"}`, { id: exportToastId });
+    } catch (error) {
+      console.error("Failed to export clients:", error);
+      toast.error(
+        error instanceof Error && error.message
+          ? error.message
+          : getAdminFriendlyErrorMessage(error, { resource: "clients", action: "export" }),
+        { id: exportToastId },
+      );
+    } finally {
+      setExportingClients(false);
+    }
+  }, [token, clientsSearch.query, fromDate, toDate]);
+
+  const handleExportSubIbs = useCallback(async () => {
+    if (!token) {
+      toast.error("Authentication required to export data");
+      return;
+    }
+
+    const exportToastId = "sub-ibs-export";
+    try {
+      setExportingSubIbs(true);
+      toast.loading("Preparing export...", { id: exportToastId });
+
+      const { blob, filename } = await ibRequestsApi.exportSubIbs(token, {
+        search: subIbsSearch.query || undefined,
+        level: levelFilter || undefined,
+        from_date: fromDate || undefined,
+        to_date: toDate || undefined,
+      });
+
+      if (!blob.size) {
+        toast.error("No data returned for export", { id: exportToastId });
+        return;
+      }
+
+      const downloadUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename || "ib_sub_ibs.xlsx";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(downloadUrl);
+
+      toast.success(`Downloaded ${filename || "ib_sub_ibs.xlsx"}`, { id: exportToastId });
+    } catch (error) {
+      console.error("Failed to export sub-IBs:", error);
+      toast.error(
+        error instanceof Error && error.message
+          ? error.message
+          : getAdminFriendlyErrorMessage(error, { resource: "sub IBs", action: "export" }),
+        { id: exportToastId },
+      );
+    } finally {
+      setExportingSubIbs(false);
+    }
+  }, [token, subIbsSearch.query, levelFilter, fromDate, toDate]);
+
   const isLoading = clientsLoading || subIbsLoading || rebatesLoading;
   const currentPagination =
     activeTab === "clients"
@@ -929,6 +1025,16 @@ export default function IbClientsPage() {
                     setToDate(date ? format(date, "yyyy-MM-dd") : null);
                   }}
                 />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void handleExportClients()}
+                  disabled={exportingClients || clientsLoading}
+                  className="h-9"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  {exportingClients ? "Exporting..." : "Export"}
+                </Button>
                 {(fromDate || toDate) && (
                   <Button
                     variant="ghost"
@@ -1025,6 +1131,16 @@ export default function IbClientsPage() {
                     setToDate(date ? format(date, "yyyy-MM-dd") : null);
                   }}
                 />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void handleExportSubIbs()}
+                  disabled={exportingSubIbs || subIbsLoading}
+                  className="h-9"
+                >
+                  <Download className="mr-2 h-4 w-4" />
+                  {exportingSubIbs ? "Exporting..." : "Export"}
+                </Button>
                 {(fromDate || toDate || levelFilter) && (
                   <Button
                     variant="ghost"
