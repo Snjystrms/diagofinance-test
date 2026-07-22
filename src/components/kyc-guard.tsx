@@ -15,12 +15,12 @@ const KYC_APPROVED_STATUSES = ["approved", "verified", "full-verified"];
 
 function isKyCApproved(verificationStatus: {
   personal_information?: { status?: string };
-  legal_information?: { status?: string };
+  // legal_information?: { status?: string };
   documents_verification?: { status?: string };
 }): boolean {
   return (
     verificationStatus.personal_information?.status === "completed" &&
-    verificationStatus.legal_information?.status === "completed" &&
+    // verificationStatus.legal_information?.status === "completed" &&
     verificationStatus.documents_verification?.status === "completed"
   );
 }
@@ -32,7 +32,7 @@ export function KyCGuard({ children }: KyCGuardProps) {
   const [showDialog, setShowDialog] = useState(false);
   const [incompleteSections, setIncompleteSections] = useState<
     Array<{
-      key: "personal_information" | "legal_information" | "documents_verification";
+      key: "personal_information" | "documents_verification";
       title: string;
       message: string;
       route: string;
@@ -59,7 +59,7 @@ export function KyCGuard({ children }: KyCGuardProps) {
             setIncompleteSections([]);
           } else {
             const incomplete: Array<{
-              key: "personal_information" | "legal_information" | "documents_verification";
+              key: "personal_information" | "documents_verification";
               title: string;
               message: string;
               route: string;
@@ -75,16 +75,16 @@ export function KyCGuard({ children }: KyCGuardProps) {
                 route: "/profile/view_profile#personal",
               });
             }
-            if (verificationStatus.legal_information?.status !== "completed") {
-              incomplete.push({
-                key: "legal_information",
-                title: "Legal Information",
-                message:
-                  verificationStatus.legal_information?.message ||
-                  "Please complete your legal information to continue.",
-                route: "/profile/view_profile#account",
-              });
-            }
+            // if (verificationStatus.legal_information?.status !== "completed") {
+            //   incomplete.push({
+            //     key: "legal_information",
+            //     title: "Legal Information",
+            //     message:
+            //       verificationStatus.legal_information?.message ||
+            //       "Please complete your legal information to continue.",
+            //     route: "/profile/view_profile#account",
+            //   });
+            // }
             if (verificationStatus.documents_verification?.status !== "completed") {
               incomplete.push({
                 key: "documents_verification",
@@ -132,8 +132,6 @@ export function KyCGuard({ children }: KyCGuardProps) {
           icon:
             section.key === "personal_information" ? (
               <Settings className="h-5 w-5 text-orange-600" />
-            ) : section.key === "legal_information" ? (
-              <Scale className="h-5 w-5 text-orange-600" />
             ) : (
               <FileText className="h-5 w-5 text-orange-600" />
             ),

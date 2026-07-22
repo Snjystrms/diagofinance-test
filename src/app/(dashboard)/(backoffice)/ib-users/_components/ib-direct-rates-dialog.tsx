@@ -5,7 +5,12 @@ import toast from "react-hot-toast";
 import { Landmark, Pencil, RefreshCw } from "lucide-react";
 
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
-import { adminAccountTypesApi, API_BASE_URL, type AdminIbUser, type AccountTypeItem } from "@/lib/api";
+import {
+  adminAccountTypesApi,
+  API_BASE_URL,
+  type AdminIbUser,
+  type AccountTypeItem,
+} from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
 
 import { Badge } from "@/components/ui/badge";
@@ -61,7 +66,8 @@ export function IbDirectRatesDialog({
   const [loading, setLoading] = useState(false);
   const [loadError, setLoadError] = useState<unknown | null>(null);
   const [accountTypes, setAccountTypes] = useState<AccountTypeItem[]>([]);
-  const [selectedAccountTypeId, setSelectedAccountTypeId] = useState<string>("");
+  const [selectedAccountTypeId, setSelectedAccountTypeId] =
+    useState<string>("");
   const [directRateValue, setDirectRateValue] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [editingRate, setEditingRate] = useState<DirectRate | null>(null);
@@ -69,7 +75,10 @@ export function IbDirectRatesDialog({
   const loadAccountTypes = useCallback(async () => {
     if (!token) return;
     try {
-      const response = await adminAccountTypesApi.list({ token, status: "true" });
+      const response = await adminAccountTypesApi.list({
+        token,
+        status: "true",
+      });
       const items = response?.data?.accountTypes ?? [];
       setAccountTypes(items);
     } catch {
@@ -199,19 +208,21 @@ export function IbDirectRatesDialog({
       };
 
       if (!response.ok || !payload.success) {
-        throw new Error(payload.message || "Failed to update rate");
+        const errorMessage = payload.message || "Failed to update rate";
+        throw new Error(errorMessage);
       }
 
       toast.success(payload.message || "Rate updated successfully");
       handleCancelEdit();
       void loadRates();
     } catch (error) {
-      toast.error(
-        getAdminFriendlyErrorMessage(error, {
-          resource: "direct rate",
-          action: "update",
-        }),
-      );
+      const fallbackMessage = getAdminFriendlyErrorMessage(error, {
+        resource: "direct rate",
+        action: "update",
+      });
+      const message = error instanceof Error && error.message ? error.message : fallbackMessage;
+
+      toast.error(message);
     } finally {
       setSaving(false);
     }
@@ -291,7 +302,7 @@ export function IbDirectRatesDialog({
                   min="0"
                   className="h-9"
                   placeholder="Enter rate"
-                  value={directRateValue} 
+                  value={directRateValue}
                   onChange={(e) => setDirectRateValue(e.target.value)}
                 />
               </div>
@@ -300,7 +311,9 @@ export function IbDirectRatesDialog({
                   size="sm"
                   className="h-9"
                   onClick={() => void handleSave()}
-                  disabled={saving || !selectedAccountTypeId || !directRateValue}
+                  disabled={
+                    saving || !selectedAccountTypeId || !directRateValue
+                  }
                 >
                   {saving ? <Spinner className="mr-1 h-3 w-3" /> : null}
                   {editingRate ? "Update" : "Assign"}
@@ -366,8 +379,12 @@ export function IbDirectRatesDialog({
                       <td className="p-3 font-medium">
                         {rate.account_type_name || "-"}
                       </td>
-                      <td className="p-3 text-right">{rate.direct_rate ?? "-"}</td>
-                      <td className="p-3 text-right">{rate.parent_direct_rate ?? "-"}</td>
+                      <td className="p-3 text-right">
+                        {rate.direct_rate ?? "-"}
+                      </td>
+                      <td className="p-3 text-right">
+                        {rate.parent_direct_rate ?? "-"}
+                      </td>
                       <td className="p-3 text-center">
                         {getStatusBadge(rate.status)}
                       </td>
