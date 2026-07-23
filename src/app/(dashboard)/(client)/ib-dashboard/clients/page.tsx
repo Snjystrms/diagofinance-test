@@ -815,13 +815,18 @@ export default function IbClientsPage() {
       link.remove();
       URL.revokeObjectURL(downloadUrl);
 
-      toast.success(`Downloaded ${filename || "ib_direct_clients.xlsx"}`, { id: exportToastId });
+      toast.success(`Downloaded ${filename || "ib_direct_clients.xlsx"}`, {
+        id: exportToastId,
+      });
     } catch (error) {
       console.error("Failed to export clients:", error);
       toast.error(
         error instanceof Error && error.message
           ? error.message
-          : getAdminFriendlyErrorMessage(error, { resource: "clients", action: "export" }),
+          : getAdminFriendlyErrorMessage(error, {
+              resource: "clients",
+              action: "export",
+            }),
         { id: exportToastId },
       );
     } finally {
@@ -861,13 +866,18 @@ export default function IbClientsPage() {
       link.remove();
       URL.revokeObjectURL(downloadUrl);
 
-      toast.success(`Downloaded ${filename || "ib_sub_ibs.xlsx"}`, { id: exportToastId });
+      toast.success(`Downloaded ${filename || "ib_sub_ibs.xlsx"}`, {
+        id: exportToastId,
+      });
     } catch (error) {
       console.error("Failed to export sub-IBs:", error);
       toast.error(
         error instanceof Error && error.message
           ? error.message
-          : getAdminFriendlyErrorMessage(error, { resource: "sub IBs", action: "export" }),
+          : getAdminFriendlyErrorMessage(error, {
+              resource: "sub IBs",
+              action: "export",
+            }),
         { id: exportToastId },
       );
     } finally {

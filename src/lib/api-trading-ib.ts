@@ -273,7 +273,10 @@ export const userMT5AccountsApi = {
     }
     return apiCall<UserMT5AccountCreateData>(`/user/mt5-account`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(body),
     });
   },
@@ -293,7 +296,10 @@ export const userMT5AccountsApi = {
   demoDeposit: (data: UserMT5DemoDepositRequest, token: string) =>
     apiCall<UserMT5DemoDepositData>(`/user/mt5/demo-deposit`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     }),
 
@@ -301,27 +307,36 @@ export const userMT5AccountsApi = {
     id: string | number,
     data: UserMT5PasswordResetRequest,
     token: string,
-    length: number = data.new_password.length
+    length: number = data.new_password.length,
   ) =>
-    apiCall<UserMT5MainPasswordResetData>(`/user/mt5-account/${id}/reset-main-password?${buildMt5PasswordResetQuery(length)}`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify(data),
-    }),
+    apiCall<UserMT5MainPasswordResetData>(
+      `/user/mt5-account/${id}/reset-main-password?${buildMt5PasswordResetQuery(length)}`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      },
+    ),
 
   resetInvestorPassword: (
     id: string | number,
     data: UserMT5PasswordResetRequest,
     token: string,
-    length: number = data.new_password.length
+    length: number = data.new_password.length,
   ) =>
     apiCall<UserMT5InvestorPasswordResetData>(
       `/user/mt5-account/${id}/reset-investor-password?${buildMt5PasswordResetQuery(length)}`,
       {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(data),
-      }
+      },
     ),
 
   getTradesHistory: (
@@ -333,9 +348,13 @@ export const userMT5AccountsApi = {
       per_page?: number;
       debug?: number;
     },
-    token: string
+    token: string,
   ) => {
-    if (params.login === undefined || params.login === null || `${params.login}`.trim() === "") {
+    if (
+      params.login === undefined ||
+      params.login === null ||
+      `${params.login}`.trim() === ""
+    ) {
       throw new Error("MT5 login is required to fetch trades history");
     }
 
@@ -347,22 +366,27 @@ export const userMT5AccountsApi = {
     if (params.per_page) qs.set("per_page", String(params.per_page));
     if (params.debug !== undefined) qs.set("debug", String(params.debug));
 
-    return apiCall<UserMT5TradesHistoryData>(`/user/mt5-account/trades-history?${qs.toString()}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    return apiCall<UserMT5TradesHistoryData>(
+      `/user/mt5-account/trades-history?${qs.toString()}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
   },
 
-  updateLeverage: (
-    id: string | number,
-    leverage: number,
-    token: string
-  ) =>
-    apiCall<{ accountId: number; leverage: number }>(`/user/mt5-account/${id}/leverage`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ leverage }),
-    }),
+  updateLeverage: (id: string | number, leverage: number, token: string) =>
+    apiCall<{ accountId: number; leverage: number }>(
+      `/user/mt5-account/${id}/leverage`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ leverage }),
+      },
+    ),
 };
 
 export interface Mt5SdkPosition {
@@ -449,8 +473,13 @@ export interface Mt5SdkTradeHistoryParams {
   to_dt?: string;
 }
 
-const unwrapDirectOrEnvelope = <T,>(response: ApiResponse<T> | T): T => {
-  if (response && typeof response === "object" && "data" in response && !("items" in response)) {
+const unwrapDirectOrEnvelope = <T>(response: ApiResponse<T> | T): T => {
+  if (
+    response &&
+    typeof response === "object" &&
+    "data" in response &&
+    !("items" in response)
+  ) {
     const data = (response as ApiResponse<T>).data;
     if (data !== undefined) {
       return data;
@@ -474,13 +503,16 @@ export const mt5SdkApi = {
       {
         method: "GET",
         headers: authHeaders(token),
-      }
+      },
     );
 
     return unwrapDirectOrEnvelope<Mt5SdkPositionsResponse>(response);
   },
 
-  getTradeHistory: async ({ login, from_dt, to_dt }: Mt5SdkTradeHistoryParams, token?: string | null) => {
+  getTradeHistory: async (
+    { login, from_dt, to_dt }: Mt5SdkTradeHistoryParams,
+    token?: string | null,
+  ) => {
     if (login === undefined || login === null || `${login}`.trim() === "") {
       throw new Error("MT5 login is required to fetch trade history");
     }
@@ -495,7 +527,7 @@ export const mt5SdkApi = {
       {
         method: "GET",
         headers: authHeaders(token),
-      }
+      },
     );
 
     return unwrapDirectOrEnvelope<Mt5SdkTradeHistoryResponse>(response);
@@ -843,7 +875,10 @@ export const ibRequestsApi = {
   create: (data: CreateIbRequestBody, token: string) =>
     apiCall(`/user/ib-requests`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     }),
 
@@ -856,7 +891,10 @@ export const ibRequestsApi = {
   internalTransfer: (data: IbInternalTransferRequest, token: string) =>
     apiCall(`/user/ib-internal-transfer`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     }),
 
@@ -866,7 +904,10 @@ export const ibRequestsApi = {
       headers: { Authorization: `Bearer ${token}` },
     }),
 
-  getIbWalletTransactions: (token: string, params?: { page?: number; limit?: number }) => {
+  getIbWalletTransactions: (
+    token: string,
+    params?: { page?: number; limit?: number },
+  ) => {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", String(params.page));
     if (params?.limit) queryParams.append("limit", String(params.limit));
@@ -879,7 +920,19 @@ export const ibRequestsApi = {
     });
   },
 
-  getSubIbs: (token: string, params?: { page?: number; limit?: number; search?: string; from_date?: string | null; to_date?: string | null; sort_by?: string | null; sort_order?: string | null; level?: number | null; }) => {
+  getSubIbs: (
+    token: string,
+    params?: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      from_date?: string | null;
+      to_date?: string | null;
+      sort_by?: string | null;
+      sort_order?: string | null;
+      level?: number | null;
+    },
+  ) => {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", String(params.page));
     if (params?.limit) queryParams.append("limit", String(params.limit));
@@ -898,7 +951,18 @@ export const ibRequestsApi = {
     });
   },
 
-  getClients: (token: string, params?: { page?: number; limit?: number; search?: string; from_date?: string | null; to_date?: string | null; sort_by?: string | null; sort_order?: string | null }) => {
+  getClients: (
+    token: string,
+    params?: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      from_date?: string | null;
+      to_date?: string | null;
+      sort_by?: string | null;
+      sort_order?: string | null;
+    },
+  ) => {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", String(params.page));
     if (params?.limit) queryParams.append("limit", String(params.limit));
@@ -916,7 +980,14 @@ export const ibRequestsApi = {
     });
   },
 
-  exportClients: async (token: string, params?: { search?: string; from_date?: string | null; to_date?: string | null }) => {
+  exportClients: async (
+    token: string,
+    params?: {
+      search?: string;
+      from_date?: string | null;
+      to_date?: string | null;
+    },
+  ) => {
     if (!token) {
       throw new Error("Token is required to export clients");
     }
@@ -945,7 +1016,10 @@ export const ibRequestsApi = {
       const payload = await response.json().catch(() => null);
       throw new ApiRequestError({
         message:
-          (payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string"
+          (payload &&
+          typeof payload === "object" &&
+          "message" in payload &&
+          typeof payload.message === "string"
             ? payload.message
             : null) || `HTTP ${response.status}`,
         status: response.status,
@@ -965,7 +1039,15 @@ export const ibRequestsApi = {
     };
   },
 
-  exportSubIbs: async (token: string, params?: { search?: string; level?: number | null; from_date?: string | null; to_date?: string | null }) => {
+  exportSubIbs: async (
+    token: string,
+    params?: {
+      search?: string;
+      level?: number | null;
+      from_date?: string | null;
+      to_date?: string | null;
+    },
+  ) => {
     if (!token) {
       throw new Error("Token is required to export sub-IBs");
     }
@@ -995,7 +1077,10 @@ export const ibRequestsApi = {
       const payload = await response.json().catch(() => null);
       throw new ApiRequestError({
         message:
-          (payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string"
+          (payload &&
+          typeof payload === "object" &&
+          "message" in payload &&
+          typeof payload.message === "string"
             ? payload.message
             : null) || `HTTP ${response.status}`,
         status: response.status,
@@ -1015,7 +1100,18 @@ export const ibRequestsApi = {
     };
   },
 
-  getRebates: (token: string, params?: { page?: number; limit?: number; search?: string; from_date?: string | null; to_date?: string | null; sort_by?: string | null; sort_order?: string | null }) => {
+  getRebates: (
+    token: string,
+    params?: {
+      page?: number;
+      limit?: number;
+      search?: string;
+      from_date?: string | null;
+      to_date?: string | null;
+      sort_by?: string | null;
+      sort_order?: string | null;
+    },
+  ) => {
     const queryParams = new URLSearchParams();
     if (params?.page) queryParams.append("page", String(params.page));
     if (params?.limit) queryParams.append("limit", String(params.limit));
@@ -1109,7 +1205,13 @@ export type AdminIbRequestListParams = {
 };
 
 export const adminIbRequestsApi = {
-  list: ({ token, status, search, page = 1, perPage = 20 }: AdminIbRequestListParams) => {
+  list: ({
+    token,
+    status,
+    search,
+    page = 1,
+    perPage = 20,
+  }: AdminIbRequestListParams) => {
     if (!token) {
       throw new Error("Token is required to fetch IB requests");
     }
@@ -1134,7 +1236,11 @@ export const adminIbRequestsApi = {
     });
   },
 
-  updateStatus: (id: string | number, body: AdminIbRequestUpdateBody, token: string) => {
+  updateStatus: (
+    id: string | number,
+    body: AdminIbRequestUpdateBody,
+    token: string,
+  ) => {
     if (!token) {
       throw new Error("Token is required to update IB request");
     }
@@ -1145,7 +1251,10 @@ export const adminIbRequestsApi = {
 
     return apiCall(`/admin/ib-requests/${id}`, {
       method: "PUT",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(body),
     });
   },
@@ -1412,7 +1521,12 @@ export interface AdminIbSubIbsResponse {
 }
 
 export const adminIbUsersApi = {
-  list: ({ token, page = 1, per_page = 10, search }: AdminIbUsersListParams) => {
+  list: ({
+    token,
+    page = 1,
+    per_page = 10,
+    search,
+  }: AdminIbUsersListParams) => {
     if (!token) {
       throw new Error("Token is required to fetch IB users");
     }
@@ -1466,7 +1580,10 @@ export const adminIbUsersApi = {
       `/admin/ib-management/ib-users/${userId}/plan`,
       {
         method: "PATCH",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(body),
       },
     );
@@ -1486,7 +1603,10 @@ export const adminIbUsersApi = {
     if (!token) throw new Error("Token is required to fetch IB wallet");
     if (id === null || id === undefined || `${id}`.trim() === "")
       throw new Error("IB user ID is required");
-    const qs = new URLSearchParams({ page: String(page), per_page: String(perPage) });
+    const qs = new URLSearchParams({
+      page: String(page),
+      per_page: String(perPage),
+    });
     return apiCall<AdminIbWalletData>(
       `/admin/ib-management/ib-users/${encodeURIComponent(String(id))}/wallet?${qs.toString()}`,
       { method: "GET", headers: { Authorization: `Bearer ${token}` } },
@@ -1503,11 +1623,21 @@ export const adminIbUsersApi = {
     );
   },
 
-  clients: (id: number | string, token: string, page = 1, perPage = 20, dateFrom?: string, dateTo?: string) => {
+  clients: (
+    id: number | string,
+    token: string,
+    page = 1,
+    perPage = 20,
+    dateFrom?: string,
+    dateTo?: string,
+  ) => {
     if (!token) throw new Error("Token is required to fetch IB clients");
     if (id === null || id === undefined || `${id}`.trim() === "")
       throw new Error("IB user ID is required");
-    const qs = new URLSearchParams({ page: String(page), per_page: String(perPage) });
+    const qs = new URLSearchParams({
+      page: String(page),
+      per_page: String(perPage),
+    });
     if (dateFrom) qs.append("date_from", dateFrom);
     if (dateTo) qs.append("date_to", dateTo);
     return apiCall<AdminIbClientsResponse>(
@@ -1516,11 +1646,21 @@ export const adminIbUsersApi = {
     );
   },
 
-  subIbs: (id: number | string, token: string, page = 1, perPage = 20, dateFrom?: string, dateTo?: string) => {
+  subIbs: (
+    id: number | string,
+    token: string,
+    page = 1,
+    perPage = 20,
+    dateFrom?: string,
+    dateTo?: string,
+  ) => {
     if (!token) throw new Error("Token is required to fetch IB sub-IBs");
     if (id === null || id === undefined || `${id}`.trim() === "")
       throw new Error("IB user ID is required");
-    const qs = new URLSearchParams({ page: String(page), per_page: String(perPage) });
+    const qs = new URLSearchParams({
+      page: String(page),
+      per_page: String(perPage),
+    });
     if (dateFrom) qs.append("date_from", dateFrom);
     if (dateTo) qs.append("date_to", dateTo);
     return apiCall<AdminIbSubIbsResponse>(
@@ -1600,8 +1740,14 @@ export const adminIbCommissionReportApi = {
     if (!token) {
       throw new Error("Token is required to fetch IB commission level report");
     }
-    if (user_id === null || user_id === undefined || `${user_id}`.trim() === "") {
-      throw new Error("User ID is required to fetch IB commission level report");
+    if (
+      user_id === null ||
+      user_id === undefined ||
+      `${user_id}`.trim() === ""
+    ) {
+      throw new Error(
+        "User ID is required to fetch IB commission level report",
+      );
     }
 
     const qs = new URLSearchParams();
@@ -1609,7 +1755,7 @@ export const adminIbCommissionReportApi = {
     if (date_to) qs.set("date_to", date_to);
 
     const endpoint = `/admin/ib-management/commission-level-report/${encodeURIComponent(
-      String(user_id)
+      String(user_id),
     )}${qs.toString() ? `?${qs.toString()}` : ""}`;
 
     return apiCall<IbCommissionReportPayload>(endpoint, {
@@ -1680,7 +1826,11 @@ export const adminIbUserCommissionsApi = {
     });
   },
 
-  updateUserCommissions: (userId: string | number, body: UserCommissionUpdateBody, token: string) => {
+  updateUserCommissions: (
+    userId: string | number,
+    body: UserCommissionUpdateBody,
+    token: string,
+  ) => {
     if (!token) {
       throw new Error("Token is required to update user commissions");
     }
@@ -1701,7 +1851,11 @@ export const adminIbUserCommissionsApi = {
     });
   },
 
-  patchUserCommission: (userId: string | number, commission: UserCommission, token: string) => {
+  patchUserCommission: (
+    userId: string | number,
+    commission: UserCommission,
+    token: string,
+  ) => {
     if (!token) {
       throw new Error("Token is required to update user commission");
     }
@@ -1746,13 +1900,16 @@ export const adminMT5RequestApi = {
       {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
-      }
+      },
     ),
 
   process: (data: AdminMT5RequestProcessRequest, token: string) =>
     apiCall(`/admin/mt5-request/process`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(data),
     }),
 };
@@ -1808,16 +1965,22 @@ export interface BrokerCryptoWalletUpdateBody {
 
 export const adminBrokerCryptoWalletsApi = {
   list: (token: string) =>
-    apiCall<BrokerCryptoWalletsListResponse["data"]>(`/admin/broker-crypto-wallets`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+    apiCall<BrokerCryptoWalletsListResponse["data"]>(
+      `/admin/broker-crypto-wallets`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
 
   getById: (id: string | number, token: string) =>
-    apiCall<BrokerCryptoWalletResponse["data"]>(`/admin/broker-crypto-wallets/${id}`, {
-      method: "GET",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+    apiCall<BrokerCryptoWalletResponse["data"]>(
+      `/admin/broker-crypto-wallets/${id}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
 
   create: (data: BrokerCryptoWalletCreateBody, token: string) => {
     const formData = new FormData();
@@ -1826,7 +1989,8 @@ export const adminBrokerCryptoWalletsApi = {
     formData.append("wallet_address", data.wallet_address);
     formData.append("wallet_screenshot", data.wallet_screenshot);
     if (data.label !== undefined) formData.append("label", data.label ?? "");
-    if (data.is_active !== undefined) formData.append("is_active", String(data.is_active));
+    if (data.is_active !== undefined)
+      formData.append("is_active", String(data.is_active));
 
     return apiCall<BrokerCryptoWalletResponse>(`/admin/broker-crypto-wallets`, {
       method: "POST",
@@ -1835,27 +1999,39 @@ export const adminBrokerCryptoWalletsApi = {
     });
   },
 
-  update: (id: string | number, data: BrokerCryptoWalletUpdateBody, token: string) => {
+  update: (
+    id: string | number,
+    data: BrokerCryptoWalletUpdateBody,
+    token: string,
+  ) => {
     const formData = new FormData();
     formData.append("network", data.network);
     formData.append("currency", data.currency);
     formData.append("wallet_address", data.wallet_address);
-    if (data.wallet_screenshot) formData.append("wallet_screenshot", data.wallet_screenshot);
+    if (data.wallet_screenshot)
+      formData.append("wallet_screenshot", data.wallet_screenshot);
     if (data.label !== undefined) formData.append("label", data.label ?? "");
-    if (data.is_active !== undefined) formData.append("is_active", String(data.is_active));
+    if (data.is_active !== undefined)
+      formData.append("is_active", String(data.is_active));
 
-    return apiCall<BrokerCryptoWalletResponse>(`/admin/broker-crypto-wallets/${id}`, {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    });
+    return apiCall<BrokerCryptoWalletResponse>(
+      `/admin/broker-crypto-wallets/${id}`,
+      {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      },
+    );
   },
 
   delete: (id: string | number, token: string) =>
-    apiCall<{ success: boolean; message: string }>(`/admin/broker-crypto-wallets/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    }),
+    apiCall<{ success: boolean; message: string }>(
+      `/admin/broker-crypto-wallets/${id}`,
+      {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
 };
 
 export interface MT5Account {
@@ -2082,28 +2258,39 @@ export const adminMT5AccountsApi = {
     qs.set("limit", String(limit));
 
     if (search && search.trim()) qs.set("search", search.trim());
-    if (status !== undefined && status !== null && `${status}` !== "") qs.set("status", String(status));
-    if (account_mode !== undefined && account_mode !== null && `${account_mode}` !== "") {
+    if (status !== undefined && status !== null && `${status}` !== "")
+      qs.set("status", String(status));
+    if (
+      account_mode !== undefined &&
+      account_mode !== null &&
+      `${account_mode}` !== ""
+    ) {
       qs.set("account_mode", String(account_mode));
     }
-    if (user_id !== undefined && user_id !== null && `${user_id}` !== "") qs.set("user_id", String(user_id));
-    if (group_id !== undefined && group_id !== null && `${group_id}` !== "") qs.set("group_id", String(group_id));
-    if (manager_id !== undefined && manager_id !== null && `${manager_id}` !== "") {
+    if (user_id !== undefined && user_id !== null && `${user_id}` !== "")
+      qs.set("user_id", String(user_id));
+    if (group_id !== undefined && group_id !== null && `${group_id}` !== "")
+      qs.set("group_id", String(group_id));
+    if (
+      manager_id !== undefined &&
+      manager_id !== null &&
+      `${manager_id}` !== ""
+    ) {
       qs.set("manager_id", String(manager_id));
     }
-    
+
     if (sort_by) {
       qs.set("sort_by", sort_by);
     }
-    
+
     if (sort_order) {
       qs.set("sort_order", sort_order);
     }
-    
+
     if (date_from) {
       qs.set("date_from", date_from);
     }
-    
+
     if (date_to) {
       qs.set("date_to", date_to);
     }
@@ -2122,7 +2309,9 @@ export const adminMT5AccountsApi = {
     }
 
     return apiCall<{
-      data?: AdminMT5Account | { mt5_account?: AdminMT5Account; account?: AdminMT5Account };
+      data?:
+        | AdminMT5Account
+        | { mt5_account?: AdminMT5Account; account?: AdminMT5Account };
       account?: AdminMT5Account;
       mt5_account?: AdminMT5Account;
     }>(`/admin/mt5-accounts/${id}`, {
@@ -2131,16 +2320,23 @@ export const adminMT5AccountsApi = {
     });
   },
 
-  update: (id: string | number, data: UpdateMT5AccountRequest, token: string) => {
+  update: (
+    id: string | number,
+    data: UpdateMT5AccountRequest,
+    token: string,
+  ) => {
     if (!token) {
       throw new Error("Token is required to update MT5 account");
     }
 
-    return apiCall<{ data?: AdminMT5Account; account?: AdminMT5Account }>(`/admin/mt5-accounts/${id}`, {
-      method: "PUT",
-      headers: { Authorization: `Bearer ${token}` },
-      body: JSON.stringify(data),
-    });
+    return apiCall<{ data?: AdminMT5Account; account?: AdminMT5Account }>(
+      `/admin/mt5-accounts/${id}`,
+      {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+        body: JSON.stringify(data),
+      },
+    );
   },
 
   delete: (id: string | number, token: string) => {
@@ -2148,10 +2344,13 @@ export const adminMT5AccountsApi = {
       throw new Error("Token is required to delete MT5 account");
     }
 
-    return apiCall<{ success: boolean; message: string }>(`/admin/mt5-accounts/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    return apiCall<{ success: boolean; message: string }>(
+      `/admin/mt5-accounts/${id}`,
+      {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
   },
 
   create: (data: CreateMT5AccountRequest, token: string) => {
@@ -2173,9 +2372,17 @@ export const adminMT5AccountsApi = {
       body.balance = data.balance;
     }
 
-    return apiCall<{ success?: boolean; message?: string; data?: AdminMT5Account; account?: AdminMT5Account }>(`/admin/mt5-accounts`, {
+    return apiCall<{
+      success?: boolean;
+      message?: string;
+      data?: AdminMT5Account;
+      account?: AdminMT5Account;
+    }>(`/admin/mt5-accounts`, {
       method: "POST",
-      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify(body),
     });
   },
@@ -2192,7 +2399,10 @@ export const adminMT5AccountsApi = {
       `/admin/mt5-accounts/${mt5Id}/resend-credentials-email`,
       {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({}),
       },
     );

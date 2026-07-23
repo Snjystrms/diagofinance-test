@@ -220,7 +220,10 @@ export function IbDirectRatesDialog({
         resource: "direct rate",
         action: "update",
       });
-      const message = error instanceof Error && error.message ? error.message : fallbackMessage;
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : fallbackMessage;
 
       toast.error(message);
     } finally {

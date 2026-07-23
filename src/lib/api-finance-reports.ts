@@ -2544,3 +2544,73 @@ export const adminIbUsersReportApi = {
   },
 };
 
+export interface AuditLogItem {
+  id: number;
+  actor_type: string;
+  actor_id: string;
+  actor_email: string;
+  action: string;
+  entity: string;
+  entity_id: string;
+  description: string;
+  ip_address: string;
+  created_at: string;
+}
+
+export interface AuditLogsResponse {
+  data: AuditLogItem[];
+  total: number;
+  per_page: number;
+  current_page: number;
+  last_page: number;
+}
+
+export interface AuditLogsParams {
+  token: string;
+  page?: number;
+  per_page?: number;
+  actor_type?: string | null;
+  entity?: string | null;
+  action?: string | null;
+  actor_id?: string | null;
+  from_date?: string | null;
+  to_date?: string | null;
+  search?: string | null;
+}
+
+export const adminAuditLogsApi = {
+  list: (params: AuditLogsParams) => {
+    const { token, ...queryParams } = params;
+    if (!token) {
+      throw new Error("Token is required to fetch audit logs");
+    }
+
+    const qs = new URLSearchParams();
+    if (queryParams.page) qs.set("page", String(queryParams.page));
+    if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
+    if (queryParams.actor_type) qs.set("actor_type", queryParams.actor_type);
+    if (queryParams.entity) qs.set("entity", queryParams.entity);
+    if (queryParams.action) qs.set("action", queryParams.action);
+    if (queryParams.actor_id) qs.set("actor_id", queryParams.actor_id);
+    if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
+    if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
+    if (queryParams.search) qs.set("search", queryParams.search);
+
+    const endpoint = `/admin/activity-logs/audit-logs?${qs.toString()}`;
+
+    return apiCall<AuditLogsResponse>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+  entities: (token: string) => {
+    if (!token) {
+      throw new Error("Token is required to fetch audit logs entities");
+    }
+    return apiCall<string[]>("/admin/activity-logs/audit-logs/entities", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
+

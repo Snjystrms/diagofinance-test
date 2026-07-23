@@ -339,6 +339,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
       "Deposit Crypto Details",
       "Setting Management",
       "PSP Setting",
+      "Audit Logs",
       "Currency Management",
     ],
   },
@@ -842,6 +843,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "settings",
     navLabel: "PSP Setting",
     managerCategories: ["Settings", "PSP Setting", "Setting Management"],
+  },
+   {
+    path: "/audit-logs",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "settings",
+    navLabel: "Audit Logs",
+    managerCategories: ["Settings", "Audit Logs", "Setting Management"],
   },
     {
     path: "/currency-management",
