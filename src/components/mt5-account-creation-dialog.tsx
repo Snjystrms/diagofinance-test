@@ -1,10 +1,6 @@
 "use client";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, TrendingUp, BarChart2, Globe2, Zap } from "lucide-react";
 
@@ -35,14 +31,14 @@ const FEATURES = [
 
 // Subtle animated candlestick bars for the header decoration
 const CANDLES = [
-  { x: 6,  bodyH: 22, bodyY: 14, wickT: 8,  wickB: 40, bull: true  },
+  { x: 6, bodyH: 22, bodyY: 14, wickT: 8, wickB: 40, bull: true },
   { x: 18, bodyH: 14, bodyY: 22, wickT: 16, wickB: 40, bull: false },
-  { x: 30, bodyH: 28, bodyY: 8,  wickT: 4,  wickB: 40, bull: true  },
+  { x: 30, bodyH: 28, bodyY: 8, wickT: 4, wickB: 40, bull: true },
   { x: 42, bodyH: 10, bodyY: 26, wickT: 20, wickB: 40, bull: false },
-  { x: 54, bodyH: 20, bodyY: 12, wickT: 6,  wickB: 36, bull: true  },
-  { x: 66, bodyH: 32, bodyY: 4,  wickT: 2,  wickB: 40, bull: true  },
+  { x: 54, bodyH: 20, bodyY: 12, wickT: 6, wickB: 36, bull: true },
+  { x: 66, bodyH: 32, bodyY: 4, wickT: 2, wickB: 40, bull: true },
   { x: 78, bodyH: 12, bodyY: 20, wickT: 14, wickB: 36, bull: false },
-  { x: 90, bodyH: 24, bodyY: 10, wickT: 6,  wickB: 38, bull: true  },
+  { x: 90, bodyH: 24, bodyY: 10, wickT: 6, wickB: 38, bull: true },
 ];
 
 export function Mt5AccountCreationDialog({
@@ -64,7 +60,6 @@ export function Mt5AccountCreationDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md p-0 overflow-hidden border-0 shadow-2xl gap-0">
-
         {/* ── Header ── */}
         <div className="relative overflow-hidden bg-[#0B1220] px-6 pt-6 pb-7">
           {/* Candlestick chart decoration */}
@@ -78,21 +73,27 @@ export function Mt5AccountCreationDialog({
               <g key={i}>
                 {/* Wick */}
                 <line
-                  x1={c.x + 4} y1={c.wickT}
-                  x2={c.x + 4} y2={c.bodyY}
+                  x1={c.x + 4}
+                  y1={c.wickT}
+                  x2={c.x + 4}
+                  y2={c.bodyY}
                   stroke={c.bull ? "#FFB401" : "#ef4444"}
                   strokeWidth="0.8"
                 />
                 <line
-                  x1={c.x + 4} y1={c.bodyY + c.bodyH}
-                  x2={c.x + 4} y2={c.wickB}
+                  x1={c.x + 4}
+                  y1={c.bodyY + c.bodyH}
+                  x2={c.x + 4}
+                  y2={c.wickB}
                   stroke={c.bull ? "#FFB401" : "#ef4444"}
                   strokeWidth="0.8"
                 />
                 {/* Body */}
                 <rect
-                  x={c.x} y={c.bodyY}
-                  width={8} height={c.bodyH}
+                  x={c.x}
+                  y={c.bodyY}
+                  width={8}
+                  height={c.bodyH}
                   rx="1"
                   fill={c.bull ? "#FFB401" : "#ef4444"}
                 />
@@ -114,9 +115,13 @@ export function Mt5AccountCreationDialog({
 
             <div>
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[10px] font-bold tracking-[0.18em] uppercase text-[#FFB401]">MetaTrader 5</span>
+                <span className="text-[10px] font-bold tracking-[0.18em] uppercase text-[#FFB401]">
+                  MetaTrader 5
+                </span>
                 <span className="w-1 h-1 rounded-full bg-[#FFB401]/40" />
-                <span className="text-[10px] tracking-widest uppercase text-white/35">Vinnexia Capital</span>
+                <span className="text-[10px] tracking-widest uppercase text-white/35">
+                  Diago Finance
+                </span>
               </div>
               <h2 className="text-xl font-bold text-white tracking-tight leading-tight">
                 Open Your Trading Account
@@ -140,7 +145,9 @@ export function Mt5AccountCreationDialog({
                 <Icon className="h-4 w-4 text-[#FFB401]" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground leading-none mb-0.5">{label}</p>
+                <p className="text-sm font-semibold text-foreground leading-none mb-0.5">
+                  {label}
+                </p>
                 <p className="text-xs text-muted-foreground">{desc}</p>
               </div>
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -152,8 +159,11 @@ export function Mt5AccountCreationDialog({
             <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-[#FFB401]/5 to-transparent pointer-events-none" />
             <p className="text-xs text-muted-foreground leading-relaxed">
               Your MT5 account gives you access to{" "}
-              <span className="text-foreground font-medium">1000+ instruments</span>,
-              real-time data, and one-click execution — all within the vinnexia platform.
+              <span className="text-foreground font-medium">
+                1000+ instruments
+              </span>
+              , real-time data, and one-click execution — all within the
+              vinnexia platform.
             </p>
           </div>
         </div>

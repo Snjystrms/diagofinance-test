@@ -1147,6 +1147,76 @@ const themeSwatches: ThemeSwatch[] = [
     }
   }
 }
+,{
+  id: "diagofinance-bright",
+  name: "Diagofinance Bright",
+
+  leftColor: "#FAFAFA",
+  rightColor: "#F0F0F2",
+
+  cssVariables: {
+    primary: "#EC0808",          // Red — pure accent, pops against neutral base
+    secondary: "#18181B",        // Near-black neutral — not maroon-tinted
+    accent: "#F8C701",           // Gold — hover/highlight
+
+    background: "#FAFAFA",       // Neutral off-white
+    foreground: "#18181B",       // Neutral near-black text
+
+    border: "#E4E4E7",           // Plain neutral grey border
+
+    muted: "#F0F0F2",            // Neutral light grey for cards/sidebar
+    mutedForeground: "#71717A",  // Neutral grey secondary text
+
+    sidebar: {
+      background: "#F0F0F2",
+      foreground: "#18181B",
+
+      primary: "#EC0808",
+      primaryForeground: "#FAFAFA",
+
+      accent: "#F8C701",
+      accentForeground: "#18181B",
+
+      border: "#E4E4E7",
+      ring: "#EC0808"
+    }
+  }
+},
+{
+  id: "diagofinance-dark",
+  name: "Diagofinance Dark",
+
+  leftColor: "#0A0A0B",
+  rightColor: "#18181B",
+
+  cssVariables: {
+    primary: "#EC0808",          // Red — now the dominant accent
+    secondary: "#500101",        // Deep maroon secondary
+    accent: "#BB8700",           // Dark gold — used sparingly, just a small highlight
+
+    background: "#0A0A0B",       // True neutral near-black
+    foreground: "#F4F4F5",       // Neutral near-white text
+
+    border: "#27272A",           // Plain neutral dark grey border
+
+    muted: "#18181B",            // Neutral charcoal for cards/sidebar
+    mutedForeground: "#A1A1AA",  // Neutral grey secondary text
+
+    sidebar: {
+      background: "#0A0A0B",
+      foreground: "#F4F4F5",
+
+      primary: "#EC0808",
+      primaryForeground: "#F4F4F5",
+
+      accent: "#500101",
+      accentForeground: "#F4F4F5",
+
+      border: "#27272A",
+      ring: "#EC0808"
+    }
+  }
+}
 ]
 
 const swatchById = new Map(themeSwatches.map((swatch) => [swatch.id, swatch]))
@@ -1181,6 +1251,7 @@ export const themePairs: ThemePair[] = [
   { id: "tokyo-frost", name: "Tokyo Frost", brightThemeId: "cool", darkThemeId: "tokyo-night" },
   { id: "nord-tundra", name: "Nord Tundra", brightThemeId: "nord-aurora", darkThemeId: "nordic-frost" },
   { id: "solar-abyss", name: "Solar Abyss", brightThemeId: "solar-flare", darkThemeId: "oceanic-abyss" },
+   { id: "diagofinance", name: "Diagofinance", brightThemeId: "diagofinance-bright", darkThemeId: "diagofinance-dark" },
   { id: "synth-graphite", name: "Synth Graphite", brightThemeId: "synthwave-84", darkThemeId: "graphite" },
   { id: "gold-obsidian", name: "Gold Obsidian", brightThemeId: "rose-gold-dark", darkThemeId: "monokai-pro" },
   { id: "golden-bull", name: "Golden Bull", brightThemeId: "golden-bull-bright", darkThemeId: "golden-bull-dark" }

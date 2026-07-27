@@ -1,23 +1,23 @@
-'use client';
+"use client";
 
-import { useEffect } from 'react';
-import Image from 'next/image';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/contexts/auth-context';
-import { useClientCustomization } from '@/contexts/client-customization-context';
+import { useEffect } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth-context";
+import { useClientCustomization } from "@/contexts/client-customization-context";
 
 export function HomeRedirectClient() {
-  const user= useAuth();
+  const user = useAuth();
   const router = useRouter();
   const { themeMode } = useClientCustomization();
 
-  const logoSrc = themeMode === 'bright' ? '/vinnexia-logo.svg' : '/vinnexia-logo-dark.svg';
+  const logoSrc = themeMode === "bright" ? "/diagologo.svg" : "/diagologo.svg";
 
   useEffect(() => {
-    if (user.isAuthenticated ) {
-      router.push('/dashboard');
+    if (user.isAuthenticated) {
+      router.push("/dashboard");
     } else {
-      router.push('/login');
+      router.push("/login");
     }
   }, [user.isAuthenticated, router]);
 
@@ -32,8 +32,12 @@ export function HomeRedirectClient() {
           priority
           className="mx-auto"
         />
-        <p className="mt-4 text-sm font-semibold tracking-[0.01em] text-foreground">Loading</p>
-        <p className="mt-1.5 text-sm leading-6 text-foreground/78">Preparing your Vinnexia workspace.</p>
+        <p className="mt-4 text-sm font-semibold tracking-[0.01em] text-foreground">
+          Loading
+        </p>
+        <p className="mt-1.5 text-sm leading-6 text-foreground/78">
+          Preparing your DiagoFinance workspace.
+        </p>
       </div>
     </div>
   );

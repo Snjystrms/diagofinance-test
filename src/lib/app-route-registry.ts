@@ -28,7 +28,12 @@ import {
 } from "@/lib/manager-permissions";
 import type { NavItem, Permission, UserType } from "@/types/permissions";
 
-export type AppAudience = "shared" | "client" | "backoffice" | "admin" | "manager";
+export type AppAudience =
+  | "shared"
+  | "client"
+  | "backoffice"
+  | "admin"
+  | "manager";
 export type AppRole = UserType;
 
 type SidebarSectionId =
@@ -105,9 +110,9 @@ export const crmData = {
   },
   teams: [
     {
-      name: "Vinnexia Capital",
-      logoBright: "/vinnexia-logo.svg",
-      logoDark: "/vinnexia-logo-dark.svg",
+      name: "Diago Finance",
+      logoBright: "/diagologo.svg",
+      logoDark: "/diagologo.svg",
       plan: "Precision, Power, Performance.",
     },
   ],
@@ -214,7 +219,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     managerCategories: ["IB Management"],
-  }, 
+  },
   // {
   //   id: "ib-plans-management",
   //   title: "Partner Plans Management",
@@ -233,15 +238,15 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     roles: BACKOFFICE_ROLES,
     managerCategories: ["Account Management"],
   },
-//  {
-//     id: "group-management",
-//     title: "Group Management",
-//     url: "/all-groups",
-//     icon: Package,
-//     audience: "backoffice",
-//     roles: BACKOFFICE_ROLES,
-//     managerCategories: ["Group Management"],
-//   },
+  //  {
+  //     id: "group-management",
+  //     title: "Group Management",
+  //     url: "/all-groups",
+  //     icon: Package,
+  //     audience: "backoffice",
+  //     roles: BACKOFFICE_ROLES,
+  //     managerCategories: ["Group Management"],
+  //   },
   //   {
   //   id: "manager-management",
   //   title: "Sub-Admin Management",
@@ -296,7 +301,6 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     roles: BACKOFFICE_ROLES,
     managerCategories: ["E-Mail Management", "Email Management"],
   },
-
 
   // {
   //   id: "marketing-management",
@@ -571,7 +575,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     navLabel: "All Users",
     managerCategories: ["User Management"],
   },
-   {
+  {
     path: "/temp-users",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
@@ -716,7 +720,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "notification",
     navLabel: "All Notifications",
   },
- {
+  {
     path: "/report-management/all-transaction-report",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
@@ -764,7 +768,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   //   navLabel: "Partner Withdrawal Report",
   //   managerCategories: ["Report Management"],
   // },
-   {
+  {
     path: "/report-management/ib-commission-report",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
@@ -844,7 +848,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     navLabel: "PSP Setting",
     managerCategories: ["Settings", "PSP Setting", "Setting Management"],
   },
-   {
+  {
     path: "/audit-logs",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
@@ -852,13 +856,17 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     navLabel: "Audit Logs",
     managerCategories: ["Settings", "Audit Logs", "Setting Management"],
   },
-    {
+  {
     path: "/currency-management",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "settings",
     navLabel: "Currency Management",
-    managerCategories: ["Settings", "Currency Management", "Setting Management"],
+    managerCategories: [
+      "Settings",
+      "Currency Management",
+      "Setting Management",
+    ],
   },
   {
     path: "/bank-details",
@@ -866,15 +874,23 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     roles: BACKOFFICE_ROLES,
     sidebarSection: "settings",
     navLabel: "Deposit Bank Details",
-    managerCategories: ["Settings", "Deposit Bank Details", "Setting Management"],
+    managerCategories: [
+      "Settings",
+      "Deposit Bank Details",
+      "Setting Management",
+    ],
   },
-    {
+  {
     path: "/deposit-crypto-details",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "settings",
     navLabel: "Deposit Crypto Details",
-    managerCategories: ["Settings", "Deposit Crypto Details", "Setting Management"],
+    managerCategories: [
+      "Settings",
+      "Deposit Crypto Details",
+      "Setting Management",
+    ],
   },
   {
     path: "/ib-plans",
@@ -892,7 +908,10 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
   },
 ];
 
-const DEFAULT_ROLE_NAVIGATION: Record<Exclude<AppRole, "manager" | "subadmin">, NavItem[]> = {
+const DEFAULT_ROLE_NAVIGATION: Record<
+  Exclude<AppRole, "manager" | "subadmin">,
+  NavItem[]
+> = {
   admin: buildNavigationForRole("admin"),
   user: buildNavigationForRole("user"),
 };
@@ -905,12 +924,14 @@ function cloneNavItems(items: NavItem[]): NavItem[] {
 }
 
 function matchesPrefix(pathname: string, prefixes: string[]) {
-  return prefixes.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+  return prefixes.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
 }
 
 function isManagerCategoryAllowed(
   categories: Set<string>,
-  requiredCategories?: string[]
+  requiredCategories?: string[],
 ) {
   if (!requiredCategories || requiredCategories.length === 0) {
     return true;
@@ -921,11 +942,13 @@ function isManagerCategoryAllowed(
 
 function getManagerCategorySet(groupedPermissions?: GroupedPermissions[]) {
   return new Set(
-    (groupedPermissions ?? []).map((group) => group.category).filter(Boolean)
+    (groupedPermissions ?? []).map((group) => group.category).filter(Boolean),
   );
 }
 
-function getManagerPermissionNameSet(groupedPermissions?: GroupedPermissions[]) {
+function getManagerPermissionNameSet(
+  groupedPermissions?: GroupedPermissions[],
+) {
   const set = new Set<string>();
   (groupedPermissions ?? []).forEach((group) => {
     (group.permissions ?? []).forEach((permission) => {
@@ -940,7 +963,7 @@ function getManagerPermissionNameSet(groupedPermissions?: GroupedPermissions[]) 
 function hasManagerFeature(
   permissionNames: Set<string>,
   moduleKey: "account-types" | "reportManagement",
-  featureKey: string
+  featureKey: string,
 ) {
   const requiredNames = getManagerPermissionNames(moduleKey, featureKey);
   if (requiredNames.length === 0) return false;
@@ -952,47 +975,102 @@ function hasAnyReportFeature(permissionNames: Set<string>) {
     hasManagerFeature(permissionNames, "reportManagement", "depositReport") ||
     hasManagerFeature(permissionNames, "reportManagement", "ibUsersReport") ||
     hasManagerFeature(permissionNames, "reportManagement", "withdrawReport") ||
-    hasManagerFeature(permissionNames, "reportManagement", "ibWithdrawReport") ||
-    hasManagerFeature(permissionNames, "reportManagement", "ibCommissionReport") ||
-    hasManagerFeature(permissionNames, "reportManagement", "internalTransferReport") ||
+    hasManagerFeature(
+      permissionNames,
+      "reportManagement",
+      "ibWithdrawReport",
+    ) ||
+    hasManagerFeature(
+      permissionNames,
+      "reportManagement",
+      "ibCommissionReport",
+    ) ||
+    hasManagerFeature(
+      permissionNames,
+      "reportManagement",
+      "internalTransferReport",
+    ) ||
     hasManagerFeature(permissionNames, "reportManagement", "loginActivity") ||
     hasManagerFeature(permissionNames, "reportManagement", "historyReport")
   );
 }
 
-function isManagerRouteFeatureAllowed(path: string, permissionNames: Set<string>) {
+function isManagerRouteFeatureAllowed(
+  path: string,
+  permissionNames: Set<string>,
+) {
   if (path === "/all-accounts") {
-    return hasManagerFeature(permissionNames, "account-types", "accountTypesList");
+    return hasManagerFeature(
+      permissionNames,
+      "account-types",
+      "accountTypesList",
+    );
   }
   if (path === "/report-management") {
     return hasAnyReportFeature(permissionNames);
   }
   if (path === "/report-management/all-transaction-report") {
-    return hasManagerFeature(permissionNames, "reportManagement", "allTransactionReport");
+    return hasManagerFeature(
+      permissionNames,
+      "reportManagement",
+      "allTransactionReport",
+    );
   }
-   if (path === "/report-management/daily-summary-report") {
-    return hasManagerFeature(permissionNames, "reportManagement", "dailySummaryReport");
+  if (path === "/report-management/daily-summary-report") {
+    return hasManagerFeature(
+      permissionNames,
+      "reportManagement",
+      "dailySummaryReport",
+    );
   }
   if (path === "/report-management/all-partners-report") {
-    return hasManagerFeature(permissionNames, "reportManagement", "ibUsersReport");
+    return hasManagerFeature(
+      permissionNames,
+      "reportManagement",
+      "ibUsersReport",
+    );
   }
   if (path === "/report-management/withdrawal-report") {
-    return hasManagerFeature(permissionNames, "reportManagement", "withdrawReport");
+    return hasManagerFeature(
+      permissionNames,
+      "reportManagement",
+      "withdrawReport",
+    );
   }
   if (path === "/report-management/ib-withdrawal-report") {
-    return hasManagerFeature(permissionNames, "reportManagement", "ibWithdrawReport");
+    return hasManagerFeature(
+      permissionNames,
+      "reportManagement",
+      "ibWithdrawReport",
+    );
   }
   if (path === "/report-management/ib-commission-report") {
-    return hasManagerFeature(permissionNames, "reportManagement", "ibCommissionReport");
+    return hasManagerFeature(
+      permissionNames,
+      "reportManagement",
+      "ibCommissionReport",
+    );
   }
   if (path === "/report-management/internal-transfer-report") {
-    return hasManagerFeature(permissionNames, "reportManagement", "internalTransferReport");
+    return hasManagerFeature(
+      permissionNames,
+      "reportManagement",
+      "internalTransferReport",
+    );
   }
   if (path === "/report-management/login-activity-report") {
-    return hasManagerFeature(permissionNames, "reportManagement", "loginActivity");
+    return hasManagerFeature(
+      permissionNames,
+      "reportManagement",
+      "loginActivity",
+    );
   }
   if (path === "/report-management/trading-history-report") {
-    return hasManagerFeature(permissionNames, "reportManagement", "historyReport");
+    return hasManagerFeature(
+      permissionNames,
+      "reportManagement",
+      "historyReport",
+    );
   }
   return true;
 }
@@ -1026,7 +1104,10 @@ function findBestRoute(pathname: string) {
     });
 }
 
-export function getBreadcrumbItems(pathname: string, role?: UserType): AppBreadcrumbItem[] {
+export function getBreadcrumbItems(
+  pathname: string,
+  role?: UserType,
+): AppBreadcrumbItem[] {
   const normalizedPathname = normalizePathname(pathname);
   const route = findBestRoute(normalizedPathname);
 
@@ -1043,7 +1124,9 @@ export function getBreadcrumbItems(pathname: string, role?: UserType): AppBreadc
     return [{ title: "Dashboard" }];
   }
 
-  const breadcrumbs: AppBreadcrumbItem[] = [{ title: "Dashboard", url: "/dashboard" }];
+  const breadcrumbs: AppBreadcrumbItem[] = [
+    { title: "Dashboard", url: "/dashboard" },
+  ];
 
   if (route?.sidebarSection) {
     const section = getSectionById(route.sidebarSection);
@@ -1075,9 +1158,12 @@ export function getBreadcrumbItems(pathname: string, role?: UserType): AppBreadc
 }
 
 function buildNavigationForRole(role: "admin" | "user"): NavItem[] {
-  return SIDEBAR_SECTIONS.filter((section) => section.roles.includes(role)).flatMap((section) => {
+  return SIDEBAR_SECTIONS.filter((section) =>
+    section.roles.includes(role),
+  ).flatMap((section) => {
     const sectionRoutes = ROUTE_DEFINITIONS.filter(
-      (route) => route.sidebarSection === section.id && route.roles.includes(role)
+      (route) =>
+        route.sidebarSection === section.id && route.roles.includes(role),
     );
 
     if (section.directLink) {
@@ -1112,7 +1198,7 @@ export function getAdminNavigation(): NavItem[] {
 export function getUserNavigation(isIbUser = false): NavItem[] {
   const items = cloneNavItems(DEFAULT_ROLE_NAVIGATION.user);
 
-  console.log('[getUserNavigation] isIbUser:', isIbUser);
+  console.log("[getUserNavigation] isIbUser:", isIbUser);
 
   if (!isIbUser) {
     return items;
@@ -1126,11 +1212,13 @@ export function getUserNavigation(isIbUser = false): NavItem[] {
           url: "/ib-dashboard",
           icon: BarChart3,
         }
-      : item
+      : item,
   );
 }
 
-export function getManagerNavigation(groupedPermissions?: GroupedPermissions[]): NavItem[] {
+export function getManagerNavigation(
+  groupedPermissions?: GroupedPermissions[],
+): NavItem[] {
   const categories = getManagerCategorySet(groupedPermissions);
   const permissionNames = getManagerPermissionNameSet(groupedPermissions);
   const reportRouteFeatureMap: Array<{
@@ -1147,15 +1235,42 @@ export function getManagerNavigation(groupedPermissions?: GroupedPermissions[]):
       | "loginActivity"
       | "historyReport";
   }> = [
-    { path: "/report-management/all-transaction-report", featureKey: "allTransactionReport" },
-    { path: "/report-management/daily-summary-report", featureKey: "dailySummaryReport" },
-    { path: "/report-management/all-partners-report", featureKey: "ibUsersReport" },
-    { path: "/report-management/withdrawal-report", featureKey: "withdrawReport" },
-    { path: "/report-management/ib-withdrawal-report", featureKey: "ibWithdrawReport" },
-    { path: "/report-management/ib-commission-report", featureKey: "ibCommissionReport" },
-    { path: "/report-management/internal-transfer-report", featureKey: "internalTransferReport" },
-    { path: "/report-management/login-activity-report", featureKey: "loginActivity" },
-    { path: "/report-management/trading-history-report", featureKey: "historyReport" },
+    {
+      path: "/report-management/all-transaction-report",
+      featureKey: "allTransactionReport",
+    },
+    {
+      path: "/report-management/daily-summary-report",
+      featureKey: "dailySummaryReport",
+    },
+    {
+      path: "/report-management/all-partners-report",
+      featureKey: "ibUsersReport",
+    },
+    {
+      path: "/report-management/withdrawal-report",
+      featureKey: "withdrawReport",
+    },
+    {
+      path: "/report-management/ib-withdrawal-report",
+      featureKey: "ibWithdrawReport",
+    },
+    {
+      path: "/report-management/ib-commission-report",
+      featureKey: "ibCommissionReport",
+    },
+    {
+      path: "/report-management/internal-transfer-report",
+      featureKey: "internalTransferReport",
+    },
+    {
+      path: "/report-management/login-activity-report",
+      featureKey: "loginActivity",
+    },
+    {
+      path: "/report-management/trading-history-report",
+      featureKey: "historyReport",
+    },
   ];
 
   return SIDEBAR_SECTIONS.filter((section) => {
@@ -1164,7 +1279,11 @@ export function getManagerNavigation(groupedPermissions?: GroupedPermissions[]):
     }
 
     if (section.id === "account-management") {
-      return hasManagerFeature(permissionNames, "account-types", "accountTypesList");
+      return hasManagerFeature(
+        permissionNames,
+        "account-types",
+        "accountTypesList",
+      );
     }
     if (section.id === "reports") {
       return hasAnyReportFeature(permissionNames);
@@ -1173,7 +1292,10 @@ export function getManagerNavigation(groupedPermissions?: GroupedPermissions[]):
     return isManagerCategoryAllowed(categories, section.managerCategories);
   }).flatMap((section) => {
     let sectionRoutes = ROUTE_DEFINITIONS.filter((route) => {
-      if (route.sidebarSection !== section.id || !route.roles.includes("manager")) {
+      if (
+        route.sidebarSection !== section.id ||
+        !route.roles.includes("manager")
+      ) {
         return false;
       }
 
@@ -1186,9 +1308,15 @@ export function getManagerNavigation(groupedPermissions?: GroupedPermissions[]):
 
     if (section.id === "reports") {
       sectionRoutes = sectionRoutes.filter((route) => {
-        const match = reportRouteFeatureMap.find((entry) => entry.path === route.path);
+        const match = reportRouteFeatureMap.find(
+          (entry) => entry.path === route.path,
+        );
         if (!match) return false;
-        return hasManagerFeature(permissionNames, "reportManagement", match.featureKey);
+        return hasManagerFeature(
+          permissionNames,
+          "reportManagement",
+          match.featureKey,
+        );
       });
     }
 
@@ -1215,7 +1343,7 @@ export function getManagerNavigation(groupedPermissions?: GroupedPermissions[]):
 
 /** Flat links for compact UI (e.g. header dropdown). Omits `/dashboard`; max 2 items; empty when manager has no real sections. */
 export function getManagerHeaderQuickLinks(
-  groupedPermissions?: GroupedPermissions[]
+  groupedPermissions?: GroupedPermissions[],
 ): { title: string; url: string }[] {
   const nav = getManagerNavigation(groupedPermissions);
   const out: { title: string; url: string }[] = [];
@@ -1243,9 +1371,12 @@ export function getManagerHeaderQuickLinks(
 }
 
 export function getSidebarNavigation(
-  user?: Pick<SidebarContext, "isIbUser" | "managerPermissions" | "subadminPermissions"> & {
+  user?: Pick<
+    SidebarContext,
+    "isIbUser" | "managerPermissions" | "subadminPermissions"
+  > & {
     type?: UserType;
-  }
+  },
 ): NavItem[] {
   switch (user?.type) {
     case "admin":
@@ -1266,7 +1397,7 @@ export function getRouteDefinitions() {
 export function isRouteAllowedForRole(
   pathname: string,
   role: UserType,
-  options?: Pick<SidebarContext, "managerPermissions">
+  options?: Pick<SidebarContext, "managerPermissions">,
 ) {
   const matchingRoute = ROUTE_DEFINITIONS.find((route) => {
     const prefixes = [route.path, ...(route.activeMatch ?? [])];
@@ -1293,7 +1424,9 @@ export function isRouteAllowedForRole(
     return true;
   }
 
-  const permissionNames = getManagerPermissionNameSet(options?.managerPermissions);
+  const permissionNames = getManagerPermissionNameSet(
+    options?.managerPermissions,
+  );
   if (!isManagerRouteFeatureAllowed(matchingRoute.path, permissionNames)) {
     return false;
   }

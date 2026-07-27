@@ -354,7 +354,7 @@ export default function UserNewsPage() {
                 </span>
                 <span className="w-1 h-1 rounded-full bg-[#FFB401]/50" />
                 <span className="text-[10px] tracking-widest uppercase text-muted-foreground">
-                  Vinnexia Capital
+                  Diago Finance
                 </span>
               </div>
               <h1 className="text-2xl font-bold text-foreground tracking-tight">

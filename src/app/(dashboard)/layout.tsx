@@ -1,28 +1,38 @@
-"use client"
+"use client";
 
-import { AppSidebar } from "@/components/app-sidebar"
-import { IbDashboardSidebarWrapper } from "@/components/ib-dashboard-sidebar-wrapper"
-import { ProtectedRoute } from "@/components/protected-route"
-import { Header } from "@/components/header"
-import { DashboardBreadcrumbs } from "@/components/dashboard-breadcrumbs"
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
-import { useAuth } from "@/contexts/auth-context"
-import { useEffect } from "react"
-import dynamic from "next/dynamic"
-import { usePathname } from "next/navigation"
-import { useClientCustomization } from "@/contexts/client-customization-context"
-import Image from "next/image"
+import { AppSidebar } from "@/components/app-sidebar";
+import { IbDashboardSidebarWrapper } from "@/components/ib-dashboard-sidebar-wrapper";
+import { ProtectedRoute } from "@/components/protected-route";
+import { Header } from "@/components/header";
+import { DashboardBreadcrumbs } from "@/components/dashboard-breadcrumbs";
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { useAuth } from "@/contexts/auth-context";
+import { useEffect } from "react";
+import dynamic from "next/dynamic";
+import { usePathname } from "next/navigation";
+import { useClientCustomization } from "@/contexts/client-customization-context";
+import Image from "next/image";
 
-const AppSidebarV2 = dynamic(() => import("@/components/app-sidebar-v2").then((m) => ({ default: m.AppSidebarV2 })), { ssr: false })
-const AppSidebarV3 = dynamic(() => import("@/components/app-sidebar-v3").then((m) => ({ default: m.AppSidebarV3 })), { ssr: false })
+const AppSidebarV2 = dynamic(
+  () =>
+    import("@/components/app-sidebar-v2").then((m) => ({
+      default: m.AppSidebarV2,
+    })),
+  { ssr: false },
+);
+const AppSidebarV3 = dynamic(
+  () =>
+    import("@/components/app-sidebar-v3").then((m) => ({
+      default: m.AppSidebarV3,
+    })),
+  { ssr: false },
+);
 
 interface DashboardLayoutProps {
-  children: React.ReactNode
+  children: React.ReactNode;
 }
 
-export default function DashboardLayout({
-  children,
-}: DashboardLayoutProps) {
+export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { user } = useAuth();
   const pathname = usePathname();
   const { sidebarId: selectedSidebar, themeMode } = useClientCustomization();
@@ -49,14 +59,16 @@ export default function DashboardLayout({
         defaultOpen={
           isIbPortal
             ? true
-            : selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel"
+            : selectedSidebar === "two-panel" ||
+                selectedSidebar === "expanded-panel"
               ? false
               : true
         }
         open={
           isIbPortal
             ? undefined
-            : selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel"
+            : selectedSidebar === "two-panel" ||
+                selectedSidebar === "expanded-panel"
               ? false
               : undefined
         }
@@ -66,13 +78,15 @@ export default function DashboardLayout({
                 "--sidebar-width": "22rem",
                 "--sidebar-width-icon": "5.25rem",
               } as React.CSSProperties)
-            : selectedSidebar === "two-panel" || selectedSidebar === "expanded-panel"
-            ? {
-                "--sidebar-width": selectedSidebar === "expanded-panel" ? "400px" : "350px",
-              } as React.CSSProperties
-            : {
-                "--sidebar-width": "20rem",
-          } as React.CSSProperties
+            : selectedSidebar === "two-panel" ||
+                selectedSidebar === "expanded-panel"
+              ? ({
+                  "--sidebar-width":
+                    selectedSidebar === "expanded-panel" ? "400px" : "350px",
+                } as React.CSSProperties)
+              : ({
+                  "--sidebar-width": "20rem",
+                } as React.CSSProperties)
         }
       >
         {isIbPortal ? (
@@ -89,14 +103,20 @@ export default function DashboardLayout({
           <DashboardBreadcrumbs />
           <main className="relative flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-background p-3 sm:p-4 lg:p-6">
             <div className="pointer-events-none fixed bottom-4 right-4 z-0 h-48 w-48 opacity-[0.4] dark:opacity-[0.4]">
-              <Image src={themeMode === "bright" ? "/vinnexia-logo.svg" : "/vinnexia-logo-dark.svg"} alt="" width={192} height={192} className="object-contain" />
+              <Image
+                src={
+                  themeMode === "bright" ? "/diagologo.svg" : "/diagologo.svg"
+                }
+                alt=""
+                width={192}
+                height={192}
+                className="object-contain"
+              />
             </div>
-            <div className="relative z-1 w-full max-w-none">
-              {children}
-</div>
+            <div className="relative z-1 w-full max-w-none">{children}</div>
           </main>
         </SidebarInset>
       </SidebarProvider>
     </ProtectedRoute>
-  )
+  );
 }

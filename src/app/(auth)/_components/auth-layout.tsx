@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import Image from 'next/image';
-import type { ReactNode } from 'react';
-import { useClientCustomization } from '@/contexts/client-customization-context';
+import Image from "next/image";
+import type { ReactNode } from "react";
+import { useClientCustomization } from "@/contexts/client-customization-context";
 
 interface AuthLayoutProps {
   children: ReactNode;
@@ -10,14 +10,13 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ children }: AuthLayoutProps) {
   const { themeMode } = useClientCustomization();
-  const logoSrc = themeMode === 'bright' ? '/vinnexia-logo.svg' : '/vinnexia-logo-dark.svg';
+  const logoSrc =
+    themeMode === "bright" ? "/diagologo.svg" : "/diagologo.svg";
 
   return (
     <div className="min-h-screen flex bg-background">
-
       {/* ─── LEFT PANEL ─── */}
       <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden flex-col">
-
         {/* Subtle geometric grid texture */}
         <div
           className="absolute inset-0 opacity-[0.04]"
@@ -26,7 +25,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               linear-gradient(color-mix(in srgb, var(--color-primary) 60%, transparent) 1px, transparent 1px),
               linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 60%, transparent) 1px, transparent 1px)
             `,
-            backgroundSize: '48px 48px',
+            backgroundSize: "48px 48px",
           }}
         />
 
@@ -43,7 +42,6 @@ export function AuthLayout({ children }: AuthLayoutProps) {
 
         {/* Centered vertical brand stack */}
         <div className="relative z-10 flex flex-col items-center justify-center h-full px-10 gap-0">
-
           {/* Logo + wordmark */}
           <div className="flex flex-col items-center mb-8">
             <Image
@@ -56,9 +54,12 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             />
             <span
               className="truncate font-cinzel text-[21px] font-bold uppercase tracking-[0.2em] text-transparent [-webkit-text-stroke:0.5px_var(--color-foreground)] [text-shadow:0_0_4px_color-mix(in_srgb,var(--color-foreground)_25%,transparent)]"
-              style={{ textShadow: '0 0 20px color-mix(in srgb, var(--color-primary) 25%, transparent)' }}
+              style={{
+                textShadow:
+                  "0 0 20px color-mix(in srgb, var(--color-primary) 25%, transparent)",
+              }}
             >
-              VINNEXIA CAPITAL
+              Diago Finance
             </span>
             <span className="font-arvo text-xs font-semibold tracking-[0.18em] text-primary mt-1.5 uppercase">
               Trade With Confidence
@@ -73,7 +74,10 @@ export function AuthLayout({ children }: AuthLayoutProps) {
             {/* Radial glow beneath the bull */}
             <div
               className="absolute bottom-[-20px] left-1/2 -translate-x-1/2 w-[380px] h-[120px] rounded-full opacity-30 blur-2xl"
-              style={{ background: 'radial-gradient(ellipse, var(--color-primary) 0%, transparent 70%)' }}
+              style={{
+                background:
+                  "radial-gradient(ellipse, var(--color-primary) 0%, transparent 70%)",
+              }}
             />
             <Image
               src="/login-bull1.png"
@@ -89,14 +93,17 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           {/* Stats row */}
           <div className="mt-10 flex items-center gap-8">
             {[
-              { value: '150+', label: 'Markets' },
-              { value: '100%', label: 'Trust' },
-              { value: '24/7', label: 'Support' },
+              { value: "150+", label: "Markets" },
+              { value: "100%", label: "Trust" },
+              { value: "24/7", label: "Support" },
             ].map((stat, i) => (
               <div key={i} className="flex flex-col items-center gap-1">
                 <span
                   className="text-xl font-bold text-primary font-cinzel"
-                  style={{ textShadow: '0 0 10px color-mix(in srgb, var(--color-primary) 30%, transparent)' }}
+                  style={{
+                    textShadow:
+                      "0 0 10px color-mix(in srgb, var(--color-primary) 30%, transparent)",
+                  }}
                 >
                   {stat.value}
                 </span>
@@ -120,7 +127,6 @@ export function AuthLayout({ children }: AuthLayoutProps) {
       {/* ─── RIGHT PANEL (form) ─── */}
       <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
         <div className="max-w-md w-full space-y-8">
-
           {/* Mobile-only logo */}
           <div className="flex flex-col items-center lg:hidden">
             <Image
@@ -131,11 +137,14 @@ export function AuthLayout({ children }: AuthLayoutProps) {
               className="object-contain"
               priority
             />
-             <span
+            <span
               className="truncate font-cinzel text-[21px] font-bold uppercase tracking-[0.2em] text-transparent [-webkit-text-stroke:0.5px_var(--color-foreground)] [text-shadow:0_0_4px_color-mix(in_srgb,var(--color-foreground)_25%,transparent)]"
-              style={{ textShadow: '0 0 20px color-mix(in srgb, var(--color-primary) 25%, transparent)' }}
+              style={{
+                textShadow:
+                  "0 0 20px color-mix(in srgb, var(--color-primary) 25%, transparent)",
+              }}
             >
-              VINNEXIA CAPITAL
+              Diago Finance
             </span>
             <span className="font-arvo text-[10px] font-semibold tracking-wide text-primary mt-0.5">
               Trade With Confidence
