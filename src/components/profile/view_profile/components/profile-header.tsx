@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { ProfileHeaderSkeleton } from "@/components/loading/client-page-skeletons";
 import { Phone, MapPin, Shield, CheckCircle2, Copy, Check, Sparkles } from "lucide-react";
+import { ThemePill } from "@/components/ui/theme-pill";
 import { useAuth } from "@/contexts/auth-context";
 import { authApi, type ProfileViewResponse } from "@/lib/api";
 import toast from "react-hot-toast";
@@ -142,10 +143,12 @@ export default function ProfileHeader() {
 
           {/* Name + email + kicker */}
           <div className="space-y-1.5">
-            <div className="ib-portal-kicker inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]">
-              <Sparkles className="h-3 w-3" />
+            <ThemePill
+              icon={<Sparkles className="h-3 w-3" />}
+              className="gap-1.5 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em]"
+            >
               Client Account
-            </div>
+            </ThemePill>
             <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-[1.8rem] leading-tight">
               {user.name || user.email}
             </h1>

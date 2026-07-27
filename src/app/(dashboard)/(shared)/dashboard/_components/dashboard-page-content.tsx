@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ClientCardGridSkeleton } from "@/components/loading/client-page-skeletons";
 import { Badge } from "@/components/ui/badge";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -83,6 +84,7 @@ import {
   Key,
   RefreshCw,
   SlidersHorizontal,
+  ChartCandlestick,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { ProfileCompletionDialog } from "@/components/profile-completion-dialog";
@@ -134,6 +136,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { useClientCustomization } from "@/contexts/client-customization-context";
 import { getDashboardThemeArtwork } from "@/components/theme-customizer";
+import { ThemePill } from "@/components/ui/theme-pill";
 
 import { formatCurrency } from "@/lib/formatters";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
@@ -193,7 +196,10 @@ export function DashboardPageContent() {
     themePairId,
     themeMode,
   } = useClientCustomization();
-  const dashboardThemeArtwork = getDashboardThemeArtwork(themePairId, themeMode);
+  const dashboardThemeArtwork = getDashboardThemeArtwork(
+    themePairId,
+    themeMode,
+  );
   const queryClient = useQueryClient();
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showMt5Dialog, setShowMt5Dialog] = useState(false);
@@ -201,9 +207,7 @@ export function DashboardPageContent() {
   const [showPromotionDialog, setShowPromotionDialog] = useState(false);
   const [incompleteSections, setIncompleteSections] = useState<
     Array<{
-      key:
-        | "personal_information"
-        | "documents_verification";
+      key: "personal_information" | "documents_verification";
       title: string;
       message: string;
       route: string;
@@ -296,7 +300,9 @@ export function DashboardPageContent() {
   }, []);
   // When the card is too narrow, fall back to the gradient version without theme artwork.
   const forceGradientTheme = walletCardWidth > 0 && walletCardWidth <= 262;
-  const effectiveThemeArtwork = forceGradientTheme ? null : dashboardThemeArtwork;
+  const effectiveThemeArtwork = forceGradientTheme
+    ? null
+    : dashboardThemeArtwork;
   const usesDashboardThemeArtwork = effectiveThemeArtwork !== null;
 
   // Get news and promotions from userDashboard data
@@ -435,10 +441,22 @@ export function DashboardPageContent() {
       }
 
       // Check for success: handle both success boolean and status code (as number or string)
-      const hasStatusField = bankDetailsResponse && typeof bankDetailsResponse === 'object' && 'status' in bankDetailsResponse;
-      const statusValue = hasStatusField ? (bankDetailsResponse as unknown as Record<string, unknown>).status : undefined;
-      const bankSuccess = bankDetailsResponse?.success === true || statusValue === 200 || statusValue === '200';
-      if (bankSuccess && bankDetailsResponse.data && Array.isArray(bankDetailsResponse.data)) {
+      const hasStatusField =
+        bankDetailsResponse &&
+        typeof bankDetailsResponse === "object" &&
+        "status" in bankDetailsResponse;
+      const statusValue = hasStatusField
+        ? (bankDetailsResponse as unknown as Record<string, unknown>).status
+        : undefined;
+      const bankSuccess =
+        bankDetailsResponse?.success === true ||
+        statusValue === 200 ||
+        statusValue === "200";
+      if (
+        bankSuccess &&
+        bankDetailsResponse.data &&
+        Array.isArray(bankDetailsResponse.data)
+      ) {
         setHasBankDetails(bankDetailsResponse.data.length > 0);
       }
     } catch (error) {
@@ -489,13 +507,19 @@ export function DashboardPageContent() {
     const fetchBankDetails = async () => {
       try {
         const response = await authApi.getBankDetails(token);
-        
+
         // Check for success: response.success should be true, but API might return status code instead
         // Handle both success boolean and status field (as number or string)
-        const hasStatusField = response && typeof response === 'object' && 'status' in response;
-        const statusValue = hasStatusField ? (response as unknown as Record<string, unknown>).status : undefined;
-        const isSuccess = response.success === true || statusValue === 200 || statusValue === '200';
-        
+        const hasStatusField =
+          response && typeof response === "object" && "status" in response;
+        const statusValue = hasStatusField
+          ? (response as unknown as Record<string, unknown>).status
+          : undefined;
+        const isSuccess =
+          response.success === true ||
+          statusValue === 200 ||
+          statusValue === "200";
+
         if (isSuccess && response.data && Array.isArray(response.data)) {
           const hasBankAccounts = response.data.length > 0;
           setHasBankDetails(hasBankAccounts);
@@ -512,8 +536,7 @@ export function DashboardPageContent() {
   }, [isUser, token]);
 
   // Debug: Log hasBankDetails state changes
-  useEffect(() => {
-  }, [hasBankDetails]);
+  useEffect(() => {}, [hasBankDetails]);
 
   // Check if MT5 dialog should be shown (only if user has no MT5 accounts and profile is complete)
   useEffect(() => {
@@ -1091,7 +1114,7 @@ export function DashboardPageContent() {
             aria-label="View deposits"
             className="block cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-full"
           >
-            <div className="border border-border/50 rounded-3xl bg-card shadow-sm transition-all duration-200 hover:shadow-md h-full">
+            <div className="border border-border/100 rounded-3xl bg-card shadow-sm transition-all duration-200 hover:shadow-md h-full">
               <div className="pt-6 pb-6 px-6 h-full flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex-1">
@@ -1106,11 +1129,11 @@ export function DashboardPageContent() {
                       )}
                     </p>
                   </div>
-                  <div className="p-3 rounded-2xl bg-muted/70 border border-border/50">
-                    <TrendingUp className="h-6 w-6 text-foreground" />
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#00ED57]/50 bg-background/80 shadow-sm shadow-[#00ED57]/20 backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                    <TrendingUp className="h-5 w-5 text-[#00ED57]" />
                   </div>
                 </div>
-                <div className="pt-3 border-t border-border/50 mt-auto">
+                <div className="pt-3 border-t border-border/100 mt-auto">
                   <p className="text-xs text-muted-foreground">
                     All time deposits
                   </p>
@@ -1131,7 +1154,7 @@ export function DashboardPageContent() {
             aria-label="View withdrawals"
             className="block cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-full"
           >
-            <div className="border border-border/50 rounded-3xl bg-card shadow-sm transition-all duration-200 hover:shadow-md h-full">
+            <div className="border border-border/100 rounded-3xl bg-card shadow-sm transition-all duration-200 hover:shadow-md h-full">
               <div className="pt-6 pb-6 px-6 h-full flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex-1">
@@ -1146,11 +1169,11 @@ export function DashboardPageContent() {
                       )}
                     </p>
                   </div>
-                  <div className="p-3 rounded-2xl bg-muted/70 border border-border/50">
-                    <TrendingDown className="h-6 w-6 text-foreground" />
+                  <div className="p-3 rounded-2xl bg-muted/70 border border-[#00ED57]/50 shadow-sm shadow-[#00ED57]/20">
+                    <TrendingDown className="h-6 w-6 text-[#00ED57]" />
                   </div>
                 </div>
-                <div className="pt-3 border-t border-border/50 mt-auto">
+                <div className="pt-3 border-t border-border/100 mt-auto">
                   <p className="text-xs text-muted-foreground">
                     All time withdrawals
                   </p>
@@ -1171,7 +1194,7 @@ export function DashboardPageContent() {
             aria-label="View trading accounts"
             className="block cursor-pointer rounded-3xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-full"
           >
-            <div className="border border-border/50 rounded-3xl bg-card shadow-sm transition-all duration-200 hover:shadow-md h-full">
+            <div className="border border-border/100 rounded-3xl bg-card shadow-sm transition-all duration-200 hover:shadow-md h-full">
               <div className="pt-6 pb-6 px-6 h-full flex flex-col">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex-1">
@@ -1185,11 +1208,11 @@ export function DashboardPageContent() {
                         0}
                     </p>
                   </div>
-                  <div className="p-3 rounded-2xl bg-muted/70 border border-border/50">
-                    <Building2 className="h-6 w-6 text-foreground" />
+                  <div className="p-3 rounded-2xl bg-muted/70 border border-[#EC0808]/50 shadow-sm shadow-[#EC0808]/20">
+                    <ChartCandlestick className="h-6 w-6 text-[#EC0808]" />
                   </div>
                 </div>
-                <div className="pt-3 border-t border-border/50 mt-auto">
+                <div className="pt-3 border-t border-border/100 mt-auto">
                   <p className="text-xs text-muted-foreground">
                     Active MT5 accounts
                   </p>
@@ -1207,7 +1230,7 @@ export function DashboardPageContent() {
         component: (
           <div
             onClick={() => router.push("/my-wallet/wallet-overview")}
-            className="border border-border/50 rounded-3xl bg-card shadow-sm h-full cursor-pointer relative overflow-hidden"
+            className="border border-border/100 rounded-3xl bg-card shadow-sm h-full cursor-pointer relative overflow-hidden"
           >
             {usesDashboardThemeArtwork && (
               <div
@@ -1220,7 +1243,7 @@ export function DashboardPageContent() {
                   <Wallet className="h-3.5 w-3.5" />
                   Wallet Balance
                 </p>
-                <div className="p-2 rounded-lg bg-muted/70 border border-border/50">
+                <div className="p-2 rounded-lg bg-muted/70 border border-border/100">
                   <Shield className="h-4 w-4 text-foreground" />
                 </div>
               </div>
@@ -1250,7 +1273,7 @@ export function DashboardPageContent() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="h-9 px-4 text-foreground border-border/50"
+                      className="h-9 px-4 text-foreground border-border/100"
                     >
                       <ArrowLeftRight className="h-4 w-4 mr-2" />
                       Transfer Funds
@@ -1483,7 +1506,7 @@ export function DashboardPageContent() {
         id: "deposits-chart",
         title: "Deposits Chart",
         component: isDepositsStatisticsLoading ? (
-          <Card className="relative flex w-full max-w-full flex-col gap-6 overflow-hidden rounded-2xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-muted/20 shadow-lg md:p-6 h-full">
+          <Card className="relative flex w-full max-w-full flex-col gap-6 overflow-hidden rounded-2xl border-2 border-border/100 bg-gradient-to-br from-card via-card to-muted/20 shadow-lg md:p-6 h-full">
             <CardHeader className="relative flex flex-col items-start gap-4.5 space-y-0 p-0 md:flex-row md:items-center md:justify-between md:gap-0">
               <div className="flex items-center gap-2.5">
                 <Skeleton className="h-8 w-8 rounded-lg" />
@@ -1491,7 +1514,7 @@ export function DashboardPageContent() {
               </div>
             </CardHeader>
             <CardContent className="relative flex flex-col gap-4 p-0">
-              <div className="flex w-full gap-1 rounded-lg border border-border/50 bg-muted/30 p-1">
+              <div className="flex w-full gap-1 rounded-lg border border-border/100 bg-muted/30 p-1">
                 <Skeleton className="h-9 flex-1" />
                 <Skeleton className="h-9 flex-1" />
               </div>
@@ -1540,7 +1563,7 @@ export function DashboardPageContent() {
         id: "withdrawals-chart",
         title: "Withdrawals Chart",
         component: isWithdrawalsStatisticsLoading ? (
-          <Card className="relative flex w-full max-w-full flex-col gap-6 overflow-hidden rounded-2xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-muted/20 shadow-lg md:p-6 h-full">
+          <Card className="relative flex w-full max-w-full flex-col gap-6 overflow-hidden rounded-2xl border-2 border-border/100 bg-gradient-to-br from-card via-card to-muted/20 shadow-lg md:p-6 h-full">
             <CardHeader className="relative flex flex-col items-start gap-4.5 space-y-0 p-0 md:flex-row md:items-center md:justify-between md:gap-0">
               <div className="flex items-center gap-2.5">
                 <Skeleton className="h-8 w-8 rounded-lg" />
@@ -1548,7 +1571,7 @@ export function DashboardPageContent() {
               </div>
             </CardHeader>
             <CardContent className="relative flex flex-col gap-4 p-0">
-              <div className="flex w-full gap-1 rounded-lg border border-border/50 bg-muted/30 p-1">
+              <div className="flex w-full gap-1 rounded-lg border border-border/100 bg-muted/30 p-1">
                 <Skeleton className="h-9 flex-1" />
                 <Skeleton className="h-9 flex-1" />
               </div>
@@ -1602,7 +1625,7 @@ export function DashboardPageContent() {
         component: (
           <div
             onClick={() => router.push("/funds/deposit")}
-            className="border border-dashed border-border/50 rounded-3xl bg-card h-full cursor-pointer"
+            className="border border-dashed border-border/100 rounded-3xl bg-card h-full cursor-pointer"
           >
             <div className="pt-6 pb-6 h-full flex flex-col items-center justify-center text-center space-y-4">
               <div className="flex h-24 w-24 items-center justify-center rounded-full bg-muted/70">
@@ -1623,7 +1646,7 @@ export function DashboardPageContent() {
               >
                 <Button
                   size="sm"
-                  className="w-full border border-border/50 text-foreground bg-muted/50 hover:bg-muted transition-all duration-200"
+                  className="w-full border border-border/100 text-foreground bg-muted/50 hover:bg-muted transition-all duration-200"
                 >
                   <PlusCircle className="h-4 w-4 mr-2" />
                   Deposit Funds
@@ -1701,12 +1724,14 @@ export function DashboardPageContent() {
               {canCustomizeDashboard && (
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-2xl font-bold text-foreground">Dashboard</h2>
+                    <h2 className="text-2xl font-bold text-foreground">
+                      Dashboard
+                    </h2>
                     <p className="text-sm text-muted-foreground">
                       Switch between normal and custom dashboard layouts
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 rounded-lg border border-border/50 bg-muted/50 p-1">
+                  <div className="flex items-center gap-2 rounded-lg border border-border/100 bg-muted/50 p-1">
                     <Button
                       variant={
                         isCustomDashboard === "normal" ? "default" : "ghost"
@@ -1749,10 +1774,12 @@ export function DashboardPageContent() {
                         )}
                         <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                           <div className="space-y-2">
-                            <div className="ib-portal-kicker inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.22em]">
-                              <Sparkles className="h-3.5 w-3.5" />
+                            <ThemePill
+                              icon={<Sparkles className="h-3.5 w-3.5" />}
+                              className="rounded-full text-xs font-semibold uppercase tracking-[0.22em]"
+                            >
                               Client Portal
-                            </div>
+                            </ThemePill>
                             <div className="space-y-1">
                               <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2.15rem]">
                                 {(() => {
@@ -1763,14 +1790,18 @@ export function DashboardPageContent() {
                                       : h < 17
                                         ? "Good afternoon"
                                         : "Good evening";
-                                  const fullName = utilityFunctions.formatName(user?.name);
+                                  const fullName = utilityFunctions.formatName(
+                                    user?.name,
+                                  );
                                   const firstName = fullName?.split(" ")[0];
-                                  return firstName ? `${greeting}, ${firstName}` : greeting;
+                                  return firstName
+                                    ? `${greeting}, ${firstName}`
+                                    : greeting;
                                 })()}
                               </h1>
                               <p className="max-w-3xl text-sm text-muted-foreground sm:text-base">
-                                Welcome back! Here&apos;s what&apos;s happening with your
-                                account today.
+                                Welcome back! Here&apos;s what&apos;s happening
+                                with your account today.
                               </p>
                             </div>
                           </div>
@@ -1801,11 +1832,11 @@ export function DashboardPageContent() {
                                     )}
                                   </p>
                                 </div>
-                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
-                                  <TrendingUp className="h-5 w-5 text-foreground" />
+                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#00ED57]/50 bg-background/80 shadow-sm shadow-[#00ED57]/20 backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                                  <TrendingUp className="h-5 w-5 text-[#00ED57]" />
                                 </div>
                               </div>
-                              <div className="pt-3 border-t border-border/50">
+                              <div className="pt-3 border-t border-border/100">
                                 <p className="text-xs text-muted-foreground">
                                   All time deposits
                                 </p>
@@ -1836,11 +1867,11 @@ export function DashboardPageContent() {
                                     )}
                                   </p>
                                 </div>
-                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
-                                  <TrendingDown className="h-5 w-5 text-foreground" />
+                                <div className="p-3 rounded-2xl bg-muted/70 border border-[#00ED57]/50 shadow-sm shadow-[#00ED57]/20">
+                                  <TrendingDown className="h-6 w-6 text-[#00ED57]" />
                                 </div>
                               </div>
-                              <div className="pt-3 border-t border-border/50">
+                              <div className="pt-3 border-t border-border/100">
                                 <p className="text-xs text-muted-foreground">
                                   All time withdrawals
                                 </p>
@@ -1871,11 +1902,11 @@ export function DashboardPageContent() {
                                       0}
                                   </p>
                                 </div>
-                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
-                                  <Building2 className="h-5 w-5 text-foreground" />
+                                <div className="p-3 rounded-2xl bg-muted/70 border border-[#EC0808]/50 shadow-sm shadow-[#EC0808]/20">
+                                  <ChartCandlestick className="h-6 w-6 text-[#EC0808]" />
                                 </div>
                               </div>
-                              <div className="pt-3 border-t border-border/50">
+                              <div className="pt-3 border-t border-border/100">
                                 <p className="text-xs text-muted-foreground">
                                   Active MT5 accounts
                                 </p>
@@ -1887,97 +1918,110 @@ export function DashboardPageContent() {
 
                       {/* Top Cards Row - Wallet, IB Wallet, Profile Progress */}
                       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                    {/* Wallet Balance Card - Enhanced */}
-                    <Card
-                      ref={walletCardRef}
-                      // onClick={() => router.push("/my-wallet/wallet-overview")}
-                      className={`sm:col-span-1 lg:col-span-1 relative overflow-hidden shadow-2xl rounded-3xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group cursor-pointer ${usesDashboardThemeArtwork ? "text-foreground bg-card ib-portal-surface ib-portal-surface-primary" : "text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent border-none"}`}
-                    >
-                      {usesDashboardThemeArtwork ? (
-                        <div
-                          className={`dashboard-theme-overlay dashboard-theme-wallet-overlay theme-art-${effectiveThemeArtwork}`}
-                        />
-                      ) : (
-                        <>
-                          <div className="absolute inset-0 opacity-60">
-                            <div className="absolute -left-20 -top-20 w-60 h-60 bg-primary-foreground/20 rounded-full blur-3xl animate-pulse" />
-                            <div className="absolute right-10 top-10 w-40 h-40 bg-primary-foreground/15 rounded-full blur-3xl" />
-                            <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-accent/20 rounded-full blur-3xl" />
-                          </div>
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-                        </>
-                      )}
-                      <CardHeader className="relative z-10 pb-3 px-6 pt-6">
-                        <div className="flex items-center justify-between mb-2">
-                          <p
-                            className={`uppercase tracking-wider text-xs font-bold flex items-center gap-2 ${usesDashboardThemeArtwork ? "text-muted-foreground" : "text-primary-foreground/80"}`}
-                          >
-                            <Wallet className="h-3.5 w-3.5" />
-                            Wallet Balance
-                          </p>
-                          <div
-                            className={`p-1.5 rounded-lg backdrop-blur-sm border ${usesDashboardThemeArtwork ? "bg-muted/70 border-border/50" : "bg-primary-foreground/10 border-primary-foreground/20"}`}
+                        {/* Wallet Balance Card - Enhanced */}
+                        <Card
+                          ref={walletCardRef}
+                          // onClick={() => router.push("/my-wallet/wallet-overview")}
+                          className={`sm:col-span-1 lg:col-span-1 relative overflow-hidden shadow-2xl rounded-3xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group cursor-pointer ${usesDashboardThemeArtwork ? "text-foreground bg-card ib-portal-surface ib-portal-surface-primary" : "text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent border-none"}`}
+                        >
+                          {usesDashboardThemeArtwork ? (
+                            <div
+                              className={`dashboard-theme-overlay dashboard-theme-wallet-overlay theme-art-${effectiveThemeArtwork}`}
+                            />
+                          ) : (
+                            <>
+                              <div className="absolute inset-0 opacity-60">
+                                <div className="absolute -left-20 -top-20 w-60 h-60 bg-primary-foreground/20 rounded-full blur-3xl animate-pulse" />
+                                <div className="absolute right-10 top-10 w-40 h-40 bg-primary-foreground/15 rounded-full blur-3xl" />
+                                <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-accent/20 rounded-full blur-3xl" />
+                              </div>
+                              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+                            </>
+                          )}
+                          <CardHeader className="relative z-10 pb-3 px-6 pt-6">
+                            <div className="flex items-center justify-between mb-2">
+                              <ThemePill
+                                icon={<Wallet className="h-3.5 w-3.5" />}
+                                tone={
+                                  usesDashboardThemeArtwork
+                                    ? "subtle"
+                                    : "default"
+                                }
+                                className={`rounded-full text-[11px] font-semibold uppercase tracking-[0.18em] ${usesDashboardThemeArtwork ? "" : "text-primary-foreground"}`}
+                              >
+                                Wallet Balance
+                              </ThemePill>
+                              {/* <div
+                            className={`p-1.5 rounded-lg backdrop-blur-sm border ${usesDashboardThemeArtwork ? "bg-muted/70 border-border/100" : "bg-primary-foreground/10 border-primary-foreground/20"}`}
                           >
                             <Shield
                               className={`h-4 w-4 ${usesDashboardThemeArtwork ? "text-foreground" : "text-primary-foreground"}`}
                             />
-                          </div>
-                        </div>
-                        <div className="flex items-baseline gap-2 mt-2">
-                          <span
-                            className={`text-4xl font-extrabold leading-tight ${usesDashboardThemeArtwork ? "" : "drop-shadow-lg"}`}
-                          >
-                            {formatAmount(dashboardData?.wallet?.balance)}
-                          </span>
-                          <span
-                            className={`text-lg font-bold ${usesDashboardThemeArtwork ? "text-muted-foreground" : "text-primary-foreground/80"}`}
-                          >
-                            USD
-                          </span>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="relative z-10 pt-4 pb-6 px-6">
-                        <div className="flex items-start justify-between gap-4">
-                          <div className="flex-1 space-y-3">
-                            <div>
-                              <p
-                                className={`text-sm font-semibold mb-1 ${usesDashboardThemeArtwork ? "text-foreground" : "text-primary-foreground"}`}
-                              >
-                                Your Main Wallet
-                              </p>
-                              <p
-                                className={`text-xs leading-relaxed ${usesDashboardThemeArtwork ? "text-muted-foreground" : "text-primary-foreground/80"}`}
-                              >
-                                Securely manage balances across deposits and
-                                transfers.
-                              </p>
+                          </div> */}
                             </div>
-                            <div
-                              className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg backdrop-blur-sm border ${usesDashboardThemeArtwork ? "text-muted-foreground bg-muted/70 border-border/50" : "text-primary-foreground/90 bg-primary-foreground/10 border-primary-foreground/20"}`}
+                            <div className="flex items-baseline gap-2 mt-2">
+                              <span
+                                className={`text-4xl font-extrabold leading-tight ${usesDashboardThemeArtwork ? "" : "drop-shadow-lg"}`}
+                              >
+                                {formatAmount(dashboardData?.wallet?.balance)}
+                              </span>
+                              <span
+                                className={`text-lg font-bold ${usesDashboardThemeArtwork ? "text-muted-foreground" : "text-primary-foreground/80"}`}
+                              >
+                                USD
+                              </span>
+                            </div>
+                          </CardHeader>
+                          <CardContent className="relative z-10 pt-4 pb-6 px-6">
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1 space-y-3">
+                                <div className="space-y-2">
+                                  <h3
+                                    className={`text-lg font-bold ${usesDashboardThemeArtwork ? "text-foreground" : "text-primary-foreground"}`}
+                                  >
+                                    Your Main Wallet
+                                  </h3>
+                                  <p
+                                    className={`text-[14px] font-normal leading-[19.5px] tracking-normal font-sans ${usesDashboardThemeArtwork ? "text-muted-foreground" : "text-primary-foreground/80"}`}
+                                    style={{
+                                      fontFamily:
+                                        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+                                    }}
+                                  >
+                                    Securely manage balances across deposits and
+                                    transfers.
+                                  </p>
+                                </div>
+                                {/* <div
+                              className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg backdrop-blur-sm border ${usesDashboardThemeArtwork ? "text-muted-foreground bg-muted/70 border-border/100" : "text-primary-foreground/90 bg-primary-foreground/10 border-primary-foreground/20"}`}
                             >
                               <Sparkles className="h-3.5 w-3.5 animate-pulse" />
                               <span className="font-medium">
                                 Instant transfers available
                               </span>
-                            </div>
-                            <Link
-                              href="/funds/internal-transfer"
-                              className="inline-block mt-2"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Button
-                                variant={usesDashboardThemeArtwork ? "outline" : "ghost"}
-                                size="sm"
-                                className={`h-9 px-4 text-xs font-bold backdrop-blur-sm transition-all duration-300 hover:scale-105 ${usesDashboardThemeArtwork ? "text-foreground border-border/50 hover:bg-muted/70" : "text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/20 border border-primary-foreground/30"}`}
-                              >
-                                <ArrowLeftRight className="h-4 w-4 mr-2" />
-                                Transfer Funds
-                              </Button>
-                            </Link>
-                          </div>
-                          <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                            </div> */}
+                                <Link
+                                  href="/funds/internal-transfer"
+                                  className="inline-block mt-2"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Button
+                                    variant={
+                                      usesDashboardThemeArtwork
+                                        ? "outline"
+                                        : "ghost"
+                                    }
+                                    size="default"
+                                    className={`h-11 px-6 text-sm font-bold backdrop-blur-sm transition-all duration-300 hover:scale-105 ${usesDashboardThemeArtwork ? "text-foreground border-border/100 hover:bg-muted/70" : "text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/20 border border-primary-foreground/30"}`}
+                                  >
+                                    <ArrowLeftRight className="h-4 w-4 mr-2" />
+                                    Transfer Funds
+                                  </Button>
+                                </Link>
+                              </div>
+                              {/* <div className="flex flex-col items-center gap-2 flex-shrink-0">
                             <div
-                              className={`p-4 rounded-2xl backdrop-blur-md shadow-lg group-hover:scale-110 transition-transform duration-300 ${usesDashboardThemeArtwork ? "border border-border/50 bg-muted/70" : "border-2 border-primary-foreground/30 bg-primary-foreground/10"}`}
+                              className={`p-4 rounded-2xl backdrop-blur-md shadow-lg group-hover:scale-110 transition-transform duration-300 ${usesDashboardThemeArtwork ? "border border-border/100 bg-muted/70" : "border-2 border-primary-foreground/30 bg-primary-foreground/10"}`}
                             >
                               <Lock
                                 className={`h-8 w-8 ${usesDashboardThemeArtwork ? "text-foreground" : "text-primary-foreground"}`}
@@ -1988,191 +2032,205 @@ export function DashboardPageContent() {
                             >
                               Protected
                             </span>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    {/* Partner Wallet Card - Enhanced */}
-                    {hasIbWalletData && ibWalletData && (
-                      <Link
-                        href="/ib-dashboard/wallet"
-                        aria-label="View IB Wallet"
-                        className="sm:col-span-1 lg:col-span-1 block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-full"
-                      >
-                        <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary h-full">
-                          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/8 to-indigo-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
-                          <CardHeader className="relative z-10 pb-3 px-6 pt-6">
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="uppercase tracking-wider text-xs font-semibold text-muted-foreground flex items-center gap-2">
-                                <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                                Partner Wallet
-                              </div>
-                              <div className="p-1.5 rounded-lg backdrop-blur-sm border bg-muted/70 border-border/50">
-                                <Shield className="h-4 w-4 text-foreground" />
-                              </div>
-                            </div>
-                            <div className="flex items-baseline gap-2 mt-2">
-                              <span className="text-4xl font-extrabold leading-tight">
-                                {formatAmount(
-                                  ibWalletData.wallet_balance.amount,
-                                )}
-                              </span>
-                              <span className="text-lg font-bold text-muted-foreground">
-                                {ibWalletData.wallet_balance.currency}
-                              </span>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="relative z-10 pt-4 pb-6 px-6 flex-1">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1 space-y-3">
-                                <div>
-                                  <p className="text-foreground text-sm font-semibold mb-1">
-                                    Partner Wallet
-                                  </p>
-                                  <p className="text-muted-foreground text-xs leading-relaxed">
-                                    Your Partner earnings and balance.
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg backdrop-blur-sm border text-muted-foreground bg-muted/70 border-border/50">
-                                  <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-                                  <span className="font-medium">
-                                    Partner Commission Tracking
-                                  </span>
-                                </div>
-                                <div className="space-y-2 pt-2 border-t border-border/50">
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span className="text-muted-foreground">
-                                      Client Wallet:
-                                    </span>
-                                    <span className="font-semibold text-foreground">
-                                      {formatCurrency(
-                                        ibWalletData.client_wallet.amount,
-                                        ibWalletData.client_wallet.currency,
-                                      )}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center justify-between text-xs">
-                                    <span className="text-muted-foreground">
-                                      Total Earned:
-                                    </span>
-                                    <span className="font-semibold text-foreground">
-                                      {formatCurrency(
-                                        ibWalletData.earning_summary
-                                          .total_earned,
-                                        ibWalletData.earning_summary.currency,
-                                      )}
-                                    </span>
-                                  </div>
-                                </div>
-                              </div>
-                              <div className="flex flex-col items-center gap-2 flex-shrink-0">
-                                <div className="p-4 rounded-2xl backdrop-blur-md shadow-lg group-hover:scale-110 transition-transform duration-300 border border-border/50 bg-muted/70">
-                                  <Wallet className="h-8 w-8" />
-                                </div>
-                                <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                  Partner
-                                </span>
-                              </div>
+                          </div> */}
                             </div>
                           </CardContent>
                         </Card>
-                      </Link>
-                    )}
 
-                    {/* Deposit Funds Card */}
-                    {(!dashboardData?.wallet?.balance ||
-                      dashboardData.wallet.balance === 0) && (
-                      <Card
-                        onClick={() => router.push("/funds/deposit")}
-                        className="sm:col-span-1 lg:col-span-1 relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary cursor-pointer"
-                      >
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/8 to-purple-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
-                        <CardContent className="pt-6 pb-6 px-6 relative z-10">
-                          <div className="flex flex-col items-center justify-center text-center space-y-4">
-                            <div className="relative w-20 h-20 flex items-center justify-center">
-                              <div
-                                className="absolute inset-0 rounded-full border border-dashed border-border/60"
-                                style={{
-                                  animation: "spin 10s linear infinite",
-                                }}
-                              />
-                              <div className="flex h-full w-full items-center justify-center rounded-full border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-105 transition-transform duration-300">
-                                <Wallet className="h-7 w-7 text-foreground" />
-                              </div>
-                              <div className="absolute -bottom-1 -right-1">
-                                <div className="flex h-6 w-6 items-center justify-center rounded-full border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm">
-                                  <PlusCircle className="h-3.5 w-3.5 text-foreground" />
+                        {/* Partner Wallet Card - Enhanced */}
+                        {hasIbWalletData && ibWalletData && (
+                          <Link
+                            href="/ib-dashboard/wallet"
+                            aria-label="View IB Wallet"
+                            className="sm:col-span-1 lg:col-span-1 block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-full"
+                          >
+                            <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary h-full">
+                              <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/8 to-indigo-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
+                              <CardHeader className="relative z-10 pb-3 px-6 pt-6">
+                                <div className="flex items-center justify-between mb-2">
+                                  <div className="uppercase tracking-wider text-xs font-semibold text-muted-foreground flex items-center gap-2">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                                    Partner Wallet
+                                  </div>
+                                  <div className="p-1.5 rounded-lg backdrop-blur-sm border bg-muted/70 border-border/100">
+                                    <Shield className="h-4 w-4 text-foreground" />
+                                  </div>
+                                </div>
+                                <div className="flex items-baseline gap-2 mt-2">
+                                  <span className="text-4xl font-extrabold leading-tight">
+                                    {formatAmount(
+                                      ibWalletData.wallet_balance.amount,
+                                    )}
+                                  </span>
+                                  <span className="text-lg font-bold text-muted-foreground">
+                                    {ibWalletData.wallet_balance.currency}
+                                  </span>
+                                </div>
+                              </CardHeader>
+                              <CardContent className="relative z-10 pt-4 pb-6 px-6 flex-1">
+                                <div className="flex items-start justify-between gap-4">
+                                  <div className="flex-1 space-y-3">
+                                    <div>
+                                      <p className="text-foreground text-sm font-semibold mb-1">
+                                        Partner Wallet
+                                      </p>
+                                      <p className="text-muted-foreground text-xs leading-relaxed">
+                                        Your Partner earnings and balance.
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg backdrop-blur-sm border text-muted-foreground bg-muted/70 border-border/100">
+                                      <Sparkles className="h-3.5 w-3.5 animate-pulse" />
+                                      <span className="font-medium">
+                                        Partner Commission Tracking
+                                      </span>
+                                    </div>
+                                    <div className="space-y-2 pt-2 border-t border-border/100">
+                                      <div className="flex items-center justify-between text-xs">
+                                        <span className="text-muted-foreground">
+                                          Client Wallet:
+                                        </span>
+                                        <span className="font-semibold text-foreground">
+                                          {formatCurrency(
+                                            ibWalletData.client_wallet.amount,
+                                            ibWalletData.client_wallet.currency,
+                                          )}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center justify-between text-xs">
+                                        <span className="text-muted-foreground">
+                                          Total Earned:
+                                        </span>
+                                        <span className="font-semibold text-foreground">
+                                          {formatCurrency(
+                                            ibWalletData.earning_summary
+                                              .total_earned,
+                                            ibWalletData.earning_summary
+                                              .currency,
+                                          )}
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex flex-col items-center gap-2 flex-shrink-0">
+                                    <div className="p-4 rounded-2xl backdrop-blur-md shadow-lg group-hover:scale-110 transition-transform duration-300 border border-border/100 bg-muted/70">
+                                      <Wallet className="h-8 w-8" />
+                                    </div>
+                                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                                      Partner
+                                    </span>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </Link>
+                        )}
+
+                        {/* Deposit Funds Card */}
+                        {(!dashboardData?.wallet?.balance ||
+                          dashboardData.wallet.balance === 0) && (
+                          <Card
+                            onClick={() => router.push("/funds/deposit")}
+                            className="sm:col-span-1 lg:col-span-1 relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary cursor-pointer"
+                          >
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/8 to-purple-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
+                            <CardContent className="pt-6 pb-6 px-6 relative z-10">
+                              <div className="flex flex-col items-center justify-center text-center space-y-4">
+                                <div className="relative w-20 h-20 flex items-center justify-center">
+                                  <div
+                                    className="absolute inset-0 rounded-full border border-dashed border-border/60"
+                                    style={{
+                                      animation: "spin 10s linear infinite",
+                                    }}
+                                  />
+                                  <div className="flex h-full w-full items-center justify-center rounded-full border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-105 transition-transform duration-300">
+                                    <Wallet className="h-7 w-7 text-foreground" />
+                                  </div>
+                                  <div className="absolute -bottom-1 -right-1">
+                                    <div className="flex h-6 w-6 items-center justify-center rounded-full border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm">
+                                      <PlusCircle className="h-3.5 w-3.5 text-foreground" />
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="space-y-1">
+                                  <h3 className="text-base font-semibold text-foreground">
+                                    Wallet Empty
+                                  </h3>
+                                  <p className="text-xs text-muted-foreground">
+                                    Deposit funds to start your trading journey
+                                  </p>
+                                </div>
+                                <div className="pt-1 border-t border-border/100 w-full">
+                                  <Link
+                                    href="/funds/deposit"
+                                    className="w-full block mt-3"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Button size="sm" className="w-full">
+                                      <PlusCircle className="h-4 w-4 mr-2" />
+                                      Deposit Funds
+                                    </Button>
+                                  </Link>
                                 </div>
                               </div>
-                            </div>
-                            <div className="space-y-1">
-                              <h3 className="text-base font-semibold text-foreground">
-                                Wallet Empty
-                              </h3>
-                              <p className="text-xs text-muted-foreground">
-                                Deposit funds to start your trading journey
-                              </p>
-                            </div>
-                            <div className="pt-1 border-t border-border/50 w-full">
-                              <Link
-                                href="/funds/deposit"
-                                className="w-full block mt-3"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <Button size="sm" className="w-full">
-                                  <PlusCircle className="h-4 w-4 mr-2" />
-                                  Deposit Funds
-                                </Button>
-                              </Link>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )}
+                            </CardContent>
+                          </Card>
+                        )}
 
-                    {/* Profile Status Card - Enhanced */}
-                    <div className="sm:col-span-2 lg:col-span-1">
-                      <Card
-                        onClick={() => {
-                          const pendingDocs = profileTimeline.some(
-                            (item) =>
-                              item.id === "documents_verification" &&
-                              item.status === "Pending",
-                          );
-                          const pendingPersonal = profileTimeline.some(
-                            (item) =>
-                              item.id === "personal_information" &&
-                              item.status === "Pending",
-                          );
-                          if (pendingDocs) {
-                            router.push("/profile/kyc-verification");
-                          } else if (pendingPersonal) {
-                            router.push("/profile/view_profile#personal");
-                          } else {
-                            router.push("/profile/view_profile");
-                          }
-                        }}
-                        className="rounded-[28px] h-full relative overflow-hidden border shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface cursor-pointer"
-                      >
-                        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/8 to-purple-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
-                        <CardHeader className="flex flex-row items-center justify-between pb-3 pt-5 px-5 relative z-10 border-b border-border/50">
-                          <div className="flex items-center gap-3">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm">
-                              <Target className="h-4 w-4 text-primary" />
-                            </div>
-                            <div>
-                              <CardTitle className="text-base font-bold">
-                                Profile Status
-                              </CardTitle>
-                              <div className="flex items-center gap-1.5 mt-0.5">
+                        {/* Profile Status Card - Enhanced */}
+                        <div className="sm:col-span-2 lg:col-span-1">
+                          <Card
+                            onClick={() => {
+                              const pendingDocs = profileTimeline.some(
+                                (item) =>
+                                  item.id === "documents_verification" &&
+                                  item.status === "Pending",
+                              );
+                              const pendingPersonal = profileTimeline.some(
+                                (item) =>
+                                  item.id === "personal_information" &&
+                                  item.status === "Pending",
+                              );
+                              if (pendingDocs) {
+                                router.push("/profile/kyc-verification");
+                              } else if (pendingPersonal) {
+                                router.push("/profile/view_profile#personal");
+                              } else {
+                                router.push("/profile/view_profile");
+                              }
+                            }}
+                            className="rounded-[28px] h-full relative overflow-hidden border shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface cursor-pointer"
+                          >
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/8 to-purple-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
+
+                            <CardHeader className="flex flex-row items-center justify-between pb-3 pt-5 px-5 relative z-10 border-b border-border/100">
+                              <div className="flex items-center gap-3">
+                               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 bg-[#3D3D3D] shadow-sm backdrop-blur-sm">
+                                  <Image
+                                    src="/profilestatusicon.svg"
+                                    alt="Profile status"
+                                    width={18}
+                                    height={18}
+                                  />
+                                </div>
+                                <div>
+                                  <CardTitle className="text-base font-bold">
+                                    Profile Status
+                                  </CardTitle>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-1.5">
                                 {dashboardData?.profile_status?.status ===
                                 "Verified" ? (
                                   <>
-                                    <CheckCircle2 className="h-3 w-3 text-green-500" />
-                                    <p className="text-xs font-semibold text-green-600 dark:text-green-400">
+                                    <p className="text-sm font-semibold text-blue-500">
                                       Verified
                                     </p>
+                                    <Image
+                                      src="/verifyblue.svg"
+                                      alt="Verified"
+                                      width={16}
+                                      height={16}
+                                    />
                                   </>
                                 ) : (
                                   <>
@@ -2183,101 +2241,114 @@ export function DashboardPageContent() {
                                   </>
                                 )}
                               </div>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="px-5 pb-5 pt-4 relative z-10">
-                          {profileTimeline.length === 0 ? (
-                            <div className="flex flex-col items-center justify-center py-6 text-center">
-                              <FileText className="h-10 w-10 text-muted-foreground/30 mb-2" />
-                              <p className="text-xs text-muted-foreground">
-                                No profile status information
-                              </p>
-                            </div>
-                          ) : (
-                            <div className="space-y-3 max-h-[200px] overflow-y-auto pr-1 custom-scrollbar">
-                              {profileTimeline
-                                .slice(0, 3)
-                                .map((activity) => (
-                                  <div
-                                    key={activity.id}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      if (activity.id === "documents_verification") {
-                                        router.push("/profile/kyc-verification");
-                                      } else if (activity.id === "personal_information") {
-                                        router.push("/profile/view_profile#personal");
-                                      } else if (activity.id === "legal_information") {
-                                        router.push("/profile/view_profile#account");
-                                      } else {
-                                        router.push("/profile/view_profile");
-                                      }
-                                    }}
-                                    className="flex gap-3 items-start p-2 rounded-lg hover:bg-muted/50 transition-colors group/item cursor-pointer"
-                                  >
+                            </CardHeader>
+
+                            <CardContent className="px-5 pb-5 pt-4 relative z-10">
+                              {profileTimeline.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-6 text-center">
+                                  <FileText className="h-10 w-10 text-muted-foreground/30 mb-2" />
+                                  <p className="text-xs text-muted-foreground">
+                                    No profile status information
+                                  </p>
+                                </div>
+                              ) : (
+                                <div className="max-h-[280px] overflow-y-auto pr-1 custom-scrollbar">
+                                  {profileTimeline.map((activity, index) => (
                                     <div
-                                      className={`size-7 rounded-full flex items-center justify-center text-white flex-shrink-0 shadow-md transition-transform group-hover/item:scale-110 ${
-                                        activity.iconColor ?? "bg-primary"
+                                      key={activity.id}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (
+                                          activity.id ===
+                                          "documents_verification"
+                                        ) {
+                                          router.push(
+                                            "/profile/kyc-verification",
+                                          );
+                                        } else if (
+                                          activity.id === "personal_information"
+                                        ) {
+                                          router.push(
+                                            "/profile/view_profile#personal",
+                                          );
+                                        } else if (
+                                          activity.id === "legal_information"
+                                        ) {
+                                          router.push(
+                                            "/profile/view_profile#account",
+                                          );
+                                        } else {
+                                          router.push("/profile/view_profile");
+                                        }
+                                      }}
+                                      className={`flex gap-3 items-center p-2.5 hover:bg-muted/50 transition-colors group/item cursor-pointer ${
+                                        index !== profileTimeline.length - 1
+                                          ? "border-b border-border/100"
+                                          : ""
                                       }`}
                                     >
-                                      {activity.icon}
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center justify-between gap-2">
+                                      <div className="size-9 rounded-full flex items-center justify-center bg-[#113F24] shadow-md transition-transform group-hover/item:scale-110">
+                                        <Image
+                                          src="/documentsicon.svg"
+                                          alt=""
+                                          width={16}
+                                          height={16}
+                                        />
+                                      </div>
+                                      <div className="flex-1 min-w-0">
                                         <h4 className="text-sm font-semibold truncate">
                                           {activity.title}
                                         </h4>
-                                        <Badge
-                                          variant={
-                                            activity.badgeVariant ?? "secondary"
-                                          }
-                                          className={`text-[10px] px-2 py-0.5 font-semibold ${
-                                            activity.status === "Completed"
-                                              ? "bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
-                                              : "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400"
-                                          }`}
-                                        >
-                                          {activity.status}
-                                        </Badge>
+                                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                                          {activity.description}
+                                        </p>
                                       </div>
-                                      <p className="text-[10px] text-muted-foreground mt-0.5 truncate">
-                                        {activity.description}
-                                      </p>
+                                      <Badge
+                                        variant="outline"
+                                        className={`text-[10px] px-2 py-0.5 font-medium rounded-full bg-transparent flex-shrink-0 ${
+                                          activity.status === "Completed"
+                                            ? "border-green-500/60 text-green-400"
+                                            : "border-red-500/60 text-red-400"
+                                        }`}
+                                      >
+                                        {activity.status === "Completed"
+                                          ? "Completed"
+                                          : "Incomplete"}
+                                      </Badge>
                                     </div>
-                                  </div>
-                                ))}
-                            </div>
-                          )}
-                          {profileTimeline.some(
-                            (item) => item.status === "Pending",
-                          ) && (
-                            <Link
-                              href={
-                                profileTimeline.some(
-                                  (item) =>
-                                    item.id === "documents_verification" &&
-                                    item.status === "Pending",
-                                )
-                                  ? "/profile/kyc-verification"
-                                  : "/profile/view_profile"
-                              }
-                              className="block mt-4"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="w-full text-xs h-9 font-semibold border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all duration-300"
-                              >
-                                <Settings className="h-3.5 w-3.5 mr-2" />
-                                Complete Profile
-                              </Button>
-                            </Link>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </div>
-                  </div>
+                                  ))}
+                                </div>
+                              )}
+                              {profileTimeline.some(
+                                (item) => item.status === "Pending",
+                              ) && (
+                                <Link
+                                  href={
+                                    profileTimeline.some(
+                                      (item) =>
+                                        item.id === "documents_verification" &&
+                                        item.status === "Pending",
+                                    )
+                                      ? "/profile/kyc-verification"
+                                      : "/profile/view_profile"
+                                  }
+                                  className="block mt-4"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full text-xs h-9 font-semibold border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all duration-300"
+                                  >
+                                    <Settings className="h-3.5 w-3.5 mr-2" />
+                                    Complete Profile
+                                  </Button>
+                                </Link>
+                              )}
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Profile Stepper - 20% width on XL screens */}
@@ -2289,10 +2360,10 @@ export function DashboardPageContent() {
                     </div>
                   </div>
 
-              {/* Deposits and Withdrawals Charts */}
-              <div className="grid gap-4 xl:grid-cols-2">
-                {isDepositsStatisticsLoading ? (
-                      <Card className="relative flex w-full max-w-full flex-col gap-6 overflow-hidden rounded-2xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-muted/20 shadow-lg md:p-6">
+                  {/* Deposits and Withdrawals Charts */}
+                  <div className="grid gap-4 xl:grid-cols-2">
+                    {isDepositsStatisticsLoading ? (
+                      <Card className="relative flex w-full max-w-full flex-col gap-6 overflow-hidden rounded-2xl border-2 border-border/100 bg-gradient-to-br from-card via-card to-muted/20 shadow-lg md:p-6">
                         <CardHeader className="relative flex flex-col items-start gap-4.5 space-y-0 p-0 md:flex-row md:items-center md:justify-between md:gap-0">
                           <div className="flex items-center gap-2.5">
                             <Skeleton className="h-8 w-8 rounded-lg" />
@@ -2300,7 +2371,7 @@ export function DashboardPageContent() {
                           </div>
                         </CardHeader>
                         <CardContent className="relative flex flex-col gap-4 p-0">
-                          <div className="flex w-full gap-1 rounded-lg border border-border/50 bg-muted/30 p-1">
+                          <div className="flex w-full gap-1 rounded-lg border border-border/100 bg-muted/30 p-1">
                             <Skeleton className="h-9 flex-1" />
                             <Skeleton className="h-9 flex-1" />
                           </div>
@@ -2358,8 +2429,8 @@ export function DashboardPageContent() {
                       />
                     )}
 
-                {isWithdrawalsStatisticsLoading ? (
-                      <Card className="relative flex w-full max-w-full flex-col gap-6 overflow-hidden rounded-2xl border-2 border-border/50 bg-gradient-to-br from-card via-card to-muted/20 shadow-lg md:p-6">
+                    {isWithdrawalsStatisticsLoading ? (
+                      <Card className="relative flex w-full max-w-full flex-col gap-6 overflow-hidden rounded-2xl border-2 border-border/100 bg-gradient-to-br from-card via-card to-muted/20 shadow-lg md:p-6">
                         <CardHeader className="relative flex flex-col items-start gap-4.5 space-y-0 p-0 md:flex-row md:items-center md:justify-between md:gap-0">
                           <div className="flex items-center gap-2.5">
                             <Skeleton className="h-8 w-8 rounded-lg" />
@@ -2367,7 +2438,7 @@ export function DashboardPageContent() {
                           </div>
                         </CardHeader>
                         <CardContent className="relative flex flex-col gap-4 p-0">
-                          <div className="flex w-full gap-1 rounded-lg border border-border/50 bg-muted/30 p-1">
+                          <div className="flex w-full gap-1 rounded-lg border border-border/100 bg-muted/30 p-1">
                             <Skeleton className="h-9 flex-1" />
                             <Skeleton className="h-9 flex-1" />
                           </div>
@@ -2425,8 +2496,8 @@ export function DashboardPageContent() {
                           )
                         }
                       />
-                )}
-              </div>
+                    )}
+                  </div>
                 </>
               ) : (
                 /* Custom Dashboard View with Drag and Drop */

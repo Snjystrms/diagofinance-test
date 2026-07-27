@@ -2,6 +2,7 @@
 
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { ThemePill } from "@/components/ui/theme-pill";
 import { ArrowRight, TrendingUp, BarChart2, Globe2, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClientCustomization } from "@/contexts/client-customization-context";
@@ -128,9 +129,9 @@ export function Mt5AccountCreationDialog({
 
             <div>
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="ib-portal-kicker inline-flex rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em]">
+                <ThemePill className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em]">
                   MetaTrader 5
-                </span>
+                </ThemePill>
                 <span className="h-1 w-1 rounded-full bg-primary/40" />
                 <span className="text-[10px] tracking-widest uppercase text-muted-foreground/80">
                   Diago Finance

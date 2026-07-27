@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Sparkles } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { ThemePill } from "@/components/ui/theme-pill";
 import { cn } from "@/lib/utils";
 
 interface IbPageShellProps {
@@ -65,10 +66,12 @@ export function IbPageHeader({
     <section className="ib-portal-hero rounded-[20px] sm:rounded-[28px] border px-4 py-5 sm:px-7 sm:py-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
-          <div className="ib-portal-kicker inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.22em]">
-            <Sparkles className="h-3.5 w-3.5" />
+          <ThemePill
+            icon={<Sparkles className="h-3.5 w-3.5" />}
+            className="rounded-full text-xs font-semibold uppercase tracking-[0.22em]"
+          >
             {eyebrow}
-          </div>
+          </ThemePill>
           <div className="space-y-1">
             <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2.15rem]">{title}</h1>
             {description ? (

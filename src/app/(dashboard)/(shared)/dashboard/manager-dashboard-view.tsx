@@ -22,6 +22,7 @@ import type {
 } from "@/lib/api";
 import { useClientCustomization } from "@/contexts/client-customization-context"
 import { getDashboardThemeArtwork } from "@/components/theme-customizer"
+import { ThemePill } from "@/components/ui/theme-pill";
 
 interface ManagerDashboardViewProps {
   managerDashboardData: ManagerDashboardData | null;
@@ -190,10 +191,12 @@ export function ManagerDashboardView({ managerDashboardData, userName }: Manager
           />
         )}
         <div className="relative z-10 space-y-2">
-          <div className="ib-portal-kicker inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.22em]">
-            <Sparkles className="h-3.5 w-3.5" />
+          <ThemePill
+            icon={<Sparkles className="h-3.5 w-3.5" />}
+            className="rounded-full text-xs font-semibold uppercase tracking-[0.22em]"
+          >
             Manager Portal
-          </div>
+          </ThemePill>
           <div className="space-y-1">
             <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2.15rem]">
               {greeting}

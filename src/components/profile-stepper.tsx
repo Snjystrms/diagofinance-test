@@ -2,7 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Stepper, StepperDescription, StepperIndicator, StepperItem, StepperSeparator, StepperTitle, StepperTrigger } from "./ui/stepper";
+import {
+  Stepper,
+  StepperDescription,
+  StepperIndicator,
+  StepperItem,
+  StepperSeparator,
+  StepperTitle,
+  StepperTrigger,
+} from "./ui/stepper";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -43,8 +51,7 @@ export function ProfileStepper({
   const [activeStep, setActiveStep] = useState(0);
 
   // Debug logging
-  useEffect(() => {
-  }, [hasBankDetails]);
+  useEffect(() => {}, [hasBankDetails]);
 
   // Calculate status for each step
   const steps = useMemo((): StepItem[] => {
@@ -114,12 +121,12 @@ export function ProfileStepper({
     const sortedSteps = stepsList.sort((a, b) => {
       const aCompleted = a.status === "completed";
       const bCompleted = b.status === "completed";
-      
+
       // If both have same completion status, sort by order
       if (aCompleted === bCompleted) {
         return a.order - b.order;
       }
-      
+
       // Put completed items first (top), pending items last (bottom)
       return aCompleted ? -1 : 1;
     });
@@ -213,8 +220,8 @@ export function ProfileStepper({
       <CardHeader className="relative z-10 pb-3 pt-5 px-4 sm:px-5 border-b border-border/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl border border-border/60 bg-background/80 text-foreground shadow-sm backdrop-blur-sm">
-              <FileCheck className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+            <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl border border-border/60 bg-[#3D3D3D] text-foreground shadow-sm backdrop-blur-sm">
+              <FileCheck className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
             </div>
             <div>
               <CardTitle className="text-base sm:text-lg font-bold">
@@ -226,7 +233,7 @@ export function ProfileStepper({
             </div>
           </div>
           <div className="text-right">
-            <div className="text-lg sm:text-xl font-bold bg-gradient-to-br from-primary to-primary/70 bg-clip-text text-transparent">
+            <div className="text-lg sm:text-xl font-bold text-[#E6E6E6]">
               {progressPercentage.toFixed(0)}%
             </div>
           </div>

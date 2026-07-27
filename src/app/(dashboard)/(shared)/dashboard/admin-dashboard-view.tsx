@@ -28,6 +28,7 @@ import { EnhancedDashboardCharts } from "./_components/EnhancedDashboardCharts";
 import dynamic from "next/dynamic";
 import type { AdminDashboardData } from "@/lib/api";
 import { useClientCustomization } from "@/contexts/client-customization-context";
+import { ThemePill } from "@/components/ui/theme-pill";
 import { getDashboardThemeArtwork } from "@/components/theme-customizer";
 
 const ChartContainer = dynamic(
@@ -330,10 +331,12 @@ export function AdminDashboardView({
           />
         )}
         <div className="relative z-10 space-y-2">
-          <div className="ib-portal-kicker inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.22em]">
-            <Sparkles className="h-3.5 w-3.5" />
+          <ThemePill
+            icon={<Sparkles className="h-3.5 w-3.5" />}
+            className="rounded-full text-xs font-semibold uppercase tracking-[0.22em]"
+          >
             Admin Portal
-          </div>
+          </ThemePill>
           <div className="space-y-1">
             <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2.15rem]">
               {greeting}
