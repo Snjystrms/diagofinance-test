@@ -90,6 +90,31 @@ const clientPresets: Record<string, ClientPreset> = {
       dashboardLayout: true,
     },
   },
+  diagofinance: {
+    id: "diagofinance",
+    name: "Diagofinance Preset",
+    themeId: "diagofinance-dark",
+    themePairId: "diagofinance",
+    themeMode: "dark",
+    sidebarId: "default",
+    dashboards: {
+      admin: {
+        mode: "normal",
+        layout: [],
+        hiddenWidgets: [],
+      },
+      client: {
+        mode: "normal",
+        layout: [],
+        hiddenWidgets: [],
+      },
+    },
+    locks: {
+      theme: false,
+      sidebar: true,
+      dashboardLayout: true,
+    },
+  },
 };
 
 export const getActiveClientPresetId = () => process.env.NEXT_PUBLIC_CLIENT_PRESET || "default";

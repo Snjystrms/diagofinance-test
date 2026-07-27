@@ -133,7 +133,7 @@ import toast from "react-hot-toast";
 import { useQuery } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import { useClientCustomization } from "@/contexts/client-customization-context";
-import { isGoldenBullTheme } from "@/components/theme-customizer";
+import { getDashboardThemeArtwork } from "@/components/theme-customizer";
 
 import { formatCurrency } from "@/lib/formatters";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
@@ -193,7 +193,7 @@ export function DashboardPageContent() {
     themePairId,
     themeMode,
   } = useClientCustomization();
-  const isBullTheme = isGoldenBullTheme(themePairId, themeMode);
+  const dashboardThemeArtwork = getDashboardThemeArtwork(themePairId, themeMode);
   const queryClient = useQueryClient();
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const [showMt5Dialog, setShowMt5Dialog] = useState(false);
@@ -294,9 +294,10 @@ export function DashboardPageContent() {
     observer.observe(node);
     // No cleanup needed — the observer is scoped to this node's lifetime
   }, []);
-  // When card is too narrow (<=235px), force the gradient theme (without bull image)
+  // When the card is too narrow, fall back to the gradient version without theme artwork.
   const forceGradientTheme = walletCardWidth > 0 && walletCardWidth <= 262;
-  const effectiveTheme = forceGradientTheme ? false : isBullTheme;
+  const effectiveThemeArtwork = forceGradientTheme ? null : dashboardThemeArtwork;
+  const usesDashboardThemeArtwork = effectiveThemeArtwork !== null;
 
   // Get news and promotions from userDashboard data
   const dashboardNewsItems = useMemo(() => {
@@ -1208,8 +1209,10 @@ export function DashboardPageContent() {
             onClick={() => router.push("/my-wallet/wallet-overview")}
             className="border border-border/50 rounded-3xl bg-card shadow-sm h-full cursor-pointer relative overflow-hidden"
           >
-            {isBullTheme && (
-              <div className="bull-theme-overlay bull-theme-wallet-overlay" />
+            {usesDashboardThemeArtwork && (
+              <div
+                className={`dashboard-theme-overlay dashboard-theme-wallet-overlay theme-art-${effectiveThemeArtwork}`}
+              />
             )}
             <div className="relative z-10 pb-3 px-6 pt-6 h-full flex flex-col">
               <div className="flex items-center justify-between mb-2">
@@ -1640,7 +1643,6 @@ export function DashboardPageContent() {
     depositsCurrency,
     withdrawalsCurrency,
     overallAccounts,
-    walletCurrency,
     profileTimeline,
     depositsStatistics,
     withdrawalsStatistics,
@@ -1648,8 +1650,11 @@ export function DashboardPageContent() {
     withdrawalStatisticsPeriod,
     isDepositsStatisticsLoading,
     isWithdrawalsStatisticsLoading,
+    hasIbWalletData,
     ibWalletData,
-    isBullTheme,
+    effectiveThemeArtwork,
+    usesDashboardThemeArtwork,
+    router,
   ]);
 
   return (
@@ -1737,8 +1742,10 @@ export function DashboardPageContent() {
                     <div className="xl:col-span-3 space-y-6">
                       {/* Header Section */}
                       <div className="ib-portal-hero rounded-[28px] border px-6 py-6 sm:px-7">
-                        {isBullTheme && (
-                          <div className="bull-theme-overlay bull-theme-welcome-overlay" />
+                        {dashboardThemeArtwork && (
+                          <div
+                            className={`dashboard-theme-overlay dashboard-theme-welcome-overlay theme-art-${dashboardThemeArtwork}`}
+                          />
                         )}
                         <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                           <div className="space-y-2">
@@ -1884,10 +1891,12 @@ export function DashboardPageContent() {
                     <Card
                       ref={walletCardRef}
                       // onClick={() => router.push("/my-wallet/wallet-overview")}
-                      className={`sm:col-span-1 lg:col-span-1 relative overflow-hidden shadow-2xl rounded-3xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group cursor-pointer ${effectiveTheme ? "text-foreground bg-card ib-portal-surface ib-portal-surface-primary" : "text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent border-none"}`}
+                      className={`sm:col-span-1 lg:col-span-1 relative overflow-hidden shadow-2xl rounded-3xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group cursor-pointer ${usesDashboardThemeArtwork ? "text-foreground bg-card ib-portal-surface ib-portal-surface-primary" : "text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent border-none"}`}
                     >
-                      {effectiveTheme ? (
-                        <div className="bull-theme-overlay bull-theme-wallet-overlay" />
+                      {usesDashboardThemeArtwork ? (
+                        <div
+                          className={`dashboard-theme-overlay dashboard-theme-wallet-overlay theme-art-${effectiveThemeArtwork}`}
+                        />
                       ) : (
                         <>
                           <div className="absolute inset-0 opacity-60">
@@ -1901,27 +1910,27 @@ export function DashboardPageContent() {
                       <CardHeader className="relative z-10 pb-3 px-6 pt-6">
                         <div className="flex items-center justify-between mb-2">
                           <p
-                            className={`uppercase tracking-wider text-xs font-bold flex items-center gap-2 ${effectiveTheme ? "text-muted-foreground" : "text-primary-foreground/80"}`}
+                            className={`uppercase tracking-wider text-xs font-bold flex items-center gap-2 ${usesDashboardThemeArtwork ? "text-muted-foreground" : "text-primary-foreground/80"}`}
                           >
                             <Wallet className="h-3.5 w-3.5" />
                             Wallet Balance
                           </p>
                           <div
-                            className={`p-1.5 rounded-lg backdrop-blur-sm border ${effectiveTheme ? "bg-muted/70 border-border/50" : "bg-primary-foreground/10 border-primary-foreground/20"}`}
+                            className={`p-1.5 rounded-lg backdrop-blur-sm border ${usesDashboardThemeArtwork ? "bg-muted/70 border-border/50" : "bg-primary-foreground/10 border-primary-foreground/20"}`}
                           >
                             <Shield
-                              className={`h-4 w-4 ${effectiveTheme ? "text-foreground" : "text-primary-foreground"}`}
+                              className={`h-4 w-4 ${usesDashboardThemeArtwork ? "text-foreground" : "text-primary-foreground"}`}
                             />
                           </div>
                         </div>
                         <div className="flex items-baseline gap-2 mt-2">
                           <span
-                            className={`text-4xl font-extrabold leading-tight ${effectiveTheme ? "" : "drop-shadow-lg"}`}
+                            className={`text-4xl font-extrabold leading-tight ${usesDashboardThemeArtwork ? "" : "drop-shadow-lg"}`}
                           >
                             {formatAmount(dashboardData?.wallet?.balance)}
                           </span>
                           <span
-                            className={`text-lg font-bold ${effectiveTheme ? "text-muted-foreground" : "text-primary-foreground/80"}`}
+                            className={`text-lg font-bold ${usesDashboardThemeArtwork ? "text-muted-foreground" : "text-primary-foreground/80"}`}
                           >
                             USD
                           </span>
@@ -1932,19 +1941,19 @@ export function DashboardPageContent() {
                           <div className="flex-1 space-y-3">
                             <div>
                               <p
-                                className={`text-sm font-semibold mb-1 ${effectiveTheme ? "text-foreground" : "text-primary-foreground"}`}
+                                className={`text-sm font-semibold mb-1 ${usesDashboardThemeArtwork ? "text-foreground" : "text-primary-foreground"}`}
                               >
                                 Your Main Wallet
                               </p>
                               <p
-                                className={`text-xs leading-relaxed ${effectiveTheme ? "text-muted-foreground" : "text-primary-foreground/80"}`}
+                                className={`text-xs leading-relaxed ${usesDashboardThemeArtwork ? "text-muted-foreground" : "text-primary-foreground/80"}`}
                               >
                                 Securely manage balances across deposits and
                                 transfers.
                               </p>
                             </div>
                             <div
-                              className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg backdrop-blur-sm border ${effectiveTheme ? "text-muted-foreground bg-muted/70 border-border/50" : "text-primary-foreground/90 bg-primary-foreground/10 border-primary-foreground/20"}`}
+                              className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg backdrop-blur-sm border ${usesDashboardThemeArtwork ? "text-muted-foreground bg-muted/70 border-border/50" : "text-primary-foreground/90 bg-primary-foreground/10 border-primary-foreground/20"}`}
                             >
                               <Sparkles className="h-3.5 w-3.5 animate-pulse" />
                               <span className="font-medium">
@@ -1957,9 +1966,9 @@ export function DashboardPageContent() {
                               onClick={(e) => e.stopPropagation()}
                             >
                               <Button
-                                variant={effectiveTheme ? "outline" : "ghost"}
+                                variant={usesDashboardThemeArtwork ? "outline" : "ghost"}
                                 size="sm"
-                                className={`h-9 px-4 text-xs font-bold backdrop-blur-sm transition-all duration-300 hover:scale-105 ${effectiveTheme ? "text-foreground border-border/50 hover:bg-muted/70" : "text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/20 border border-primary-foreground/30"}`}
+                                className={`h-9 px-4 text-xs font-bold backdrop-blur-sm transition-all duration-300 hover:scale-105 ${usesDashboardThemeArtwork ? "text-foreground border-border/50 hover:bg-muted/70" : "text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/20 border border-primary-foreground/30"}`}
                               >
                                 <ArrowLeftRight className="h-4 w-4 mr-2" />
                                 Transfer Funds
@@ -1968,14 +1977,14 @@ export function DashboardPageContent() {
                           </div>
                           <div className="flex flex-col items-center gap-2 flex-shrink-0">
                             <div
-                              className={`p-4 rounded-2xl backdrop-blur-md shadow-lg group-hover:scale-110 transition-transform duration-300 ${effectiveTheme ? "border border-border/50 bg-muted/70" : "border-2 border-primary-foreground/30 bg-primary-foreground/10"}`}
+                              className={`p-4 rounded-2xl backdrop-blur-md shadow-lg group-hover:scale-110 transition-transform duration-300 ${usesDashboardThemeArtwork ? "border border-border/50 bg-muted/70" : "border-2 border-primary-foreground/30 bg-primary-foreground/10"}`}
                             >
                               <Lock
-                                className={`h-8 w-8 ${effectiveTheme ? "text-foreground" : "text-primary-foreground"}`}
+                                className={`h-8 w-8 ${usesDashboardThemeArtwork ? "text-foreground" : "text-primary-foreground"}`}
                               />
                             </div>
                             <span
-                              className={`text-[10px] font-semibold uppercase tracking-wider ${effectiveTheme ? "text-muted-foreground" : "text-primary-foreground/90"}`}
+                              className={`text-[10px] font-semibold uppercase tracking-wider ${usesDashboardThemeArtwork ? "text-muted-foreground" : "text-primary-foreground/90"}`}
                             >
                               Protected
                             </span>

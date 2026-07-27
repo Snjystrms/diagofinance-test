@@ -32,6 +32,7 @@ interface ThemeSwatch {
     secondary: string
     accent: string
     background: string
+    card?: string
     foreground: string
     border: string
     muted: string
@@ -48,6 +49,8 @@ export interface ThemePair {
   brightThemeId: string
   darkThemeId: string
 }
+
+export type DashboardThemeArtwork = "bull" | "diagofinance" | null
 
 const themeSwatches: ThemeSwatch[] = [
   {
@@ -1190,17 +1193,17 @@ const themeSwatches: ThemeSwatch[] = [
   rightColor: "#18181B",
 
   cssVariables: {
-    primary: "#EC0808",          // Red — now the dominant accent
+    primary: "#EC0808",          // Red — dominant accent
     secondary: "#500101",        // Deep maroon secondary
-    accent: "#BB8700",           // Dark gold — used sparingly, just a small highlight
+    accent: "#BB8700",           // Dark gold — sparing highlight
 
-    background: "#0A0A0B",       // True neutral near-black
-    foreground: "#F4F4F5",       // Neutral near-white text
+    background: "#030303",       // Dashboard background beneath the cards
+    card: "#151515",             // Flat card surface
+    foreground: "#F4F4F5",       // FIXED: near-white text (was #151515)
 
-    border: "#27272A",           // Plain neutral dark grey border
-
-    muted: "#18181B",            // Neutral charcoal for cards/sidebar
-    mutedForeground: "#A1A1AA",  // Neutral grey secondary text
+    border: "#27272A",
+    muted: "#18181B",
+    mutedForeground: "#A1A1AA",
 
     sidebar: {
       background: "#0A0A0B",
@@ -1221,11 +1224,26 @@ const themeSwatches: ThemeSwatch[] = [
 
 const swatchById = new Map(themeSwatches.map((swatch) => [swatch.id, swatch]))
 
-export function isGoldenBullTheme(pairId: string, mode?: ThemeMode): boolean {
+const dashboardThemeArtworkByThemeId: Record<string, Exclude<DashboardThemeArtwork, null>> = {
+  "golden-bull-bright": "bull",
+  "golden-bull-dark": "bull",
+  "diagofinance-bright": "diagofinance",
+  "diagofinance-dark": "diagofinance",
+}
+
+export function getDashboardThemeArtwork(pairId: string, mode?: ThemeMode): DashboardThemeArtwork {
   const pair = themePairs.find((p) => p.id === pairId)
-  if (!pair) return false
+  if (!pair) return null
   const themeId = mode === "dark" ? pair.darkThemeId : pair.brightThemeId
-  return themeId === "golden-bull-dark" || themeId === "golden-bull-bright"
+  return dashboardThemeArtworkByThemeId[themeId] ?? null
+}
+
+export function isGoldenBullTheme(pairId: string, mode?: ThemeMode): boolean {
+  return getDashboardThemeArtwork(pairId, mode) === "bull"
+}
+
+export function isDiagofinanceTheme(pairId: string, mode?: ThemeMode): boolean {
+  return getDashboardThemeArtwork(pairId, mode) === "diagofinance"
 }
 
 export const themePairs: ThemePair[] = [
@@ -1309,7 +1327,7 @@ function writeVariables(target: HTMLElement, vars: ThemeSwatch["cssVariables"]) 
   const sidebarRing = sidebarVars.ring ?? vars.border
 
   target.style.setProperty("--background", vars.background)
-  target.style.setProperty("--card", vars.background)
+  target.style.setProperty("--card", vars.card ?? vars.background)
   target.style.setProperty("--popover", vars.background)
   target.style.setProperty("--sidebar", sidebarBackground)
 
@@ -1393,6 +1411,7 @@ export function applyThemePairMode(pairId: string, mode: ThemeMode) {
   } else {
     root.classList.remove("dark")
   }
+  root.dataset.themeId = themeId
 
   const target = dark ? (darkContainer || root) : root
 

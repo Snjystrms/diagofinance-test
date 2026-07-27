@@ -287,6 +287,24 @@
       );
   }
 
+  :root[data-theme-id="diagofinance-dark"] .ib-portal-shell {
+    background-color: #030303;
+    background-image: none;
+  }
+
+ :root[data-theme-id="diagofinance-dark"] .ib-portal-hero,
+:root[data-theme-id="diagofinance-dark"] .ib-portal-surface,
+:root[data-theme-id="diagofinance-dark"] .ib-portal-surface-primary,
+:root[data-theme-id="diagofinance-dark"] .ib-portal-surface-emerald,
+:root[data-theme-id="diagofinance-dark"] .ib-portal-surface-amber,
+:root[data-theme-id="diagofinance-dark"] .ib-portal-note {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--card), var(--card)) padding-box,
+    linear-gradient(100.15deg, #606060 -5.5%, #B10430 56.77%, #606060 111.96%) border-box;
+  box-shadow: 0 30px 70px -54px rgba(0, 0, 0, 0.72);
+}
+
   .ib-sidebar-hero {
     background:
       linear-gradient(
@@ -498,7 +516,7 @@
     }
   }
 
-  .bull-theme-overlay {
+  .dashboard-theme-overlay {
     position: absolute;
     inset: 0;
     z-index: 0;
@@ -506,34 +524,52 @@
     background-repeat: no-repeat;
   }
 
-  .bull-theme-welcome-overlay {
-    background-image: url('/welcome-bull-light.png');
+  .dashboard-theme-welcome-overlay {
     background-position: right center;
     background-size: cover;
   }
 
-.bull-theme-wallet-overlay {
-    background-image: url('/wallet-balance-bull-bright.png');
+  .dashboard-theme-wallet-overlay {
     background-position: bottom right;
     background-size: auto;
+  }
+
+  .theme-art-bull.dashboard-theme-welcome-overlay {
+    background-image: url('/welcome-bull-light.png');
+  }
+
+  .theme-art-diagofinance.dashboard-theme-welcome-overlay {
+    background-image: url('/welcome-header.svg');
+  }
+
+  .theme-art-bull.dashboard-theme-wallet-overlay {
+    background-image: url('/wallet-balance-bull-bright.png');
     background-color: #eeb03f;
   }
 
-  .dark .bull-theme-wallet-overlay {
+  .theme-art-diagofinance.dashboard-theme-wallet-overlay {
+    background-image: url('/walet-balance-diago.svg');
+  }
+
+  .dark .theme-art-bull.dashboard-theme-welcome-overlay {
+    background-image: url('/welcome-bull.png');
+  }
+
+  .dark .theme-art-diagofinance.dashboard-theme-welcome-overlay {
+    background-image: url('/welcome-header.svg');
+  }
+
+  .dark .theme-art-bull.dashboard-theme-wallet-overlay {
     background-image: url('/wallet-balance-bull.png');
     background-color: #1f1402;
   }
 
-  .dark .bull-theme-welcome-overlay {
-    background-image: url('/welcome-bull.png');
-  }
-
-  .dark .bull-theme-wallet-overlay {
-    background-image: url('/wallet-balance-bull.png');
+  .dark .theme-art-diagofinance.dashboard-theme-wallet-overlay {
+    background-image: url('/walet-balance-diago.svg');
   }
 
   @container (max-width: 760px) {
-    .bull-theme-welcome-overlay {
+    .dashboard-theme-welcome-overlay {
       display: none;
     }
   }

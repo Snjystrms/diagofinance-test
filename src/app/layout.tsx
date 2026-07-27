@@ -43,7 +43,7 @@ const themeBootstrapScript = `
       "nordic-frost","solar-flare","oceanic-abyss","crimson-tide","synthwave-84",
       "monokai-pro","nord-aurora","midnight-moss","deep-ocean-inc","blood-moon",
       "rose-gold-dark","cyber-lime","neon-vamp","stealth-amber","abyssal-emerald",
-      "sub-zero","toxic-waste","phantom-rose","purple-noir","golden-bull-dark","ocean"
+      "sub-zero","toxic-waste","phantom-rose","purple-noir","golden-bull-dark","diagofinance-dark","ocean"
     ];
     var darkSet = new Set(darkThemeIds);
     var pairMap = {
@@ -69,6 +69,7 @@ const themeBootstrapScript = `
       "tokyo-frost": { b: "cool", d: "tokyo-night" },
       "nord-tundra": { b: "nord-aurora", d: "nordic-frost" },
       "solar-abyss": { b: "solar-flare", d: "oceanic-abyss" },
+      "diagofinance": { b: "diagofinance-bright", d: "diagofinance-dark" },
       "synth-graphite": { b: "synthwave-84", d: "graphite" },
       "gold-obsidian": { b: "rose-gold-dark", d: "monokai-pro" },
       "golden-bull": { b: "golden-bull-bright", d: "golden-bull-dark" }
@@ -84,6 +85,9 @@ const themeBootstrapScript = `
     }
     var isDark = mode === "dark" || darkSet.has(themeId);
     document.documentElement.classList.toggle("dark", isDark);
+    if (themeId) {
+      document.documentElement.dataset.themeId = themeId;
+    }
     
     // Prevent blue text flash on sidebar items
     var style = document.createElement('style');

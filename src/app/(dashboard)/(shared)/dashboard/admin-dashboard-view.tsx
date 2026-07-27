@@ -28,7 +28,7 @@ import { EnhancedDashboardCharts } from "./_components/EnhancedDashboardCharts";
 import dynamic from "next/dynamic";
 import type { AdminDashboardData } from "@/lib/api";
 import { useClientCustomization } from "@/contexts/client-customization-context";
-import { isGoldenBullTheme } from "@/components/theme-customizer";
+import { getDashboardThemeArtwork } from "@/components/theme-customizer";
 
 const ChartContainer = dynamic(
   () =>
@@ -98,7 +98,7 @@ export function AdminDashboardView({
   userName,
 }: AdminDashboardViewProps) {
   const { themePairId, themeMode } = useClientCustomization();
-  const isBullTheme = isGoldenBullTheme(themePairId, themeMode);
+  const dashboardThemeArtwork = getDashboardThemeArtwork(themePairId, themeMode);
   const kpis = adminDashboardData?.kpis;
   const transactionGraph = adminDashboardData?.transaction_graph;
   const clientsGraph = adminDashboardData?.clients_graph;
@@ -324,8 +324,10 @@ export function AdminDashboardView({
     <div className="min-h-full w-full p-4 lg:p-6 xl:p-8">
       {/* Header */}
       <div className="mb-6 ib-portal-hero rounded-[28px] border px-6 py-6 sm:px-7">
-        {isBullTheme && (
-          <div className="bull-theme-overlay bull-theme-welcome-overlay" />
+        {dashboardThemeArtwork && (
+          <div
+            className={`dashboard-theme-overlay dashboard-theme-welcome-overlay theme-art-${dashboardThemeArtwork}`}
+          />
         )}
         <div className="relative z-10 space-y-2">
           <div className="ib-portal-kicker inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.22em]">

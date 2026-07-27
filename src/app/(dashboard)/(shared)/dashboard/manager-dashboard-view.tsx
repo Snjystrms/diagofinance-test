@@ -21,7 +21,7 @@ import type {
   ManagerWithdrawalsStats,
 } from "@/lib/api";
 import { useClientCustomization } from "@/contexts/client-customization-context"
-import { isGoldenBullTheme } from "@/components/theme-customizer"
+import { getDashboardThemeArtwork } from "@/components/theme-customizer"
 
 interface ManagerDashboardViewProps {
   managerDashboardData: ManagerDashboardData | null;
@@ -165,7 +165,7 @@ function WithdrawalsSection({ withdrawals }: { withdrawals: ManagerWithdrawalsSt
 
 export function ManagerDashboardView({ managerDashboardData, userName }: ManagerDashboardViewProps) {
   const { themePairId, themeMode } = useClientCustomization();
-  const isBullTheme = isGoldenBullTheme(themePairId, themeMode);
+  const dashboardThemeArtwork = getDashboardThemeArtwork(themePairId, themeMode);
   const manager = managerDashboardData?.manager;
   const permissions = managerDashboardData?.permissions;
   const clients = managerDashboardData?.stats?.clients;
@@ -184,7 +184,11 @@ export function ManagerDashboardView({ managerDashboardData, userName }: Manager
     <div className="min-h-full w-full p-4 lg:p-6 xl:p-8">
       {/* Header */}
       <div className="mb-6 ib-portal-hero rounded-[28px] border px-6 py-6 sm:px-7">
-        {isBullTheme && <div className="bull-theme-overlay bull-theme-welcome-overlay" />}
+        {dashboardThemeArtwork && (
+          <div
+            className={`dashboard-theme-overlay dashboard-theme-welcome-overlay theme-art-${dashboardThemeArtwork}`}
+          />
+        )}
         <div className="relative z-10 space-y-2">
           <div className="ib-portal-kicker inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.22em]">
             <Sparkles className="h-3.5 w-3.5" />
