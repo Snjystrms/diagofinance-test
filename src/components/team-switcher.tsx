@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Image from "next/image"
+import * as React from "react";
+import Image from "next/image";
 
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar"
-import { useClientCustomization } from "@/contexts/client-customization-context"
-import { cn } from "@/lib/utils"
+} from "@/components/ui/sidebar";
+import { useClientCustomization } from "@/contexts/client-customization-context";
+import { cn } from "@/lib/utils";
 
 export function TeamSwitcher({
   teams,
@@ -18,31 +18,33 @@ export function TeamSwitcher({
   roleLabel,
 }: {
   teams: {
-    name: string
-    logo?: React.ElementType | string
-    logoBright?: string
-    logoDark?: string
-    plan: string
-  }[]
-  variant?: "default" | "enterprise"
-  roleLabel?: string
+    name: string;
+    logo?: React.ElementType | string;
+    logoBright?: string;
+    logoDark?: string;
+    plan: string;
+  }[];
+  variant?: "default" | "enterprise";
+  roleLabel?: string;
 }) {
-  const { state } = useSidebar()
-  const { themeMode } = useClientCustomization()
-  const isCollapsed = state === "collapsed"
-  const [activeTeam] = React.useState(teams[0])
-  const isEnterprise = variant === "enterprise"
+  const { state } = useSidebar();
+  const { themeMode } = useClientCustomization();
+  const isCollapsed = state === "collapsed";
+  const [activeTeam] = React.useState(teams[0]);
+  const isEnterprise = variant === "enterprise";
 
   const resolvedLogo = React.useMemo(() => {
-    if (!activeTeam) return null
+    if (!activeTeam) return null;
     if (activeTeam.logoBright && activeTeam.logoDark) {
-      return themeMode === "bright" ? activeTeam.logoBright : activeTeam.logoDark
+      return themeMode === "bright"
+        ? activeTeam.logoBright
+        : activeTeam.logoDark;
     }
-    return activeTeam.logo ?? null
-  }, [activeTeam, themeMode])
+    return activeTeam.logo ?? null;
+  }, [activeTeam, themeMode]);
 
   if (!activeTeam) {
-    return null
+    return null;
   }
 
   return (
@@ -53,47 +55,61 @@ export function TeamSwitcher({
           className={cn(
             isEnterprise
               ? "h-auto min-h-0 rounded-2xl border px-3 py-2 text-sidebar-foreground transition-all duration-200 hover:opacity-90 group-data-[collapsible=icon]:size-12! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:rounded-2xl group-data-[collapsible=icon]:px-0! group-data-[collapsible=icon]:py-0! ib-portal-hero"
-              : "data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+              : "data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground",
           )}
         >
           <div
             className={cn(
-              "flex w-full items-center gap-3",
-              isCollapsed && "justify-center gap-0"
+              "flex w-full items-center gap-1.5",
+              isCollapsed ? "justify-center gap-0" : "justify-center",
             )}
           >
             {typeof resolvedLogo === "string" ? (
-              <Image src={resolvedLogo} alt={activeTeam.name} width={60} height={60} className="size-10 object-contain" />
+              <Image
+                src={resolvedLogo}
+                alt={activeTeam.name}
+                width={60}
+                height={60}
+                className="size-10 object-contain"
+              />
             ) : resolvedLogo ? (
-              React.createElement(resolvedLogo as React.ElementType, { className: "size-10" })
+              React.createElement(resolvedLogo as React.ElementType, {
+                className: "size-10",
+              })
             ) : null}
             {!isCollapsed && (
-              <>
-                <div className="grid flex-1 gap-0.5 text-left leading-tight">
-                  {isEnterprise && (
-                    <span className="truncate text-[11px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/60">
-                      {roleLabel ?? "Workspace"}
-                    </span>
-                  )}
-                  <span
-                    className={cn(
-                      "truncate font-cinzel text-[11px] font-bold uppercase tracking-[0.2em]",
-                      themeMode === "bright"
-                        ? "text-[#48526b] [-webkit-text-stroke:0.5px_#48526b] [text-shadow:0_0_4px_rgba(72,82,107,0.25)]"
-                        : "text-transparent [-webkit-text-stroke:0.5px_white] [text-shadow:0_0_4px_rgba(255,255,255,0.25)]"
-                    )}
-                  >
-                    {activeTeam.name}
+              <div className="grid gap-0.5 text-center leading-tight">
+                {isEnterprise && (
+                  <span className="truncate text-[11px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/60">
+                    {roleLabel ?? "Workspace"}
                   </span>
-                  <span className="truncate font-arvo text-[10px] font-bold tracking-wide text-[#FFB800]">
-                    {activeTeam.plan}
-                  </span>
-                </div>
-              </>
+                )}
+                <span
+                  className="truncate text-[13px] font-bold uppercase tracking-[0.2em]"
+                  style={{
+                    fontFamily: "Montserrat, sans-serif",
+                    background:
+                      "linear-gradient(180deg, #F8C701 -155.58%, #816700 248.31%)",
+                    WebkitBackgroundClip: "text",
+                    WebkitTextFillColor: "transparent",
+                  }}
+                >
+                  {activeTeam.name}
+                </span>
+                <span
+                  className="truncate text-[8px] font-semibold tracking-[0.2em]"
+                  style={{
+                    fontFamily: "Montserrat, sans-serif",
+                    color: "#D1D1D1",
+                  }}
+                >
+                  {activeTeam.plan}
+                </span>
+              </div>
             )}
           </div>
         </SidebarMenuButton>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }

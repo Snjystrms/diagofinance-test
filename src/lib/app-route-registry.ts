@@ -113,7 +113,7 @@ export const crmData = {
       name: "Diago Finance",
       logoBright: "/diagologo.svg",
       logoDark: "/diagologo.svg",
-      plan: "Precision, Power, Performance.",
+      plan: "BUILD YOUR FUTURE",
     },
   ],
 };

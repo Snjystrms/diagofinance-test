@@ -14,15 +14,12 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  User,
   FileCheck,
-  Building2,
-  Wallet,
-  Landmark,
   Download,
   CheckCircle2,
   Clock,
   AlertCircle,
+  Landmark,
 } from "lucide-react";
 import type { UserDashboardData } from "@/lib/api";
 
@@ -75,7 +72,13 @@ export function ProfileStepper({
         title: "Complete Profile",
         description: "Fill in your personal information",
         status: personalInfoComplete ? "completed" : "pending",
-        icon: <User className="h-4 w-4" />,
+        icon: (
+          <img
+            src="/complete_profile_icon.svg"
+            alt="Complete Profile"
+            className="h-5 w-5 object-contain"
+          />
+        ),
         route: "/profile/view_profile#personal",
         order: personalInfoComplete ? 10 : 1,
       },
@@ -84,7 +87,13 @@ export function ProfileStepper({
         title: "KYC Verification",
         description: "Upload and verify your documents",
         status: kycComplete ? "completed" : "pending",
-        icon: <FileCheck className="h-4 w-4" />,
+        icon: (
+          <img
+            src="/kyc_verification_icon.svg"
+            alt="KYC Verification"
+            className="h-5 w-5 object-contain"
+          />
+        ),
         route: "/profile/kyc-verification",
         order: kycComplete ? 11 : 2,
       },
@@ -93,7 +102,13 @@ export function ProfileStepper({
         title: "Open MT5 Account",
         description: "Create your first trading account",
         status: hasMt5Account ? "completed" : "pending",
-        icon: <Building2 className="h-4 w-4" />,
+        icon: (
+          <img
+            src="/open_mt5_account_icon.svg"
+            alt="Open MT5 Account"
+            className="h-5 w-5 object-contain"
+          />
+        ),
         route: "/my_accounts/open-trading-account",
         order: hasMt5Account ? 12 : 3,
       },
@@ -102,7 +117,13 @@ export function ProfileStepper({
         title: "Make First Deposit",
         description: "Fund your wallet to start trading",
         status: hasDeposit ? "completed" : "pending",
-        icon: <Wallet className="h-4 w-4" />,
+        icon: (
+          <img
+            src="/make_first_deposit.svg"
+            alt="Make First Deposit"
+            className="h-5 w-5 object-contain"
+          />
+        ),
         route: "/funds/deposit",
         order: hasDeposit ? 13 : 4,
       },
@@ -111,7 +132,7 @@ export function ProfileStepper({
         title: "Add Bank Details",
         description: "Set up your withdrawal method",
         status: hasBankDetails ? "completed" : "pending",
-        icon: <Landmark className="h-4 w-4" />,
+        icon: <Landmark className="h-4 w-4 text-white" />,
         route: "/profile/view_profile?tab=bank",
         order: hasBankDetails ? 14 : 5,
       },
@@ -265,12 +286,10 @@ export function ProfileStepper({
                     onClick={() => handleStepClick(step)}
                     className="cursor-pointer"
                   >
-                    <StepperIndicator>
-                      {step.status === "completed" ? (
-                        <CheckCircle2 className="h-4 w-4" />
-                      ) : (
-                        step.icon
-                      )}
+                    <StepperIndicator asChild>
+                      <div className="flex items-center justify-center">
+                        {step.icon}
+                      </div>
                     </StepperIndicator>
                   </StepperTrigger>
                   {index < steps.length - 1 && <StepperSeparator />}
@@ -295,24 +314,18 @@ export function ProfileStepper({
         </Stepper>
 
         {/* Optional Action - MetaTrader Installation */}
-        <div className="mt-6 pt-5 border-t border-border/50">
-          <div
-            className="flex items-center gap-3 cursor-pointer hover:bg-gradient-to-r hover:from-muted/40 hover:to-muted/20 rounded-xl p-3 transition-all duration-200 group border border-border/30 hover:border-border/50 hover:shadow-sm bg-muted/10"
-            onClick={() => window.open(optionalAction.route, "_blank")}
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background/80 text-foreground shadow-sm backdrop-blur-sm group-hover:scale-105 transition-transform duration-200">
-              {optionalAction.icon}
-            </div>
-            <div className="flex-1">
-              <div className="text-sm font-semibold group-hover:text-primary transition-colors duration-200">
-                {optionalAction.title}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {optionalAction.description}
-              </div>
-            </div>
-          </div>
-        </div>
+<div className="mt-6 pt-5 border-t border-border/50">
+  <div
+    className="cursor-pointer overflow-hidden rounded-xl border border-border/30 bg-muted/10 transition-all duration-200 hover:border-border/50 hover:shadow-sm"
+    onClick={() => window.open(optionalAction.route, "_blank")}
+  >
+    <img
+      src="/install_mt5.png"
+      alt="Install MetaTrader 5"
+      className="w-full h-auto object-contain"
+    />
+  </div>
+</div>
       </CardContent>
     </Card>
   );

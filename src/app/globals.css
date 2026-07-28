@@ -6,7 +6,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-inter-sans);
+  --font-sans:
+    "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", var(--font-inter-sans), sans-serif;
   --font-mono: var(--font-geist-mono);
   --font-cinzel: var(--font-cinzel);
   --font-arvo: var(--font-arvo);
@@ -159,7 +161,10 @@
   body {
     @apply bg-background text-foreground;
     background-color: var(--background);
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: var(--font-sans);
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
   }
 }
 
@@ -182,8 +187,16 @@
 
   .ib-portal-shell {
     background-image:
-      radial-gradient(circle at top right, color-mix(in srgb, var(--primary) 14%, transparent) 0%, transparent 34%),
-      radial-gradient(circle at left 18%, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 26%),
+      radial-gradient(
+        circle at top right,
+        color-mix(in srgb, var(--primary) 14%, transparent) 0%,
+        transparent 34%
+      ),
+      radial-gradient(
+        circle at left 18%,
+        color-mix(in srgb, var(--accent) 10%, transparent) 0%,
+        transparent 26%
+      ),
       linear-gradient(
         180deg,
         color-mix(in srgb, var(--background) 92%, var(--primary) 8%) 0%,
@@ -195,13 +208,12 @@
     position: relative;
     overflow: hidden;
     container-type: inline-size;
-    background:
-      linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--card) 76%, var(--primary) 24%) 0%,
-        color-mix(in srgb, var(--card) 82%, var(--accent) 18%) 52%,
-        color-mix(in srgb, var(--card) 92%, transparent) 100%
-      );
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--card) 76%, var(--primary) 24%) 0%,
+      color-mix(in srgb, var(--card) 82%, var(--accent) 18%) 52%,
+      color-mix(in srgb, var(--card) 92%, transparent) 100%
+    );
     border-color: color-mix(in srgb, var(--border) 72%, var(--primary) 28%);
     box-shadow:
       0 26px 60px -38px color-mix(in srgb, var(--primary) 38%, transparent),
@@ -246,7 +258,8 @@
     border-color: color-mix(in srgb, var(--border) 65%, var(--primary) 35%);
     background: color-mix(in srgb, var(--background) 82%, var(--primary) 18%);
     color: var(--foreground);
-    box-shadow: 0 18px 34px -24px color-mix(in srgb, var(--primary) 35%, transparent);
+    box-shadow: 0 18px 34px -24px
+      color-mix(in srgb, var(--primary) 35%, transparent);
   }
 
   .ib-portal-action:hover {
@@ -255,50 +268,46 @@
 
   .ib-portal-surface {
     border-color: color-mix(in srgb, var(--border) 78%, var(--primary) 22%);
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--card) 96%, transparent) 0%,
-        color-mix(in srgb, var(--muted) 40%, var(--card) 60%) 100%
-      );
-    box-shadow: 0 30px 70px -54px color-mix(in srgb, var(--foreground) 18%, transparent);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--card) 96%, transparent) 0%,
+      color-mix(in srgb, var(--muted) 40%, var(--card) 60%) 100%
+    );
+    box-shadow: 0 30px 70px -54px
+      color-mix(in srgb, var(--foreground) 18%, transparent);
   }
 
   .ib-portal-surface-primary {
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--background) 84%, var(--primary) 16%) 0%,
-        color-mix(in srgb, var(--card) 82%, transparent) 100%
-      );
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--background) 84%, var(--primary) 16%) 0%,
+      color-mix(in srgb, var(--card) 82%, transparent) 100%
+    );
   }
 
   .ib-portal-surface-emerald {
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--background) 88%, var(--accent) 12%) 0%,
-        color-mix(in srgb, var(--card) 82%, transparent) 100%
-      );
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--background) 88%, var(--accent) 12%) 0%,
+      color-mix(in srgb, var(--card) 82%, transparent) 100%
+    );
   }
 
   .ib-portal-surface-amber {
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--background) 82%, var(--primary) 18%) 0%,
-        color-mix(in srgb, var(--card) 86%, transparent) 100%
-      );
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--background) 82%, var(--primary) 18%) 0%,
+      color-mix(in srgb, var(--card) 86%, transparent) 100%
+    );
   }
 
   .ib-portal-note {
     border-color: color-mix(in srgb, var(--border) 68%, var(--accent) 32%);
-    background:
-      linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--background) 84%, var(--accent) 16%) 0%,
-        color-mix(in srgb, var(--background) 90%, var(--primary) 10%) 100%
-      );
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--background) 84%, var(--accent) 16%) 0%,
+      color-mix(in srgb, var(--background) 90%, var(--primary) 10%) 100%
+    );
   }
 
   :root[data-theme-id="diagofinance-dark"] .ib-portal-shell {
@@ -315,67 +324,81 @@
     border: 1px solid transparent;
     background:
       linear-gradient(var(--card), var(--card)) padding-box,
-      linear-gradient(100.15deg, #606060 -5.5%, #B10430 56.77%, #606060 111.96%) border-box;
+      linear-gradient(100.15deg, #606060 -5.5%, #b10430 56.77%, #606060 111.96%)
+        border-box;
     box-shadow: 0 30px 70px -54px rgba(0, 0, 0, 0.72);
   }
 
- :root[data-theme-id="diagofinance-dark"] .ib-theme-pill {
-  border: 1px solid transparent;
-  background:
-    linear-gradient(180deg, rgba(4, 4, 4, 0.55) 0%, rgba(17, 17, 17, 0.62) 100%) padding-box,
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.45) 0%,
-      rgba(255, 255, 255, 0.12) 42%,
-      rgba(255, 255, 255, 0.32) 100%
-    ) border-box;
-  color: #F4F4F5;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 16px 34px -24px rgba(0, 0, 0, 0.84);
-}
+  :root[data-theme-id="diagofinance-dark"] .ib-theme-pill {
+    border: 1px solid transparent;
+    background:
+      linear-gradient(
+          180deg,
+          rgba(4, 4, 4, 0.55) 0%,
+          rgba(17, 17, 17, 0.62) 100%
+        )
+        padding-box,
+      linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.45) 0%,
+          rgba(255, 255, 255, 0.12) 42%,
+          rgba(255, 255, 255, 0.32) 100%
+        )
+        border-box;
+    color: #f4f4f5;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      0 16px 34px -24px rgba(0, 0, 0, 0.84);
+  }
 
   :root[data-theme-id="diagofinance-dark"] .ib-theme-pill[data-tone="subtle"] {
     background:
-      linear-gradient(180deg, rgba(9, 9, 9, 0.9) 0%, rgba(22, 22, 22, 0.94) 100%) padding-box,
       linear-gradient(
-        180deg,
-        rgba(255, 255, 255, 0.7) 0%,
-        rgba(255, 255, 255, 0.18) 42%,
-        rgba(255, 255, 255, 0.5) 100%
-      ) border-box;
+          180deg,
+          rgba(9, 9, 9, 0.9) 0%,
+          rgba(22, 22, 22, 0.94) 100%
+        )
+        padding-box,
+      linear-gradient(
+          180deg,
+          rgba(255, 255, 255, 0.7) 0%,
+          rgba(255, 255, 255, 0.18) 42%,
+          rgba(255, 255, 255, 0.5) 100%
+        )
+        border-box;
     color: rgba(244, 244, 245, 0.92);
   }
 
   .ib-sidebar-hero {
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--sidebar) 82%, var(--sidebar-primary) 18%) 0%,
-        color-mix(in srgb, var(--sidebar) 96%, transparent) 100%
-      );
-    border-bottom: 1px solid color-mix(in srgb, var(--sidebar-border) 82%, transparent);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--sidebar) 82%, var(--sidebar-primary) 18%) 0%,
+      color-mix(in srgb, var(--sidebar) 96%, transparent) 100%
+    );
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--sidebar-border) 82%, transparent);
   }
 
   .ib-sidebar-balance {
     border: 1px solid color-mix(in srgb, var(--sidebar-border) 72%, transparent);
     background: color-mix(in srgb, var(--sidebar-accent) 76%, transparent);
-    box-shadow: inset 0 1px 0 color-mix(in srgb, var(--sidebar-primary-foreground) 12%, transparent);
+    box-shadow: inset 0 1px 0
+      color-mix(in srgb, var(--sidebar-primary-foreground) 12%, transparent);
   }
 
   .ib-sidebar-grid {
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--background) 88%, var(--sidebar) 12%) 0%,
-        color-mix(in srgb, var(--background) 100%, transparent) 100%
-      );
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--background) 88%, var(--sidebar) 12%) 0%,
+      color-mix(in srgb, var(--background) 100%, transparent) 100%
+    );
   }
 
   .ib-sidebar-nav-card {
     border: 1px solid color-mix(in srgb, var(--border) 78%, transparent);
     background: color-mix(in srgb, var(--card) 86%, var(--sidebar) 14%);
-    box-shadow: 0 16px 30px -28px color-mix(in srgb, var(--foreground) 20%, transparent);
+    box-shadow: 0 16px 30px -28px
+      color-mix(in srgb, var(--foreground) 20%, transparent);
   }
 
   .ib-sidebar-nav-card:hover {
@@ -384,26 +407,28 @@
 
   .ib-sidebar-nav-card-active {
     border-color: color-mix(in srgb, var(--sidebar-primary) 40%, transparent);
-    background:
-      linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--sidebar-accent) 84%, white 16%) 0%,
-        color-mix(in srgb, var(--sidebar-primary) 16%, var(--sidebar-accent) 84%) 100%
-      );
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--sidebar-accent) 84%, white 16%) 0%,
+      color-mix(in srgb, var(--sidebar-primary) 16%, var(--sidebar-accent) 84%)
+        100%
+    );
     color: var(--sidebar-foreground);
-    box-shadow: 0 18px 34px -28px color-mix(in srgb, var(--sidebar-primary) 30%, transparent);
+    box-shadow: 0 18px 34px -28px
+      color-mix(in srgb, var(--sidebar-primary) 30%, transparent);
   }
 
   .ib-sidebar-nav-card-active:hover {
     border-color: color-mix(in srgb, var(--sidebar-primary) 46%, transparent);
-    background:
-      linear-gradient(
-        135deg,
-        color-mix(in srgb, var(--sidebar-accent) 78%, white 22%) 0%,
-        color-mix(in srgb, var(--sidebar-primary) 20%, var(--sidebar-accent) 80%) 100%
-      );
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--sidebar-accent) 78%, white 22%) 0%,
+      color-mix(in srgb, var(--sidebar-primary) 20%, var(--sidebar-accent) 80%)
+        100%
+    );
     color: var(--sidebar-foreground);
-    box-shadow: 0 18px 36px -28px color-mix(in srgb, var(--sidebar-primary) 36%, transparent);
+    box-shadow: 0 18px 36px -28px
+      color-mix(in srgb, var(--sidebar-primary) 36%, transparent);
   }
 
   .ib-collapsed-nav {
@@ -423,9 +448,14 @@
     top: 50%;
     transform: translateY(-50%) scale(0.96);
     transform-origin: left center;
-    background: color-mix(in srgb, var(--sidebar-primary) 74%, var(--accent) 26%);
+    background: color-mix(
+      in srgb,
+      var(--sidebar-primary) 74%,
+      var(--accent) 26%
+    );
     color: var(--sidebar-primary-foreground);
-    border: 1px solid color-mix(in srgb, var(--sidebar-primary) 56%, transparent);
+    border: 1px solid
+      color-mix(in srgb, var(--sidebar-primary) 56%, transparent);
     border-radius: 0.9rem;
     padding: 0.38rem 0.7rem;
     font-size: 0.72rem;
@@ -434,12 +464,15 @@
     line-height: 1;
     white-space: nowrap;
     box-shadow:
-      0 10px 24px -14px color-mix(in srgb, var(--sidebar-primary) 62%, transparent),
+      0 10px 24px -14px
+        color-mix(in srgb, var(--sidebar-primary) 62%, transparent),
       0 2px 6px -4px color-mix(in srgb, var(--foreground) 32%, transparent);
     opacity: 0;
     pointer-events: none;
     z-index: 40;
-    transition: opacity 180ms ease, transform 180ms ease;
+    transition:
+      opacity 180ms ease,
+      transform 180ms ease;
   }
 
   .ib-collapsed-nav-item::before {
@@ -450,14 +483,22 @@
     transform: translateY(-50%) scale(0.95);
     width: 0.56rem;
     height: 0.56rem;
-    border-left: 1px solid color-mix(in srgb, var(--sidebar-primary) 56%, transparent);
-    border-bottom: 1px solid color-mix(in srgb, var(--sidebar-primary) 56%, transparent);
-    background: color-mix(in srgb, var(--sidebar-primary) 74%, var(--accent) 26%);
+    border-left: 1px solid
+      color-mix(in srgb, var(--sidebar-primary) 56%, transparent);
+    border-bottom: 1px solid
+      color-mix(in srgb, var(--sidebar-primary) 56%, transparent);
+    background: color-mix(
+      in srgb,
+      var(--sidebar-primary) 74%,
+      var(--accent) 26%
+    );
     rotate: 45deg;
     opacity: 0;
     pointer-events: none;
     z-index: 39;
-    transition: opacity 180ms ease, transform 180ms ease;
+    transition:
+      opacity 180ms ease,
+      transform 180ms ease;
   }
 
   .ib-collapsed-nav-item:hover::after,
@@ -468,7 +509,8 @@
     transform: translateY(-50%) scale(1);
   }
 
-  .ib-dashboard-sidebar-host[data-collapsible="icon"] .ib-dashboard-sidebar-content {
+  .ib-dashboard-sidebar-host[data-collapsible="icon"]
+    .ib-dashboard-sidebar-content {
     overflow: visible;
   }
 
@@ -477,8 +519,10 @@
     z-index: 60;
   }
 
-  .ib-dashboard-sidebar-host[data-collapsible="icon"] .ib-collapsed-nav-item:hover,
-  .ib-dashboard-sidebar-host[data-collapsible="icon"] .ib-collapsed-nav-item:focus-visible {
+  .ib-dashboard-sidebar-host[data-collapsible="icon"]
+    .ib-collapsed-nav-item:hover,
+  .ib-dashboard-sidebar-host[data-collapsible="icon"]
+    .ib-collapsed-nav-item:focus-visible {
     z-index: 70;
   }
 
@@ -577,37 +621,37 @@
   }
 
   .theme-art-bull.dashboard-theme-welcome-overlay {
-    background-image: url('/welcome-bull-light.png');
+    background-image: url("/welcome-bull-light.png");
   }
 
   .theme-art-diagofinance.dashboard-theme-welcome-overlay {
-    background-image: url('/welcome-header.svg');
+    background-image: url("/welcome-header.svg");
   }
 
   .theme-art-bull.dashboard-theme-wallet-overlay {
-    background-image: url('/wallet-balance-bull-bright.png');
+    background-image: url("/wallet-balance-bull-bright.png");
     background-color: #eeb03f;
   }
 
   .theme-art-diagofinance.dashboard-theme-wallet-overlay {
-    background-image: url('/walet-balance-diago.svg');
+    background-image: url("/walet-balance-diago.svg");
   }
 
   .dark .theme-art-bull.dashboard-theme-welcome-overlay {
-    background-image: url('/welcome-bull.png');
+    background-image: url("/welcome-bull.png");
   }
 
   .dark .theme-art-diagofinance.dashboard-theme-welcome-overlay {
-    background-image: url('/welcome-header.svg');
+    background-image: url("/welcome-header.svg");
   }
 
   .dark .theme-art-bull.dashboard-theme-wallet-overlay {
-    background-image: url('/wallet-balance-bull.png');
+    background-image: url("/wallet-balance-bull.png");
     background-color: #1f1402;
   }
 
   .dark .theme-art-diagofinance.dashboard-theme-wallet-overlay {
-    background-image: url('/walet-balance-diago.svg');
+    background-image: url("/walet-balance-diago.svg");
   }
 
   @container (max-width: 760px) {
@@ -646,5 +690,8 @@ body:not(.theme-loaded) *::after {
 
 /* Enable transitions after theme is loaded */
 body.theme-loaded * {
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease,
+    color 0.3s ease;
 }
