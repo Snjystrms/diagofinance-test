@@ -192,6 +192,56 @@ export interface TradingAccountSummaryItem {
   }>;
 }
 
+export interface ManagementReportSummary {
+  total_clients?: number | string | null;
+  total_deposit?: number | string | null;
+  total_withdraw?: number | string | null;
+  net_deposit?: number | string | null;
+  total_lots?: number | string | null;
+  total_ib_commission?: number | string | null;
+}
+
+export interface ManagementReportCountryChartItem {
+  country?: string | null;
+  name?: string | null;
+  label?: string | null;
+  total_deposit?: number | string | null;
+  deposit?: number | string | null;
+  value?: number | string | null;
+  amount?: number | string | null;
+}
+
+export interface ManagementReportRowItem {
+  id?: number | string | null;
+  name?: string | null;
+  username?: string | null;
+  email?: string | null;
+  country?: string | null;
+  total_deposit?: number | string | null;
+  total_withdraw?: number | string | null;
+  deposit?: number | string | null;
+  withdraw?: number | string | null;
+  amount?: number | string | null;
+  lots?: number | string | null;
+  commission?: number | string | null;
+  [key: string]: unknown;
+}
+
+export interface ManagementReportResponse {
+  summary?: ManagementReportSummary;
+  country_wise_deposit?: ManagementReportCountryChartItem[];
+  chart_data?: ManagementReportCountryChartItem[];
+  top_10_depositor?: ManagementReportRowItem[];
+  top_10_withdrawals?: ManagementReportRowItem[];
+  data?: {
+    summary?: ManagementReportSummary;
+    country_wise_deposit?: ManagementReportCountryChartItem[];
+    chart_data?: ManagementReportCountryChartItem[];
+    top_10_depositor?: ManagementReportRowItem[];
+    top_10_withdrawals?: ManagementReportRowItem[];
+  };
+}
+
 export interface TradingAccountsSummaryResponse {
   summary: TradingAccountSummaryItem[];
   overall: {
@@ -1030,6 +1080,42 @@ export interface AdminGroupDeleteBody {
   id: number;
 }
 
+export const adminManagementReportApi = {
+  list: ({
+    token,
+    country,
+    from_date,
+    to_date,
+  }: {
+    token: string;
+    country?: string;
+    from_date?: string;
+    to_date?: string;
+  }) => {
+    const qs = new URLSearchParams();
+
+    if (country && country.trim()) {
+      qs.set("country", country.trim());
+    }
+    if (from_date && from_date.trim()) {
+      qs.set("from_date", from_date.trim());
+    }
+    if (to_date && to_date.trim()) {
+      qs.set("to_date", to_date.trim());
+    }
+
+    const endpoint = `/admin/management-report${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<ManagementReportResponse>(endpoint, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      },
+    });
+  },
+};
+
 export const adminAccountTypesApi = {
   list: ({
     token,
@@ -1792,7 +1878,12 @@ export const adminCurrencyRatesApi = {
     );
   },
 
-  history: (params: { id: string; token: string; page?: number; per_page?: number }) => {
+  history: (params: {
+    id: string;
+    token: string;
+    page?: number;
+    per_page?: number;
+  }) => {
     const { id, token, page = 1, per_page = 10 } = params;
     const query = new URLSearchParams({
       page: String(page),
@@ -1818,13 +1909,10 @@ export const adminCurrencyRatesApi = {
         total_records: number;
         per_page: number;
       };
-    }>(
-      `/admin/currency-rates/${id}/history?${query.toString()}`,
-      {
-        method: "GET",
-        headers: { Authorization: `Bearer ${token}` },
-      },
-    );
+    }>(`/admin/currency-rates/${id}/history?${query.toString()}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
   },
 
   get: (id: string | number, token: string) =>
@@ -1931,8 +2019,6 @@ export const authApi = {
       method: "POST",
       body: JSON.stringify(data),
     }),
-
-
 
   refreshToken: (token: string) =>
     apiCall<{ token?: string; access_token?: string }>("/auth/refresh", {
@@ -2381,7 +2467,7 @@ export const adminBankDetailsApi = {
 
     return fetch(`${API_BASE_URL}${endpoint}`, {
       method: "GET",
-      headers: { 
+      headers: {
         Authorization: `Bearer ${token}`,
       },
     });
@@ -2447,38 +2533,39 @@ export const adminBrokerBankDetailsApi = {
     }
 
     // Use FormData if QR code is base64 image - convert to file
-    const isBase64Image = body.upi_qr_code_url && body.upi_qr_code_url.startsWith('data:image');
-    
+    const isBase64Image =
+      body.upi_qr_code_url && body.upi_qr_code_url.startsWith("data:image");
+
     if (isBase64Image) {
       const formData = new FormData();
-      formData.append('account_holder_name', body.account_holder_name);
-      formData.append('account_number', body.account_number);
-      formData.append('address', body.address);
-      formData.append('bank_name', body.bank_name);
-      formData.append('country', body.country);
-      formData.append('iban_number', body.iban_number);
-      formData.append('swift_ifsc_code', body.swift_ifsc_code);
-      formData.append('is_active', body.is_active ? '1' : '0');
+      formData.append("account_holder_name", body.account_holder_name);
+      formData.append("account_number", body.account_number);
+      formData.append("address", body.address);
+      formData.append("bank_name", body.bank_name);
+      formData.append("country", body.country);
+      formData.append("iban_number", body.iban_number);
+      formData.append("swift_ifsc_code", body.swift_ifsc_code);
+      formData.append("is_active", body.is_active ? "1" : "0");
 
       // Convert base64 to File object
       try {
-        const base64Data = body.upi_qr_code_url.split(',')[1];
-        const mimeType = body.upi_qr_code_url.split(';')[0].split(':')[1];
+        const base64Data = body.upi_qr_code_url.split(",")[1];
+        const mimeType = body.upi_qr_code_url.split(";")[0].split(":")[1];
         const byteString = atob(base64Data);
         const arrayBuffer = new ArrayBuffer(byteString.length);
         const uint8Array = new Uint8Array(arrayBuffer);
-        
+
         for (let i = 0; i < byteString.length; i++) {
           uint8Array[i] = byteString.charCodeAt(i);
         }
-        
+
         const blob = new Blob([uint8Array], { type: mimeType });
-        const file = new File([blob], 'qr-code.png', { type: mimeType });
-        formData.append('upi_qr_code', file);
+        const file = new File([blob], "qr-code.png", { type: mimeType });
+        formData.append("upi_qr_code", file);
       } catch (error) {
-        console.error('Failed to convert base64 to file:', error);
+        console.error("Failed to convert base64 to file:", error);
         // Fallback: send as base64 string
-        formData.append('upi_qr_code_url', body.upi_qr_code_url);
+        formData.append("upi_qr_code_url", body.upi_qr_code_url);
       }
 
       return apiCall<BrokerBankDetailItem>(`/admin/broker-bank-details`, {
@@ -2535,38 +2622,39 @@ export const adminBrokerBankDetailsApi = {
     }
 
     // Use FormData if QR code is base64 image - convert to file
-    const isBase64Image = body.upi_qr_code_url && body.upi_qr_code_url.startsWith('data:image');
-    
+    const isBase64Image =
+      body.upi_qr_code_url && body.upi_qr_code_url.startsWith("data:image");
+
     if (isBase64Image) {
       const formData = new FormData();
-      formData.append('account_holder_name', body.account_holder_name);
-      formData.append('account_number', body.account_number);
-      formData.append('address', body.address);
-      formData.append('bank_name', body.bank_name);
-      formData.append('country', body.country);
-      formData.append('iban_number', body.iban_number);
-      formData.append('swift_ifsc_code', body.swift_ifsc_code);
-      formData.append('is_active', body.is_active ? '1' : '0');
+      formData.append("account_holder_name", body.account_holder_name);
+      formData.append("account_number", body.account_number);
+      formData.append("address", body.address);
+      formData.append("bank_name", body.bank_name);
+      formData.append("country", body.country);
+      formData.append("iban_number", body.iban_number);
+      formData.append("swift_ifsc_code", body.swift_ifsc_code);
+      formData.append("is_active", body.is_active ? "1" : "0");
 
       // Convert base64 to File object
       try {
-        const base64Data = body.upi_qr_code_url.split(',')[1];
-        const mimeType = body.upi_qr_code_url.split(';')[0].split(':')[1];
+        const base64Data = body.upi_qr_code_url.split(",")[1];
+        const mimeType = body.upi_qr_code_url.split(";")[0].split(":")[1];
         const byteString = atob(base64Data);
         const arrayBuffer = new ArrayBuffer(byteString.length);
         const uint8Array = new Uint8Array(arrayBuffer);
-        
+
         for (let i = 0; i < byteString.length; i++) {
           uint8Array[i] = byteString.charCodeAt(i);
         }
-        
+
         const blob = new Blob([uint8Array], { type: mimeType });
-        const file = new File([blob], 'qr-code.png', { type: mimeType });
-        formData.append('upi_qr_code', file);
+        const file = new File([blob], "qr-code.png", { type: mimeType });
+        formData.append("upi_qr_code", file);
       } catch (error) {
-        console.error('Failed to convert base64 to file:', error);
+        console.error("Failed to convert base64 to file:", error);
         // Fallback: send as base64 string
-        formData.append('upi_qr_code_url', body.upi_qr_code_url);
+        formData.append("upi_qr_code_url", body.upi_qr_code_url);
       }
 
       return apiCall<BrokerBankDetailItem>(
@@ -3000,7 +3088,10 @@ export interface AdminKycDetailResponseData {
   };
   submitted_at?: string;
   summary?: Record<string, unknown>;
-  documents?: Record<string, AdminKycDetailDocument | number | null | undefined>;
+  documents?: Record<
+    string,
+    AdminKycDetailDocument | number | null | undefined
+  >;
   document_files?: Record<string, string | null | undefined>;
   document_urls?: Record<string, string | null | undefined>;
   rejection_comments?: Record<string, string | undefined>;
@@ -4405,11 +4496,7 @@ export const adminBroadcastEmailApi = {
     );
   },
 
-  sendNextChunk: (
-    campaignId: number,
-    chunkSize: number,
-    token: string,
-  ) => {
+  sendNextChunk: (campaignId: number, chunkSize: number, token: string) => {
     return apiCall<BroadcastCampaignChunkResult>(
       `/admin/user-management/broadcast-email/campaign/${campaignId}/send-next-chunk`,
       {

@@ -18,6 +18,7 @@ import {
   UserPlus,
   Users,
   Wallet,
+  LayoutDashboard
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -38,6 +39,7 @@ export type AppRole = UserType;
 
 type SidebarSectionId =
   | "dashboard"
+  | "managementdashboard"
   | "wallet"
   | "accounts"
   | "funds"
@@ -126,6 +128,15 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     icon: Home,
     audience: "shared",
     roles: SHARED_ROLES,
+    directLink: true,
+  },
+  {
+    id: "managementdashboard",
+    title: "Management Dashboard",
+    url: "/management-dashboard",
+    icon: LayoutDashboard,
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
     directLink: true,
   },
   // {
@@ -566,6 +577,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "client",
     roles: CLIENT_ROLES,
     navLabel: "Settings",
+  },
+  {
+    path: "/management-dashboard",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "managementdashboard",
+    navLabel: "Management Dashboard",
+    managerCategories: ["Report Management"],
   },
   {
     path: "/new-users",

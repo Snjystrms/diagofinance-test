@@ -1,5 +1,29 @@
 // API base URL is configured via .env only
-export const API_BASE_URL = (process.env.NEXT_PUBLIC_API_BASE_URL || "").replace(/\/+$/, "");
+const normalizeApiBaseUrl = (value: string) => {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+
+  const withoutTrailingSlash = trimmed.replace(/\/+$/, "");
+
+  if (
+    /^https?:\/\//i.test(withoutTrailingSlash) ||
+    withoutTrailingSlash.startsWith("//")
+  ) {
+    return withoutTrailingSlash;
+  }
+
+  if (/^(localhost|127\.0\.0\.1)(:\d+)?(\/.*)?$/i.test(withoutTrailingSlash)) {
+    return `http://${withoutTrailingSlash}`;
+  }
+
+  return withoutTrailingSlash.startsWith("/")
+    ? withoutTrailingSlash
+    : `/${withoutTrailingSlash}`;
+};
+
+export const API_BASE_URL = normalizeApiBaseUrl(
+  process.env.NEXT_PUBLIC_API_BASE_URL || "",
+);
 
 export interface ApiResponse<T = unknown> {
   success: boolean;
@@ -41,11 +65,16 @@ const extractBearerToken = (authorization?: string | null) => {
 };
 
 const getAuthorizationHeader = (headers: Record<string, string>) => {
-  const key = Object.keys(headers).find((header) => header.toLowerCase() === "authorization");
+  const key = Object.keys(headers).find(
+    (header) => header.toLowerCase() === "authorization",
+  );
   return key ? headers[key] : null;
 };
 
-const setAuthorizationHeader = (headers: Record<string, string>, token: string) => {
+const setAuthorizationHeader = (
+  headers: Record<string, string>,
+  token: string,
+) => {
   Object.keys(headers).forEach((header) => {
     if (header.toLowerCase() === "authorization") {
       delete headers[header];
@@ -90,13 +119,18 @@ export async function refreshCurrentAuthToken(tokenOverride?: string | null) {
     try {
       const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       });
 
       // If refresh endpoint returns 401, return the old token to keep user logged in
       // The old token will continue to be used until other API calls get 401
       if (response.status === 401) {
-        console.warn("Token refresh returned 401 - continuing with existing token");
+        console.warn(
+          "Token refresh returned 401 - continuing with existing token",
+        );
         return token; // Return the old token instead of null
       }
 
@@ -105,7 +139,9 @@ export async function refreshCurrentAuthToken(tokenOverride?: string | null) {
 
       if (!newToken) {
         const currentStoredToken = getStoredAuthToken();
-        return currentStoredToken && currentStoredToken !== token ? currentStoredToken : token;
+        return currentStoredToken && currentStoredToken !== token
+          ? currentStoredToken
+          : token;
       }
 
       if (isAdminSession()) {
@@ -114,7 +150,9 @@ export async function refreshCurrentAuthToken(tokenOverride?: string | null) {
         localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, newToken);
       }
       window.dispatchEvent(
-        new CustomEvent(AUTH_TOKEN_REFRESHED_EVENT, { detail: { token: newToken } })
+        new CustomEvent(AUTH_TOKEN_REFRESHED_EVENT, {
+          detail: { token: newToken },
+        }),
       );
       return newToken;
     } catch (error) {
@@ -129,7 +167,10 @@ export async function refreshCurrentAuthToken(tokenOverride?: string | null) {
   return refreshTokenPromise;
 }
 
-export function handle401Redirect(response: Response, hasAuth: boolean): boolean {
+export function handle401Redirect(
+  response: Response,
+  hasAuth: boolean,
+): boolean {
   if (response.status === 401 && hasAuth) {
     if (typeof window !== "undefined") {
       if (isAdminSession()) {
@@ -197,13 +238,21 @@ export type ApiCallOptions = RequestInit & {
   skipAuthRedirect?: boolean;
 };
 
-const fetchWithConfig = async (url: string, config: RequestInit, endpoint: string) => {
+const fetchWithConfig = async (
+  url: string,
+  config: RequestInit,
+  endpoint: string,
+) => {
   try {
     return await fetch(url, config);
   } catch (networkError) {
-    if (networkError instanceof TypeError && networkError.message === "Failed to fetch") {
+    if (
+      networkError instanceof TypeError &&
+      networkError.message === "Failed to fetch"
+    ) {
       throw new ApiRequestError({
-        message: "Unable to connect to the server. Please check your internet connection or try again later.",
+        message:
+          "Unable to connect to the server. Please check your internet connection or try again later.",
         status: 0,
         statusText: "Network Error",
         endpoint,
@@ -216,7 +265,7 @@ const fetchWithConfig = async (url: string, config: RequestInit, endpoint: strin
 
 export async function apiCall<T>(
   endpoint: string,
-  options: ApiCallOptions = {}
+  options: ApiCallOptions = {},
 ): Promise<ApiResponse<T>> {
   if (!API_BASE_URL) {
     throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
@@ -227,7 +276,11 @@ export async function apiCall<T>(
   if (endpoint.includes("ib-requests/status")) {
   }
 
-  const { headers: optionHeaders, skipAuthRedirect = false, ...restOptions } = options;
+  const {
+    headers: optionHeaders,
+    skipAuthRedirect = false,
+    ...restOptions
+  } = options;
 
   const normalizedHeaders = (() => {
     if (!optionHeaders) return {};
@@ -260,8 +313,7 @@ export async function apiCall<T>(
     endpoint.startsWith("/user/internal-transfer/")
   ) {
     try {
-    } catch {
-    }
+    } catch {}
   }
 
   if (endpoint.includes("ib-requests/status")) {
@@ -290,7 +342,11 @@ export async function apiCall<T>(
     if (retryToken) {
       refreshReturnedToken = true;
       setAuthorizationHeader(finalHeaders, retryToken);
-      response = await fetchWithConfig(url, { ...config, headers: finalHeaders }, endpoint);
+      response = await fetchWithConfig(
+        url,
+        { ...config, headers: finalHeaders },
+        endpoint,
+      );
     }
   }
 
@@ -298,7 +354,13 @@ export async function apiCall<T>(
   // 1. We got a retry token from refresh (either new or old), AND
   // 2. The retry with that token STILL returned 401
   // This means: if refresh gave us ANY token (new or old) and the API still rejects it, the session is truly invalid
-  if (!skipAuthRedirect && response.status === 401 && hasAuth && didAttemptRefresh && refreshReturnedToken) {
+  if (
+    !skipAuthRedirect &&
+    response.status === 401 &&
+    hasAuth &&
+    didAttemptRefresh &&
+    refreshReturnedToken
+  ) {
     if (handle401Redirect(response, hasAuth)) {
       return new Promise<ApiResponse<T>>(() => {});
     }
@@ -311,7 +373,10 @@ export async function apiCall<T>(
 
   if (!response.ok || (json && json.success === false)) {
     if (endpoint.includes("ib-requests/status")) {
-      console.error("[apiCall] Request failed:", json?.message || `HTTP ${response.status}`);
+      console.error(
+        "[apiCall] Request failed:",
+        json?.message || `HTTP ${response.status}`,
+      );
     }
 
     throw new ApiRequestError({

@@ -295,7 +295,7 @@ export function ProfileStepper({
                   {index < steps.length - 1 && <StepperSeparator />}
                 </div>
                 <div
-                  className="flex-1 pb-6 cursor-pointer hover:bg-gradient-to-r hover:from-muted/40 hover:to-muted/20 rounded-xl p-2.5 -ml-2 transition-all duration-200 group border border-transparent hover:border-border/30 hover:shadow-sm"
+                  className="flex-1 pb-6 cursor-pointer hover:bg-gradient-to-r hover:from-muted/40 hover:to-muted/20 rounded-xl p-2.5 pt-0 -ml-2 transition-all duration-200 group border border-transparent hover:border-border/30 hover:shadow-sm"
                   onClick={() => handleStepClick(step)}
                 >
                   <div className="flex items-center justify-between gap-2 mb-1">

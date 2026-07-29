@@ -2,152 +2,160 @@
 
 import Image from "next/image";
 import type { ReactNode } from "react";
+import { TrendingUp, ShieldCheck, UserCircle2 } from "lucide-react";
 import { useClientCustomization } from "@/contexts/client-customization-context";
 
 interface AuthLayoutProps {
   children: ReactNode;
 }
 
+const FEATURES = [
+  {
+    icon: TrendingUp,
+    title: "Real-time insights",
+    desc: "Track your growth every day",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Bank-grade security",
+    desc: "Your data, always protected",
+  },
+];
+
 export function AuthLayout({ children }: AuthLayoutProps) {
   const { themeMode } = useClientCustomization();
-  const logoSrc =
-    themeMode === "bright" ? "/diagologo.svg" : "/diagologo.svg";
+  const logoSrc = themeMode === "bright" ? "/diagologo.svg" : "/diagologo.svg";
 
   return (
-    <div className="min-h-screen flex bg-background">
-      {/* ─── LEFT PANEL ─── */}
-      <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden flex-col">
-        {/* Subtle geometric grid texture */}
+    <div className="relative min-h-screen w-full overflow-hidden bg-background flex items-center justify-center px-4 py-10 sm:px-6 lg:px-8">
+      {/* ─── Ambient background ─── */}
+      <div className="pointer-events-none absolute inset-0">
+        {/* Fine dotted grid, denser toward the right */}
+        <svg
+          className="absolute inset-0 h-full w-full opacity-[0.12]"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <defs>
+            <pattern id="dotGrid" width="18" height="18" patternUnits="userSpaceOnUse">
+              <circle cx="1" cy="1" r="1" fill="var(--color-primary)" />
+            </pattern>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#dotGrid)" />
+        </svg>
+
         <div
-          className="absolute inset-0 opacity-[0.04]"
+          className="absolute -top-40 -right-32 h-[520px] w-[520px] rounded-full opacity-30 blur-[130px]"
           style={{
-            backgroundImage: `
-              linear-gradient(color-mix(in srgb, var(--color-primary) 60%, transparent) 1px, transparent 1px),
-              linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 60%, transparent) 1px, transparent 1px)
-            `,
-            backgroundSize: "48px 48px",
+            background:
+              "radial-gradient(circle, var(--color-primary) 0%, transparent 70%)",
           }}
         />
+        <div
+          className="absolute -bottom-32 -left-24 h-[380px] w-[380px] rounded-full opacity-20 blur-[110px]"
+          style={{
+            background:
+              "radial-gradient(circle, var(--color-primary) 0%, transparent 70%)",
+          }}
+        />
+      </div>
 
-        {/* Top-left corner accent lines */}
-        <div className="absolute top-0 left-0 w-24 h-24 opacity-40">
-          <div className="absolute top-6 left-6 w-px h-12 bg-primary" />
-          <div className="absolute top-6 left-6 w-12 h-px bg-primary" />
-        </div>
-        {/* Bottom-right corner accent lines */}
-        <div className="absolute bottom-0 right-0 w-24 h-24 opacity-40">
-          <div className="absolute bottom-6 right-6 w-px h-12 bg-primary" />
-          <div className="absolute bottom-6 right-6 w-12 h-px bg-primary" />
-        </div>
+      {/* ─── Card container ─── */}
+      <div
+        className="relative z-10 grid w-full max-w-5xl grid-cols-1 overflow-hidden rounded-3xl border border-primary/20 bg-card lg:grid-cols-[46%_54%]"
+        style={{
+          boxShadow:
+            "0 0 0 1px color-mix(in srgb, var(--color-primary) 8%, transparent), 0 32px 80px rgba(0,0,0,0.55)",
+        }}
+      >
+        {/* ─── LEFT: brand panel ─── */}
+        <div className="relative hidden flex-col justify-between overflow-hidden border-r border-primary/10 px-10 py-12 lg:flex">
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.5]"
+            style={{
+              background:
+                "linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 10%, transparent) 0%, transparent 55%)",
+            }}
+          />
 
-        {/* Centered vertical brand stack */}
-        <div className="relative z-10 flex flex-col items-center justify-center h-full px-10 gap-0">
-          {/* Logo + wordmark */}
-          <div className="flex flex-col items-center mb-8">
-            <Image
-              src={logoSrc}
-              alt="vinnexia"
-              width={72}
-              height={72}
-              className="object-contain drop-shadow-[0_0_18px_color-mix(in_srgb,var(--color-primary)_50%,transparent)]"
-              priority
-            />
-            <span
-              className="truncate font-cinzel text-[21px] font-bold uppercase tracking-[0.2em] text-transparent [-webkit-text-stroke:0.5px_var(--color-foreground)] [text-shadow:0_0_4px_color-mix(in_srgb,var(--color-foreground)_25%,transparent)]"
-              style={{
-                textShadow:
-                  "0 0 20px color-mix(in srgb, var(--color-primary) 25%, transparent)",
-              }}
-            >
-              Diago Finance
-            </span>
-            <span className="font-arvo text-xs font-semibold tracking-[0.18em] text-primary mt-1.5 uppercase">
-              Trade With Confidence
-            </span>
+          <div className="relative z-10">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <Image
+                  src={logoSrc}
+                  alt="Diago Finance"
+                  width={36}
+                  height={36}
+                  className="object-contain"
+                  priority
+                />
+                <span className="font-cinzel text-sm font-bold uppercase tracking-[0.18em] text-foreground">
+                  Diago Finance
+                </span>
+              </div>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-primary/25 bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
+                <UserCircle2 className="h-3.5 w-3.5" />
+                Member portal
+              </span>
+            </div>
+
+            <h2 className="mt-10 font-cinzel text-4xl font-extrabold leading-tight text-foreground">
+              Welcome <span className="text-primary">back</span>
+            </h2>
+            <p className="mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">
+              Sign in to pick up right where you left off with Diago Finance.
+            </p>
+
+            <div className="mt-8 space-y-4">
+              {FEATURES.map((item) => (
+                <div key={item.title} className="flex items-start gap-3">
+                  <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-primary/20 bg-primary/10">
+                    <item.icon className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">
+                      {item.title}
+                    </p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Thin gold divider */}
-          <div className="w-16 h-px bg-gradient-to-r from-transparent via-primary to-transparent mb-10 opacity-70" />
-
-          {/* Bull image */}
-          <div className="relative w-full flex items-center justify-center">
-            {/* Radial glow beneath the bull */}
+          <div className="relative z-10 flex items-center justify-center pt-10">
             <div
-              className="absolute bottom-[-20px] left-1/2 -translate-x-1/2 w-[380px] h-[120px] rounded-full opacity-30 blur-2xl"
+              className="absolute h-[110px] w-[260px] rounded-full opacity-30 blur-2xl"
               style={{
                 background:
                   "radial-gradient(ellipse, var(--color-primary) 0%, transparent 70%)",
               }}
             />
             <Image
-              src="/login-bull1.png"
-              alt="vinnexia bull"
-              width={460}
-              height={340}
-              className="relative z-10 object-contain w-full max-w-[460px]
-                         drop-shadow-[0_8px_40px_color-mix(in_srgb,var(--color-primary)_35%,transparent)]"
+              src="/loginpageimage.svg"
+              alt="Diago Finance"
+              width={222}
+              height={155}
+              className="relative z-10 object-contain drop-shadow-[0_8px_30px_color-mix(in_srgb,var(--color-primary)_35%,transparent)]"
+              style={{ width: 222, height: 155, transform: "rotate(0deg)", opacity: 1 }}
               priority
             />
           </div>
-
-          {/* Stats row */}
-          <div className="mt-10 flex items-center gap-8">
-            {[
-              { value: "150+", label: "Markets" },
-              { value: "100%", label: "Trust" },
-              { value: "24/7", label: "Support" },
-            ].map((stat, i) => (
-              <div key={i} className="flex flex-col items-center gap-1">
-                <span
-                  className="text-xl font-bold text-primary font-cinzel"
-                  style={{
-                    textShadow:
-                      "0 0 10px color-mix(in srgb, var(--color-primary) 30%, transparent)",
-                  }}
-                >
-                  {stat.value}
-                </span>
-                <span className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-arvo">
-                  {stat.label}
-                </span>
-              </div>
-            ))}
-          </div>
-
-          {/* Bottom tagline */}
-          <p className="mt-10 text-center text-[11px] text-muted-foreground/60 tracking-widest uppercase font-arvo max-w-[260px] leading-relaxed">
-            Institutional-grade execution &nbsp;·&nbsp; Zero compromise
-          </p>
         </div>
 
-        {/* Right edge fade to separate from form side */}
-        <div className="absolute inset-y-0 right-0 w-16 bg-gradient-to-r from-transparent to-background" />
-      </div>
-
-      {/* ─── RIGHT PANEL (form) ─── */}
-      <div className="flex-1 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-background">
-        <div className="max-w-md w-full space-y-8">
+        {/* ─── RIGHT: form panel ─── */}
+        <div className="relative flex flex-col justify-center px-6 py-10 sm:px-10 sm:py-12 lg:px-12">
           {/* Mobile-only logo */}
-          <div className="flex flex-col items-center lg:hidden">
+          <div className="mb-8 flex flex-col items-center lg:hidden">
             <Image
               src={logoSrc}
-              alt="vinnexia"
-              width={52}
-              height={52}
+              alt="Diago Finance"
+              width={44}
+              height={44}
               className="object-contain"
               priority
             />
-            <span
-              className="truncate font-cinzel text-[21px] font-bold uppercase tracking-[0.2em] text-transparent [-webkit-text-stroke:0.5px_var(--color-foreground)] [text-shadow:0_0_4px_color-mix(in_srgb,var(--color-foreground)_25%,transparent)]"
-              style={{
-                textShadow:
-                  "0 0 20px color-mix(in srgb, var(--color-primary) 25%, transparent)",
-              }}
-            >
+            <span className="mt-2 font-cinzel text-base font-bold uppercase tracking-[0.18em] text-foreground">
               Diago Finance
-            </span>
-            <span className="font-arvo text-[10px] font-semibold tracking-wide text-primary mt-0.5">
-              Trade With Confidence
             </span>
           </div>
 

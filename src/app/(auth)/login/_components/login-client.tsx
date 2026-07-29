@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { Mail, Lock, ShieldCheck, Check, ArrowRight } from 'lucide-react';
 import {
   loginSchema,
   forgotPasswordSchema,
@@ -38,6 +39,7 @@ export function LoginClient() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [show2FA, setShow2FA] = useState(false);
   const [twoFACode, setTwoFACode] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [pendingLoginData, setPendingLoginData] = useState<{
     email: string;
     password: string;
@@ -61,6 +63,8 @@ export function LoginClient() {
   const onLoginSubmit = async (data: LoginFormData) => {
     setIsLoading(true);
     try {
+      // `rememberMe` is currently a client-side preference only. Wire it into
+      // `loginMutation`/your auth API if the backend supports persistent sessions.
       const response = await loginMutation.mutateAsync(data);
       if (response?.requires_2fa || response?.data?.requires_2fa) {
         const responseData = response.data || {};
@@ -258,297 +262,311 @@ export function LoginClient() {
     }
   };
 
+  const eyebrow = show2FA ? 'Verification' : showForgotPassword ? 'Reset password' : 'Sign in';
+  const heading = show2FA
+    ? 'Two-factor authentication'
+    : showForgotPassword
+    ? 'Forgot your password?'
+    : 'Hey, hello';
+  const subheading = show2FA
+    ? 'Enter the 6-digit code from your authenticator app'
+    : showForgotPassword
+    ? 'Enter your email to receive a password reset link'
+    : 'Enter your credentials to access your dashboard';
+
   return (
     <ProtectedRoute requireAuth={false}>
       <AuthLayout>
-        <div className="text-center">
-          <h2 className="mt-6 text-3xl font-extrabold text-foreground">
-            {showForgotPassword ? 'Reset your password' : 'Sign in to your account'}
-          </h2>
-          <p className="mt-2 text-sm text-muted-foreground">
-            {showForgotPassword ? (
-              'Enter your email to receive a password reset link'
-            ) : (
-              <>
-                Don&apos;t have an account?{' '}
-                <Link
-                  href="/register"
-                  className="font-medium text-primary hover:text-primary/80 transition-colors"
-                >
-                  Sign up
-                </Link>
-              </>
-            )}
-          </p>
-        </div>
-
-        {/* Card with gold border accent */}
-        <div
-          className="rounded-xl border border-primary/20 bg-card overflow-hidden"
-          style={{ boxShadow: '0 0 0 1px color-mix(in srgb, var(--color-primary) 8%, transparent), 0 24px 60px rgba(0,0,0,0.4)' }}
-        >
-          {/* Gold top bar accent */}
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
-
-          <div className="px-8 pt-7 pb-2">
-            <h3 className="text-foreground font-semibold text-lg">
-              {show2FA
-                ? 'Two-Factor Authentication'
-                : showForgotPassword
-                ? 'Forgot Password'
-                : 'Login'}
-            </h3>
-            <p className="text-muted-foreground text-sm mt-0.5">
-              {show2FA
-                ? 'Enter the 6-digit code from your authenticator app'
-                : showForgotPassword
-                ? 'Enter your email to receive a password reset link'
-                : 'Enter your credentials to access your account'}
-            </p>
+        <div className="space-y-8">
+          {/* Eyebrow + heading */}
+          <div>
+            <span className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">
+              {eyebrow}
+            </span>
+            <h1 className="mt-2 font-cinzel text-3xl font-extrabold text-foreground">
+              {heading}
+            </h1>
+            <p className="mt-2 text-sm text-muted-foreground">{subheading}</p>
           </div>
 
-          <div className="px-8 pb-8 pt-4">
-
-            {/* ── 2FA ── */}
-            {show2FA ? (
-              <div key="2fa-form" className="space-y-5">
-                {/* <p className="text-sm text-muted-foreground text-center">
-                  Enter the 6-digit code from your authenticator app
-                </p> */}
-                <div className="flex justify-center">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    maxLength={6}
-                    value={twoFACode}
-                    onChange={(e) => setTwoFACode(e.target.value.replace(/\D/g, ''))}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !isVerifying2FA && twoFACode.length === 6) {
-                        handle2FAVerification();
-                      }
-                    }}
-                    placeholder="123456"
-                    autoFocus
-                    className="
-                      w-48 text-center text-2xl tracking-[0.4em] font-bold
-                      bg-input border border-primary/25 rounded-lg
-                      text-foreground placeholder:text-muted-foreground/50
-                      px-4 py-3 outline-none
-                      focus:border-primary/60 focus:ring-1 focus:ring-primary/20
-                      transition-all
-                    "
-                  />
+          {/* ── 2FA ── */}
+          {show2FA ? (
+            <div key="2fa-form" className="space-y-6">
+              <div className="flex justify-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border border-primary/25 bg-primary/10">
+                  <ShieldCheck className="h-5 w-5 text-primary" />
                 </div>
-                <div className="flex justify-center gap-3 pt-1">
+              </div>
+              <div className="flex justify-center">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  maxLength={6}
+                  value={twoFACode}
+                  onChange={(e) => setTwoFACode(e.target.value.replace(/\D/g, ''))}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !isVerifying2FA && twoFACode.length === 6) {
+                      handle2FAVerification();
+                    }
+                  }}
+                  placeholder="123456"
+                  autoFocus
+                  className="
+                    w-48 text-center text-2xl tracking-[0.4em] font-bold
+                    bg-input border border-primary/20 rounded-xl
+                    text-foreground placeholder:text-muted-foreground/50
+                    px-4 py-3.5 outline-none
+                    focus:border-primary/60 focus:ring-1 focus:ring-primary/20
+                    transition-all
+                  "
+                />
+              </div>
+              <div className="flex justify-center gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShow2FA(false);
+                    setTwoFACode('');
+                    setPendingLoginData(null);
+                  }}
+                  className="
+                    px-5 py-2.5 rounded-xl text-sm font-medium
+                    border border-border text-muted-foreground
+                    hover:border-border hover:text-foreground
+                    transition-all
+                  "
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handle2FAVerification}
+                  disabled={isVerifying2FA || twoFACode.length !== 6}
+                  className="
+                    px-5 py-2.5 rounded-xl text-sm font-semibold
+                    bg-gradient-to-r from-primary to-primary/80 text-primary-foreground
+                    hover:opacity-90
+                    disabled:opacity-40 disabled:cursor-not-allowed
+                    transition-all flex items-center gap-2
+                  "
+                >
+                  {isVerifying2FA ? (
+                    <>
+                      <Spinner className="mr-2 h-4 w-4" />
+                      Verifying...
+                    </>
+                  ) : (
+                    <>
+                      Verify &amp; login
+                      <ArrowRight className="h-4 w-4" />
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+
+          /* ── Forgot password ── */
+          ) : showForgotPassword ? (
+            <div key="forgot-form" className="space-y-6">
+              <Form {...forgotPasswordForm}>
+                <form
+                  onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)}
+                  className="space-y-5"
+                >
+                  <FormField
+                    control={forgotPasswordForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground/70">Email</FormLabel>
+                        <FormControl>
+                          <div className="relative flex items-center rounded-xl border border-primary/20 bg-input focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/15 transition-all">
+                            <span className="flex h-10 w-10 shrink-0 items-center justify-center border-r border-primary/15">
+                              <Mail className="h-4 w-4 text-primary/70" />
+                            </span>
+                            <input
+                              type="email"
+                              placeholder="Enter your email"
+                              autoFocus
+                              {...field}
+                              className="
+                                w-full bg-transparent
+                                text-foreground placeholder:text-muted-foreground/50 text-sm
+                                px-4 py-2.5 outline-none
+                              "
+                            />
+                          </div>
+                        </FormControl>
+                        <FormMessage className="text-red-400 text-xs" />
+                      </FormItem>
+                    )}
+                  />
                   <button
-                    type="button"
-                    onClick={() => {
-                      setShow2FA(false);
-                      setTwoFACode('');
-                      setPendingLoginData(null);
-                    }}
+                    type="submit"
+                    disabled={isForgotPasswordLoading}
                     className="
-                      px-5 py-2.5 rounded-lg text-sm font-medium
-                      border border-border text-muted-foreground
-                      hover:border-border hover:text-foreground
-                      transition-all
-                    "
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handle2FAVerification}
-                    disabled={isVerifying2FA || twoFACode.length !== 6}
-                    className="
-                      px-5 py-2.5 rounded-lg text-sm font-semibold
-                      bg-primary text-primary-foreground
-                      hover:bg-primary/90
+                      w-full py-3 rounded-xl text-sm font-bold tracking-wide
+                      bg-gradient-to-r from-primary to-primary/80 text-primary-foreground
+                      hover:opacity-90
                       disabled:opacity-40 disabled:cursor-not-allowed
-                      transition-all flex items-center gap-2
+                      transition-all flex items-center justify-center gap-2
                     "
                   >
-                    {isVerifying2FA ? (
+                    {isForgotPasswordLoading ? (
                       <>
-                  <Spinner className="mr-2 h-4 w-4" />
-                  Verifying...
+                        <Spinner className="mr-2 h-4 w-4" />
+                        Sending reset link...
                       </>
                     ) : (
-                      'Verify & Login'
+                      <>
+                        Send reset link
+                        <ArrowRight className="h-4 w-4" />
+                      </>
                     )}
                   </button>
-                </div>
-              </div>
-
-            /* ── Forgot password ── */
-            ) : showForgotPassword ? (
-              <div key="forgot-form" className="space-y-5">
-                <div className="space-y-1.5">
-                  {/* <label className="text-sm font-medium text-white/70">Email</label> */}
-                  <Form {...forgotPasswordForm}>
-                    <form
-                      onSubmit={forgotPasswordForm.handleSubmit(onForgotPasswordSubmit)}
-                      className="space-y-5"
+                  <div className="text-center">
+                    <button
+                      type="button"
+                      onClick={() => setShowForgotPassword(false)}
+                      className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
                     >
-                      <FormField
-                        control={forgotPasswordForm.control}
-                        name="email"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-foreground/70">Email</FormLabel>
-                            <FormControl>
-                              <input
-                                type="email"
-                                placeholder="Enter your email"
-                                autoFocus
-                                {...field}
-                                className="
-                                  w-full bg-input border border-primary/20 rounded-lg
-                                  text-foreground placeholder:text-muted-foreground/50 text-sm
-                                  px-4 py-2.5 outline-none
-                                  focus:border-primary/50 focus:ring-1 focus:ring-primary/15
-                                  transition-all
-                                "
-                              />
-                            </FormControl>
-                            <FormMessage className="text-red-400 text-xs" />
-                          </FormItem>
-                        )}
-                      />
-                      <button
-                        type="submit"
-                        disabled={isForgotPasswordLoading}
-                        className="
-                          w-full py-2.5 rounded-lg text-sm font-semibold
-                          bg-primary text-primary-foreground
-                          hover:bg-primary/90
-                          disabled:opacity-40 disabled:cursor-not-allowed
-                          transition-all flex items-center justify-center gap-2
-                        "
-                      >
-                        {isForgotPasswordLoading ? (
-                          <>
-                  <Spinner className="mr-2 h-4 w-4" />
-                  Sending Reset Link...
-                          </>
-                        ) : (
-                          'Send Reset Link'
-                        )}
-                      </button>
-                      <div className="text-center">
-                        <button
-                          type="button"
-                          onClick={() => setShowForgotPassword(false)}
-                          className="text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary px-2 py-1 rounded"
-                        >
-                          ← Back to Login
-                        </button>
-                      </div>
-                    </form>
-                  </Form>
-                </div>
-              </div>
+                      ← Back to login
+                    </button>
+                  </div>
+                </form>
+              </Form>
+            </div>
 
-            /* ── Login form ── */
-            ) : (
-              <div key="login-form">
-                <Form {...loginForm}>
-                  <form
-                    onSubmit={loginForm.handleSubmit(onLoginSubmit)}
-                    className="space-y-5"
-                  >
-                    <FormField
-                      control={loginForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground/70 text-sm">Email</FormLabel>
-                          <FormControl>
+          /* ── Login form ── */
+          ) : (
+            <div key="login-form">
+              <Form {...loginForm}>
+                <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-5">
+                  <FormField
+                    control={loginForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground/70 text-sm">Email</FormLabel>
+                        <FormControl>
+                          <div className="relative flex items-center rounded-xl border border-primary/20 bg-input focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/15 transition-all">
+                            <span className="flex h-11 w-11 shrink-0 items-center justify-center border-r border-primary/15">
+                              <Mail className="h-4 w-4 text-primary/70" />
+                            </span>
                             <Input
                               type="email"
                               placeholder="Enter your email"
                               {...field}
                               className="
-                                w-full !bg-input border border-primary/20 rounded-lg
+                                w-full !bg-transparent border-0
                                 text-foreground placeholder:text-muted-foreground/50 text-sm
-                                px-4 py-2.5 outline-none
-                                focus:border-primary/50 focus:ring-1 focus:ring-primary/15
-                                transition-all
+                                !pl-4 pr-4 py-2.5 outline-none focus-visible:ring-0
                               "
                             />
-                          </FormControl>
-                          <FormMessage className="text-red-400 text-xs" />
-                        </FormItem>
-                      )}
-                    />
+                          </div>
+                        </FormControl>
+                        <FormMessage className="text-red-400 text-xs" />
+                      </FormItem>
+                    )}
+                  />
 
-                    <FormField
-                      control={loginForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-foreground/70 text-sm">Password</FormLabel>
-                          <FormControl>
+                  <FormField
+                    control={loginForm.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-foreground/70 text-sm">Password</FormLabel>
+                        <FormControl>
+                          <div className="relative flex items-center rounded-xl border border-primary/20 bg-input focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/15 transition-all">
+                            <span className="flex h-11 w-11 shrink-0 items-center justify-center border-r border-primary/15">
+                              <Lock className="h-4 w-4 text-primary/70" />
+                            </span>
                             <PasswordInput
                               placeholder="Enter your password"
                               autoComplete="current-password"
                               onChange={field.onChange}
                               value={field.value}
                               inputClassName="
-                                w-full !bg-input border border-primary/20 rounded-lg
+                                w-full !bg-transparent border-0
                                 text-foreground placeholder:text-muted-foreground/50 text-sm
-                                px-4 py-2.5 outline-none
-                                focus:border-primary/50 focus:ring-1 focus:ring-primary/15
-                                transition-all
+                                !pl-4 pr-4 py-2.5 outline-none
                               "
                             />
-                          </FormControl>
-                          <FormMessage className="text-red-400 text-xs" />
-                        </FormItem>
-                      )}
-                    />
+                          </div>
+                        </FormControl>
+                        <FormMessage className="text-red-400 text-xs" />
+                      </FormItem>
+                    )}
+                  />
 
-                    <div className="flex items-center justify-between pt-1">
-                        <button
-                          type="button"
-                          onClick={() => setShowForgotPassword(true)}
-                          className="text-sm font-medium text-primary bg-primary/10 hover:bg-primary/20 underline transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary px-2 py-1 rounded"
-                        >
-                          Forgot your password?
-                        </button>
-                    </div>
+                  <div className="flex items-center justify-between pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setRememberMe((v) => !v)}
+                      aria-pressed={rememberMe}
+                      className="flex items-center gap-2 text-sm text-muted-foreground"
+                    >
+                      <span
+                        className={`flex h-4 w-4 items-center justify-center rounded border transition-colors ${
+                          rememberMe
+                            ? 'border-primary bg-primary'
+                            : 'border-border bg-input'
+                        }`}
+                      >
+                        {rememberMe && <Check className="h-3 w-3 text-primary-foreground" />}
+                      </span>
+                      Remember me
+                    </button>
 
                     <button
-                       type="submit"
-                       disabled={isLoading}
-                       className="
-                         w-full py-3 rounded-lg text-sm font-bold tracking-wide
-                         bg-primary text-primary-foreground
-                         hover:bg-primary/90 hover:shadow-xl
-                         focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
-                         disabled:opacity-40 disabled:cursor-not-allowed
-                         transition-all transform hover:scale-105 flex items-center justify-center gap-2
-                         shadow-[0_0_20px_color-mix(in_srgb,var(--color-primary)_20%,transparent)]
-                       "
-                     >
-                      {isLoading ? (
-                        <>
-                  <Spinner className="mr-2 h-4 w-4" />
-                  Signing in...
-                        </>
-                      ) : (
-                        'Sign In'
-                      )}
+                      type="button"
+                      onClick={() => setShowForgotPassword(true)}
+                      className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                    >
+                      Forgot password?
                     </button>
-                  </form>
-                </Form>
-              </div>
-            )}
-          </div>
+                  </div>
 
-          {/* Gold bottom bar accent */}
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+                  <button
+                    type="submit"
+                    disabled={isLoading}
+                    className="
+                      w-full py-3 rounded-xl text-sm font-bold tracking-wide
+                      bg-gradient-to-r from-primary to-primary/80 text-primary-foreground
+                      hover:opacity-90 hover:shadow-xl
+                      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
+                      disabled:opacity-40 disabled:cursor-not-allowed
+                      transition-all flex items-center justify-center gap-2
+                      shadow-[0_0_20px_color-mix(in_srgb,var(--color-primary)_25%,transparent)]
+                    "
+                  >
+                    {isLoading ? (
+                      <>
+                        <Spinner className="mr-2 h-4 w-4" />
+                        Signing in...
+                      </>
+                    ) : (
+                      <>
+                        Sign in
+                        <ArrowRight className="h-4 w-4" />
+                      </>
+                    )}
+                  </button>
+                </form>
+              </Form>
+
+              <p className="mt-6 text-center text-sm text-muted-foreground">
+                New to Diago Finance?{' '}
+                <Link
+                  href="/register"
+                  className="font-medium text-primary hover:text-primary/80 transition-colors"
+                >
+                  Create an account
+                </Link>
+              </p>
+            </div>
+          )}
         </div>
       </AuthLayout>
     </ProtectedRoute>
