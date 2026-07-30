@@ -304,6 +304,25 @@ export function DashboardPageContent() {
     ? null
     : dashboardThemeArtwork;
   const usesDashboardThemeArtwork = effectiveThemeArtwork !== null;
+  const artworkForegroundClass = "text-zinc-50";
+  const artworkMutedForegroundClass = "text-zinc-50/80";
+  const artworkPillClass =
+    "!border-white/30 !bg-black/30 !text-zinc-50 shadow-[0_16px_34px_-24px_rgba(0,0,0,0.84)]";
+  const artworkActionClass =
+    "border-white/30 bg-black/20 text-zinc-50 hover:bg-black/35 hover:text-zinc-50";
+  const isBrightMode = themeMode === "bright";
+  const walletEmptyStateImageSrc =
+    isBrightMode
+      ? "/wallet_empty_bright.svg"
+      : "/wallet_empty_dark.svg";
+  const profileStatusIconSrc =
+    isBrightMode
+      ? "/profilestatusiconbright.svg"
+      : "/profilestatusicon.svg";
+  const documentStatusIconSrc =
+    isBrightMode
+      ? "/documenticonbright.svg"
+      : "/documentsicon.svg";
 
   // Get news and promotions from userDashboard data
   const dashboardNewsItems = useMemo(() => {
@@ -1776,12 +1795,14 @@ export function DashboardPageContent() {
                           <div className="space-y-2">
                             <ThemePill
                               icon={<Sparkles className="h-3.5 w-3.5" />}
-                              className="rounded-full text-xs font-semibold uppercase tracking-[0.22em]"
+                              className={`rounded-full text-xs font-semibold uppercase tracking-[0.22em] ${dashboardThemeArtwork ? artworkPillClass : ""}`}
                             >
                               Client Portal
                             </ThemePill>
                             <div className="space-y-1">
-                              <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2.15rem]">
+                              <h1
+                                className={`text-3xl font-semibold tracking-tight sm:text-[2.15rem] ${dashboardThemeArtwork ? artworkForegroundClass : "text-foreground"}`}
+                              >
                                 {(() => {
                                   const h = new Date().getHours();
                                   const greeting =
@@ -1799,7 +1820,9 @@ export function DashboardPageContent() {
                                     : greeting;
                                 })()}
                               </h1>
-                              <p className="max-w-3xl text-sm text-muted-foreground sm:text-base">
+                              <p
+                                className={`max-w-3xl text-sm sm:text-base ${dashboardThemeArtwork ? artworkMutedForegroundClass : "text-muted-foreground"}`}
+                              >
                                 Welcome back! Here&apos;s what&apos;s happening
                                 with your account today.
                               </p>
@@ -1821,7 +1844,7 @@ export function DashboardPageContent() {
                             <CardContent className="relative z-10 pt-6 pb-6 px-6">
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex-1">
-                                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                                  <div className="text-xs font-semibold text-[#8B7355] uppercase tracking-wider mb-2 flex items-center gap-2">
                                     <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
                                     Total Deposits
                                   </div>
@@ -1837,7 +1860,7 @@ export function DashboardPageContent() {
                                 </div>
                               </div>
                               <div className="pt-3 border-t border-border/100">
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-xs text-[#8B7355]">
                                   All time deposits
                                 </p>
                               </div>
@@ -1856,7 +1879,7 @@ export function DashboardPageContent() {
                             <CardContent className="relative z-10 pt-6 pb-6 px-6">
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex-1">
-                                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                                  <div className="text-xs font-semibold text-[#8B7355] uppercase tracking-wider mb-2 flex items-center gap-2">
                                     <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
                                     Total Withdrawals
                                   </div>
@@ -1872,7 +1895,7 @@ export function DashboardPageContent() {
                                 </div>
                               </div>
                               <div className="pt-3 border-t border-border/100">
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-xs text-[#8B7355]">
                                   All time withdrawals
                                 </p>
                               </div>
@@ -1891,7 +1914,7 @@ export function DashboardPageContent() {
                             <CardContent className="relative z-10 pt-6 pb-6 px-6">
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex-1">
-                                  <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                                  <div className="text-xs font-semibold text-[#8B7355] uppercase tracking-wider mb-2 flex items-center gap-2">
                                     <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
                                     Trading Accounts
                                   </div>
@@ -1907,7 +1930,7 @@ export function DashboardPageContent() {
                                 </div>
                               </div>
                               <div className="pt-3 border-t border-border/100">
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-xs text-[#8B7355]">
                                   Active MT5 accounts
                                 </p>
                               </div>
@@ -1922,7 +1945,7 @@ export function DashboardPageContent() {
                         <Card
                           ref={walletCardRef}
                           // onClick={() => router.push("/my-wallet/wallet-overview")}
-                          className={`sm:col-span-1 lg:col-span-1 relative overflow-hidden shadow-2xl rounded-3xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group cursor-pointer ${usesDashboardThemeArtwork ? "text-foreground bg-card ib-portal-surface ib-portal-surface-primary" : "text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent border-none"}`}
+                          className={`sm:col-span-1 lg:col-span-1 relative overflow-hidden shadow-2xl rounded-3xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group cursor-pointer ${usesDashboardThemeArtwork ? "bg-card text-zinc-50 ib-portal-surface ib-portal-surface-primary" : "text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent border-none"}`}
                         >
                           {usesDashboardThemeArtwork ? (
                             <div
@@ -1947,7 +1970,7 @@ export function DashboardPageContent() {
                                     ? "subtle"
                                     : "default"
                                 }
-                                className={`rounded-full text-[11px] font-semibold uppercase tracking-[0.18em] ${usesDashboardThemeArtwork ? "" : "text-primary-foreground"}`}
+                                className={`rounded-full text-[11px] font-semibold uppercase tracking-[0.18em] ${usesDashboardThemeArtwork ? artworkPillClass : "text-primary-foreground"}`}
                               >
                                 Wallet Balance
                               </ThemePill>
@@ -1961,12 +1984,12 @@ export function DashboardPageContent() {
                             </div>
                             <div className="flex items-baseline gap-2 mt-2">
                               <span
-                                className={`text-4xl font-extrabold leading-tight ${usesDashboardThemeArtwork ? "" : "drop-shadow-lg"}`}
+                                className={`text-4xl font-extrabold leading-tight ${usesDashboardThemeArtwork ? artworkForegroundClass : "drop-shadow-lg"}`}
                               >
                                 {formatAmount(dashboardData?.wallet?.balance)}
                               </span>
                               <span
-                                className={`text-lg font-bold ${usesDashboardThemeArtwork ? "text-muted-foreground" : "text-primary-foreground/80"}`}
+                                className={`text-lg font-bold ${usesDashboardThemeArtwork ? artworkMutedForegroundClass : "text-primary-foreground/80"}`}
                               >
                                 USD
                               </span>
@@ -1977,12 +2000,12 @@ export function DashboardPageContent() {
                               <div className="flex-1 space-y-3">
                                 <div className="space-y-2">
                                   <h3
-                                    className={`text-lg font-bold ${usesDashboardThemeArtwork ? "text-foreground" : "text-primary-foreground"}`}
+                                    className={`text-lg font-bold ${usesDashboardThemeArtwork ? artworkForegroundClass : "text-primary-foreground"}`}
                                   >
                                     Your Main Wallet
                                   </h3>
                                   <p
-                                    className={`text-[14px] font-normal leading-[19.5px] tracking-normal font-sans ${usesDashboardThemeArtwork ? "text-muted-foreground" : "text-primary-foreground/80"}`}
+                                    className={`text-[14px] font-normal leading-[19.5px] tracking-normal font-sans ${usesDashboardThemeArtwork ? artworkMutedForegroundClass : "text-primary-foreground/80"}`}
                                     style={{
                                       fontFamily:
                                         '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
@@ -2012,7 +2035,7 @@ export function DashboardPageContent() {
                                         : "ghost"
                                     }
                                     size="default"
-                                    className={`h-11 px-6 text-sm font-bold backdrop-blur-sm transition-all duration-300 hover:scale-105 ${usesDashboardThemeArtwork ? "text-foreground border-border/100 hover:bg-muted/70" : "text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/20 border border-primary-foreground/30"}`}
+                                    className={`h-11 px-6 text-sm font-bold backdrop-blur-sm transition-all duration-300 hover:scale-105 ${usesDashboardThemeArtwork ? artworkActionClass : "text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/20 border border-primary-foreground/30"}`}
                                   >
                                     <ArrowLeftRight className="h-4 w-4 mr-2" />
                                     Transfer Funds
@@ -2136,20 +2159,12 @@ export function DashboardPageContent() {
                             <CardContent className="pt-6 pb-6 px-6 relative z-10">
                               <div className="flex flex-col items-center justify-center text-center space-y-4">
                                 <div className="relative w-20 h-20 flex items-center justify-center">
-                                  <div
-                                    className="absolute inset-0 rounded-full border border-dashed border-border/60"
-                                    style={{
-                                      animation: "spin 10s linear infinite",
-                                    }}
+                                  <Image
+                                    src={walletEmptyStateImageSrc}
+                                    alt="Empty wallet"
+                                    fill
+                                    className="object-contain group-hover:scale-105 transition-transform duration-300"
                                   />
-                                  <div className="flex h-full w-full items-center justify-center rounded-full border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-105 transition-transform duration-300">
-                                    <Wallet className="h-7 w-7 text-foreground" />
-                                  </div>
-                                  <div className="absolute -bottom-1 -right-1">
-                                    <div className="flex h-6 w-6 items-center justify-center rounded-full border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm">
-                                      <PlusCircle className="h-3.5 w-3.5 text-foreground" />
-                                    </div>
-                                  </div>
                                 </div>
                                 <div className="space-y-1">
                                   <h3 className="text-base font-semibold text-foreground">
@@ -2204,12 +2219,14 @@ export function DashboardPageContent() {
 
                             <CardHeader className="flex flex-row items-center justify-between pb-3 pt-5 px-5 relative z-10 border-b border-border/100">
                               <div className="flex items-center gap-3">
-                               <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-border/60 bg-[#3D3D3D] shadow-sm backdrop-blur-sm">
+                               <div
+                                  className={`flex items-center justify-center ${isBrightMode ? "h-8 w-8" : "h-9 w-9 rounded-xl border border-border/60 bg-muted shadow-sm backdrop-blur-sm"}`}
+                                >
                                   <Image
-                                    src="/profilestatusicon.svg"
+                                    src={profileStatusIconSrc}
                                     alt="Profile status"
-                                    width={18}
-                                    height={18}
+                                    width={isBrightMode ? 32 : 18}
+                                    height={isBrightMode ? 32 : 18}
                                   />
                                 </div>
                                 <div>
@@ -2287,12 +2304,14 @@ export function DashboardPageContent() {
                                           : ""
                                       }`}
                                     >
-                                      <div className="size-9 rounded-full flex items-center justify-center bg-[#113F24] shadow-md transition-transform group-hover/item:scale-110">
+                                      <div
+                                        className={`flex items-center justify-center transition-transform group-hover/item:scale-110 ${isBrightMode ? "size-[34px]" : "size-9 rounded-full bg-[#113F24] shadow-md"}`}
+                                      >
                                         <Image
-                                          src="/documentsicon.svg"
+                                          src={documentStatusIconSrc}
                                           alt=""
-                                          width={16}
-                                          height={16}
+                                          width={isBrightMode ? 34 : 16}
+                                          height={isBrightMode ? 34 : 16}
                                         />
                                       </div>
                                       <div className="flex-1 min-w-0">

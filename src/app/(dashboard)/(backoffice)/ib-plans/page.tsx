@@ -1,690 +1,556 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import type { ChangeEvent, FormEvent } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
-import { RefreshCw, Layers, Plus, Trash2 } from "lucide-react";
-
+import * as XLSX from "xlsx";
+import {
+  Award,
+  ChevronDown,
+  Download,
+  Plus,
+  RefreshCw,
+} from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ProtectedRoute } from "@/components/protected-route";
-import { Badge } from "@/components/ui/badge";
+import { PermissionAwareCrudDataTable } from "@/components/permission-aware-crud-table";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
-import { Spinner } from "@/components/ui/spinner";
-import { DeleteDialog } from "@/components/dialogs/delete-dialog";
-import { useAuth } from "@/contexts/auth-context";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
-  adminCommissionPlansApi,
-  type CommissionPlan,
-  type CommissionPlanRule,
-  type CommissionPlanListResponseData,
-  type CommissionPlanRuleInput,
+  adminIbPlansCrudApi,
+  type AdminIbPlanCrudItem,
+  type AdminIbPlanCrudUpdateBody,
 } from "@/lib/api";
-import { formatDateTimeInIST } from "@/lib/formatters";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
+import { getColumns } from "./columns";
+import { IbPlanForm } from "./ib-plan-form";
 
-type GroupedRules = {
-  key: string;
-  label: string;
-  rules: CommissionPlanRule[];
+export type IbPlanRow = {
+  id: string;
+  name: string;
+  status: boolean;
+  created_at?: string;
+  updated_at?: string;
 };
 
-const subIbColumns: Array<{ key: keyof CommissionPlanRule; label: string }> = [
-  { key: "rate_sub_ib_1", label: "Sub IB 1" },
-  { key: "rate_sub_ib_2", label: "Sub IB 2" },
-  { key: "rate_sub_ib_3", label: "Sub IB 3" },
-  { key: "rate_sub_ib_4", label: "Sub IB 4" },
-  { key: "rate_sub_ib_5", label: "Sub IB 5" },
-];
-
-const defaultRulesTemplate = `[
-  {
-    "asset_group": "FOREX",
-    "asset_group_label": "Forex",
-    "level": 0,
-    "rate_ib": 5,
-    "rate_sub_ib_1": 1.5,
-    "rate_sub_ib_2": 0.75,
-    "rate_sub_ib_3": 0.5,
-    "rate_sub_ib_4": 0.5,
-    "rate_sub_ib_5": 0.5,
-    "status": "active"
-  }
-]`;
-
-const formatRate = (value: string | number | null | undefined) => {
-  if (value === null || value === undefined) {
-    return "0";
-  }
-  const num = Number(value);
-  if (!Number.isFinite(num)) {
-    return String(value);
-  }
-  return new Intl.NumberFormat(undefined, {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 5,
-  }).format(num);
+const getExportTimestamp = () => {
+  const date = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return [
+    date.getFullYear(),
+    pad(date.getMonth() + 1),
+    pad(date.getDate()),
+    "-",
+    pad(date.getHours()),
+    pad(date.getMinutes()),
+    pad(date.getSeconds()),
+  ].join("");
 };
 
-const formatDateTime = (value?: string | null) => {
-  if (!value) {
-    return "—";
-  }
+const formatExportDateTime = (value?: string | null) => {
+  if (!value) return "-";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return formatDateTimeInIST(value);
-};
-
-const groupRules = (rules: CommissionPlanRule[] | undefined): GroupedRules[] => {
-  if (!rules || rules.length === 0) {
-    return [];
-  }
-  const bucket = new Map<string, GroupedRules>();
-  rules.forEach((rule) => {
-    const label = rule.asset_group_label?.trim() || rule.asset_group || "Rules";
-    const key = `${rule.asset_group}-${label}`.toLowerCase();
-    if (!bucket.has(key)) {
-      bucket.set(key, {
-        key,
-        label,
-        rules: [],
-      });
-    }
-    bucket.get(key)!.rules.push(rule);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
-
-  return Array.from(bucket.values()).map((group) => ({
-    ...group,
-    rules: [...group.rules].sort((a, b) => a.level - b.level),
-  }));
 };
+
+const coerceBoolean = (value: unknown, fallback = false) => {
+  if (typeof value === "boolean") return value;
+  if (typeof value === "number") return value !== 0;
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (["1", "true", "active", "yes", "on"].includes(normalized)) return true;
+    if (["0", "false", "inactive", "no", "off", ""].includes(normalized)) {
+      return false;
+    }
+  }
+  return fallback;
+};
+
+const normalizePlan = (plan: AdminIbPlanCrudItem): IbPlanRow => ({
+  id: String(plan.id),
+  name: plan.name ?? "",
+  status: coerceBoolean(plan.status, true),
+  created_at: plan.created_at,
+  updated_at: plan.updated_at,
+});
 
 export default function IbPlansPage() {
   const { token } = useAuth();
+  const queryClient = useQueryClient();
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewItem, setViewItem] = useState<IbPlanRow | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<"all" | "true" | "false">(
+    "all",
+  );
+  const [search, setSearch] = useState("");
+  const authToken = useMemo(() => {
+    if (token) return token;
+    if (typeof window === "undefined") return null;
 
-  const [plans, setPlans] = useState<CommissionPlan[]>([]);
-  const [pagination, setPagination] = useState<CommissionPlanListResponseData["pagination"]>();
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<unknown | null>(null);
-  const [refreshing, setRefreshing] = useState(false);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [createSubmitting, setCreateSubmitting] = useState(false);
-  const [createForm, setCreateForm] = useState({
-    name: "",
-    description: "",
-    status: "active",
-    rules: defaultRulesTemplate,
+    return (
+      sessionStorage.getItem("authToken") ||
+      localStorage.getItem("auth_token")
+    );
+  }, [token]);
+
+  const {
+    data: plansResult,
+    isLoading: loading,
+    isError,
+    error,
+    refetch,
+  } = useQuery({
+    queryKey: ["ibPlansCrud", authToken],
+    queryFn: async () => {
+      const response = await adminIbPlansCrudApi.list(authToken!);
+      return (response?.data?.ibPlans ?? []).map(normalizePlan);
+    },
+    enabled: Boolean(authToken),
+    staleTime: 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
-  const [createError, setCreateError] = useState<string | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<CommissionPlan | null>(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const loadPlans = useCallback(
-    async ({ silent = false }: { silent?: boolean } = {}) => {
-      if (!token) {
-        return;
+  const data = useMemo(() => plansResult ?? [], [plansResult]);
+
+  const filteredData = useMemo(() => {
+    const normalizedSearch = search.trim().toLowerCase();
+
+    return data.filter((plan) => {
+      const matchesSearch =
+        normalizedSearch.length === 0 ||
+        plan.name.toLowerCase().includes(normalizedSearch) ||
+        plan.id.toLowerCase().includes(normalizedSearch);
+
+      const matchesStatus =
+        statusFilter === "all" ||
+        (statusFilter === "true" && plan.status) ||
+        (statusFilter === "false" && !plan.status);
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [data, search, statusFilter]);
+
+  const invalidatePlans = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["ibPlansCrud", authToken] });
+  }, [queryClient, authToken]);
+
+  const fetchPlanDetail = useCallback(
+    async (id: string): Promise<IbPlanRow> => {
+      if (!authToken) {
+        throw new Error("Missing auth token");
       }
 
+      const response = await adminIbPlansCrudApi.getById(id, authToken);
+      const plan = response?.data;
+
+      if (!plan || plan.id === undefined || plan.id === null) {
+        throw new Error("IB plan details unavailable");
+      }
+
+      return normalizePlan(plan);
+    },
+    [authToken],
+  );
+
+  const handleAdd = async (payload: Omit<IbPlanRow, "id">) => {
+    if (!authToken) return Promise.reject();
+
+    if (!payload.name.trim()) {
+      toast.error("IB plan name is required");
+      return Promise.reject(new Error("IB plan name is required"));
+    }
+
+    try {
+      await adminIbPlansCrudApi.create(
+        {
+          name: payload.name.trim(),
+        },
+        authToken,
+      );
+      invalidatePlans();
+      toast.success("IB plan created");
+      return Promise.resolve();
+    } catch (error: unknown) {
+      toast.error(
+        getAdminFriendlyErrorMessage(error, {
+          resource: "IB plans",
+          action: "create",
+        }),
+      );
+      return Promise.reject(error);
+    }
+  };
+
+  const handleUpdate = async (row: IbPlanRow) => {
+    if (!authToken) return Promise.reject();
+
+    if (!row.name.trim()) {
+      toast.error("IB plan name is required");
+      return Promise.reject(new Error("IB plan name is required"));
+    }
+
+    const payload: AdminIbPlanCrudUpdateBody = {
+      name: row.name.trim(),
+      status: Boolean(row.status),
+    };
+
+    try {
+      setActionLoadingId(row.id);
+      await adminIbPlansCrudApi.update(row.id, payload, authToken);
+      invalidatePlans();
+      toast.success("IB plan updated");
+      return Promise.resolve();
+    } catch (error: unknown) {
+      toast.error(
+        getAdminFriendlyErrorMessage(error, {
+          resource: "IB plans",
+          action: "update",
+        }),
+      );
+      return Promise.reject(error);
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleToggleStatus = useCallback(
+    async (id: string) => {
+      if (!authToken) return;
+
+      const target = data.find((plan) => plan.id === id);
+      if (!target) return;
+
       try {
-        if (silent) {
-          setRefreshing(true);
-        } else {
-          setLoading(true);
-          setLoadError(null);
-        }
-
-        const response = await adminCommissionPlansApi.list({
-          token,
-          includeRules: true,
-        });
-
-        const payload = response?.data;
-        setPlans(payload?.plans ?? []);
-        setPagination(payload?.pagination);
+        setActionLoadingId(id);
+        await adminIbPlansCrudApi.update(
+          id,
+          {
+            name: target.name.trim(),
+            status: !target.status,
+          },
+          authToken,
+        );
+        invalidatePlans();
+        toast.success("IB plan status updated");
       } catch (error: unknown) {
-        console.error("Failed to fetch commission plans:", error);
-        if (!silent) {
-          setLoadError(error);
-        }
         toast.error(
           getAdminFriendlyErrorMessage(error, {
-            resource: "commission plans",
-            action: "load",
-          })
+            resource: "IB plans",
+            action: "update",
+          }),
         );
-        if (!silent) {
-          setPlans([]);
-        }
       } finally {
-        if (silent) {
-          setRefreshing(false);
-        } else {
-          setLoading(false);
-        }
+        setActionLoadingId(null);
       }
     },
-    [token],
+    [data, invalidatePlans, authToken],
   );
 
-  useEffect(() => {
-    void loadPlans();
-  }, [loadPlans]);
+  const handleDelete = async (id: string) => {
+    if (!authToken) return Promise.reject();
 
-  const resetCreateForm = useCallback(() => {
-    setCreateForm({
-      name: "",
-      description: "",
-      status: "active",
-      rules: defaultRulesTemplate,
-    });
-    setCreateError(null);
-    setCreateSubmitting(false);
-  }, []);
-
-  const handleCreateDialogChange = (open: boolean) => {
-    setCreateDialogOpen(open);
-    if (!open) {
-      resetCreateForm();
+    try {
+      setActionLoadingId(id);
+      await adminIbPlansCrudApi.delete(id, authToken);
+      invalidatePlans();
+      toast.success("IB plan deleted");
+      return Promise.resolve();
+    } catch (error: unknown) {
+      toast.error(
+        getAdminFriendlyErrorMessage(error, {
+          resource: "IB plans",
+          action: "delete",
+        }),
+      );
+      return Promise.reject(error);
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
-  const handleCreateFieldChange = (
-    event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    const { name, value } = event.target;
-    setCreateError(null);
-    setCreateForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleCreateStatusChange = (value: string) => {
-    setCreateError(null);
-    setCreateForm((prev) => ({
-      ...prev,
-      status: value,
-    }));
-  };
-
-  const handleCreateSubmit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!token) {
-      toast.error("Authentication is required to create a commission plan");
-      return;
-    }
-
-    const trimmedName = createForm.name.trim();
-    if (!trimmedName) {
-      setCreateError("Plan name is required.");
-      return;
-    }
-
-    let parsedRules: CommissionPlanRuleInput[] | undefined;
-    if (createForm.rules.trim()) {
+  const handleViewPlan = useCallback(
+    async (id: string) => {
       try {
-        const json = JSON.parse(createForm.rules);
-        if (!Array.isArray(json)) {
-          throw new Error("Rules JSON must be an array.");
+        setActionLoadingId(id);
+        const plan = await fetchPlanDetail(id);
+        setViewItem(plan);
+        setViewOpen(true);
+      } catch (error: unknown) {
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "IB plan details",
+            action: "load",
+          }),
+        );
+      } finally {
+        setActionLoadingId(null);
+      }
+    },
+    [fetchPlanDetail],
+  );
+
+  const handleExport = useCallback(
+    (formatType: "xlsx" | "csv") => {
+      const exportToastId = `ib-plans-export-${formatType}`;
+
+      try {
+        if (filteredData.length === 0) {
+          toast.error("No data to export", { id: exportToastId });
+          return;
         }
 
-        parsedRules = json.map((rule, index) => {
-          if (!rule?.asset_group) {
-            throw new Error(`Rule at index ${index} is missing 'asset_group'.`);
-          }
-          if (typeof rule.level !== "number") {
-            throw new Error(`Rule at index ${index} must include a numeric 'level'.`);
-          }
-          return rule as CommissionPlanRuleInput;
+        toast.loading(`Preparing ${formatType.toUpperCase()} export...`, {
+          id: exportToastId,
         });
-      } catch {
-        setCreateError(
-          "Please enter commission rules as a valid JSON array. Each rule must include an asset group and a numeric level."
+
+        const exportData = filteredData.map((plan, index) => ({
+          "Sr. No.": index + 1,
+          "Plan ID": plan.id,
+          Name: plan.name || "-",
+          Status: plan.status ? "Active" : "Inactive",
+          Created: formatExportDateTime(plan.created_at),
+          Updated: formatExportDateTime(plan.updated_at),
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(exportData);
+        const filenameBase = `ib-plans-${getExportTimestamp()}`;
+        let filename = `${filenameBase}.xlsx`;
+
+        if (formatType === "xlsx") {
+          const workbook = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(workbook, worksheet, "IB Plans");
+          XLSX.writeFile(workbook, filename);
+        } else {
+          const csv = XLSX.utils.sheet_to_csv(worksheet);
+          const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+          const link = document.createElement("a");
+          filename = `${filenameBase}.csv`;
+          link.href = URL.createObjectURL(blob);
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          link.remove();
+          URL.revokeObjectURL(link.href);
+        }
+
+        toast.success(`Exported ${filteredData.length} IB plans to ${filename}`, {
+          id: exportToastId,
+        });
+      } catch (error: unknown) {
+        console.error(`Failed to export ${formatType}:`, error);
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "IB plans",
+            action: "export",
+          }),
+          { id: exportToastId },
         );
-        return;
       }
-    }
-
-    setCreateSubmitting(true);
-    setCreateError(null);
-    try {
-      await adminCommissionPlansApi.create(
-        {
-          name: trimmedName,
-          description: createForm.description.trim() || undefined,
-          status: createForm.status,
-          rules: parsedRules,
-        },
-        token
-      );
-      toast.success("Commission plan created");
-      handleCreateDialogChange(false);
-      await loadPlans({ silent: true });
-    } catch (error: unknown) {
-      console.error("Failed to create commission plan:", error);
-      toast.error(
-        getAdminFriendlyErrorMessage(error, {
-          resource: "commission plans",
-          action: "create",
-        })
-      );
-    } finally {
-      setCreateSubmitting(false);
-    }
-  };
-
-  const handleDeletePlan = async () => {
-    if (!token || !deleteTarget) {
-      return;
-    }
-
-    const plan = deleteTarget;
-    setDeleteLoading(true);
-    try {
-      await adminCommissionPlansApi.delete(plan.id, token);
-      toast.success(`Deleted plan "${plan.name}"`);
-      setDeleteTarget(null);
-      await loadPlans({ silent: true });
-    } catch (error: unknown) {
-      console.error("Failed to delete commission plan:", error);
-      toast.error(
-        getAdminFriendlyErrorMessage(error, {
-          resource: "commission plans",
-          action: "delete",
-        })
-      );
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
-
-  const totals = useMemo(() => {
-    const planCount = plans.length;
-    const ruleCount = plans.reduce((acc, plan) => acc + (plan.rules?.length ?? 0), 0);
-    const activePlans = plans.filter((plan) => plan.status?.toLowerCase() === "active").length;
-    return { planCount, ruleCount, activePlans };
-  }, [plans]);
-
-  const renderRulesTable = (rules: CommissionPlanRule[]) => (
-    <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-[80px]">Level</TableHead>
-            <TableHead>IB Rate</TableHead>
-            {subIbColumns.map((column) => (
-              <TableHead key={column.key}>{column.label}</TableHead>
-            ))}
-            <TableHead>Status</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rules.map((rule) => (
-            <TableRow key={rule.id}>
-              <TableCell className="font-medium">Level {rule.level}</TableCell>
-              <TableCell>{formatRate(rule.rate_ib)}</TableCell>
-              {subIbColumns.map((column) => (
-                <TableCell key={column.key}>{formatRate(rule[column.key])}</TableCell>
-              ))}
-              <TableCell>
-                <Badge variant={rule.status === "active" ? "default" : "secondary"}>
-                  {rule.status === "active" ? "Active" : "Inactive"}
-                </Badge>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+    },
+    [filteredData],
   );
 
-  const getPlanKey = (plan: CommissionPlan) => plan.uuid ?? `plan-${plan.id}`;
+  const columns = useMemo(
+    () => getColumns({ onToggleStatus: handleToggleStatus, actionLoadingId }),
+    [handleToggleStatus, actionLoadingId],
+  );
 
-  const renderPlanPanel = (plan: CommissionPlan) => {
-    const grouped = groupRules(plan.rules);
-
+  if (isError && data.length === 0) {
     return (
-      <Card className="overflow-hidden">
-        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <CardTitle className="text-xl font-semibold">{plan.name}</CardTitle>
-              <Badge variant={plan.status?.toLowerCase() === "active" ? "default" : "secondary"}>
-                {plan.status ?? "Unknown"}
-              </Badge>
-            </div>
-            {plan.description ? (
-              <CardDescription className="max-w-3xl text-sm leading-relaxed">
-                {plan.description}
-              </CardDescription>
-            ) : null}
-          </div>
-          <div className="flex flex-col items-start gap-3 text-sm text-muted-foreground sm:items-end">
-            <div className="space-y-1 whitespace-nowrap">
-              <div>Created: {formatDateTime(plan.created_at)}</div>
-              <div>Updated: {formatDateTime(plan.updated_at)}</div>
-            </div>
-            <Button
-              variant="destructive"
-              size="sm"
-              onClick={() => setDeleteTarget(plan)}
-              disabled={deleteLoading && deleteTarget?.id === plan.id}
-            >
-              {deleteLoading && deleteTarget?.id === plan.id ? (
-                <Spinner className="mr-2 h-4 w-4" />
-              ) : (
-                <Trash2 className="mr-2 h-4 w-4" />
-              )}
-              Delete Plan
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {grouped.length > 0 ? (
-            grouped.map((group) => (
-              <div
-                key={group.key}
-                className="space-y-3 rounded-xl border border-border/70 bg-card/40 p-4 shadow-sm"
-              >
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h3 className="text-base font-semibold">{group.label}</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {group.rules.length} {group.rules.length === 1 ? "level" : "levels"}
-                    </p>
-                  </div>
-                  <Badge variant="outline" className="w-fit">
-                    Asset Group: {group.rules[0]?.asset_group ?? "—"}
-                  </Badge>
-                </div>
-                {renderRulesTable(group.rules)}
-              </div>
-            ))
-          ) : (
-            <div className="rounded-md border border-dashed bg-muted/40 p-6 text-center text-sm text-muted-foreground">
-              No rules available for this plan.
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <ProtectedRoute>
+        <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+          <ApiErrorState
+            error={error}
+            audience="admin"
+            variant="panel"
+            resource="IB plans"
+            action="load"
+            onRetry={() => {
+              void refetch();
+            }}
+          />
+        </div>
+      </ProtectedRoute>
     );
-  };
+  }
 
-  const renderContent = () => {
-    if (loading) {
-      return (
+  if (loading && data.length === 0) {
+    return (
+      <ProtectedRoute>
         <ListPageSkeleton
-          contained={false}
-          showHeader={false}
-          showFilterPanel={false}
-          actionCount={0}
+          actionCount={1}
           columnCount={5}
-          rowCount={7}
-          className="px-0"
+          rowCount={8}
+          filterPillCount={2}
         />
-      );
-    }
-
-    if (loadError && plans.length === 0) {
-      return (
-        <ApiErrorState
-          error={loadError}
-          audience="admin"
-          variant="panel"
-          resource="commission plans"
-          action="load"
-          onRetry={() => {
-            void loadPlans({ silent: false });
-          }}
-        />
-      );
-    }
-
-    if (!loading && plans.length === 0) {
-      return (
-        <div className="rounded-lg border border-dashed bg-muted/40 p-12 text-center space-y-3">
-          <Layers className="mx-auto h-10 w-10 text-muted-foreground" />
-          <h3 className="text-lg font-semibold">No commission plans found</h3>
-          <p className="text-sm text-muted-foreground">
-            Create a commission plan in the admin panel to have it appear here.
-          </p>
-          <Button variant="outline" onClick={() => loadPlans({ silent: false })} disabled={loading}>
-            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Retry
-          </Button>
-        </div>
-      );
-    }
-
-    return (
-      <Tabs defaultValue={getPlanKey(plans[0]!)} className="space-y-6">
-        <div className="rounded-full border border-border/60 bg-muted/40 p-1">
-          <TabsList className="flex flex-wrap gap-1 bg-transparent p-1">
-            {plans.map((plan) => {
-              const isActive = plan.status?.toLowerCase() === "active";
-              return (
-                <TabsTrigger
-                  key={getPlanKey(plan)}
-                  value={getPlanKey(plan)}
-                  className="group flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-all data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=inactive]:hover:bg-background/70"
-                >
-                  <span>{plan.name}</span>
-                  <Badge
-                    variant={isActive ? "default" : "secondary"}
-                    className="rounded-full px-2 py-0 text-[10px] uppercase tracking-wide"
-                  >
-                    {plan.status ?? "unknown"}
-                  </Badge>
-                </TabsTrigger>
-              );
-            })}
-          </TabsList>
-        </div>
-
-        {plans.map((plan) => (
-          <TabsContent key={getPlanKey(plan)} value={getPlanKey(plan)} className="space-y-6">
-            {renderPlanPanel(plan)}
-          </TabsContent>
-        ))}
-      </Tabs>
+      </ProtectedRoute>
     );
-  };
+  }
 
   return (
     <ProtectedRoute>
-      <>
-        
-          <div className="container mx-auto space-y-6 p-4 md:p-6">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h1 className="text-2xl font-semibold tracking-tight">IB Commission Plans</h1>
-                <p className="text-sm text-muted-foreground">
-                  Review payout structures across all Introducing Broker plans. Levels expand to show IB
-                  and sub-IB commission rates by asset group.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Dialog open={createDialogOpen} onOpenChange={handleCreateDialogChange}>
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="mr-2 h-4 w-4" />
-                      New Plan
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <form className="space-y-5" onSubmit={handleCreateSubmit}>
-                      <DialogHeader>
-                        <DialogTitle>Create Commission Plan</DialogTitle>
-                        <DialogDescription>
-                          Configure a new commission plan. Provide at least one rule using the JSON
-                          template to match backend expectations.
-                        </DialogDescription>
-                      </DialogHeader>
-
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="plan-name">Name</Label>
-                          <Input
-                            id="plan-name"
-                            name="name"
-                            placeholder="Standard Plus"
-                            value={createForm.name}
-                            onChange={handleCreateFieldChange}
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="plan-description">Description</Label>
-                          <Textarea
-                            id="plan-description"
-                            name="description"
-                            placeholder="Describe the commission plan..."
-                            value={createForm.description}
-                            onChange={handleCreateFieldChange}
-                            rows={3}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Status</Label>
-                          <Select value={createForm.status} onValueChange={handleCreateStatusChange}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="active">Active</SelectItem>
-                              <SelectItem value="inactive">Inactive</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="plan-rules">Rules JSON</Label>
-                          <Textarea
-                            id="plan-rules"
-                            name="rules"
-                            value={createForm.rules}
-                            onChange={handleCreateFieldChange}
-                            rows={10}
-                            spellCheck={false}
-                          />
-                          <p className="text-xs text-muted-foreground">
-                            Paste an array of rule objects. Levels must be numeric and match backend
-                            schema.
-                          </p>
-                          {createError ? (
-                            <p className="text-sm text-destructive">{createError}</p>
-                          ) : null}
-                        </div>
-                      </div>
-
-                      <DialogFooter>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => handleCreateDialogChange(false)}
-                          disabled={createSubmitting}
-                        >
-                          Cancel
-                        </Button>
-                        <Button type="submit" disabled={createSubmitting}>
-                          {createSubmitting ? (
-                            <Spinner className="mr-2 h-4 w-4" />
-                          ) : (
-                            <Plus className="mr-2 h-4 w-4" />
-                          )}
-                          {createSubmitting ? "Creating..." : "Create Plan"}
-                        </Button>
-                      </DialogFooter>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-
-                <Button
-                  variant="outline"
-                  onClick={() => loadPlans({ silent: true })}
-                  disabled={loading || refreshing}
-                >
-                  <RefreshCw className={`mr-2 h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-                  Refresh
-                </Button>
-              </div>
-            </div>
-
-            <div className="rounded-full border border-border/60 bg-muted/40 px-6 py-4">
-              <div className="flex flex-col items-start gap-4 md:flex-row md:items-center md:justify-between">
-                <div className="flex flex-wrap items-center gap-6">
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Total Plans
-                    </p>
-                    <p className="text-xl font-semibold">{totals.planCount}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Active Plans
-                    </p>
-                    <p className="text-xl font-semibold text-emerald-500">{totals.activePlans}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                      Total Rules
-                    </p>
-                    <p className="text-xl font-semibold">{totals.ruleCount}</p>
-                  </div>
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {pagination?.total_records
-                    ? `${pagination.total_records} records in backend`
-                    : "Counts based on fetched plans"}
-                </div>
-              </div>
-            </div>
-
-            {renderContent()}
+      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+        <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="space-y-1">
+            <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
+              <Award className="h-6 w-6 text-primary" />
+              IB Plans
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Create, update, and manage IB plans
+            </p>
           </div>
-        
-        <DeleteDialog
-          isOpen={Boolean(deleteTarget)}
+          <div className="flex flex-wrap gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Download className="h-4 w-4" />
+                  Export
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => handleExport("xlsx")}>
+                  Export Excel (.xlsx)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button onClick={() => setIsCreateDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Add New
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => void invalidatePlans()}
+              disabled={loading}
+            >
+              <RefreshCw
+                className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
+              />
+              Refresh
+            </Button>
+          </div>
+        </div>
+
+        <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
+          <div className="space-y-1">
+            <Label htmlFor="search">Search</Label>
+            <Input
+              id="search"
+              placeholder="Search by plan name or ID..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label>Status</Label>
+            <Select
+              value={statusFilter}
+              onValueChange={(value: "all" | "true" | "false") =>
+                setStatusFilter(value)
+              }
+            >
+              <SelectTrigger className="w-full max-w-[140px]">
+                <SelectValue placeholder="All" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="true">Active</SelectItem>
+                <SelectItem value="false">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="flex items-end">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setSearch("");
+                setStatusFilter("all");
+              }}
+            >
+              Clear Filters
+            </Button>
+          </div>
+        </div>
+
+        <PermissionAwareCrudDataTable<IbPlanRow>
+          data={filteredData}
+          initialData={filteredData}
+          columns={columns}
+          formComponent={IbPlanForm}
+          title=""
+          description=""
+          requiredModule="ibPlan"
+          hideAddButton={true}
+          onAdd={async (partial) => {
+            const plan = partial as Partial<IbPlanRow>;
+            return handleAdd({
+              name: plan.name ?? "",
+              status: Boolean(plan.status),
+            });
+          }}
+          onUpdate={handleUpdate}
+          onDelete={handleDelete}
+          onView={(row) => {
+            void handleViewPlan(row.id);
+          }}
+          onFetchItem={fetchPlanDetail}
+          rowIsReadOnly={() => false}
+        />
+
+        <IbPlanForm
+          open={isCreateDialogOpen}
+          onOpenChange={setIsCreateDialogOpen}
+          initialData={null}
+          onSubmit={async (formData) => {
+            await handleAdd({
+              name: formData.name,
+              status: formData.status,
+            });
+            setIsCreateDialogOpen(false);
+          }}
+        />
+
+        <IbPlanForm
+          open={viewOpen}
           onOpenChange={(open) => {
+            setViewOpen(open);
             if (!open) {
-              setDeleteTarget(null);
+              setViewItem(null);
             }
           }}
-          onConfirm={() => {
-            void handleDeletePlan();
-          }}
-          title={`Delete ${deleteTarget?.name ?? "plan"}?`}
-          description="This action will permanently remove the commission plan and its rules."
-          confirmText={deleteLoading ? "Deleting..." : "Delete"}
-          cancelText="Cancel"
-          variant="destructive"
+          initialData={viewItem}
+          readOnly={true}
+          onSubmit={() => {}}
         />
-      </>
+      </div>
     </ProtectedRoute>
   );
 }
-

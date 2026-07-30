@@ -241,8 +241,8 @@ export function ProfileStepper({
       <CardHeader className="relative z-10 pb-3 pt-5 px-4 sm:px-5 border-b border-border/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl border border-border/60 bg-[#3D3D3D] text-foreground shadow-sm backdrop-blur-sm">
-              <FileCheck className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+            <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl border border-border/60 bg-muted text-foreground shadow-sm backdrop-blur-sm">
+              <FileCheck className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
             </div>
             <div>
               <CardTitle className="text-base sm:text-lg font-bold">
@@ -254,7 +254,7 @@ export function ProfileStepper({
             </div>
           </div>
           <div className="text-right">
-            <div className="text-lg sm:text-xl font-bold text-[#E6E6E6]">
+            <div className="text-lg sm:text-xl font-bold text-foreground">
               {progressPercentage.toFixed(0)}%
             </div>
           </div>

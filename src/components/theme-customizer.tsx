@@ -1,56 +1,61 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Separator } from "@/components/ui/separator"
-import { Check, Palette, Image, Link } from "lucide-react"
-import { cn } from "@/lib/utils"
-import { useClientCustomization } from "@/contexts/client-customization-context"
-import { showDevThemeTools } from "@/components/theme-provider"
+import * as React from "react";
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Check, Palette, Image, Link } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { useClientCustomization } from "@/contexts/client-customization-context";
+import { showDevThemeTools } from "@/components/theme-provider";
 
 interface SidebarThemeOverrides {
-  background?: string
-  foreground?: string
-  primary?: string
-  primaryForeground?: string
-  accent?: string
-  accentForeground?: string
-  border?: string
-  ring?: string
+  background?: string;
+  foreground?: string;
+  primary?: string;
+  primaryForeground?: string;
+  accent?: string;
+  accentForeground?: string;
+  border?: string;
+  ring?: string;
 }
 
 interface ThemeSwatch {
-  id: string
-  name: string
-  leftColor: string
-  rightColor: string
+  id: string;
+  name: string;
+  leftColor: string;
+  rightColor: string;
   cssVariables: {
-    primary: string
-    secondary: string
-    accent: string
-    background: string
-    card?: string
-    foreground: string
-    border: string
-    muted: string
-    mutedForeground: string
-    sidebar?: SidebarThemeOverrides
-  }
+    primary: string;
+    secondary: string;
+    accent: string;
+    background: string;
+    card?: string;
+    foreground: string;
+    border: string;
+    muted: string;
+    mutedForeground: string;
+    sidebar?: SidebarThemeOverrides;
+  };
 }
 
-export type ThemeMode = "bright" | "dark"
+export type ThemeMode = "bright" | "dark";
 
 export interface ThemePair {
-  id: string
-  name: string
-  brightThemeId: string
-  darkThemeId: string
+  id: string;
+  name: string;
+  brightThemeId: string;
+  darkThemeId: string;
 }
 
-export type DashboardThemeArtwork = "bull" | "diagofinance" | null
+export type DashboardThemeArtwork = "bull" | "diagofinance" | null;
 
 const themeSwatches: ThemeSwatch[] = [
   {
@@ -66,8 +71,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#0f172a",
       border: "#e2e8f0",
       muted: "#f8fafc",
-      mutedForeground: "#64748b"
-    }
+      mutedForeground: "#64748b",
+    },
   },
   {
     id: "warm",
@@ -82,8 +87,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#451a03",
       border: "#fed7aa",
       muted: "#fef3c7",
-      mutedForeground: "#92400e"
-    }
+      mutedForeground: "#92400e",
+    },
   },
   {
     id: "cool",
@@ -98,8 +103,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#0c4a6e",
       border: "#bae6fd",
       muted: "#e0f2fe",
-      mutedForeground: "#0369a1"
-    }
+      mutedForeground: "#0369a1",
+    },
   },
   {
     id: "nature",
@@ -114,8 +119,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#14532d",
       border: "#bbf7d0",
       muted: "#dcfce7",
-      mutedForeground: "#166534"
-    }
+      mutedForeground: "#166534",
+    },
   },
   {
     id: "sunset",
@@ -130,8 +135,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#7f1d1d",
       border: "#fecaca",
       muted: "#fee2e2",
-      mutedForeground: "#dc2626"
-    }
+      mutedForeground: "#dc2626",
+    },
   },
   {
     id: "ocean",
@@ -146,8 +151,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#f0f9ff",
       border: "#334155",
       muted: "#1e293b",
-      mutedForeground: "#94a3b8"
-    }
+      mutedForeground: "#94a3b8",
+    },
   },
   {
     id: "forest",
@@ -162,8 +167,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#14532d",
       border: "#bbf7d0",
       muted: "#dcfce7",
-      mutedForeground: "#166534"
-    }
+      mutedForeground: "#166534",
+    },
   },
   {
     id: "berry",
@@ -178,8 +183,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#831843",
       border: "#f9a8d4",
       muted: "#fce7f3",
-      mutedForeground: "#be185d"
-    }
+      mutedForeground: "#be185d",
+    },
   },
   {
     id: "citrus",
@@ -194,8 +199,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#78350f",
       border: "#fde68a",
       muted: "#fef3c7",
-      mutedForeground: "#a16207"
-    }
+      mutedForeground: "#a16207",
+    },
   },
   {
     id: "lavender",
@@ -210,8 +215,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#581c87",
       border: "#ddd6fe",
       muted: "#f3e8ff",
-      mutedForeground: "#7c3aed"
-    }
+      mutedForeground: "#7c3aed",
+    },
   },
   {
     id: "sage",
@@ -226,8 +231,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#064e3b",
       border: "#d1fae5",
       muted: "#dcfce7",
-      mutedForeground: "#047857"
-    }
+      mutedForeground: "#047857",
+    },
   },
   {
     id: "coral",
@@ -242,8 +247,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#7f1d1d",
       border: "#fecaca",
       muted: "#fee2e2",
-      mutedForeground: "#dc2626"
-    }
+      mutedForeground: "#dc2626",
+    },
   },
   {
     id: "midnight",
@@ -258,8 +263,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#f8fafc",
       border: "#334155",
       muted: "#1e293b",
-      mutedForeground: "#94a3b8"
-    }
+      mutedForeground: "#94a3b8",
+    },
   },
   {
     id: "charcoal",
@@ -274,8 +279,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#f9fafb",
       border: "#374151",
       muted: "#1f2937",
-      mutedForeground: "#9ca3af"
-    }
+      mutedForeground: "#9ca3af",
+    },
   },
   {
     id: "navy",
@@ -290,8 +295,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#f8fafc",
       border: "#1e40af",
       muted: "#1e40af",
-      mutedForeground: "#94a3b8"
-    }
+      mutedForeground: "#94a3b8",
+    },
   },
   {
     id: "emerald",
@@ -306,8 +311,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#f0fdf4",
       border: "#065f46",
       muted: "#065f46",
-      mutedForeground: "#a7f3d0"
-    }
+      mutedForeground: "#a7f3d0",
+    },
   },
   {
     id: "ruby",
@@ -322,8 +327,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#fef2f2",
       border: "#991b1b",
       muted: "#991b1b",
-      mutedForeground: "#fecaca"
-    }
+      mutedForeground: "#fecaca",
+    },
   },
   {
     id: "sapphire",
@@ -338,8 +343,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#f0f9ff",
       border: "#1e40af",
       muted: "#1e40af",
-      mutedForeground: "#bae6fd"
-    }
+      mutedForeground: "#bae6fd",
+    },
   },
   {
     id: "amethyst",
@@ -354,8 +359,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#581c87",
       border: "#ddd6fe",
       muted: "#f3e8ff",
-      mutedForeground: "#7c3aed"
-    }
+      mutedForeground: "#7c3aed",
+    },
   },
   {
     id: "custom",
@@ -370,8 +375,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#0f172a",
       border: "#e2e8f0",
       muted: "#f8fafc",
-      mutedForeground: "#64748b"
-    }
+      mutedForeground: "#64748b",
+    },
   },
   {
     id: "dark-blue",
@@ -386,8 +391,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#f8fafc",
       border: "#1e293b",
       muted: "#1e293b",
-      mutedForeground: "#94a3b8"
-    }
+      mutedForeground: "#94a3b8",
+    },
   },
   {
     id: "rose",
@@ -402,8 +407,8 @@ const themeSwatches: ThemeSwatch[] = [
       foreground: "#881337",
       border: "#ffe4e6",
       muted: "#fdf2f8",
-      mutedForeground: "#be185d"
-    }
+      mutedForeground: "#be185d",
+    },
   },
   {
     id: "noir",
@@ -427,9 +432,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#0f172a",
         accentForeground: "#e2e8f0",
         border: "#1f2937",
-        ring: "#4c1d95"
-      }
-    }
+        ring: "#4c1d95",
+      },
+    },
   },
   {
     id: "classic-bw",
@@ -453,9 +458,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#171717",
         accentForeground: "#f5f5f5",
         border: "#262626",
-        ring: "#d4d4d4"
-      }
-    }
+        ring: "#d4d4d4",
+      },
+    },
   },
   {
     id: "cyberpunk",
@@ -479,9 +484,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#1f2937",
         accentForeground: "#06b6d4",
         border: "#1f2937",
-        ring: "#ec4899"
-      }
-    }
+        ring: "#ec4899",
+      },
+    },
   },
   {
     id: "dracula",
@@ -505,9 +510,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#44475a",
         accentForeground: "#8be9fd",
         border: "#44475a",
-        ring: "#bd93f9"
-      }
-    }
+        ring: "#bd93f9",
+      },
+    },
   },
   {
     id: "tokyo-night",
@@ -531,9 +536,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#24283b",
         accentForeground: "#7aa2f7",
         border: "#24283b",
-        ring: "#bb9af7"
-      }
-    }
+        ring: "#bb9af7",
+      },
+    },
   },
   {
     id: "matrix-glitch",
@@ -557,9 +562,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#042f1a",
         accentForeground: "#86efac",
         border: "#115e59",
-        ring: "#22c55e"
-      }
-    }
+        ring: "#22c55e",
+      },
+    },
   },
   {
     id: "nordic-frost",
@@ -583,9 +588,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#3b4252",
         accentForeground: "#88c0d0",
         border: "#3b4252",
-        ring: "#88c0d0"
-      }
-    }
+        ring: "#88c0d0",
+      },
+    },
   },
   {
     id: "solar-flare",
@@ -609,9 +614,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#2e1065",
         accentForeground: "#f97316",
         border: "#3b0764",
-        ring: "#f97316"
-      }
-    }
+        ring: "#f97316",
+      },
+    },
   },
   {
     id: "oceanic-abyss",
@@ -635,9 +640,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#075985",
         accentForeground: "#f0f9ff",
         border: "#0c4a6e",
-        ring: "#0ea5e9"
-      }
-    }
+        ring: "#0ea5e9",
+      },
+    },
   },
   {
     id: "crimson-tide",
@@ -661,9 +666,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#4c0519",
         accentForeground: "#fda4af",
         border: "#4c0519",
-        ring: "#f43f5e"
-      }
-    }
+        ring: "#f43f5e",
+      },
+    },
   },
   {
     id: "synthwave-84",
@@ -687,9 +692,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#2b213a",
         accentForeground: "#8be9fd",
         border: "#3d2f4d",
-        ring: "#ff79c6"
-      }
-    }
+        ring: "#ff79c6",
+      },
+    },
   },
   {
     id: "monokai-pro",
@@ -713,9 +718,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#403e41",
         accentForeground: "#ff6188",
         border: "#403e41",
-        ring: "#ffd866"
-      }
-    }
+        ring: "#ffd866",
+      },
+    },
   },
   {
     id: "nord-aurora",
@@ -739,9 +744,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#3b4252",
         accentForeground: "#88c0d0",
         border: "#3b4252",
-        ring: "#8fbcbb"
-      }
-    }
+        ring: "#8fbcbb",
+      },
+    },
   },
   {
     id: "midnight-moss",
@@ -765,9 +770,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#112e27",
         accentForeground: "#34d399",
         border: "#163a31",
-        ring: "#34d399"
-      }
-    }
+        ring: "#34d399",
+      },
+    },
   },
   {
     id: "deep-ocean-inc",
@@ -791,9 +796,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#1e293b",
         accentForeground: "#38bdf8",
         border: "#1e293b",
-        ring: "#38bdf8"
-      }
-    }
+        ring: "#38bdf8",
+      },
+    },
   },
   {
     id: "blood-moon",
@@ -817,9 +822,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#2a0808",
         accentForeground: "#f97316",
         border: "#3a0c0c",
-        ring: "#ef4444"
-      }
-    }
+        ring: "#ef4444",
+      },
+    },
   },
   {
     id: "rose-gold-dark",
@@ -843,9 +848,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#2e2528",
         accentForeground: "#fda4af",
         border: "#3a2f33",
-        ring: "#fda4af"
-      }
-    }
+        ring: "#fda4af",
+      },
+    },
   },
   {
     id: "cyber-lime",
@@ -869,9 +874,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#27272a",
         accentForeground: "#22d3ee",
         border: "#27272a",
-        ring: "#a3e635"
-      }
-    }
+        ring: "#a3e635",
+      },
+    },
   },
   {
     id: "neon-vamp",
@@ -895,9 +900,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#1e1135",
         accentForeground: "#22d3ee",
         border: "#291749",
-        ring: "#c084fc"
-      }
-    }
+        ring: "#c084fc",
+      },
+    },
   },
   {
     id: "stealth-amber",
@@ -921,9 +926,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#27272a",
         accentForeground: "#fbbf24",
         border: "#27272a",
-        ring: "#f59e0b"
-      }
-    }
+        ring: "#f59e0b",
+      },
+    },
   },
   {
     id: "abyssal-emerald",
@@ -947,9 +952,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#062e21",
         accentForeground: "#a7f3d0",
         border: "#0c4f3a",
-        ring: "#10b981"
-      }
-    }
+        ring: "#10b981",
+      },
+    },
   },
   {
     id: "sub-zero",
@@ -973,9 +978,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#1e293b",
         accentForeground: "#93c5fd",
         border: "#1e293b",
-        ring: "#38bdf8"
-      }
-    }
+        ring: "#38bdf8",
+      },
+    },
   },
   {
     id: "toxic-waste",
@@ -999,9 +1004,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#171717",
         accentForeground: "#e4e4e7",
         border: "#262626",
-        ring: "#a3e635"
-      }
-    }
+        ring: "#a3e635",
+      },
+    },
   },
   {
     id: "phantom-rose",
@@ -1025,9 +1030,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#2a0f17",
         accentForeground: "#f472b6",
         border: "#431422",
-        ring: "#fb7185"
-      }
-    }
+        ring: "#fb7185",
+      },
+    },
   },
   {
     id: "graphite",
@@ -1051,9 +1056,9 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#1f2937",
         accentForeground: "#fde68a",
         border: "#1f2937",
-        ring: "#fb923c"
-      }
-    }
+        ring: "#fb923c",
+      },
+    },
   },
   {
     id: "purple-noir",
@@ -1077,280 +1082,443 @@ const themeSwatches: ThemeSwatch[] = [
         accent: "#1a1129",
         accentForeground: "#ddd6fe",
         border: "#27272a",
-        ring: "#7c3aed"
-      }
-    }
+        ring: "#7c3aed",
+      },
+    },
   },
-{
-  id: "golden-bull-bright",
-  name: "Golden Bull Bright",
+  {
+    id: "golden-bull-bright",
+    name: "Golden Bull Bright",
 
-  leftColor: "#F5F0E8",
-  rightColor: "#EDE6D8",
+    leftColor: "#F5F0E8",
+    rightColor: "#EDE6D8",
 
-  cssVariables: {
-    primary: "#FFB401",          // Unchanged — gold pops on warm parchment
-    secondary: "#5C4E3A",        // Warm dark brown — replaces cold slate
-    accent: "#FFC533",           // Gold hover
+    cssVariables: {
+      primary: "#FFB401", // Unchanged — gold pops on warm parchment
+      secondary: "#5C4E3A", // Warm dark brown — replaces cold slate
+      accent: "#FFC533", // Gold hover
 
-    background: "#F5F0E8",       // Warm parchment — not white, not grey
-    foreground: "#2C2218",       // Deep warm ink — not pure black
+      background: "#F5F0E8", // Warm parchment — not white, not grey
+      foreground: "#2C2218", // Deep warm ink — not pure black
 
-    border: "#D9CEB8",           // Tan border — visible but not harsh
+      border: "#D9CEB8", // Tan border — visible but not harsh
 
-    muted: "#EDE6D8",            // Darker parchment for cards/sidebar
-    mutedForeground: "#8B7355",  // Mid warm brown for secondary text
+      muted: "#EDE6D8", // Darker parchment for cards/sidebar
+      mutedForeground: "#8B7355", // Mid warm brown for secondary text
 
-    sidebar: {
-      background: "#EDE6D8",     // One shade deeper than main bg
-      foreground: "#2C2218",
+      sidebar: {
+        background: "#EDE6D8", // One shade deeper than main bg
+        foreground: "#2C2218",
 
-      primary: "#FFB401",
-      primaryForeground: "#1C1610",
+        primary: "#FFB401",
+        primaryForeground: "#1C1610",
 
-      accent: "#D9CEB8",         // Hover — darker tan
-      accentForeground: "#4A3728",
+        accent: "#D9CEB8", // Hover — darker tan
+        accentForeground: "#4A3728",
 
-      border: "#D9CEB8",
-      ring: "#FFC533"
-    }
-  }
-},
-{
-  id: "golden-bull-dark",
-  name: "Golden Bull Dark",
-  leftColor: "#111722",
-  rightColor: "#1A2230",
+        border: "#D9CEB8",
+        ring: "#FFC533",
+      },
+    },
+  },
+  {
+    id: "golden-bull-dark",
+    name: "Golden Bull Dark",
+    leftColor: "#111722",
+    rightColor: "#1A2230",
 
-  cssVariables: {
-    primary: "#FFB401",          // Main gold
-    secondary: "#48526B",        // Slate blue-grey
-    accent: "#FFC533",           // Brighter gold for hover/active states
+    cssVariables: {
+      primary: "#FFB401", // Main gold
+      secondary: "#48526B", // Slate blue-grey
+      accent: "#FFC533", // Brighter gold for hover/active states
 
-    background: "#111722",       // Deep navy-charcoal
-    foreground: "#F4F6F8",       // Soft white
+      background: "#111722", // Deep navy-charcoal
+      foreground: "#F4F6F8", // Soft white
 
-    border: "#2D3748",           // Modern slate border
+      border: "#2D3748", // Modern slate border
 
-    muted: "#1A2230",            // Card backgrounds
-    mutedForeground: "#9AA4B5",  // Secondary text
+      muted: "#1A2230", // Card backgrounds
+      mutedForeground: "#9AA4B5", // Secondary text
 
-    sidebar: {
-      background: "#0E141F",
-      foreground: "#F4F6F8",
+      sidebar: {
+        background: "#0E141F",
+        foreground: "#F4F6F8",
 
-      primary: "#FFB401",
-      primaryForeground: "#111722",
+        primary: "#FFB401",
+        primaryForeground: "#111722",
 
-      accent: "#48526B",
-      accentForeground: "#FFB401",
+        accent: "#48526B",
+        accentForeground: "#FFB401",
 
-      border: "#2D3748",
-      ring: "#FFC533"
-    }
-  }
-}
-,{
-  id: "diagofinance-bright",
-  name: "Diagofinance Bright",
+        border: "#2D3748",
+        ring: "#FFC533",
+      },
+    },
+  },
+  {
+    id: "diagofinance-bright",
+    name: "Diagofinance Bright",
 
-  leftColor: "#FAFAFA",
-  rightColor: "#F0F0F2",
+    leftColor: "#FFFFFF",
+    rightColor: "#F8F9FA",
 
-  cssVariables: {
-    primary: "#EC0808",          // Red — pure accent, pops against neutral base
-    secondary: "#18181B",        // Near-black neutral — not maroon-tinted
-    accent: "#F8C701",           // Gold — hover/highlight
+    cssVariables: {
+      primary: "#C10037",
+      secondary: "#18181B",
+      accent: "#EC0808",
 
-    background: "#FAFAFA",       // Neutral off-white
-    foreground: "#18181B",       // Neutral near-black text
+      background: "#F8F9FA",
+      card: "#FFFFFF",
+      foreground: "#1A1A1A",
 
-    border: "#E4E4E7",           // Plain neutral grey border
+      border: "#FDE8E8",
 
-    muted: "#F0F0F2",            // Neutral light grey for cards/sidebar
-    mutedForeground: "#71717A",  // Neutral grey secondary text
+      muted: "#F3F4F6",
+      mutedForeground: "#6B7280",
 
-    sidebar: {
-      background: "#F0F0F2",
-      foreground: "#18181B",
+      sidebar: {
+        background: "#FFFFFF",
+        foreground: "#1A1A1A",
 
-      primary: "#EC0808",
-      primaryForeground: "#FAFAFA",
+        primary: "#C10037",
+        primaryForeground: "#FFFFFF",
 
-      accent: "#F8C701",
-      accentForeground: "#18181B",
+        accent: "#F8F9FA",
+        accentForeground: "#1A1A1A",
 
-      border: "#E4E4E7",
-      ring: "#EC0808"
-    }
-  }
-},
-{
-  id: "diagofinance-dark",
-  name: "Diagofinance Dark",
+        border: "#FDE8E8",
+        ring: "#C10037",
+      },
+    },
+  },
+  {
+    id: "diagofinance-dark",
+    name: "Diagofinance Dark",
 
-  leftColor: "#0A0A0B",
-  rightColor: "#18181B",
+    leftColor: "#0A0A0B",
+    rightColor: "#18181B",
 
-  cssVariables: {
-    primary: "#EC0808",          // Red — dominant accent
-    secondary: "#500101",        // Deep maroon secondary
-    accent: "#BB8700",           // Dark gold — sparing highlight
+    cssVariables: {
+      primary: "#EC0808", // Red — dominant accent
+      secondary: "#500101", // Deep maroon secondary
+      accent: "#BB8700", // Dark gold — sparing highlight
 
-    background: "#030303",       // Dashboard background beneath the cards
-    card: "#151515",             // Flat card surface
-    foreground: "#F4F4F5",       // FIXED: near-white text (was #151515)
-
-    border: "#27272A",
-    muted: "#18181B",
-    mutedForeground: "#A1A1AA",
-
-    sidebar: {
-      background: "#0A0A0B",
-      foreground: "#F4F4F5",
-
-      primary: "#EC0808",
-      primaryForeground: "#F4F4F5",
-
-      accent: "#500101",
-      accentForeground: "#F4F4F5",
+      background: "#030303", // Dashboard background beneath the cards
+      card: "#151515", // Flat card surface
+      foreground: "#F4F4F5", // FIXED: near-white text (was #151515)
 
       border: "#27272A",
-      ring: "#EC0808"
-    }
-  }
-}
-]
+      muted: "#18181B",
+      mutedForeground: "#A1A1AA",
 
-const swatchById = new Map(themeSwatches.map((swatch) => [swatch.id, swatch]))
+      sidebar: {
+        background: "#0A0A0B",
+        foreground: "#F4F4F5",
 
-const dashboardThemeArtworkByThemeId: Record<string, Exclude<DashboardThemeArtwork, null>> = {
+        primary: "#EC0808",
+        primaryForeground: "#F4F4F5",
+
+        accent: "#500101",
+        accentForeground: "#F4F4F5",
+
+        border: "#27272A",
+        ring: "#EC0808",
+      },
+    },
+  },
+];
+
+const swatchById = new Map(themeSwatches.map((swatch) => [swatch.id, swatch]));
+
+const dashboardThemeArtworkByThemeId: Record<
+  string,
+  Exclude<DashboardThemeArtwork, null>
+> = {
   "golden-bull-bright": "bull",
   "golden-bull-dark": "bull",
   "diagofinance-bright": "diagofinance",
   "diagofinance-dark": "diagofinance",
-}
+};
 
-export function getDashboardThemeArtwork(pairId: string, mode?: ThemeMode): DashboardThemeArtwork {
-  const pair = themePairs.find((p) => p.id === pairId)
-  if (!pair) return null
-  const themeId = mode === "dark" ? pair.darkThemeId : pair.brightThemeId
-  return dashboardThemeArtworkByThemeId[themeId] ?? null
+export function getDashboardThemeArtwork(
+  pairId: string,
+  mode?: ThemeMode,
+): DashboardThemeArtwork {
+  const pair = themePairs.find((p) => p.id === pairId);
+  if (!pair) return null;
+  const themeId = mode === "dark" ? pair.darkThemeId : pair.brightThemeId;
+  return dashboardThemeArtworkByThemeId[themeId] ?? null;
 }
 
 export function isGoldenBullTheme(pairId: string, mode?: ThemeMode): boolean {
-  return getDashboardThemeArtwork(pairId, mode) === "bull"
+  return getDashboardThemeArtwork(pairId, mode) === "bull";
 }
 
 export function isDiagofinanceTheme(pairId: string, mode?: ThemeMode): boolean {
-  return getDashboardThemeArtwork(pairId, mode) === "diagofinance"
+  return getDashboardThemeArtwork(pairId, mode) === "diagofinance";
 }
 
 export const themePairs: ThemePair[] = [
-  { id: "clean-slate", name: "Clean Slate", brightThemeId: "default", darkThemeId: "charcoal" },
-  { id: "amber-glow", name: "Amber Glow", brightThemeId: "warm", darkThemeId: "stealth-amber" },
-  { id: "arctic-cyan", name: "Arctic Cyan", brightThemeId: "cool", darkThemeId: "sub-zero" },
-  { id: "evergreen", name: "Evergreen", brightThemeId: "nature", darkThemeId: "abyssal-emerald" },
-  { id: "red-horizon", name: "Red Horizon", brightThemeId: "sunset", darkThemeId: "crimson-tide" },
-  { id: "ocean-drive", name: "Ocean Drive", brightThemeId: "ocean", darkThemeId: "deep-ocean-inc" },
-  { id: "forest-night", name: "Forest Night", brightThemeId: "forest", darkThemeId: "midnight-moss" },
-  { id: "berry-neon", name: "Berry Neon", brightThemeId: "berry", darkThemeId: "phantom-rose" },
-  { id: "citrus-toxic", name: "Citrus Toxic", brightThemeId: "citrus", darkThemeId: "toxic-waste" },
-  { id: "lavender-noir", name: "Lavender Noir", brightThemeId: "lavender", darkThemeId: "purple-noir" },
-  { id: "sage-matrix", name: "Sage Matrix", brightThemeId: "sage", darkThemeId: "matrix-glitch" },
-  { id: "coral-blood", name: "Coral Blood", brightThemeId: "coral", darkThemeId: "blood-moon" },
-  { id: "midnight-ivory", name: "Midnight Ivory", brightThemeId: "custom", darkThemeId: "midnight" },
-  { id: "blue-shift", name: "Blue Shift", brightThemeId: "dark-blue", darkThemeId: "navy" },
-  { id: "rose-vamp", name: "Rose Vamp", brightThemeId: "rose", darkThemeId: "neon-vamp" },
-  { id: "mono-contrast", name: "Mono Contrast", brightThemeId: "amethyst", darkThemeId: "classic-bw" },
-  { id: "noir-radiant", name: "Noir Radiant", brightThemeId: "sapphire", darkThemeId: "noir" },
-  { id: "cyber-wave", name: "Cyber Wave", brightThemeId: "ruby", darkThemeId: "cyberpunk" },
-  { id: "dracula-dusk", name: "Dracula Dusk", brightThemeId: "sunset", darkThemeId: "dracula" },
-  { id: "tokyo-frost", name: "Tokyo Frost", brightThemeId: "cool", darkThemeId: "tokyo-night" },
-  { id: "nord-tundra", name: "Nord Tundra", brightThemeId: "nord-aurora", darkThemeId: "nordic-frost" },
-  { id: "solar-abyss", name: "Solar Abyss", brightThemeId: "solar-flare", darkThemeId: "oceanic-abyss" },
-   { id: "diagofinance", name: "Diagofinance", brightThemeId: "diagofinance-bright", darkThemeId: "diagofinance-dark" },
-  { id: "synth-graphite", name: "Synth Graphite", brightThemeId: "synthwave-84", darkThemeId: "graphite" },
-  { id: "gold-obsidian", name: "Gold Obsidian", brightThemeId: "rose-gold-dark", darkThemeId: "monokai-pro" },
-  { id: "golden-bull", name: "Golden Bull", brightThemeId: "golden-bull-bright", darkThemeId: "golden-bull-dark" }
-]
+  {
+    id: "clean-slate",
+    name: "Clean Slate",
+    brightThemeId: "default",
+    darkThemeId: "charcoal",
+  },
+  {
+    id: "amber-glow",
+    name: "Amber Glow",
+    brightThemeId: "warm",
+    darkThemeId: "stealth-amber",
+  },
+  {
+    id: "arctic-cyan",
+    name: "Arctic Cyan",
+    brightThemeId: "cool",
+    darkThemeId: "sub-zero",
+  },
+  {
+    id: "evergreen",
+    name: "Evergreen",
+    brightThemeId: "nature",
+    darkThemeId: "abyssal-emerald",
+  },
+  {
+    id: "red-horizon",
+    name: "Red Horizon",
+    brightThemeId: "sunset",
+    darkThemeId: "crimson-tide",
+  },
+  {
+    id: "ocean-drive",
+    name: "Ocean Drive",
+    brightThemeId: "ocean",
+    darkThemeId: "deep-ocean-inc",
+  },
+  {
+    id: "forest-night",
+    name: "Forest Night",
+    brightThemeId: "forest",
+    darkThemeId: "midnight-moss",
+  },
+  {
+    id: "berry-neon",
+    name: "Berry Neon",
+    brightThemeId: "berry",
+    darkThemeId: "phantom-rose",
+  },
+  {
+    id: "citrus-toxic",
+    name: "Citrus Toxic",
+    brightThemeId: "citrus",
+    darkThemeId: "toxic-waste",
+  },
+  {
+    id: "lavender-noir",
+    name: "Lavender Noir",
+    brightThemeId: "lavender",
+    darkThemeId: "purple-noir",
+  },
+  {
+    id: "sage-matrix",
+    name: "Sage Matrix",
+    brightThemeId: "sage",
+    darkThemeId: "matrix-glitch",
+  },
+  {
+    id: "coral-blood",
+    name: "Coral Blood",
+    brightThemeId: "coral",
+    darkThemeId: "blood-moon",
+  },
+  {
+    id: "midnight-ivory",
+    name: "Midnight Ivory",
+    brightThemeId: "custom",
+    darkThemeId: "midnight",
+  },
+  {
+    id: "blue-shift",
+    name: "Blue Shift",
+    brightThemeId: "dark-blue",
+    darkThemeId: "navy",
+  },
+  {
+    id: "rose-vamp",
+    name: "Rose Vamp",
+    brightThemeId: "rose",
+    darkThemeId: "neon-vamp",
+  },
+  {
+    id: "mono-contrast",
+    name: "Mono Contrast",
+    brightThemeId: "amethyst",
+    darkThemeId: "classic-bw",
+  },
+  {
+    id: "noir-radiant",
+    name: "Noir Radiant",
+    brightThemeId: "sapphire",
+    darkThemeId: "noir",
+  },
+  {
+    id: "cyber-wave",
+    name: "Cyber Wave",
+    brightThemeId: "ruby",
+    darkThemeId: "cyberpunk",
+  },
+  {
+    id: "dracula-dusk",
+    name: "Dracula Dusk",
+    brightThemeId: "sunset",
+    darkThemeId: "dracula",
+  },
+  {
+    id: "tokyo-frost",
+    name: "Tokyo Frost",
+    brightThemeId: "cool",
+    darkThemeId: "tokyo-night",
+  },
+  {
+    id: "nord-tundra",
+    name: "Nord Tundra",
+    brightThemeId: "nord-aurora",
+    darkThemeId: "nordic-frost",
+  },
+  {
+    id: "solar-abyss",
+    name: "Solar Abyss",
+    brightThemeId: "solar-flare",
+    darkThemeId: "oceanic-abyss",
+  },
+  {
+    id: "diagofinance",
+    name: "Diagofinance",
+    brightThemeId: "diagofinance-bright",
+    darkThemeId: "diagofinance-dark",
+  },
+  {
+    id: "synth-graphite",
+    name: "Synth Graphite",
+    brightThemeId: "synthwave-84",
+    darkThemeId: "graphite",
+  },
+  {
+    id: "gold-obsidian",
+    name: "Gold Obsidian",
+    brightThemeId: "rose-gold-dark",
+    darkThemeId: "monokai-pro",
+  },
+  {
+    id: "golden-bull",
+    name: "Golden Bull",
+    brightThemeId: "golden-bull-bright",
+    darkThemeId: "golden-bull-dark",
+  },
+];
 
-const defaultThemePair = themePairs[0]
+const defaultThemePair = themePairs[0];
 
-const legacyThemeToPairMode = new Map<string, { pairId: string; mode: ThemeMode }>()
+const legacyThemeToPairMode = new Map<
+  string,
+  { pairId: string; mode: ThemeMode }
+>();
 themePairs.forEach((pair) => {
-  legacyThemeToPairMode.set(pair.brightThemeId, { pairId: pair.id, mode: "bright" })
-  legacyThemeToPairMode.set(pair.darkThemeId, { pairId: pair.id, mode: "dark" })
-})
+  legacyThemeToPairMode.set(pair.brightThemeId, {
+    pairId: pair.id,
+    mode: "bright",
+  });
+  legacyThemeToPairMode.set(pair.darkThemeId, {
+    pairId: pair.id,
+    mode: "dark",
+  });
+});
 
 interface ThemeCustomizerProps {
-  open: boolean
-  onOpenChange: (open: boolean) => void
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 /** ---------- Utilities ---------- **/
 
 // Convert #rrggbb to relative luminance (0 = black, 1 = white)
 function hexToLuminance(hex: string): number {
-  const h = hex.replace("#", "")
-  const r = parseInt(h.substring(0, 2), 16) / 255
-  const g = parseInt(h.substring(2, 4), 16) / 255
-  const b = parseInt(h.substring(4, 6), 16) / 255
-  const srgb = [r, g, b].map(c => (c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)))
-  return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2]
+  const h = hex.replace("#", "");
+  const r = parseInt(h.substring(0, 2), 16) / 255;
+  const g = parseInt(h.substring(2, 4), 16) / 255;
+  const b = parseInt(h.substring(4, 6), 16) / 255;
+  const srgb = [r, g, b].map((c) =>
+    c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4),
+  );
+  return 0.2126 * srgb[0] + 0.7152 * srgb[1] + 0.0722 * srgb[2];
 }
 
 function isDarkTheme(bgHex: string): boolean {
   try {
-    return hexToLuminance(bgHex) < 0.35
+    return hexToLuminance(bgHex) < 0.35;
   } catch {
     // Fallback heuristic
-    return bgHex.startsWith("#0") || bgHex.startsWith("#1") || bgHex.startsWith("#2") || bgHex.startsWith("#3")
+    return (
+      bgHex.startsWith("#0") ||
+      bgHex.startsWith("#1") ||
+      bgHex.startsWith("#2") ||
+      bgHex.startsWith("#3")
+    );
   }
 }
 
-function writeVariables(target: HTMLElement, vars: ThemeSwatch["cssVariables"]) {
+function writeVariables(
+  target: HTMLElement,
+  vars: ThemeSwatch["cssVariables"],
+) {
   // Core variables used by shadcn/ui
-  target.style.setProperty("--primary", vars.primary)
-  target.style.setProperty("--secondary", vars.secondary)
-  target.style.setProperty("--accent", vars.accent)
+  target.style.setProperty("--primary", vars.primary);
+  target.style.setProperty("--secondary", vars.secondary);
+  target.style.setProperty("--accent", vars.accent);
 
-  const sidebarVars = vars.sidebar ?? {}
-  const sidebarBackground = sidebarVars.background ?? vars.background
-  const sidebarForeground = sidebarVars.foreground ?? vars.foreground
-  const sidebarPrimary = sidebarVars.primary ?? vars.primary
-  const sidebarPrimaryForeground = sidebarVars.primaryForeground ?? vars.foreground
-  const sidebarAccent = sidebarVars.accent ?? vars.accent
+  const sidebarVars = vars.sidebar ?? {};
+  const sidebarBackground = sidebarVars.background ?? vars.background;
+  const sidebarForeground = sidebarVars.foreground ?? vars.foreground;
+  const sidebarPrimary = sidebarVars.primary ?? vars.primary;
+  const sidebarPrimaryForeground =
+    sidebarVars.primaryForeground ?? vars.foreground;
+  const sidebarAccent = sidebarVars.accent ?? vars.accent;
   const sidebarAccentForeground =
-    sidebarVars.accentForeground ?? vars.foreground
-  const sidebarBorder = sidebarVars.border ?? vars.border
-  const sidebarRing = sidebarVars.ring ?? vars.border
+    sidebarVars.accentForeground ?? vars.foreground;
+  const sidebarBorder = sidebarVars.border ?? vars.border;
+  const sidebarRing = sidebarVars.ring ?? vars.border;
 
-  target.style.setProperty("--background", vars.background)
-  target.style.setProperty("--card", vars.card ?? vars.background)
-  target.style.setProperty("--popover", vars.background)
-  target.style.setProperty("--sidebar", sidebarBackground)
+  target.style.setProperty("--background", vars.background);
+  target.style.setProperty("--card", vars.card ?? vars.background);
+  target.style.setProperty("--popover", vars.background);
+  target.style.setProperty("--sidebar", sidebarBackground);
 
-  target.style.setProperty("--foreground", vars.foreground)
-  target.style.setProperty("--card-foreground", vars.foreground)
-  target.style.setProperty("--popover-foreground", vars.foreground)
-  target.style.setProperty("--sidebar-foreground", sidebarForeground)
+  target.style.setProperty("--foreground", vars.foreground);
+  target.style.setProperty("--card-foreground", vars.foreground);
+  target.style.setProperty("--popover-foreground", vars.foreground);
+  target.style.setProperty("--sidebar-foreground", sidebarForeground);
 
-  target.style.setProperty("--sidebar-primary", sidebarPrimary)
-  target.style.setProperty("--sidebar-primary-foreground", sidebarPrimaryForeground)
-  target.style.setProperty("--sidebar-accent", sidebarAccent)
-  target.style.setProperty("--sidebar-accent-foreground", sidebarAccentForeground)
-  target.style.setProperty("--sidebar-border", sidebarBorder)
-  target.style.setProperty("--sidebar-ring", sidebarRing)
+  target.style.setProperty("--sidebar-primary", sidebarPrimary);
+  target.style.setProperty(
+    "--sidebar-primary-foreground",
+    sidebarPrimaryForeground,
+  );
+  target.style.setProperty("--sidebar-accent", sidebarAccent);
+  target.style.setProperty(
+    "--sidebar-accent-foreground",
+    sidebarAccentForeground,
+  );
+  target.style.setProperty("--sidebar-border", sidebarBorder);
+  target.style.setProperty("--sidebar-ring", sidebarRing);
 
-  target.style.setProperty("--border", vars.border)
-  target.style.setProperty("--muted", vars.muted)
-  target.style.setProperty("--muted-foreground", vars.mutedForeground)
+  target.style.setProperty("--border", vars.border);
+  target.style.setProperty("--muted", vars.muted);
+  target.style.setProperty("--muted-foreground", vars.mutedForeground);
 
   // Back-compat custom vars
-  target.style.setProperty("--color-primary", vars.primary)
-  target.style.setProperty("--color-secondary", vars.secondary)
-  target.style.setProperty("--color-accent", vars.accent)
+  target.style.setProperty("--color-primary", vars.primary);
+  target.style.setProperty("--color-secondary", vars.secondary);
+  target.style.setProperty("--color-accent", vars.accent);
 }
 
 function clearVariables(target: HTMLElement) {
@@ -1377,90 +1545,104 @@ function clearVariables(target: HTMLElement) {
     "--muted-foreground",
     "--color-primary",
     "--color-secondary",
-    "--color-accent"
-  ]
-  keys.forEach(k => target.style.removeProperty(k))
+    "--color-accent",
+  ];
+  keys.forEach((k) => target.style.removeProperty(k));
 }
 
-export function resolveThemePairMode(themeId: string): { pairId: string; mode: ThemeMode } {
-  const pairById = themePairs.find((pair) => pair.id === themeId)
+export function resolveThemePairMode(themeId: string): {
+  pairId: string;
+  mode: ThemeMode;
+} {
+  const pairById = themePairs.find((pair) => pair.id === themeId);
   if (pairById) {
-    return { pairId: pairById.id, mode: "bright" }
+    return { pairId: pairById.id, mode: "bright" };
   }
-  return legacyThemeToPairMode.get(themeId) ?? { pairId: defaultThemePair.id, mode: "bright" }
+  return (
+    legacyThemeToPairMode.get(themeId) ?? {
+      pairId: defaultThemePair.id,
+      mode: "bright",
+    }
+  );
 }
 
 export function getThemeIdForPairMode(pairId: string, mode: ThemeMode): string {
-  const pair = themePairs.find((entry) => entry.id === pairId) ?? defaultThemePair
-  return mode === "dark" ? pair.darkThemeId : pair.brightThemeId
+  const pair =
+    themePairs.find((entry) => entry.id === pairId) ?? defaultThemePair;
+  return mode === "dark" ? pair.darkThemeId : pair.brightThemeId;
 }
 
 export function applyThemePairMode(pairId: string, mode: ThemeMode) {
-  if (typeof document === "undefined") return
+  if (typeof document === "undefined") return;
 
-  const themeId = getThemeIdForPairMode(pairId, mode)
-  const theme = swatchById.get(themeId) ?? themeSwatches[0]
-  if (!theme) return
+  const themeId = getThemeIdForPairMode(pairId, mode);
+  const theme = swatchById.get(themeId) ?? themeSwatches[0];
+  if (!theme) return;
 
-  const root = document.documentElement
-  const darkContainer = document.querySelector(".dark") as HTMLElement | null
-  const dark = isDarkTheme(theme.cssVariables.background)
+  const root = document.documentElement;
+  const darkContainer = document.querySelector(".dark") as HTMLElement | null;
+  const dark = isDarkTheme(theme.cssVariables.background);
 
   if (dark) {
-    root.classList.add("dark")
+    root.classList.add("dark");
   } else {
-    root.classList.remove("dark")
+    root.classList.remove("dark");
   }
-  root.dataset.themeId = themeId
+  root.dataset.themeId = themeId;
 
-  const target = dark ? (darkContainer || root) : root
+  const target = dark ? darkContainer || root : root;
 
-  writeVariables(target, theme.cssVariables)
+  writeVariables(target, theme.cssVariables);
   if (target !== root) {
-    clearVariables(root)
+    clearVariables(root);
   }
   if (darkContainer && darkContainer !== target) {
-    clearVariables(darkContainer)
+    clearVariables(darkContainer);
   }
 }
 
 export function applyThemeById(themeId: string) {
-  const resolved = resolveThemePairMode(themeId)
-  applyThemePairMode(resolved.pairId, resolved.mode)
+  const resolved = resolveThemePairMode(themeId);
+  applyThemePairMode(resolved.pairId, resolved.mode);
 }
 
 /** ---------- Component ---------- **/
 
 export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
-  const { canCustomizeTheme, themePairId, setThemePairId } = useClientCustomization()
-  const [activeTab, setActiveTab] = useState<"background" | "shortcuts" | "color-theme">("color-theme")
-  const [selectedThemePairId, setSelectedThemePairId] = useState<string>(themePairId)
-  const [initialThemePairId, setInitialThemePairId] = useState<string>(themePairId)
+  const { canCustomizeTheme, themePairId, setThemePairId } =
+    useClientCustomization();
+  const [activeTab, setActiveTab] = useState<
+    "background" | "shortcuts" | "color-theme"
+  >("color-theme");
+  const [selectedThemePairId, setSelectedThemePairId] =
+    useState<string>(themePairId);
+  const [initialThemePairId, setInitialThemePairId] =
+    useState<string>(themePairId);
 
   useEffect(() => {
-    if (!open) return
-    setSelectedThemePairId(themePairId)
-    setInitialThemePairId(themePairId)
-  }, [open, themePairId])
+    if (!open) return;
+    setSelectedThemePairId(themePairId);
+    setInitialThemePairId(themePairId);
+  }, [open, themePairId]);
 
   const handleThemeSelect = (pairId: string) => {
-    if (!canCustomizeTheme) return
-    setSelectedThemePairId(pairId)
-    setThemePairId(pairId)
-  }
+    if (!canCustomizeTheme) return;
+    setSelectedThemePairId(pairId);
+    setThemePairId(pairId);
+  };
 
   const handleDone = () => {
-    onOpenChange(false)
-  }
+    onOpenChange(false);
+  };
 
   const handleCancel = () => {
-    setSelectedThemePairId(initialThemePairId)
-    setThemePairId(initialThemePairId)
-    onOpenChange(false)
-  }
+    setSelectedThemePairId(initialThemePairId);
+    setThemePairId(initialThemePairId);
+    onOpenChange(false);
+  };
 
   if (!showDevThemeTools) {
-    return null
+    return null;
   }
 
   const renderTabContent = () => {
@@ -1470,43 +1652,44 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
           <div className="space-y-4">
             <div className="grid grid-cols-6 gap-3">
               {themePairs.map((pair) => {
-                const brightTheme = swatchById.get(pair.brightThemeId)
-                const darkTheme = swatchById.get(pair.darkThemeId)
-                const leftColor = brightTheme?.leftColor ?? "#f8fafc"
-                const rightColor = darkTheme?.rightColor ?? "#0f172a"
+                const brightTheme = swatchById.get(pair.brightThemeId);
+                const darkTheme = swatchById.get(pair.darkThemeId);
+                const leftColor = brightTheme?.leftColor ?? "#f8fafc";
+                const rightColor = darkTheme?.rightColor ?? "#0f172a";
                 return (
-                <button
-                  key={pair.id}
-                  onClick={() => handleThemeSelect(pair.id)}
-                  disabled={!canCustomizeTheme}
-                  className={cn(
-                    "relative w-12 h-12 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-                    canCustomizeTheme && "hover:scale-105",
-                    selectedThemePairId === pair.id && "ring-2 ring-blue-500 ring-offset-2"
-                  )}
-                  title={pair.name}
-                >
-                  <div className="w-full h-full rounded-full overflow-hidden">
-                    <div
-                      className="w-1/2 h-full float-left"
-                      style={{ backgroundColor: leftColor }}
-                    />
-                    <div
-                      className="w-1/2 h-full float-right"
-                      style={{ backgroundColor: rightColor }}
-                    />
-                  </div>
-                  {selectedThemePairId === pair.id && (
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <Check className="w-5 h-5 text-blue-600 bg-white rounded-full p-0.5" />
+                  <button
+                    key={pair.id}
+                    onClick={() => handleThemeSelect(pair.id)}
+                    disabled={!canCustomizeTheme}
+                    className={cn(
+                      "relative w-12 h-12 rounded-full transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+                      canCustomizeTheme && "hover:scale-105",
+                      selectedThemePairId === pair.id &&
+                        "ring-2 ring-blue-500 ring-offset-2",
+                    )}
+                    title={pair.name}
+                  >
+                    <div className="w-full h-full rounded-full overflow-hidden">
+                      <div
+                        className="w-1/2 h-full float-left"
+                        style={{ backgroundColor: leftColor }}
+                      />
+                      <div
+                        className="w-1/2 h-full float-right"
+                        style={{ backgroundColor: rightColor }}
+                      />
                     </div>
-                  )}
-                </button>
-                )
+                    {selectedThemePairId === pair.id && (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <Check className="w-5 h-5 text-blue-600 bg-white rounded-full p-0.5" />
+                      </div>
+                    )}
+                  </button>
+                );
               })}
             </div>
           </div>
-        )
+        );
       case "background":
         return (
           <div className="space-y-4">
@@ -1515,7 +1698,7 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
               <p>Background customization coming soon</p>
             </div>
           </div>
-        )
+        );
       case "shortcuts":
         return (
           <div className="space-y-4">
@@ -1524,19 +1707,22 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
               <p>Shortcuts customization coming soon</p>
             </div>
           </div>
-        )
+        );
       default:
-        return null
+        return null;
     }
-  }
+  };
 
   return (
-    <Dialog open={open} onOpenChange={(o) => {
-      if (!o) {
-        setInitialThemePairId(selectedThemePairId)
-      }
-      onOpenChange(o)
-    }}>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) {
+          setInitialThemePairId(selectedThemePairId);
+        }
+        onOpenChange(o);
+      }}
+    >
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="text-center">Customize this page</DialogTitle>
@@ -1552,7 +1738,7 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
                   "w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors",
                   activeTab === "background"
                     ? "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                    : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                    : "hover:bg-gray-50 dark:hover:bg-gray-800",
                 )}
               >
                 <Image className="w-4 h-4" />
@@ -1565,7 +1751,7 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
                   "w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors",
                   activeTab === "shortcuts"
                     ? "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                    : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                    : "hover:bg-gray-50 dark:hover:bg-gray-800",
                 )}
               >
                 <Link className="w-4 h-4" />
@@ -1578,7 +1764,7 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
                   "w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors",
                   activeTab === "color-theme"
                     ? "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
-                    : "hover:bg-gray-50 dark:hover:bg-gray-800"
+                    : "hover:bg-gray-50 dark:hover:bg-gray-800",
                 )}
               >
                 <Palette className="w-4 h-4" />
@@ -1608,5 +1794,5 @@ export function ThemeCustomizer({ open, onOpenChange }: ThemeCustomizerProps) {
         </div>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

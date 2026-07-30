@@ -369,6 +369,65 @@
     color: rgba(244, 244, 245, 0.92);
   }
 
+  :root[data-theme-id="diagofinance-bright"] .ib-portal-shell {
+    background-color: #f8f9fa;
+    background-image: none;
+  }
+
+  :root[data-theme-id="diagofinance-bright"] .ib-portal-hero,
+  :root[data-theme-id="diagofinance-bright"] .ib-portal-surface,
+  :root[data-theme-id="diagofinance-bright"] .ib-portal-surface-primary,
+  :root[data-theme-id="diagofinance-bright"] .ib-portal-surface-emerald,
+  :root[data-theme-id="diagofinance-bright"] .ib-portal-surface-amber,
+  :root[data-theme-id="diagofinance-bright"] .ib-portal-note {
+    border: 1px solid transparent;
+    background:
+      linear-gradient(var(--card), var(--card)) padding-box,
+      linear-gradient(100.15deg, #fde8e8 -5.5%, #b10430 56.77%, #fde8e8 111.96%)
+        border-box;
+    box-shadow: 0 30px 70px -54px rgba(0, 0, 0, 0.06);
+  }
+
+  :root[data-theme-id="diagofinance-bright"] .ib-theme-pill {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(
+        180deg,
+        rgba(4, 4, 4, 0.55) 0%,
+        rgba(17, 17, 17, 0.62) 100%
+      )
+      padding-box,
+    linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.45) 0%,
+        rgba(255, 255, 255, 0.12) 42%,
+        rgba(255, 255, 255, 0.32) 100%
+      )
+      border-box;
+  color: #f4f4f5;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 16px 34px -24px rgba(0, 0, 0, 0.84);
+}
+
+:root[data-theme-id="diagofinance-bright"] .ib-theme-pill[data-tone="subtle"] {
+  background:
+    linear-gradient(
+        180deg,
+        rgba(9, 9, 9, 0.9) 0%,
+        rgba(22, 22, 22, 0.94) 100%
+      )
+      padding-box,
+    linear-gradient(
+        180deg,
+        rgba(255, 255, 255, 0.7) 0%,
+        rgba(255, 255, 255, 0.18) 42%,
+        rgba(255, 255, 255, 0.5) 100%
+      )
+      border-box;
+  color: rgba(244, 244, 245, 0.92);
+}
+
   .ib-sidebar-hero {
     background: linear-gradient(
       180deg,

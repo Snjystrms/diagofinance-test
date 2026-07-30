@@ -17,19 +17,25 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/auth-context";
-import {
-  adminAccountTypesApi,
-  adminIbPlansApi,
-  type AccountTypeCommissionItem,
-  type AccountTypeItem,
-  type AdminIbPlanAccountTypeItem,
-  type AdminIbPlanCommissionItem,
-  type AdminIbPlanItem,
-  type AdminIbPlanUpsertBody,
+import type {
+  AccountTypeCommissionItem,
+  AccountTypeItem,
+  AdminIbPlanAccountTypeItem,
+  AdminIbPlanCommissionItem,
+  AdminIbPlanItem,
+  AdminIbPlanUpsertBody,
 } from "@/lib/api";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { getColumns } from "./columns";
 import { IbPlanForm } from "./ib-plan-form";
+// TEMPORARY: backend endpoints for IB plans / account types aren't live yet.
+// Swap this import back to "@/lib/api" (adminIbPlansApi / adminAccountTypesApi)
+// once they exist — the call signatures below match exactly.
+import {
+  mockAdminIbPlansApi as adminIbPlansApi,
+  mockAdminAccountTypesApi as adminAccountTypesApi,
+} from "./ib-plans-mock-api";
+// import { mockAdminAccountTypesApi as admina } from "./ib-plans-mock-api";
 
 export type IbPlanCommissionRow = {
   level: string;
@@ -219,7 +225,11 @@ const serialize = (plan: Partial<IbPlanRow>): AdminIbPlanUpsertBody => ({
 });
 
 export default function IbPlansManagementPage() {
-  const { token } = useAuth();
+  const { token: authToken } = useAuth();
+  // TEMPORARY: fall back to a dummy token so the mock API runs during UI
+  // preview even if there's no real authenticated session. Remove the
+  // fallback once wired back to the real API.
+  const token = authToken ?? "dev-preview-token";
   const queryClient = useQueryClient();
   const [viewOpen, setViewOpen] = useState(false);
   const [viewItem, setViewItem] = useState<IbPlanRow | null>(null);

@@ -224,7 +224,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   },
   {
     id: "ib-management",
-    title: "Partner Management",
+    title: "IB Management",
     url: "/all-ib",
     icon: UserCheck,
     audience: "backoffice",
@@ -679,7 +679,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "ib-management",
-    navLabel: "Partner Request",
+    navLabel: "IB Request",
     managerCategories: ["IB Management"],
   },
   {
@@ -687,7 +687,15 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "ib-management",
-    navLabel: "Partner List",
+    navLabel: "IB List",
+    managerCategories: ["IB Management"],
+  },
+   {
+    path: "/ib-plans",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "ib-management",
+    navLabel: "IB Plans",
     managerCategories: ["IB Management"],
   },
   // {
@@ -704,7 +712,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "ib-plans-management",
-    navLabel: "Partner Plans",
+    navLabel: "IB Plans",
     managerCategories: ["IB Plans Management"],
     activeMatch: ["/ib-plans-management"],
   },
