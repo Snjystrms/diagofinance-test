@@ -375,6 +375,16 @@
   }
 
   :root[data-theme-id="diagofinance-bright"] .ib-portal-hero,
+  :root[data-theme-id="diagofinance-bright"] .ib-portal-hero h1,
+:root[data-theme-id="diagofinance-bright"] .ib-portal-hero p,
+:root[data-theme-id="diagofinance-bright"] .ib-portal-hero .text-foreground,
+:root[data-theme-id="diagofinance-bright"] .ib-portal-hero .text-muted-foreground {
+  color: #f4f4f5 !important;
+}
+:root[data-theme-id="diagofinance-bright"] .ib-portal-hero p,
+:root[data-theme-id="diagofinance-bright"] .ib-portal-hero .text-muted-foreground {
+  color: rgba(244, 244, 245, 0.78) !important;
+}
   :root[data-theme-id="diagofinance-bright"] .ib-portal-surface,
   :root[data-theme-id="diagofinance-bright"] .ib-portal-surface-primary,
   :root[data-theme-id="diagofinance-bright"] .ib-portal-surface-emerald,

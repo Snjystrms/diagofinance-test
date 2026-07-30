@@ -299,7 +299,7 @@ export function DashboardPageContent() {
     // No cleanup needed — the observer is scoped to this node's lifetime
   }, []);
   // When the card is too narrow, fall back to the gradient version without theme artwork.
-  const forceGradientTheme = walletCardWidth > 0 && walletCardWidth <= 262;
+  const forceGradientTheme = walletCardWidth > 0 && walletCardWidth <= 258;
   const effectiveThemeArtwork = forceGradientTheme
     ? null
     : dashboardThemeArtwork;
