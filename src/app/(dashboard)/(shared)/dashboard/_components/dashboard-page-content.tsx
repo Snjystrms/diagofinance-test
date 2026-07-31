@@ -311,18 +311,15 @@ export function DashboardPageContent() {
   const artworkActionClass =
     "border-white/30 bg-black/20 text-zinc-50 hover:bg-black/35 hover:text-zinc-50";
   const isBrightMode = themeMode === "bright";
-  const walletEmptyStateImageSrc =
-    isBrightMode
-      ? "/wallet_empty_bright.svg"
-      : "/wallet_empty_dark.svg";
-  const profileStatusIconSrc =
-    isBrightMode
-      ? "/profilestatusiconbright.svg"
-      : "/profilestatusicon.svg";
-  const documentStatusIconSrc =
-    isBrightMode
-      ? "/documenticonbright.svg"
-      : "/documentsicon.svg";
+  const walletEmptyStateImageSrc = isBrightMode
+    ? "/wallet_empty_bright.svg"
+    : "/wallet_empty_dark.svg";
+  const profileStatusIconSrc = isBrightMode
+    ? "/profilestatusiconbright.svg"
+    : "/profilestatusicon.svg";
+  const documentStatusIconSrc = isBrightMode
+    ? "/documenticonbright.svg"
+    : "/documentsicon.svg";
 
   // Get news and promotions from userDashboard data
   const dashboardNewsItems = useMemo(() => {
@@ -1565,8 +1562,8 @@ export function DashboardPageContent() {
               </svg>
             }
             stats={depositsStatistics}
-            lineColor="#22c55e"
-            primaryColor="#22c55e"
+            lineColor="var(--primary)"
+            primaryColor="var(--primary)"
             emptyStateLabel="No deposit data available"
             formatValue={(value) => formatCurrency(value, depositsCurrency)}
             selectedPeriod={depositStatisticsPeriod === 7 ? "7d" : "1m"}
@@ -1617,13 +1614,14 @@ export function DashboardPageContent() {
               >
                 <g fill="none" stroke="currentColor" strokeWidth="1.5">
                   <path d="M2 12c0-4.714 0-7.071 1.464-8.536C4.93 2 7.286 2 12 2s7.071 0 8.535 1.464C22 4.93 22 7.286 22 12s0 7.071-1.465 8.535C19.072 22 16.714 22 12 22s-7.071 0-8.536-1.465C2 19.072 2 16.714 2 12Z" />
+
                   <path strokeLinecap="round" d="M7 18V9m5 9V6m5 12v-5" />
                 </g>
               </svg>
             }
             stats={withdrawalsStatistics}
-            lineColor="#ef4444"
-            primaryColor="#ef4444"
+            lineColor="var(--primary)"
+            primaryColor="var(--primary)"
             emptyStateLabel="No withdrawal data available"
             formatValue={(value) => formatCurrency(value, withdrawalsCurrency)}
             selectedPeriod={withdrawalStatisticsPeriod === 7 ? "7d" : "1m"}
@@ -2219,7 +2217,7 @@ export function DashboardPageContent() {
 
                             <CardHeader className="flex flex-row items-center justify-between pb-3 pt-5 px-5 relative z-10 border-b border-border/100">
                               <div className="flex items-center gap-3">
-                               <div
+                                <div
                                   className={`flex items-center justify-center ${isBrightMode ? "h-8 w-8" : "h-9 w-9 rounded-xl border border-border/60 bg-muted shadow-sm backdrop-blur-sm"}`}
                                 >
                                   <Image

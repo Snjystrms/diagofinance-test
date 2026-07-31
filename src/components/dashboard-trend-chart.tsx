@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import React from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import React from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -9,52 +9,52 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select"
+} from "@/components/ui/select";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
   type ChartConfig,
-} from "@/components/ui/chart"
-import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts"
-import { cn } from "@/lib/utils"
-import { TrendingDown, TrendingUp } from "lucide-react"
+} from "@/components/ui/chart";
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import { cn } from "@/lib/utils";
+import { TrendingDown, TrendingUp } from "lucide-react";
 
 type PeriodOption = {
-  label: string
-  value: "7d" | "1m"
-  maxPoints: number
-}
+  label: string;
+  value: "7d" | "1m";
+  maxPoints: number;
+};
 
 const PERIOD_OPTIONS: PeriodOption[] = [
   { label: "7D", value: "7d", maxPoints: 7 },
   { label: "1M", value: "1m", maxPoints: 30 },
-]
+];
 
 export type WalletStatistic = {
-  day: string
-  date: string
-  amount: number
-}
+  day: string;
+  date: string;
+  amount: number;
+};
 
 type SelectOption = {
-  label: string
-  value: string
-}
+  label: string;
+  value: string;
+};
 
 type DashboardTrendChartProps = {
-  title: string
-  subtitle: string
-  icon: React.ReactNode
-  stats: WalletStatistic[]
-  lineColor: string
-  primaryColor?: string
-  selectOptions?: SelectOption[]
-  emptyStateLabel?: string
-  formatValue: (value: number) => string
-  selectedPeriod?: PeriodOption["value"]
-  onPeriodChange?: (period: PeriodOption["value"]) => void
-}
+  title: string;
+  subtitle: string;
+  icon: React.ReactNode;
+  stats: WalletStatistic[];
+  lineColor: string;
+  primaryColor?: string;
+  selectOptions?: SelectOption[];
+  emptyStateLabel?: string;
+  formatValue: (value: number) => string;
+  selectedPeriod?: PeriodOption["value"];
+  onPeriodChange?: (period: PeriodOption["value"]) => void;
+};
 
 export function DashboardTrendChart({
   title,
@@ -70,81 +70,107 @@ export function DashboardTrendChart({
   onPeriodChange,
 }: DashboardTrendChartProps) {
   const [internalPeriod, setInternalPeriod] =
-    React.useState<PeriodOption["value"]>("7d")
-  
+    React.useState<PeriodOption["value"]>("7d");
+
   // Track theme changes by observing class changes on document element
-  const [themeVersion, setThemeVersion] = React.useState(0)
-  
+  const [themeVersion, setThemeVersion] = React.useState(0);
+
   React.useEffect(() => {
-    if (typeof window === "undefined") return
-    
+    if (typeof window === "undefined") return;
+
     // Force re-computation when theme changes
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
-        if (mutation.attributeName === "class" || mutation.attributeName === "style") {
-          setThemeVersion((v) => v + 1)
+        if (
+          mutation.attributeName === "class" ||
+          mutation.attributeName === "style"
+        ) {
+          setThemeVersion((v) => v + 1);
         }
-      })
-    })
-    
+      });
+    });
+
     observer.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ["class", "style"],
-    })
-    
-    return () => observer.disconnect()
-  }, [])
-  
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
   // Use controlled period if provided, otherwise use internal state
-  const selectedPeriod = controlledPeriod ?? internalPeriod
-  
+  const selectedPeriod = controlledPeriod ?? internalPeriod;
+
   // Resolve CSS variables to actual color values that SVG can render.
   // SVG stroke does NOT support oklch() or other modern color spaces —
   // we must always resolve to rgb() via the DOM element trick.
   const resolvedPrimaryColor = React.useMemo(() => {
-    if (typeof window === "undefined") return primaryColor
-    
+    if (typeof window === "undefined") return primaryColor;
+
     // If it's already a hex color, return as-is (hex is safe for SVG)
     if (primaryColor.startsWith("#")) {
-      return primaryColor
+      return primaryColor;
     }
-    
+
     // For everything else (CSS variables, oklch, hsl, rgb, etc.)
     // use the browser to compute the final rgb() value that SVG understands.
-    const testEl = document.createElement("div")
-    testEl.style.color = primaryColor
-    testEl.style.visibility = "hidden"
-    testEl.style.position = "absolute"
-    document.body.appendChild(testEl)
-    const computedColor = getComputedStyle(testEl).color
-    document.body.removeChild(testEl)
-    
+    const testEl = document.createElement("div");
+    testEl.style.color = primaryColor;
+    testEl.style.visibility = "hidden";
+    testEl.style.position = "absolute";
+    document.body.appendChild(testEl);
+    const computedColor = getComputedStyle(testEl).color;
+    document.body.removeChild(testEl);
+
     // getComputedStyle().color always returns rgb() or rgba() — safe for SVG
-    return computedColor || primaryColor
-  }, [primaryColor, themeVersion]) // Re-compute when theme changes
-  
+    return computedColor || primaryColor;
+  }, [primaryColor, themeVersion]); // Re-compute when theme changes
+
   // Get contrasting stroke color for activeDot based on theme
   const activeDotStroke = React.useMemo(() => {
-    if (typeof window === "undefined") return "#ffffff"
-    
-    const root = document.documentElement
-    const bgValue = getComputedStyle(root).getPropertyValue("--background").trim()
+    if (typeof window === "undefined") return "#ffffff";
+
+    const root = document.documentElement;
+    const bgValue = getComputedStyle(root)
+      .getPropertyValue("--background")
+      .trim();
     // Default to white for light themes, dark for dark themes
     // A simple heuristic: if background is dark, use light stroke
-    return bgValue.includes("0.145") || bgValue.includes("0.205") ? "#ffffff" : "#000000"
-  }, [themeVersion]) // Re-compute when theme changes
-  
+    return bgValue.includes("0.145") || bgValue.includes("0.205")
+      ? "#ffffff"
+      : "#000000";
+  }, [themeVersion]); // Re-compute when theme changes
+
+  // Detect bright/light theme for gradient switching
+  const isBrightTheme = React.useMemo(() => {
+    if (typeof window === "undefined") return false;
+    const root = document.documentElement;
+    // Check for bright theme via data-theme-id (set by theme provider)
+    const themeId = root.getAttribute("data-theme-id");
+    if (themeId === "diagofinance-bright") return true;
+    if (themeId === "diagofinance-dark") return false;
+    // Fallback: check background luminance
+    const bgValue = getComputedStyle(root).getPropertyValue("--background").trim();
+    // Bright theme uses #f8f9fa (rgb 248, 249, 250) ~ 0.97 luminance
+    const rgbMatch = bgValue.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+    if (rgbMatch) {
+      const luminance = (0.299 * parseInt(rgbMatch[1]) + 0.587 * parseInt(rgbMatch[2]) + 0.114 * parseInt(rgbMatch[3])) / 255;
+      return luminance > 0.6;
+    }
+    return false;
+  }, [themeVersion]);
+
   const handlePeriodChange = (period: PeriodOption["value"]) => {
     if (onPeriodChange) {
-      onPeriodChange(period)
+      onPeriodChange(period);
     } else {
-      setInternalPeriod(period)
+      setInternalPeriod(period);
     }
-  }
-  
+  };
+
   const [selectedSource, setSelectedSource] = React.useState(
     selectOptions[0]?.value ?? "all",
-  )
+  );
 
   const chartConfig = React.useMemo<ChartConfig>(
     () => ({
@@ -154,20 +180,20 @@ export function DashboardTrendChart({
       },
     }),
     [resolvedPrimaryColor, title],
-  )
+  );
 
   const displayedStats = React.useMemo(() => {
-    if (!stats?.length) return []
+    if (!stats?.length) return [];
     const option =
       PERIOD_OPTIONS.find((period) => period.value === selectedPeriod) ??
-      PERIOD_OPTIONS[0]
-    if (!option) return stats
+      PERIOD_OPTIONS[0];
+    if (!option) return stats;
 
     if (stats.length <= option.maxPoints) {
-      return stats
+      return stats;
     }
-    return stats.slice(stats.length - option.maxPoints)
-  }, [stats, selectedPeriod])
+    return stats.slice(stats.length - option.maxPoints);
+  }, [stats, selectedPeriod]);
 
   const chartData = React.useMemo(() => {
     return displayedStats.map((stat, index) => {
@@ -202,70 +228,76 @@ export function DashboardTrendChart({
         // Fallback to index if no date or day available
         dateLabel = `${index + 1}`;
       }
-      
+
       return {
         time: index,
         amount: stat.amount,
         label: dateLabel,
       };
     });
-  }, [displayedStats])
+  }, [displayedStats]);
 
   const totalValue = React.useMemo(() => {
-    if (!displayedStats.length) return 0
-    return displayedStats.reduce((sum, stat) => sum + stat.amount, 0)
-  }, [displayedStats])
+    if (!displayedStats.length) return 0;
+    return displayedStats.reduce((sum, stat) => sum + stat.amount, 0);
+  }, [displayedStats]);
 
   const changePercent = React.useMemo(() => {
-    if (displayedStats.length < 2) return 0
-    const first = displayedStats[0].amount
-    const last = displayedStats[displayedStats.length - 1].amount
-    if (first === 0) return 0
-    return ((last - first) / Math.abs(first)) * 100
-  }, [displayedStats])
+    if (displayedStats.length < 2) return 0;
+    const first = displayedStats[0].amount;
+    const last = displayedStats[displayedStats.length - 1].amount;
+    if (first === 0) return 0;
+    return ((last - first) / Math.abs(first)) * 100;
+  }, [displayedStats]);
 
   const highest = React.useMemo(() => {
-    if (!displayedStats.length) return 0
-    return Math.max(...displayedStats.map((stat) => stat.amount))
-  }, [displayedStats])
+    if (!displayedStats.length) return 0;
+    return Math.max(...displayedStats.map((stat) => stat.amount));
+  }, [displayedStats]);
 
   const lowest = React.useMemo(() => {
-    if (!displayedStats.length) return 0
-    return Math.min(...displayedStats.map((stat) => stat.amount))
-  }, [displayedStats])
+    if (!displayedStats.length) return 0;
+    return Math.min(...displayedStats.map((stat) => stat.amount));
+  }, [displayedStats]);
 
-  const isPositive = changePercent >= 0
+  const isPositive = changePercent >= 0;
 
   // Get theme-aware color for XAxis ticks
   const tickColor = React.useMemo(() => {
-    if (typeof window === "undefined") return "#71717a" // fallback for SSR
+    if (typeof window === "undefined") return "#71717a"; // fallback for SSR
     // Create a test element to get the computed color
-    const testEl = document.createElement("div")
-    testEl.className = "text-muted-foreground"
-    testEl.style.visibility = "hidden"
-    testEl.style.position = "absolute"
-    document.body.appendChild(testEl)
-    const computedColor = getComputedStyle(testEl).color
-    document.body.removeChild(testEl)
-    
+    const testEl = document.createElement("div");
+    testEl.className = "text-muted-foreground";
+    testEl.style.visibility = "hidden";
+    testEl.style.position = "absolute";
+    document.body.appendChild(testEl);
+    const computedColor = getComputedStyle(testEl).color;
+    document.body.removeChild(testEl);
+
     // If we got a valid color, use it
-    if (computedColor && computedColor !== "rgba(0, 0, 0, 0)" && computedColor !== "transparent") {
-      return computedColor
+    if (
+      computedColor &&
+      computedColor !== "rgba(0, 0, 0, 0)" &&
+      computedColor !== "transparent"
+    ) {
+      return computedColor;
     }
-    
+
     // Fallback: try to get CSS variable value directly
-    const root = document.documentElement
-    const value = getComputedStyle(root).getPropertyValue("--muted-foreground").trim()
+    const root = document.documentElement;
+    const value = getComputedStyle(root)
+      .getPropertyValue("--muted-foreground")
+      .trim();
     if (value) {
-      return value.startsWith("hsl") ? value : `hsl(${value})`
+      return value.startsWith("hsl") ? value : `hsl(${value})`;
     }
-    
+
     // Final fallback
-    return "#71717a"
-  }, [])
+    return "#71717a";
+  }, []);
 
   return (
-    <Card className="relative flex w-full max-w-full flex-col gap-6 overflow-hidden rounded-2xl border-2 border-border/50 hover:border-primary/50 transition-all duration-300 hover:shadow-xl bg-gradient-to-br from-card via-card to-muted/20 shadow-lg backdrop-blur-sm group md:p-6">
+    <Card className="relative flex w-full max-w-full flex-col gap-6 overflow-hidden rounded-2xl border-2 hover:border-primary/50 transition-all duration-300 hover:shadow-xl shadow-lg backdrop-blur-sm group md:p-6 ib-portal-surface">
       {/* Decorative gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-50 group-hover:opacity-75 transition-opacity pointer-events-none" />
       
@@ -279,25 +311,30 @@ export function DashboardTrendChart({
           </span>
         </CardTitle>
 
-        {selectOptions.length > 1 && (
-          <Select
-            value={selectedSource}
-            onValueChange={(value) => setSelectedSource(value)}
-          >
-            <SelectTrigger size="sm" className="w-full border-border/50 bg-background/50 backdrop-blur-sm md:w-[150px]">
-              <SelectValue placeholder="Select" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                {selectOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        )}
+        <div className="flex items-center gap-2.5">
+          {selectOptions.length > 1 && (
+            <Select
+              value={selectedSource}
+              onValueChange={(value) => setSelectedSource(value)}
+            >
+              <SelectTrigger
+                size="sm"
+                className="w-full border-border/50 bg-background/50 backdrop-blur-sm md:w-[150px]"
+              >
+                <SelectValue placeholder="Select" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  {selectOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       </CardHeader>
 
       <CardContent className="relative flex flex-col gap-4 p-0">
@@ -311,7 +348,7 @@ export function DashboardTrendChart({
                 "relative flex h-9 flex-1 items-center justify-center bg-transparent text-sm font-semibold tracking-[-0.006em] outline-none transition-all duration-200 first:rounded-l-lg last:rounded-r-lg",
                 selectedPeriod === period.value
                   ? "bg-gradient-to-br from-primary/20 to-primary/10 text-foreground shadow-sm border-y border-primary/20"
-                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                  : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
               )}
             >
               {period.label}
@@ -321,14 +358,19 @@ export function DashboardTrendChart({
 
         {displayedStats.length > 0 ? (
           <>
-            <div className="flex flex-col gap-1.5 rounded-lg bg-gradient-to-br from-muted/30 to-muted/10 p-4 border border-border/30">
+           <div className="flex flex-col gap-1.5 rounded-lg p-4 ib-portal-surface ib-portal-surface-primary" style={{
+              border: "1px solid transparent",
+              background: isBrightTheme
+                ? `linear-gradient(90deg, #FCFAF7, #F9F6F2, #F7F4F1) padding-box, linear-gradient(100.15deg, #FDE8E8 -5.5%, #B10430 56.77%, #FDE8E8 111.96%) border-box`
+                : `linear-gradient(90deg, #3B111C, #2D131A, #22191D) padding-box, linear-gradient(100.15deg, #606060 -5.5%, #B10430 56.77%, #606060 111.96%) border-box`
+            }}>
               <div className="flex items-baseline gap-3">
                 <span className="text-2xl font-bold tracking-[-0.006em] tabular-nums bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent">
                   {formatValue(totalValue)}
                 </span>
                 <span
                   className={cn(
-                    "inline-flex h-6 items-center justify-center gap-1.5 rounded-md px-2.5 text-xs font-semibold tracking-[-0.006em] whitespace-nowrap shadow-sm border",
+                    "ml-auto inline-flex h-6 items-center justify-center gap-1.5 rounded-full px-2.5 text-xs font-semibold tracking-[-0.006em] whitespace-nowrap shadow-sm border",
                     isPositive
                       ? "bg-[#E0FAEC] text-[#22C55E] border-emerald-200/50 dark:bg-emerald-900/50 dark:border-emerald-800/50"
                       : "bg-rose-100 text-rose-600 border-rose-200/50 dark:bg-rose-900/40 dark:border-rose-800/50",
@@ -347,21 +389,26 @@ export function DashboardTrendChart({
               </p>
             </div>
 
-            <div className="relative rounded-lg border border-border/30 bg-gradient-to-br from-background to-muted/10 p-3 shadow-inner">
-              <ChartContainer
-                config={chartConfig}
-                className="aspect-auto h-[225px] w-full"
-              >
+           <div className="relative rounded-lg p-3 shadow-inner ib-portal-surface ib-portal-surface-primary" style={{
+              border: "1px solid transparent",
+              background: isBrightTheme
+                ? `linear-gradient(135deg, #F6F1E8, #F9F6F2, #FCFAF7) padding-box, linear-gradient(100.15deg, #FDE8E8 -5.5%, #B10430 56.77%, #FDE8E8 111.96%) border-box`
+                : `linear-gradient(135deg, #581328, #40151F, #231B1F) padding-box, linear-gradient(100.15deg, #606060 -5.5%, #B10430 56.77%, #606060 111.96%) border-box`
+            }}>
+  <ChartContainer
+    config={chartConfig}
+    className="aspect-auto h-[225px] w-full"
+  >
                 <LineChart accessibilityLayer data={chartData}>
-                  <CartesianGrid 
-                    vertical={false} 
-                    stroke="hsl(var(--muted))" 
+                  <CartesianGrid
+                    vertical={false}
+                    stroke="hsl(var(--muted))"
                     strokeDasharray="3 3"
                     opacity={0.3}
                   />
                   <XAxis
                     dataKey="label"
-                    tick={{ 
+                    tick={{
                       fontSize: 11,
                       fill: tickColor,
                     }}
@@ -371,7 +418,11 @@ export function DashboardTrendChart({
                   <YAxis hide domain={["dataMin - 2", "dataMax + 2"]} />
                   <ChartTooltip
                     content={<ChartTooltipContent hideIndicator hideLabel />}
-                    cursor={{ stroke: resolvedPrimaryColor, strokeWidth: 1, strokeDasharray: "5 5" }}
+                    cursor={{
+                      stroke: resolvedPrimaryColor,
+                      strokeWidth: 1,
+                      strokeDasharray: "5 5",
+                    }}
                   />
                   <Line
                     type="monotone"
@@ -396,7 +447,7 @@ export function DashboardTrendChart({
                 <span className="font-medium text-muted-foreground">
                   Highest
                 </span>
-                <span className="ml-1.5 font-bold text-foreground">
+                <span className="ml-1.5 font-bold text-[#22C55E]">
                   {formatValue(highest)}
                 </span>
               </div>
@@ -405,7 +456,7 @@ export function DashboardTrendChart({
                 <span className="font-medium text-muted-foreground">
                   Lowest
                 </span>
-                <span className="ml-1.5 font-bold text-foreground">
+                <span className="ml-1.5 font-bold text-[#FF3B30]">
                   {formatValue(lowest)}
                 </span>
               </div>
@@ -413,11 +464,12 @@ export function DashboardTrendChart({
           </>
         ) : (
           <div className="flex h-[225px] flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border/50 bg-muted/10">
-            <p className="text-sm text-muted-foreground font-medium">{emptyStateLabel}</p>
+            <p className="text-sm text-muted-foreground font-medium">
+              {emptyStateLabel}
+            </p>
           </div>
         )}
       </CardContent>
     </Card>
-  )
+  );
 }
-
