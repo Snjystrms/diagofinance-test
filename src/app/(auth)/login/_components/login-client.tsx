@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Mail, Lock, ShieldCheck, Check, ArrowRight } from 'lucide-react';
+import { Mail, Lock, ShieldCheck, ArrowRight } from 'lucide-react';
 import {
   loginSchema,
   forgotPasswordSchema,
@@ -39,7 +39,7 @@ export function LoginClient() {
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [show2FA, setShow2FA] = useState(false);
   const [twoFACode, setTwoFACode] = useState('');
-  const [rememberMe, setRememberMe] = useState(true);
+  const [rememberMe, setRememberMe] = useState(false);
   const [pendingLoginData, setPendingLoginData] = useState<{
     email: string;
     password: string;
@@ -262,28 +262,24 @@ export function LoginClient() {
     }
   };
 
-  const eyebrow = show2FA ? 'Verification' : showForgotPassword ? 'Reset password' : 'Sign in';
   const heading = show2FA
     ? 'Two-factor authentication'
     : showForgotPassword
     ? 'Forgot your password?'
-    : 'Hey, hello';
+    : 'Welcome Back';
   const subheading = show2FA
     ? 'Enter the 6-digit code from your authenticator app'
     : showForgotPassword
     ? 'Enter your email to receive a password reset link'
-    : 'Enter your credentials to access your dashboard';
+    : 'Enter you email and password to access your account.';
 
   return (
     <ProtectedRoute requireAuth={false}>
       <AuthLayout>
-        <div className="space-y-8">
-          {/* Eyebrow + heading */}
+        <div className="w-full max-w-md mx-auto space-y-7">
+          {/* Heading */}
           <div>
-            <span className="text-xs font-semibold uppercase tracking-[0.25em] text-primary">
-              {eyebrow}
-            </span>
-            <h1 className="mt-2 font-cinzel text-3xl font-extrabold text-foreground">
+            <h1 className="font-cinzel text-4xl font-bold text-foreground">
               {heading}
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">{subheading}</p>
@@ -314,7 +310,7 @@ export function LoginClient() {
                   autoFocus
                   className="
                     w-48 text-center text-2xl tracking-[0.4em] font-bold
-                    bg-input border border-primary/20 rounded-xl
+                    bg-input border border-border rounded-md
                     text-foreground placeholder:text-muted-foreground/50
                     px-4 py-3.5 outline-none
                     focus:border-primary/60 focus:ring-1 focus:ring-primary/20
@@ -331,7 +327,7 @@ export function LoginClient() {
                     setPendingLoginData(null);
                   }}
                   className="
-                    px-5 py-2.5 rounded-xl text-sm font-medium
+                    px-5 py-2.5 rounded-md text-sm font-medium
                     border border-border text-muted-foreground
                     hover:border-border hover:text-foreground
                     transition-all
@@ -344,8 +340,8 @@ export function LoginClient() {
                   onClick={handle2FAVerification}
                   disabled={isVerifying2FA || twoFACode.length !== 6}
                   className="
-                    px-5 py-2.5 rounded-xl text-sm font-semibold
-                    bg-gradient-to-r from-primary to-primary/80 text-primary-foreground
+                    px-5 py-2.5 rounded-md text-sm font-semibold
+                    bg-primary text-primary-foreground
                     hover:opacity-90
                     disabled:opacity-40 disabled:cursor-not-allowed
                     transition-all flex items-center gap-2
@@ -379,11 +375,11 @@ export function LoginClient() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-foreground/70">Email</FormLabel>
+                        <FormLabel className="text-foreground text-sm font-semibold">Email</FormLabel>
                         <FormControl>
-                          <div className="relative flex items-center rounded-xl border border-primary/20 bg-input focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/15 transition-all">
-                            <span className="flex h-10 w-10 shrink-0 items-center justify-center border-r border-primary/15">
-                              <Mail className="h-4 w-4 text-primary/70" />
+                          <div className="relative flex items-center rounded-md border border-border bg-input focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/15 transition-all">
+                            <span className="flex h-11 w-11 shrink-0 items-center justify-center">
+                              <Mail className="h-4 w-4 text-muted-foreground" />
                             </span>
                             <input
                               type="email"
@@ -392,8 +388,8 @@ export function LoginClient() {
                               {...field}
                               className="
                                 w-full bg-transparent
-                                text-foreground placeholder:text-muted-foreground/50 text-sm
-                                px-4 py-2.5 outline-none
+                                text-foreground placeholder:text-muted-foreground/60 text-sm
+                                pr-4 py-2.5 outline-none
                               "
                             />
                           </div>
@@ -406,8 +402,8 @@ export function LoginClient() {
                     type="submit"
                     disabled={isForgotPasswordLoading}
                     className="
-                      w-full py-3 rounded-xl text-sm font-bold tracking-wide
-                      bg-gradient-to-r from-primary to-primary/80 text-primary-foreground
+                      w-full py-3 rounded-md text-sm font-bold
+                      bg-primary text-primary-foreground
                       hover:opacity-90
                       disabled:opacity-40 disabled:cursor-not-allowed
                       transition-all flex items-center justify-center gap-2
@@ -419,10 +415,7 @@ export function LoginClient() {
                         Sending reset link...
                       </>
                     ) : (
-                      <>
-                        Send reset link
-                        <ArrowRight className="h-4 w-4" />
-                      </>
+                      'Send reset link'
                     )}
                   </button>
                   <div className="text-center">
@@ -448,20 +441,20 @@ export function LoginClient() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-foreground/70 text-sm">Email</FormLabel>
+                        <FormLabel className="text-foreground text-sm font-semibold">Email</FormLabel>
                         <FormControl>
-                          <div className="relative flex items-center rounded-xl border border-primary/20 bg-input focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/15 transition-all">
-                            <span className="flex h-11 w-11 shrink-0 items-center justify-center border-r border-primary/15">
-                              <Mail className="h-4 w-4 text-primary/70" />
+                          <div className="relative flex items-center rounded-md border border-border bg-input focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/15 transition-all">
+                            <span className="flex h-11 w-11 shrink-0 items-center justify-center">
+                              <Mail className="h-4 w-4 text-muted-foreground" />
                             </span>
                             <Input
                               type="email"
-                              placeholder="Enter your email"
+                              placeholder="akash25@gmail.com"
                               {...field}
                               className="
                                 w-full !bg-transparent border-0
-                                text-foreground placeholder:text-muted-foreground/50 text-sm
-                                !pl-4 pr-4 py-2.5 outline-none focus-visible:ring-0
+                                text-foreground placeholder:text-muted-foreground/60 text-sm
+                                !pl-0 pr-4 py-2.5 outline-none focus-visible:ring-0
                               "
                             />
                           </div>
@@ -476,21 +469,21 @@ export function LoginClient() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-foreground/70 text-sm">Password</FormLabel>
+                        <FormLabel className="text-foreground text-sm font-semibold">Password</FormLabel>
                         <FormControl>
-                          <div className="relative flex items-center rounded-xl border border-primary/20 bg-input focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/15 transition-all">
-                            <span className="flex h-11 w-11 shrink-0 items-center justify-center border-r border-primary/15">
-                              <Lock className="h-4 w-4 text-primary/70" />
+                          <div className="relative flex items-center rounded-md border border-border bg-input focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/15 transition-all">
+                            <span className="flex h-11 w-11 shrink-0 items-center justify-center">
+                              <Lock className="h-4 w-4 text-muted-foreground" />
                             </span>
                             <PasswordInput
-                              placeholder="Enter your password"
+                              placeholder="••••••••••"
                               autoComplete="current-password"
                               onChange={field.onChange}
                               value={field.value}
                               inputClassName="
                                 w-full !bg-transparent border-0
-                                text-foreground placeholder:text-muted-foreground/50 text-sm
-                                !pl-4 pr-4 py-2.5 outline-none
+                                text-foreground placeholder:text-muted-foreground/60 text-sm
+                                !pl-0 pr-4 py-2.5 outline-none
                               "
                             />
                           </div>
@@ -501,30 +494,22 @@ export function LoginClient() {
                   />
 
                   <div className="flex items-center justify-between pt-1">
-                    <button
-                      type="button"
-                      onClick={() => setRememberMe((v) => !v)}
-                      aria-pressed={rememberMe}
-                      className="flex items-center gap-2 text-sm text-muted-foreground"
-                    >
-                      <span
-                        className={`flex h-4 w-4 items-center justify-center rounded border transition-colors ${
-                          rememberMe
-                            ? 'border-primary bg-primary'
-                            : 'border-border bg-input'
-                        }`}
-                      >
-                        {rememberMe && <Check className="h-3 w-3 text-primary-foreground" />}
-                      </span>
+                    <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="h-4 w-4 rounded border-border text-primary accent-primary cursor-pointer"
+                      />
                       Remember me
-                    </button>
+                    </label>
 
                     <button
                       type="button"
                       onClick={() => setShowForgotPassword(true)}
-                      className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                      className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors underline underline-offset-2"
                     >
-                      Forgot password?
+                      Forgot Password?
                     </button>
                   </div>
 
@@ -532,13 +517,12 @@ export function LoginClient() {
                     type="submit"
                     disabled={isLoading}
                     className="
-                      w-full py-3 rounded-xl text-sm font-bold tracking-wide
-                      bg-gradient-to-r from-primary to-primary/80 text-primary-foreground
-                      hover:opacity-90 hover:shadow-xl
+                      w-full py-3 rounded-md text-sm font-bold tracking-wide
+                      bg-primary text-primary-foreground
+                      hover:opacity-90
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
                       disabled:opacity-40 disabled:cursor-not-allowed
                       transition-all flex items-center justify-center gap-2
-                      shadow-[0_0_20px_color-mix(in_srgb,var(--color-primary)_25%,transparent)]
                     "
                   >
                     {isLoading ? (
@@ -547,22 +531,19 @@ export function LoginClient() {
                         Signing in...
                       </>
                     ) : (
-                      <>
-                        Sign in
-                        <ArrowRight className="h-4 w-4" />
-                      </>
+                      'Sign In'
                     )}
                   </button>
                 </form>
               </Form>
 
               <p className="mt-6 text-center text-sm text-muted-foreground">
-                New to Diago Finance?{' '}
+                Don&apos;t have an account?{' '}
                 <Link
                   href="/register"
-                  className="font-medium text-primary hover:text-primary/80 transition-colors"
+                  className="font-semibold text-primary hover:text-primary/80 transition-colors"
                 >
-                  Create an account
+                  Create Now
                 </Link>
               </p>
             </div>

@@ -156,7 +156,7 @@ const formatMt5Balance = (
     return "-"; // API failed or didn't return balance
   }
 
-  const amount = isCent ? balanceValue * 100 : balanceValue;
+  const amount = isCent ? balanceValue * 1 : balanceValue;
 
   const formatted = Number(amount).toLocaleString("en-US", {
     minimumFractionDigits: 2,
