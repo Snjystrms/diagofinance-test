@@ -271,21 +271,28 @@ export function LoginClient() {
     ? 'Enter the 6-digit code from your authenticator app'
     : showForgotPassword
     ? 'Enter your email to receive a password reset link'
-    : 'Enter you email and password to access your account.';
+    : 'Enter your email and password to access your account.';
+
+  const primaryButtonGradient: React.CSSProperties = {
+    background:
+      'linear-gradient(0deg, #C50435, #C50435), linear-gradient(180deg, #EC0808 -78.33%, #500101 265%)',
+  };
 
   return (
     <ProtectedRoute requireAuth={false}>
       <AuthLayout>
-        <div className="w-full max-w-md mx-auto space-y-7">
+        <div className="w-full max-w-md mx-auto space-y-8">
           {/* Heading */}
-          <div>
-            <h1 className="font-cinzel text-4xl font-bold text-foreground">
+          <div className="text-center">
+            <h1 className="font-sans font-medium text-[40px] leading-[100%] tracking-[-4%] text-foreground">
               {heading}
             </h1>
-            <p className="mt-2 text-sm text-muted-foreground">{subheading}</p>
+            <p className="mt-3 font-sans font-normal text-[16px] leading-[150%] tracking-[-3%] text-muted-foreground">
+              {subheading}
+            </p>
           </div>
 
-          {/* ── 2FA ── */}
+{/* ── 2FA ── */}
           {show2FA ? (
             <div key="2fa-form" className="space-y-6">
               <div className="flex justify-center">
@@ -310,6 +317,7 @@ export function LoginClient() {
                   autoFocus
                   className="
                     w-48 text-center text-2xl tracking-[0.4em] font-bold
+                    font-sans font-bold text-[24px] leading-[150%] tracking-[-3%]
                     bg-input border border-border rounded-md
                     text-foreground placeholder:text-muted-foreground/50
                     px-4 py-3.5 outline-none
@@ -327,7 +335,7 @@ export function LoginClient() {
                     setPendingLoginData(null);
                   }}
                   className="
-                    px-5 py-2.5 rounded-md text-sm font-medium
+                    px-5 py-2.5 rounded-md font-sans font-medium text-[14px] leading-[150%] tracking-[-3%]
                     border border-border text-muted-foreground
                     hover:border-border hover:text-foreground
                     transition-all
@@ -339,9 +347,10 @@ export function LoginClient() {
                   type="button"
                   onClick={handle2FAVerification}
                   disabled={isVerifying2FA || twoFACode.length !== 6}
+                  style={primaryButtonGradient}
                   className="
-                    px-5 py-2.5 rounded-md text-sm font-semibold
-                    bg-primary text-primary-foreground
+                    px-5 py-2.5 rounded-md font-sans font-semibold text-[14px] leading-[150%] tracking-[-3%]
+                    text-white
                     hover:opacity-90
                     disabled:opacity-40 disabled:cursor-not-allowed
                     transition-all flex items-center gap-2
@@ -354,7 +363,7 @@ export function LoginClient() {
                     </>
                   ) : (
                     <>
-                      Verify &amp; login
+                      Verify & login
                       <ArrowRight className="h-4 w-4" />
                     </>
                   )}
@@ -362,7 +371,7 @@ export function LoginClient() {
               </div>
             </div>
 
-          /* ── Forgot password ── */
+/* ── Forgot password ── */
           ) : showForgotPassword ? (
             <div key="forgot-form" className="space-y-6">
               <Form {...forgotPasswordForm}>
@@ -375,9 +384,9 @@ export function LoginClient() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-foreground text-sm font-semibold">Email</FormLabel>
+                        <FormLabel className="font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-foreground">Email</FormLabel>
                         <FormControl>
-                          <div className="relative flex items-center rounded-md border border-border bg-input focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/15 transition-all">
+                          <div className="relative flex items-center rounded-md border border-[#2A2A2E] bg-input/60 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/15 transition-all">
                             <span className="flex h-11 w-11 shrink-0 items-center justify-center">
                               <Mail className="h-4 w-4 text-muted-foreground" />
                             </span>
@@ -388,7 +397,7 @@ export function LoginClient() {
                               {...field}
                               className="
                                 w-full bg-transparent
-                                text-foreground placeholder:text-muted-foreground/60 text-sm
+                                font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-foreground placeholder:text-muted-foreground/60
                                 pr-4 py-2.5 outline-none
                               "
                             />
@@ -401,9 +410,10 @@ export function LoginClient() {
                   <button
                     type="submit"
                     disabled={isForgotPasswordLoading}
+                    style={primaryButtonGradient}
                     className="
-                      w-full py-3 rounded-md text-sm font-bold
-                      bg-primary text-primary-foreground
+                      w-full py-3.5 rounded-md font-sans font-bold text-[14px] leading-[150%] tracking-[-3%]
+                      text-white
                       hover:opacity-90
                       disabled:opacity-40 disabled:cursor-not-allowed
                       transition-all flex items-center justify-center gap-2
@@ -422,7 +432,7 @@ export function LoginClient() {
                     <button
                       type="button"
                       onClick={() => setShowForgotPassword(false)}
-                      className="text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+                      className="font-sans font-medium text-[14px] leading-[150%] tracking-[-3%] text-primary hover:text-primary/80 transition-colors"
                     >
                       ← Back to login
                     </button>
@@ -441,9 +451,9 @@ export function LoginClient() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-foreground text-sm font-semibold">Email</FormLabel>
+                        <FormLabel className="font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-foreground">Email</FormLabel>
                         <FormControl>
-                          <div className="relative flex items-center rounded-md border border-border bg-input focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/15 transition-all">
+                          <div className="relative flex items-center rounded-md border border-[#2A2A2E] bg-input/60 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/15 transition-all">
                             <span className="flex h-11 w-11 shrink-0 items-center justify-center">
                               <Mail className="h-4 w-4 text-muted-foreground" />
                             </span>
@@ -453,7 +463,7 @@ export function LoginClient() {
                               {...field}
                               className="
                                 w-full !bg-transparent border-0
-                                text-foreground placeholder:text-muted-foreground/60 text-sm
+                                font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-foreground placeholder:text-muted-foreground/60
                                 !pl-0 pr-4 py-2.5 outline-none focus-visible:ring-0
                               "
                             />
@@ -469,9 +479,9 @@ export function LoginClient() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-foreground text-sm font-semibold">Password</FormLabel>
+                        <FormLabel className="font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-foreground">Password</FormLabel>
                         <FormControl>
-                          <div className="relative flex items-center rounded-md border border-border bg-input focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/15 transition-all">
+                          <div className="relative flex items-center rounded-md border border-[#2A2A2E] bg-input/60 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/15 transition-all">
                             <span className="flex h-11 w-11 shrink-0 items-center justify-center">
                               <Lock className="h-4 w-4 text-muted-foreground" />
                             </span>
@@ -480,10 +490,11 @@ export function LoginClient() {
                               autoComplete="current-password"
                               onChange={field.onChange}
                               value={field.value}
+                              className="flex-1 min-w-0"
                               inputClassName="
                                 w-full !bg-transparent border-0
-                                text-foreground placeholder:text-muted-foreground/60 text-sm
-                                !pl-0 pr-4 py-2.5 outline-none
+                                font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-foreground placeholder:text-muted-foreground/60
+                                !pl-0 pr-11 py-2.5 outline-none
                               "
                             />
                           </div>
@@ -494,7 +505,7 @@ export function LoginClient() {
                   />
 
                   <div className="flex items-center justify-between pt-1">
-                    <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
+                    <label className="flex items-center gap-2 font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-muted-foreground cursor-pointer">
                       <input
                         type="checkbox"
                         checked={rememberMe}
@@ -507,7 +518,7 @@ export function LoginClient() {
                     <button
                       type="button"
                       onClick={() => setShowForgotPassword(true)}
-                      className="text-sm font-semibold text-primary hover:text-primary/80 transition-colors underline underline-offset-2"
+                      className="font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-foreground hover:text-primary/80 transition-colors underline underline-offset-2"
                     >
                       Forgot Password?
                     </button>
@@ -516,9 +527,10 @@ export function LoginClient() {
                   <button
                     type="submit"
                     disabled={isLoading}
+                    style={primaryButtonGradient}
                     className="
-                      w-full py-3 rounded-md text-sm font-bold tracking-wide
-                      bg-primary text-primary-foreground
+                      w-full py-3.5 rounded-md font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] tracking-wide
+                      text-white
                       hover:opacity-90
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
                       disabled:opacity-40 disabled:cursor-not-allowed
@@ -537,11 +549,11 @@ export function LoginClient() {
                 </form>
               </Form>
 
-              <p className="mt-6 text-center text-sm text-muted-foreground">
+              <p className="mt-8 text-center font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-muted-foreground">
                 Don&apos;t have an account?{' '}
                 <Link
                   href="/register"
-                  className="font-semibold text-primary hover:text-primary/80 transition-colors"
+                  className="font-normal text-primary hover:text-primary/80 transition-colors underline underline-offset-2"
                 >
                   Create Now
                 </Link>

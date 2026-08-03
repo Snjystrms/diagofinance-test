@@ -2,10 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { ProtectedRoute } from '@/components/protected-route';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-import { Mail, CheckCircle, ArrowLeft, RefreshCw, Key, AlertCircle } from 'lucide-react';
+import { Mail, CheckCircle, ArrowLeft, RefreshCw, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/api';
 import { ApiRequestError } from '@/lib/api-core';
@@ -75,7 +73,7 @@ export function CheckEmailClient() {
     try {
       const result = await authApi.verifyOtp({
         otp: otp,
-        email: email
+        email: email,
       });
 
       if (result.success) {
@@ -106,7 +104,7 @@ export function CheckEmailClient() {
       setError('');
 
       const result = await authApi.resendOtp({
-        email: email
+        email: email,
       });
 
       if (result.success) {
@@ -130,18 +128,23 @@ export function CheckEmailClient() {
     }
   };
 
+  const primaryButtonGradient: React.CSSProperties = {
+    background:
+      'linear-gradient(0deg, #C50435, #C50435), linear-gradient(180deg, #EC0808 -78.33%, #500101 265%)',
+  };
+
   if (success) {
     return (
       <ProtectedRoute requireAuth={false}>
         <AuthLayout>
-          <div className="text-center">
+          <div className="w-full max-w-md mx-auto text-center">
             <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-full mb-6 bg-green-500/10">
               <CheckCircle className="h-8 w-8 text-green-500" />
             </div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">
+            <h1 className="font-sans font-medium text-[40px] leading-[100%] tracking-[-4%] text-foreground">
               You&apos;re all set!
             </h1>
-            <p className="text-muted-foreground text-lg">
+            <p className="mt-3 font-sans font-normal text-[16px] leading-[150%] tracking-[-3%] text-muted-foreground">
               Your email has been verified successfully. Welcome aboard! Redirecting to login...
             </p>
           </div>
@@ -153,67 +156,63 @@ export function CheckEmailClient() {
   return (
     <ProtectedRoute requireAuth={false}>
       <AuthLayout>
-        <div className="text-center">
-          {/* Email Icon */}
-          <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-full mb-6 bg-primary/10">
-            <Mail className="h-6 w-6 text-primary" />
-          </div>
-
-          <h1 className="text-3xl font-bold text-foreground mb-2">
-            Check your email
-          </h1>
-
-          <p className="text-muted-foreground text-lg">
-            {email
-              ? "We've sent a verification OTP to"
-              : "We've sent a verification OTP to your inbox"}
-          </p>
-
-          {email && (
-            <div className="mt-3 p-3 bg-muted rounded-lg border border-primary/20">
-              <p className="text-sm font-medium text-foreground break-all">
-                {email}
-              </p>
+        <div className="w-full max-w-md mx-auto space-y-8">
+          {/* Heading */}
+          <div className="text-center">
+            <div className="mx-auto flex items-center justify-center w-12 h-12 rounded-full border border-primary/25 bg-primary/10 mb-5">
+              <Mail className="h-5 w-5 text-primary" />
             </div>
-          )}
-        </div>
-
-        {/* Card with gold border accent */}
-        <div
-          className="rounded-xl border border-primary/20 bg-card overflow-hidden shadow-lg"
-        >
-          {/* Gold top bar accent */}
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/60 to-transparent" />
-
-          <div className="px-8 pt-7 pb-2 text-center">
-            <div className="mx-auto flex items-center justify-center w-12 h-12 rounded-full mb-3 bg-primary/10">
-              <Key className="h-6 w-6 text-primary" />
-            </div>
-            <h3 className="text-foreground font-semibold text-lg">Enter Verification OTP</h3>
-            <p className="text-muted-foreground text-sm mt-0.5">
-              Please enter the 6-digit OTP sent to your email
+            <h1 className="font-sans font-medium text-[40px] leading-[100%] tracking-[-4%] text-foreground">
+              Check your email
+            </h1>
+            <p className="mt-3 font-sans font-normal text-[16px] leading-[150%] tracking-[-3%] text-muted-foreground">
+              {email
+                ? "We've sent a verification OTP to"
+                : "We've sent a verification OTP to your inbox"}
             </p>
+
+            {email && (
+              <div className="mt-3 inline-flex px-3 py-2 bg-input/60 rounded-md border border-[#2A2A2E]">
+                <p className="font-sans font-medium text-[14px] leading-[150%] tracking-[-3%] text-foreground break-all">
+                  {email}
+                </p>
+              </div>
+            )}
           </div>
 
-          <div className="px-8 pb-8 pt-4 space-y-6">
-            {/* OTP Input */}
-            <div className="space-y-3">
-              <Label htmlFor="otp" className="text-sm font-medium text-muted-foreground">
-                OTP Code
-              </Label>
-              <Input
+          <div className="space-y-6">
+            <div className="flex justify-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full border border-primary/25 bg-primary/10">
+                <ShieldCheck className="h-5 w-5 text-primary" />
+              </div>
+            </div>
+
+            <div className="flex flex-col items-center gap-2">
+              <input
                 id="otp"
                 type="text"
-                placeholder="Enter 6-digit OTP"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
                 value={otp}
                 onChange={handleOtpChange}
-                onKeyDown={(e) => { if (e.key === 'Enter') handleVerifyOtp(); }}
-                className="text-center text-lg font-mono tracking-widest"
-                maxLength={6}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleVerifyOtp();
+                }}
+                placeholder="123456"
+                className="
+                  w-48 text-center text-2xl tracking-[0.4em] font-bold
+                  font-sans font-bold text-[24px] leading-[150%] tracking-[-3%]
+                  bg-input border border-border rounded-md
+                  text-foreground placeholder:text-muted-foreground/50
+                  px-4 py-3.5 outline-none
+                  focus:border-primary/60 focus:ring-1 focus:ring-primary/20
+                  transition-all
+                "
               />
               {error && (
-                <div className="flex items-center space-x-2 text-destructive text-sm">
-                  <AlertCircle className="h-4 w-4" />
+                <div className="flex items-center gap-1.5 font-sans text-[13px] text-red-400">
+                  <AlertCircle className="h-3.5 w-3.5" />
                   <span>{error}</span>
                 </div>
               )}
@@ -221,30 +220,30 @@ export function CheckEmailClient() {
 
             {/* Instructions */}
             <div className="space-y-3">
-              <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                <p className="text-sm text-muted-foreground">
+              <div className="flex items-start gap-3">
+                <div className="w-1.5 h-1.5 bg-primary rounded-full mt-1.5 flex-shrink-0" />
+                <p className="font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-muted-foreground">
                   Open your email application or inbox
                 </p>
               </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                <p className="text-sm text-muted-foreground">
+              <div className="flex items-start gap-3">
+                <div className="w-1.5 h-1.5 bg-primary rounded-full mt-1.5 flex-shrink-0" />
+                <p className="font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-muted-foreground">
                   Look for an email with the subject &quot;Your OTP for Registration&quot;
                 </p>
               </div>
-              <div className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0" />
-                <p className="text-sm text-muted-foreground">
+              <div className="flex items-start gap-3">
+                <div className="w-1.5 h-1.5 bg-primary rounded-full mt-1.5 flex-shrink-0" />
+                <p className="font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-muted-foreground">
                   Enter the 6-digit OTP code above
                 </p>
               </div>
             </div>
 
             {/* Spam folder notice */}
-            <div className="p-3 bg-primary/10 border border-primary/20 rounded-lg">
-              <p className="text-sm text-primary">
-                <strong>Tip:</strong> If you don&apos;t see the email, check your spam or junk folder.
+            <div className="px-4 py-3 bg-primary/10 border border-primary/20 rounded-md">
+              <p className="font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-primary">
+                <span className="font-semibold">Tip:</span> If you don&apos;t see the email, check your spam or junk folder.
               </p>
             </div>
 
@@ -254,13 +253,13 @@ export function CheckEmailClient() {
                 type="button"
                 onClick={handleVerifyOtp}
                 disabled={isVerifying || otp.length !== 6}
+                style={primaryButtonGradient}
                 className="
-                  w-full py-3 rounded-lg text-sm font-bold tracking-wide
-                  bg-primary text-primary-foreground
-                  hover:bg-primary/90
+                  w-full py-3.5 rounded-md font-sans font-bold text-[14px] leading-[150%] tracking-[-3%]
+                  text-white
+                  hover:opacity-90
                   disabled:opacity-40 disabled:cursor-not-allowed
                   transition-all flex items-center justify-center gap-2
-                  shadow-lg
                 "
               >
                 {isVerifying ? (
@@ -278,9 +277,10 @@ export function CheckEmailClient() {
                 onClick={handleResendOtp}
                 disabled={resendCountdown > 0 || isResending}
                 className="
-                  w-full py-2.5 rounded-lg text-sm font-medium
+                  w-full py-2.5 rounded-md font-sans font-medium text-[14px] leading-[150%] tracking-[-3%]
                   border border-border text-muted-foreground
                   hover:border-primary/50 hover:text-foreground
+                  disabled:opacity-40 disabled:cursor-not-allowed
                   transition-all flex items-center justify-center gap-2
                 "
               >
@@ -288,33 +288,28 @@ export function CheckEmailClient() {
                 {resendCountdown > 0
                   ? `Resend in ${resendCountdown}s`
                   : isResending
-                    ? 'Resending...'
-                    : "Didn't receive OTP?"
-                }
+                  ? 'Resending...'
+                  : "Didn't receive OTP?"}
               </button>
 
               <Link
                 href="/login"
                 className="
-                  block w-full py-2.5 rounded-lg text-sm font-medium text-center
+                  flex items-center justify-center gap-2
+                  w-full py-2.5 rounded-md font-sans font-medium text-[14px] leading-[150%] tracking-[-3%]
                   text-muted-foreground hover:text-foreground transition-colors
                 "
               >
-                <ArrowLeft className="h-4 w-4 inline mr-2" />
+                <ArrowLeft className="h-4 w-4" />
                 Back to Login
               </Link>
             </div>
 
             {/* Additional help */}
-            <div className="text-center">
-              <p className="text-xs text-muted-foreground/60">
-                Having trouble? Contact our support team for assistance.
-              </p>
-            </div>
+            <p className="text-center font-sans font-normal text-[12px] leading-[150%] tracking-[-3%] text-muted-foreground/60">
+              Having trouble? Contact our support team for assistance.
+            </p>
           </div>
-
-          {/* Gold bottom bar accent */}
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
         </div>
       </AuthLayout>
     </ProtectedRoute>

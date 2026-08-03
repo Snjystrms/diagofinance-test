@@ -69,7 +69,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           style={{
             top: "13.4%",
             left: "17%",
-            width: "101.4%",
+            width: "102.4%",
             aspectRatio: "933 / 606.9732666015625",
           }}
         >
