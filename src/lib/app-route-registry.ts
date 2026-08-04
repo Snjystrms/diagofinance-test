@@ -627,6 +627,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     managerCategories: ["User Management"],
   },
   {
+    path: "/add-existing-clients",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "user-management",
+    navLabel: "Add Existing Clients",
+    managerCategories: ["User Management"],
+  },
+  {
     path: "/admin-transaction",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,

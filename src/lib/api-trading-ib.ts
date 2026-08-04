@@ -2408,3 +2408,108 @@ export const adminMT5AccountsApi = {
     );
   },
 };
+
+export interface IBExistingClient {
+  id: number;
+  account_id: string;
+  mt5_id: number;
+  client_id: number;
+  group_id: number;
+  status: boolean;
+  account_mode: "live" | "demo";
+  source: string;
+  leverage: number;
+  created_at: string;
+  updated_at: string;
+  first_name: string;
+  last_name: string;
+  client_email: string;
+  group_name: string;
+  mt5_group_name: string;
+  client_name: string;
+}
+
+export interface IBExistingClientsListParams {
+  token: string;
+  page?: number;
+  limit?: number;
+  search?: string;
+  all_sources?: boolean;
+  date_from?: string;
+  date_to?: string;
+  group_id?: number | string;
+}
+
+export interface IBExistingClientsListResponse {
+  existingClients: IBExistingClient[];
+  pagination: {
+    current_page: number;
+    total_pages: number;
+    total_existing_clients: number;
+    per_page: number;
+  };
+}
+
+export interface CreateIBExistingClientRequest {
+  client_id: number;
+  group_id: number;
+  leverage: number;
+  mt5_id: string | number;
+}
+
+export interface CreateIBExistingClientResponse {
+  success: boolean;
+  message: string;
+  data?: IBExistingClient;
+}
+
+export const adminIBExistingClientsApi = {
+  list: ({
+    token,
+    page = 1,
+    limit = 10,
+    search,
+    all_sources = false,
+    date_from,
+    date_to,
+    group_id,
+  }: IBExistingClientsListParams) => {
+    if (!token) {
+      throw new Error("Token is required to fetch IB existing clients");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("page", String(page));
+    qs.set("limit", String(limit));
+
+    if (search && search.trim()) qs.set("search", search.trim());
+    if (all_sources) qs.set("all_sources", "true");
+    if (date_from) qs.set("date_from", date_from);
+    if (date_to) qs.set("date_to", date_to);
+    if (group_id !== undefined && group_id !== "" && group_id !== null) {
+      qs.set("group_id", String(group_id));
+    }
+
+    const endpoint = `/admin/ib-existing-clients${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<IBExistingClientsListResponse>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  create: (data: CreateIBExistingClientRequest, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to create IB existing client");
+    }
+
+    return apiCall<CreateIBExistingClientResponse>(`/admin/ib-existing-clients`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    });
+  },
+};
