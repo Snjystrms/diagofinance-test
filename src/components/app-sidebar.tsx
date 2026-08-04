@@ -7,7 +7,6 @@ import { TeamSwitcher } from "@/components/team-switcher"
 import { useAuth } from "@/contexts/auth-context"
 import { generateSubadminNavigation } from "@/lib/permission-nav-mapper"
 import {
-  crmData,
   getSectionLabelForRole,
   getSidebarNavigation,
 } from "@/lib/app-route-registry"
@@ -45,19 +44,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {...props}
     >
       <SidebarHeader className="border-b border-sidebar-border px-4 py-4 group-data-[collapsible=icon]:px-3 group-data-[collapsible=icon]:py-3">
-        <TeamSwitcher
-          teams={crmData.teams}
-          variant="enterprise"
-          roleLabel={
-            user?.type === "manager"
-              ? "Manager Console"
-              : user?.type === "subadmin"
-                ? "Subadmin Console"
-                : user?.type === "admin"
-                  ? "Admin Console"
-                  : "Client Workspace"
-          }
-        />
+        <TeamSwitcher variant="enterprise" />
       </SidebarHeader>
       <SidebarContent className="gap-0 px-1.5 py-3">
         <NavMain

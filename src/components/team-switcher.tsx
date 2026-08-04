@@ -9,43 +9,16 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { useClientCustomization } from "@/contexts/client-customization-context";
 import { cn } from "@/lib/utils";
 
 export function TeamSwitcher({
-  teams,
   variant = "default",
-  roleLabel,
 }: {
-  teams: {
-    name: string;
-    logo?: React.ElementType | string;
-    logoBright?: string;
-    logoDark?: string;
-    plan: string;
-  }[];
   variant?: "default" | "enterprise";
-  roleLabel?: string;
 }) {
   const { state } = useSidebar();
-  const { themeMode } = useClientCustomization();
   const isCollapsed = state === "collapsed";
-  const [activeTeam] = React.useState(teams[0]);
   const isEnterprise = variant === "enterprise";
-
-  const resolvedLogo = React.useMemo(() => {
-    if (!activeTeam) return null;
-    if (activeTeam.logoBright && activeTeam.logoDark) {
-      return themeMode === "bright"
-        ? activeTeam.logoBright
-        : activeTeam.logoDark;
-    }
-    return activeTeam.logo ?? null;
-  }, [activeTeam, themeMode]);
-
-  if (!activeTeam) {
-    return null;
-  }
 
   return (
     <SidebarMenu className="group-data-[collapsible=icon]:items-center">
@@ -54,7 +27,7 @@ export function TeamSwitcher({
           size="default"
           className={cn(
             isEnterprise
-              ? "h-auto min-h-0 rounded-2xl border px-3 py-2 text-sidebar-foreground transition-all duration-200 hover:opacity-90 group-data-[collapsible=icon]:size-12! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:rounded-2xl group-data-[collapsible=icon]:px-0! group-data-[collapsible=icon]:py-0! ib-portal-hero"
+              ? "h-auto min-h-0 rounded-2xl px-2 py-1 text-sidebar-foreground transition-all duration-200 hover:opacity-90 hover:bg-transparent group-data-[collapsible=icon]:size-12! group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:rounded-2xl group-data-[collapsible=icon]:px-0! group-data-[collapsible=icon]:py-0!"
               : "data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground",
           )}
         >
@@ -64,49 +37,13 @@ export function TeamSwitcher({
               isCollapsed ? "justify-center gap-0" : "justify-center",
             )}
           >
-            {typeof resolvedLogo === "string" ? (
-              <Image
-                src={resolvedLogo}
-                alt={activeTeam.name}
-                width={60}
-                height={60}
-                className="size-10 object-contain"
-              />
-            ) : resolvedLogo ? (
-              React.createElement(resolvedLogo as React.ElementType, {
-                className: "size-10",
-              })
-            ) : null}
-            {!isCollapsed && (
-              <div className="grid gap-0.5 text-center leading-tight">
-                {isEnterprise && (
-                  <span className="truncate text-[11px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/60">
-                    {roleLabel ?? "Workspace"}
-                  </span>
-                )}
-                <span
-                  className="truncate text-[13px] font-bold uppercase tracking-[0.2em]"
-                  style={{
-                    fontFamily: "Montserrat, sans-serif",
-                    background:
-                      "linear-gradient(180deg, #F8C701 -155.58%, #816700 248.31%)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                  }}
-                >
-                  {activeTeam.name}
-                </span>
-                <span
-                  className="truncate text-[8px] font-semibold tracking-[0.2em]"
-                  style={{
-                    fontFamily: "Montserrat, sans-serif",
-                    color: "#D1D1D1",
-                  }}
-                >
-                  {activeTeam.plan}
-                </span>
-              </div>
-            )}
+            <Image
+              src="/diagofinancelogo.svg"
+              alt="Diagofinance"
+              width={239}
+              height={63}
+              className="h-16 w-auto object-contain"
+            />
           </div>
         </SidebarMenuButton>
       </SidebarMenuItem>
