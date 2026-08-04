@@ -1842,8 +1842,7 @@ export function DashboardPageContent() {
                             <CardContent className="relative z-10 pt-6 pb-6 px-6">
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex-1">
-                                  <div className="text-xs font-semibold text-[#8B7355] uppercase tracking-wider mb-2 flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
+                                  <div className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
                                     Total Deposits
                                   </div>
                                   <p className="text-2xl font-bold text-foreground tabular-nums">
@@ -1853,8 +1852,13 @@ export function DashboardPageContent() {
                                     )}
                                   </p>
                                 </div>
-                                <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#00ED57]/50 bg-background/80 shadow-sm shadow-[#00ED57]/20 backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
-                                  <TrendingUp className="h-5 w-5 text-[#00ED57]" />
+                                <div className="flex h-11 w-11 items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                                  <Image
+                                    src={isBrightMode ? "/total_deposit_bright.svg" : "/total_deposit.svg"}
+                                    alt="Total deposits"
+                                    width={44}
+                                    height={44}
+                                  />
                                 </div>
                               </div>
                               <div className="pt-3 border-t border-border/100">
@@ -1877,8 +1881,7 @@ export function DashboardPageContent() {
                             <CardContent className="relative z-10 pt-6 pb-6 px-6">
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex-1">
-                                  <div className="text-xs font-semibold text-[#8B7355] uppercase tracking-wider mb-2 flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                                   <div className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
                                     Total Withdrawals
                                   </div>
                                   <p className="text-2xl font-bold text-foreground tabular-nums">
@@ -1888,8 +1891,13 @@ export function DashboardPageContent() {
                                     )}
                                   </p>
                                 </div>
-                                <div className="p-3 rounded-2xl bg-muted/70 border border-[#00ED57]/50 shadow-sm shadow-[#00ED57]/20">
-                                  <TrendingDown className="h-6 w-6 text-[#00ED57]" />
+                                 <div className="flex h-11 w-11 items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                                  <Image
+                                    src={isBrightMode ? "/total_withdrawal_bright.svg" : "/total_withdrawal.svg"}
+                                    alt="Total withdrawals"
+                                    width={44}
+                                    height={44}
+                                  />
                                 </div>
                               </div>
                               <div className="pt-3 border-t border-border/100">
@@ -1912,8 +1920,7 @@ export function DashboardPageContent() {
                             <CardContent className="relative z-10 pt-6 pb-6 px-6">
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex-1">
-                                  <div className="text-xs font-semibold text-[#8B7355] uppercase tracking-wider mb-2 flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
+                                   <div className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
                                     Trading Accounts
                                   </div>
                                   <p className="text-2xl font-bold text-foreground tabular-nums">
@@ -1923,8 +1930,13 @@ export function DashboardPageContent() {
                                       0}
                                   </p>
                                 </div>
-                                <div className="p-3 rounded-2xl bg-muted/70 border border-[#EC0808]/50 shadow-sm shadow-[#EC0808]/20">
-                                  <ChartCandlestick className="h-6 w-6 text-[#EC0808]" />
+                                <div className="flex h-11 w-11 items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                                  <Image
+                                    src={isBrightMode ? "/trading_accounts_bright.svg" : "/trading_accounts.svg"}
+                                    alt="Trading accounts"
+                                    width={44}
+                                    height={42}
+                                  />
                                 </div>
                               </div>
                               <div className="pt-3 border-t border-border/100">
@@ -2624,7 +2636,7 @@ export function DashboardPageContent() {
                           <TabsList className="grid h-auto w-full grid-cols-2 rounded-lg bg-muted/50 p-1">
                             <TabsTrigger
                               value="mt5-live"
-                              className="rounded-md px-2 py-2 text-sm transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                              className="rounded-md px-2 py-2 text-sm transition-all duration-200 data-[state=active]:bg-[#C50435]! data-[state=active]:text-white!"
                             >
                               <div className="flex items-center gap-1.5">
                                 <Activity className="h-4 w-4" />
@@ -2635,7 +2647,7 @@ export function DashboardPageContent() {
                             </TabsTrigger>
                             <TabsTrigger
                               value="mt5-demo"
-                              className="rounded-md px-2 py-2 text-sm transition-all duration-200 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                              className="rounded-md px-2 py-2 text-sm transition-all duration-200 data-[state=active]:bg-[#C50435]! data-[state=active]:text-white!"
                             >
                               <div className="flex items-center gap-1.5">
                                 <Target className="h-4 w-4" />
@@ -2737,31 +2749,54 @@ export function DashboardPageContent() {
                         );
                       })}
 
-                      <Card className="group h-full border border-dashed border-primary/35 bg-gradient-to-br from-primary/10 via-card to-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-primary/60 hover:shadow-lg">
-                        <CardContent className="flex h-full flex-col p-5 sm:p-6">
-                          <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
-                            <PlusCircle className="h-6 w-6" />
-                          </div>
+                      <Card className="group relative h-full overflow-hidden rounded-[28px] border border-white/5 shadow-[0_20px_60px_rgba(0,0,0,0.6)] transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+                        <div
+                          className="pointer-events-none absolute inset-0"
+                          style={{
+                            background:
+                              "radial-gradient(140% 120% at 90% 105%, #ff4a1f 0%, #e8330f 10%, #8a1608 26%, #2b0803 44%, transparent 62%), #050505",
+                          }}
+                        />
+                        <div
+                          className="pointer-events-none absolute inset-0"
+                          style={{
+                            backgroundImage:
+                              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.15' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='1.4' intercept='0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+                            backgroundSize: "180px 180px",
+                            mixBlendMode: "screen",
+                            opacity: 0.22,
+                          }}
+                        />
+                        <div
+                          className="pointer-events-none absolute inset-0 rounded-[inherit]"
+                          style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }}
+                        />
+                        <CardContent className="relative z-10 flex h-full flex-col p-7">
                           <div className="space-y-2">
-                            <h3 className="text-lg font-bold text-foreground">
+                            <h3 className="text-[22px] font-bold tracking-[-0.01em] text-white">
                               {createAccountTitle}
                             </h3>
-                            <p className="text-sm leading-6 text-muted-foreground">
+                            <p className="max-w-[260px] text-sm leading-6 text-white/45">
                               {currentAccounts.length === 0
                                 ? `No ${getTabTitle().toLowerCase()} yet. ${createAccountDescription}`
                                 : createAccountDescription}
                             </p>
                           </div>
-                          <Button
-                            asChild
-                            className="mt-auto h-11 justify-between rounded-xl bg-primary/95 px-4 text-primary-foreground shadow-sm hover:bg-primary"
+                          <Link
+                            href={createAccountHref}
+                            className="mt-auto flex items-center justify-between rounded-2xl border border-white/10 px-5 py-2 text-[15px] font-medium text-white/90 backdrop-blur-[6px] transition-all duration-200 hover:border-white/15 hover:bg-white/10"
+                            style={{
+                              background:
+                                "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,70,20,0.12))",
+                            }}
                           >
-                            <Link href={createAccountHref}>
-                              Open {activeTab === "mt5-demo" ? "Demo" : "Live"}{" "}
-                              Account
+                            Open{" "}
+                            {activeTab === "mt5-demo" ? "Demo" : "Live"}{" "}
+                            Account
+                            <span className="inline-flex h-[22px] w-[22px] items-center justify-center">
                               <ArrowRight className="h-4 w-4" />
-                            </Link>
-                          </Button>
+                            </span>
+                          </Link>
                         </CardContent>
                       </Card>
                     </div>

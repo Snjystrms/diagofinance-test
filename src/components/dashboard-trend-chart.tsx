@@ -347,7 +347,7 @@ export function DashboardTrendChart({
               className={cn(
                 "relative flex h-9 flex-1 items-center justify-center bg-transparent text-sm font-semibold tracking-[-0.006em] outline-none transition-all duration-200 first:rounded-l-lg last:rounded-r-lg",
                 selectedPeriod === period.value
-                  ? "bg-gradient-to-br from-primary/20 to-primary/10 text-foreground shadow-sm border-y border-primary/20"
+                  ? "bg-[#C50435] text-white shadow-sm"
                   : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
               )}
             >
