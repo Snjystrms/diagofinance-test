@@ -68,6 +68,7 @@ import { mt5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { formatApiDateTimeAsIST } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
+import { ViewContentDialog } from "@/components/ui/view-content-dialog";
 
 type BonusActionMode = "give" | "remove";
 
@@ -474,9 +475,13 @@ export default function BonusManagementPage() {
         header: "Comment",
         accessorFn: (row) => row.comment ?? "",
         cell: ({ row }) => (
-          <p className="max-w-[280px] truncate text-sm text-muted-foreground">
-            {row.original.comment || "-"}
-          </p>
+          <ViewContentDialog
+            content={row.original.comment}
+            title="Bonus Comment"
+            description="Full comment for this bonus entry"
+            triggerLabel="View"
+            emptyLabel="—"
+          />
         ),
       },
       {

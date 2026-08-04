@@ -2553,6 +2553,7 @@ export interface AuditLogItem {
   entity: string;
   entity_id: string;
   description: string;
+  user_email: string;
   ip_address: string;
   created_at: string;
 }

@@ -27,6 +27,7 @@ import { Calendar, ClipboardList, RefreshCw } from "lucide-react";
 import { formatApiDateTimeAsIST } from "@/lib/formatters";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { format } from "date-fns";
+import { ViewContentDialog } from "@/components/ui/view-content-dialog";
 
 
 /* ---------------- Helpers ---------------- */
@@ -365,12 +366,12 @@ export default function AuditLogsPage() {
         },
       },
       {
-        id: "action",
-        header: "Action",
-        accessorKey: "action",
+        id: "user_email",
+        header: "User Email",
+        accessorKey: "user_email",
         cell: ({ row }) => (
-          <span className="font-mono text-xs bg-muted/60 border border-muted-foreground/10 px-1.5 py-0.5 rounded">
-            {row.original.action}
+          <span className="font-medium text-sm">
+            {row.original.user_email || "—"}
           </span>
         ),
       },
@@ -394,9 +395,13 @@ export default function AuditLogsPage() {
         header: "Description",
         accessorKey: "description",
         cell: ({ row }) => (
-          <p className="text-sm leading-normal max-w-[280px] break-words whitespace-normal text-muted-foreground font-normal">
-            {row.original.description}
-          </p>
+          <ViewContentDialog
+            content={row.original.description}
+            title="Audit Log Description"
+            description="Full description of this audit event"
+            triggerLabel="View"
+            emptyLabel="—"
+          />
         ),
       },
       {

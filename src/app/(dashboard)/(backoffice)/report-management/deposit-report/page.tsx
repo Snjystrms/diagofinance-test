@@ -40,6 +40,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import { ManualSortHeader } from "@/components/data-table/manual-sort-header";
+import { ViewContentDialog } from "@/components/ui/view-content-dialog";
 
 /* ---------------- Helpers ---------------- */
 const fmtDateTime = (s?: string | null) => {
@@ -411,7 +412,15 @@ export default function ReportManagementPage() {
         id: "comment",
         header: "Comment",
         accessorKey: "comment",
-        cell: ({ row }) => row.original.comment || "-",
+        cell: ({ row }) => (
+          <ViewContentDialog
+            content={row.original.comment}
+            title="Deposit Comment"
+            description="Full comment for this deposit"
+            triggerLabel="View"
+            emptyLabel="—"
+          />
+        ),
       },
       {
         id: "payment_method",

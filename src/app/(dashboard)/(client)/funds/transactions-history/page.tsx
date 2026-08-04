@@ -16,8 +16,8 @@ import {
   CheckCircle,
   XCircle,
   Calendar,
-  ExternalLink,
-  Plus
+  Plus,
+  FileText
 } from 'lucide-react'
 import { formatApiDateTimeAsIST, formatDateTimeInIST } from '@/lib/formatters'
 import { format, parse } from "date-fns";
@@ -31,6 +31,7 @@ import { type ColumnDef } from '@tanstack/react-table'
 import { parseAsInteger } from 'nuqs'
 import { useQueryState } from 'nuqs'
 import { useRouter } from 'next/navigation'
+import { ViewContentDialog } from '@/components/ui/view-content-dialog'
 
 const formatDateTime = (value?: string | null): string => {
   if (!value) return "-";
@@ -303,11 +304,14 @@ export default function TransactionsHistoryPage() {
         cell: ({ row }) => {
           const transaction = row.original
           return (
-            <div className="max-w-md">
-              <p className="text-sm text-foreground truncate">
-                {transaction.description}
-              </p>
-            </div>
+            <ViewContentDialog
+              content={transaction.description}
+              title="Transaction Description"
+              description="Full description of the transaction"
+              triggerLabel="View"
+              triggerIcon={<FileText className="h-4 w-4 mr-2" />}
+              emptyLabel="—"
+            />
           )
         },
       },
@@ -580,8 +584,3 @@ export default function TransactionsHistoryPage() {
     
   )
 }
-
-
-
-
-

@@ -34,6 +34,7 @@ import { fmtDateTime, formatAmount } from "@/lib/formatters";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import { ManualSortHeader } from "@/components/data-table/manual-sort-header";
+import { ViewContentDialog } from "@/components/ui/view-content-dialog";
 
 const statusBadge = (status: string | number) => {
   const statusStr = String(status);
@@ -383,7 +384,15 @@ export default function WithdrawalReportPage() {
         id: "comment",
         header: "Comment",
         accessorKey: "comment",
-        cell: ({ row }) => row.original.comment || "-",
+        cell: ({ row }) => (
+          <ViewContentDialog
+            content={row.original.comment}
+            title="Withdrawal Comment"
+            description="Full comment for this withdrawal"
+            triggerLabel="View"
+            emptyLabel="—"
+          />
+        ),
       },
       {
         id: "payment_method",

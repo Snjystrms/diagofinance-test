@@ -22,6 +22,7 @@ import {
   type TransactionReportListPayload,
 } from "@/lib/api";
 import { fmtDateTime, formatAmount } from "@/lib/formatters";
+import { ViewContentDialog } from "@/components/ui/view-content-dialog";
 
 export default function AllTransactionReportPage() {
   const authCtx = useAuth?.();
@@ -204,7 +205,15 @@ export default function AllTransactionReportPage() {
         id: "comment",
         header: "Comment",
         accessorKey: "comment",
-        cell: ({ row }) => row.original.comment || "-",
+        cell: ({ row }) => (
+          <ViewContentDialog
+            content={row.original.comment}
+            title="Transaction Comment"
+            description="Full comment for this transaction"
+            triggerLabel="View"
+            emptyLabel="—"
+          />
+        ),
       },
       {
         id: "approved_by",

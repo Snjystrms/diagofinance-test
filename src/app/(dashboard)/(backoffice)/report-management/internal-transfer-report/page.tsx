@@ -22,6 +22,7 @@ import type { ReportExportFormat } from "@/components/report-page-wrapper";
 import { fmtDateTime, formatAmount } from "@/lib/formatters";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
+import { ViewContentDialog } from "@/components/ui/view-content-dialog";
 
 /* ---------------- Page ---------------- */
 export default function InternalTransferReportPage() {
@@ -211,18 +212,15 @@ export default function InternalTransferReportPage() {
         id: "comment",
         header: "Comment",
         accessorKey: "comment",
-        cell: ({ row }) => {
-          const comment = row.original.comment;
-          if (!comment) return <span className="text-muted-foreground">—</span>;
-          return (
-            <span
-              className="text-sm max-w-[200px] truncate block"
-              title={String(comment)}
-            >
-              {comment}
-            </span>
-          );
-        },
+        cell: ({ row }) => (
+          <ViewContentDialog
+            content={row.original.comment}
+            title="Transfer Comment"
+            description="Full comment for this internal transfer"
+            triggerLabel="View"
+            emptyLabel="—"
+          />
+        ),
       },
       {
         id: "status",
@@ -318,11 +316,3 @@ export default function InternalTransferReportPage() {
     </ReportPageWrapper>
   );
 }
-
-
-
-
-
-
-
-

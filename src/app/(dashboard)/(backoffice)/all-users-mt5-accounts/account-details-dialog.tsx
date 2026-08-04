@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Mail, User, Server, Settings2 } from "lucide-react";
+import { Loader2, Mail } from "lucide-react";
 import toast from "react-hot-toast";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -95,28 +95,13 @@ const formatWalletBalance = (
 };
 
 const DetailItem = ({ label, value }: { label: string; value: unknown }) => (
-  <div className="space-y-1 rounded-lg border border-border/60 bg-background p-3 shadow-sm transition-colors hover:border-border hover:bg-muted/30">
-    <dt className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+  <div className="space-y-1 rounded-md border bg-background p-3">
+    <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
       {label}
     </dt>
     <dd className="break-words text-sm font-medium text-foreground">
       {displayValue(value)}
     </dd>
-  </div>
-);
-
-const SectionHeading = ({
-  icon: Icon,
-  title,
-}: {
-  icon: React.ElementType;
-  title: string;
-}) => (
-  <div className="flex items-center gap-2">
-    <span className="flex h-6 w-6 items-center justify-center rounded-md bg-primary/10 text-primary">
-      <Icon className="h-3.5 w-3.5" />
-    </span>
-    <h3 className="text-sm font-semibold tracking-tight">{title}</h3>
   </div>
 );
 
@@ -197,6 +182,7 @@ export function AccountDetailsDialog({
 
   const user = account?.user ?? account?.User;
   const group = account?.group;
+  const accountType = account?.accountType;
   const mode = account?.account_mode
     ? String(account.account_mode).toUpperCase()
     : emptyValue;
@@ -204,35 +190,12 @@ export function AccountDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[800px]">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-[760px]">
         <DialogHeader>
-          <div className="flex flex-wrap items-start justify-between gap-3 pr-8">
-            <div className="space-y-1">
-              <DialogTitle>MT5 Account Details</DialogTitle>
-              <DialogDescription>
-                Complete account information fetched from the selected MT5
-                account.
-              </DialogDescription>
-            </div>
-
-            {!loading && account && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleResendCredentials}
-                disabled={sendingCredentials}
-                className="gap-2 shrink-0"
-              >
-                {sendingCredentials ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Mail className="h-4 w-4" />
-                )}
-                {sendingCredentials ? "Sending..." : "Resend Credentials"}
-              </Button>
-            )}
-          </div>
+          <DialogTitle>MT5 Account Details</DialogTitle>
+          <DialogDescription>
+            Complete account information fetched from the selected MT5 account.
+          </DialogDescription>
         </DialogHeader>
 
         {loading ? (
@@ -242,15 +205,12 @@ export function AccountDetailsDialog({
             Account details are not available.
           </div>
         ) : (
-          <div className="space-y-6">
-            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-border/60 bg-muted/20 p-3">
-              <Badge variant="outline" className="font-medium">
-                {mode}
-              </Badge>
-              <span className="text-sm font-semibold text-foreground">
-                {getName(account)}
-              </span>
+          <div className="space-y-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline">{mode}</Badge>
+              <span className="text-sm font-medium">{getName(account)}</span>
 
+              {/* Added ml-auto to push this badge to the far right */}
               <Badge
                 className={`ml-auto ${
                   status === "Active"
@@ -263,7 +223,7 @@ export function AccountDetailsDialog({
             </div>
 
             <section className="space-y-3">
-              <SectionHeading icon={Server} title="Account" />
+              <h3 className="text-sm font-semibold">Account</h3>
               <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <DetailItem label="Account ID" value={account.account_id} />
                 <DetailItem label="MT5 Login" value={account.mt5_id} />
@@ -311,7 +271,7 @@ export function AccountDetailsDialog({
             </section>
 
             <section className="space-y-3">
-              <SectionHeading icon={User} title="User" />
+              <h3 className="text-sm font-semibold">User</h3>
               <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 <DetailItem label="Name" value={getName(account)} />
                 <DetailItem
@@ -322,6 +282,7 @@ export function AccountDetailsDialog({
                   label="Mobile"
                   value={user?.mobile ?? account.mobile}
                 />
+                {/* <DetailItem label="User ID" value={account.user_id ?? user?.id} /> */}
                 <DetailItem
                   label="IB ID"
                   value={account.sponsor_id ?? user?.sponsor_id}
@@ -330,11 +291,11 @@ export function AccountDetailsDialog({
             </section>
 
             <section className="space-y-3">
-              <SectionHeading
-                icon={Settings2}
-                title="Group and Trading Settings"
-              />
+              <h3 className="text-sm font-semibold">
+                Group and Trading Settings
+              </h3>
               <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                {/* <DetailItem label="Group ID" value={account.group_id ?? group?.id} /> */}
                 <DetailItem label="Group Name" value={group?.name} />
                 <DetailItem
                   label="MT5 Group"
@@ -344,12 +305,41 @@ export function AccountDetailsDialog({
                   label="Minimum Deposit"
                   value={account.minimum_deposit ?? group?.minimum_deposit}
                 />
+                {/* <DetailItem label="Spread From" value={account.spread_from ?? accountType?.spread_from} /> */}
+                {/* <DetailItem label="Maximum Leverage" value={account.maximum_leverage ?? accountType?.maximum_leverage} />
+                <DetailItem label="Leverage Type" value={account.leverage_type ?? accountType?.leverage_type} /> */}
+                {/* <DetailItem label="Stop Out Level" value={account.stop_out_level ?? accountType?.stop_out_level} /> */}
+                {/* <DetailItem label="Hedge Margin" value={account.hedge_margin ?? accountType?.hedge_margin} /> */}
+                {/* <DetailItem label="Swap Free" value={account.swap_free_option ?? accountType?.swap_free_option} /> */}
+                {/* <DetailItem label="Base Currencies" value={account.base_currency ?? accountType?.base_currency} /> */}
                 <DetailItem
                   label="Updated"
                   value={formatDate(account.updated_at)}
                 />
               </dl>
             </section>
+          </div>
+        )}
+
+        {!loading && account && (
+          <div className="flex justify-end border-t border-border/40 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleResendCredentials}
+              disabled={sendingCredentials}
+              className="gap-2"
+            >
+              {sendingCredentials ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Mail className="h-4 w-4" />
+              )}
+              {sendingCredentials
+                ? "Sending..."
+                : "Resend MT5 Credentials Email"}
+            </Button>
           </div>
         )}
       </DialogContent>

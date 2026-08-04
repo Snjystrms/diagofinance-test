@@ -54,6 +54,7 @@ import {
 import { useAuth } from "@/contexts/auth-context";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { ApiRequestError } from "@/lib/api-core";
+import { ViewContentDialog } from "@/components/ui/view-content-dialog";
 import {
   adminUsersApi,
   type AdminPaginatedApiData,
@@ -717,9 +718,13 @@ const walletHistoryColumns: ColumnDef<AdminUserWalletHistoryItem>[] = [
     header: "Remark",
     key: "remark",
     render: (item) => (
-      <span className="max-w-[260px] truncate block">
-        {item.remark || "-"}
-      </span>
+      <ViewContentDialog
+        content={item.remark}
+        title="Transaction Remark"
+        description="Full remark for this transaction"
+        triggerLabel="View"
+        emptyLabel="—"
+      />
     ),
   },
   {
