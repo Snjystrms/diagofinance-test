@@ -26,25 +26,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useAuth } from "@/contexts/auth-context";
 import { adminAccountTypesApi, adminIBExistingClientsApi, type AccountTypeGroupItem, type IBExistingClient, type CreateIBExistingClientRequest } from "@/lib/api";
 import { useModuleCapabilities } from "@/hooks/use-permission-capabilities";
 import { getColumns } from "./columns";
 import { CreateExistingClientDialog } from "./create-existing-client-dialog";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
-
-const statusFilters = [
-  { label: "All statuses", value: "all" },
-  { label: "Active", value: "1" },
-  { label: "Inactive", value: "0" },
-];
-
-const accountModeFilters = [
-  { label: "All", value: "all" },
-  { label: "Demo", value: "demo" },
-  { label: "Live", value: "live" },
-];
 
 const extractItems = (data: unknown): IBExistingClient[] => {
   if (!data) return [];
@@ -92,11 +79,7 @@ export default function AddExistingClientsPage() {
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
-  const [statusFilter, setStatusFilter] = useQueryState(
-    "status",
-    parseAsString.withDefault("all"),
-  );
-  const [accountModeFilter, setAccountModeFilter] = useQueryState(
+  const [accountModeFilter] = useQueryState(
     "account_mode",
     parseAsString.withDefault("all"),
   );
@@ -141,13 +124,11 @@ export default function AddExistingClientsPage() {
 
   // Group filter state
   const [groups, setGroups] = useState<AccountTypeGroupItem[]>([]);
-  const [loadingGroups, setLoadingGroups] = useState(false);
 
   const loadGroups = useCallback(async () => {
     if (!token) return;
 
     try {
-      setLoadingGroups(true);
       const response = await adminAccountTypesApi.list({ token });
       const items = response?.data?.accountTypes ?? [];
 
@@ -157,8 +138,6 @@ export default function AddExistingClientsPage() {
       setGroups(liveGroups);
     } catch (error) {
       console.error("Failed to load groups:", error);
-    } finally {
-      setLoadingGroups(false);
     }
   }, [token]);
 
@@ -363,7 +342,7 @@ export default function AddExistingClientsPage() {
                 Add Existing Clients
               </h1>
               <p className="text-sm text-muted-foreground">
-                View and manage MT5 Accounts that have been added into the system via 'Add Existing Clients' flow.
+                View and manage MT5 Accounts that have been added into the system via &apos;Add Existing Clients&apos; flow.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
