@@ -210,7 +210,6 @@ export default function AllTransactionReportPage() {
             content={row.original.comment}
             title="Transaction Comment"
             description="Full comment for this transaction"
-            triggerLabel="View"
             emptyLabel="—"
           />
         ),

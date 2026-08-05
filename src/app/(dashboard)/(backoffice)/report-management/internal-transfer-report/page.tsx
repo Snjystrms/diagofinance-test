@@ -28,20 +28,26 @@ import { ViewContentDialog } from "@/components/ui/view-content-dialog";
 export default function InternalTransferReportPage() {
   const authCtx = useAuth?.();
   const { isManager, hasFeature } = useManagerPermissions();
-  const canViewReport = !isManager || hasFeature("reportManagement", "internalTransferReport");
+  const canViewReport =
+    !isManager || hasFeature("reportManagement", "internalTransferReport");
   const ctxToken = authCtx?.token;
   const token =
     ctxToken ||
-    (typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : "");
+    (typeof window !== "undefined"
+      ? localStorage.getItem("auth_token") || ""
+      : "");
 
   const [rows, setRows] = useState<InternalTransferReportItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
-  const [perPage, setPerPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
+  const [perPage, setPerPage] = useQueryState(
+    "perPage",
+    parseAsInteger.withDefault(10),
+  );
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  
+
   // Search filter
   const [searchQuery, setSearchQuery] = useQueryState("search", parseAsString);
   const [searchInput, setSearchInput] = useState(searchQuery || "");
@@ -70,9 +76,9 @@ export default function InternalTransferReportPage() {
       });
 
       // The API response structure: { success, message, data: [...], pagination: {...}, filters: {...} }
-      const payload = (response as unknown) as InternalTransferReportListPayload;
+      const payload = response as unknown as InternalTransferReportListPayload;
       const reportItems = Array.isArray(payload?.data) ? payload.data : [];
-      
+
       setRows(reportItems);
 
       const paginationData = payload?.pagination;
@@ -90,18 +96,13 @@ export default function InternalTransferReportPage() {
         getAdminFriendlyErrorMessage(error, {
           resource: "internal transfer report",
           action: "load",
-        })
+        }),
       );
       setRows([]);
     } finally {
       setLoading(false);
     }
-  }, [
-    token,
-    page,
-    perPage,
-    searchQuery,
-  ]);
+  }, [token, page, perPage, searchQuery]);
 
   useEffect(() => {
     void loadReport();
@@ -111,53 +112,58 @@ export default function InternalTransferReportPage() {
     void loadReport();
   }, [loadReport]);
 
-  const handleExport = useCallback(async (formatType: ReportExportFormat) => {
-    if (!canViewReport) {
-      toast.error("You do not have permission to export internal transfer report");
-      return;
-    }
-    if (!token) {
-      toast.error("Authentication required to export data");
-      return;
-    }
-    const exportToastId = `export-${formatType}`;
-    try {
-      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
-      
-      const { blob, filename } = await adminInternalTransferReportApi.export({
-        token,
-        format: formatType,
-        search: searchQuery || undefined,
-      });
-
-      if (blob.size === 0) {
-        toast.error("No data to export", { id: exportToastId });
+  const handleExport = useCallback(
+    async (formatType: ReportExportFormat) => {
+      if (!canViewReport) {
+        toast.error(
+          "You do not have permission to export internal transfer report",
+        );
         return;
       }
+      if (!token) {
+        toast.error("Authentication required to export data");
+        return;
+      }
+      const exportToastId = `export-${formatType}`;
+      try {
+        toast.loading(`Preparing ${formatType.toUpperCase()} export...`, {
+          id: exportToastId,
+        });
 
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(link.href);
+        const { blob, filename } = await adminInternalTransferReportApi.export({
+          token,
+          format: formatType,
+          search: searchQuery || undefined,
+        });
 
-      toast.success(`Successfully exported to ${filename}`, { id: exportToastId });
-    } catch (error: unknown) {
-      toast.error(
-        getAdminFriendlyErrorMessage(error, {
-          resource: "internal transfer report",
-          action: "export",
-        }),
-        { id: exportToastId }
-      );
-    }
-  }, [
-    canViewReport,
-    token,
-    searchQuery,
-  ]);
+        if (blob.size === 0) {
+          toast.error("No data to export", { id: exportToastId });
+          return;
+        }
+
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+
+        toast.success(`Successfully exported to ${filename}`, {
+          id: exportToastId,
+        });
+      } catch (error: unknown) {
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "internal transfer report",
+            action: "export",
+          }),
+          { id: exportToastId },
+        );
+      }
+    },
+    [canViewReport, token, searchQuery],
+  );
 
   const columns: ColumnDef<InternalTransferReportItem>[] = useMemo(
     () => [
@@ -166,7 +172,11 @@ export default function InternalTransferReportPage() {
         header: "Sr. No.",
         accessorKey: "id",
         cell: ({ row, table }) => (
-          <SerialNumberCell row={row} table={table} className="font-mono text-sm" />
+          <SerialNumberCell
+            row={row}
+            table={table}
+            className="font-mono text-sm"
+          />
         ),
       },
       {
@@ -176,11 +186,14 @@ export default function InternalTransferReportPage() {
         cell: ({ row }) => {
           const name = row.original.name;
           const email = row.original.email;
-          if (!name && !email) return <span className="text-muted-foreground">—</span>;
+          if (!name && !email)
+            return <span className="text-muted-foreground">—</span>;
           return (
             <div className="space-y-0.5">
               <div className="font-medium">{name || "—"}</div>
-              <div className="text-xs text-muted-foreground">{email || "—"}</div>
+              <div className="text-xs text-muted-foreground">
+                {email || "—"}
+              </div>
             </div>
           );
         },
@@ -192,10 +205,12 @@ export default function InternalTransferReportPage() {
         cell: ({ row }) => (
           <div className="space-y-0.5">
             <div className="text-sm">
-              <span className="text-muted-foreground">From:</span> {row.original.from_account || "—"}
+              <span className="text-muted-foreground">From:</span>{" "}
+              {row.original.from_account || "—"}
             </div>
             <div className="text-sm">
-              <span className="text-muted-foreground">To:</span> {row.original.to_account || "—"}
+              <span className="text-muted-foreground">To:</span>{" "}
+              {row.original.to_account || "—"}
             </div>
           </div>
         ),
@@ -205,7 +220,9 @@ export default function InternalTransferReportPage() {
         header: "Amount (USD)",
         accessorKey: "amount",
         cell: ({ row }) => (
-          <span className="font-medium whitespace-nowrap">{formatAmount(row.original.amount)}</span>
+          <span className="font-medium whitespace-nowrap">
+            {formatAmount(row.original.amount)}
+          </span>
         ),
       },
       {
@@ -217,7 +234,6 @@ export default function InternalTransferReportPage() {
             content={row.original.comment}
             title="Transfer Comment"
             description="Full comment for this internal transfer"
-            triggerLabel="View"
             emptyLabel="—"
           />
         ),
@@ -228,7 +244,8 @@ export default function InternalTransferReportPage() {
         accessorKey: "status",
         cell: ({ row }) => {
           const status = row.original.status;
-          if (status == null) return <span className="text-muted-foreground">—</span>;
+          if (status == null)
+            return <span className="text-muted-foreground">—</span>;
           const isSuccess = status === 1 || status === "completed";
           return (
             <span
@@ -255,7 +272,7 @@ export default function InternalTransferReportPage() {
         ),
       },
     ],
-    []
+    [],
   );
   if (!canViewReport) {
     return (

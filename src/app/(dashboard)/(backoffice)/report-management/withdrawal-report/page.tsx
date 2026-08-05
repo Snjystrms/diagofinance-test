@@ -68,37 +68,40 @@ const statusBadge = (status: string | number) => {
 export default function WithdrawalReportPage() {
   const authCtx = useAuth?.();
   const { isManager, hasFeature } = useManagerPermissions();
-  const canViewReport = !isManager || hasFeature("reportManagement", "withdrawReport");
+  const canViewReport =
+    !isManager || hasFeature("reportManagement", "withdrawReport");
   const ctxToken = authCtx?.token;
   const token =
     ctxToken ||
-    (typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : "");
+    (typeof window !== "undefined"
+      ? localStorage.getItem("auth_token") || ""
+      : "");
 
   const [rows, setRows] = useState<WithdrawalReportItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
-  const [perPage, setPerPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
+  const [perPage, setPerPage] = useQueryState(
+    "perPage",
+    parseAsInteger.withDefault(10),
+  );
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
 
   // Filters
   const [statusFilter, setStatusFilter] = useQueryState(
     "status",
-    parseAsString
+    parseAsString,
   );
   const [paymentMethodFilter, setPaymentMethodFilter] = useQueryState(
     "payment_method_id",
-    parseAsString
+    parseAsString,
   );
-  const [isIbFilter, setIsIbFilter] = useQueryState(
-    "is_ib",
-    parseAsString
-  );
+  const [isIbFilter, setIsIbFilter] = useQueryState("is_ib", parseAsString);
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [fromDateStr, setFromDateStr] = useQueryState(
     "from_date",
-    parseAsString
+    parseAsString,
   );
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [toDateStr, setToDateStr] = useQueryState("to_date", parseAsString);
@@ -164,32 +167,29 @@ export default function WithdrawalReportPage() {
         token,
         // Only pass filter parameters if they are set
         status:
-          statusFilter && statusFilter !== "all"
-            ? statusFilter
-            : undefined,
+          statusFilter && statusFilter !== "all" ? statusFilter : undefined,
         payment_method_id:
           paymentMethodFilter && paymentMethodFilter !== "all"
             ? paymentMethodFilter
             : paymentMethodFilter === "all"
               ? "all"
               : undefined,
-        is_ib:
-          isIbFilter && isIbFilter !== "all"
-            ? isIbFilter
-            : undefined,
+        is_ib: isIbFilter && isIbFilter !== "all" ? isIbFilter : undefined,
         from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
         to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
         page,
         per_page: perPage,
         search: searchQuery || undefined,
         sort_column: sortBy || undefined,
-        sort_order: sortOrder ? (sortOrder.toUpperCase() as "ASC" | "DESC") : undefined,
+        sort_order: sortOrder
+          ? (sortOrder.toUpperCase() as "ASC" | "DESC")
+          : undefined,
       });
 
       // The API response structure: { success, message, data: [...], pagination: {...}, filters: {...} }
-      const payload = (response as unknown) as WithdrawalReportListPayload;
+      const payload = response as unknown as WithdrawalReportListPayload;
       const reportItems = Array.isArray(payload?.data) ? payload.data : [];
-      
+
       setRows(reportItems);
 
       const paginationData = payload?.pagination;
@@ -207,7 +207,7 @@ export default function WithdrawalReportPage() {
         getAdminFriendlyErrorMessage(error, {
           resource: "withdrawal report",
           action: "load",
-        })
+        }),
       );
       setRows([]);
     } finally {
@@ -239,7 +239,7 @@ export default function WithdrawalReportPage() {
         setToDate(date);
       }
     },
-    []
+    [],
   );
 
   const handleResetFilters = useCallback(() => {
@@ -263,74 +263,76 @@ export default function WithdrawalReportPage() {
     setPage,
   ]);
 
-  const handleExport = useCallback(async (formatType: ReportExportFormat) => {
-    if (!canViewReport) {
-      toast.error("You do not have permission to export withdrawal report");
-      return;
-    }
-    if (!token) {
-      toast.error("Authentication required to export data");
-      return;
-    }
-    const exportToastId = `export-${formatType}`;
-    try {
-      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
-      
-      const { blob, filename } = await adminWithdrawalReportApi.export({
-        token,
-        format: formatType,
-        status:
-          statusFilter && statusFilter !== "all"
-            ? statusFilter
-            : undefined,
-        payment_method_id:
-          paymentMethodFilter && paymentMethodFilter !== "all"
-            ? paymentMethodFilter
-            : paymentMethodFilter === "all"
-              ? "all"
-              : undefined,
-        is_ib:
-          isIbFilter && isIbFilter !== "all"
-            ? isIbFilter
-            : undefined,
-        from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
-        to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
-        search: searchQuery || undefined,
-      });
-
-      if (blob.size === 0) {
-        toast.error("No data to export", { id: exportToastId });
+  const handleExport = useCallback(
+    async (formatType: ReportExportFormat) => {
+      if (!canViewReport) {
+        toast.error("You do not have permission to export withdrawal report");
         return;
       }
+      if (!token) {
+        toast.error("Authentication required to export data");
+        return;
+      }
+      const exportToastId = `export-${formatType}`;
+      try {
+        toast.loading(`Preparing ${formatType.toUpperCase()} export...`, {
+          id: exportToastId,
+        });
 
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(link.href);
+        const { blob, filename } = await adminWithdrawalReportApi.export({
+          token,
+          format: formatType,
+          status:
+            statusFilter && statusFilter !== "all" ? statusFilter : undefined,
+          payment_method_id:
+            paymentMethodFilter && paymentMethodFilter !== "all"
+              ? paymentMethodFilter
+              : paymentMethodFilter === "all"
+                ? "all"
+                : undefined,
+          is_ib: isIbFilter && isIbFilter !== "all" ? isIbFilter : undefined,
+          from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
+          to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
+          search: searchQuery || undefined,
+        });
 
-      toast.success(`Successfully exported to ${filename}`, { id: exportToastId });
-    } catch (error: unknown) {
-      toast.error(
-        getAdminFriendlyErrorMessage(error, {
-          resource: "withdrawal report",
-          action: "export",
-        }),
-        { id: exportToastId }
-      );
-    }
-  }, [
-    canViewReport,
-    token,
-    statusFilter,
-    paymentMethodFilter,
-    isIbFilter,
-    fromDate,
-    toDate,
-    searchQuery,
-  ]);
+        if (blob.size === 0) {
+          toast.error("No data to export", { id: exportToastId });
+          return;
+        }
+
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+
+        toast.success(`Successfully exported to ${filename}`, {
+          id: exportToastId,
+        });
+      } catch (error: unknown) {
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "withdrawal report",
+            action: "export",
+          }),
+          { id: exportToastId },
+        );
+      }
+    },
+    [
+      canViewReport,
+      token,
+      statusFilter,
+      paymentMethodFilter,
+      isIbFilter,
+      fromDate,
+      toDate,
+      searchQuery,
+    ],
+  );
 
   // Count active filters
   const activeFilterCount = useMemo(() => {
@@ -344,7 +346,16 @@ export default function WithdrawalReportPage() {
     if (sortOrder) count++;
     if (searchQuery) count++;
     return count;
-  }, [statusFilter, paymentMethodFilter, isIbFilter, fromDate, toDate, sortBy, sortOrder, searchQuery]);
+  }, [
+    statusFilter,
+    paymentMethodFilter,
+    isIbFilter,
+    fromDate,
+    toDate,
+    sortBy,
+    sortOrder,
+    searchQuery,
+  ]);
 
   const columns: ColumnDef<WithdrawalReportItem>[] = useMemo(
     () => [
@@ -353,11 +364,15 @@ export default function WithdrawalReportPage() {
         header: "Sr. No.",
         accessorKey: "id",
         cell: ({ row, table }) => (
-          <SerialNumberCell row={row} table={table} className="font-mono text-sm" />
+          <SerialNumberCell
+            row={row}
+            table={table}
+            className="font-mono text-sm"
+          />
         ),
       },
       {
-       id: "user",
+        id: "user",
         header: "User",
         accessorKey: "name",
         cell: ({ row }) => {
@@ -367,20 +382,26 @@ export default function WithdrawalReportPage() {
           return (
             <div className="space-y-0.5">
               <div className="font-medium">{name || "-"}</div>
-              <div className="text-xs text-muted-foreground">{email || "-"}</div>
+              <div className="text-xs text-muted-foreground">
+                {email || "-"}
+              </div>
             </div>
           );
         },
       },
       {
         id: "amount",
-        header: () => <ManualSortHeader sortKey="amount" title="Amount (USD)" />,
+        header: () => (
+          <ManualSortHeader sortKey="amount" title="Amount (USD)" />
+        ),
         accessorKey: "amount",
         cell: ({ row }) => (
-          <span className="font-medium whitespace-nowrap">{formatAmount(row.original.amount)}</span>
+          <span className="font-medium whitespace-nowrap">
+            {formatAmount(row.original.amount)}
+          </span>
         ),
       },
-       {
+      {
         id: "comment",
         header: "Comment",
         accessorKey: "comment",
@@ -389,7 +410,6 @@ export default function WithdrawalReportPage() {
             content={row.original.comment}
             title="Withdrawal Comment"
             description="Full comment for this withdrawal"
-            triggerLabel="View"
             emptyLabel="—"
           />
         ),
@@ -448,7 +468,7 @@ export default function WithdrawalReportPage() {
         accessorKey: "status",
         cell: ({ row }) => statusBadge(row.original.status),
       },
-       {
+      {
         id: "approved_by",
         header: "Approved By",
         accessorKey: "approved_by",
@@ -466,7 +486,7 @@ export default function WithdrawalReportPage() {
         ),
       },
     ],
-    []
+    [],
   );
   if (!canViewReport) {
     return (
@@ -516,79 +536,97 @@ export default function WithdrawalReportPage() {
               delay={300}
             />
           </div>
-         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-  <div className="space-y-1.5">
-    <Label htmlFor="status-filter" className="text-xs font-medium text-muted-foreground">Status</Label>
-    <Select
-      value={statusFilter || undefined}
-      onValueChange={(value) => {
-        setStatusFilter(value === "all" ? null : value);
-        setPage(1);
-      }}
-    >
-      <SelectTrigger id="status-filter" className="h-9 w-full">
-        <SelectValue placeholder="All Status" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">All Status</SelectItem>
-        <SelectItem value="pending">Pending</SelectItem>
-        <SelectItem value="approved">Approved</SelectItem>
-        <SelectItem value="rejected">Rejected</SelectItem>
-      </SelectContent>
-    </Select>
-  </div>
-  <div className="space-y-1.5">
-    <Label htmlFor="user-type-filter" className="text-xs font-medium text-muted-foreground">User Type</Label>
-    <Select
-      value={isIbFilter || undefined}
-      onValueChange={(value) => {
-        setIsIbFilter(value === "all" ? null : value);
-        setPage(1);
-      }}
-    >
-      <SelectTrigger id="user-type-filter" className="h-9 w-full">
-        <SelectValue placeholder="All Users" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">All Users</SelectItem>
-        <SelectItem value="1">Partners Only</SelectItem>
-        <SelectItem value="0">Non-Partners Only</SelectItem>
-      </SelectContent>
-    </Select>
-  </div>
-  <div className="space-y-1.5">
-    <Label htmlFor="payment-method-filter" className="text-xs font-medium text-muted-foreground">Payment Method</Label>
-    <Select
-      value={paymentMethodFilter || undefined}
-      onValueChange={(value) => {
-        setPaymentMethodFilter(value === "all" ? null : value);
-        setPage(1);
-      }}
-    >
-      <SelectTrigger id="payment-method-filter" className="h-9 w-full">
-        <SelectValue placeholder="All Methods" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">All Methods</SelectItem>
-      </SelectContent>
-    </Select>
-  </div>
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="status-filter"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Status
+              </Label>
+              <Select
+                value={statusFilter || undefined}
+                onValueChange={(value) => {
+                  setStatusFilter(value === "all" ? null : value);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger id="status-filter" className="h-9 w-full">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="user-type-filter"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                User Type
+              </Label>
+              <Select
+                value={isIbFilter || undefined}
+                onValueChange={(value) => {
+                  setIsIbFilter(value === "all" ? null : value);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger id="user-type-filter" className="h-9 w-full">
+                  <SelectValue placeholder="All Users" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Users</SelectItem>
+                  <SelectItem value="1">Partners Only</SelectItem>
+                  <SelectItem value="0">Non-Partners Only</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label
+                htmlFor="payment-method-filter"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Payment Method
+              </Label>
+              <Select
+                value={paymentMethodFilter || undefined}
+                onValueChange={(value) => {
+                  setPaymentMethodFilter(value === "all" ? null : value);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger
+                  id="payment-method-filter"
+                  className="h-9 w-full"
+                >
+                  <SelectValue placeholder="All Methods" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Methods</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-  <div className="md:col-span-2 xl:col-span-1">
-    <DateRangePicker
-      fromDate={fromDate}
-      toDate={toDate}
-      onFromDateChange={(date) => {
-        handleDateChange(date, "from");
-        setPage(1);
-      }}
-      onToDateChange={(date) => {
-        handleDateChange(date, "to");
-        setPage(1);
-      }}
-    />
-  </div>
-</div>
+            <div className="md:col-span-2 xl:col-span-1">
+              <DateRangePicker
+                fromDate={fromDate}
+                toDate={toDate}
+                onFromDateChange={(date) => {
+                  handleDateChange(date, "from");
+                  setPage(1);
+                }}
+                onToDateChange={(date) => {
+                  handleDateChange(date, "to");
+                  setPage(1);
+                }}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Results Section */}
@@ -613,12 +651,3 @@ export default function WithdrawalReportPage() {
     </ReportPageWrapper>
   );
 }
-
-
-
-
-
-
-
-
-

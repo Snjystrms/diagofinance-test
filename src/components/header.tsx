@@ -190,7 +190,7 @@ export function Header() {
                   ? "2FA is enabled"
                   : "2FA is disabled"
             }
-            className="ib-portal-kicker inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] transition-all duration-200 hover:shadow-sm disabled:opacity-60 flex-shrink-0"
+            className="ib-portal-kicker inline-flex cursor-pointer items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] transition-all duration-200 hover:shadow-sm disabled:opacity-60 disabled:cursor-not-allowed flex-shrink-0"
           >
             {isLoading2FAStatus ? (
               <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
@@ -214,7 +214,7 @@ export function Header() {
             <button
               onClick={() => setSidebarSelectorOpen(true)}
               title="Choose Sidebar Layout"
-              className="flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background text-foreground"
+              className="flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background text-foreground"
             >
               <Layout className="h-4 w-4" />
             </button>
@@ -226,7 +226,7 @@ export function Header() {
               <button
                 onClick={toggleThemeMode}
                 title={`Switch to ${themeMode === "bright" ? "dark" : "bright"} mode`}
-                className="flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center rounded-full border border-border/60 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md active:scale-95 text-foreground overflow-hidden"
+                className="flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 cursor-pointer items-center justify-center rounded-full border border-border/60 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md active:scale-95 text-foreground overflow-hidden"
                 style={{
                   backgroundColor: themeMode === "dark" ? "#000000" : "#ffffff",
                   color: themeMode === "dark" ? "#ffffff" : "#000000",
@@ -283,7 +283,7 @@ export function Header() {
                 <button
                   onClick={() => setThemeCustomizerOpen(true)}
                   title="Customize Theme"
-                  className="flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center rounded-xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background text-foreground"
+                  className="flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 cursor-pointer items-center justify-center rounded-xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background text-foreground"
                 >
                   <Palette className="h-4 w-4" />
                 </button>
@@ -296,7 +296,7 @@ export function Header() {
             <button
               onClick={handleExportPreset}
               title="Copy current preset snapshot"
-              className="hidden lg:flex h-8 sm:h-9 flex-shrink-0 items-center gap-1.5 rounded-xl border border-border/60 bg-background/80 px-3 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background text-xs font-semibold text-foreground"
+              className="hidden lg:flex h-8 sm:h-9 flex-shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border border-border/60 bg-background/80 px-3 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background text-xs font-semibold text-foreground"
             >
               <Copy className="h-3.5 w-3.5" />
               Export
@@ -361,7 +361,7 @@ export function Header() {
                   </div>
                 </div>
               ) : (
-                <button className="flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 items-center justify-center rounded-full border border-primary/80 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background hover:border-primary p-1">
+                <button className="flex h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0 cursor-pointer items-center justify-center rounded-full border border-primary/80 bg-background/80 shadow-sm backdrop-blur-sm transition-all duration-200 hover:shadow-md hover:bg-background hover:border-primary p-1">
                   <Avatar className="h-7 w-7 sm:h-8 sm:w-8">
                     <AvatarFallback className="text-xs font-semibold bg-transparent">
                       {user?.name ? (

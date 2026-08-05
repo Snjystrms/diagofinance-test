@@ -28,7 +28,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { CalendarIcon, RefreshCw, Download, ChevronDown, BarChart3, Search } from "lucide-react";
+import {
+  CalendarIcon,
+  RefreshCw,
+  Download,
+  ChevronDown,
+  BarChart3,
+  Search,
+} from "lucide-react";
 
 import {
   adminDepositReportApi,
@@ -96,41 +103,44 @@ const statusBadge = (status: string | number) => {
 export default function ReportManagementPage() {
   const authCtx = useAuth?.();
   const { isManager, hasFeature } = useManagerPermissions();
-  const canViewReport = !isManager || hasFeature("reportManagement", "depositReport");
+  const canViewReport =
+    !isManager || hasFeature("reportManagement", "depositReport");
   const ctxToken = authCtx?.token;
   const token =
     ctxToken ||
-    (typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : "");
+    (typeof window !== "undefined"
+      ? localStorage.getItem("auth_token") || ""
+      : "");
 
   const [rows, setRows] = useState<DepositReportItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
-  const [perPage, setPerPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
+  const [perPage, setPerPage] = useQueryState(
+    "perPage",
+    parseAsInteger.withDefault(10),
+  );
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
 
   // Filters
   const [statusFilter, setStatusFilter] = useQueryState(
     "status",
-    parseAsString
+    parseAsString,
   );
   const [paymentMethodFilter, setPaymentMethodFilter] = useQueryState(
     "payment_method_id",
-    parseAsString
+    parseAsString,
   );
   const [sourceFilter, setSourceFilter] = useQueryState(
     "source",
-    parseAsString
+    parseAsString,
   );
-  const [isIbFilter, setIsIbFilter] = useQueryState(
-    "is_ib",
-    parseAsString
-  );
+  const [isIbFilter, setIsIbFilter] = useQueryState("is_ib", parseAsString);
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [fromDateStr, setFromDateStr] = useQueryState(
     "from_date",
-    parseAsString
+    parseAsString,
   );
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [toDateStr, setToDateStr] = useQueryState("to_date", parseAsString);
@@ -215,9 +225,13 @@ export default function ReportManagementPage() {
         per_page: perPage,
         search: searchQuery || undefined,
         sort_column: sortBy || undefined,
-        sort_order: sortOrder ? (sortOrder.toUpperCase() as "ASC" | "DESC") : undefined,
-        source: sourceFilter && sourceFilter !== "all" ? sourceFilter : undefined,
-        is_ib: isIbFilter && isIbFilter !== "all" ? Number(isIbFilter) : undefined,
+        sort_order: sortOrder
+          ? (sortOrder.toUpperCase() as "ASC" | "DESC")
+          : undefined,
+        source:
+          sourceFilter && sourceFilter !== "all" ? sourceFilter : undefined,
+        is_ib:
+          isIbFilter && isIbFilter !== "all" ? Number(isIbFilter) : undefined,
       });
 
       if (requestId !== requestIdRef.current) return;
@@ -243,7 +257,7 @@ export default function ReportManagementPage() {
         getAdminFriendlyErrorMessage(error, {
           resource: "deposit report",
           action: "load",
-        })
+        }),
       );
       setRows([]);
     } finally {
@@ -278,7 +292,7 @@ export default function ReportManagementPage() {
         setToDate(date);
       }
     },
-    []
+    [],
   );
 
   const handleResetFilters = useCallback(() => {
@@ -304,60 +318,82 @@ export default function ReportManagementPage() {
     setPage,
   ]);
 
-  const handleExport = useCallback(async (formatType: "xlsx" | "csv") => {
-    if (!canViewReport) {
-      toast.error("You do not have permission to export deposit report");
-      return;
-    }
-    if (!token) {
-      toast.error("Authentication required to export data");
-      return;
-    }
-    const exportToastId = `export-${formatType}`;
-    try {
-      toast.loading(`Preparing ${formatType.toUpperCase()} export...`, { id: exportToastId });
-      
-      const { blob, filename } = await adminDepositReportApi.export({
-        token,
-        format: formatType,
-        status: statusFilter && statusFilter !== "all" ? Number(statusFilter) : undefined,
-        payment_method_id:
-          paymentMethodFilter && paymentMethodFilter !== "all"
-            ? paymentMethodFilter
-            : paymentMethodFilter === "all"
-              ? "all"
-              : undefined,
-        from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
-        to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
-        search: searchQuery || undefined,
-        source: sourceFilter && sourceFilter !== "all" ? sourceFilter : undefined,
-        is_ib: isIbFilter && isIbFilter !== "all" ? Number(isIbFilter) : undefined,
-      });
-
-      if (blob.size === 0) {
-        toast.error("No data to export", { id: exportToastId });
+  const handleExport = useCallback(
+    async (formatType: "xlsx" | "csv") => {
+      if (!canViewReport) {
+        toast.error("You do not have permission to export deposit report");
         return;
       }
+      if (!token) {
+        toast.error("Authentication required to export data");
+        return;
+      }
+      const exportToastId = `export-${formatType}`;
+      try {
+        toast.loading(`Preparing ${formatType.toUpperCase()} export...`, {
+          id: exportToastId,
+        });
 
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(link.href);
+        const { blob, filename } = await adminDepositReportApi.export({
+          token,
+          format: formatType,
+          status:
+            statusFilter && statusFilter !== "all"
+              ? Number(statusFilter)
+              : undefined,
+          payment_method_id:
+            paymentMethodFilter && paymentMethodFilter !== "all"
+              ? paymentMethodFilter
+              : paymentMethodFilter === "all"
+                ? "all"
+                : undefined,
+          from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
+          to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
+          search: searchQuery || undefined,
+          source:
+            sourceFilter && sourceFilter !== "all" ? sourceFilter : undefined,
+          is_ib:
+            isIbFilter && isIbFilter !== "all" ? Number(isIbFilter) : undefined,
+        });
 
-      toast.success(`Successfully exported to ${filename}`, { id: exportToastId });
-    } catch (error: unknown) {
-      toast.error(
-        getAdminFriendlyErrorMessage(error, {
-          resource: "deposit report",
-          action: "export",
-        }),
-        { id: exportToastId }
-      );
-    }
-  }, [canViewReport, token, statusFilter, paymentMethodFilter, fromDate, toDate, searchQuery, sourceFilter, isIbFilter]);
+        if (blob.size === 0) {
+          toast.error("No data to export", { id: exportToastId });
+          return;
+        }
+
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        URL.revokeObjectURL(link.href);
+
+        toast.success(`Successfully exported to ${filename}`, {
+          id: exportToastId,
+        });
+      } catch (error: unknown) {
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "deposit report",
+            action: "export",
+          }),
+          { id: exportToastId },
+        );
+      }
+    },
+    [
+      canViewReport,
+      token,
+      statusFilter,
+      paymentMethodFilter,
+      fromDate,
+      toDate,
+      searchQuery,
+      sourceFilter,
+      isIbFilter,
+    ],
+  );
 
   // Count active filters
   const activeFilterCount = useMemo(() => {
@@ -372,7 +408,17 @@ export default function ReportManagementPage() {
     if (sortOrder) count++;
     if (searchQuery) count++;
     return count;
-  }, [statusFilter, paymentMethodFilter, sourceFilter, isIbFilter, fromDate, toDate, sortBy, sortOrder, searchQuery]);
+  }, [
+    statusFilter,
+    paymentMethodFilter,
+    sourceFilter,
+    isIbFilter,
+    fromDate,
+    toDate,
+    sortBy,
+    sortOrder,
+    searchQuery,
+  ]);
 
   const columns: ColumnDef<DepositReportItem>[] = useMemo(
     () => [
@@ -381,7 +427,11 @@ export default function ReportManagementPage() {
         header: "Sr. No.",
         accessorKey: "id",
         cell: ({ row, table }) => (
-          <SerialNumberCell row={row} table={table} className="font-mono text-sm" />
+          <SerialNumberCell
+            row={row}
+            table={table}
+            className="font-mono text-sm"
+          />
         ),
       },
       {
@@ -395,20 +445,26 @@ export default function ReportManagementPage() {
           return (
             <div className="space-y-0.5">
               <div className="font-medium">{name || "-"}</div>
-              <div className="text-xs text-muted-foreground">{email || "-"}</div>
+              <div className="text-xs text-muted-foreground">
+                {email || "-"}
+              </div>
             </div>
           );
         },
       },
       {
         id: "amount",
-        header: () => <ManualSortHeader sortKey="amount" title="Amount (USD)" />,
+        header: () => (
+          <ManualSortHeader sortKey="amount" title="Amount (USD)" />
+        ),
         accessorKey: "amount",
         cell: ({ row }) => (
-          <span className="font-medium whitespace-nowrap">{formatAmount(row.original.amount)}</span>
+          <span className="font-medium whitespace-nowrap">
+            {formatAmount(row.original.amount)}
+          </span>
         ),
       },
-       {
+      {
         id: "comment",
         header: "Comment",
         accessorKey: "comment",
@@ -417,7 +473,6 @@ export default function ReportManagementPage() {
             content={row.original.comment}
             title="Deposit Comment"
             description="Full comment for this deposit"
-            triggerLabel="View"
             emptyLabel="—"
           />
         ),
@@ -441,8 +496,9 @@ export default function ReportManagementPage() {
         accessorKey: "transaction_hash",
         cell: ({ row }) => {
           // const hash = row.original.transaction_hash;
-           const reference = row.original.reference;
-          if (!reference) return <span className="text-muted-foreground">—</span>;
+          const reference = row.original.reference;
+          if (!reference)
+            return <span className="text-muted-foreground">—</span>;
           return (
             <span
               className="font-mono text-xs max-w-[200px] truncate block"
@@ -477,19 +533,17 @@ export default function ReportManagementPage() {
         ),
       },
     ],
-    []
+    [],
   );
 
   if (loading && rows.length === 0) {
     return (
-      
-        <ListPageSkeleton
-          actionCount={2}
-          columnCount={6}
-          rowCount={10}
-          filterPillCount={4}
-        />
-      
+      <ListPageSkeleton
+        actionCount={2}
+        columnCount={6}
+        rowCount={10}
+        filterPillCount={4}
+      />
     );
   }
 
@@ -520,142 +574,157 @@ export default function ReportManagementPage() {
   }
 
   return (
-    
-      <div className="container mx-auto p-6 space-y-6">
-        {/* Header Section */}
-        <div className="flex items-center justify-between">
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header Section */}
+      <div className="flex items-center justify-between">
         <div>
-            <h1 className="flex items-center gap-2 text-2xl font-semibold">
-              <BarChart3 className="h-6 w-6 text-primary" />
-              Deposit Report
-            </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              Manage and view deposit transactions
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Download className="h-4 w-4" />
-                  Export
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => void handleExport("xlsx")}>Export Excel (.xlsx)</DropdownMenuItem>
-                {/* <DropdownMenuItem onClick={() => void handleExport("csv")}>Export CSV (.csv)</DropdownMenuItem> */}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={loadReport} 
-              disabled={loading}
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              Refresh
-            </Button>
-          </div>
+          <h1 className="flex items-center gap-2 text-2xl font-semibold">
+            <BarChart3 className="h-6 w-6 text-primary" />
+            Deposit Report
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Manage and view deposit transactions
+          </p>
         </div>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Download className="h-4 w-4" />
+                Export
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => void handleExport("xlsx")}>
+                Export Excel (.xlsx)
+              </DropdownMenuItem>
+              {/* <DropdownMenuItem onClick={() => void handleExport("csv")}>Export CSV (.csv)</DropdownMenuItem> */}
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-  <div className="space-y-1.5">
-    <Label htmlFor="status-filter" className="text-xs font-medium text-muted-foreground">Status</Label>
-    <Select
-      value={statusFilter || "all"}
-      onValueChange={(value) => {
-        setStatusFilter(value === "all" ? null : value);
-        setPage(1);
-      }}
-    >
-      <SelectTrigger id="status-filter" className="h-9 w-full">
-        <SelectValue placeholder="All Status" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">All Status</SelectItem>
-        <SelectItem value="0">Pending</SelectItem>
-        <SelectItem value="1">Approved</SelectItem>
-        <SelectItem value="2">Rejected</SelectItem>
-      </SelectContent>
-    </Select>
-  </div>
-  <div className="space-y-1.5">
-    <Label htmlFor="source-filter" className="text-xs font-medium text-muted-foreground">Source</Label>
-    <Select
-      value={sourceFilter || "all"}
-      onValueChange={(value) => {
-        setSourceFilter(value === "all" ? null : value);
-        setPage(1);
-      }}
-    >
-      <SelectTrigger id="source-filter" className="h-9 w-full">
-        <SelectValue placeholder="All Sources" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">All Sources</SelectItem>
-        <SelectItem value="online">Online</SelectItem>
-        <SelectItem value="bank">Bank</SelectItem>
-        <SelectItem value="usdt">USDT</SelectItem>
-      </SelectContent>
-    </Select>
-  </div>
-  <div className="space-y-1.5">
-    <Label htmlFor="ib-filter" className="text-xs font-medium text-muted-foreground">Partner (IB)</Label>
-    <Select
-      value={isIbFilter || "all"}
-      onValueChange={(value) => {
-        setIsIbFilter(value === "all" ? null : value);
-        setPage(1);
-      }}
-    >
-      <SelectTrigger id="ib-filter" className="h-9 w-full">
-        <SelectValue placeholder="All Users" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="all">All Users</SelectItem>
-        <SelectItem value="1">Only Partner (IB)</SelectItem>
-        <SelectItem value="0">Only Clients</SelectItem>
-      </SelectContent>
-    </Select>
-  </div>
-
-  <div className="md:col-span-2 lg:col-span-3 xl:col-span-1">
-    <DateRangePicker
-      fromDate={fromDate}
-      toDate={toDate}
-      onFromDateChange={(date) => {
-        handleDateChange(date, "from");
-        setPage(1);
-      }}
-      onToDateChange={(date) => {
-        handleDateChange(date, "to");
-        setPage(1);
-      }}
-    />
-  </div>
-</div>
-
-        {/* Results Section */}
-        <div className="rounded-lg border bg-card">
-          <div className="p-5">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-base font-semibold">Results</h2>
-              <span className="text-xs text-muted-foreground">
-                Showing {rows.length} of {total} results
-              </span>
-            </div>
-
-            {/* Data Table */}
-            <AppDataTable<DepositReportItem>
-              data={rows}
-              columns={columns}
-              pageCount={totalPages}
-            />
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={loadReport}
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
         </div>
       </div>
-    
+
+      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="space-y-1.5">
+          <Label
+            htmlFor="status-filter"
+            className="text-xs font-medium text-muted-foreground"
+          >
+            Status
+          </Label>
+          <Select
+            value={statusFilter || "all"}
+            onValueChange={(value) => {
+              setStatusFilter(value === "all" ? null : value);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger id="status-filter" className="h-9 w-full">
+              <SelectValue placeholder="All Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Status</SelectItem>
+              <SelectItem value="0">Pending</SelectItem>
+              <SelectItem value="1">Approved</SelectItem>
+              <SelectItem value="2">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label
+            htmlFor="source-filter"
+            className="text-xs font-medium text-muted-foreground"
+          >
+            Source
+          </Label>
+          <Select
+            value={sourceFilter || "all"}
+            onValueChange={(value) => {
+              setSourceFilter(value === "all" ? null : value);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger id="source-filter" className="h-9 w-full">
+              <SelectValue placeholder="All Sources" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Sources</SelectItem>
+              <SelectItem value="online">Online</SelectItem>
+              <SelectItem value="bank">Bank</SelectItem>
+              <SelectItem value="usdt">USDT</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5">
+          <Label
+            htmlFor="ib-filter"
+            className="text-xs font-medium text-muted-foreground"
+          >
+            Partner (IB)
+          </Label>
+          <Select
+            value={isIbFilter || "all"}
+            onValueChange={(value) => {
+              setIsIbFilter(value === "all" ? null : value);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger id="ib-filter" className="h-9 w-full">
+              <SelectValue placeholder="All Users" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Users</SelectItem>
+              <SelectItem value="1">Only Partner (IB)</SelectItem>
+              <SelectItem value="0">Only Clients</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="md:col-span-2 lg:col-span-3 xl:col-span-1">
+          <DateRangePicker
+            fromDate={fromDate}
+            toDate={toDate}
+            onFromDateChange={(date) => {
+              handleDateChange(date, "from");
+              setPage(1);
+            }}
+            onToDateChange={(date) => {
+              handleDateChange(date, "to");
+              setPage(1);
+            }}
+          />
+        </div>
+      </div>
+
+      {/* Results Section */}
+      <div className="rounded-lg border bg-card">
+        <div className="p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold">Results</h2>
+            <span className="text-xs text-muted-foreground">
+              Showing {rows.length} of {total} results
+            </span>
+          </div>
+
+          {/* Data Table */}
+          <AppDataTable<DepositReportItem>
+            data={rows}
+            columns={columns}
+            pageCount={totalPages}
+          />
+        </div>
+      </div>
+    </div>
   );
-} 
+}

@@ -244,7 +244,7 @@ export function NotificationInbox({ mode = "user", shouldFetchUnreadCount = fals
         <Button
           size="icon"
           variant="ghost"
-          className="relative flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9"
+          className="relative flex-shrink-0 h-8 w-8 sm:h-9 sm:w-9 cursor-pointer"
           aria-label="Open notifications"
         >
           <Bell className="h-4 w-4" aria-hidden="true" />
@@ -272,7 +272,7 @@ export function NotificationInbox({ mode = "user", shouldFetchUnreadCount = fals
                 <button
                   onClick={markAllAsRead}
                   disabled={isMarkingAll}
-                  className="text-xs font-medium text-muted-foreground hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+                  className="text-xs font-medium text-muted-foreground hover:underline cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {isMarkingAll ? "Marking..." : "Mark all as read"}
                 </button>
@@ -310,7 +310,7 @@ export function NotificationInbox({ mode = "user", shouldFetchUnreadCount = fals
                   >
                     <button
                       onClick={() => !n.isRead && markAsRead(n.id)}
-                      className="flex-1 flex items-start gap-3 text-left"
+                      className="flex-1 flex items-start gap-3 text-left cursor-pointer"
                     >
                       <div className={cn(
                         "mt-1 flex-shrink-0",
@@ -338,7 +338,7 @@ export function NotificationInbox({ mode = "user", shouldFetchUnreadCount = fals
                     {mode !== "admin" && (
                       <button
                         onClick={(e) => deleteNotification(n.id, e)}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 p-1 hover:bg-destructive/10 rounded"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0 p-1 cursor-pointer hover:bg-destructive/10 rounded"
                         aria-label="Delete notification"
                       >
                         <Trash2 className="h-4 w-4 text-muted-foreground hover:text-destructive" />

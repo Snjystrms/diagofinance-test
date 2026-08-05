@@ -2367,7 +2367,7 @@ export function DashboardPageContent() {
                                   <Button
                                     variant="outline"
                                     size="sm"
-                                    className="w-full text-xs h-9 font-semibold border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all duration-300"
+                                    className="w-full text-xs h-9 font-semibold border-primary/30 hover:bg-primary/10 hover:border-primary/50 transition-all duration-300 cursor-pointer flex items-center justify-center"
                                   >
                                     <Settings className="h-3.5 w-3.5 mr-2" />
                                     Complete Profile

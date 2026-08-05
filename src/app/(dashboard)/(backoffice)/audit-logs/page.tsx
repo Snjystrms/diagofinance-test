@@ -29,7 +29,6 @@ import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { format } from "date-fns";
 import { ViewContentDialog } from "@/components/ui/view-content-dialog";
 
-
 /* ---------------- Helpers ---------------- */
 const formatDateTime = (dateString: string) => {
   try {
@@ -49,7 +48,6 @@ const formatEntityLabel = (entity: string) => {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 };
-
 
 const getActorTypeBadge = (actorType: string) => {
   switch (actorType) {
@@ -72,11 +70,7 @@ const getActorTypeBadge = (actorType: string) => {
         </Badge>
       );
     default:
-      return (
-        <Badge variant="outline">
-          {actorType}
-        </Badge>
-      );
+      return <Badge variant="outline">{actorType}</Badge>;
   }
 };
 
@@ -87,15 +81,21 @@ export default function AuditLogsPage() {
   const [logs, setLogs] = useState<AuditLogItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
-  
+
   // URL sync query parameters
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
-  const [perPage, setPerPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
+  const [perPage, setPerPage] = useQueryState(
+    "perPage",
+    parseAsInteger.withDefault(10),
+  );
   const [actorType, setActorType] = useQueryState("actor_type", parseAsString);
   const [entity, setEntity] = useQueryState("entity", parseAsString);
   const [action, setAction] = useQueryState("action", parseAsString);
   const [actorId, setActorId] = useQueryState("actor_id", parseAsString);
-  const [fromDateStr, setFromDateStr] = useQueryState("from_date", parseAsString);
+  const [fromDateStr, setFromDateStr] = useQueryState(
+    "from_date",
+    parseAsString,
+  );
   const [toDateStr, setToDateStr] = useQueryState("to_date", parseAsString);
   const [search, setSearch] = useQueryState("search", parseAsString);
 
@@ -154,7 +154,10 @@ export default function AuditLogsPage() {
         setAvailableEntities(response.data);
       } else {
         // Fallback entities list in case of API failure/unwrapped format
-        const resObj = response as unknown as { success?: boolean; data?: string[] };
+        const resObj = response as unknown as {
+          success?: boolean;
+          data?: string[];
+        };
         if (resObj && Array.isArray(resObj.data)) {
           setAvailableEntities(resObj.data);
         } else {
@@ -177,7 +180,7 @@ export default function AuditLogsPage() {
             "usdt_deposit",
             "user",
             "user_2fa",
-            "withdrawal"
+            "withdrawal",
           ]);
         }
       }
@@ -202,7 +205,7 @@ export default function AuditLogsPage() {
         "usdt_deposit",
         "user",
         "user_2fa",
-        "withdrawal"
+        "withdrawal",
       ]);
     } finally {
       setLoadingEntities(false);
@@ -212,8 +215,6 @@ export default function AuditLogsPage() {
   useEffect(() => {
     void loadEntities();
   }, [loadEntities]);
-
-
 
   const [pagination, setPagination] = useState({
     current_page: 1,
@@ -241,7 +242,7 @@ export default function AuditLogsPage() {
     try {
       setLoading(true);
       setLoadError(null);
-      
+
       const response = await adminAuditLogsApi.list({
         token,
         page,
@@ -292,13 +293,14 @@ export default function AuditLogsPage() {
           total_pages: payload.last_page ?? 1,
         });
       } else {
-        const failure = (resObj && resObj.message) || "Failed to load audit logs";
+        const failure =
+          (resObj && resObj.message) || "Failed to load audit logs";
         setLoadError(failure);
         toast.error(
           getAdminFriendlyErrorMessage(failure, {
             resource: "audit logs",
             action: "load",
-          })
+          }),
         );
         setLogs([]);
       }
@@ -306,13 +308,27 @@ export default function AuditLogsPage() {
       console.error("Error loading audit logs:", error);
       setLoadError(error);
       toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "audit logs", action: "load" })
+        getAdminFriendlyErrorMessage(error, {
+          resource: "audit logs",
+          action: "load",
+        }),
       );
       setLogs([]);
     } finally {
       setLoading(false);
     }
-  }, [token, page, perPage, actorType, entity, action, actorId, fromDateStr, toDateStr, search]);
+  }, [
+    token,
+    page,
+    perPage,
+    actorType,
+    entity,
+    action,
+    actorId,
+    fromDateStr,
+    toDateStr,
+    search,
+  ]);
 
   useEffect(() => {
     void loadAuditLogs();
@@ -335,7 +351,15 @@ export default function AuditLogsPage() {
     setToDate(undefined);
     setFromDateStr(null);
     setToDateStr(null);
-  }, [setPage, setActorType, setEntity, setAction, setSearch, setFromDateStr, setToDateStr]);
+  }, [
+    setPage,
+    setActorType,
+    setEntity,
+    setAction,
+    setSearch,
+    setFromDateStr,
+    setToDateStr,
+  ]);
 
   const columns: ColumnDef<AuditLogItem>[] = useMemo(
     () => [
@@ -343,9 +367,7 @@ export default function AuditLogsPage() {
         id: "id",
         header: "Sr. No.",
         accessorKey: "id",
-        cell: ({ row, table }) => (
-          <SerialNumberCell row={row} table={table} />
-        ),
+        cell: ({ row, table }) => <SerialNumberCell row={row} table={table} />,
       },
       {
         id: "actor",
@@ -399,7 +421,6 @@ export default function AuditLogsPage() {
             content={row.original.description}
             title="Audit Log Description"
             description="Full description of this audit event"
-            triggerLabel="View"
             emptyLabel="—"
           />
         ),
@@ -426,7 +447,7 @@ export default function AuditLogsPage() {
         ),
       },
     ],
-    []
+    [],
   );
 
   if (loadError && logs.length === 0) {
@@ -470,7 +491,8 @@ export default function AuditLogsPage() {
               Audit Logs
             </h1>
             <p className="text-sm text-muted-foreground">
-              View system audit logs, actions, and history across all entity records
+              View system audit logs, actions, and history across all entity
+              records
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -573,8 +595,8 @@ export default function AuditLogsPage() {
           </div>
           <div className="text-sm text-muted-foreground">
             Page {pagination.current_page} of{" "}
-            {Math.max(1, pagination.total_pages)} - {perPage} entries per page
-            {" "}- {pagination.total} total records
+            {Math.max(1, pagination.total_pages)} - {perPage} entries per page -{" "}
+            {pagination.total} total records
           </div>
         </div>
 

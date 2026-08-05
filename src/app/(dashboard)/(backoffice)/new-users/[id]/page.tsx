@@ -23,7 +23,12 @@ import {
 import { formatApiDateTimeAsIST } from "@/lib/formatters";
 import { AuthenticatedDocumentViewer } from "@/components/authenticated-document-viewer";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
-import { ReusableDataTable, getStatusBadge as getCommonStatusBadge, type ColumnDef, type PaginationState as ReusablePaginationState } from "@/components/data-table";
+import {
+  ReusableDataTable,
+  getStatusBadge as getCommonStatusBadge,
+  type ColumnDef,
+  type PaginationState as ReusablePaginationState,
+} from "@/components/data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ProtectedRoute } from "@/components/protected-route";
@@ -254,7 +259,10 @@ function Mt5BalanceButton({ account }: { account: AdminUserMt5AccountItem }) {
       <div className="flex items-center gap-2">
         <Wallet className="h-4 w-4 text-muted-foreground" />
         <span className="font-medium">
-          {formatValueWithCurrency(displayBalance, getUserMt5BalanceCurrency(account))}
+          {formatValueWithCurrency(
+            displayBalance,
+            getUserMt5BalanceCurrency(account),
+          )}
         </span>
         <Button
           variant="ghost"
@@ -510,7 +518,7 @@ const withdrawalsColumns: ColumnDef<AdminUserTransactionItem>[] = [
       const raw = item as Record<string, unknown>;
       const isCrypto = item.payment_method?.type === "local";
       const isBank = item.payment_method?.type === "bank_transfer";
-      
+
       if (isCrypto) {
         return (
           <div className="max-w-[220px] whitespace-normal text-xs space-y-0.5">
@@ -525,9 +533,12 @@ const withdrawalsColumns: ColumnDef<AdminUserTransactionItem>[] = [
           </div>
         );
       }
-      
+
       if (isBank) {
-        const bd = raw.bank_detail as Record<string, unknown> | null | undefined;
+        const bd = raw.bank_detail as
+          | Record<string, unknown>
+          | null
+          | undefined;
         if (!bd) return "-";
         return (
           <div className="max-w-[220px] whitespace-normal text-xs space-y-0.5">
@@ -550,7 +561,7 @@ const withdrawalsColumns: ColumnDef<AdminUserTransactionItem>[] = [
           </div>
         );
       }
-      
+
       return "-";
     },
   },
@@ -640,7 +651,9 @@ const activityLogColumns: ColumnDef<AdminUserActivityLogItem>[] = [
   {
     header: "Browser",
     key: "browser",
-    render: (item) => [item.browser_name, item.browser_version].filter(Boolean).join(" ") || "-",
+    render: (item) =>
+      [item.browser_name, item.browser_version].filter(Boolean).join(" ") ||
+      "-",
   },
   {
     header: "Device",
@@ -670,10 +683,11 @@ const walletHistoryColumns: ColumnDef<AdminUserWalletHistoryItem>[] = [
     header: "Amount",
     key: "amount",
     render: (item) => {
-      const isNegative = ["withdrawal", "transfer_out"].includes(
-        String(item.payment_type ?? "").toLowerCase(),
-      ) || Number(item.amount ?? 0) < 0;
-      
+      const isNegative =
+        ["withdrawal", "transfer_out"].includes(
+          String(item.payment_type ?? "").toLowerCase(),
+        ) || Number(item.amount ?? 0) < 0;
+
       return (
         <span
           className={
@@ -697,7 +711,8 @@ const walletHistoryColumns: ColumnDef<AdminUserWalletHistoryItem>[] = [
   {
     header: "Wallet",
     key: "wallet_type",
-    render: (item) => item.wallet_type === "ib" ? "Partner" : (item.wallet_type || "-"),
+    render: (item) =>
+      item.wallet_type === "ib" ? "Partner" : item.wallet_type || "-",
   },
   {
     header: "Before",
@@ -722,7 +737,6 @@ const walletHistoryColumns: ColumnDef<AdminUserWalletHistoryItem>[] = [
         content={item.remark}
         title="Transaction Remark"
         description="Full remark for this transaction"
-        triggerLabel="View"
         emptyLabel="—"
       />
     ),
@@ -945,7 +959,7 @@ export default function NewUserDetailPage() {
       "usdt-transactions",
       "withdrawal-requests",
     ];
-    
+
     for (const key of possibleStorageKeys) {
       const returnUrl = tableStateStorage.getReturnUrl(key, false);
       if (returnUrl) {
@@ -954,7 +968,7 @@ export default function NewUserDetailPage() {
         return;
       }
     }
-    
+
     router.push("/new-users");
   };
 
@@ -980,31 +994,34 @@ export default function NewUserDetailPage() {
     createPaginatedState<AdminUserTransactionItem>(),
   );
   const [depositsPerPage, setDepositsPerPage] = useState(DEFAULT_PAGE_SIZE);
-  
+
   const [withdrawalsState, setWithdrawalsState] = useState(() =>
     createPaginatedState<AdminUserTransactionItem>(),
   );
-  const [withdrawalsPerPage, setWithdrawalsPerPage] = useState(DEFAULT_PAGE_SIZE);
-  
+  const [withdrawalsPerPage, setWithdrawalsPerPage] =
+    useState(DEFAULT_PAGE_SIZE);
+
   const [bankDetailsState, setBankDetailsState] = useState(() =>
     createPaginatedState<AdminUserBankDetailItem>(),
   );
-  const [bankDetailsPerPage, setBankDetailsPerPage] = useState(DEFAULT_PAGE_SIZE);
-  
+  const [bankDetailsPerPage, setBankDetailsPerPage] =
+    useState(DEFAULT_PAGE_SIZE);
+
   const [activityState, setActivityState] = useState(() =>
     createPaginatedState<AdminUserActivityLogItem>(),
   );
   const [activityPerPage, setActivityPerPage] = useState(DEFAULT_PAGE_SIZE);
-  
+
   const [referrer, setReferrer] = useState<AdminUserReferralItem | null>(null);
   const [referralLoading, setReferralLoading] = useState(false);
   const [referralError, setReferralError] = useState<unknown | null>(null);
   const [referralLoaded, setReferralLoaded] = useState(false);
-  
+
   const [walletHistoryState, setWalletHistoryState] = useState(() =>
     createPaginatedState<AdminUserWalletHistoryItem>(),
   );
-  const [walletHistoryPerPage, setWalletHistoryPerPage] = useState(DEFAULT_PAGE_SIZE);
+  const [walletHistoryPerPage, setWalletHistoryPerPage] =
+    useState(DEFAULT_PAGE_SIZE);
   const [mt5AccountsState, setMt5AccountsState] = useState(() =>
     createCollectionState<AdminUserMt5AccountItem>(),
   );
@@ -1723,19 +1740,19 @@ export default function NewUserDetailPage() {
               </div>
             </div>
             <div className="flex flex-wrap items-end gap-2">
-                {/* Login to Client Portal Button */}
-                      <div className="flex justify-end pt-4">
-                        <Button
-                          type="button"
-                          variant="default"
-                          onClick={() => setShowLoginAsClientDialog(true)}
-                          disabled={!crudUser?.email || !token}
-                          className="bg-gradient-to-r from-primary to-amber-500 hover:from-primary/90 hover:to-amber-500/90"
-                        >
-                          <LogIn className="mr-2 h-4 w-4" />
-                          Login to Client Portal
-                        </Button>
-                      </div>
+              {/* Login to Client Portal Button */}
+              <div className="flex justify-end pt-4">
+                <Button
+                  type="button"
+                  variant="default"
+                  onClick={() => setShowLoginAsClientDialog(true)}
+                  disabled={!crudUser?.email || !token}
+                  className="bg-gradient-to-r from-primary to-amber-500 hover:from-primary/90 hover:to-amber-500/90"
+                >
+                  <LogIn className="mr-2 h-4 w-4" />
+                  Login to Client Portal
+                </Button>
+              </div>
               <Button
                 type="button"
                 variant="outline"
@@ -1836,11 +1853,15 @@ export default function NewUserDetailPage() {
                             </div>
                             <div className="mt-2 flex items-center gap-2 text-sm font-medium text-foreground group-hover:text-primary">
                               <ShieldCheck className="h-4 w-4" />
-                              <span className="group-hover:underline">View Partner Details</span>
+                              <span className="group-hover:underline">
+                                View Partner Details
+                              </span>
                             </div>
                           </StatePreservingLink>
                         )}
-                        <div className={`rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm ${crudUser?.sponsor_id ? "sm:col-span-1" : "sm:col-span-2"}`}>
+                        <div
+                          className={`rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm ${crudUser?.sponsor_id ? "sm:col-span-1" : "sm:col-span-2"}`}
+                        >
                           <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                             Password
                           </div>
@@ -1913,8 +1934,6 @@ export default function NewUserDetailPage() {
                           </div>
                         </div>
                       </div>
-
-                    
                     </div>
 
                     <Card className="border-border/70 bg-background/80 shadow-none">
@@ -1983,7 +2002,9 @@ export default function NewUserDetailPage() {
                                 <div className="flex items-center gap-2">
                                   <AuthenticatedDocumentViewer
                                     src={kycData.document_urls.poi_front_file}
-                                    fileName={kycData.document_urls.poi_front_file}
+                                    fileName={
+                                      kycData.document_urls.poi_front_file
+                                    }
                                     label="POI Front"
                                     mode="thumbnail"
                                     previewClassName="h-12 w-16 rounded border border-border/60"
@@ -2000,7 +2021,9 @@ export default function NewUserDetailPage() {
                                 <div className="flex items-center gap-2">
                                   <AuthenticatedDocumentViewer
                                     src={kycData.document_urls.poa_front_file}
-                                    fileName={kycData.document_urls.poa_front_file}
+                                    fileName={
+                                      kycData.document_urls.poa_front_file
+                                    }
                                     label="POA Front"
                                     mode="thumbnail"
                                     previewClassName="h-12 w-16 rounded border border-border/60"
@@ -2017,7 +2040,9 @@ export default function NewUserDetailPage() {
                                 <div className="flex items-center gap-2">
                                   <AuthenticatedDocumentViewer
                                     src={kycData.document_urls.poa_back_file}
-                                    fileName={kycData.document_urls.poa_back_file}
+                                    fileName={
+                                      kycData.document_urls.poa_back_file
+                                    }
                                     label="POA Back"
                                     mode="thumbnail"
                                     previewClassName="h-12 w-16 rounded border border-border/60"
@@ -2163,10 +2188,18 @@ export default function NewUserDetailPage() {
                         <ReusableDataTable
                           data={depositsState.rows}
                           columns={depositsColumns}
-                          pagination={convertToReusablePagination(depositsState.pagination)}
+                          pagination={convertToReusablePagination(
+                            depositsState.pagination,
+                          )}
                           isLoading={depositsState.loading}
                           showSerialNumber={true}
-                          serialNumberStart={((depositsState.pagination?.current_page ?? 1) - 1) * (depositsState.pagination?.per_page ?? DEFAULT_PAGE_SIZE) + 1}
+                          serialNumberStart={
+                            ((depositsState.pagination?.current_page ?? 1) -
+                              1) *
+                              (depositsState.pagination?.per_page ??
+                                DEFAULT_PAGE_SIZE) +
+                            1
+                          }
                           onPageChange={(page) => void loadDepositsPage(page)}
                           onPerPageChange={(perPage) => {
                             setDepositsPerPage(perPage);
@@ -2195,11 +2228,21 @@ export default function NewUserDetailPage() {
                         <ReusableDataTable
                           data={withdrawalsState.rows}
                           columns={withdrawalsColumns}
-                          pagination={convertToReusablePagination(withdrawalsState.pagination)}
+                          pagination={convertToReusablePagination(
+                            withdrawalsState.pagination,
+                          )}
                           isLoading={withdrawalsState.loading}
                           showSerialNumber={true}
-                          serialNumberStart={((withdrawalsState.pagination?.current_page ?? 1) - 1) * (withdrawalsState.pagination?.per_page ?? DEFAULT_PAGE_SIZE) + 1}
-                          onPageChange={(page) => void loadWithdrawalsPage(page)}
+                          serialNumberStart={
+                            ((withdrawalsState.pagination?.current_page ?? 1) -
+                              1) *
+                              (withdrawalsState.pagination?.per_page ??
+                                DEFAULT_PAGE_SIZE) +
+                            1
+                          }
+                          onPageChange={(page) =>
+                            void loadWithdrawalsPage(page)
+                          }
                           onPerPageChange={(perPage) => {
                             setWithdrawalsPerPage(perPage);
                           }}
@@ -2229,7 +2272,7 @@ export default function NewUserDetailPage() {
                                 <TableHead>Sr. No.</TableHead>
                                 <TableHead>MT5 Login</TableHead>
                                 <TableHead>Account Type</TableHead>
-                                 <TableHead>Mode</TableHead>
+                                <TableHead>Mode</TableHead>
                                 <TableHead>Balance</TableHead>
                                 {/* <TableHead>Investor Password</TableHead>
                                 <TableHead>Main Password</TableHead> */}
@@ -2277,7 +2320,7 @@ export default function NewUserDetailPage() {
                                     <TableCell className="max-w-[220px] truncate">
                                       {item.account_type_name || "-"}
                                     </TableCell>
-                                     <TableCell className="max-w-[220px] truncate">
+                                    <TableCell className="max-w-[220px] truncate">
                                       {item.account_mode || "-"}
                                     </TableCell>
                                     <TableCell className="font-mono text-xs">
@@ -2311,9 +2354,13 @@ export default function NewUserDetailPage() {
                         <ReusableDataTable
                           data={bankDetailsState.rows}
                           columns={bankDetailsColumns}
-                          pagination={convertToReusablePagination(bankDetailsState.pagination)}
+                          pagination={convertToReusablePagination(
+                            bankDetailsState.pagination,
+                          )}
                           isLoading={bankDetailsState.loading}
-                          onPageChange={(page) => void loadBankDetailsPage(page)}
+                          onPageChange={(page) =>
+                            void loadBankDetailsPage(page)
+                          }
                           onPerPageChange={(perPage) => {
                             setBankDetailsPerPage(perPage);
                           }}
@@ -2341,10 +2388,18 @@ export default function NewUserDetailPage() {
                         <ReusableDataTable
                           data={activityState.rows}
                           columns={activityLogColumns}
-                          pagination={convertToReusablePagination(activityState.pagination)}
+                          pagination={convertToReusablePagination(
+                            activityState.pagination,
+                          )}
                           isLoading={activityState.loading}
                           showSerialNumber={true}
-                          serialNumberStart={((activityState.pagination?.current_page ?? 1) - 1) * (activityState.pagination?.per_page ?? DEFAULT_PAGE_SIZE) + 1}
+                          serialNumberStart={
+                            ((activityState.pagination?.current_page ?? 1) -
+                              1) *
+                              (activityState.pagination?.per_page ??
+                                DEFAULT_PAGE_SIZE) +
+                            1
+                          }
                           onPageChange={(page) => void loadActivityPage(page)}
                           onPerPageChange={(perPage) => {
                             setActivityPerPage(perPage);
@@ -2424,11 +2479,22 @@ export default function NewUserDetailPage() {
                         <ReusableDataTable
                           data={walletHistoryState.rows}
                           columns={walletHistoryColumns}
-                          pagination={convertToReusablePagination(walletHistoryState.pagination)}
+                          pagination={convertToReusablePagination(
+                            walletHistoryState.pagination,
+                          )}
                           isLoading={walletHistoryState.loading}
                           showSerialNumber={true}
-                          serialNumberStart={((walletHistoryState.pagination?.current_page ?? 1) - 1) * (walletHistoryState.pagination?.per_page ?? DEFAULT_PAGE_SIZE) + 1}
-                          onPageChange={(page) => void loadWalletHistoryPage(page)}
+                          serialNumberStart={
+                            ((walletHistoryState.pagination?.current_page ??
+                              1) -
+                              1) *
+                              (walletHistoryState.pagination?.per_page ??
+                                DEFAULT_PAGE_SIZE) +
+                            1
+                          }
+                          onPageChange={(page) =>
+                            void loadWalletHistoryPage(page)
+                          }
                           onPerPageChange={(perPage) => {
                             setWalletHistoryPerPage(perPage);
                           }}
