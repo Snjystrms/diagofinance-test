@@ -706,6 +706,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     navLabel: "IB Plans",
     managerCategories: ["IB Management"],
   },
+   {
+    path: "/commission-group",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "ib-management",
+    navLabel: "Commission Group",
+    managerCategories: ["IB Management"],
+  },
   // {
   //   path: "/set-ib-commission",
   //   audience: "backoffice",

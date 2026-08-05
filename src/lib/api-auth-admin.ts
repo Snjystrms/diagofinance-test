@@ -1059,6 +1059,7 @@ export interface AdminGroupItem {
   id: number;
   name: string;
   mt5_group_name?: string;
+  mode?: string;
   status?: number | boolean;
 }
 
@@ -3848,6 +3849,177 @@ export const adminIbPlansCrudApi = {
     }
 
     return apiCall<unknown>(`/admin/ib-plans/${planId}`, {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      },
+    });
+  },
+};
+
+export interface AdminCommissionGroupRate {
+  level: number;
+  rate: number;
+  symbol_category: string;
+}
+
+export interface AdminCommissionGroupItem {
+  id: number;
+  ib_plan_id: number;
+  plan_name: string;
+  group_id: number;
+  group_name: string;
+  mt5_group_name: string;
+  status: boolean | number | string;
+  created_at?: string;
+  updated_at?: string;
+  rates?: Record<string, Record<string, number>>;
+}
+
+export interface AdminCommissionGroupPagination {
+  current_page?: number;
+  total_pages?: number;
+  total_commission_groups?: number;
+  per_page?: number;
+}
+
+export interface AdminCommissionGroupListData {
+  commissionGroups: AdminCommissionGroupItem[];
+  pagination?: AdminCommissionGroupPagination;
+}
+
+export interface AdminCommissionGroupCategoriesData {
+  categories: string[];
+}
+
+export type AdminCommissionGroupCreateBody = {
+  ib_plan_id: number;
+  group_id: number;
+  rates: AdminCommissionGroupRate[];
+};
+
+export type AdminCommissionGroupUpdateBody = {
+  rates: AdminCommissionGroupRate[];
+  status: boolean;
+};
+
+export const adminCommissionGroupsApi = {
+  getCategories: (token: string) => {
+    if (!token) {
+      throw new Error("Token is required to fetch commission group categories");
+    }
+
+    return apiCall<AdminCommissionGroupCategoriesData>(
+      `/admin/commission-groups/categories`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      },
+    );
+  },
+
+  list: (token: string) => {
+    if (!token) {
+      throw new Error("Token is required to fetch commission groups");
+    }
+
+    return apiCall<AdminCommissionGroupListData>(
+      `/admin/commission-groups/list`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      },
+    );
+  },
+
+  getById: (groupId: number | string, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to fetch a commission group");
+    }
+
+    if (groupId === undefined || groupId === null || `${groupId}` === "") {
+      throw new Error(
+        "A valid commission group identifier is required to fetch it",
+      );
+    }
+
+    return apiCall<AdminCommissionGroupItem>(
+      `/admin/commission-groups/${groupId}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      },
+    );
+  },
+
+  create: (body: AdminCommissionGroupCreateBody, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to create a commission group");
+    }
+
+    return apiCall<AdminCommissionGroupItem>(
+      `/admin/commission-groups/create`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+        body: JSON.stringify(body),
+      },
+    );
+  },
+
+  update: (
+    groupId: number | string,
+    body: AdminCommissionGroupUpdateBody,
+    token: string,
+  ) => {
+    if (!token) {
+      throw new Error("Token is required to update a commission group");
+    }
+
+    if (groupId === undefined || groupId === null || `${groupId}` === "") {
+      throw new Error(
+        "A valid commission group identifier is required to update it",
+      );
+    }
+
+    return apiCall<AdminCommissionGroupItem>(
+      `/admin/commission-groups/${groupId}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+        body: JSON.stringify(body),
+      },
+    );
+  },
+
+  delete: (groupId: number | string, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to delete a commission group");
+    }
+
+    if (groupId === undefined || groupId === null || `${groupId}` === "") {
+      throw new Error(
+        "A valid commission group identifier is required to delete it",
+      );
+    }
+
+    return apiCall<unknown>(`/admin/commission-groups/${groupId}`, {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
