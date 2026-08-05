@@ -39,6 +39,7 @@ import {
   type AdminCommissionGroupUpdateBody,
 } from "@/lib/api";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
 import { getColumns } from "./columns";
 import { CommissionGroupForm } from "./commission-group-form";
 
@@ -75,15 +76,7 @@ const getExportTimestamp = () => {
 
 const formatExportDateTime = (value?: string | null) => {
   if (!value) return "-";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return formatApiDateTimeAsIST(value);
 };
 
 const coerceBoolean = (value: unknown, fallback = false) => {

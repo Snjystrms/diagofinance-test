@@ -105,6 +105,12 @@ export function CommissionGroupForm({
     [initialData, readOnly],
   );
 
+  const selectedGroup = useMemo(
+    () =>
+      groups.find((group) => String(group.id) === String(initialData?.group_id)),
+    [groups, initialData],
+  );
+
   useEffect(() => {
     if (open && initialData) {
       setSelectedPlanId(String(initialData.ib_plan_id ?? ""));
@@ -307,8 +313,19 @@ export function CommissionGroupForm({
                 <div className="space-y-2">
                   <Label>Group</Label>
                   {initialData ? (
-                    <div className="flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm">
-                      {initialData.mt5_group_name || initialData.group_name}
+                    <div className="flex min-h-9 flex-col justify-center rounded-md border bg-muted/40 px-3 py-1.5 text-sm">
+                      <span className="font-medium">
+                        {selectedGroup?.account_type_name ||
+                          selectedGroup?.name ||
+                          initialData.group_name}
+                      </span>
+                      {selectedGroup?.mt5_group_name ||
+                      initialData.mt5_group_name ? (
+                        <span className="text-xs text-muted-foreground">
+                          {selectedGroup?.mt5_group_name ||
+                            initialData.mt5_group_name}
+                        </span>
+                      ) : null}
                     </div>
                   ) : (
                     <Select
@@ -322,10 +339,16 @@ export function CommissionGroupForm({
                       <SelectContent>
                         {groups.map((group) => (
                           <SelectItem key={group.id} value={String(group.id)}>
-                            {/* {group.name} */}
-                            {group.mt5_group_name
-                              ? ` (${group.mt5_group_name})`
-                              : ""}
+                            <div className="flex flex-col">
+                              <span className="font-medium">
+                                {group.account_type_name || group.name}
+                              </span>
+                              {group.mt5_group_name ? (
+                                <span className="text-xs text-muted-foreground">
+                                  {group.mt5_group_name}
+                                </span>
+                              ) : null}
+                            </div>
                           </SelectItem>
                         ))}
                       </SelectContent>

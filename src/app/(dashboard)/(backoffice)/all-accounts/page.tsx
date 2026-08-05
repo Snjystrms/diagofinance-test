@@ -669,10 +669,10 @@ export default function AllAccountsPage() {
             <div className="space-y-1">
               <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
                 <Package className="h-6 w-6 text-primary" />
-                All Accounts
+                All Groups
               </h1>
               <p className="text-sm text-muted-foreground">
-                Create, update, and manage account types
+                Create, update, and manage group types
               </p>
             </div>
             <div className="flex flex-wrap gap-2">

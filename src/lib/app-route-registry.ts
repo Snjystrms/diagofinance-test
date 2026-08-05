@@ -242,7 +242,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   // },
   {
     id: "account-management",
-    title: "Account Management",
+    title: "Group Management",
     url: "/all-accounts",
     icon: Package,
     audience: "backoffice",
@@ -737,7 +737,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "account-management",
-    navLabel: "All Accounts",
+    navLabel: "All Groups",
     managerCategories: ["Account Management"],
   },
   {

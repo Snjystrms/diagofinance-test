@@ -23,7 +23,7 @@ export const getColumns = (opts: {
   {
     id: "name",
     accessorKey: "name",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Account Name" />,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Group Name" />,
     cell: ({ row }) => (
       <div className="flex flex-col">
         <span className="font-medium">{row.original.name}</span>

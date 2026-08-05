@@ -5,10 +5,19 @@ import { Award, Cog, Layers } from "lucide-react";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { Switch } from "@/components/ui/switch";
-import { formatDateTimeInIST } from "@/lib/formatters";
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
 import type { CommissionGroupRow } from "./page";
 
-const fmtDate = (value?: string) => (value ? formatDateTimeInIST(value) : "-");
+const formatDateTime = (value?: string | null) => {
+  if (!value) {
+    return "-";
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return formatApiDateTimeAsIST(value);
+};
 
 export const getColumns = (opts: {
   onToggleStatus: (id: string) => void;
@@ -94,25 +103,25 @@ export const getColumns = (opts: {
     cell: ({ row }) => (
       <div className="inline-flex items-center gap-1">
         <Award className="h-4 w-4 text-primary" />
-        <span className="text-sm">{fmtDate(row.original.created_at)}</span>
+        <span className="text-sm">{formatDateTime(row.original.created_at)}</span>
       </div>
     ),
     enableColumnFilter: false,
     enableSorting: false,
   },
-  {
-    id: "updated_at",
-    accessorKey: "updated_at",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Updated" />
-    ),
-    cell: ({ row }) => (
-      <div className="inline-flex items-center gap-1">
-        <Cog className="h-4 w-4 text-primary" />
-        <span className="text-sm">{fmtDate(row.original.updated_at)}</span>
-      </div>
-    ),
-    enableColumnFilter: false,
-    enableSorting: false,
-  },
+  // {
+  //   id: "updated_at",
+  //   accessorKey: "updated_at",
+  //   header: ({ column }) => (
+  //     <DataTableColumnHeader column={column} title="Updated" />
+  //   ),
+  //   cell: ({ row }) => (
+  //     <div className="inline-flex items-center gap-1">
+  //       <Cog className="h-4 w-4 text-primary" />
+  //       <span className="text-sm">{fmtDate(row.original.updated_at)}</span>
+  //     </div>
+  //   ),
+  //   enableColumnFilter: false,
+  //   enableSorting: false,
+  // },
 ];

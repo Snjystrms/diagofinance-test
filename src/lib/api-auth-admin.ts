@@ -1058,6 +1058,7 @@ export interface AccountTypeCreateResponseData {
 export interface AdminGroupItem {
   id: number;
   name: string;
+  account_type_name?: string;
   mt5_group_name?: string;
   mode?: string;
   status?: number | boolean;

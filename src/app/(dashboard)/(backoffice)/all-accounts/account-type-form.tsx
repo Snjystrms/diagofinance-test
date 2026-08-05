@@ -138,9 +138,9 @@ export function AccountTypeForm({
             <DialogTitle>
               {isEdit
                 ? readOnly
-                  ? "View Account Type"
-                  : "Edit Account Type"
-                : "Create Account Type"}
+                  ? "View Group Type"
+                  : "Edit Group Type"
+                : "Create Group Type"}
             </DialogTitle>
           </DialogHeader>
 
@@ -151,7 +151,7 @@ export function AccountTypeForm({
                 id="name"
                 value={form.name}
                 onChange={(e) => setForm({ ...form, name: e.target.value })}
-                placeholder="Standard account"
+                placeholder="Standard Group"
                 disabled={disabled}
                 required
               />
