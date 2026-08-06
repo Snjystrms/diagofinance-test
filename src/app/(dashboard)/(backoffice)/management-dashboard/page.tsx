@@ -263,25 +263,25 @@ export default function ManagementDashboardPage() {
                 icon={Users}
                 title="Total Clients"
                 value={formatCurrency(summary.total_clients)}
-                accent="from-sky-500/15 to-sky-500/5"
+                ibVariant="ib-portal-surface-primary"
               />
               <SummaryCard
                 icon={CircleDollarSign}
                 title="Total Deposit"
                 value={formatCurrency(summary.total_deposit)}
-                accent="from-emerald-500/15 to-emerald-500/5"
+                ibVariant="ib-portal-surface-emerald"
               />
               <SummaryCard
                 icon={ArrowDownLeft}
                 title="Total Withdraw"
                 value={formatCurrency(summary.total_withdraw)}
-                accent="from-amber-500/15 to-amber-500/5"
+                ibVariant="ib-portal-surface-amber"
               />
               <SummaryCard
                 icon={TrendingUp}
                 title="Net Deposit"
                 value={formatCurrency(summary.net_deposit)}
-                accent="from-violet-500/15 to-violet-500/5"
+                ibVariant="ib-portal-surface-primary"
               />
             </div>
 
@@ -458,23 +458,29 @@ function SummaryCard({
   icon: Icon,
   title,
   value,
-  accent,
+  ibVariant,
 }: {
   icon: typeof Users;
   title: string;
   value: string;
-  accent: string;
+  ibVariant: string;
 }) {
   return (
-    <Card className={`border-border/70 bg-gradient-to-br ${accent}`}>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-foreground/80">
-          {title}
-        </CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <p className="text-2xl font-semibold text-foreground">{value}</p>
+    <Card
+      className={`relative h-full overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ${ibVariant}`}
+    >
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-3 mb-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground leading-tight">
+            {title}
+          </p>
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+            <Icon className="h-4 w-4 text-foreground" />
+          </div>
+        </div>
+        <div className="text-2xl font-semibold tracking-tight text-foreground">
+          {value}
+        </div>
       </CardContent>
     </Card>
   );

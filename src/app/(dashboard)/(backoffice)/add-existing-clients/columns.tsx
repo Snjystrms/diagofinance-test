@@ -149,9 +149,13 @@ export const getColumns = (): ColumnDef<IBExistingClient>[] => [
       <DataTableColumnHeader column={column} title="Group" />
     ),
     cell: ({ row }) => (
-      <div className="flex items-center gap-2">
-        <span className="text-sm">{row.original.group_name}</span>
-        <span className="text-xs text-muted-foreground">({row.original.mt5_group_name})</span>
+      <div className="space-y-0.5 items-center">
+        <div className="truncate text-sm font-medium">
+          {row.original.group_name}
+        </div>
+        <div className="truncate text-xs text-muted-foreground">
+          {row.original.mt5_group_name}
+        </div>
       </div>
     ),
     enableColumnFilter: false,

@@ -5,10 +5,11 @@ import { Award, Cog } from "lucide-react";
 import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { Switch } from "@/components/ui/switch";
-import { formatDateTimeInIST } from "@/lib/formatters";
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
 import type { IbPlanRow } from "./page";
 
-const fmtDate = (value?: string) => (value ? formatDateTimeInIST(value) : "-");
+const fmtDate = (value?: string) =>
+  value ? formatApiDateTimeAsIST(value) : "-";
 
 export const getColumns = (opts: {
   onToggleStatus: (id: string) => void;
