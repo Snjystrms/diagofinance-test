@@ -3859,6 +3859,158 @@ export const adminIbPlansCrudApi = {
   },
 };
 
+export interface AdminIbCommissionItem {
+  id: number | string;
+  user_uuid: string;
+  user_email?: string;
+  user_name?: string;
+  ib_plan_id: number | string;
+  plan_name?: string;
+  status: boolean | number | string;
+  assigned_by?: string | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AdminIbCommissionPagination {
+  current_page?: number;
+  total_pages?: number;
+  total_ib_commissions?: number;
+  per_page?: number;
+}
+
+export interface AdminIbCommissionListData {
+  ibCommissions?: AdminIbCommissionItem[];
+  pagination?: AdminIbCommissionPagination;
+}
+
+export type AdminIbCommissionCreateBody = {
+  ib_plan_id: number;
+  user_uuid: string;
+};
+
+export type AdminIbCommissionUpdateBody = {
+  ib_plan_id: number;
+  status: boolean;
+};
+
+export const adminIbCommissionApi = {
+  list: (
+    token: string,
+    search?: string | null,
+    page: number = 1,
+    perPage: number = 10,
+    sortOrder?: string | null,
+    dateFrom?: string | null,
+    dateTo?: string | null,
+  ) => {
+    if (!token) {
+      throw new Error("Token is required to fetch IB commission assignments");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("page", String(page));
+    qs.set("per_page", String(perPage));
+    if (search && search.trim()) {
+      qs.set("search", search.trim());
+    }
+
+    const normalizedSortOrder = sortOrder?.trim().toLowerCase();
+    if (normalizedSortOrder === "asc" || normalizedSortOrder === "desc") {
+      qs.set("sort_order", normalizedSortOrder);
+    }
+
+    if (dateFrom && dateFrom.trim()) {
+      qs.set("date_from", dateFrom.trim());
+    }
+
+    if (dateTo && dateTo.trim()) {
+      qs.set("date_to", dateTo.trim());
+    }
+
+    const endpoint = `/admin/ib-commission/list${
+      qs.toString() ? `?${qs.toString()}` : ""
+    }`;
+
+    return apiCall<AdminIbCommissionListData>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  get: (userUuid: string, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to fetch an IB commission assignment");
+    }
+
+    const id = String(userUuid ?? "").trim();
+    if (!id) {
+      throw new Error("IB commission user UUID is required");
+    }
+
+    return apiCall<AdminIbCommissionItem>(
+      `/admin/ib-commission/${encodeURIComponent(id)}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+  },
+
+  create: (body: AdminIbCommissionCreateBody, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to create an IB commission assignment");
+    }
+
+    const userUuid = String(body.user_uuid ?? "").trim();
+    if (!userUuid) {
+      throw new Error("IB commission user UUID is required");
+    }
+
+    return apiCall<AdminIbCommissionItem>(
+      `/admin/ib-commission`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          ib_plan_id: body.ib_plan_id,
+          user_uuid: userUuid,
+        }),
+      },
+    );
+  },
+
+  update: (
+    userUuid: string,
+    body: AdminIbCommissionUpdateBody,
+    token: string,
+  ) => {
+    if (!token) {
+      throw new Error("Token is required to update an IB commission assignment");
+    }
+
+    const id = String(userUuid ?? "").trim();
+    if (!id) {
+      throw new Error("IB commission user UUID is required");
+    }
+
+    return apiCall<AdminIbCommissionItem>(
+      `/admin/ib-commission/${encodeURIComponent(id)}`,
+      {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
+      },
+    );
+  },
+};
+
 export interface AdminCommissionGroupRate {
   level: number;
   rate: number;
