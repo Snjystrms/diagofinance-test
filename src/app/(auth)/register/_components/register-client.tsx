@@ -1,19 +1,22 @@
-'use client';
+"use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import * as Flags from 'country-flag-icons/react/3x2';
-import { User, Mail, Lock, Phone, Globe, Gift, Check, X } from 'lucide-react';
+import { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import * as Flags from "country-flag-icons/react/3x2";
+import { User, Mail, Lock, Phone, Globe, Gift, Check, X } from "lucide-react";
 
-import { FALLBACK_COUNTRY_OPTIONS } from '@/lib/country-options';
-import { registerSchema, type RegisterFormData } from '@/lib/validations';
-import { useAuthMutations } from '@/hooks/use-auth-mutations';
-import { sanitizeDigits, sanitizePersonText } from '@/components/forms/validated-fields';
-import { Input } from '@/components/ui/input';
-import { PasswordInput } from '@/components/password-input';
+import { FALLBACK_COUNTRY_OPTIONS, resolveCountryForCode } from "@/lib/country-options";
+import { registerSchema, type RegisterFormData } from "@/lib/validations";
+import { useAuthMutations } from "@/hooks/use-auth-mutations";
+import {
+  sanitizeDigits,
+  sanitizePersonText,
+} from "@/components/forms/validated-fields";
+import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/password-input";
 import {
   Form,
   FormControl,
@@ -21,17 +24,17 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { ProtectedRoute } from '@/components/protected-route';
-import { Spinner } from '@/components/ui/spinner';
-import { AuthLayout } from '@/app/(auth)/_components/auth-layout';
+} from "@/components/ui/select";
+import { ProtectedRoute } from "@/components/protected-route";
+import { Spinner } from "@/components/ui/spinner";
+import { AuthLayout } from "@/app/(auth)/_components/auth-layout";
 
 // NOTE: country-flag-icons keys its flag components by ISO 3166-1 alpha-2
 // code (e.g. "IN", "AE", "US") — not by phone code or country name.
@@ -43,22 +46,33 @@ import { AuthLayout } from '@/app/(auth)/_components/auth-layout';
 function CountryFlag({ iso2 }: { iso2?: string }) {
   if (!iso2) return null;
   const FlagComponent = (
-    Flags as unknown as Record<string, React.ComponentType<{ className?: string; title?: string }>>
+    Flags as unknown as Record<
+      string,
+      React.ComponentType<{ className?: string; title?: string }>
+    >
   )[iso2.toUpperCase()];
   if (!FlagComponent) return null;
-  return <FlagComponent className="h-3.5 w-5 rounded-[2px] shrink-0 object-cover" title={iso2} />;
+  return (
+    <FlagComponent
+      className="h-3.5 w-5 rounded-[2px] shrink-0 object-cover"
+      title={iso2}
+    />
+  );
 }
 
 function PasswordRequirements({ password }: { password: string }) {
   const requirements = useMemo(
     () => [
-      { label: 'At least 8 characters', test: (p: string) => p.length >= 8 },
-      { label: 'One uppercase letter', test: (p: string) => /[A-Z]/.test(p) },
-      { label: 'One lowercase letter', test: (p: string) => /[a-z]/.test(p) },
-      { label: 'One number', test: (p: string) => /[0-9]/.test(p) },
-      { label: 'One special character', test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+      { label: "At least 8 characters", test: (p: string) => p.length >= 8 },
+      { label: "One uppercase letter", test: (p: string) => /[A-Z]/.test(p) },
+      { label: "One lowercase letter", test: (p: string) => /[a-z]/.test(p) },
+      { label: "One number", test: (p: string) => /[0-9]/.test(p) },
+      {
+        label: "One special character",
+        test: (p: string) => /[^A-Za-z0-9]/.test(p),
+      },
     ],
-    []
+    [],
   );
 
   return (
@@ -69,7 +83,7 @@ function PasswordRequirements({ password }: { password: string }) {
           <li
             key={req.label}
             className={`flex items-center gap-1.5 font-sans text-xs transition-colors ${
-              met ? 'text-emerald-500' : 'text-muted-foreground/60'
+              met ? "text-emerald-500" : "text-muted-foreground/60"
             }`}
           >
             {met ? <Check className="h-3 w-3" /> : <X className="h-3 w-3" />}
@@ -88,39 +102,46 @@ export function RegisterClient() {
 
   const form = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
-    mode: 'onBlur',
-    reValidateMode: 'onBlur',
+    mode: "onBlur",
+    reValidateMode: "onBlur",
     defaultValues: {
-      first_name: '',
-      last_name: '',
-      country_code: '',
-      email: '',
-      mobile: '',
-      country: '',
-      password: '',
-      confirm_password: '',
-      referral_code: '',
+      first_name: "",
+      last_name: "",
+      country_code: "",
+      email: "",
+      mobile: "",
+      country: "",
+      password: "",
+      confirm_password: "",
+      referral_code: "",
     },
   });
 
   const handleCountryChange = (selectedCountry: string) => {
-    const countryData = FALLBACK_COUNTRY_OPTIONS.find((country) => country.name === selectedCountry);
+    const countryData = FALLBACK_COUNTRY_OPTIONS.find(
+      (country) => country.name === selectedCountry,
+    );
     if (!countryData) return;
 
-    form.setValue('country', selectedCountry, { shouldValidate: true });
-    form.setValue('country_code', countryData.phone_code, { shouldValidate: true });
+    form.setValue("country", selectedCountry, { shouldValidate: true });
+    form.setValue("country_code", countryData.phone_code, {
+      shouldValidate: true,
+    });
   };
 
   useEffect(() => {
-    const ibCode = searchParams.get('ib');
-    const referralCode = searchParams.get('referral_code');
-    const nextReferralCode = ibCode || referralCode || '';
+    const ibCode = searchParams.get("ib");
+    const referralCode = searchParams.get("referral_code");
+    const nextReferralCode = ibCode || referralCode || "";
 
     if (!nextReferralCode) {
       return;
     }
 
-    form.setValue('referral_code', nextReferralCode, { shouldDirty: false, shouldValidate: true });
+    form.setValue("referral_code", nextReferralCode, {
+      shouldDirty: false,
+      shouldValidate: true,
+    });
   }, [form, searchParams]);
 
   const onSubmit = async (data: RegisterFormData) => {
@@ -144,16 +165,16 @@ export function RegisterClient() {
 
   const primaryButtonGradient: React.CSSProperties = {
     background:
-      'linear-gradient(0deg, #C50435, #C50435), linear-gradient(180deg, #EC0808 -78.33%, #500101 265%)',
+      "linear-gradient(0deg, #C50435, #C50435), linear-gradient(180deg, #EC0808 -78.33%, #500101 265%)",
   };
 
   const inputWrapperClass =
-    'relative flex items-center rounded-md border border-[#2A2A2E] bg-input/60 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/15 transition-all';
-  const iconSlotClass = 'flex h-11 w-11 shrink-0 items-center justify-center';
+    "relative flex items-center rounded-md border border-[#2A2A2E] bg-input/60 focus-within:border-primary/60 focus-within:ring-1 focus-within:ring-primary/15 transition-all";
+  const iconSlotClass = "flex h-11 w-11 shrink-0 items-center justify-center";
   const bareInputClass =
-    'w-full !bg-transparent border-0 font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-foreground placeholder:text-muted-foreground/60 !pl-0 pr-4 py-2.5 outline-none focus-visible:ring-0';
+    "w-full !bg-transparent border-0 font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-foreground placeholder:text-muted-foreground/60 !pl-0 pr-4 py-2.5 outline-none focus-visible:ring-0";
   const labelClass =
-    'font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-foreground';
+    "font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-foreground";
 
   return (
     <ProtectedRoute requireAuth={false}>
@@ -171,7 +192,10 @@ export function RegisterClient() {
 
           <div>
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-5"
+              >
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <FormField
                     control={form.control}
@@ -187,7 +211,11 @@ export function RegisterClient() {
                             <Input
                               placeholder="Enter your first name"
                               {...field}
-                              onChange={(e) => field.onChange(sanitizePersonText(e.target.value))}
+                              onChange={(e) =>
+                                field.onChange(
+                                  sanitizePersonText(e.target.value),
+                                )
+                              }
                               className={bareInputClass}
                             />
                           </div>
@@ -211,7 +239,11 @@ export function RegisterClient() {
                             <Input
                               placeholder="Enter your last name"
                               {...field}
-                              onChange={(e) => field.onChange(sanitizePersonText(e.target.value))}
+                              onChange={(e) =>
+                                field.onChange(
+                                  sanitizePersonText(e.target.value),
+                                )
+                              }
                               className={bareInputClass}
                             />
                           </div>
@@ -260,19 +292,29 @@ export function RegisterClient() {
                         value={field.value}
                       >
                         <FormControl>
-                          <SelectTrigger className="h-11 w-full !bg-input/60 border-[#2A2A2E] text-foreground focus:ring-primary/15">
-                            <div className="flex items-center gap-2">
+                          <SelectTrigger className="h-11 w-full min-w-0 !bg-input/60 border-[#2A2A2E] text-foreground focus:ring-primary/15 [&>span]:truncate [&>span]:block">
+                            <div className="flex min-w-0 items-center gap-2">
                               {/* <Globe className="h-4 w-4 text-muted-foreground shrink-0" /> */}
                               <SelectValue placeholder="Select country" />
                             </div>
                           </SelectTrigger>
                         </FormControl>
-                        <SelectContent side="bottom" avoidCollisions={false}>
+                        <SelectContent
+                          side="bottom"
+                          avoidCollisions={false}
+                          className="max-w-[--radix-select-trigger-width] w-[--radix-select-trigger-width]"
+                        >
                           {FALLBACK_COUNTRY_OPTIONS.map((country) => (
-                            <SelectItem key={country.name} value={country.name}>
-                              <span className="flex items-center gap-2">
-                                <CountryFlag iso2={(country as { iso2?: string }).iso2} />
-                                {country.name}
+                            <SelectItem
+                              key={country.name}
+                              value={country.name}
+                              className="truncate"
+                            >
+                              <span className="flex min-w-0 items-center gap-2">
+                                <CountryFlag
+                                  iso2={(country as { iso2?: string }).iso2}
+                                />
+                                <span className="truncate">{country.name}</span>
                               </span>
                             </SelectItem>
                           ))}
@@ -287,40 +329,60 @@ export function RegisterClient() {
                   <FormField
                     control={form.control}
                     name="country_code"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className={labelClass}>Code</FormLabel>
-                        <Select
-                          value={field.value}
-                          onValueChange={(value) => {
-                            field.onChange(value);
-                            const matchedCountry = FALLBACK_COUNTRY_OPTIONS.find(
-                              (country) => country.phone_code === value
-                            );
-                            if (matchedCountry) {
-                              form.setValue('country', matchedCountry.name, { shouldValidate: true });
-                            }
-                          }}
-                        >
-                          <FormControl>
-                            <SelectTrigger className="h-11 w-full !bg-input/60 border-[#2A2A2E] text-foreground focus:ring-primary/15">
-                              <SelectValue placeholder="Code" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent side="bottom" avoidCollisions={false}>
-                            {FALLBACK_COUNTRY_OPTIONS.map((country) => (
-                              <SelectItem key={`${country.name}-${country.phone_code}`} value={country.phone_code}>
-                                <span className="flex items-center gap-2">
-                                  <CountryFlag iso2={(country as { iso2?: string }).iso2} />
-                                  {country.phone_code}
-                                </span>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage className="text-red-400 text-xs" />
-                      </FormItem>
-                    )}
+                    render={({ field }) => {
+                      const preferredCountry = form.watch("country");
+                      const resolvedCodeCountry = resolveCountryForCode(
+                        field.value,
+                        preferredCountry,
+                      );
+                      return (
+                        <FormItem>
+                          <FormLabel className={labelClass}>Code</FormLabel>
+                          <Select
+                            value={resolvedCodeCountry?.iso2 ?? field.value ?? ""}
+                            onValueChange={(value) => {
+                              const matchedCountry =
+                                FALLBACK_COUNTRY_OPTIONS.find(
+                                  (country) => country.iso2 === value,
+                                );
+                              if (matchedCountry) {
+                                field.onChange(matchedCountry.phone_code);
+                                form.setValue("country", matchedCountry.name, {
+                                  shouldValidate: true,
+                                });
+                              }
+                            }}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="h-11 w-full min-w-0 !bg-input/60 border-[#2A2A2E] text-foreground focus:ring-primary/15 [&>span]:truncate [&>span]:block">
+                                <SelectValue placeholder="Code" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent
+                              side="bottom"
+                              avoidCollisions={false}
+                              className="max-w-[--radix-select-trigger-width] w-[--radix-select-trigger-width]"
+                            >
+                              {FALLBACK_COUNTRY_OPTIONS.map((country) => (
+                                <SelectItem
+                                  key={country.iso2}
+                                  value={country.iso2}
+                                  className="truncate"
+                                >
+                                  <span className="flex min-w-0 items-center gap-2">
+                                    <CountryFlag iso2={country.iso2} />
+                                    <span className="truncate">
+                                      {country.phone_code} ({country.name})
+                                    </span>
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage className="text-red-400 text-xs" />
+                        </FormItem>
+                      );
+                    }}
                   />
 
                   <FormField
@@ -328,7 +390,9 @@ export function RegisterClient() {
                     name="mobile"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className={labelClass}>Mobile Number</FormLabel>
+                        <FormLabel className={labelClass}>
+                          Mobile Number
+                        </FormLabel>
                         <FormControl>
                           <div className={inputWrapperClass}>
                             <span className={iconSlotClass}>
@@ -339,8 +403,12 @@ export function RegisterClient() {
                               inputMode="numeric"
                               maxLength={10}
                               {...field}
-                              value={field.value || ''}
-                              onChange={(event) => field.onChange(sanitizeDigits(event.target.value, 10))}
+                              value={field.value || ""}
+                              onChange={(event) =>
+                                field.onChange(
+                                  sanitizeDigits(event.target.value, 10),
+                                )
+                              }
                               className={bareInputClass}
                             />
                           </div>
@@ -373,7 +441,9 @@ export function RegisterClient() {
                         </div>
                       </FormControl>
                       <FormMessage className="text-red-400 text-xs" />
-                      {field.value && <PasswordRequirements password={field.value} />}
+                      {field.value && (
+                        <PasswordRequirements password={field.value} />
+                      )}
                     </FormItem>
                   )}
                 />
@@ -383,7 +453,9 @@ export function RegisterClient() {
                   name="confirm_password"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className={labelClass}>Confirm Password</FormLabel>
+                      <FormLabel className={labelClass}>
+                        Confirm Password
+                      </FormLabel>
                       <FormControl>
                         <div className={inputWrapperClass}>
                           <span className={iconSlotClass}>
@@ -409,7 +481,9 @@ export function RegisterClient() {
                   name="referral_code"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className={labelClass}>Referral Code</FormLabel>
+                      <FormLabel className={labelClass}>
+                        Referral Code
+                      </FormLabel>
                       <FormControl>
                         <div className={inputWrapperClass}>
                           <span className={iconSlotClass}>
@@ -446,14 +520,14 @@ export function RegisterClient() {
                       Creating account...
                     </>
                   ) : (
-                    'Create account'
+                    "Create account"
                   )}
                 </button>
               </form>
             </Form>
 
             <p className="mt-8 text-center font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-muted-foreground">
-              Already have an account?{' '}
+              Already have an account?{" "}
               <Link
                 href="/login"
                 className="font-normal text-primary hover:text-primary/80 transition-colors underline underline-offset-2"

@@ -317,6 +317,8 @@ export default function AllPartnersReportPage() {
         id: "id",
         header: "Sr. No.",
         accessorKey: "sr_no",
+        size: 70,
+        minSize: 60,
         cell: ({ row, table }) => (
           <SerialNumberCell row={row} table={table} className="font-mono text-sm" />
         ),
@@ -325,6 +327,8 @@ export default function AllPartnersReportPage() {
         id: "user",
         header: "Partner Details",
         accessorKey: "name",
+        size: 240,
+        minSize: 200,
         cell: ({ row }) => {
           const status = row.original.verification_status;
           return (
@@ -353,38 +357,78 @@ export default function AllPartnersReportPage() {
         id: "deposit",
         header: () => <ManualSortHeader sortKey="deposit" title="Personal Deposit" />,
         accessorKey: "deposit",
+        size: 140,
+        minSize: 130,
         cell: ({ row }) => (
           <span className="font-medium whitespace-nowrap">${formatAmount(row.original.deposit)}</span>
-        ),
-      },
-      {
-        id: "team_deposit",
-        header: () => <ManualSortHeader sortKey="team_deposit" title="Team Deposit" />,
-        accessorKey: "team_deposit",
-        cell: ({ row }) => (
-          <span className="font-medium whitespace-nowrap">${formatAmount(row.original.team_deposit)}</span>
         ),
       },
       {
         id: "withdrawal",
         header: () => <ManualSortHeader sortKey="withdrawal" title="Personal Withdrawal" />,
         accessorKey: "withdrawal",
+        size: 160,
+        minSize: 150,
         cell: ({ row }) => (
           <span className="font-medium whitespace-nowrap">${formatAmount(row.original.withdrawal)}</span>
+        ),
+      },
+      {
+        id: "direct_users_deposit",
+        header: () => <ManualSortHeader sortKey="direct_users_deposit" title="Direct Users Deposit" />,
+        accessorKey: "direct_users_deposit",
+        size: 170,
+        minSize: 160,
+        cell: ({ row }) => (
+          <span className="font-medium whitespace-nowrap">${formatAmount(row.original.direct_users_deposit)}</span>
+        ),
+      },
+      {
+        id: "direct_users_withdrawal",
+        header: () => <ManualSortHeader sortKey="direct_users_withdrawal" title="Direct Users Withdrawal" />,
+        accessorKey: "direct_users_withdrawal",
+        size: 180,
+        minSize: 170,
+        cell: ({ row }) => (
+          <span className="font-medium whitespace-nowrap">${formatAmount(row.original.direct_users_withdrawal)}</span>
+        ),
+      },
+      {
+        id: "team_deposit",
+        header: () => <ManualSortHeader sortKey="team_deposit" title="Team Deposit" />,
+        accessorKey: "team_deposit",
+        size: 130,
+        minSize: 120,
+        cell: ({ row }) => (
+          <span className="font-medium whitespace-nowrap">${formatAmount(row.original.team_deposit)}</span>
         ),
       },
       {
         id: "team_withdrawal",
         header: () => <ManualSortHeader sortKey="team_withdrawal" title="Team Withdrawal" />,
         accessorKey: "team_withdrawal",
+        size: 150,
+        minSize: 140,
         cell: ({ row }) => (
           <span className="font-medium whitespace-nowrap">${formatAmount(row.original.team_withdrawal)}</span>
+        ),
+      },
+     {
+        id: "net_balance",
+        header: () => <ManualSortHeader sortKey="net_balance" title="Net Balance" />,
+        accessorKey: "net_balance",
+        size: 150,
+        minSize: 140,
+        cell: ({ row }) => (
+          <span className="font-medium whitespace-nowrap">${formatAmount(row.original.net_balance)}</span>
         ),
       },
       {
         id: "ib_commission",
         header: () => <ManualSortHeader sortKey="ib_commission" title="Partner Commission" />,
         accessorKey: "ib_commission",
+        size: 160,
+        minSize: 150,
         cell: ({ row }) => (
           <span className="font-semibold text-primary whitespace-nowrap">${formatAmount(row.original.ib_commission)}</span>
         ),
@@ -393,6 +437,8 @@ export default function AllPartnersReportPage() {
         id: "main_wallet",
         header: () => <ManualSortHeader sortKey="main_wallet_balance" title="Main Wallet" />,
         accessorKey: "main_wallet_balance",
+        size: 120,
+        minSize: 110,
         cell: ({ row }) => (
           <span className="font-medium whitespace-nowrap">${formatAmount(row.original.main_wallet_balance)}</span>
         ),
@@ -401,6 +447,8 @@ export default function AllPartnersReportPage() {
         id: "partner_wallet",
         header: () => <ManualSortHeader sortKey="partner_wallet_balance" title="Partner Wallet" />,
         accessorKey: "partner_wallet_balance",
+        size: 130,
+        minSize: 120,
         cell: ({ row }) => (
           <span className="font-medium whitespace-nowrap">${formatAmount(row.original.partner_wallet_balance)}</span>
         ),
@@ -409,6 +457,8 @@ export default function AllPartnersReportPage() {
         id: "referred_by",
         header: "Referred By",
         accessorKey: "referred_by_name",
+        size: 180,
+        minSize: 160,
         cell: ({ row }) => {
           const name = row.original.referred_by_name;
           const email = row.original.referred_by_email;
@@ -425,6 +475,8 @@ export default function AllPartnersReportPage() {
         id: "created_at",
         header: () => <ManualSortHeader sortKey="created_at" title="Registered At" />,
         accessorKey: "created_at",
+        size: 170,
+        minSize: 160,
         cell: ({ row }) => (
           <div className="flex items-center gap-1 text-sm whitespace-nowrap">
             <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />

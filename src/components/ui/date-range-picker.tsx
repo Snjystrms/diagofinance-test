@@ -117,6 +117,7 @@ export function DateRangePicker({
               captionLayout="dropdown"
               fromYear={2020}
               toYear={new Date().getFullYear() + 1}
+              disabled={fromDate ? { before: fromDate } : undefined}
             />
           </PopoverContent>
         </Popover>

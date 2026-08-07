@@ -35,6 +35,10 @@ export function IbDashboardSidebar() {
   const { state, isMobile, closeMobileSidebar } = useSidebar();
   const sessionLogout = useSessionLogout();
   const isCollapsed = state === "collapsed";
+  const activeTextClass =
+    themeMode === "bright"
+      ? "text-[#48526b]"
+      : "text-white dark:text-sidebar-active-text";
 
   const handleMobileNav = useCallback(() => {
     if (isMobile) closeMobileSidebar();
@@ -121,13 +125,6 @@ export function IbDashboardSidebar() {
       "0 6px 18px -8px color-mix(in srgb, var(--sidebar-primary) 55%, transparent)",
   };
 
-  const activeIconStyle = {
-    backgroundImage:
-      "linear-gradient(135deg, var(--sidebar-primary) 0%, color-mix(in srgb, var(--sidebar-primary) 65%, white 35%) 100%)",
-    boxShadow:
-      "0 4px 12px -2px color-mix(in srgb, var(--sidebar-primary) 60%, transparent)",
-  };
-
   const walletGlow = {
     backgroundColor:
       "color-mix(in srgb, var(--sidebar-primary) 32%, transparent)",
@@ -179,12 +176,17 @@ export function IbDashboardSidebar() {
                 className={cn(
                   "w-full flex items-center justify-center rounded-2xl border p-2.5 transition-all duration-200",
                   active
-                    ? "text-sidebar-primary"
+                    ? activeTextClass
                     : "border-transparent bg-sidebar-accent/40 text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground",
                 )}
                 title={item.label}
               >
-                <Icon className="h-4.5 w-4.5" />
+                <Icon
+                  className={cn(
+                    "h-4.5 w-4.5",
+                    active && activeTextClass,
+                  )}
+                />
               </button>
             );
           })}
@@ -224,14 +226,14 @@ export function IbDashboardSidebar() {
         <div className="flex items-center gap-3 rounded-2xl border border-sidebar-border/60 px-3 py-2 shadow-sm ib-portal-hero">
           <div className="relative h-10 w-10 shrink-0">
             <Image
-              src="/diagologo.svg"
+              src="/vinnexia-logo.svg"
               alt="Vinnexia"
               fill
               className="object-contain dark:hidden"
               priority
             />
             <Image
-              src="/diagologo.svg"
+              src="/vinnexia-logo-dark.svg"
               alt="Vinnexia"
               fill
               className="object-contain hidden dark:block"
@@ -247,7 +249,7 @@ export function IbDashboardSidebar() {
                   : "text-transparent [-webkit-text-stroke:0.5px_white] [text-shadow:0_0_4px_rgba(255,255,255,0.25)]",
               )}
             >
-              Diago Finance
+              Vinnexia Capital
             </span>
             <span className="truncate font-arvo text-[10px] font-bold tracking-wide text-[#FFB800]">
               Precision, Power, Performance
@@ -353,22 +355,23 @@ export function IbDashboardSidebar() {
                     : "border-transparent bg-sidebar-accent/35 hover:bg-sidebar-accent/65 text-sidebar-foreground/70 hover:text-sidebar-foreground",
                 )}
               >
-                {/* Icon container */}
+                {/* Icon container — styled like the wallet card icon boxes */}
                 <div
-                  style={active ? activeIconStyle : undefined}
                   className={cn(
-                    "flex items-center justify-center rounded-xl p-2 transition-colors duration-200",
+                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg transition-colors duration-200",
                     active
-                      ? "text-sidebar-primary-foreground"
+                      ? "bg-sidebar-primary/15 text-sidebar-primary"
                       : "bg-sidebar-accent/60 text-sidebar-foreground/60 group-hover:text-sidebar-foreground",
                   )}
                 >
-                  <Icon className="h-[18px] w-[18px]" />
+                  <Icon className="h-3.5 w-3.5" />
                 </div>
                 <span
                   className={cn(
                     "text-[11px] font-medium leading-tight",
-                    active ? "text-sidebar-primary font-semibold" : "",
+                    active
+                      ? cn(activeTextClass, "font-semibold")
+                      : "",
                   )}
                 >
                   {item.label}

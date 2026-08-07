@@ -2413,12 +2413,15 @@ export interface IbUsersReportItem {
   team_deposit: number;
   withdrawal: number;
   team_withdrawal: number;
+  net_balance: number;
   ib_commission: number;
   main_wallet_balance: number;
   partner_wallet_balance: number;
   referred_by_name: string;
   referred_by_email: string;
   created_at: string;
+  direct_users_withdrawal: number;
+  direct_users_deposit: number;
 }
 
 export interface IbUsersReportListParams {

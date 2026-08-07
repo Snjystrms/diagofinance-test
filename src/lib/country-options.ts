@@ -234,3 +234,25 @@ export const FALLBACK_COUNTRY_OPTIONS: LocationCountryOption[] = RAW_COUNTRIES.m
 export const COUNTRY_CODES = [
   ...new Set(FALLBACK_COUNTRY_OPTIONS.map((country) => country.phone_code))
 ];
+
+export const resolveCountryForCode = (
+  phoneCode?: string | null,
+  preferredCountryName?: string | null,
+): LocationCountryOption | null => {
+  if (!phoneCode) return null;
+
+  if (preferredCountryName) {
+    const exact = FALLBACK_COUNTRY_OPTIONS.find(
+      (country) =>
+        country.phone_code === phoneCode &&
+        country.name === preferredCountryName,
+    );
+    if (exact) return exact;
+  }
+
+  return (
+    FALLBACK_COUNTRY_OPTIONS.find(
+      (country) => country.phone_code === phoneCode,
+    ) ?? null
+  );
+};

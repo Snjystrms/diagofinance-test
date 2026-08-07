@@ -29,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FALLBACK_COUNTRY_OPTIONS } from "@/lib/country-options";
+import { FALLBACK_COUNTRY_OPTIONS, resolveCountryForCode } from "@/lib/country-options";
 
 type UserFormDialogValues = FieldValues & {
   first_name: string;
@@ -163,12 +163,20 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
                         field.onChange(value);
                       }}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full min-w-0 [&>span]:truncate [&>span]:block">
                         <SelectValue placeholder="Select country" />
                       </SelectTrigger>
-                      <SelectContent side="bottom" avoidCollisions={false}>
+                      <SelectContent
+                        side="bottom"
+                        avoidCollisions={false}
+                        className="max-w-[--radix-select-trigger-width] w-[--radix-select-trigger-width]"
+                      >
                         {FALLBACK_COUNTRY_OPTIONS.map((country) => (
-                          <SelectItem key={country.name} value={country.name}>
+                          <SelectItem
+                            key={country.name}
+                            value={country.name}
+                            className="truncate"
+                          >
                             {country.name}
                              {/* ({country.phone_code}) */}
                           </SelectItem>
@@ -184,38 +192,52 @@ export function UserFormDialog<TFormValues extends UserFormDialogValues>({
                   name={fieldPath<TFormValues>("country_code")}
                   label="Country code"
                   rules={{ required: "Country code is required" }}
-                  renderControl={({ field }) => (
-                    <Select
-                      value={field.value}
-                      onValueChange={(value) => {
-                        field.onChange(value);
-                        const matchedCountry = FALLBACK_COUNTRY_OPTIONS.find(
-                          (country) => country.phone_code === value,
-                        );
-                        if (matchedCountry) {
-                          form.setValue(
-                            fieldPath<TFormValues>("country"),
-                            matchedCountry.name as TFormValues[FieldPath<TFormValues>],
-                            { shouldValidate: true },
+                  renderControl={({ field }) => {
+                    const preferredCountry = form.watch(
+                      fieldPath<TFormValues>("country"),
+                    );
+                    const resolvedCodeCountry = resolveCountryForCode(
+                      field.value,
+                      preferredCountry,
+                    );
+                    return (
+                      <Select
+                        value={resolvedCodeCountry?.iso2 ?? field.value ?? ""}
+                        onValueChange={(value) => {
+                          const matchedCountry = FALLBACK_COUNTRY_OPTIONS.find(
+                            (country) => country.iso2 === value,
                           );
-                        }
-                      }}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select country code" />
-                      </SelectTrigger>
-                      <SelectContent side="bottom" avoidCollisions={false}>
-                        {FALLBACK_COUNTRY_OPTIONS.map((country) => (
-                          <SelectItem
-                            key={`${country.name}-${country.phone_code}`}
-                            value={country.phone_code}
-                          >
-                            {country.phone_code} ({country.name})
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+                          if (matchedCountry) {
+                            field.onChange(matchedCountry.phone_code);
+                            form.setValue(
+                              fieldPath<TFormValues>("country"),
+                              matchedCountry.name as TFormValues[FieldPath<TFormValues>],
+                              { shouldValidate: true },
+                            );
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="w-full min-w-0 [&>span]:truncate [&>span]:block">
+                          <SelectValue placeholder="Select country code" />
+                        </SelectTrigger>
+                        <SelectContent
+                          side="bottom"
+                          avoidCollisions={false}
+                          className="max-w-[--radix-select-trigger-width] w-[--radix-select-trigger-width]"
+                        >
+                          {FALLBACK_COUNTRY_OPTIONS.map((country) => (
+                            <SelectItem
+                              key={country.iso2}
+                              value={country.iso2}
+                              className="truncate"
+                            >
+                              {country.phone_code} ({country.name})
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    );
+                  }}
                 />
                                 {/* ── Mobile ── */}
                 <ValidatedFormField
