@@ -2294,37 +2294,28 @@ export const adminBankDetailsApi = {
     });
   },
 
-  create: (body: AdminBankDetailCreateBody, token: string) => {
+   create: (body: AdminBankDetailCreateBody, token: string) => {
     if (!token) {
       throw new Error("Token is required to create bank details");
     }
 
+    const formData = new FormData();
+    formData.append("user_uuid", body.user_uuid);
+    formData.append("account_holder_name", body.account_holder_name);
+    formData.append("account_number", body.account_number);
+    formData.append("iban_number", body.iban_number);
+    formData.append("swift_ifsc_code", body.swift_ifsc_code);
+    formData.append("bank_name", body.bank_name);
+    formData.append("address", body.address);
+    formData.append("country", body.country);
     if (body.passbook_photo instanceof File) {
-      const formData = new FormData();
-      formData.append("user_uuid", body.user_uuid);
-      formData.append("account_holder_name", body.account_holder_name);
-      formData.append("account_number", body.account_number);
-      formData.append("iban_number", body.iban_number);
-      formData.append("swift_ifsc_code", body.swift_ifsc_code);
-      formData.append("bank_name", body.bank_name);
-      formData.append("address", body.address);
-      formData.append("country", body.country);
       formData.append("passbook_photo", body.passbook_photo);
-
-      return apiCall<AdminBankDetailItem>(`/admin/bank-details`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
     }
 
     return apiCall<AdminBankDetailItem>(`/admin/bank-details`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
     });
   },
 
@@ -2357,36 +2348,24 @@ export const adminBankDetailsApi = {
       throw new Error("Bank detail UUID is required");
     }
 
+    const formData = new FormData();
+    formData.append("account_holder_name", body.account_holder_name);
+    formData.append("account_number", body.account_number);
+    formData.append("iban_number", body.iban_number);
+    formData.append("swift_ifsc_code", body.swift_ifsc_code);
+    formData.append("bank_name", body.bank_name);
+    formData.append("address", body.address);
+    formData.append("country", body.country);
     if (body.passbook_photo instanceof File) {
-      const formData = new FormData();
-      formData.append("account_holder_name", body.account_holder_name);
-      formData.append("account_number", body.account_number);
-      formData.append("iban_number", body.iban_number);
-      formData.append("swift_ifsc_code", body.swift_ifsc_code);
-      formData.append("bank_name", body.bank_name);
-      formData.append("address", body.address);
-      formData.append("country", body.country);
       formData.append("passbook_photo", body.passbook_photo);
-
-      return apiCall<AdminBankDetailItem>(
-        `/admin/bank-details/${encodeURIComponent(id)}`,
-        {
-          method: "PUT",
-          headers: { Authorization: `Bearer ${token}` },
-          body: formData,
-        },
-      );
     }
 
     return apiCall<AdminBankDetailItem>(
       `/admin/bank-details/${encodeURIComponent(id)}`,
       {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
       },
     );
   },
@@ -2469,7 +2448,7 @@ export const adminBankDetailsApi = {
 
     return fetch(`${API_BASE_URL}${endpoint}`, {
       method: "GET",
-      headers: {
+      headers: { 
         Authorization: `Bearer ${token}`,
       },
     });
@@ -2514,6 +2493,44 @@ export const userBrokerCryptoWalletsApi = {
   },
 };
 
+const buildBrokerBankDetailFormData = (body: BrokerBankDetailPayload): FormData => {
+  const formData = new FormData();
+  formData.append("account_holder_name", body.account_holder_name);
+  formData.append("account_number", body.account_number);
+  formData.append("address", body.address);
+  formData.append("bank_name", body.bank_name);
+  formData.append("country", body.country);
+  formData.append("iban_number", body.iban_number);
+  formData.append("swift_ifsc_code", body.swift_ifsc_code);
+  formData.append("is_active", body.is_active ? "1" : "0");
+
+  const qrValue = body.upi_qr_code_url;
+  if (qrValue && qrValue.startsWith("data:image")) {
+    try {
+      const base64Data = qrValue.split(",")[1];
+      const mimeType = qrValue.split(";")[0].split(":")[1];
+      const byteString = atob(base64Data);
+      const arrayBuffer = new ArrayBuffer(byteString.length);
+      const uint8Array = new Uint8Array(arrayBuffer);
+
+      for (let i = 0; i < byteString.length; i++) {
+        uint8Array[i] = byteString.charCodeAt(i);
+      }
+
+      const blob = new Blob([uint8Array], { type: mimeType });
+      const file = new File([blob], "qr-code.png", { type: mimeType });
+      formData.append("upi_qr_code", file);
+    } catch (error) {
+      console.error("Failed to convert base64 to file:", error);
+      formData.append("upi_qr_code_url", qrValue);
+    }
+  } else if (qrValue) {
+    formData.append("upi_qr_code_url", qrValue);
+  }
+
+  return formData;
+};
+
 export const adminBrokerBankDetailsApi = {
   list: (token: string) => {
     if (!token) {
@@ -2534,59 +2551,10 @@ export const adminBrokerBankDetailsApi = {
       throw new Error("Token is required to create broker bank details");
     }
 
-    // Use FormData if QR code is base64 image - convert to file
-    const isBase64Image =
-      body.upi_qr_code_url && body.upi_qr_code_url.startsWith("data:image");
-
-    if (isBase64Image) {
-      const formData = new FormData();
-      formData.append("account_holder_name", body.account_holder_name);
-      formData.append("account_number", body.account_number);
-      formData.append("address", body.address);
-      formData.append("bank_name", body.bank_name);
-      formData.append("country", body.country);
-      formData.append("iban_number", body.iban_number);
-      formData.append("swift_ifsc_code", body.swift_ifsc_code);
-      formData.append("is_active", body.is_active ? "1" : "0");
-
-      // Convert base64 to File object
-      try {
-        const base64Data = body.upi_qr_code_url.split(",")[1];
-        const mimeType = body.upi_qr_code_url.split(";")[0].split(":")[1];
-        const byteString = atob(base64Data);
-        const arrayBuffer = new ArrayBuffer(byteString.length);
-        const uint8Array = new Uint8Array(arrayBuffer);
-
-        for (let i = 0; i < byteString.length; i++) {
-          uint8Array[i] = byteString.charCodeAt(i);
-        }
-
-        const blob = new Blob([uint8Array], { type: mimeType });
-        const file = new File([blob], "qr-code.png", { type: mimeType });
-        formData.append("upi_qr_code", file);
-      } catch (error) {
-        console.error("Failed to convert base64 to file:", error);
-        // Fallback: send as base64 string
-        formData.append("upi_qr_code_url", body.upi_qr_code_url);
-      }
-
-      return apiCall<BrokerBankDetailItem>(`/admin/broker-bank-details`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          // Don't set Content-Type for FormData - browser sets it with boundary
-        },
-        body: formData,
-      });
-    }
-
     return apiCall<BrokerBankDetailItem>(`/admin/broker-bank-details`, {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
+      headers: { Authorization: `Bearer ${token}` },
+      body: buildBrokerBankDetailFormData(body),
     });
   },
 
@@ -2623,64 +2591,12 @@ export const adminBrokerBankDetailsApi = {
       throw new Error("Broker bank detail ID is required");
     }
 
-    // Use FormData if QR code is base64 image - convert to file
-    const isBase64Image =
-      body.upi_qr_code_url && body.upi_qr_code_url.startsWith("data:image");
-
-    if (isBase64Image) {
-      const formData = new FormData();
-      formData.append("account_holder_name", body.account_holder_name);
-      formData.append("account_number", body.account_number);
-      formData.append("address", body.address);
-      formData.append("bank_name", body.bank_name);
-      formData.append("country", body.country);
-      formData.append("iban_number", body.iban_number);
-      formData.append("swift_ifsc_code", body.swift_ifsc_code);
-      formData.append("is_active", body.is_active ? "1" : "0");
-
-      // Convert base64 to File object
-      try {
-        const base64Data = body.upi_qr_code_url.split(",")[1];
-        const mimeType = body.upi_qr_code_url.split(";")[0].split(":")[1];
-        const byteString = atob(base64Data);
-        const arrayBuffer = new ArrayBuffer(byteString.length);
-        const uint8Array = new Uint8Array(arrayBuffer);
-
-        for (let i = 0; i < byteString.length; i++) {
-          uint8Array[i] = byteString.charCodeAt(i);
-        }
-
-        const blob = new Blob([uint8Array], { type: mimeType });
-        const file = new File([blob], "qr-code.png", { type: mimeType });
-        formData.append("upi_qr_code", file);
-      } catch (error) {
-        console.error("Failed to convert base64 to file:", error);
-        // Fallback: send as base64 string
-        formData.append("upi_qr_code_url", body.upi_qr_code_url);
-      }
-
-      return apiCall<BrokerBankDetailItem>(
-        `/admin/broker-bank-details/${detailId}`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            // Don't set Content-Type for FormData - browser sets it with boundary
-          },
-          body: formData,
-        },
-      );
-    }
-
     return apiCall<BrokerBankDetailItem>(
       `/admin/broker-bank-details/${detailId}`,
       {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
+        headers: { Authorization: `Bearer ${token}` },
+        body: buildBrokerBankDetailFormData(body),
       },
     );
   },
@@ -4664,7 +4580,11 @@ export interface AdminWithdrawalDecisionResponse {
 
 /* ─── User bank deposit ──────────────────────────────────────────────────── */
 
+export type BankDepositTarget = "mt5" | "wallet";
+
 export interface BankDepositRequest {
+  target: BankDepositTarget;
+  account_ref?: string | null;
   amount: number;
   transaction_id: string;
   payment_proof?: string | File | null;
@@ -4674,9 +4594,15 @@ export interface BankDepositRequest {
 export interface BankDepositSubmitData {
   id: number;
   transaction_id: string;
+  target: BankDepositTarget;
   payment_proof_url: string | null;
+  account_ref: string | null;
+  mt5_user_id: number | null;
+  user_comment: string | null;
   amount: number;
   status: string;
+  mt5_account_id: string | null;
+  mt5_login: number | null;
   created_at: string;
 }
 
@@ -4688,11 +4614,17 @@ export interface BankDepositRecord {
   payment_proof_url: string | null;
   status: string;
   admin_notes: string | null;
+  user_comment: string | null;
   approved_by: string | null;
   approved_by_manager_id: string | null;
   approved_at: string | null;
   created_at: string;
   updated_at: string;
+  mt5_user_id: number | null;
+  target: BankDepositTarget;
+  account_ref: string | null;
+  mt5_account_id: string | null;
+  mt5_login: number | null;
   walletTransaction?: {
     id: number;
     amount: number;
@@ -4715,6 +4647,10 @@ export interface BankDepositListData {
 export const bankDepositApi = {
   submit: (data: BankDepositRequest, token: string) => {
     const formData = new FormData();
+    formData.append("target", data.target);
+    if (data.target === "mt5") {
+      formData.append("account_ref", data.account_ref ?? "");
+    }
     formData.append("amount", String(data.amount));
     formData.append("transaction_id", data.transaction_id);
     if (data.payment_proof) {
@@ -4754,6 +4690,119 @@ export const bankDepositApi = {
   getRequest: (id: number | string, token: string) =>
     apiCall<{ success: boolean; data: BankDepositRecord }>(
       `/user/bank-deposit/user-requests/${id}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    ),
+};
+
+/* ─── User cash deposit ─────────────────────────────────────────────────── */
+
+export type CashDepositTarget = "mt5" | "wallet";
+
+export interface CashDepositRequest {
+  target: CashDepositTarget;
+  account_ref?: string | null;
+  amount: number;
+  comment?: string | null;
+  payment_proof?: File | null;
+}
+
+export interface CashDepositSubmitData {
+  id: number;
+  amount: number;
+  mt5_user_id: number | null;
+  user_comment: string | null;
+  status: number;
+  file: string | null;
+  created_at: string;
+  target: CashDepositTarget;
+  status_label: string;
+  mt5_account_id: string | null;
+  mt5_login: number | null;
+}
+
+export interface CashDepositRecord {
+  id: number;
+  user_id: number;
+  manager_id: number | null;
+  amount: number;
+  admin_comment: string | null;
+  user_comment: string | null;
+  payment_method_id: number | null;
+  payment_detail_id: number | null;
+  mt5_user_id: number | null;
+  user_type: number;
+  status: number;
+  file: string | null;
+  transaction_hash: string | null;
+  merchant_trade_no: string | null;
+  coinsbuy_deposit_id: string | null;
+  created_at: string;
+  updated_at: string;
+  mt5_account_id: string | null;
+  mt5_login: number | null;
+  status_label: string;
+  target: CashDepositTarget;
+  walletTransaction?: unknown;
+}
+
+export interface CashDepositListData {
+  requests: CashDepositRecord[];
+  pagination: {
+    current_page: number;
+    total_pages: number;
+    total_records: number;
+    limit: number;
+  };
+}
+
+export const cashDepositApi = {
+  submit: (data: CashDepositRequest, token: string) => {
+    const formData = new FormData();
+    formData.append("target", data.target);
+    if (data.target === "mt5") {
+      formData.append("account_ref", data.account_ref ?? "");
+    }
+    formData.append("amount", String(data.amount));
+    if (data.comment) {
+      formData.append("comment", data.comment);
+    }
+    if (data.payment_proof) {
+      formData.append("payment_proof", data.payment_proof);
+    }
+
+    return apiCall<{
+      success: boolean;
+      message: string;
+      data: CashDepositSubmitData;
+    }>(`/cash-deposit/submit`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+  },
+
+  listRequests: (token: string, page = 1, limit = 10, status?: string) => {
+    const qs = new URLSearchParams();
+    qs.set("page", String(page));
+    qs.set("limit", String(limit));
+    if (status && status !== "all") {
+      qs.set("status", status);
+    }
+    return apiCall<{ success: boolean; data: CashDepositListData }>(
+      `/user/cash-deposit/user-requests?${qs.toString()}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+  },
+
+  getRequest: (id: number | string, token: string) =>
+    apiCall<{ success: boolean; data: CashDepositRecord }>(
+      `/user/cash-deposit/user-requests/${id}`,
       {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },

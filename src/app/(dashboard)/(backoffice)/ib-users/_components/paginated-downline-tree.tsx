@@ -22,7 +22,7 @@ import toast from 'react-hot-toast';
 import { ApiErrorState } from '@/components/errors/api-error-state';
 import { TeamTreeSkeleton } from '@/components/loading/backoffice-page-skeletons';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Info, Search } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
 import type { AdminIbUser } from '@/lib/api';
 import { fetchUsersByLevel, NODE_H, NODE_W, levelColor, levelToDepth, type UserByLevel, type DirectRate } from '@/lib/downline-tree';
@@ -168,7 +168,7 @@ export function PaginatedDownlineTree({
           setNodesById(nextNodes);
           setEdges(nextEdges);
           setLoading(false);
-          toast(`${ibUser.name} has no downline users yet`, { icon: 'ℹ️' });
+          toast(`${ibUser.name} has no downline users yet`, { icon: <Info className="h-4 w-4" /> });
           return;
         }
 
@@ -309,7 +309,7 @@ export function PaginatedDownlineTree({
       });
 
       if (newUsers.length === 0) {
-        toast('No more children to load', { icon: 'ℹ️' });
+        toast('No more children to load', { icon: <Info className="h-4 w-4" /> });
         return;
       }
 
@@ -490,7 +490,8 @@ export function PaginatedDownlineTree({
         const term = needle.trim().toLowerCase();
         if (!term) return;
         const target = nodes.find((n) =>
-          n.data.username.toLowerCase().includes(term)
+          n.data.username.toLowerCase().includes(term) ||
+          (n.data.email ?? '').toLowerCase().includes(term)
         );
         if (target) {
           rf.setCenter(target.position.x + NODE_W / 2, target.position.y + (NODE_H + 40) / 2, {
@@ -498,7 +499,7 @@ export function PaginatedDownlineTree({
             duration: 600,
           });
         } else {
-          toast('No matching user on the graph', { icon: '🔍' });
+          toast('No matching user on the graph', { icon: <Search className="h-4 w-4" /> });
         }
       },
       [nodes, rf]
