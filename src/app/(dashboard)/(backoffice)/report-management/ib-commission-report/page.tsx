@@ -8,6 +8,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Landmark,
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
@@ -102,6 +103,18 @@ export default function IbCommissionReportPage() {
   useEffect(() => {
     setSearchInput(searchQuery || "");
   }, [searchQuery]);
+
+  const handleClearFilters = useCallback(() => {
+    setPage(1);
+    setFromDate(null);
+    setToDate(null);
+    setFromDateObj(undefined);
+    setToDateObj(undefined);
+    setSearchInput("");
+    setSearchQuery(null);
+  }, [setPage, setFromDate, setToDate, setSearchQuery]);
+
+  const hasActiveFilters = Boolean(searchQuery || fromDate || toDate);
 
   const loadReport = useCallback(async () => {
     if (!token) {
@@ -230,8 +243,8 @@ export default function IbCommissionReportPage() {
       isRefreshing={loading}
     >
       <div className="space-y-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex-1">
+        <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
+          <div className="min-w-[240px] flex-1">
             <ApiSearchBar
               value={searchInput}
               onChange={(value) => setSearchInput(value)}
@@ -244,37 +257,31 @@ export default function IbCommissionReportPage() {
               delay={300}
             />
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <DateRangePicker
-              fromDate={fromDateObj}
-              toDate={toDateObj}
-              onFromDateChange={(date) => {
-                setFromDateObj(date);
-                setPage(1);
-                setFromDate(date ? format(date, "yyyy-MM-dd") : null);
-              }}
-              onToDateChange={(date) => {
-                setToDateObj(date);
-                setPage(1);
-                setToDate(date ? format(date, "yyyy-MM-dd") : null);
-              }}
-            />
-            {(fromDate || toDate) && (
-              <Button
-                aria-label="Clear date filters"
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setPage(1);
-                  setFromDate(null);
-                  setToDate(null);
-                }}
-                className="h-9 text-muted-foreground hover:text-foreground text-xs"
-              >
-                Clear Dates
-              </Button>
-            )}
-          </div>
+          <DateRangePicker
+            fromDate={fromDateObj}
+            toDate={toDateObj}
+            onFromDateChange={(date) => {
+              setFromDateObj(date);
+              setPage(1);
+              setFromDate(date ? format(date, "yyyy-MM-dd") : null);
+            }}
+            onToDateChange={(date) => {
+              setToDateObj(date);
+              setPage(1);
+              setToDate(date ? format(date, "yyyy-MM-dd") : null);
+            }}
+          />
+          {hasActiveFilters ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearFilters}
+              className="h-9 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+              Clear Filters
+            </Button>
+          ) : null}
         </div>
 
         <div className="rounded-lg border bg-card">

@@ -12,7 +12,7 @@ import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { CalendarIcon, Search, Landmark } from "lucide-react";
+import { CalendarIcon, Landmark, X } from "lucide-react";
 
 import {
   adminIbWithdrawalReportApi,
@@ -199,9 +199,12 @@ export default function IbWithdrawalReportPage() {
   const handleResetFilters = useCallback(() => {
     setFromDate(undefined);
     setToDate(undefined);
+    setSearchInput("");
+    setSearchQuery(null);
     setPage(1);
   }, [
     setPage,
+    setSearchQuery,
   ]);
 
   const handleExport = useCallback(async (formatType: ReportExportFormat) => {
@@ -261,8 +264,9 @@ export default function IbWithdrawalReportPage() {
     let count = 0;
     if (fromDate) count++;
     if (toDate) count++;
+    if (searchQuery) count++;
     return count;
-  }, [fromDate, toDate]);
+  }, [fromDate, toDate, searchQuery]);
 
   const columns: ColumnDef<IbWithdrawalReportItem>[] = useMemo(
     () => [
@@ -410,20 +414,8 @@ export default function IbWithdrawalReportPage() {
       isRefreshing={loading}
     >
       <div className="space-y-4">
-       <div className="rounded-lg border bg-card p-5">
-  <div className="mb-4 flex items-center justify-between">
-    <h2 className="flex items-center gap-2 text-base font-semibold">
-      <Search className="h-4 w-4" />
-      Filters
-    </h2>
-    {activeFilterCount > 0 ? (
-      <Button variant="ghost" size="sm" onClick={handleResetFilters}>
-        Reset
-      </Button>
-    ) : null}
-  </div>
-  <div className="flex flex-col gap-3 md:flex-row md:items-end">
-    <div className="flex-1">
+       <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
+    <div className="min-w-[240px] flex-1">
       <ApiSearchBar
         value={searchInput}
         onChange={(value) => setSearchInput(value)}
@@ -448,8 +440,18 @@ export default function IbWithdrawalReportPage() {
         setPage(1);
       }}
     />
+    {activeFilterCount > 0 ? (
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={handleResetFilters}
+        className="h-9 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+      >
+        <X className="h-4 w-4" />
+        Clear Filters
+      </Button>
+    ) : null}
   </div>
-</div>
 
         {/* Results Section */}
         <div className="rounded-lg border bg-card">

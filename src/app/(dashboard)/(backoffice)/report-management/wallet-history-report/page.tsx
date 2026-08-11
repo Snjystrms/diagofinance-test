@@ -10,7 +10,8 @@ import { format } from "date-fns";
 import { AppDataTable } from "@/components/app-data-table";
 import { Badge } from "@/components/ui/badge";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { CalendarIcon, Wallet } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { CalendarIcon, Wallet, X } from "lucide-react";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 
 import {
@@ -183,6 +184,20 @@ export default function WalletHistoryReportPage() {
       }
     },
     [setFromDateParam, setToDateParam],
+  );
+
+  const handleClearFilters = useCallback(() => {
+    setSearchInput("");
+    setSearchQuery(null);
+    setFromDate(undefined);
+    setFromDateParam(null);
+    setToDate(undefined);
+    setToDateParam(null);
+    setPage(1);
+  }, [setSearchQuery, setFromDateParam, setToDateParam, setPage]);
+
+  const hasActiveFilters = Boolean(
+    searchQuery || fromDateParam || toDateParam,
   );
 
   const handleExport = useCallback(
@@ -361,7 +376,7 @@ export default function WalletHistoryReportPage() {
       isRefreshing={loading}
     >
       <div className="space-y-4">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end">
+        <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
           <div className="flex-1">
             <ApiSearchBar
               value={searchInput}
@@ -387,6 +402,17 @@ export default function WalletHistoryReportPage() {
               setPage(1);
             }}
           />
+          {hasActiveFilters ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearFilters}
+              className="h-9 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+              Clear Filters
+            </Button>
+          ) : null}
         </div>
 
         {/* Results Section */}

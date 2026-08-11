@@ -9,7 +9,9 @@ import { format } from "date-fns";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
-import { CalendarIcon } from "lucide-react";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { Button } from "@/components/ui/button";
+import { CalendarIcon, X } from "lucide-react";
 
 import {
   adminLoginActivityReportApi,
@@ -45,10 +47,50 @@ export default function LoginActivityReportPage() {
   const [searchQuery, setSearchQuery] = useQueryState("search", parseAsString);
   const [searchInput, setSearchInput] = useState(searchQuery || "");
 
+  // Date filters
+  const [fromDateParam, setFromDateParam] = useQueryState(
+    "from_date",
+    parseAsString,
+  );
+  const [toDateParam, setToDateParam] = useQueryState("to_date", parseAsString);
+  const [fromDate, setFromDate] = useState<Date | undefined>(
+    fromDateParam ? new Date(fromDateParam) : undefined,
+  );
+  const [toDate, setToDate] = useState<Date | undefined>(
+    toDateParam ? new Date(toDateParam) : undefined,
+  );
+
   // Sync search input with query param
   useEffect(() => {
     setSearchInput(searchQuery || "");
   }, [searchQuery]);
+
+  const handleDateChange = useCallback(
+    (date: Date | undefined, type: "from" | "to") => {
+      if (type === "from") {
+        setFromDate(date);
+        setFromDateParam(date ? format(date, "yyyy-MM-dd") : null);
+      } else {
+        setToDate(date);
+        setToDateParam(date ? format(date, "yyyy-MM-dd") : null);
+      }
+    },
+    [setFromDateParam, setToDateParam],
+  );
+
+  const handleClearFilters = useCallback(() => {
+    setSearchInput("");
+    setSearchQuery(null);
+    setFromDate(undefined);
+    setFromDateParam(null);
+    setToDate(undefined);
+    setToDateParam(null);
+    setPage(1);
+  }, [setSearchQuery, setFromDateParam, setToDateParam, setPage]);
+
+  const hasActiveFilters = Boolean(
+    searchQuery || fromDateParam || toDateParam,
+  );
 
   const loadReport = useCallback(async () => {
     if (!token) {
@@ -64,6 +106,8 @@ export default function LoginActivityReportPage() {
       const response = await adminLoginActivityReportApi.list({
         token,
         search: searchQuery || undefined,
+        from_date: fromDateParam || undefined,
+        to_date: toDateParam || undefined,
         page,
         per_page: perPage,
       });
@@ -100,6 +144,8 @@ export default function LoginActivityReportPage() {
     page,
     perPage,
     searchQuery,
+    fromDateParam,
+    toDateParam,
   ]);
 
   useEffect(() => {
@@ -123,6 +169,8 @@ export default function LoginActivityReportPage() {
         token,
         format: formatType,
         search: searchQuery || undefined,
+        from_date: fromDateParam || undefined,
+        to_date: toDateParam || undefined,
       });
 
       if (blob.size === 0) {
@@ -152,6 +200,8 @@ export default function LoginActivityReportPage() {
     canViewReport,
     token,
     searchQuery,
+    fromDateParam,
+    toDateParam,
   ]);
 
   const columns: ColumnDef<LoginActivityReportItem>[] = useMemo(
@@ -297,18 +347,43 @@ export default function LoginActivityReportPage() {
       isRefreshing={loading}
     >
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <ApiSearchBar
-            value={searchInput}
-            onChange={(value) => setSearchInput(value)}
-            onSearch={(value) => {
+        <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
+          <div className="min-w-[240px] flex-1">
+            <ApiSearchBar
+              value={searchInput}
+              onChange={(value) => setSearchInput(value)}
+              onSearch={(value) => {
+                setPage(1);
+                setSearchQuery(value.trim() || null);
+              }}
+              placeholder="Search in IP address..."
+              minimumLength={3}
+              delay={300}
+            />
+          </div>
+          <DateRangePicker
+            fromDate={fromDate}
+            toDate={toDate}
+            onFromDateChange={(date) => {
+              handleDateChange(date, "from");
               setPage(1);
-              setSearchQuery(value.trim() || null);
             }}
-            placeholder="Search in IP address..."
-            minimumLength={3}
-            delay={300}
+            onToDateChange={(date) => {
+              handleDateChange(date, "to");
+              setPage(1);
+            }}
           />
+          {hasActiveFilters ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearFilters}
+              className="h-9 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+              Clear Filters
+            </Button>
+          ) : null}
         </div>
 
         {/* Results Section */}

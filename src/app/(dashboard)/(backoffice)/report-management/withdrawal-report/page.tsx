@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { CalendarIcon, Search, TrendingDown } from "lucide-react";
+import { CalendarIcon, TrendingDown, X } from "lucide-react";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 
 import {
@@ -511,19 +511,8 @@ export default function WithdrawalReportPage() {
       isRefreshing={loading}
     >
       <div className="space-y-4">
-        <div className="rounded-lg border bg-card p-5">
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="flex items-center gap-2 text-base font-semibold">
-              <Search className="h-4 w-4" />
-              Filters
-            </h2>
-            {activeFilterCount > 0 ? (
-              <Button variant="ghost" size="sm" onClick={handleResetFilters}>
-                Reset
-              </Button>
-            ) : null}
-          </div>
-          <div className="mb-4">
+        <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
+          <div className="min-w-[240px] flex-1">
             <ApiSearchBar
               value={searchInput}
               onChange={(value) => setSearchInput(value)}
@@ -536,97 +525,104 @@ export default function WithdrawalReportPage() {
               delay={300}
             />
           </div>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="status-filter"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                Status
-              </Label>
-              <Select
-                value={statusFilter || undefined}
-                onValueChange={(value) => {
-                  setStatusFilter(value === "all" ? null : value);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger id="status-filter" className="h-9 w-full">
-                  <SelectValue placeholder="All Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Status</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="user-type-filter"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                User Type
-              </Label>
-              <Select
-                value={isIbFilter || undefined}
-                onValueChange={(value) => {
-                  setIsIbFilter(value === "all" ? null : value);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger id="user-type-filter" className="h-9 w-full">
-                  <SelectValue placeholder="All Users" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Users</SelectItem>
-                  <SelectItem value="1">Partners Only</SelectItem>
-                  <SelectItem value="0">Non-Partners Only</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label
-                htmlFor="payment-method-filter"
-                className="text-xs font-medium text-muted-foreground"
-              >
-                Payment Method
-              </Label>
-              <Select
-                value={paymentMethodFilter || undefined}
-                onValueChange={(value) => {
-                  setPaymentMethodFilter(value === "all" ? null : value);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger
-                  id="payment-method-filter"
-                  className="h-9 w-full"
-                >
-                  <SelectValue placeholder="All Methods" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Methods</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="md:col-span-2 xl:col-span-1">
-              <DateRangePicker
-                fromDate={fromDate}
-                toDate={toDate}
-                onFromDateChange={(date) => {
-                  handleDateChange(date, "from");
-                  setPage(1);
-                }}
-                onToDateChange={(date) => {
-                  handleDateChange(date, "to");
-                  setPage(1);
-                }}
-              />
-            </div>
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="status-filter"
+              className="text-xs font-medium text-muted-foreground"
+            >
+              Status
+            </Label>
+            <Select
+              value={statusFilter || undefined}
+              onValueChange={(value) => {
+                setStatusFilter(value === "all" ? null : value);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger id="status-filter" className="h-9 w-full">
+                <SelectValue placeholder="All Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="user-type-filter"
+              className="text-xs font-medium text-muted-foreground"
+            >
+              User Type
+            </Label>
+            <Select
+              value={isIbFilter || undefined}
+              onValueChange={(value) => {
+                setIsIbFilter(value === "all" ? null : value);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger id="user-type-filter" className="h-9 w-full">
+                <SelectValue placeholder="All Users" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Users</SelectItem>
+                <SelectItem value="1">Partners Only</SelectItem>
+                <SelectItem value="0">Non-Partners Only</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5">
+            <Label
+              htmlFor="payment-method-filter"
+              className="text-xs font-medium text-muted-foreground"
+            >
+              Payment Method
+            </Label>
+            <Select
+              value={paymentMethodFilter || undefined}
+              onValueChange={(value) => {
+                setPaymentMethodFilter(value === "all" ? null : value);
+                setPage(1);
+              }}
+            >
+              <SelectTrigger
+                id="payment-method-filter"
+                className="h-9 w-full"
+              >
+                <SelectValue placeholder="All Methods" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Methods</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <DateRangePicker
+            fromDate={fromDate}
+            toDate={toDate}
+            onFromDateChange={(date) => {
+              handleDateChange(date, "from");
+              setPage(1);
+            }}
+            onToDateChange={(date) => {
+              handleDateChange(date, "to");
+              setPage(1);
+            }}
+          />
+          {activeFilterCount > 0 ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleResetFilters}
+              className="h-9 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+              Clear Filters
+            </Button>
+          ) : null}
         </div>
 
         {/* Results Section */}

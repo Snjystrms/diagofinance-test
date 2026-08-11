@@ -18,8 +18,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { ManualSortHeader } from "@/components/data-table/manual-sort-header";
-import { CalendarIcon, RefreshCw, Download, ChevronDown, BarChart3, TrendingUp, TrendingDown, Users } from "lucide-react";
+import { CalendarIcon, RefreshCw, Download, ChevronDown, BarChart3, TrendingUp, TrendingDown, Users, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 import {
@@ -90,6 +91,14 @@ export default function DailySummaryReportPage() {
     parseAsString
   );
 
+  // Search
+  const [searchQuery, setSearchQuery] = useQueryState("search", parseAsString);
+  const [searchInput, setSearchInput] = useState(searchQuery || "");
+
+  useEffect(() => {
+    setSearchInput(searchQuery || "");
+  }, [searchQuery]);
+
   // Sync date state with query params
   useEffect(() => {
     if (fromDateStr) {
@@ -145,6 +154,7 @@ export default function DailySummaryReportPage() {
         token,
         page,
         per_page: perPage,
+        search: searchQuery || undefined,
         from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
         to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
         sort_column: sortBy || undefined,
@@ -190,6 +200,7 @@ export default function DailySummaryReportPage() {
     toDate,
     sortBy,
     sortOrderParam,
+    searchQuery,
   ]);
 
   useEffect(() => {
@@ -212,10 +223,13 @@ export default function DailySummaryReportPage() {
     setToDate(undefined);
     setSortBy(null);
     setSortOrderParam(null);
+    setSearchInput("");
+    setSearchQuery(null);
     setPage(1);
   }, [
     setSortBy,
     setSortOrderParam,
+    setSearchQuery,
     setPage,
   ]);
 
@@ -235,6 +249,7 @@ export default function DailySummaryReportPage() {
       const { blob, filename } = await adminDailySummaryReportApi.export({
         token,
         format: formatType,
+        search: searchQuery || undefined,
         from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
         to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
         sort_column: sortBy || undefined,
@@ -264,15 +279,16 @@ export default function DailySummaryReportPage() {
         { id: exportToastId }
       );
     }
-  }, [canViewReport, token, fromDate, toDate, sortBy, sortOrderParam]);
+  }, [canViewReport, token, fromDate, toDate, sortBy, sortOrderParam, searchQuery]);
 
   // Count active filters
   const activeFilterCount = useMemo(() => {
     let count = 0;
+    if (searchQuery) count++;
     if (fromDate) count++;
     if (toDate) count++;
     return count;
-  }, [fromDate, toDate]);
+  }, [searchQuery, fromDate, toDate]);
 
   const columns: ColumnDef<DailySummaryReportItem>[] = useMemo(
     () => [
@@ -445,32 +461,43 @@ export default function DailySummaryReportPage() {
       </div>
 
       {/* Filters Section */}
-      <div className="rounded-lg border bg-card p-5">
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="flex items-center gap-2 text-base font-semibold">
-            <CalendarIcon className="h-4 w-4" />
-            Filters
-          </h2>
-          {activeFilterCount > 0 ? (
-            <Button variant="ghost" size="sm" onClick={handleResetFilters}>
-              Reset
-            </Button>
-          ) : null}
-        </div>
-        <div className="grid gap-3 md:grid-cols-2">
-          <DateRangePicker
-            fromDate={fromDate}
-            toDate={toDate}
-            onFromDateChange={(date) => {
-              handleDateChange(date, "from");
+      <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
+        <div className="min-w-[240px] flex-1">
+          <ApiSearchBar
+            value={searchInput}
+            onChange={(value) => setSearchInput(value)}
+            onSearch={(value) => {
               setPage(1);
+              setSearchQuery(value.trim() || null);
             }}
-            onToDateChange={(date) => {
-              handleDateChange(date, "to");
-              setPage(1);
-            }}
+            placeholder="Search..."
+            minimumLength={3}
+            delay={300}
           />
         </div>
+        <DateRangePicker
+          fromDate={fromDate}
+          toDate={toDate}
+          onFromDateChange={(date) => {
+            handleDateChange(date, "from");
+            setPage(1);
+          }}
+          onToDateChange={(date) => {
+            handleDateChange(date, "to");
+            setPage(1);
+          }}
+        />
+        {activeFilterCount > 0 ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleResetFilters}
+            className="h-9 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+            Clear Filters
+          </Button>
+        ) : null}
       </div>
 
       {/* Results Section */}

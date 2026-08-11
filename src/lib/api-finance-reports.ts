@@ -1387,6 +1387,8 @@ export interface InternalTransferReportItem {
 export interface InternalTransferReportListParams {
   token: string;
   search?: string;
+  from_date?: string;
+  to_date?: string;
   page?: number;
   per_page?: number;
 }
@@ -1428,6 +1430,12 @@ export const adminInternalTransferReportApi = {
     if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
     if (queryParams.search && queryParams.search.trim()) {
       qs.set("search", queryParams.search.trim());
+    }
+    if (queryParams.from_date && queryParams.from_date.trim()) {
+      qs.set("from_date", queryParams.from_date.trim());
+    }
+    if (queryParams.to_date && queryParams.to_date.trim()) {
+      qs.set("to_date", queryParams.to_date.trim());
     }
 
     const endpoint = `/admin/reports/internal-transfer-report${qs.toString() ? `?${qs.toString()}` : ""}`;
@@ -1806,6 +1814,8 @@ export const adminTransactionReportApi = {
 export interface LoginActivityReportListParams {
   token: string;
   search?: string;
+  from_date?: string;
+  to_date?: string;
   page?: number;
   per_page?: number;
 }
@@ -1847,6 +1857,12 @@ export const adminLoginActivityReportApi = {
     if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
     if (queryParams.search && queryParams.search.trim()) {
       qs.set("search", queryParams.search.trim());
+    }
+    if (queryParams.from_date && queryParams.from_date.trim()) {
+      qs.set("from_date", queryParams.from_date.trim());
+    }
+    if (queryParams.to_date && queryParams.to_date.trim()) {
+      qs.set("to_date", queryParams.to_date.trim());
     }
 
     const endpoint = `/admin/reports/login-activity-report${qs.toString() ? `?${qs.toString()}` : ""}`;
@@ -1936,6 +1952,8 @@ export interface TradingHistoryReportItem {
 export interface TradingHistoryReportListParams {
   token: string;
   search?: string;
+  from_date?: string;
+  to_date?: string;
   page?: number;
   per_page?: number;
 }
@@ -1958,6 +1976,9 @@ export interface TradingHistoryReportListPayload {
 export interface TradingHistoryReportExportParams {
   token: string;
   format?: "xlsx" | "csv";
+  search?: string;
+  from_date?: string;
+  to_date?: string;
 }
 
 const parseContentDispositionFilename = (
@@ -2001,7 +2022,15 @@ export const adminTradingHistoryReportApi = {
     const qs = new URLSearchParams();
     if (queryParams.page) qs.set("page", String(queryParams.page));
     if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
-    if (queryParams.search) qs.set("search", queryParams.search);
+    if (queryParams.search && queryParams.search.trim()) {
+      qs.set("search", queryParams.search.trim());
+    }
+    if (queryParams.from_date && queryParams.from_date.trim()) {
+      qs.set("from_date", queryParams.from_date.trim());
+    }
+    if (queryParams.to_date && queryParams.to_date.trim()) {
+      qs.set("to_date", queryParams.to_date.trim());
+    }
 
     const endpoint = `/admin/reports/trading-history-report${qs.toString() ? `?${qs.toString()}` : ""}`;
 
@@ -2014,6 +2043,9 @@ export const adminTradingHistoryReportApi = {
   export: async ({
     token,
     format = "xlsx",
+    search,
+    from_date,
+    to_date,
   }: TradingHistoryReportExportParams) => {
     if (!token) {
       throw new Error("Token is required to export trading history report");
@@ -2025,6 +2057,15 @@ export const adminTradingHistoryReportApi = {
 
     const qs = new URLSearchParams();
     qs.set("format", format);
+    if (search && search.trim()) {
+      qs.set("search", search.trim());
+    }
+    if (from_date && from_date.trim()) {
+      qs.set("from_date", from_date.trim());
+    }
+    if (to_date && to_date.trim()) {
+      qs.set("to_date", to_date.trim());
+    }
 
     const endpoint = `/admin/reports/trading-history-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
@@ -2441,6 +2482,7 @@ export interface DailySummaryReportItem {
 
 export interface DailySummaryReportListParams {
   token: string;
+  search?: string;
   page?: number;
   per_page?: number;
   from_date?: string;
@@ -2466,6 +2508,7 @@ export interface DailySummaryReportListPayload {
 export interface DailySummaryReportExportParams {
   token: string;
   format?: "xlsx" | "csv";
+  search?: string;
   from_date?: string;
   to_date?: string;
   sort_column?: string;
@@ -2484,6 +2527,9 @@ export const adminDailySummaryReportApi = {
     if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
     if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
     if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
+    if (queryParams.search && queryParams.search.trim()) {
+      qs.set("search", queryParams.search.trim());
+    }
     if (queryParams.sort_column) qs.set("sort_column", queryParams.sort_column);
     if (queryParams.sort_order) qs.set("sort_order", queryParams.sort_order);
 
@@ -2509,6 +2555,9 @@ export const adminDailySummaryReportApi = {
     qs.set("format", format);
     if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
     if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
+    if (queryParams.search && queryParams.search.trim()) {
+      qs.set("search", queryParams.search.trim());
+    }
     if (queryParams.sort_column) qs.set("sort_column", queryParams.sort_column);
     if (queryParams.sort_order) qs.set("sort_order", queryParams.sort_order);
 

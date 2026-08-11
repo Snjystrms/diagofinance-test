@@ -3,12 +3,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
-import { History, ReceiptText } from "lucide-react";
+import { History, ReceiptText, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
+import { format } from "date-fns";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { Button } from "@/components/ui/button";
 import { ReportPageWrapper } from "@/components/report-page-wrapper";
 import type { ReportExportFormat } from "@/components/report-page-wrapper";
 import { Badge } from "@/components/ui/badge";
@@ -72,9 +75,49 @@ export default function TradingHistoryReportPage() {
   const [searchQuery, setSearchQuery] = useQueryState("search", parseAsString);
   const [searchInput, setSearchInput] = useState(searchQuery || "");
 
+  // Date filters
+  const [fromDateParam, setFromDateParam] = useQueryState(
+    "from_date",
+    parseAsString,
+  );
+  const [toDateParam, setToDateParam] = useQueryState("to_date", parseAsString);
+  const [fromDate, setFromDate] = useState<Date | undefined>(
+    fromDateParam ? new Date(fromDateParam) : undefined,
+  );
+  const [toDate, setToDate] = useState<Date | undefined>(
+    toDateParam ? new Date(toDateParam) : undefined,
+  );
+
   useEffect(() => {
     setSearchInput(searchQuery || "");
   }, [searchQuery]);
+
+  const handleDateChange = useCallback(
+    (date: Date | undefined, type: "from" | "to") => {
+      if (type === "from") {
+        setFromDate(date);
+        setFromDateParam(date ? format(date, "yyyy-MM-dd") : null);
+      } else {
+        setToDate(date);
+        setToDateParam(date ? format(date, "yyyy-MM-dd") : null);
+      }
+    },
+    [setFromDateParam, setToDateParam],
+  );
+
+  const handleClearFilters = useCallback(() => {
+    setSearchInput("");
+    setSearchQuery(null);
+    setFromDate(undefined);
+    setFromDateParam(null);
+    setToDate(undefined);
+    setToDateParam(null);
+    setPage(1);
+  }, [setSearchQuery, setFromDateParam, setToDateParam, setPage]);
+
+  const hasActiveFilters = Boolean(
+    searchQuery || fromDateParam || toDateParam,
+  );
 
   const loadReport = useCallback(async () => {
     if (!token) {
@@ -90,6 +133,8 @@ export default function TradingHistoryReportPage() {
       const response = await adminTradingHistoryReportApi.list({
         token,
         search: searchQuery || undefined,
+        from_date: fromDateParam || undefined,
+        to_date: toDateParam || undefined,
         page,
         per_page: perPage,
       });
@@ -113,7 +158,7 @@ export default function TradingHistoryReportPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, perPage, token, searchQuery]);
+  }, [page, perPage, token, searchQuery, fromDateParam, toDateParam]);
 
   useEffect(() => {
     void loadReport();
@@ -138,6 +183,9 @@ export default function TradingHistoryReportPage() {
         const { blob, filename } = await adminTradingHistoryReportApi.export({
           token,
           format: formatType,
+          search: searchQuery || undefined,
+          from_date: fromDateParam || undefined,
+          to_date: toDateParam || undefined,
         });
 
         if (!blob.size) {
@@ -166,7 +214,7 @@ export default function TradingHistoryReportPage() {
         );
       }
     },
-    [canViewReport, token]
+    [canViewReport, token, searchQuery, fromDateParam, toDateParam]
   );
 
   const columns: ColumnDef<TradingHistoryReportItem>[] = useMemo(
@@ -296,18 +344,43 @@ export default function TradingHistoryReportPage() {
       isRefreshing={loading}
     >
       <div className="space-y-4">
-        <div className="flex items-center gap-2">
-          <ApiSearchBar
-            value={searchInput}
-            onChange={(value) => setSearchInput(value)}
-            onSearch={(value) => {
+        <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
+          <div className="min-w-[240px] flex-1">
+            <ApiSearchBar
+              value={searchInput}
+              onChange={(value) => setSearchInput(value)}
+              onSearch={(value) => {
+                setPage(1);
+                setSearchQuery(value.trim() || null);
+              }}
+              placeholder="Search by name, email, account..."
+              minimumLength={3}
+              delay={300}
+            />
+          </div>
+          <DateRangePicker
+            fromDate={fromDate}
+            toDate={toDate}
+            onFromDateChange={(date) => {
+              handleDateChange(date, "from");
               setPage(1);
-              setSearchQuery(value.trim() || null);
             }}
-            placeholder="Search by name, email, account..."
-            minimumLength={3}
-            delay={300}
+            onToDateChange={(date) => {
+              handleDateChange(date, "to");
+              setPage(1);
+            }}
           />
+          {hasActiveFilters ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearFilters}
+              className="h-9 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+              Clear Filters
+            </Button>
+          ) : null}
         </div>
 
         <div className="rounded-lg border bg-card">

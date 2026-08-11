@@ -34,7 +34,7 @@ import {
   Download,
   ChevronDown,
   BarChart3,
-  Search,
+  X,
 } from "lucide-react";
 
 import {
@@ -615,7 +615,20 @@ export default function ReportManagementPage() {
         </div>
       </div>
 
-      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
+        <div className="min-w-[240px] flex-1">
+          <ApiSearchBar
+            value={searchInput}
+            onChange={(value) => setSearchInput(value)}
+            onSearch={(value) => {
+              setPage(1);
+              setSearchQuery(value.trim() || null);
+            }}
+            placeholder="Search by name, email..."
+            minimumLength={3}
+            delay={300}
+          />
+        </div>
         <div className="space-y-1.5">
           <Label
             htmlFor="status-filter"
@@ -691,20 +704,29 @@ export default function ReportManagementPage() {
           </Select>
         </div>
 
-        <div className="md:col-span-2 lg:col-span-3 xl:col-span-1">
-          <DateRangePicker
-            fromDate={fromDate}
-            toDate={toDate}
-            onFromDateChange={(date) => {
-              handleDateChange(date, "from");
-              setPage(1);
-            }}
-            onToDateChange={(date) => {
-              handleDateChange(date, "to");
-              setPage(1);
-            }}
-          />
-        </div>
+        <DateRangePicker
+          fromDate={fromDate}
+          toDate={toDate}
+          onFromDateChange={(date) => {
+            handleDateChange(date, "from");
+            setPage(1);
+          }}
+          onToDateChange={(date) => {
+            handleDateChange(date, "to");
+            setPage(1);
+          }}
+        />
+        {activeFilterCount > 0 ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleResetFilters}
+            className="h-9 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+            Clear Filters
+          </Button>
+        ) : null}
       </div>
 
       {/* Results Section */}

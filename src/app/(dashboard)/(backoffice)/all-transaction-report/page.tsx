@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
-import { ArrowLeftRight, CalendarIcon } from "lucide-react";
+import { ArrowLeftRight, CalendarIcon, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import { format } from "date-fns";
@@ -13,6 +13,7 @@ import { ReportPageWrapper } from "@/components/report-page-wrapper";
 import type { ReportExportFormat } from "@/components/report-page-wrapper";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
@@ -112,6 +113,20 @@ export default function AllTransactionReportPage() {
       }
     },
     [setFromDateParam, setToDateParam]
+  );
+
+  const handleClearFilters = useCallback(() => {
+    setSearchInput("");
+    setSearchQuery(null);
+    setFromDate(undefined);
+    setFromDateParam(null);
+    setToDate(undefined);
+    setToDateParam(null);
+    setPage(1);
+  }, [setSearchQuery, setFromDateParam, setToDateParam, setPage]);
+
+  const hasActiveFilters = Boolean(
+    searchQuery || fromDateParam || toDateParam
   );
 
   const handleExport = useCallback(
@@ -311,6 +326,17 @@ export default function AllTransactionReportPage() {
               setPage(1);
             }}
           />
+          {hasActiveFilters ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleClearFilters}
+              className="h-9 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+              Clear Filters
+            </Button>
+          ) : null}
         </div>
 
         <div className="rounded-lg border bg-card">
