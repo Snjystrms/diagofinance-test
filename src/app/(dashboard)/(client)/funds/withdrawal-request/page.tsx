@@ -13,6 +13,7 @@ import {
   walletApi,
   type WalletSummaryData,
   type WithdrawalItem,
+  type WithdrawalRequest,
 } from "@/lib/api";
 import {
   authApi,
@@ -22,6 +23,7 @@ import {
   type UserBankDetailsData,
   type UserPaymentMethod,
 } from "@/lib/api-auth-admin";
+import { mt5AccountsApi, type MT5Account } from "@/lib/api-trading-ib";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import {
   CLIENT_WALLET_REFRESH_EVENT,
@@ -39,6 +41,10 @@ import {
   ExternalLink,
   TrendingDown,
   Plus,
+  Landmark,
+  Banknote,
+  Hash,
+  User,
 } from "lucide-react";
 import {
   Select,
@@ -96,12 +102,16 @@ const getCurrencyFromCountry = (country?: string | null): string | null => {
 
 function WithdrawalRequestContent() {
   const { token } = useAuth();
-  const [withdrawalType, setWithdrawalType] = useState<"crypto" | "bank">(
+  const [withdrawalType, setWithdrawalType] = useState<"crypto" | "bank" | "cash">(
     "crypto",
   );
   const [amount, setAmount] = useState("");
   const [walletAddress, setWalletAddress] = useState("");
   const [chainId, setChainId] = useState("TRC20");
+  const [source, setSource] = useState<"wallet" | "mt5">("wallet");
+  const [selectedMt5Account, setSelectedMt5Account] = useState<string>("");
+  const [mt5Accounts, setMt5Accounts] = useState<MT5Account[]>([]);
+  const [mt5AccountsLoading, setMt5AccountsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -109,7 +119,7 @@ function WithdrawalRequestContent() {
     null,
   );
   const [submittedWithdrawalType, setSubmittedWithdrawalType] = useState<
-    "crypto" | "bank" | null
+    "crypto" | "bank" | "cash" | null
   >(null);
   const [submittedBankCredit, setSubmittedBankCredit] = useState<number | null>(
     null,
@@ -129,6 +139,7 @@ function WithdrawalRequestContent() {
   const [localPaymentMethodId, setLocalPaymentMethodId] = useState<
     number | null
   >(null);
+  const [cashPaymentMethodId, setCashPaymentMethodId] = useState<number | null>(null);
   const [currencyRates, setCurrencyRates] = useState<CurrencyRateItem[]>([]);
   const [withdrawalCurrency, setWithdrawalCurrency] = useState("INR");
 
@@ -154,13 +165,36 @@ function WithdrawalRequestContent() {
     }
   };
 
+  const fetchMt5Accounts = async () => {
+    if (!token) return;
+    try {
+      setMt5AccountsLoading(true);
+      const response = await mt5AccountsApi.getAll(token);
+      const accounts = Array.isArray(response.data?.mt5_accounts)
+        ? response.data.mt5_accounts
+        : [];
+      setMt5Accounts(accounts.filter((acc) => acc.account_mode === "live"));
+    } catch (err) {
+      console.error("Error fetching MT5 accounts:", err);
+    } finally {
+      setMt5AccountsLoading(false);
+    }
+  };
+
   useEffect(() => {
     void fetchWalletSummary();
   }, [token]);
 
   useEffect(() => {
+    void fetchMt5Accounts();
+  }, [token]);
+
+  useEffect(() => {
     const fetchCurrencyRates = async () => {
-      if (!token || withdrawalType !== "bank") {
+      if (
+        !token ||
+        (withdrawalType !== "bank" && withdrawalType !== "cash")
+      ) {
         return;
       }
       try {
@@ -235,6 +269,9 @@ function WithdrawalRequestContent() {
         const localPaymentMethod = methods.find(
           (method) => method.type === "local",
         );
+        const cashPaymentMethod = methods.find(
+          (method) => method.type === "cash",
+        );
         setBankTransferMethodId(
           typeof bankTransferMethod?.id === "number"
             ? bankTransferMethod.id
@@ -243,6 +280,11 @@ function WithdrawalRequestContent() {
         setLocalPaymentMethodId(
           typeof localPaymentMethod?.id === "number"
             ? localPaymentMethod.id
+            : null,
+        );
+        setCashPaymentMethodId(
+          typeof cashPaymentMethod?.id === "number"
+            ? cashPaymentMethod.id
             : null,
         );
       } catch (fetchError) {
@@ -280,8 +322,10 @@ function WithdrawalRequestContent() {
     walletData?.wallets?.main?.balance ?? mainWallet?.balance ?? 0;
   const currency = mainWallet?.currency || "USDT";
   const supportsBankWithdrawal = !!bankTransferMethodId && !!bankDetails?.id;
+  const supportsCashWithdrawal = !!cashPaymentMethodId;
   const isCryptoWithdrawal = withdrawalType === "crypto";
   const isBankWithdrawal = withdrawalType === "bank";
+  const isCashWithdrawal = withdrawalType === "cash";
   const minimumAmount = 25.0;
 
   const activeRatesFromUsd = useMemo(
@@ -393,34 +437,62 @@ function WithdrawalRequestContent() {
         setError("Crypto withdrawal is unavailable right now.");
         return;
       }
-    } else if (!supportsBankWithdrawal) {
-      setError(
-        "Bank withdrawal is unavailable. Please add bank details first.",
-      );
-      return;
-    } else if (convertedBankAmount === null) {
-      setError("Bank withdrawal conversion rate is currently unavailable.");
+    } else if (isBankWithdrawal) {
+      if (!supportsBankWithdrawal) {
+        setError(
+          "Bank withdrawal is unavailable. Please add bank details first.",
+        );
+        return;
+      } else if (convertedBankAmount === null) {
+        setError("Bank withdrawal conversion rate is currently unavailable.");
+        return;
+      }
+    } else if (isCashWithdrawal) {
+      if (!supportsCashWithdrawal) {
+        setError("Cash withdrawal is unavailable right now.");
+        return;
+      }
+    }
+
+    // Validate MT5 account selection if source is mt5
+    if (source === "mt5" && !selectedMt5Account.trim()) {
+      setError("Please select an MT5 account");
       return;
     }
 
     setIsSubmitting(true);
 
     try {
-      const response = await withdrawalApi.create(
-        isCryptoWithdrawal
-          ? {
-              amount,
-              payment_method_id: localPaymentMethodId ?? undefined,
-              wallet_address: walletAddress.trim(),
-              chain_id: chainId,
-            }
-          : {
-              amount,
-              payment_method_id: bankTransferMethodId ?? undefined,
-              bank_detail_id: bankDetails?.id ?? undefined,
-            },
-        token,
-      );
+      let payload: WithdrawalRequest = {
+        amount,
+        source,
+      };
+
+      if (source === "mt5") {
+        payload.mt5_account_id = selectedMt5Account;
+      }
+
+      if (isCryptoWithdrawal) {
+        payload = {
+          ...payload,
+          payment_method_id: localPaymentMethodId ?? undefined,
+          wallet_address: walletAddress.trim(),
+          chain_id: chainId,
+        };
+      } else if (isBankWithdrawal) {
+        payload = {
+          ...payload,
+          payment_method_id: bankTransferMethodId ?? undefined,
+          bank_detail_id: bankDetails?.id ?? undefined,
+        };
+      } else {
+        payload = {
+          ...payload,
+          payment_method_id: cashPaymentMethodId ?? undefined,
+        };
+      }
+
+      const response = await withdrawalApi.create(payload, token);
 
       if (!response.success) {
         throw new Error(
@@ -464,7 +536,7 @@ function WithdrawalRequestContent() {
     ? walletAddress.trim().length > 0
     : true;
   const hasChainId = isCryptoWithdrawal ? chainId !== "" : true;
-  const hasBankSetup = isCryptoWithdrawal ? true : supportsBankWithdrawal;
+  const hasBankSetup = isCryptoWithdrawal ? true : (isBankWithdrawal ? supportsBankWithdrawal : supportsCashWithdrawal);
   const hasToken = !!token;
   const canSubmit =
     isValidAmount &&
@@ -473,6 +545,145 @@ function WithdrawalRequestContent() {
     hasBankSetup &&
     !isSubmitting &&
     hasToken;
+
+  type PanelItem = { icon: typeof Wallet; title: string; text: string };
+  const rightPanel: {
+    title: string;
+    tagline: string;
+    verifyTitle: string;
+    steps: PanelItem[];
+    verify: PanelItem[];
+  } = (() => {
+    const baseStep: PanelItem = {
+      icon: Wallet,
+      title: "Enter amount",
+      text: `Minimum ${formatAmount(minimumAmount)} USD from Main Wallet or MT5.`,
+    };
+    if (isCryptoWithdrawal) {
+      return {
+        title: "Crypto transfer flow",
+        tagline: "Move funds safely in a few quick steps.",
+        verifyTitle: "What to verify",
+        steps: [
+          baseStep,
+          {
+            icon: Network,
+            title: "Pick a network",
+            text: "Must match your receiving wallet's chain.",
+          },
+          {
+            icon: Copy,
+            title: "Paste address",
+            text: "Use the exact wallet address from your receiving platform.",
+          },
+          {
+            icon: ShieldCheck,
+            title: "Submit",
+            text: "Reviewed within 24–48 hours.",
+          },
+        ],
+        verify: [
+          {
+            icon: Hash,
+            title: "Address format",
+            text: "Use the same chain as the network you selected.",
+          },
+          {
+            icon: Clock,
+            title: "Processing",
+            text: "Stays pending while the team verifies the destination.",
+          },
+          {
+            icon: Network,
+            title: "Fees",
+            text: "Delivery cost varies by chain.",
+          },
+        ],
+      };
+    }
+    if (isBankWithdrawal) {
+      return {
+        title: "Bank transfer flow",
+        tagline: "Send funds to your bank in a few quick steps.",
+        verifyTitle: "What to verify",
+        steps: [
+          baseStep,
+          {
+            icon: DollarSign,
+            title: "Pick currency",
+            text: "Choose your withdrawal currency and live rate.",
+          },
+          {
+            icon: Landmark,
+            title: "Confirm account",
+            text: "Ensure your saved bank details are correct.",
+          },
+          {
+            icon: ShieldCheck,
+            title: "Submit",
+            text: "Bank processing varies by country and bank.",
+          },
+        ],
+        verify: [
+          {
+            icon: Landmark,
+            title: "Account details",
+            text: "Check holder name, bank, and account number.",
+          },
+          {
+            icon: Clock,
+            title: "Processing window",
+            text: "Approval depends on admin review.",
+          },
+          {
+            icon: DollarSign,
+            title: "Rates",
+            text: "Live USD conversion shown in the form.",
+          },
+        ],
+      };
+    }
+    return {
+      title: "Cash pickup flow",
+      tagline: "Collect your funds in person in a few quick steps.",
+      verifyTitle: "What to verify",
+      steps: [
+        baseStep,
+        {
+          icon: Banknote,
+          title: "Pick currency",
+          text: "Choose the currency for your cash pickup.",
+        },
+        {
+          icon: User,
+          title: "No destination needed",
+          text: "Collect cash at your registered branch.",
+        },
+        {
+          icon: ShieldCheck,
+          title: "Submit",
+          text: "Processed at the branch after review.",
+        },
+      ],
+      verify: [
+        {
+          icon: Banknote,
+          title: "Pickup method",
+          text: "Cash is collected at your registered branch.",
+        },
+        {
+          icon: Clock,
+          title: "Processing",
+          text: "Approval happens after internal review.",
+        },
+        {
+          icon: ShieldCheck,
+          title: "Security",
+          text: "Our team verifies every request before release.",
+        },
+      ],
+    };
+  })();
 
   return (
     <div className="min-h-screen w-full bg-background px-4 py-6 lg:px-6 xl:px-8">
@@ -486,7 +697,7 @@ function WithdrawalRequestContent() {
               Withdrawal Request
             </h1>
             <p className="max-w-2xl text-sm leading-6 text-muted-foreground md:text-base">
-              Choose Crypto or Bank withdrawal, fill required details, and
+              Choose Crypto, Bank, or Cash withdrawal, fill required details, and
               submit your request for review.
             </p>
           </div>
@@ -509,7 +720,7 @@ function WithdrawalRequestContent() {
                 Type
               </p>
               <p className="text-sm font-semibold text-foreground">
-                {isCryptoWithdrawal ? "Crypto" : "Bank"}
+                {isCryptoWithdrawal ? "Crypto" : isBankWithdrawal ? "Bank" : "Cash"}
               </p>
             </div>
             <div className="rounded-xl border border-border/50 bg-muted/20 px-3 py-2">
@@ -519,7 +730,9 @@ function WithdrawalRequestContent() {
               <p className="truncate text-sm font-semibold text-foreground">
                 {isCryptoWithdrawal
                   ? selectedChain?.value || "--"
-                  : bankDetails?.bank_name || "Not configured"}
+                  : isBankWithdrawal
+                    ? bankDetails?.bank_name || "Not configured"
+                    : "Cash Pickup"}
               </p>
             </div>
           </div>
@@ -531,31 +744,27 @@ function WithdrawalRequestContent() {
               {!success ? (
                 <>
                   <div className="space-y-1">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                      Transfer Request
-                    </p>
                     <h2 className="text-2xl font-semibold tracking-tight text-foreground">
                       Submit Withdrawal Details
                     </h2>
-                    <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-                      Select withdrawal type, enter amount, and submit with the
-                      required details.
-                    </p>
                   </div>
 
                   <Tabs
                     value={withdrawalType}
                     onValueChange={(value) =>
-                      setWithdrawalType(value as "crypto" | "bank")
+                      setWithdrawalType(value as "crypto" | "bank" | "cash")
                     }
                     className="space-y-4"
                   >
-                    <TabsList className="grid h-auto w-full grid-cols-2 rounded-xl p-1">
-                      <TabsTrigger value="crypto" className="rounded-lg">
+                    <TabsList className="grid h-auto w-full grid-cols-3 rounded-xl p-1">
+                      <TabsTrigger value="crypto" className="rounded-md py-2 px-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                         Crypto Withdrawal
                       </TabsTrigger>
-                      <TabsTrigger value="bank" className="rounded-lg">
+                      <TabsTrigger value="bank" className="rounded-md py-2 px-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                         Bank Withdrawal
+                      </TabsTrigger>
+                      <TabsTrigger value="cash" className="rounded-md py-2 px-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                        Cash Withdrawal
                       </TabsTrigger>
                     </TabsList>
                   </Tabs>
@@ -613,7 +822,69 @@ function WithdrawalRequestContent() {
                         Valid withdrawal amount
                       </p>
                     )}
-                    {isBankWithdrawal && (
+
+                    {/* Source Selection (Wallet vs MT5) */}
+                    <div className="space-y-3">
+                      <Label htmlFor="withdrawal-source" className="text-sm font-semibold text-foreground">
+                        Withdrawal Source <span className="text-destructive">*</span>
+                      </Label>
+                      <Select value={source} onValueChange={(val) => setSource(val as "wallet" | "mt5")}>
+                        <SelectTrigger id="withdrawal-source" className="h-10 w-full rounded-xl border-2 border-border bg-background focus:border-primary">
+                          <SelectValue placeholder="Select source" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="wallet">
+                            <div className="flex items-center gap-2">
+                              <Wallet className="h-4 w-4" />
+                              <span>Main Wallet (USD)</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="mt5">
+                            <div className="flex items-center gap-2">
+                              <TrendingDown className="h-4 w-4" />
+                              <span>MT5 Account</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {source === "mt5" && (
+                        <div className="space-y-2">
+                          <Label htmlFor="mt5-account" className="text-sm font-semibold text-foreground">
+                            MT5 Account <span className="text-destructive">*</span>
+                          </Label>
+                          {mt5AccountsLoading ? (
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+                              <Clock className="h-4 w-4 animate-spin" />
+                              Loading MT5 accounts...
+                            </div>
+                          ) : mt5Accounts.length === 0 ? (
+                            <p className="text-sm text-destructive">
+                              No live MT5 accounts found. Please add an MT5 account first.
+                            </p>
+                          ) : (
+                            <Select value={selectedMt5Account} onValueChange={setSelectedMt5Account}>
+                              <SelectTrigger id="mt5-account" className="h-10 w-full rounded-xl border-2 border-border bg-background focus:border-primary">
+                                <SelectValue placeholder="Select MT5 account" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {mt5Accounts.map((acc) => (
+                                  <SelectItem key={acc.account_id} value={acc.account_id}>
+                                    <div className="flex flex-col">
+                                      <span className="font-medium">{acc.account_id}</span>
+                                      <span className="text-xs text-muted-foreground">
+                                        {acc.account_mode} • {acc.mt5_id}
+                                      </span>
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {(isBankWithdrawal || isCashWithdrawal) && (
                       <div className="space-y-3">
                         <Label
                           htmlFor="withdrawal-currency"
@@ -647,14 +918,17 @@ function WithdrawalRequestContent() {
                           amountNumeric > 0 &&
                           convertedBankAmount !== null && (
                             <p className="text-xs font-medium text-foreground">
-                              Estimated bank credit: {formatAmount(convertedBankAmount.toFixed(2))} {withdrawalCurrency.toUpperCase()}
+                              {isBankWithdrawal
+                                ? "Estimated bank credit:"
+                                : "Estimated cash amount:"}{" "}
+                              {formatAmount(convertedBankAmount.toFixed(2))} {withdrawalCurrency.toUpperCase()}
                             </p>
                           )}
                       </div>
                     )}
                   </div>
 
-                  {!isCryptoWithdrawal ? (
+                  {isBankWithdrawal ? (
                     <div className="space-y-3">
                       <Label className="text-sm font-semibold text-foreground">
                         Your Bank Account (Withdrawal Destination)
@@ -765,6 +1039,24 @@ function WithdrawalRequestContent() {
                         </p>
                       )} */}
                     </div>
+                  ) : isCashWithdrawal ? (
+                    <div className="space-y-3">
+                      <div className="rounded-xl border border-border/60 bg-muted/20 p-4 text-sm">
+                        <div className="flex items-start gap-3">
+                          <DollarSign className="mt-0.5 h-4 w-4 text-muted-foreground shrink-0" />
+                          <div className="space-y-1">
+                            <p className="font-medium text-foreground">
+                              Cash Pickup
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              You will receive the cash amount at your registered
+                              branch. No additional destination details are
+                              required.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   ) : (
                     <>
                       <div className="space-y-3">
@@ -838,42 +1130,9 @@ function WithdrawalRequestContent() {
                             </Button>
                           )}
                         </div>
-                        <div className="flex items-start gap-2 rounded-xl border border-amber-300/50 bg-amber-50/80 px-3 py-3 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100">
-                          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
-                          <p>
-                            Paste the destination address exactly as shown by
-                            the receiving wallet, and make sure it supports the
-                            selected network.
-                          </p>
-                        </div>
                       </div>
                     </>
                   )}
-
-                  <div className="rounded-2xl border border-amber-300/60 bg-amber-50/80 p-4 dark:border-amber-800 dark:bg-amber-950/30">
-                    <div className="flex items-start gap-3">
-                      <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
-                      <div className="space-y-1 text-xs text-amber-900 dark:text-amber-100">
-                        <p className="font-semibold">Before you submit:</p>
-                        <ul className="space-y-1">
-                          <li>
-                            {isCryptoWithdrawal
-                              ? "Double-check wallet address and selected network."
-                              : "Confirm your saved bank account details are correct."}
-                          </li>
-                          <li>
-                            Processing can take 24-48 hours depending on review
-                            and network conditions.
-                          </li>
-                          <li>
-                            {isCryptoWithdrawal
-                              ? "Network fees can differ by chain and destination wallet."
-                              : "Bank processing times may vary by country and bank."}
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
 
                   <Button
                     onClick={handleSubmit}
@@ -959,6 +1218,17 @@ function WithdrawalRequestContent() {
                               </code>
                             </div>
                           </>
+                        ) : submittedWithdrawalType === "cash" ? (
+                          <>
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">
+                                Method:
+                              </span>
+                              <span className="max-w-[70%] truncate text-right text-sm font-medium text-emerald-800 dark:text-emerald-200">
+                                Cash Pickup
+                              </span>
+                            </div>
+                          </>
                         ) : (
                           <>
                             <div className="flex items-center justify-between">
@@ -1037,79 +1307,73 @@ function WithdrawalRequestContent() {
           </Card>
 
           <div className="space-y-6">
-            <Card className="border border-border/60 bg-card shadow-sm">
+            <Card className="overflow-hidden border border-border/60 bg-card shadow-sm">
+              <div className="h-1.5 bg-gradient-to-r from-primary/80 via-primary to-primary/30" />
               <CardContent className="space-y-5 p-6">
                 <div className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
                     Transfer Flow
                   </p>
                   <h3 className="text-lg font-semibold text-foreground">
-                    How it works
+                    {rightPanel.title}
                   </h3>
+                  <p className="text-sm leading-6 text-muted-foreground">
+                    {rightPanel.tagline}
+                  </p>
                 </div>
 
                 <div className="space-y-3">
-                  {[
-                    `Enter the withdrawal amount with a minimum of ${formatAmount(minimumAmount)} USD.`,
-                    "Select the blockchain network that matches the receiving wallet.",
-                    "Paste the destination wallet address exactly as provided by the receiving platform.",
-                    "Submit the request and wait for internal review plus network-side processing.",
-                  ].map((step, index) => (
+                  {rightPanel.steps.map((step) => (
                     <div
-                      key={step}
-                      className="flex items-start gap-3 rounded-xl border border-border/50 bg-muted/20 px-4 py-3"
+                      key={step.title}
+                      className="flex items-start gap-3 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/30 px-4 py-3 transition-colors hover:border-primary/40"
                     >
-                      <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-primary/20 bg-primary/10 text-xs font-semibold text-primary">
-                        {index + 1}
+                      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <step.icon className="h-4 w-4" />
                       </div>
-                      <p className="text-sm leading-6 text-muted-foreground">
-                        {step}
-                      </p>
+                      <div className="space-y-0.5">
+                        <p className="text-sm font-medium text-foreground">
+                          {step.title}
+                        </p>
+                        <p className="text-xs leading-5 text-muted-foreground">
+                          {step.text}
+                        </p>
+                      </div>
                     </div>
                   ))}
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border border-border/60 bg-card shadow-sm">
+            <Card className="overflow-hidden border border-border/60 bg-card shadow-sm">
+              <div className="h-1.5 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300" />
               <CardContent className="space-y-4 p-6">
                 <div className="space-y-1">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     Request Signals
                   </p>
                   <h3 className="text-lg font-semibold text-foreground">
-                    What to verify
+                    {rightPanel.verifyTitle}
                   </h3>
                 </div>
 
                 <div className="space-y-3 text-sm">
-                  <div className="rounded-xl border border-border/50 bg-background/80 px-4 py-3">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Address format
-                    </p>
-                    <p className="mt-1 leading-6 text-muted-foreground">
-                      Make sure the destination address belongs to the same
-                      chain you selected in the network dropdown.
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-border/50 bg-background/80 px-4 py-3">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Processing window
-                    </p>
-                    <p className="mt-1 leading-6 text-muted-foreground">
-                      Requests can remain pending while the team verifies the
-                      destination and network before release.
-                    </p>
-                  </div>
-                  <div className="rounded-xl border border-border/50 bg-background/80 px-4 py-3">
-                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                      Fee awareness
-                    </p>
-                    <p className="mt-1 leading-6 text-muted-foreground">
-                      Different chains can have different final delivery costs
-                      and settlement times.
-                    </p>
-                  </div>
+                  {rightPanel.verify.map((item) => (
+                    <div
+                      key={item.title}
+                      className="flex items-start gap-3 rounded-xl border border-border/50 bg-background/80 px-4 py-3"
+                    >
+                      <item.icon className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                          {item.title}
+                        </p>
+                        <p className="text-xs leading-5 text-muted-foreground">
+                          {item.text}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>

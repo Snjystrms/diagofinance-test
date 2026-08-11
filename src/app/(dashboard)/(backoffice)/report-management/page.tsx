@@ -12,6 +12,7 @@ import {
   ShieldCheck,
   Receipt,
   Users,
+  History,
 } from "lucide-react";
 
 const reports = [
@@ -62,6 +63,12 @@ const reports = [
     href: "/report-management/login-activity-report",
     icon: ShieldCheck,
     description: "View user login activities",
+  },
+  {
+    title: "Wallet History Report",
+    href: "/report-management/wallet-history-report",
+    icon: History,
+    description: "View wallet history transactions",
   },
   {
     title: "All Transaction Report",

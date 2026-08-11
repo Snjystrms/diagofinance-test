@@ -780,6 +780,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     managerCategories: ["Report Management"],
   },
   {
+    path: "/report-management/wallet-history-report",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "reports",
+    navLabel: "Wallet History Report",
+    managerCategories: ["Report Management"],
+  },
+  {
     path: "/report-management/all-partners-report",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,

@@ -654,7 +654,7 @@ export default function BonusManagementPage() {
           <div>
             <Card className="border-border/70">
               <CardHeader className="gap-4 border-b border-border/60">
-                <div className="flex flex-row items-center gap-3 overflow-x-auto">
+                <div className="flex flex-row items-end gap-3 overflow-x-auto">
                   <ApiSearchBar
                     value={historySearch}
                     onChange={setHistorySearch}
@@ -752,7 +752,7 @@ export default function BonusManagementPage() {
               onValueChange={(value) => setActionMode(value as BonusActionMode)}
               className="w-full"
             >
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-2 h-11 p-1 gap-1 rounded-lg">
                 <TabsTrigger value="give" disabled={!canGive}>
                   Give Bonus
                 </TabsTrigger>

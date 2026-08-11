@@ -188,6 +188,8 @@ export interface WithdrawalRequest {
   chain_id?: string;
   payment_method_id?: number;
   bank_detail_id?: number;
+  source?: "wallet" | "mt5";
+  mt5_account_id?: string;
 }
 
 export interface WithdrawalItem {
@@ -203,6 +205,10 @@ export interface WithdrawalItem {
   created_at: string;
   updated_at?: string;
   payment_method_name?: string | null;
+  payment_method_type?: string | null;
+  source: string;
+  mt5_user_id: number | null;
+  mt5_id: number | null;
 }
 
 export interface WithdrawalResponse {
@@ -1080,6 +1086,147 @@ export const adminWithdrawalReportApi = {
       filename: parseContentDispositionFilename(
         response.headers.get("content-disposition"),
         `withdrawal-report.${format === "csv" ? "csv" : "xlsx"}`,
+      ),
+    };
+  },
+};
+
+export interface WalletHistoryReportItem {
+  id: number | string;
+  name?: string | null;
+  email?: string | null;
+  name_email?: string | null;
+  method?: string | null;
+  to_deposit?: number | string | null;
+  amount: number | string;
+  note?: string | null;
+  comment?: string | null;
+  approved_by?: string | null;
+  date?: string | null;
+  created_at?: string | null;
+  marketing_name?: string | null;
+}
+
+export interface WalletHistoryReportListParams {
+  token: string;
+  method?: string;
+  from_date?: string;
+  to_date?: string;
+  page?: number;
+  per_page?: number;
+  sort_column?: string;
+  sort_order?: "ASC" | "DESC";
+  search?: string;
+}
+
+export interface WalletHistoryReportListPayload {
+  success: boolean;
+  message: string;
+  data: WalletHistoryReportItem[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+    from: number;
+    to: number;
+  };
+  filters?: {
+    method?: string | null;
+    from_date?: string | null;
+    to_date?: string | null;
+    search?: string | null;
+  };
+}
+
+export interface WalletHistoryReportExportParams {
+  token: string;
+  format?: "xlsx" | "csv";
+  method?: string;
+  from_date?: string;
+  to_date?: string;
+  search?: string;
+}
+
+export const adminWalletHistoryReportApi = {
+  list: (params: WalletHistoryReportListParams) => {
+    const { token, ...queryParams } = params;
+    if (!token) {
+      throw new Error("Token is required to fetch wallet history report");
+    }
+
+    const qs = new URLSearchParams();
+    if (queryParams.page) qs.set("page", String(queryParams.page));
+    if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
+    if (queryParams.method && queryParams.method !== "all") {
+      qs.set("method", queryParams.method);
+    }
+    if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
+    if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
+    if (queryParams.sort_column) qs.set("sort_column", queryParams.sort_column);
+    if (queryParams.sort_order) qs.set("sort_order", queryParams.sort_order);
+    if (queryParams.search) qs.set("search", queryParams.search);
+
+    const endpoint = `/admin/reports/wallet-history-report${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<WalletHistoryReportListPayload>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+
+  export: async (params: WalletHistoryReportExportParams) => {
+    const { token, format = "xlsx", ...queryParams } = params;
+    if (!token) {
+      throw new Error("Token is required to export wallet history report");
+    }
+
+    if (!API_BASE_URL) {
+      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    }
+
+    const qs = new URLSearchParams();
+    qs.set("format", format);
+    if (queryParams.method && queryParams.method !== "all") {
+      qs.set("method", queryParams.method);
+    }
+    if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
+    if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
+    if (queryParams.search) qs.set("search", queryParams.search);
+
+    const endpoint = `/admin/reports/wallet-history-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (handle401Redirect(response, !!token)) {
+      return { blob: new Blob(), filename: "" };
+    }
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message:
+          (payload &&
+          typeof payload === "object" &&
+          "message" in payload &&
+          typeof payload.message === "string"
+            ? payload.message
+            : null) || `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+
+    const blob = await response.blob();
+    return {
+      blob,
+      filename: parseContentDispositionFilename(
+        response.headers.get("content-disposition"),
+        `wallet-history-report.${format === "csv" ? "csv" : "xlsx"}`,
       ),
     };
   },

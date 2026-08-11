@@ -43,6 +43,7 @@ const TRANSFER_TYPE_OPTIONS: { value: InternalTransferType; label: string }[] =
     { value: "main_to_mt5", label: "Main Wallet to MT5" },
     { value: "mt5_to_main", label: "MT5 to Main Wallet" },
     { value: "ib_to_main", label: "IB Wallet to Main Wallet" },
+    { value: "direct_to_mt5", label: "Direct to MT5" },
   ];
 
 interface InternalTransferDialogProps {
@@ -152,11 +153,13 @@ export function InternalTransferDialog({
   const needsMt5Accounts =
     transferType === "mt5_to_mt5" ||
     transferType === "main_to_mt5" ||
-    transferType === "mt5_to_main";
+    transferType === "mt5_to_main" ||
+    transferType === "direct_to_mt5";
   const isUserBasedTransfer =
     transferType === "main_to_mt5" ||
     transferType === "mt5_to_main" ||
-    transferType === "ib_to_main";
+    transferType === "ib_to_main" ||
+    transferType === "direct_to_mt5";
   const selectedFromMt5Account = userMt5Accounts.find(
     (acc) =>
       String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "") === fromMt5Account,
@@ -172,7 +175,9 @@ export function InternalTransferDialog({
         ? "usd"
         : transferType === "mt5_to_main"
           ? "usd" // Always USD for MT5 to Main transfers
-          : "usd";
+          : transferType === "direct_to_mt5"
+            ? "usd"
+            : "usd";
 
   const searchUsers = useCallback(
     async (q: string) => {
@@ -424,7 +429,7 @@ export function InternalTransferDialog({
       toast.error("Please select a user");
       return;
     }
-    if (!fromMt5Account.trim()) {
+    if (!fromMt5Account.trim() && transferType !== "direct_to_mt5") {
       toast.error("Please select the from account");
       return;
     }
@@ -491,11 +496,32 @@ export function InternalTransferDialog({
         fromAccountId = ibWallet.id;
         toAccountId = mainWallet.id;
       }
+      // For direct_to_mt5: only to_account (MT5 account login) is needed
+      else if (transferType === "direct_to_mt5") {
+        const selectedToAccount = userMt5Accounts.find(
+          (acc) => String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "") === toMt5Account,
+        );
+
+        if (!selectedToAccount) {
+          toast.error("Unable to find selected MT5 account");
+          return;
+        }
+
+        // Use MT5 login (mt5_id or account_id) as to_account
+        const mt5Login = selectedToAccount.mt5_id ?? selectedToAccount.account_id ?? selectedToAccount.id;
+        if (!mt5Login) {
+          toast.error("MT5 account login not found");
+          return;
+        }
+
+        fromAccountId = "";
+        toAccountId = String(mt5Login);
+      }
 
       const res = await adminTransactionsApi.internalTransfer(
         {
           amount: numAmount,
-          from_account: String(fromAccountId),
+          ...(transferType !== "direct_to_mt5" && { from_account: String(fromAccountId) }),
           to_account: String(toAccountId),
           type: transferType,
         },
@@ -955,6 +981,19 @@ export function InternalTransferDialog({
                       ))}
                   </SelectContent>
                 </Select>
+              </div>
+            </>
+          )}
+
+          {selectedUser && transferType === "direct_to_mt5" && (
+            <>
+              <div className="space-y-2">
+                <Label>To MT5 Account</Label>
+                {renderMt5AccountSelect(
+                  toMt5Account,
+                  (val) => setToMt5Account(val),
+                  "To Account",
+                )}
               </div>
             </>
           )}

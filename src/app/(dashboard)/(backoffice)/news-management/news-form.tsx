@@ -187,7 +187,7 @@ export function NewsForm({
                     setForm((f) => ({ ...f, imageMode: v as "file" | "url" }))
                   }
                 >
-                  <TabsList className="grid w-full grid-cols-2">
+                  <TabsList className="grid w-full grid-cols-2 h-11 p-1 gap-1 rounded-lg">
                     <TabsTrigger value="file">Upload File</TabsTrigger>
                     <TabsTrigger value="url">Image URL</TabsTrigger>
                   </TabsList>

@@ -188,7 +188,8 @@ export function AdminTransactionContent() {
   }, [loadData]);
 
   const handleTransferSuccess = useCallback((res: AdminInternalTransferData) => {
-    toast.success(`Transfer of $${formatAmount(res.amount)} from ${res.from_wallet_id} to ${res.to_wallet_id} completed successfully`);
+    const fromLabel = res.type === "direct_to_mt5" ? "Direct" : String(res.from_wallet_id);
+    toast.success(`Transfer of $${formatAmount(res.amount)} from ${fromLabel} to ${res.to_wallet_id} completed successfully`);
     void loadData();
   }, [loadData]);
 

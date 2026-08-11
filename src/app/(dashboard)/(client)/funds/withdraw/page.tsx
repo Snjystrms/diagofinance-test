@@ -31,7 +31,14 @@ import {
   Plus,
   AlertCircle,
   Copy,
-  Check
+  Check,
+  Eye,
+  Landmark,
+  Banknote,
+  Coins,
+  User,
+  Info,
+  TrendingDown,
 } from 'lucide-react'
 import { formatDateTimeInIST } from '@/lib/formatters'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -195,6 +202,63 @@ const ChainBadge = ({ chainId }: { chainId?: string | null }) => {
   )
 }
 
+// Source badge (Main Wallet vs MT5)
+const SourceBadge = ({ source, mt5Id }: { source: string | null; mt5Id: number | string | null }) => {
+  const isMt5 = source === 'mt5'
+
+  return (
+    <Badge 
+      variant="outline"
+      className={`flex items-center gap-1 w-fit ${
+        isMt5 
+          ? 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400 border-purple-300 dark:border-purple-800'
+          : 'bg-sky-100 text-sky-800 dark:bg-sky-900/20 dark:text-sky-400 border-sky-300 dark:border-sky-800'
+      }`}
+    >
+      {isMt5 ? (
+        <>
+          <TrendingDown className="h-3 w-3" />
+          <span>MT5 {mt5Id ? `#${mt5Id}` : ''}</span>
+        </>
+      ) : (
+        <>
+          <Wallet className="h-3 w-3" />
+          <span>Main Wallet</span>
+        </>
+      )}
+    </Badge>
+  )
+}
+
+// Destination type badge
+const DestinationTypeBadge = ({ paymentMethodType, paymentMethodName }: { paymentMethodType?: string | null; paymentMethodName?: string | null }) => {
+  const name = paymentMethodName?.toLowerCase() || ''
+  const type = paymentMethodType?.toLowerCase() || ''
+
+  if (type === 'cash' || name.includes('cash')) {
+    return (
+      <Badge variant="outline" className="flex items-center gap-1 w-fit bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-green-300 dark:border-green-800">
+        <Banknote className="h-3 w-3" />
+        <span>Cash</span>
+      </Badge>
+    )
+  }
+  if (name.includes('bank') || type === 'bank_transfer') {
+    return (
+      <Badge variant="outline" className="flex items-center gap-1 w-fit bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 border-blue-300 dark:border-blue-800">
+        <Landmark className="h-3 w-3" />
+        <span>Bank</span>
+      </Badge>
+    )
+  }
+  return (
+    <Badge variant="outline" className="flex items-center gap-1 w-fit bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 border-orange-300 dark:border-orange-800">
+      <Coins className="h-3 w-3" />
+      <span>Crypto</span>
+    </Badge>
+  )
+}
+
 // Bank details cell for destination column
 const BankDestinationCell = ({ 
   bankDetailId, 
@@ -337,7 +401,10 @@ const BankAccountInfoCell = ({
 }
 
 // Define columns
-const createColumns = (token: string | null): ColumnDef<WithdrawalItem>[] => [
+const createColumns = (
+  token: string | null,
+  onView: (item: WithdrawalItem) => void,
+): ColumnDef<WithdrawalItem>[] => [
       {
         id: "sr_no",
         header: "Sr. No.",
@@ -359,6 +426,18 @@ const createColumns = (token: string | null): ColumnDef<WithdrawalItem>[] => [
         })}</span>
       </div>
     ), 
+    enableColumnFilter: false,
+    enableSorting: false,
+  },
+  {
+    id: 'source',
+    accessorKey: 'source',
+    header: ({ column }) => (
+      <DataTableColumnHeader column={column} title="Source" />
+    ),
+    cell: ({ row }) => (
+      <SourceBadge source={row.original.source ?? 'wallet'} mt5Id={row.original.mt5_id ?? row.original.mt5_user_id} />
+    ),
     enableColumnFilter: false,
     enableSorting: false,
   },
@@ -402,9 +481,25 @@ const createColumns = (token: string | null): ColumnDef<WithdrawalItem>[] => [
     cell: ({ row }) => {
       const isBankTransfer = row.original.payment_method_name?.toLowerCase().includes('bank') || 
                              row.original.bank_detail_id
+      const isCash = row.original.payment_method_type?.toLowerCase() === 'cash' ||
+                     row.original.payment_method_name?.toLowerCase().includes('cash')
+      const isMt5Source = row.original.source === 'mt5'
 
       if (isBankTransfer && row.original.bank_detail_id) {
         return <BankDestinationCell bankDetailId={row.original.bank_detail_id} token={token} />
+      } else if (isCash) {
+        return (
+          <Badge variant="outline" className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-green-300 dark:border-green-800 w-fit">
+            <DollarSign className="h-3 w-3" />
+            <span>Cash</span>
+          </Badge>
+        )
+      } else if (isMt5Source && row.original.mt5_id) {
+        return (
+          <Badge variant="outline" className="bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400 border-purple-300 dark:border-purple-800 w-fit">
+            <span>MT5 {row.original.mt5_id}</span>
+          </Badge>
+        )
       } else if (row.original.chain_id) {
         return <ChainBadge chainId={row.original.chain_id} />
       }
@@ -423,10 +518,22 @@ const createColumns = (token: string | null): ColumnDef<WithdrawalItem>[] => [
     cell: ({ row }) => {
       const isBankTransfer = row.original.payment_method_name?.toLowerCase().includes('bank') || 
                              row.original.bank_detail_id
+      const isCash = row.original.payment_method_type?.toLowerCase() === 'cash' ||
+                     row.original.payment_method_name?.toLowerCase().includes('cash')
+      const isMt5Source = row.original.source === 'mt5'
 
       if (isBankTransfer && row.original.bank_detail_id) {
         return <BankAccountInfoCell bankDetailId={row.original.bank_detail_id} token={token} />
-      } else if (!isBankTransfer && row.original.wallet_address) {
+      } else if (isMt5Source && row.original.mt5_id) {
+        return (
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">MT5 Login:</span>
+            <code className="text-xs font-mono bg-muted px-2 py-1 rounded">
+              {row.original.mt5_id}
+            </code>
+          </div>
+        )
+      } else if (!isBankTransfer && !isCash && row.original.wallet_address) {
         return <WalletAddressCell address={row.original.wallet_address} />
       }
       return <span className="text-muted-foreground text-sm">-</span>
@@ -451,6 +558,24 @@ const createColumns = (token: string | null): ColumnDef<WithdrawalItem>[] => [
     enableColumnFilter: false,
     enableSorting: false,
   },
+  {
+    id: 'actions',
+    header: 'Actions',
+    enableSorting: false,
+    enableColumnFilter: false,
+    cell: ({ row }) => (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-8 w-8"
+        onClick={() => onView(row.original)}
+        aria-label="View withdrawal details"
+        title="View details"
+      >
+        <Eye className="h-4 w-4" />
+      </Button>
+    ),
+  },
 ]
 
 // Supported chain options
@@ -461,6 +586,14 @@ const CHAIN_OPTIONS = [
   { value: 'BSC', label: 'BSC (BNB Smart Chain)' },
   { value: 'ETH', label: 'ETH (Ethereum)' },
 ]
+
+// Detail row component for the detail dialog
+const DetailRow = ({ label, value }: { label: string; value: React.ReactNode }) => (
+  <div className="flex items-start justify-between gap-4">
+    <span className="text-sm text-muted-foreground">{label}</span>
+    <span className="text-sm font-medium text-foreground text-right break-all">{value}</span>
+  </div>
+)
 
 export default function WithdrawPage() {
   const router = useRouter()
@@ -482,6 +615,8 @@ export default function WithdrawPage() {
   const [copiedWallet, setCopiedWallet] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [selectedWithdrawal, setSelectedWithdrawal] = useState<WithdrawalItem | null>(null)
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false)
 
   const fetchWithdrawals = async (currentPage: number, currentLimit: number) => {
     if (!token) {
@@ -548,7 +683,14 @@ export default function WithdrawPage() {
   }, [totalPages, total, perPage])
 
   // Create columns with token
-  const columns = useMemo(() => createColumns(token), [token])
+  const columns = useMemo(
+    () =>
+      createColumns(token, (item) => {
+        setSelectedWithdrawal(item)
+        setIsDetailDialogOpen(true)
+      }),
+    [token],
+  )
 
   // Validate wallet address - lenient validation
   const validateWalletAddress = (address: string, chain: string): boolean => {
@@ -958,6 +1100,144 @@ export default function WithdrawPage() {
                   </Button>
                 </>
               )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Withdrawal Details Dialog */}
+        <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
+          <DialogContent className="sm:max-w-[520px] max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Info className="h-5 w-5 text-primary" />
+                Withdrawal Details
+              </DialogTitle>
+              <DialogDescription>
+                Request #{selectedWithdrawal?.id} • {selectedWithdrawal ? formatDateTime(selectedWithdrawal.created_at) : ''}
+              </DialogDescription>
+            </DialogHeader>
+
+            {selectedWithdrawal && (
+              <div className="space-y-5 py-2">
+                {/* Source Section */}
+                <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Withdrawal Source
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <SourceBadge source={selectedWithdrawal.source ?? 'wallet'} mt5Id={selectedWithdrawal.mt5_id ?? selectedWithdrawal.mt5_user_id} />
+                    <span className="text-sm text-muted-foreground">
+                      {selectedWithdrawal.source === 'mt5' 
+                        ? `Funds withdrawn from MT5 account${selectedWithdrawal.mt5_id ? ` #${selectedWithdrawal.mt5_id}` : ''}`
+                        : 'Funds withdrawn from the Main Wallet'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Destination Section */}
+                <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <ArrowUpRight className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Destination
+                    </span>
+                  </div>
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+                    <DestinationTypeBadge 
+                      paymentMethodType={selectedWithdrawal.payment_method_type}
+                      paymentMethodName={selectedWithdrawal.payment_method_name}
+                    />
+                    <span className="text-sm text-muted-foreground">
+                      {selectedWithdrawal.payment_method_name || 'N/A'}
+                    </span>
+                  </div>
+                  <div className="space-y-2.5">
+                    {selectedWithdrawal.bank_detail_id ? (
+                      <>
+                        <DetailRow 
+                          label="Bank Detail ID"
+                          value={selectedWithdrawal.bank_detail_id}
+                        />
+                        <DetailRow 
+                          label="Bank Account"
+                          value={<BankAccountInfoCell bankDetailId={selectedWithdrawal.bank_detail_id} token={token} />}
+                        />
+                      </>
+                    ) : null}
+                    {selectedWithdrawal.wallet_address ? (
+                      <DetailRow 
+                        label="Wallet Address"
+                        value={<WalletAddressCell address={selectedWithdrawal.wallet_address} />}
+                      />
+                    ) : null}
+                    {selectedWithdrawal.chain_id ? (
+                      <DetailRow 
+                        label="Network"
+                        value={<ChainBadge chainId={selectedWithdrawal.chain_id} />}
+                      />
+                    ) : null}
+                    {selectedWithdrawal.payment_method_type === 'cash' || 
+                     selectedWithdrawal.payment_method_name?.toLowerCase().includes('cash') ? (
+                      <DetailRow 
+                        label="Method"
+                        value="Cash Pickup"
+                      />
+                    ) : null}
+                  </div>
+                </div>
+
+                {/* Request Details Section */}
+                <div className="rounded-xl border border-border/60 bg-muted/20 p-4">
+                  <div className="mb-3 flex items-center gap-2">
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Request Details
+                    </span>
+                  </div>
+                  <div className="space-y-2.5">
+                    <DetailRow 
+                      label="Amount"
+                      value={`$${selectedWithdrawal.amount.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 8,
+                      })}`}
+                    />
+                    <DetailRow 
+                      label="Payment Method ID"
+                      value={selectedWithdrawal.payment_method_id ?? '-'}
+                    />
+                    <DetailRow 
+                      label="Status"
+                      value={<StatusBadge status={selectedWithdrawal.status} />}
+                    />
+                    <DetailRow 
+                      label="Requested At"
+                      value={formatDateTime(selectedWithdrawal.created_at)}
+                    />
+                    {selectedWithdrawal.updated_at ? (
+                      <DetailRow 
+                        label="Last Updated"
+                        value={formatDateTime(selectedWithdrawal.updated_at)}
+                      />
+                    ) : null}
+                    {selectedWithdrawal.transaction_hash ? (
+                      <DetailRow 
+                        label="Transaction Hash"
+                        value={<TransactionHashCell hash={selectedWithdrawal.transaction_hash} chainId={selectedWithdrawal.chain_id || 'TRC20'} />}
+                      />
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsDetailDialogOpen(false)}>
+                Close
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
