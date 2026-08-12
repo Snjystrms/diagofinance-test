@@ -1967,7 +1967,7 @@ export function DashboardPageContent() {
                         <Card
                           ref={walletCardRef}
                           // onClick={() => router.push("/my-wallet/wallet-overview")}
-                          className={`sm:col-span-1 lg:col-span-1 relative overflow-hidden shadow-2xl rounded-3xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group cursor-pointer ${usesDashboardThemeArtwork ? "bg-card text-zinc-50 ib-portal-surface ib-portal-surface-primary" : "text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent border-none"}`}
+                          className={`sm:col-span-1 lg:col-span-1 relative overflow-hidden shadow-2xl rounded-3xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group ${usesDashboardThemeArtwork ? "bg-card text-zinc-50 ib-portal-surface ib-portal-surface-primary" : "text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent border-none"}`}
                         >
                           {usesDashboardThemeArtwork ? (
                             <div
@@ -2055,7 +2055,7 @@ export function DashboardPageContent() {
                                         : "ghost"
                                     }
                                     size="default"
-                                    className={`h-11 px-6 text-sm font-bold backdrop-blur-sm transition-all duration-300 hover:scale-105 ${usesDashboardThemeArtwork ? artworkActionClass : "text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/20 border border-primary-foreground/30"}`}
+                                    className={`h-11 px-6 text-sm font-bold backdrop-blur-sm transition-all duration-300 hover:scale-105 cursor-pointer ${usesDashboardThemeArtwork ? artworkActionClass : "text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/20 border border-primary-foreground/30"}`}
                                   >
                                     <ArrowLeftRight className="h-4 w-4 mr-2" />
                                     Transfer Funds
@@ -2193,7 +2193,7 @@ export function DashboardPageContent() {
                                     className="w-full block mt-3"
                                     onClick={(e) => e.stopPropagation()}
                                   >
-                                    <Button size="sm" className="w-full">
+                                    <Button size="sm" className="w-full cursor-pointer">
                                       <PlusCircle className="h-4 w-4 mr-2" />
                                       Deposit Funds
                                     </Button>

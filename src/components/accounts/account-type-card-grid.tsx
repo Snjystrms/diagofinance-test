@@ -100,7 +100,7 @@ export function AccountTypeCardGrid({
                 {accountType.groups?.demo && (
                   <Button 
                     variant="outline" 
-                    className="w-full"
+                    className="w-full cursor-pointer"
                     onClick={() => handleOpenDialog(accountType, 'demo')}
                   >
                     <span className="flex min-w-0 items-center justify-center gap-2">
@@ -111,7 +111,7 @@ export function AccountTypeCardGrid({
                 )}
                 {accountType.groups?.live && (
                   <Button 
-                    className="w-full"
+                    className="w-full cursor-pointer"
                     onClick={() => handleOpenDialog(accountType, 'live')}
                   >
                     <span className="flex min-w-0 items-center justify-center gap-2">

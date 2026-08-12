@@ -1976,6 +1976,49 @@ export const userCurrencyRatesApi = {
   },
 };
 
+export interface DefaultSettingsItem {
+  disable_account: boolean;
+  disable_deposit: boolean;
+  disable_withdraw: boolean;
+  disable_transfer: boolean;
+  disable_ib_withdraw: boolean;
+  disable_mt5_to_wallet: boolean;
+  disable_wallet_to_mt5: boolean;
+  disable_ib_commission: boolean;
+  updated_by?: string | null;
+  updated_at?: string | null;
+}
+
+export type DefaultSettingsUpdateBody = Pick<
+  DefaultSettingsItem,
+  | "disable_account"
+  | "disable_deposit"
+  | "disable_withdraw"
+  | "disable_transfer"
+  | "disable_ib_withdraw"
+  | "disable_mt5_to_wallet"
+  | "disable_wallet_to_mt5"
+  | "disable_ib_commission"
+>;
+
+export const adminDefaultSettingsApi = {
+  get: (token: string) =>
+    apiCall<DefaultSettingsItem>("/admin/default-settings", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  update: (body: DefaultSettingsUpdateBody, token: string) =>
+    apiCall<DefaultSettingsItem>("/admin/default-settings", {
+      method: "PUT",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    }),
+};
+
 export interface UserNewsListResponse {
   data: NewsItem[];
   pagination: {

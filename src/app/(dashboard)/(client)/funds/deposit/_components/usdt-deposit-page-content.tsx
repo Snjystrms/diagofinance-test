@@ -274,7 +274,7 @@ function USDTDepositContent() {
             <TabsList className="ib-portal-surface inline-flex h-auto w-full flex-wrap gap-1 rounded-2xl border p-1.5">
               {hasLocal && (
                 <TabsTrigger
-                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
+                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary cursor-pointer"
                   value="local"
                 >
                   <QrCode className="h-4 w-4 mr-2" />
@@ -283,7 +283,7 @@ function USDTDepositContent() {
               )}
               {hasBinance && (
                 <TabsTrigger
-                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
+                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary cursor-pointer"
                   value="binance_pay"
                 >
                   <WalletMinimal className="h-4 w-4 mr-2" />
@@ -292,7 +292,7 @@ function USDTDepositContent() {
               )}
               {hasCoinsbuy && (
                 <TabsTrigger
-                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
+                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary cursor-pointer"
                   value="coinsbuy"
                 >
                   <Wallet className="h-4 w-4 mr-2" />
@@ -301,7 +301,7 @@ function USDTDepositContent() {
               )}
               {hasCregis && (
                 <TabsTrigger
-                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
+                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary cursor-pointer"
                   value="cregis"
                 >
                   <Shield className="h-4 w-4 mr-2" />
@@ -310,7 +310,7 @@ function USDTDepositContent() {
               )}
               {hasBank && (
                 <TabsTrigger
-                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
+                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary cursor-pointer"
                   value="bank"
                 >
                   <Building2 className="h-4 w-4 mr-2" />
@@ -319,7 +319,7 @@ function USDTDepositContent() {
               )}
               {hasCash && (
                 <TabsTrigger
-                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
+                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary cursor-pointer"
                   value="cash"
                 >
                   <Banknote className="h-4 w-4 mr-2" />
@@ -328,7 +328,7 @@ function USDTDepositContent() {
               )}
               {comingSoonMethods.map((p) => (
                 <TabsTrigger
-                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary"
+                  className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:!text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 [&[data-state=active]>svg]:!text-sidebar-primary cursor-pointer"
                   key={p.type}
                   value={p.type}
                 >

@@ -416,7 +416,7 @@ export function LoginClient() {
                       text-white
                       hover:opacity-90
                       disabled:opacity-40 disabled:cursor-not-allowed
-                      transition-all flex items-center justify-center gap-2
+                      transition-all flex items-center justify-center gap-2 cursor-pointer
                     "
                   >
                     {isForgotPasswordLoading ? (
@@ -518,7 +518,7 @@ export function LoginClient() {
                     <button
                       type="button"
                       onClick={() => setShowForgotPassword(true)}
-                      className="font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-foreground hover:text-primary/80 transition-colors underline underline-offset-2"
+                      className="font-sans font-normal text-[14px] leading-[150%] tracking-[-3%] text-foreground hover:text-primary/80 transition-colors underline underline-offset-2 cursor-pointer"
                     >
                       Forgot Password?
                     </button>
@@ -534,7 +534,7 @@ export function LoginClient() {
                       hover:opacity-90
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
                       disabled:opacity-40 disabled:cursor-not-allowed
-                      transition-all flex items-center justify-center gap-2
+                      transition-all flex items-center justify-center gap-2 cursor-pointer
                     "
                   >
                     {isLoading ? (

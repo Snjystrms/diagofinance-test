@@ -361,7 +361,7 @@ export function AccountCreationDialog({
               {/* Submit Button */}
               <Button
                 type="submit"
-                className="h-12 w-full rounded-xl"
+                className="h-12 w-full rounded-xl cursor-pointer"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? (

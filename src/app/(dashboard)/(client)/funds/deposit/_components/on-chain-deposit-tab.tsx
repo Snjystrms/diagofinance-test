@@ -185,57 +185,6 @@ export function OnChainDepositTab({ token }: { token: string | null }) {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-[28px] border border-border/60 bg-card p-5 shadow-sm md:p-6">
-        <div className="grid gap-5 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
-          <div className="space-y-2">
-            <div className="inline-flex items-center gap-2 rounded-full border border-primary/15 bg-primary/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-              <QrCode className="h-3.5 w-3.5" />
-              On-Chain Transfer
-            </div>
-            <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-              Deposit using wallet transfer details
-            </h2>
-            <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-              Use the destination address and network below, then submit either
-              the transaction hash or a payment proof screenshot for review.
-            </p>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Network
-              </div>
-              <div className="mt-2 text-sm font-semibold text-foreground">
-                {selectedCryptoWallet?.network || "—"}
-              </div>
-            </div>
-            <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Currency
-              </div>
-              <div className="mt-2 text-sm font-semibold text-foreground">
-                {selectedCryptoWallet?.currency || "—"}
-              </div>
-            </div>
-            <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Minimum
-              </div>
-              <div className="mt-2 text-sm font-semibold text-foreground">
-                {MINIMUM_DEPOSIT_AMOUNT_LABEL}
-              </div>
-            </div>
-            <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-              <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                Settlement
-              </div>
-              <div className="mt-2 text-sm font-semibold text-foreground">
-                {SETTLEMENT_LABEL}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Left Column - Crypto Wallet Details */}
         <Card className="border border-border/60 bg-card shadow-sm">

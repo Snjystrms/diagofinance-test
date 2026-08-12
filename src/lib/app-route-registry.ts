@@ -356,6 +356,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
       "PSP Setting",
       "Audit Logs",
       "Currency Management",
+      "Default Settings"
     ],
   },
 ];
@@ -916,6 +917,18 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     managerCategories: [
       "Settings",
       "Currency Management",
+      "Setting Management",
+    ],
+  },
+   {
+    path: "/default-settings",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "settings",
+    navLabel: "Default Settings",
+    managerCategories: [
+      "Settings",
+      "Default Settings",
       "Setting Management",
     ],
   },

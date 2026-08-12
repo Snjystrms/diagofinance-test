@@ -506,12 +506,12 @@ export function RegisterClient() {
                   disabled={registerMutation.isPending || isLoading}
                   style={primaryButtonGradient}
                   className="
-                    w-full py-3.5 rounded-md font-sans font-bold text-[14px] leading-[150%] tracking-[-3%]
+                    w-full py-3.5 rounded-md font-sans font-normal text-[14px] leading-[150%] tracking-[-3%]
                     text-white
                     hover:opacity-90
                     focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary
                     disabled:opacity-40 disabled:cursor-not-allowed
-                    transition-all flex items-center justify-center gap-2
+                    transition-all flex items-center justify-center gap-2 cursor-pointer
                   "
                 >
                   {registerMutation.isPending || isLoading ? (
