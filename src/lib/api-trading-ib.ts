@@ -632,9 +632,78 @@ export interface AdminIbUserDetailResponse {
   [key: string]: unknown;
 }
 
-export interface IbInternalTransferRequest {
+export type IbTransferDestination = "main" | "mt5" | "bank";
+
+export interface IbInternalTransferToMainRequest {
   amount: number;
+  destination: "main";
   comment?: string;
+}
+
+export interface IbInternalTransferToMt5Request {
+  amount: number;
+  destination: "mt5";
+  mt5_account_id: string | number;
+  note?: string;
+}
+
+export interface IbInternalTransferToBankRequest {
+  amount: number;
+  destination: "bank";
+  bank_detail_id: number;
+  note?: string;
+}
+
+export type IbInternalTransferRequest =
+  | IbInternalTransferToMainRequest
+  | IbInternalTransferToMt5Request
+  | IbInternalTransferToBankRequest;
+
+export interface IbBankDetailSummary {
+  id: number;
+  account_holder_name: string;
+  account_number: string;
+  iban_number?: string;
+  swift_ifsc_code?: string;
+  bank_name?: string;
+  address?: string;
+  country?: string;
+}
+
+export interface IbMt5AccountSummary {
+  id: number;
+  account_id: string;
+  mt5_login: number;
+}
+
+export interface IbInternalTransferData {
+  id: number;
+  user_id?: number;
+  amount: number;
+  destination: IbTransferDestination | string;
+  bank_detail_id?: number | null;
+  mt5_user_id?: number | null;
+  note?: string | null;
+  status?: string;
+  initiated_by?: string;
+  admin_notes?: string | null;
+  approved_by?: string | null;
+  approved_at?: string | null;
+  created_at?: string;
+  bank_detail?: IbBankDetailSummary | null;
+  mt5_account?: IbMt5AccountSummary | null;
+  [key: string]: unknown;
+}
+
+export interface IbInternalTransfersListResponse {
+  success: boolean;
+  data: IbInternalTransferData[];
+  meta?: {
+    total?: number;
+    page?: number;
+    limit?: number;
+    [key: string]: unknown;
+  };
 }
 
 export interface IbWalletBalance {
@@ -889,7 +958,7 @@ export const ibRequestsApi = {
     }),
 
   internalTransfer: (data: IbInternalTransferRequest, token: string) =>
-    apiCall(`/user/ib-internal-transfer`, {
+    apiCall<IbInternalTransferData>(`/user/ib-internal-transfer`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -897,6 +966,22 @@ export const ibRequestsApi = {
       },
       body: JSON.stringify(data),
     }),
+
+  getInternalTransfers: (
+    token: string,
+    params?: { page?: number; limit?: number },
+  ) => {
+    const queryParams = new URLSearchParams();
+    if (params?.page) queryParams.append("page", String(params.page));
+    if (params?.limit) queryParams.append("limit", String(params.limit));
+    const queryString = queryParams.toString();
+    const url = `/user/ib-internal-transfer${queryString ? `?${queryString}` : ""}`;
+
+    return apiCall<IbInternalTransfersListResponse>(url, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
 
   getIbWallet: (token: string) =>
     apiCall<IbWalletApiData>(`/user/ib-wallet`, {

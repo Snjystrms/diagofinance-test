@@ -222,40 +222,15 @@ export function IbDashboardSidebar() {
   return (
     <div className="flex h-full flex-col bg-sidebar text-sidebar-foreground overflow-hidden">
       {/* ── Hero ── */}
-      <div className="ib-sidebar-hero relative px-5 pt-6 pb-5 space-y-4">
-        <div className="flex items-center gap-3 rounded-2xl border border-sidebar-border/60 px-3 py-2 shadow-sm ib-portal-hero">
-          <div className="relative h-10 w-10 shrink-0">
-            <Image
-              src="/vinnexia-logo.svg"
-              alt="Vinnexia"
-              fill
-              className="object-contain dark:hidden"
-              priority
-            />
-            <Image
-              src="/vinnexia-logo-dark.svg"
-              alt="Vinnexia"
-              fill
-              className="object-contain hidden dark:block"
-              priority
-            />
-          </div>
-          <div className="grid flex-1 gap-0.5 text-left leading-tight">
-            <span
-              className={cn(
-                "truncate font-cinzel text-[11px] font-bold uppercase tracking-[0.2em]",
-                themeMode === "bright"
-                  ? "text-[#48526b] [-webkit-text-stroke:0.5px_#48526b] [text-shadow:0_0_4px_rgba(72,82,107,0.25)]"
-                  : "text-transparent [-webkit-text-stroke:0.5px_white] [text-shadow:0_0_4px_rgba(255,255,255,0.25)]",
-              )}
-            >
-              Vinnexia Capital
-            </span>
-            <span className="truncate font-arvo text-[10px] font-bold tracking-wide text-[#FFB800]">
-              Precision, Power, Performance
-            </span>
-          </div>
-        </div>
+      <div className="relative px-5 pt-6 pb-5 space-y-4">
+        <Image
+          src="/diagofinancelogo.svg"
+          alt="Diagofinance"
+          width={250}
+          height={59}
+          className="mx-auto object-contain"
+          priority
+        />
 
         {/* Divider */}
         <div className="h-px bg-gradient-to-r from-transparent via-sidebar-border/60 to-transparent" />

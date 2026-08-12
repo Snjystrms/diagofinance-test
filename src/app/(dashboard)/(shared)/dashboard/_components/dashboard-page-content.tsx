@@ -1224,8 +1224,8 @@ export function DashboardPageContent() {
                         0}
                     </p>
                   </div>
-                  <div className="p-3 rounded-2xl bg-muted/70 border border-[#EC0808]/50 shadow-sm shadow-[#EC0808]/20">
-                    <ChartCandlestick className="h-6 w-6 text-[#EC0808]" />
+                  <div className="p-3 rounded-2xl bg-muted/70 border border-[#C50435]/50 shadow-sm shadow-[#C50435]/20">
+                    <ChartCandlestick className="h-6 w-6 text-[#C50435]" />
                   </div>
                 </div>
                 <div className="pt-3 border-t border-border/100 mt-auto">
@@ -1264,7 +1264,7 @@ export function DashboardPageContent() {
                 </div>
               </div>
               <div className="flex items-baseline gap-2 mt-2">
-                <span className="text-4xl font-extrabold leading-tight">
+                <span className="text-2xl font-bold leading-tight">
                   {formatAmount(dashboardData?.wallet?.balance)}
                 </span>
                 <span className="text-lg font-bold text-muted-foreground">
@@ -1854,7 +1854,11 @@ export function DashboardPageContent() {
                                 </div>
                                 <div className="flex h-11 w-11 items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
                                   <Image
-                                    src={isBrightMode ? "/total_deposit_bright.svg" : "/total_deposit.svg"}
+                                    src={
+                                      isBrightMode
+                                        ? "/total_deposit_bright.svg"
+                                        : "/total_deposit.svg"
+                                    }
                                     alt="Total deposits"
                                     width={44}
                                     height={44}
@@ -1881,7 +1885,7 @@ export function DashboardPageContent() {
                             <CardContent className="relative z-10 pt-6 pb-6 px-6">
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex-1">
-                                   <div className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                                  <div className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
                                     Total Withdrawals
                                   </div>
                                   <p className="text-2xl font-bold text-foreground tabular-nums">
@@ -1891,9 +1895,13 @@ export function DashboardPageContent() {
                                     )}
                                   </p>
                                 </div>
-                                 <div className="flex h-11 w-11 items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                                <div className="flex h-11 w-11 items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
                                   <Image
-                                    src={isBrightMode ? "/total_withdrawal_bright.svg" : "/total_withdrawal.svg"}
+                                    src={
+                                      isBrightMode
+                                        ? "/total_withdrawal_bright.svg"
+                                        : "/total_withdrawal.svg"
+                                    }
                                     alt="Total withdrawals"
                                     width={44}
                                     height={44}
@@ -1920,7 +1928,7 @@ export function DashboardPageContent() {
                             <CardContent className="relative z-10 pt-6 pb-6 px-6">
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex-1">
-                                   <div className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
+                                  <div className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
                                     Trading Accounts
                                   </div>
                                   <p className="text-2xl font-bold text-foreground tabular-nums">
@@ -1932,7 +1940,11 @@ export function DashboardPageContent() {
                                 </div>
                                 <div className="flex h-11 w-11 items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
                                   <Image
-                                    src={isBrightMode ? "/trading_accounts_bright.svg" : "/trading_accounts.svg"}
+                                    src={
+                                      isBrightMode
+                                        ? "/trading_accounts_bright.svg"
+                                        : "/trading_accounts.svg"
+                                    }
                                     alt="Trading accounts"
                                     width={44}
                                     height={42}
@@ -1994,14 +2006,12 @@ export function DashboardPageContent() {
                             </div>
                             <div className="flex items-baseline gap-2 mt-2">
                               <span
-                                className={`text-4xl font-extrabold leading-tight ${usesDashboardThemeArtwork ? artworkForegroundClass : "drop-shadow-lg"}`}
+                                className={`text-2xl font-bold leading-tight ${usesDashboardThemeArtwork ? artworkForegroundClass : "drop-shadow-lg"}`}
                               >
-                                {formatAmount(dashboardData?.wallet?.balance)}
-                              </span>
-                              <span
-                                className={`text-lg font-bold ${usesDashboardThemeArtwork ? artworkMutedForegroundClass : "text-primary-foreground/80"}`}
-                              >
-                                USD
+                                {formatCurrency(
+                                  dashboardData?.wallet?.balance,
+                                  walletCurrency,
+                                )}
                               </span>
                             </div>
                           </CardHeader>
@@ -2077,81 +2087,74 @@ export function DashboardPageContent() {
                             aria-label="View IB Wallet"
                             className="sm:col-span-1 lg:col-span-1 block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-full"
                           >
-                            <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary h-full">
+                            <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary h-full flex flex-col">
                               <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/8 to-indigo-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
-                              <CardHeader className="relative z-10 pb-3 px-6 pt-6">
-                                <div className="flex items-center justify-between mb-2">
-                                  <div className="uppercase tracking-wider text-xs font-semibold text-muted-foreground flex items-center gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                              <CardContent className="relative z-10 pt-6 pb-6 px-6 flex flex-col flex-1">
+                                {/* Top row: label pill + icon */}
+                                <div className="flex items-start justify-between mb-0">
+                                  <ThemePill
+                                   icon={<Wallet className="h-3.5 w-3.5" />}
+                                    tone={
+                                  usesDashboardThemeArtwork
+                                    ? "subtle"
+                                    : "default"
+                                }
+                                     className={`rounded-full text-[11px] font-semibold uppercase tracking-[0.18em] ${usesDashboardThemeArtwork ? artworkPillClass : "text-primary-foreground"}`}
+                              >
                                     Partner Wallet
-                                  </div>
-                                  <div className="p-1.5 rounded-lg backdrop-blur-sm border bg-muted/70 border-border/100">
-                                    <Shield className="h-4 w-4 text-foreground" />
+                                  </ThemePill>
+
+                                  <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                                    <Image
+                                      src={
+                                        isBrightMode
+                                          ? "/partner_wallet_icon.svg"
+                                          : "/partner_wallet_dark_icon.svg"
+                                      }
+                                      alt="Partner Wallet"
+                                      width={44}
+                                      height={42}
+                                    />
                                   </div>
                                 </div>
-                                <div className="flex items-baseline gap-2 mt-2">
-                                  <span className="text-4xl font-extrabold leading-tight">
-                                    {formatAmount(
-                                      ibWalletData.wallet_balance.amount,
-                                    )}
-                                  </span>
-                                  <span className="text-lg font-bold text-muted-foreground">
-                                    {ibWalletData.wallet_balance.currency}
-                                  </span>
+
+                                {/* Balance */}
+                                <p className="text-2xl font-bold text-foreground tabular-nums truncate">
+                                  {formatCurrency(
+                                    ibWalletData.wallet_balance.amount,
+                                    ibWalletData.wallet_balance.currency,
+                                  )}
+                                </p>
+
+                                {/* Spacer pushes the block below to the bottom of the card */}
+                                <div className="flex-1" />
+
+                                {/* Title + description */}
+                                <div className="mb-3">
+                                  <p className="text-foreground text-sm font-semibold mb-1">
+                                    Partner Wallet
+                                  </p>
+                                  <p className="text-muted-foreground text-xs leading-relaxed">
+                                    Your partner earnings and balance.
+                                  </p>
                                 </div>
-                              </CardHeader>
-                              <CardContent className="relative z-10 pt-4 pb-6 px-6 flex-1">
-                                <div className="flex items-start justify-between gap-4">
-                                  <div className="flex-1 space-y-3">
-                                    <div>
-                                      <p className="text-foreground text-sm font-semibold mb-1">
-                                        Partner Wallet
-                                      </p>
-                                      <p className="text-muted-foreground text-xs leading-relaxed">
-                                        Your Partner earnings and balance.
-                                      </p>
-                                    </div>
-                                    <div className="flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg backdrop-blur-sm border text-muted-foreground bg-muted/70 border-border/100">
-                                      <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-                                      <span className="font-medium">
-                                        Partner Commission Tracking
-                                      </span>
-                                    </div>
-                                    <div className="space-y-2 pt-2 border-t border-border/100">
-                                      <div className="flex items-center justify-between text-xs">
-                                        <span className="text-muted-foreground">
-                                          Client Wallet:
-                                        </span>
-                                        <span className="font-semibold text-foreground">
-                                          {formatCurrency(
-                                            ibWalletData.client_wallet.amount,
-                                            ibWalletData.client_wallet.currency,
-                                          )}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center justify-between text-xs">
-                                        <span className="text-muted-foreground">
-                                          Total Earned:
-                                        </span>
-                                        <span className="font-semibold text-foreground">
-                                          {formatCurrency(
-                                            ibWalletData.earning_summary
-                                              .total_earned,
-                                            ibWalletData.earning_summary
-                                              .currency,
-                                          )}
-                                        </span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="flex flex-col items-center gap-2 flex-shrink-0">
-                                    <div className="p-4 rounded-2xl backdrop-blur-md shadow-lg group-hover:scale-110 transition-transform duration-300 border border-border/100 bg-muted/70">
-                                      <Wallet className="h-8 w-8" />
-                                    </div>
-                                    <span className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-                                      Partner
-                                    </span>
-                                  </div>
+
+                                {/* Commission tracking badge */}
+                                <div className="flex items-center gap-2 text-xs px-3 py-2.5 rounded-xl border text-foreground bg-muted/70 border-border/100 w-fit">
+                                  <Image
+                                    src={
+                                      isBrightMode
+                                        ? "/handshake_icon.svg"
+                                        : "/handshake_dark_icon.svg"
+                                    }
+                                    alt=""
+                                    width={16}
+                                    height={16}
+                                    className="h-4 w-4"
+                                  />
+                                  <span className="font-semibold">
+                                    Partner Commission Tracking
+                                  </span>
                                 </div>
                               </CardContent>
                             </Card>
@@ -2769,7 +2772,9 @@ export function DashboardPageContent() {
                         />
                         <div
                           className="pointer-events-none absolute inset-0 rounded-[inherit]"
-                          style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)" }}
+                          style={{
+                            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
+                          }}
                         />
                         <CardContent className="relative z-10 flex h-full flex-col p-7">
                           <div className="space-y-2">
@@ -2790,8 +2795,7 @@ export function DashboardPageContent() {
                                 "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,70,20,0.12))",
                             }}
                           >
-                            Open{" "}
-                            {activeTab === "mt5-demo" ? "Demo" : "Live"}{" "}
+                            Open {activeTab === "mt5-demo" ? "Demo" : "Live"}{" "}
                             Account
                             <span className="inline-flex h-[22px] w-[22px] items-center justify-center">
                               <ArrowRight className="h-4 w-4" />

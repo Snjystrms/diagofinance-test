@@ -361,7 +361,7 @@ export function DashboardTrendChart({
            <div className="flex flex-col gap-1.5 rounded-lg p-4 ib-portal-surface ib-portal-surface-primary" style={{
               border: "1px solid transparent",
               background: isBrightTheme
-                ? `linear-gradient(90deg, #FCFAF7, #F9F6F2, #F7F4F1) padding-box, linear-gradient(100.15deg, #FDE8E8 -5.5%, #B10430 56.77%, #FDE8E8 111.96%) border-box`
+                ? `linear-gradient(90deg, #FCFAF7, #F9F6F2, #F7F4F1) padding-box, linear-gradient(100.15deg, #E4E4E7 -5.5%, #B10430 56.77%, #E4E4E7 111.96%) border-box`
                 : `linear-gradient(90deg, #3B111C, #2D131A, #22191D) padding-box, linear-gradient(100.15deg, #606060 -5.5%, #B10430 56.77%, #606060 111.96%) border-box`
             }}>
               <div className="flex items-baseline gap-3">
@@ -392,7 +392,7 @@ export function DashboardTrendChart({
            <div className="relative rounded-lg p-3 shadow-inner ib-portal-surface ib-portal-surface-primary" style={{
               border: "1px solid transparent",
               background: isBrightTheme
-                ? `linear-gradient(135deg, #F6F1E8, #F9F6F2, #FCFAF7) padding-box, linear-gradient(100.15deg, #FDE8E8 -5.5%, #B10430 56.77%, #FDE8E8 111.96%) border-box`
+                ? `linear-gradient(135deg, #F6F1E8, #F9F6F2, #FCFAF7) padding-box, linear-gradient(100.15deg, #E4E4E7 -5.5%, #B10430 56.77%, #E4E4E7 111.96%) border-box`
                 : `linear-gradient(135deg, #581328, #40151F, #231B1F) padding-box, linear-gradient(100.15deg, #606060 -5.5%, #B10430 56.77%, #606060 111.96%) border-box`
             }}>
   <ChartContainer

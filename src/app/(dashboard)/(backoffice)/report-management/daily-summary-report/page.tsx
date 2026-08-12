@@ -290,7 +290,7 @@ export default function DailySummaryReportPage() {
     return count;
   }, [searchQuery, fromDate, toDate]);
 
-  const columns: ColumnDef<DailySummaryReportItem>[] = useMemo(
+   const columns: ColumnDef<DailySummaryReportItem>[] = useMemo(
     () => [
       {
         id: "id",
@@ -300,18 +300,16 @@ export default function DailySummaryReportPage() {
           <SerialNumberCell row={row} table={table} className="font-mono text-sm" />
         ),
       },
-      {
-        id: "date",
-        header: () => <ManualSortHeader sortKey="date" title="Date" />,
-        accessorKey: "date",
+       {
+        id: "new_registrations",
+        header: "New Registrations",
+        accessorKey: "new_registrations",
         cell: ({ row }) => (
-          <div className="flex items-center gap-1 text-sm whitespace-nowrap">
-            <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="font-medium">{fmtDate(row.original.date)}</span>
+          <div className="flex items-center gap-1 text-sm">
+            <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span className="font-medium">{row.original.new_registrations}</span>
           </div>
         ),
-        enableSorting: false,
-        enableColumnFilter: false,
       },
       {
         id: "total_deposits",
@@ -320,7 +318,7 @@ export default function DailySummaryReportPage() {
         cell: ({ row }) => (
           <div className="flex items-center gap-1 text-sm whitespace-nowrap">
             <TrendingUp className="h-4 w-4 text-green-600 flex-shrink-0" />
-            <span className="font-medium text-green-600">${formatAmount(row.original.total_deposits)}</span>
+            <span className="font-medium">${formatAmount(row.original.total_deposits)}</span>
           </div>
         ),
       },
@@ -334,17 +332,17 @@ export default function DailySummaryReportPage() {
           return (
             <div className="flex items-center gap-1 text-sm whitespace-nowrap">
               <TrendingDown className="h-4 w-4 text-red-600 flex-shrink-0" />
-              <span className="font-medium text-red-600">-${formatAmount(absAmount)}</span>
+              <span className="font-medium">-${formatAmount(absAmount)}</span>
             </div>
           );
         },
       },
       {
         id: "ib_rewards",
-        header: "IB Rewards",
+        header: "IB Commission",
         accessorKey: "ib_rewards",
         cell: ({ row }) => (
-          <span className="font-semibold text-primary whitespace-nowrap">${formatAmount(row.original.ib_rewards)}</span>
+          <span className="font-semibold">${formatAmount(row.original.ib_rewards)}</span>
         ),
       },
       {
@@ -352,7 +350,7 @@ export default function DailySummaryReportPage() {
         header: "Credit Deposits",
         accessorKey: "credit_deposits",
         cell: ({ row }) => (
-          <span className="font-medium text-blue-600 whitespace-nowrap">${formatAmount(row.original.credit_deposits)}</span>
+          <span className="font-medium">${formatAmount(row.original.credit_deposits)}</span>
         ),
       },
       {
@@ -363,20 +361,22 @@ export default function DailySummaryReportPage() {
           const amount = row.original.credit_withdrawals;
           const absAmount = Math.abs(amount);
           return (
-            <span className="font-medium text-orange-600 whitespace-nowrap">-${formatAmount(absAmount)}</span>
+            <span className="font-medium">-${formatAmount(absAmount)}</span>
           );
         },
       },
-      {
-        id: "new_registrations",
-        header: "New Registrations",
-        accessorKey: "new_registrations",
+       {
+        id: "date",
+        header: () => <ManualSortHeader sortKey="date" title="Date" />,
+        accessorKey: "date",
         cell: ({ row }) => (
-          <div className="flex items-center gap-1 text-sm">
-            <Users className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-            <span className="font-medium">{row.original.new_registrations}</span>
+          <div className="flex items-center gap-1 text-sm whitespace-nowrap">
+            <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+            <span className="font-medium">{fmtDate(row.original.date)}</span>
           </div>
         ),
+        enableSorting: false,
+        enableColumnFilter: false,
       },
     ],
     []

@@ -1199,7 +1199,7 @@ const themeSwatches: ThemeSwatch[] = [
     rightColor: "#18181B",
 
     cssVariables: {
-      primary: "#EC0808", // Red — dominant accent
+      primary: "#C50435", // Red — dominant accent
       secondary: "#500101", // Deep maroon secondary
       accent: "#BB8700", // Dark gold — sparing highlight
 
@@ -1215,14 +1215,14 @@ const themeSwatches: ThemeSwatch[] = [
         background: "#0A0A0B",
         foreground: "#F4F4F5",
 
-        primary: "#EC0808",
+        primary: "#C50435",
         primaryForeground: "#F4F4F5",
 
         accent: "#500101",
         accentForeground: "#F4F4F5",
 
         border: "#27272A",
-        ring: "#EC0808",
+        ring: "#C50435",
       },
     },
   },

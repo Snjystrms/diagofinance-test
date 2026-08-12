@@ -312,6 +312,7 @@ export default function IbDashboardPage() {
 
       const payload: IbInternalTransferRequest = {
         amount,
+        destination: "main",
         ...(transferComment.trim() ? { comment: transferComment.trim() } : {}),
       };
 
