@@ -96,7 +96,7 @@ const SETTING_DEFINITIONS: SettingDefinition[] = [
   {
     key: "disable_ib_commission",
     title: "Disable IB Commission",
-    description: "Stop accrual of new IB partner commissions.",
+    description: "Stop accrual of new IB commissions.",
     icon: BadgePercent,
     tone: "bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/20",
   },

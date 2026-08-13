@@ -213,7 +213,7 @@ function DecryptedPassword({
         size="sm"
         onClick={handleDecryptPassword}
         disabled={isLoading}
-        className="h-8"
+        className="h-8 cursor-pointer"
       >
         {isLoading ? (
           <>
@@ -301,7 +301,7 @@ export const getColumnsWithActions = (
           </div>
           <div className="text-xs text-muted-foreground">@{user.username || "-"}</div>
           <div className="text-xs text-muted-foreground">
-            {isIb ? `Partner: ${sponsorId}` : "Client"}
+            {isIb ? `IB: ${sponsorId}` : "Client"}
           </div>
         </div>
       );
@@ -399,7 +399,7 @@ export const getColumnsWithActions = (
   },
   {
     id: "ib_status",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Partner Status" />,
+    header: ({ column }) => <DataTableColumnHeader column={column} title="IB Status" />,
     cell: ({ row }) => {
       const user = row.original;
       const isIb = Boolean(String(user.sponsor_id ?? "").trim());
@@ -412,7 +412,7 @@ export const getColumnsWithActions = (
       variant="default" 
       className="bg-primary/10 text-primary hover:bg-primary/10 border-primary/20 px-2.5 py-0.5 text-xs font-medium transition-colors"
     >
-      Partner
+      IB
     </Badge>
   )}
   
@@ -440,7 +440,7 @@ export const getColumnsWithActions = (
         ) : (
            <div className="flex items-center gap-1.5">
                   <Plus className="h-3.5 w-3.5" />
-                  <span>Promote to Partner</span>
+                  <span>Promote to IB</span>
                 </div>
         )}
       </Button>

@@ -725,7 +725,7 @@ const walletHistoryColumns: ColumnDef<AdminUserWalletHistoryItem>[] = [
     header: "Wallet",
     key: "wallet_type",
     render: (item) =>
-      item.wallet_type === "ib" ? "Partner" : item.wallet_type || "-",
+      item.wallet_type === "ib" ? "IB" : item.wallet_type || "-",
   },
   {
     header: "Before",
@@ -1367,15 +1367,15 @@ export default function NewUserDetailPage() {
       );
       toast.success(
         (response as { message?: string })?.message ||
-          "Client has been successfully promoted to Partner",
+          "Client has been successfully promoted to IB",
       );
       setPromoteDialogOpen(false);
       setProfileReloadToken((value) => value + 1);
     } catch (error) {
-      console.error("Failed to promote user to Partner:", error);
+      console.error("Failed to promote user to IB:", error);
       toast.error(
         getAdminFriendlyErrorMessage(error, {
-          resource: "Partner promotion",
+          resource: "IB promotion",
           action: "create",
         }),
       );
@@ -1889,7 +1889,7 @@ export default function NewUserDetailPage() {
 
                       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
                         <DetailItem
-                          label={crudUser?.sponsor_id ? "Partner ID" : "Type"}
+                          label={crudUser?.sponsor_id ? "IB ID" : "Type"}
                           value={crudUser?.sponsor_id ?? "Client"}
                         />
                         <DetailItem
@@ -1903,12 +1903,12 @@ export default function NewUserDetailPage() {
                             className="group rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm transition-all hover:border-primary/50 hover:bg-primary/5 hover:shadow-md"
                           >
                             <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                              Partner Portal
+                              IB Portal
                             </div>
                             <div className="mt-2 flex items-center gap-2 text-sm font-medium text-foreground group-hover:text-primary">
                               <ShieldCheck className="h-4 w-4" />
                               <span className="group-hover:underline">
-                                View Partner Details
+                                View IB Details
                               </span>
                             </div>
                           </StatePreservingLink>
@@ -1916,7 +1916,7 @@ export default function NewUserDetailPage() {
                         {!crudUser?.sponsor_id && canPromoteToIb && (
                           <div className="group flex flex-col justify-between gap-3 rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm transition-all hover:border-primary/50 hover:bg-primary/5 hover:shadow-md">
                             <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
-                              Partner Portal
+                              IB Portal
                             </div>
                             <div>
                               <Button
@@ -1931,7 +1931,7 @@ export default function NewUserDetailPage() {
                                   <span>
                                     {promoteSubmitting
                                       ? "Promoting..."
-                                      : "Promote to Partner"}
+                                      : "Promote to IB"}
                                   </span>
                                 </div>
                               </Button>
@@ -2607,19 +2607,19 @@ export default function NewUserDetailPage() {
         >
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>Promote to Partner</DialogTitle>
+              <DialogTitle>Promote to IB</DialogTitle>
               <DialogDescription>
                 This action will promote{" "}
                 {[crudUser.first_name, crudUser.last_name]
                   .filter(Boolean)
                   .join(" ") || "this user"}{" "}
-                to a Partner. Please confirm the details before proceeding.
+                to a IB. Please confirm the details before proceeding.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label>Partner Name</Label>
+                <Label>IB Name</Label>
                 <Input
                   value={
                     [crudUser.first_name, crudUser.last_name]

@@ -42,7 +42,7 @@ type ClientChartPoint = {
 const transactionChartConfig = {
   deposit: { label: "Deposit", color: "var(--primary)" },
   withdraw: { label: "Withdraw", color: "var(--accent)" },
-  partner_commission: { label: "Partner Commission", color: "var(--secondary)" },
+  partner_commission: { label: "IB Commission", color: "var(--secondary)" },
   pending_commission: { label: "Pending Commission", color: "var(--secondary)" },
 } satisfies ChartConfig;
 
@@ -80,7 +80,7 @@ function TransactionTooltip({ active, payload }: CustomTooltipProps) {
         </div>
         <div className="flex items-center justify-between gap-8">
           <span className="text-xs text-muted-foreground">
-            {isLatest ? "Pending Commission" : "Partner Commission"}
+            {isLatest ? "Pending Commission" : "IB Commission"}
           </span>
           <span className="text-sm font-medium">
             {formatCurrency(isLatest ? data.pending_commission : data.partner_commission)}
@@ -207,7 +207,7 @@ export function EnhancedDashboardCharts({ adminDashboardData }: EnhancedChartsPr
   const transactionMetrics: { name: string; amount: number; change: number; colorVar: string }[] = [
     { name: "Deposit", amount: transactionSummary.deposit, change: transactionSummary.depositChange, colorVar: "var(--primary)" },
     { name: "Withdraw", amount: transactionSummary.withdraw, change: transactionSummary.withdrawChange, colorVar: "var(--accent)" },
-    { name: "Partner Commission", amount: transactionSummary.partnerCommission, change: transactionSummary.partnerCommissionChange, colorVar: "var(--secondary)" },
+    { name: "IB Commission", amount: transactionSummary.partnerCommission, change: transactionSummary.partnerCommissionChange, colorVar: "var(--secondary)" },
     { name: "Pending Commission", amount: transactionSummary.pendingCommission, change: transactionSummary.pendingCommissionChange, colorVar: "var(--secondary)" },
   ];
 

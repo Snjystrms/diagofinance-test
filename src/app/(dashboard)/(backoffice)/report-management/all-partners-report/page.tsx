@@ -425,7 +425,7 @@ export default function AllPartnersReportPage() {
       },
       {
         id: "ib_commission",
-        header: () => <ManualSortHeader sortKey="ib_commission" title="Partner Commission" />,
+        header: () => <ManualSortHeader sortKey="ib_commission" title="IB Commission" />,
         accessorKey: "ib_commission",
         size: 160,
         minSize: 150,

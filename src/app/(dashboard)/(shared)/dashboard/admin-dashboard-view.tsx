@@ -178,7 +178,7 @@ export function AdminDashboardView({
       href: "/new-users",
     },
     {
-      title: "Total Partners",
+      title: "Total IBs",
       value: kpis?.total_ib ?? 0,
       description: "Introducing Brokers",
       icon: Building2,
@@ -220,9 +220,9 @@ export function AdminDashboardView({
     },
     // Row 3
     {
-      title: "Pending Partner Request",
+      title: "Pending IB Request",
       value: kpis?.pending_ib_request ?? 0,
-      description: "Pending Partner requests",
+      description: "Pending IB requests",
       icon: Clock,
       ibVariant: "ib-portal-surface-primary",
       href: "/all-ib?status=0",
@@ -403,7 +403,7 @@ export function AdminDashboardView({
                         <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
                           <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                           <p className="relative text-xs text-muted-foreground mb-1">
-                            {period === "daily" ? "Pending Commission" : "Partner Commission"}
+                            {period === "daily" ? "Pending Commission" : "IB Commission"}
                           </p>
                           <p className="relative text-sm font-bold">
                             {formatCurrency(
@@ -464,7 +464,7 @@ export function AdminDashboardView({
                   <div className="group relative overflow-hidden p-3 rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-md backdrop-blur-sm hover:shadow-lg hover:border-primary/50 transition-all duration-300">
                     <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                     <p className="relative text-xs text-muted-foreground mb-1">
-                      Partner Commission
+                      IB Commission
                     </p>
                     <p className="relative text-sm font-bold text-primary">
                       {formatCurrency(summaryMetrics?.total.partner_commission ?? 0)}

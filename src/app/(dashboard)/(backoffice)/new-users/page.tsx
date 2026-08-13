@@ -828,16 +828,16 @@ export default function NewUsersPage() {
 
       toast.success(
         (response as { message?: string })?.message ||
-          "Client has been successfully promoted to Partner",
+          "Client has been successfully promoted to IB",
       );
       setPromoteDialogOpen(false);
       setPromoteTargetUser(null);
       await loadUsers();
     } catch (err) {
-      console.error("Failed to promote user to Partner:", err);
+      console.error("Failed to promote user to IB:", err);
       toast.error(
         getAdminFriendlyErrorMessage(err, {
-          resource: "Partner promotion",
+          resource: "IB promotion",
           action: "create",
         }),
       );
@@ -1288,7 +1288,7 @@ export default function NewUsersPage() {
 
               <TabsContent value="transfer" className="m-0 space-y-3">
                 <div className="space-y-2">
-                  <Label htmlFor="sponsor-search">New Partner</Label>
+                  <Label htmlFor="sponsor-search">New IB</Label>
                   <ApiSearchBar
                     value={sponsorSearchQuery}
                     onChange={setSponsorSearchQuery}
@@ -1356,7 +1356,7 @@ export default function NewUsersPage() {
                 <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
                   <p className="text-sm text-muted-foreground">
                     This will remove the current parent and keep this client out
-                    of partner tree structure.
+                    of IB tree structure.
                   </p>
                 </div>
               </TabsContent>
@@ -1409,17 +1409,17 @@ export default function NewUsersPage() {
         >
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle>Promote to Partner</DialogTitle>
+              <DialogTitle>Promote to IB</DialogTitle>
               <DialogDescription>
                 This action will promote{" "}
-                {promoteTargetUser?.name || "this user"} to a Partner. Please
+                {promoteTargetUser?.name || "this user"} to a IB. Please
                 confirm the details before proceeding.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-2">
               <div className="space-y-2">
-                <Label>Partner Name</Label>
+                <Label>IB Name</Label>
                 <Input
                   value={
                     promoteTargetUser

@@ -232,7 +232,7 @@ export default function IbCommissionReportPage() {
 
   return (
     <ReportPageWrapper
-      title="Partner Commission Report"
+      title="IB Commission Report"
       titleIcon={<Landmark className="h-6 w-6 text-primary" />}
       description="View commission entries generated from trader activity."
       isLoading={loading}

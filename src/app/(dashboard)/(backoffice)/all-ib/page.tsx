@@ -597,12 +597,14 @@ export default function IbManagementPage() {
   const dialogTitle =
     isReviewMode
       ? currentStatusCode === 1
-        ? "Review Approved Partner"
-        : "Review Rejected Partner"
-      : "Update Partner Request";
+        ? "Review Approved IB"
+        : currentStatusCode === 0
+          ? "Review Pending IB"
+          : "Review Rejected IB"
+      : "Update IB Request";
   const dialogDescription =
     isReviewMode
-      ? "Use the decision selector to move this Partner request between approved and rejected states."
+      ? "Use the decision selector to move this IB request between approved and rejected states."
       : "Choose the final decision inside the modal, then save it.";
 
   const renderTableSection = () => {
@@ -629,10 +631,10 @@ export default function IbManagementPage() {
       return (
         <div className="flex min-h-[40vh] flex-col items-center justify-center gap-3 text-center">
           <div className="rounded-full bg-muted px-4 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-            No Partner Requests
+            No IB Requests
           </div>
           <p className="max-w-md text-sm text-muted-foreground">
-            There are currently no Partner requests matching your filters. Adjust the
+            There are currently no IB requests matching your filters. Adjust the
             filters or refresh to check for new submissions.
           </p>
           <Button variant="outline" onClick={loadRequests} disabled={loading}>
@@ -668,10 +670,10 @@ export default function IbManagementPage() {
             <div>
               <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
                 <UserCheck className="h-6 w-6 text-primary" />
-                Partner Requests
+                IB Requests
               </h1>
               <p className="text-sm text-muted-foreground">
-                Review and process Partner applications submitted by users.
+                Review and process IB applications submitted by users.
               </p>
             </div>
             <Button variant="outline" onClick={loadRequests} disabled={loading}>
