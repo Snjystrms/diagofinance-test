@@ -1024,9 +1024,9 @@ export default function IbClientsPage() {
   return (
     <IbPageShell>
       <IbPageHeader
-        eyebrow="Partner's Clients"
+        eyebrow="IB's Clients"
         title="Client summary and rebate activity"
-        description="Browse Referred Users, Sub Partners, and rebate records from the same reporting surface."
+        description="Browse Referred Users, Sub IBs, and rebate records from the same reporting surface."
         actions={
           <Button
             variant="outline"
@@ -1067,7 +1067,7 @@ export default function IbClientsPage() {
       </div> */}
 
       <IbSectionCard
-        title="Partner activity ledger"
+        title="IB activity ledger"
         description="Filter and review client-side trading and rebate records."
       >
         <Tabs
@@ -1077,7 +1077,7 @@ export default function IbClientsPage() {
         >
           <TabsList className="grid h-auto w-full grid-cols-1 sm:grid-cols-3 rounded-2xl bg-muted/40 p-1">
             <TabsTrigger value="clients">Direct Users</TabsTrigger>
-            <TabsTrigger value="sub-ibs">Sub Partners</TabsTrigger>
+            <TabsTrigger value="sub-ibs">Sub IBs</TabsTrigger>
             <TabsTrigger value="rebates">Rebates</TabsTrigger>
           </TabsList>
 

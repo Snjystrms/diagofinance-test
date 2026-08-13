@@ -380,8 +380,8 @@ export default function IbDashboardPage() {
   return (
     <IbPageShell>
       <IbPageHeader
-        eyebrow="Partner Workspace"
-        title={`Partner dashboard for ${user.name}`}
+        eyebrow="IB Workspace"
+        title={`IB dashboard for ${user.name}`}
         description="Track rebates, move funds into the main wallet, and monitor referral performance from one place."
         actions={
           <>
@@ -389,25 +389,18 @@ export default function IbDashboardPage() {
               <RefreshCw className="mr-2 h-4 w-4" />
               Refresh
             </Button>
-            <Button variant="outline" asChild>
-              <Link href="/ib-dashboard/wallet">Wallet history</Link>
-            </Button>
-            <Button onClick={() => setIsTransferDialogOpen(true)}>
-              <ArrowRightLeft className="mr-2 h-4 w-4" />
-              Transfer funds
-            </Button>
           </>
         }
       />
 
       <div className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
         <IbMetricCard
-          title="Partner Wallet"
+          title="IB Wallet"
           value={formatCurrency(
             partner_wallet.balance,
             partner_wallet.currency,
           )}
-          description="Funds available for partner-level withdrawals and transfers."
+          description="Funds available for IB-level withdrawals and transfers."
           icon={<Wallet className="h-5 w-5" />}
           accent="primary"
         />
@@ -517,15 +510,15 @@ export default function IbDashboardPage() {
         </IbSectionCard>
 
         <IbSectionCard
-          title="Partner profile"
-          description="Core Partner program details and referral assets."
+          title="IB profile"
+          description="Core IB program details and referral assets."
         >
           <div className="space-y-3 sm:space-y-4">
             <div className="ib-portal-note rounded-2xl sm:rounded-3xl border p-3 sm:p-5">
               <div className="flex items-start justify-between gap-2 sm:gap-3">
                 <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Partner User
+                    IB User
                   </p>
                   <p className="mt-1 text-lg font-semibold text-foreground sm:mt-2 sm:text-2xl">
                     {user.name || "N/A"}
@@ -540,7 +533,7 @@ export default function IbDashboardPage() {
             <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2">
               <div className="min-w-0 rounded-2xl sm:rounded-3xl border border-border/60 bg-muted/20 p-3 sm:p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Partner ID
+                  IB ID
                 </p>
                 <p className="mt-1 break-all text-base font-semibold leading-snug text-foreground sm:mt-2 sm:text-lg">
                   {partner_info.partner_id}
@@ -603,99 +596,6 @@ export default function IbDashboardPage() {
           </div>
         </IbSectionCard>
       </div>
-
-      <Dialog
-        open={isTransferDialogOpen}
-        onOpenChange={setIsTransferDialogOpen}
-      >
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle>Transfer to client wallet</DialogTitle>
-            <DialogDescription>
-              Move balance from the partner wallet into the client wallet
-              without leaving the dashboard.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-5 py-2">
-            <div className="grid gap-4 rounded-3xl border border-border/60 bg-muted/20 p-4 sm:grid-cols-2">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Partner Wallet
-                </p>
-                <p className="mt-2 text-lg font-semibold text-foreground">
-                  {formatCurrency(
-                    partner_wallet.balance,
-                    partner_wallet.currency,
-                  )}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Client Wallet
-                </p>
-                <p className="mt-2 text-lg font-semibold text-foreground">
-                  {formatCurrency(
-                    client_wallet.balance,
-                    client_wallet.currency,
-                  )}
-                </p>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="ib-transfer-amount">Amount</Label>
-              <Input
-                id="ib-transfer-amount"
-                type="number"
-                step="1"
-                min="1"
-                max={partner_wallet.balance}
-                value={transferAmount}
-                onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                onChange={(event) => setTransferAmount(event.target.value)}
-                placeholder="Enter amount"
-                disabled={isTransferring}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="ib-transfer-comment">Comment</Label>
-              <Textarea
-                id="ib-transfer-comment"
-                rows={3}
-                value={transferComment}
-                onChange={(event) => setTransferComment(event.target.value)}
-                placeholder="Optional note for this transfer"
-                disabled={isTransferring}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsTransferDialogOpen(false);
-                setTransferAmount("");
-                setTransferComment("");
-              }}
-              disabled={isTransferring}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleTransfer} disabled={isTransferring}>
-              {isTransferring ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Transferring...
-                </>
-              ) : (
-                <>
-                  <ArrowRightLeft className="mr-2 h-4 w-4" />
-                  Transfer funds
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </IbPageShell>
   );
 }

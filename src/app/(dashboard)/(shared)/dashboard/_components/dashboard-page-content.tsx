@@ -2093,15 +2093,17 @@ export function DashboardPageContent() {
                                 {/* Top row: label pill + icon */}
                                 <div className="flex items-start justify-between mb-0">
                                   <ThemePill
-                                   icon={<Wallet className="h-3.5 w-3.5" />}
+                                    icon={<Wallet className="h-3.5 w-3.5" />}
                                     tone={
-                                  usesDashboardThemeArtwork
-                                    ? "subtle"
-                                    : "default"
-                                }
-                                     className={`rounded-full text-[11px] font-semibold uppercase tracking-[0.18em] ${usesDashboardThemeArtwork ? artworkPillClass : "text-primary-foreground"}`}
-                              >
-                                    Partner Wallet
+                                      isBrightMode
+                                        ? "reverse"
+                                        : usesDashboardThemeArtwork
+                                          ? "subtle"
+                                          : "default"
+                                    }
+                                    className={`rounded-full text-[11px] font-semibold uppercase tracking-[0.18em] ${isBrightMode ? "" : usesDashboardThemeArtwork ? artworkPillClass : "text-primary-foreground"}`}
+                                  >
+                                    IB Wallet
                                   </ThemePill>
 
                                   <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
@@ -2132,10 +2134,10 @@ export function DashboardPageContent() {
                                 {/* Title + description */}
                                 <div className="mb-3">
                                   <p className="text-foreground text-sm font-semibold mb-1">
-                                    Partner Wallet
+                                    IB Wallet
                                   </p>
                                   <p className="text-muted-foreground text-xs leading-relaxed">
-                                    Your partner earnings and balance.
+                                    Your ib earnings and balance.
                                   </p>
                                 </div>
 
@@ -2153,7 +2155,7 @@ export function DashboardPageContent() {
                                     className="h-4 w-4"
                                   />
                                   <span className="font-semibold">
-                                    Partner Commission Tracking
+                                    IB Commission Tracking
                                   </span>
                                 </div>
                               </CardContent>

@@ -15,9 +15,11 @@ import {
   Mail,
   MapPin,
   Phone,
+  Plus,
   RefreshCw,
   ShieldCheck,
   UserRound,
+  UserPlus,
   Wallet,
 } from "lucide-react";
 import { formatApiDateTimeAsIST } from "@/lib/formatters";
@@ -47,6 +49,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Table,
@@ -60,6 +72,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { ApiRequestError } from "@/lib/api-core";
 import { ViewContentDialog } from "@/components/ui/view-content-dialog";
+import { useModuleCapabilities } from "@/hooks/use-permission-capabilities";
 import {
   adminUsersApi,
   type AdminPaginatedApiData,
@@ -989,6 +1002,11 @@ export default function NewUserDetailPage() {
   const [loadingPassword, setLoadingPassword] = useState(false);
   const [sendingWelcomeEmail, setSendingWelcomeEmail] = useState(false);
   const [showLoginAsClientDialog, setShowLoginAsClientDialog] = useState(false);
+  const [promoteDialogOpen, setPromoteDialogOpen] = useState(false);
+  const [promoteSubmitting, setPromoteSubmitting] = useState(false);
+
+  const { can: canIbCapability } = useModuleCapabilities("ibManagement");
+  const canPromoteToIb = canIbCapability("promoteClientToIb");
 
   const [depositsState, setDepositsState] = useState(() =>
     createPaginatedState<AdminUserTransactionItem>(),
@@ -1329,6 +1347,42 @@ export default function NewUserDetailPage() {
       setSendingWelcomeEmail(false);
     }
   }, [token, id]);
+
+  const handlePromoteToPartner = useCallback(async () => {
+    if (!token || !crudUser?.id) return;
+
+    const partnerName =
+      [crudUser.first_name, crudUser.last_name].filter(Boolean).join(" ").trim() ||
+      crudUser.email?.trim() ||
+      "IB User";
+
+    try {
+      setPromoteSubmitting(true);
+      const response = await adminUsersApi.promoteToIb(
+        {
+          client_id: crudUser.id,
+          ib_name: partnerName,
+        },
+        token,
+      );
+      toast.success(
+        (response as { message?: string })?.message ||
+          "Client has been successfully promoted to Partner",
+      );
+      setPromoteDialogOpen(false);
+      setProfileReloadToken((value) => value + 1);
+    } catch (error) {
+      console.error("Failed to promote user to Partner:", error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, {
+          resource: "Partner promotion",
+          action: "create",
+        }),
+      );
+    } finally {
+      setPromoteSubmitting(false);
+    }
+  }, [token, crudUser]);
 
   // Reload page 1 when perPage changes for any tab
   useEffect(() => {
@@ -1859,8 +1913,33 @@ export default function NewUserDetailPage() {
                             </div>
                           </StatePreservingLink>
                         )}
+                        {!crudUser?.sponsor_id && canPromoteToIb && (
+                          <div className="group flex flex-col justify-between gap-3 rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm transition-all hover:border-primary/50 hover:bg-primary/5 hover:shadow-md">
+                            <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
+                              Partner Portal
+                            </div>
+                            <div>
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => setPromoteDialogOpen(true)}
+                                disabled={promoteSubmitting}
+                                className="relative font-medium shadow-sm transition-all duration-200 hover:shadow-md active:scale-[0.98] disabled:pointer-events-none disabled:opacity-70 px-4 py-2 text-xs"
+                              >
+                                <div className="flex items-center gap-1.5">
+                                  <UserPlus className="h-3.5 w-3.5" />
+                                  <span>
+                                    {promoteSubmitting
+                                      ? "Promoting..."
+                                      : "Promote to Partner"}
+                                  </span>
+                                </div>
+                              </Button>
+                            </div>
+                          </div>
+                        )}
                         <div
-                          className={`rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm ${crudUser?.sponsor_id ? "sm:col-span-1" : "sm:col-span-2"}`}
+                          className={`rounded-2xl border border-border/60 bg-background/80 p-4 shadow-sm ${crudUser?.sponsor_id || canPromoteToIb ? "sm:col-span-1" : "sm:col-span-2"}`}
                         >
                           <div className="text-xs font-medium uppercase tracking-[0.18em] text-muted-foreground">
                             Password
@@ -2132,43 +2211,43 @@ export default function NewUserDetailPage() {
                     <TabsList className="ib-portal-surface inline-flex h-auto w-full flex-wrap gap-1 rounded-2xl border p-1.5">
                       <TabsTrigger
                         value="deposits"
-                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20"
+                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 cursor-pointer"
                       >
                         Deposits
                       </TabsTrigger>
                       <TabsTrigger
                         value="withdrawals"
-                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20"
+                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 cursor-pointer"
                       >
                         Withdrawals
                       </TabsTrigger>
                       <TabsTrigger
                         value="mt5Accounts"
-                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20"
+                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 cursor-pointer"
                       >
                         MT5 Accounts
                       </TabsTrigger>
                       <TabsTrigger
                         value="bankDetails"
-                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20"
+                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 cursor-pointer"
                       >
                         Bank Details
                       </TabsTrigger>
                       <TabsTrigger
                         value="activityLog"
-                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20"
+                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 cursor-pointer"
                       >
                         Login Activity
                       </TabsTrigger>
                       <TabsTrigger
                         value="referralBy"
-                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20"
+                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 cursor-pointer"
                       >
                         Referral By
                       </TabsTrigger>
                       <TabsTrigger
                         value="walletHistory"
-                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20"
+                        className="flex-1 min-w-fit rounded-xl data-[state=active]:bg-sidebar-primary/20 data-[state=active]:text-sidebar-primary data-[state=active]:font-semibold data-[state=active]:ring-1 data-[state=active]:ring-inset data-[state=active]:ring-sidebar-primary/40 data-[state=active]:shadow-md data-[state=active]:shadow-sidebar-primary/20 cursor-pointer"
                       >
                         Wallet History
                       </TabsTrigger>
@@ -2514,6 +2593,67 @@ export default function NewUserDetailPage() {
           )}
         </div>
       </div>
+
+      {/* Promote to Partner Dialog */}
+      {crudUser && !crudUser.sponsor_id && (
+        <Dialog
+          open={promoteDialogOpen}
+          onOpenChange={(open) => {
+            setPromoteDialogOpen(open);
+            if (!open) {
+              setPromoteSubmitting(false);
+            }
+          }}
+        >
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Promote to Partner</DialogTitle>
+              <DialogDescription>
+                This action will promote{" "}
+                {[crudUser.first_name, crudUser.last_name]
+                  .filter(Boolean)
+                  .join(" ") || "this user"}{" "}
+                to a Partner. Please confirm the details before proceeding.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <Label>Partner Name</Label>
+                <Input
+                  value={
+                    [crudUser.first_name, crudUser.last_name]
+                      .filter(Boolean)
+                      .join(" ")
+                      .trim() ||
+                    crudUser.email?.trim() ||
+                    "IB User"
+                  }
+                  disabled
+                />
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setPromoteDialogOpen(false)}
+                disabled={promoteSubmitting}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => void handlePromoteToPartner()}
+                disabled={promoteSubmitting}
+              >
+                {promoteSubmitting ? "Promoting..." : "Promote"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {/* Login as Client Dialog */}
       {crudUser && (

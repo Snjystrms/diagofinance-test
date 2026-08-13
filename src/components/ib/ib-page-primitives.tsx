@@ -64,7 +64,8 @@ export function IbPageHeader({
 }: IbPageHeaderProps) {
   return (
     <section className="ib-portal-hero rounded-[20px] sm:rounded-[28px] border px-4 py-5 sm:px-7 sm:py-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="dashboard-theme-overlay dashboard-theme-welcome-overlay theme-art-diagofinance" />
+      <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div className="space-y-2">
           <ThemePill
             icon={<Sparkles className="h-3.5 w-3.5" />}

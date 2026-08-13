@@ -512,9 +512,9 @@ export default function TransferPage() {
   return (
     <IbPageShell>
       <IbPageHeader
-        eyebrow="Partner Transfer"
-        title="Move funds out of the partner wallet"
-        description="Transfer balance from the partner wallet into the main wallet, fund an MT5 trading account, or submit a bank withdrawal for review."
+        eyebrow="IB Transfer"
+        title="Move funds out of the IB wallet"
+        description="Transfer balance from the IB wallet into the main wallet, fund an MT5 trading account, or submit a bank withdrawal for review."
         actions={
           <>
             <Button variant="outline" onClick={() => void fetchDashboard()}>
@@ -848,7 +848,7 @@ export default function TransferPage() {
             <div className="space-y-4">
               <div className="rounded-3xl border border-border/60 bg-muted/20 p-4">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Partner Wallet After Transfer
+                  IB Wallet After Transfer
                 </p>
                 <p className="mt-2 text-xl font-semibold text-foreground">
                   {formatCurrency(projectedPartnerBalance, partner_wallet.currency)}
@@ -887,7 +887,7 @@ export default function TransferPage() {
 
       <IbSectionCard
         title="Request history"
-        description="Recent transfer and withdrawal requests submitted from your partner wallet."
+        description="Recent transfer and withdrawal requests submitted from your IB wallet."
       >
         <ReusableDataTable
           data={history}

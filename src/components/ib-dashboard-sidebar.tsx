@@ -293,7 +293,7 @@ export function IbDashboardSidebar() {
                   <PieChart className="h-3.5 w-3.5" />
                 </div>
                 <p className="text-[9.5px] font-semibold uppercase tracking-[0.16em] text-sidebar-foreground/55">
-                  Partner Wallet
+                  IB Wallet
                 </p>
               </div>
               <p className="text-sidebar-foreground font-bold text-[15px] tabular-nums leading-none">

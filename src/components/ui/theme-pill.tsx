@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 interface ThemePillProps extends HTMLAttributes<HTMLDivElement> {
   icon?: ReactNode;
-  tone?: "default" | "subtle";
+  tone?: "default" | "subtle" | "reverse";
 }
 
 export function ThemePill({

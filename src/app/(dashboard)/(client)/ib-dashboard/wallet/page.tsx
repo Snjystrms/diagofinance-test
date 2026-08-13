@@ -258,9 +258,9 @@ export default function IbWalletPage() {
   return (
     <IbPageShell>
       <IbPageHeader
-        eyebrow="Partner Wallet"
-        title="Partner and main wallet ledger"
-        description="Review current balances and the latest transfer activity linked to your Partner account."
+        eyebrow="IB Wallet"
+        title="IB and main wallet ledger"
+        description="Review current balances and the latest transfer activity linked to your IB account."
         actions={
           <Button variant="outline" onClick={fetchWalletData}>
             <RefreshCw className="mr-2 h-4 w-4" />
@@ -271,9 +271,9 @@ export default function IbWalletPage() {
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <IbMetricCard
-          title="Partner Wallet"
+          title="IB Wallet"
           value={formatCurrency(snapshot.partnerWallet.amount, snapshot.partnerWallet.currency)}
-          description="Current Partner-side balance."
+          description="Current IB-side balance."
           icon={<Wallet className="h-5 w-5" />}
           accent="primary"
         />
@@ -318,7 +318,7 @@ export default function IbWalletPage() {
               <Clock className="mb-4 h-10 w-10 text-muted-foreground" />
               <h3 className="text-lg font-semibold text-foreground">No transactions yet</h3>
               <p className="mt-2 max-w-md text-sm text-muted-foreground">
-                Your Partner wallet ledger is empty right now. Transfers and earnings will appear here once activity starts.
+                Your IB wallet ledger is empty right now. Transfers and earnings will appear here once activity starts.
               </p>
             </div>
           }
