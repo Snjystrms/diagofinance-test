@@ -315,7 +315,7 @@ export default function UserPromotionsPage() {
                 </span>
               </div>
               <h1 className="text-2xl font-bold text-foreground tracking-tight">Special Promotions</h1>
-              <p className="text-sm text-muted-foreground mt-0.5">Exclusive offers just for you — don&apos;t miss out!</p>
+              <p className="text-sm text-muted-foreground mt-0.5">Exclusive offers just for you don&apos;t miss out!</p>
             </div>
           </div>
         </div>
