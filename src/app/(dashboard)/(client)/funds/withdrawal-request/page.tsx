@@ -2,6 +2,7 @@
 import Link from "next/link";
 import React, { useEffect, useMemo, useState } from "react";
 import { ApiErrorState } from "@/components/errors/api-error-state";
+import { FeatureDisabledPanel } from "@/components/errors/feature-disabled-panel";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -101,7 +102,7 @@ const getCurrencyFromCountry = (country?: string | null): string | null => {
 
 
 function WithdrawalRequestContent() {
-  const { token } = useAuth();
+  const { token, defaultSettings } = useAuth();
   const [withdrawalType, setWithdrawalType] = useState<"crypto" | "bank" | "cash">(
     "crypto",
   );
@@ -684,6 +685,17 @@ function WithdrawalRequestContent() {
       ],
     };
   })();
+
+  if (defaultSettings?.disable_withdraw) {
+    return (
+      <div className="min-h-screen w-full bg-background px-4 py-6 lg:px-6 xl:px-8">
+        <FeatureDisabledPanel
+          title="Withdrawals Temporarily Unavailable"
+          message="Withdrawal services are currently disabled by the administrator. Please try again later. If you have any urgent concerns, please contact our support team."
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen w-full bg-background px-4 py-6 lg:px-6 xl:px-8">

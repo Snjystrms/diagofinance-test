@@ -101,7 +101,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <SidebarInset>
           <Header />
           <DashboardBreadcrumbs />
-          <main className="relative flex-1 min-h-0 overflow-y-auto overflow-x-hidden bg-background p-3 sm:p-4 lg:p-6">
+          <main className="relative flex-1 min-h-0 min-w-0 overflow-y-auto overflow-x-hidden bg-background p-3 sm:p-4 lg:p-6">
             <div className="pointer-events-none fixed bottom-4 right-4 z-0 h-48 w-48 opacity-[0.4] dark:opacity-[0.4]">
               <Image
                 src={

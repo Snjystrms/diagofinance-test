@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { authApi, GroupedPermissions, AUTH_TOKEN_REFRESH_INTERVAL_MS, refreshCurrentAuthToken } from '@/lib/api';
 import { Permission } from '@/types/permissions';
+import { defaultSettingsApi, type UserDefaultSettings } from '@/lib/default-settings';
 import toast from 'react-hot-toast';
 
 const LOCAL_TOKEN_KEY = 'auth_token';
@@ -35,6 +36,7 @@ interface AuthContextType {
   logout: () => void;
   setUser: (user: User | null) => void;
   validateSession: () => Promise<boolean>;
+  defaultSettings: UserDefaultSettings | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -109,6 +111,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [defaultSettings, setDefaultSettings] = useState<UserDefaultSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true); // Add loading state
   const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
   const refreshIntervalRef = React.useRef<NodeJS.Timeout | null>(null);
@@ -398,6 +401,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     localStorage.setItem(LOCAL_USER_KEY, JSON.stringify(userData));
   };
 
+  // Default feature settings only apply to regular client accounts. Admin,
+  // manager, and sub-admin sessions must never be gated by these toggles, so
+  // they are only fetched for `user` type sessions.
+  const isDefaultSettingsEligible =
+    isAuthenticated && Boolean(token) && user?.type === "user";
+
+  // Fetch default feature settings right after the user is authenticated.
+  // Polls every 3 minutes so the client reflects the latest admin changes.
+  // Runs on login, session restore, and admin-initiated client sessions.
+  useEffect(() => {
+    if (!isDefaultSettingsEligible || !token) {
+      setDefaultSettings(null);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadDefaultSettings = () => {
+      defaultSettingsApi
+        .get(token)
+        .then((response) => {
+          if (!cancelled && response.success && response.data) {
+            setDefaultSettings(response.data);
+          }
+        })
+        .catch((err) => {
+          console.error("Failed to load default settings:", err);
+        });
+    };
+
+    loadDefaultSettings();
+    const interval = setInterval(loadDefaultSettings, 3 * 60 * 1000);
+
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [isDefaultSettingsEligible, token]);
+
   useEffect(() => {
     const handleTokenRefresh = (event: Event) => {
       const newToken = (event as CustomEvent<{ token?: string }>).detail?.token;
@@ -565,6 +607,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     logout,
     setUser: setUserData,
     validateSession,
+    defaultSettings,
   };
 
   // Show loading spinner while validating token

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { ApiErrorState } from "@/components/errors/api-error-state";
+import { FeatureDisabledPanel } from "@/components/errors/feature-disabled-panel";
 import { IbMetricCard, IbPageHeader, IbPageShell, IbSectionCard } from "@/components/ib/ib-page-primitives";
 import { getStatusBadge, ReusableDataTable, type ColumnDef } from "@/components/data-table/reusable-data-table";
 import { Button } from "@/components/ui/button";
@@ -218,7 +219,7 @@ const getHistoryColumns = (
 ];
 
 export default function TransferPage() {
-  const { token } = useAuth();
+  const { token, defaultSettings } = useAuth();
   const [dashboardData, setDashboardData] = useState<IbDashboardResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<unknown | null>(null);
@@ -472,6 +473,17 @@ export default function TransferPage() {
     setHistoryPerPage(newPerPage);
     setHistoryPage(1);
   };
+
+  if (defaultSettings?.disable_ib_withdraw) {
+    return (
+      <IbPageShell>
+        <FeatureDisabledPanel
+          title="IB Withdrawals Temporarily Unavailable"
+          message="IB transfer and withdrawal services are currently disabled by the administrator. Please try again later. If you have any urgent concerns, please contact our support team."
+        />
+      </IbPageShell>
+    );
+  }
 
   if (isLoading) {
     return <TransferLoadingState />;

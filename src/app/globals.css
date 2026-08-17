@@ -444,6 +444,20 @@
   background: rgba(4, 4, 4, 0.78) !important;
   color: #f4f4f5 !important;
 }
+
+/* MT5 account creation dialog hero uses a light gradient in bright mode, so
+   keep its text dark instead of the dark-hero light-text treatment above. */
+:root[data-theme-id="diagofinance-bright"] .mt5-dialog-hero,
+:root[data-theme-id="diagofinance-bright"] .mt5-dialog-hero h1,
+:root[data-theme-id="diagofinance-bright"] .mt5-dialog-hero h2,
+:root[data-theme-id="diagofinance-bright"] .mt5-dialog-hero .text-foreground {
+  color: var(--foreground) !important;
+}
+:root[data-theme-id="diagofinance-bright"] .mt5-dialog-hero p,
+:root[data-theme-id="diagofinance-bright"] .mt5-dialog-hero .text-muted-foreground {
+  color: var(--muted-foreground) !important;
+}
+
   :root[data-theme-id="diagofinance-bright"] .ib-portal-surface,
   :root[data-theme-id="diagofinance-bright"] .ib-portal-surface-primary,
   :root[data-theme-id="diagofinance-bright"] .ib-portal-surface-emerald,
@@ -837,6 +851,32 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.5);
+}
+
+/* Table horizontal scrollbar */
+.overflow-x-auto {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--muted-foreground) / 0.5) transparent;
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+  height: 8px;
+  display: block;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--muted-foreground) / 0.5);
+  border-radius: 20px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground) / 0.8);
 }
 
 /* Smooth transitions for theme switching */

@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ApiErrorState } from "@/components/errors/api-error-state";
+import { FeatureDisabledNote, FeatureDisabledPanel } from "@/components/errors/feature-disabled-panel";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -174,7 +175,7 @@ const findMt5AccountById = (accounts: MT5Account[], accountId?: string) =>
   accounts.find((account) => account.account_id === accountId) ?? null;
 
 function InternalTransferContent() {
-  const { token, user } = useAuth();
+  const { token, user, defaultSettings } = useAuth();
   const searchParams = useSearchParams();
   const [mt5Accounts, setMt5Accounts] = useState<MT5Account[]>([]);
   const [mt5Balances, setMt5Balances] = useState<Record<string, number | null>>(
@@ -705,6 +706,17 @@ function InternalTransferContent() {
     : "Select MT5 account";
   const canTransferBetweenWallets = walletOptions.length > 1;
 
+  if (defaultSettings?.disable_transfer) {
+    return (
+      <IbPageShell>
+        <FeatureDisabledPanel
+          title="Internal Transfers Temporarily Unavailable"
+          message="Transfer services are currently disabled by the administrator. Please try again later. If you have any urgent concerns, please contact our support team."
+        />
+      </IbPageShell>
+    );
+  }
+
   return (
     <IbPageShell>
       <IbPageHeader
@@ -862,6 +874,12 @@ function InternalTransferContent() {
             title="Wallet to MT5"
             description="Deposit funds from your primary CRM wallet into a linked MT5 account."
           >
+            {defaultSettings?.disable_wallet_to_mt5 ? (
+              <FeatureDisabledNote
+                title="Wallet to MT5 transfers temporarily unavailable"
+                message="Wallet to MT5 transfers are currently disabled by the administrator. Please try again later."
+              />
+            ) : (
             <Form {...walletToMt5Form}>
               <form
                 onSubmit={walletToMt5Form.handleSubmit(handleWalletToMt5Submit)}
@@ -1056,6 +1074,7 @@ function InternalTransferContent() {
                 </div>
               </form>
             </Form>
+            )}
           </IbSectionCard>
         </TabsContent>
 
@@ -1064,6 +1083,12 @@ function InternalTransferContent() {
             title="MT5 to Wallet"
             description="Withdraw balances from an MT5 account back into one of your CRM wallets."
           >
+            {defaultSettings?.disable_mt5_to_wallet ? (
+              <FeatureDisabledNote
+                title="MT5 to Wallet transfers temporarily unavailable"
+                message="MT5 to Wallet transfers are currently disabled by the administrator. Please try again later."
+              />
+            ) : (
             <Form {...mt5ToWalletForm}>
               <form
                 onSubmit={mt5ToWalletForm.handleSubmit(handleMt5ToWalletSubmit)}
@@ -1242,6 +1267,7 @@ function InternalTransferContent() {
                 </div>
               </form>
             </Form>
+            )}
           </IbSectionCard>
         </TabsContent>
 

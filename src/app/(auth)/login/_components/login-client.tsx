@@ -110,7 +110,8 @@ export function LoginClient() {
         }
       }
     } catch (_error) {
-      toast.error('Login failed. Please check your credentials.');
+      // Error toast is already shown by loginMutation.onError - don't add a
+      // duplicate generic message on top of the specific backend message.
     } finally {
       setIsLoading(false);
     }

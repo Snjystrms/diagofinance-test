@@ -32,12 +32,12 @@ export function DataTable<TData>({
 
   return (
     <div
-      className={cn("flex w-full flex-col gap-2.5 overflow-auto", className)}
+      className={cn("flex w-full min-w-0 flex-col gap-2.5", className)}
       {...props}
     >
       {children}
-      <div className="rounded-md border overflow-x-auto">
-        <Table>
+      <div className="rounded-md border overflow-x-auto min-w-0">
+        <Table className="w-auto min-w-[1400px]">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

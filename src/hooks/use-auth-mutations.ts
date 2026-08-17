@@ -3,7 +3,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { authApi, RegisterRequest, LoginRequest, VerifyOtpRequest, ResendOtpRequest, ForgotPasswordRequest, ResetPasswordRequest, type ProfileViewResponse } from '@/lib/api';
+import { authApi, ApiRequestError, RegisterRequest, LoginRequest, VerifyOtpRequest, ResendOtpRequest, ForgotPasswordRequest, ResetPasswordRequest, type ProfileViewResponse } from '@/lib/api';
 import { useAuth } from '@/contexts/auth-context';
 
 // Helper function to check incomplete profile sections
@@ -145,7 +145,14 @@ export const useAuthMutations = () => {
       }
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Login failed. Please check your credentials.');
+      // Only a 401 means the credentials themselves were rejected. For other
+      // failures (e.g. a 403 feature-disabled block) surface the backend's
+      // message so the user sees why login was refused.
+      if (error instanceof ApiRequestError && error.status === 401) {
+        toast.error('Login failed. Please check your credentials.');
+      } else {
+        toast.error(error.message || 'Login failed. Please check your credentials.');
+      }
     },
   });
 

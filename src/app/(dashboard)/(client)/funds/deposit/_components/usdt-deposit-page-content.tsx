@@ -10,6 +10,7 @@ import { userPaymentMethodsApi, type UserPaymentMethod } from "@/lib/api-auth-ad
 import { walletApi, type WalletSummaryData } from "@/lib/api";
 import { CLIENT_WALLET_REFRESH_EVENT } from "@/lib/client-events";
 import { DepositPageSkeleton } from "./deposit-page-skeleton";
+import { FeatureDisabledPanel } from "@/components/errors/feature-disabled-panel";
 import { Banknote, Building2, Clock, QrCode, Shield, Wallet, WalletMinimal } from "lucide-react";
 import { ComingSoonTab } from "./deposit-shared";
 import { OnChainDepositTab } from "./on-chain-deposit-tab";
@@ -29,7 +30,7 @@ const KNOWN_TYPES = [
 ];
 
 function USDTDepositContent() {
-  const { token } = useAuth();
+  const { token, defaultSettings } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -196,6 +197,17 @@ function USDTDepositContent() {
   }, [token]);
 
   // Show full page skeleton during initial load
+  if (defaultSettings?.disable_deposit) {
+    return (
+      <div className="min-h-screen w-full bg-background px-4 py-6 lg:px-6 xl:px-8">
+        <FeatureDisabledPanel
+          title="Deposits Temporarily Unavailable"
+          message="Deposit services are currently disabled by the administrator. Please try again later. If you have any urgent concerns, please contact our support team."
+        />
+      </div>
+    );
+  }
+
   if (pmLoading && walletLoading) {
     return <DepositPageSkeleton />;
   }

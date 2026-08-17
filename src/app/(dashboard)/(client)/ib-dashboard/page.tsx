@@ -6,7 +6,9 @@ import dynamic from "next/dynamic";
 import toast from "react-hot-toast";
 import {
   ArrowRightLeft,
+  AlertTriangle,
   CalendarClock,
+  CircleDollarSign,
   Copy,
   DollarSign,
   Gem,
@@ -19,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { ApiErrorState } from "@/components/errors/api-error-state";
+import { FeatureDisabledNote } from "@/components/errors/feature-disabled-panel";
 import {
   IbMetricCard,
   IbPageHeader,
@@ -163,7 +166,7 @@ function DashboardLoadingState() {
 }
 
 export default function IbDashboardPage() {
-  const { token } = useAuth();
+  const { token, defaultSettings } = useAuth();
   const [dashboardData, setDashboardData] =
     useState<IbDashboardResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -172,6 +175,8 @@ export default function IbDashboardPage() {
   const [transferAmount, setTransferAmount] = useState("");
   const [transferComment, setTransferComment] = useState("");
   const [isTransferring, setIsTransferring] = useState(false);
+  const [showCommissionDisabledDialog, setShowCommissionDisabledDialog] =
+    useState(false);
   
   // Track theme changes for dynamic color resolution
   const [themeVersion, setThemeVersion] = useState(0);
@@ -237,6 +242,19 @@ export default function IbDashboardPage() {
   useEffect(() => {
     void fetchDashboard();
   }, [fetchDashboard]);
+
+  const isCommissionDisabled = Boolean(defaultSettings?.disable_ib_commission);
+
+  useEffect(() => {
+    if (!isCommissionDisabled) {
+      return;
+    }
+    setShowCommissionDisabledDialog(true);
+    toast.error(
+      "IB commission is temporarily disabled by the administrator. No new commissions will be credited.",
+      { duration: 6000 },
+    );
+  }, [isCommissionDisabled]);
 
   const chartData = useMemo(
     () =>
@@ -392,6 +410,13 @@ export default function IbDashboardPage() {
           </>
         }
       />
+
+      {isCommissionDisabled && (
+        <FeatureDisabledNote
+          title="IB commission temporarily disabled"
+          message="The administrator has temporarily disabled IB commission. No new commissions or rebates will be credited to your account until this is enabled again."
+        />
+      )}
 
       <div className="grid gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-4">
         <IbMetricCard
@@ -596,6 +621,34 @@ export default function IbDashboardPage() {
           </div>
         </IbSectionCard>
       </div>
+
+      <Dialog
+        open={showCommissionDisabledDialog}
+        onOpenChange={setShowCommissionDisabledDialog}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" />
+              IB commission temporarily disabled
+            </DialogTitle>
+            <DialogDescription>
+              The administrator has temporarily disabled IB commission. No new
+              commissions or rebates will be credited to your account until this
+              is enabled again. Existing balances are not affected.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setShowCommissionDisabledDialog(false)}
+            >
+              <CircleDollarSign className="mr-2 h-4 w-4" />
+              Got it
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </IbPageShell>
   );
 }

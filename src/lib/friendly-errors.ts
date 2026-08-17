@@ -218,6 +218,25 @@ export function getFriendlyError(error: unknown, options: FriendlyErrorOptions =
   const status = parts.status;
   const knownFriendlyMessage = getKnownFriendlyMessage(combinedMessage, audience);
 
+  // Backend marks feature-disabled responses with code FEATURE_DISABLED and a
+  // human-readable message. Surface that message instead of a generic 403.
+  if (
+    parts.payload &&
+    isRecord(parts.payload) &&
+    parts.payload.code === "FEATURE_DISABLED"
+  ) {
+    const featureMessage = getStringField(parts.payload, "message");
+    if (featureMessage) {
+      return {
+        title: "Service temporarily unavailable",
+        message: featureMessage,
+        status,
+        severity: "warning",
+        canRetry: false,
+      };
+    }
+  }
+
   if (!combinedMessage || combinedMessage === "failed to fetch" || combinedMessage.includes("networkerror")) {
     return {
       title: "Connection issue",

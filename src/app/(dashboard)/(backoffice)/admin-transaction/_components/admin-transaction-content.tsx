@@ -578,7 +578,7 @@ export function AdminTransactionContent() {
 
       {/* Table */}
       <div className="rounded-lg border bg-card">
-        <div className="p-5">
+        <div className="p-5 min-w-0">
           {loading && rows.length === 0 ? (
             <TableSectionSkeleton columnCount={12} rowCount={10} />
           ) : (

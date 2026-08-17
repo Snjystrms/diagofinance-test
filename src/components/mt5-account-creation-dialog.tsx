@@ -1,9 +1,10 @@
 "use client";
 
+import Image from "next/image";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { ThemePill } from "@/components/ui/theme-pill";
-import { ArrowRight, TrendingUp, BarChart2, Globe2, Zap } from "lucide-react";
+import { ArrowRight, BarChart2, Globe2, ShieldCheck, Zap } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClientCustomization } from "@/contexts/client-customization-context";
 import { getDashboardThemeArtwork } from "@/components/theme-customizer";
@@ -31,6 +32,12 @@ const FEATURES = [
     label: "Lightning Execution",
     desc: "Ultra-low latency order routing",
   },
+];
+
+const STATS = [
+  { value: "1000+", label: "Instruments" },
+  { value: "<0.1s", label: "Execution" },
+  { value: "24/7", label: "Support" },
 ];
 
 // Subtle animated candlestick bars for the header decoration
@@ -68,7 +75,7 @@ export function Mt5AccountCreationDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="ib-portal-surface sm:max-w-md overflow-hidden rounded-[28px] border p-0 shadow-2xl gap-0">
         {/* ── Header ── */}
-        <div className="ib-portal-hero relative overflow-hidden border-b border-border/50 px-6 pt-6 pb-7">
+        <div className="mt5-dialog-hero ib-portal-hero relative overflow-hidden border-b border-border/50 px-6 pt-6 pb-6">
           {dashboardThemeArtwork ? (
             <div
               className={cn(
@@ -122,13 +129,22 @@ export function Mt5AccountCreationDialog({
           <div className="pointer-events-none absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-70" />
 
           <div className="relative z-10 flex items-start gap-4">
-            {/* Icon */}
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-accent text-primary-foreground shadow-lg shadow-primary/25">
-              <TrendingUp className="h-5 w-5" strokeWidth={2.5} />
+            {/* Brand logo */}
+            <div className="relative shrink-0">
+              <div className="absolute -inset-1.5 rounded-2xl bg-gradient-to-br from-primary/35 via-accent/25 to-primary/10 blur-md" />
+              <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl border border-border/60 bg-card/90 shadow-lg shadow-primary/10 backdrop-blur-sm">
+                <Image
+                  src="/diagologo.svg"
+                  alt="Diago Finance"
+                  width={40}
+                  height={40}
+                  className="h-10 w-10 object-contain drop-shadow-sm"
+                />
+              </div>
             </div>
 
-            <div>
-              <div className="flex items-center gap-2 mb-0.5">
+            <div className="min-w-0 flex-1">
+              {/* <div className="mb-1 flex flex-wrap items-center gap-2">
                 <ThemePill className="rounded-full px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.18em]">
                   MetaTrader 5
                 </ThemePill>
@@ -136,20 +152,37 @@ export function Mt5AccountCreationDialog({
                 <span className="text-[10px] tracking-widest uppercase text-muted-foreground/80">
                   Diago Finance
                 </span>
-              </div>
+              </div> */}
               <h2 className="text-xl font-bold text-foreground tracking-tight leading-tight">
                 Open Your Trading Account
               </h2>
               <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-                Access global markets in minutes — no delays.
+                Access global markets in minutes no delays.
               </p>
             </div>
+          </div>
+
+          {/* Quick stats */}
+          <div className="relative z-10 mt-5 grid grid-cols-3 gap-2">
+            {STATS.map(({ value, label }) => (
+              <div
+                key={label}
+                className="flex flex-col items-center justify-center rounded-xl border border-border/40 bg-background/50 px-2 py-2.5 text-center backdrop-blur-sm"
+              >
+                <span className="text-sm font-bold leading-none text-foreground">
+                  {value}
+                </span>
+                <span className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground/80">
+                  {label}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
 
         {/* ── Feature List ── */}
-        <div className="bg-background px-5 pt-5 pb-4 space-y-3">
-          {FEATURES.map(({ icon: Icon, label, desc }) => (
+        <div className="space-y-3 bg-background px-5 pb-4 pt-5">
+          {FEATURES.map(({ icon: Icon, label, desc }, index) => (
             <div
               key={label}
               className="group flex items-center gap-3.5 rounded-xl border border-border/60 bg-card px-4 py-3 transition-all duration-200 hover:border-primary/30 hover:bg-primary/[0.03]"
@@ -157,45 +190,57 @@ export function Mt5AccountCreationDialog({
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10">
                 <Icon className="h-4 w-4 text-primary" />
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-foreground leading-none mb-0.5">
+              <div className="min-w-0 flex-1">
+                <p className="mb-0.5 text-sm font-semibold leading-none text-foreground">
                   {label}
                 </p>
                 <p className="text-xs text-muted-foreground">{desc}</p>
               </div>
-              <span className="h-1.5 w-1.5 rounded-full bg-accent opacity-0 transition-opacity group-hover:opacity-100" />
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-primary/20 text-[10px] font-bold text-primary/70 transition-all duration-200 group-hover:border-primary group-hover:bg-primary group-hover:text-primary-foreground">
+                {index + 1}
+              </span>
             </div>
           ))}
 
           {/* CTA block */}
-          <div className="relative mt-1 rounded-xl border border-primary/25 bg-gradient-to-br from-primary/8 to-transparent p-4">
+          {/* <div className="relative mt-1 overflow-hidden rounded-xl border border-primary/25 bg-gradient-to-br from-primary/8 to-transparent p-4">
             <div className="pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br from-primary/5 to-transparent" />
-            <p className="text-xs text-muted-foreground leading-relaxed">
-              Your MT5 account gives you access to{" "}
-              <span className="text-foreground font-medium">
-                1000+ instruments
-              </span>
-              , real-time data, and one-click execution — all within the
-              vinnexia platform.
-            </p>
-          </div>
+            <div className="relative flex items-start gap-3">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-primary/20 bg-primary/10">
+                <ShieldCheck className="h-4 w-4 text-primary" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs leading-relaxed text-muted-foreground">
+                  Your MT5 account gives you access to{" "}
+                  <span className="font-medium text-foreground">
+                    1000+ instruments
+                  </span>
+                  , real-time data, and one-click execution — all within the
+                  Diago Finance platform.
+                </p>
+                <p className="text-[11px] text-muted-foreground/70">
+                  No deposit required · Regulated infrastructure
+                </p>
+              </div>
+            </div>
+          </div> */}
         </div>
 
         {/* ── Footer ── */}
-        <DialogFooter className="px-5 py-4 border-t border-border/60 bg-muted/30 flex items-center justify-between gap-2">
+        <DialogFooter className="flex items-center justify-between gap-2 border-t border-border/60 bg-muted/30 px-5 py-4">
           <Button
             variant="ghost"
             onClick={handleSkip}
-            className="text-muted-foreground hover:text-foreground text-sm"
+            className="text-sm font-normal text-muted-foreground hover:text-foreground"
           >
             I&apos;ll do this later
           </Button>
           <Button
             onClick={handleCreateAccount}
-            className="gap-2 text-sm font-semibold shadow-md shadow-primary/20"
+            className="group gap-2 text-sm font-normal shadow-md shadow-primary/20 text-foreground"
           >
             Create MT5 Account
-            <ArrowRight className="h-3.5 w-3.5" />
+            <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-0.5" />
           </Button>
         </DialogFooter>
       </DialogContent>
