@@ -69,6 +69,7 @@ import { ClientWithdrawalDialog } from "./client-withdrawal-dialog";
 import { InternalTransferDialog } from "./internal-transfer-dialog";
 import { DirectToMt5Dialog } from "./direct-to-mt5-dialog";
 import { TransactionDetailsDialog } from "./transaction-details-dialog";
+import { TransactionBalanceCell } from "./transaction-balance-cell";
 
 export function AdminTransactionContent() {
   const authCtx = useAuth?.();
@@ -299,21 +300,10 @@ export function AdminTransactionContent() {
       ),
     },
     {
-      id: "balance_before",
-      header: "Balance Before",
+      id: "balance",
+      header: "Balance",
       cell: ({ row }) => (
-        <span className="tabular-nums text-sm text-muted-foreground whitespace-nowrap">
-          {formatAmount(row.original.balance_before)} {row.original.wallet_currency}
-        </span>
-      ),
-    },
-    {
-      id: "balance_after",
-      header: "Balance After",
-      cell: ({ row }) => (
-        <span className="tabular-nums text-sm text-muted-foreground whitespace-nowrap">
-          {formatAmount(row.original.balance_after)} {row.original.wallet_currency}
-        </span>
+        <TransactionBalanceCell transaction={row.original} />
       ),
     },
     {

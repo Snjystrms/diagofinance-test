@@ -18,6 +18,12 @@ export interface AdminTransactionItem {
   id: number;
   user_id: number;
   wallet_id: number;
+  wallet_type?: string | null;
+  wallet_balance_before?: number | null;
+  wallet_balance_after?: number | null;
+  mt5_id?: string | number | null;
+  mt5_account_id?: string | null;
+  balance?: number | null;
   transaction_type: TransactionType;
   amount: number;
   balance_before: number;

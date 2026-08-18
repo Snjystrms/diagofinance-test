@@ -12,6 +12,7 @@ import type { AdminTransactionItem } from "@/lib/api-admin-transactions";
 import { fmtDateTime, fmtISTDateTime, formatAmount, statusBadge, transactionTypeLabel } from "../_lib/transaction-format";
 import { CalendarIcon, User, Wallet, Hash, FileText, Clock, CheckCircle2, DollarSign, ArrowUpDown } from "lucide-react";
 import Link from "next/link";
+import { TransactionBalanceCell } from "./transaction-balance-cell";
 
 interface TransactionDetailsDialogProps {
   open: boolean;
@@ -99,22 +100,9 @@ export function TransactionDetailsDialog({
                 }
               />
               <InfoRow
-                label="Balance Before"
+                label="Balance"
                 icon={ArrowUpDown}
-                value={
-                  <span className="tabular-nums">
-                    {formatAmount(transaction.balance_before)} {transaction.wallet_currency}
-                  </span>
-                }
-              />
-              <InfoRow
-                label="Balance After"
-                icon={ArrowUpDown}
-                value={
-                  <span className="tabular-nums">
-                    {formatAmount(transaction.balance_after)} {transaction.wallet_currency}
-                  </span>
-                }
+                value={<TransactionBalanceCell transaction={transaction} />}
               />
               {/* <InfoRow label="Currency" value={transaction.currency} /> */}
             </div>
