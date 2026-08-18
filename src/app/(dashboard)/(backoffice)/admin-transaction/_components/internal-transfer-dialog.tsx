@@ -135,6 +135,7 @@ export function InternalTransferDialog({
   const [userMt5Accounts, setUserMt5Accounts] = useState<AdminMT5Account[]>([]);
   const [loadingMt5Accounts, setLoadingMt5Accounts] = useState(false);
   const [amount, setAmount] = useState("");
+  const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [walletBalances, setWalletBalances] = useState<
     AdminWalletBalanceItem[]
@@ -350,6 +351,7 @@ export function InternalTransferDialog({
       setToMt5Account("");
       setUserMt5Accounts([]);
       setAmount("");
+      setComment("");
       setSubmitting(false);
       setWalletBalances([]);
       setMt5AccountsWithWalletIds(new Map());
@@ -525,7 +527,7 @@ export function InternalTransferDialog({
           ...(transferType !== "direct_to_mt5" && { from_account: String(fromAccountId) }),
           to_account: String(toAccountId),
           type: transferType,
-          comment: "Internal transfer",
+          comment,
         },
         token,
       );
@@ -1082,6 +1084,17 @@ export function InternalTransferDialog({
               )}
             </div>
           )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="transfer-comment">Comment</Label>
+          <textarea
+            id="transfer-comment"
+            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            placeholder="Enter a comment for this transfer..."
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+          />
         </div>
 
         <DialogFooter>

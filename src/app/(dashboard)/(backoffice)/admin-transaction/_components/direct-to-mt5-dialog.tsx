@@ -105,6 +105,7 @@ export function DirectToMt5Dialog({
   const [userMt5Accounts, setUserMt5Accounts] = useState<AdminMT5Account[]>([]);
   const [loadingMt5Accounts, setLoadingMt5Accounts] = useState(false);
   const [amount, setAmount] = useState("");
+  const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [mt5LiveBalances, setMt5LiveBalances] = useState<Map<string, number>>(
     new Map(),
@@ -242,6 +243,7 @@ export function DirectToMt5Dialog({
       setToMt5Account("");
       setUserMt5Accounts([]);
       setAmount("");
+      setComment("");
       setSubmitting(false);
       setMt5LiveBalances(new Map());
     }
@@ -302,7 +304,7 @@ export function DirectToMt5Dialog({
           amount: numAmount,
           to_account: String(mt5Login),
           type: "direct_to_mt5",
-          comment: "Direct to MT5 transfer",
+          comment,
         },
         token,
       );
@@ -567,6 +569,17 @@ export function DirectToMt5Dialog({
               )}
             </div>
           )}
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="transfer-comment">Comment</Label>
+          <textarea
+            id="transfer-comment"
+            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+            placeholder="Enter a comment for this transfer..."
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+          />
         </div>
 
         <DialogFooter>

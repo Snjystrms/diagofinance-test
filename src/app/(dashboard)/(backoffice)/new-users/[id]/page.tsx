@@ -1043,6 +1043,10 @@ export default function NewUserDetailPage() {
   const [mt5AccountsState, setMt5AccountsState] = useState(() =>
     createCollectionState<AdminUserMt5AccountItem>(),
   );
+  const [mt5AccountsPage, setMt5AccountsPage] = useState(1);
+  const [mt5AccountsPerPage, setMt5AccountsPerPage] = useState(
+    DEFAULT_PAGE_SIZE,
+  );
   const [mt5LiveBalances, setMt5LiveBalances] = useState<
     Map<string, number | null>
   >(new Map());
@@ -1437,6 +1441,7 @@ export default function NewUserDetailPage() {
     setReferralLoaded(false);
     setWalletHistoryState(createPaginatedState<AdminUserWalletHistoryItem>());
     setMt5AccountsState(createCollectionState<AdminUserMt5AccountItem>());
+    setMt5AccountsPage(1);
     setMt5LiveBalances(new Map());
     setLoadingMt5Balances(false);
 
@@ -2359,62 +2364,85 @@ export default function NewUserDetailPage() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {mt5AccountsState.rows.map((item, index) => {
-                                const mt5Login = String(item.mt5_id ?? item.id);
-                                const liveBalance =
-                                  mt5LiveBalances.get(mt5Login);
+                              {mt5AccountsState.rows
+                                .slice(
+                                  (mt5AccountsPage - 1) * mt5AccountsPerPage,
+                                  mt5AccountsPage * mt5AccountsPerPage,
+                                )
+                                .map((item, index) => {
+                                  const mt5Login = String(item.mt5_id ?? item.id);
+                                  const liveBalance =
+                                    mt5LiveBalances.get(mt5Login);
 
-                                // Determine what to display
-                                let displayContent: string;
-                                if (loadingMt5Balances) {
-                                  // Still loading
-                                  displayContent = "loading";
-                                } else if (
-                                  liveBalance === null &&
-                                  mt5LiveBalances.has(mt5Login)
-                                ) {
-                                  // API failed for this account (explicitly set to null)
-                                  displayContent = "-";
-                                } else {
-                                  // Show balance (either live or cached fallback)
-                                  const displayBalance = getMt5DisplayBalance(
-                                    item,
-                                    liveBalance,
-                                  );
-                                  displayContent = formatValueWithCurrency(
-                                    displayBalance,
-                                    getUserMt5BalanceCurrency(item),
-                                  );
-                                }
+                                  // Determine what to display
+                                  let displayContent: string;
+                                  if (loadingMt5Balances) {
+                                    // Still loading
+                                    displayContent = "loading";
+                                  } else if (
+                                    liveBalance === null &&
+                                    mt5LiveBalances.has(mt5Login)
+                                  ) {
+                                    // API failed for this account (explicitly set to null)
+                                    displayContent = "-";
+                                  } else {
+                                    // Show balance (either live or cached fallback)
+                                    const displayBalance = getMt5DisplayBalance(
+                                      item,
+                                      liveBalance,
+                                    );
+                                    displayContent = formatValueWithCurrency(
+                                      displayBalance,
+                                      getUserMt5BalanceCurrency(item),
+                                    );
+                                  }
 
-                                return (
-                                  <TableRow key={item.id}>
-                                    <TableCell className="font-medium">
-                                      <SerialNumberCell
-                                        serialNumber={index + 1}
-                                      />
-                                    </TableCell>
+                                  return (
+                                    <TableRow key={item.id}>
+                                      <TableCell className="font-medium">
+                                        <SerialNumberCell
+                                          serialNumber={
+                                            getPaginatedSerialNumber(
+                                              index,
+                                              withFallbackPagination(
+                                                null,
+                                                mt5AccountsPage,
+                                                mt5AccountsState.rows.length,
+                                              ),
+                                            )
+                                          }
+                                        />
+                                      </TableCell>
 
-                                    <TableCell>{item.mt5_id || "-"}</TableCell>
-                                    <TableCell className="max-w-[220px] truncate">
-                                      {item.account_type_name || "-"}
-                                    </TableCell>
-                                    <TableCell className="max-w-[220px] truncate">
-                                      {item.account_mode || "-"}
-                                    </TableCell>
-                                    <TableCell className="font-mono text-xs">
-                                      <Mt5BalanceButton account={item} />
-                                    </TableCell>
-                                    {/* <TableCell className="font-mono text-xs">{item.investor_password || "-"}</TableCell>
+                                      <TableCell>{item.mt5_id || "-"}</TableCell>
+                                      <TableCell className="max-w-[220px] truncate">
+                                        {item.account_type_name || "-"}
+                                      </TableCell>
+                                      <TableCell className="max-w-[220px] truncate">
+                                        {item.account_mode || "-"}
+                                      </TableCell>
+                                      <TableCell className="font-mono text-xs">
+                                        <Mt5BalanceButton account={item} />
+                                      </TableCell>
+                                      {/* <TableCell className="font-mono text-xs">{item.investor_password || "-"}</TableCell>
                                     <TableCell className="font-mono text-xs">{item.main_password || "-"}</TableCell> */}
-                                    <TableCell>
-                                      {formatDateTime(item.date)}
-                                    </TableCell>
-                                  </TableRow>
-                                );
-                              })}
+                                      <TableCell>
+                                        {formatDateTime(item.date)}
+                                      </TableCell>
+                                    </TableRow>
+                                  );
+                                })}
                             </TableBody>
                           </Table>
+                          <PaginationControls
+                            pagination={withFallbackPagination(
+                              null,
+                              mt5AccountsPage,
+                              mt5AccountsState.rows.length,
+                            )}
+                            loading={mt5AccountsState.loading}
+                            onPageChange={(page) => setMt5AccountsPage(page)}
+                          />
                         </div>,
                       )}
                     </TabsContent>
