@@ -326,7 +326,7 @@ export type AdminUserUpdateBody = Partial<AdminUserCreateBody>;
 export type PromoteToIbBody = {
   client_id: number;
   ib_name: string;
-  // ib_plan_id: number;
+  ib_plan_id?: number;
 };
 
 export type PromoteToIbResponseData = {
@@ -1478,7 +1478,7 @@ export const adminUsersApi = {
       body: JSON.stringify({
         client_id: body.client_id,
         ib_name: ibName,
-        // ib_plan_id: body.ib_plan_id,
+        ...(body.ib_plan_id != null && { ib_plan_id: body.ib_plan_id }),
       }),
     });
   },
@@ -4550,6 +4550,13 @@ export interface AdminWithdrawalRequest {
   chain_id?: string | null;
   bank_detail_id?: number | null;
   transaction_hash?: string | null;
+  source: string;
+  mt5_user_id?: number | null;
+  mt5_account?: {
+    id: number;
+    account_id: string;
+    mt5_login: number;
+  } | null;
   payment_method: {
     id: number;
     type: string;
@@ -4887,6 +4894,161 @@ export const adminWithdrawalApi = {
   ) =>
     apiCall<AdminWithdrawalDecisionResponse>(
       `/admin/withdrawals/${id}/decision`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      },
+    ),
+};
+
+// ─── IB Withdrawal API ────────────────────────────────────────────────────────
+
+export interface AdminIbWithdrawalRequest {
+  id: number;
+  user_id: number;
+  amount: number;
+  destination: "bank" | "mt5";
+  bank_detail_id: number | null;
+  mt5_user_id: number | null;
+  note: string | null;
+  status: "pending" | "approved" | "rejected";
+  initiated_by: string;
+  admin_notes: string | null;
+  approved_by: string | null;
+  approved_at: string | null;
+  created_at: string;
+  user?: {
+    id: number;
+    email: string;
+    first_name: string | null;
+    last_name: string | null;
+  };
+  bank_detail?: {
+    id: number;
+    account_holder_name: string;
+    account_number: string;
+    iban_number: string | null;
+    swift_ifsc_code: string | null;
+    bank_name: string;
+    address: string | null;
+    country: string | null;
+  } | null;
+  mt5_account?: {
+    id: number;
+    account_id: string;
+    mt5_login: number;
+  } | null;
+}
+
+export interface AdminIbWithdrawalListResponse {
+  success?: boolean;
+  data?:
+    | AdminIbWithdrawalRequest[]
+    | {
+        withdrawals?: AdminIbWithdrawalRequest[];
+        data?: AdminIbWithdrawalRequest[];
+        requests?: AdminIbWithdrawalRequest[];
+        pagination?: {
+          page: number;
+          limit: number;
+          total: number;
+          totalPages: number;
+        };
+      };
+  meta?: { total?: number; page?: number; limit?: number };
+  pagination?: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  withdrawals?: AdminIbWithdrawalRequest[];
+  requests?: AdminIbWithdrawalRequest[];
+}
+
+export interface AdminIbWithdrawalDecisionRequest {
+  decision: "approve" | "reject";
+  action: "approve" | "reject";
+  admin_notes?: string;
+  remarks?: string;
+}
+
+export interface AdminIbWithdrawalDecisionResponse {
+  success: boolean;
+  message: string;
+  data: AdminIbWithdrawalRequest;
+}
+
+export interface AdminIbWithdrawalCreateRequest {
+  user_id: number;
+  amount: number;
+  destination: "bank" | "mt5";
+  bank_detail_id?: number;
+  mt5_account_id?: string;
+  comment?: string;
+}
+
+export const adminIbWithdrawalApi = {
+  listAll: (
+    page: number = 1,
+    limit: number = 10,
+    token: string,
+    params?: {
+      status?: string;
+      search?: string;
+      destination?: string;
+      user_id?: number;
+    },
+  ) => {
+    const qs = new URLSearchParams();
+    qs.set("page", String(page));
+    qs.set("limit", String(limit));
+    if (params?.status && params.status !== "all") {
+      qs.set("status", params.status);
+    }
+    if (params?.search && params.search.trim()) {
+      qs.set("search", params.search.trim());
+    }
+    if (params?.destination && params.destination !== "all") {
+      qs.set("destination", params.destination);
+    }
+    if (params?.user_id) {
+      qs.set("user_id", String(params.user_id));
+    }
+
+    return apiCall<AdminIbWithdrawalListResponse>(
+      `/admin/ib-withdrawals?${qs.toString()}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+  },
+
+  create: (data: AdminIbWithdrawalCreateRequest, token: string) =>
+    apiCall<{ success: boolean; message: string; data: AdminIbWithdrawalRequest }>(
+      `/admin/ib-withdrawals`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      },
+    ),
+
+  decision: (
+    id: string | number,
+    data: AdminIbWithdrawalDecisionRequest,
+    token: string,
+  ) =>
+    apiCall<AdminIbWithdrawalDecisionResponse>(
+      `/admin/ib-withdrawals/${id}/decision`,
       {
         method: "POST",
         headers: {

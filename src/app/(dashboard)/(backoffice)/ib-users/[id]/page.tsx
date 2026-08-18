@@ -176,7 +176,7 @@ type IbPlanOption = {
 
 const normalizeIbPlanOption = (plan: AdminIbPlanItem): IbPlanOption => ({
   id: String(plan.id),
-  name: plan.name ?? `Partner Plan ${plan.id}`,
+  name: plan.name ?? `IB Plan ${plan.id}`,
   status: String(plan.status ?? ""),
 });
 
@@ -188,7 +188,7 @@ const deriveFullName = (user: PreviewUser): string => {
   const match = candidates.find(
     (value) => typeof value === "string" && value.trim().length > 0,
   );
-  return match ?? "Partner User";
+  return match ?? "IB User";
 };
 
 const deriveStatusLabel = (user: PreviewUser) => {
@@ -305,14 +305,14 @@ function OverviewTab({
   return (
     <>
       <IbPageHeader
-        eyebrow="Partner Workspace"
-        title={`Partner dashboard for ${fullName}`}
-        description="Read-only preview of the partner portal."
+        eyebrow="IB Workspace"
+        title={`IB dashboard for ${fullName}`}
+        description="Read-only preview of the IB portal."
       />
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <IbMetricCard
-          title="Partner Wallet"
+          title="IB Wallet"
           value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(ibWallet?.balance ?? 0)}
           description={ibWallet ? `${ibWallet.currency}` : "Funds available for partner-level withdrawals"}
           icon={<Wallet className="h-5 w-5" />}
@@ -344,7 +344,7 @@ function OverviewTab({
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,1fr)]">
         <IbSectionCard
           title="Rebate trend"
-          description="Recent rebate activity for the partner account."
+          description="Recent rebate activity for the IB account."
           actions={
             <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-muted/30 px-3 py-1.5 text-xs text-muted-foreground">
               <TrendingUp className="h-3.5 w-3.5" />
@@ -417,15 +417,15 @@ function OverviewTab({
         </IbSectionCard>
 
         <IbSectionCard
-          title="Partner profile"
-          description="Core partner program details and referral assets."
+          title="IB profile"
+          description="Core IB program details and referral assets."
         >
           <div className="space-y-4">
             <div className="ib-portal-note rounded-3xl border p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                    Partner Info
+                    IB Info
                   </p>
                   <p className="mt-2 text-2xl font-semibold text-foreground">
                     {user.user.ib_name ?? user.fullName}
@@ -446,7 +446,7 @@ function OverviewTab({
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="min-w-0 rounded-3xl border border-border/60 bg-muted/20 p-5">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                  Partner ID
+                  IB ID
                 </p>
                 <p className="mt-2 break-all text-lg font-semibold leading-snug text-foreground sm:text-xl">
                   {partnerInfo?.partner_id ?? user.partnerId}
@@ -667,14 +667,14 @@ function WalletTab({
       <IbPageHeader
         eyebrow="Wallet"
         title="Wallet balances and transaction history"
-        description="Partner wallet, main wallet, and recent transactions."
+        description="IB wallet, main wallet, and recent transactions."
       />
 
       <div className="grid gap-4 md:grid-cols-2">
         <IbMetricCard
-          title="Partner Wallet"
+          title="IB Wallet"
           value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(partnerWallet?.balance ?? 0)}
-          description={partnerWallet?.label ?? "Partner-side commission wallet"}
+          description={partnerWallet?.label ?? "IB-side commission wallet"}
           icon={<Wallet className="h-5 w-5" />}
           accent="primary"
         />
@@ -780,7 +780,7 @@ function NetworkTab({
       key: "level",
       render: (b) => (
         <span className="font-medium">
-          {b.level_label === "IB" ? "Partner" : b.level_label}
+          {b.level_label === "IB" ? "IB" : b.level_label}
         </span>
       ),
     },
@@ -789,7 +789,7 @@ function NetworkTab({
       key: "source",
       render: (b) => (
         <span className="text-muted-foreground">
-          {b.source === "Sub-IBs" ? "Sub-Partner" : b.source}
+          {b.source === "Sub-IBs" ? "Sub-IB" : b.source}
         </span>
       ),
     },
@@ -808,13 +808,13 @@ function NetworkTab({
       ),
     },
     {
-      header: "Clients / Sub-Partners",
+      header: "Clients / Sub-IBs",
       key: "clients_sub_ibs",
       align: "right",
       render: (b) => (
         <span className="tabular-nums">
           {b.clients > 0 ? `${b.clients} clients` : ""}
-          {b.sub_ibs > 0 ? `${b.clients > 0 ? " / " : ""}${b.sub_ibs} sub-partners` : ""}
+          {b.sub_ibs > 0 ? `${b.clients > 0 ? " / " : ""}${b.sub_ibs} sub-IBs` : ""}
           {b.clients === 0 && b.sub_ibs === 0 ? "—" : ""}
         </span>
       ),
@@ -868,7 +868,7 @@ function NetworkTab({
 
   const subIbsColumns: ColumnDef<AdminIbSubIb>[] = [
     {
-      header: "Sub-Partner",
+      header: "Sub-IB",
       key: "name",
       render: (sub) => (
         <div>
@@ -948,9 +948,9 @@ function NetworkTab({
           accent="primary"
         />
         <IbMetricCard
-          title="Sub-Partners"
+          title="Sub-IBs"
           value={loading ? <Skeleton className="h-7 w-20" /> : String(networkData?.overview.sub_ibs ?? 0)}
-          description="Active sub-partners in downline"
+          description="Active sub-IBs in downline"
           icon={<Network className="h-5 w-5" />}
           accent="emerald"
         />
@@ -981,7 +981,7 @@ function NetworkTab({
         <IbMetricCard
           title="Team Business"
           value={loading ? <Skeleton className="h-7 w-28" /> : formatCurrency(networkData?.overview.team_business ?? 0)}
-          description="Volume from sub-partners and their downlines"
+          description="Volume from sub-IBs and their downlines"
           icon={<Network className="h-5 w-5" />}
           accent="amber"
         />
@@ -1019,7 +1019,7 @@ function NetworkTab({
       <div className="grid gap-4 xl:grid-cols-2">
         <IbSectionCard
           title="Referred Users"
-          description="Clients registered via the partner's referral link."
+          description="Clients registered via the IB's referral link."
           actions={
             clientsActiveFilterCount > 0 ? (
               <Button
@@ -1059,8 +1059,8 @@ function NetworkTab({
         </IbSectionCard>
 
         <IbSectionCard
-          title="Sub-Partners"
-          description="Sub-partners attached to this partner at any level."
+          title="Sub-IBs"
+          description="Sub-IBs attached to this IB at any level."
           actions={
             subIbsActiveFilterCount > 0 ? (
               <Button
@@ -1093,7 +1093,7 @@ function NetworkTab({
             emptyState={
               <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
                 <Network className="h-6 w-6" />
-                No sub-partners yet.
+                No sub-IBs yet.
               </div>
             }
           />
@@ -1108,9 +1108,9 @@ function ProfileTab({ user, loading }: TabShellProps) {
     { label: "Full name", value: user.fullName },
     { label: "Email", value: user.user.email ?? "\u2014" },
     { label: "Mobile", value: user.user.mobile ?? user.user.phone ?? "\u2014" },
-    { label: "Partner Name", value: user.user.ib_name ?? "\u2014" },
-    { label: "Partner ID", value: user.partnerId },
-    { label: "Sponsor By", value: user.user.sponsor_by ?? "\u2014" },
+    { label: "IB Name", value: user.user.ib_name ?? "\u2014" },
+    { label: "IB ID", value: user.partnerId },
+    { label: "Referred By", value: user.user.sponsor_by ?? "\u2014" },
     { label: "Referral Code", value: user.user.referral_code ?? "\u2014" },
     {
       label: "Registered",
@@ -1124,7 +1124,7 @@ function ProfileTab({ user, loading }: TabShellProps) {
     <>
       <IbPageHeader
         eyebrow="Profile"
-        title="Partner account profile"
+        title="IB account profile"
         description="Identity, plan assignment, and registration metadata."
         actions={
           <Button
@@ -1479,11 +1479,11 @@ export default function IbUserDetailPage() {
 
       setUser(resolvedUser);
     } catch (err: unknown) {
-      console.error("Failed to load partner user detail:", err);
+      console.error("Failed to load IB user detail:", err);
       setError(err);
       toast.error(
         getAdminFriendlyErrorMessage(err, {
-          resource: "partner user",
+          resource: "IB user",
           action: "load",
         }),
       );
@@ -1567,7 +1567,7 @@ export default function IbUserDetailPage() {
       console.error(`Failed to load ${tab} data:`, err);
       toast.error(
         getAdminFriendlyErrorMessage(err, {
-          resource: `partner ${tab} data`,
+          resource: `IB ${tab} data`,
           action: "load",
         }),
       );
@@ -1718,7 +1718,7 @@ export default function IbUserDetailPage() {
     return {
       user,
       referralLink,
-      planName: user.ib_plan_name ?? "Standard Partner Plan",
+      planName: user.ib_plan_name ?? "Standard IB Plan",
       partnerId: user.partner_id ?? user.referral_code ?? "\u2014",
       fullName: deriveFullName(user),
       statusLabel: deriveStatusLabel(user),
@@ -1745,13 +1745,13 @@ export default function IbUserDetailPage() {
             onClick={handleBackNavigation}
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Partner Users
+            Back to IB Users
           </Button>
           <ApiErrorState
             error={error}
             audience="admin"
             variant="panel"
-            resource="partner user"
+            resource="IB user"
             action="load"
             onRetry={() => {
               void loadUser();
@@ -1772,7 +1772,7 @@ export default function IbUserDetailPage() {
                 <Eye className="h-3.5 w-3.5 text-primary" />
                 Admin Preview
               </span>
-              <span>Read-only view of the partner portal</span>
+              <span>Read-only view of the IB portal</span>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             {previewData ? (
@@ -1879,7 +1879,7 @@ export default function IbUserDetailPage() {
               onClick={handleBackNavigation}
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Partner Users
+              Back to IB Users
             </Button>
           </div>
 

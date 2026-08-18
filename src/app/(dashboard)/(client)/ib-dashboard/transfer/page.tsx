@@ -402,7 +402,7 @@ export default function TransferPage() {
       payload = {
         amount,
         destination: "mt5",
-        mt5_account_id: Number(selectedMt5AccountId),
+        mt5_account_id: selectedMt5AccountId,
         ...(transferNote.trim() ? { note: transferNote.trim() } : {}),
       };
     } else if (destination === "bank") {

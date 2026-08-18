@@ -16,6 +16,7 @@ import {
   Eye,
   Download,
   ChevronDown,
+  Plus,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { format, parse } from "date-fns";
@@ -66,6 +67,7 @@ import { fmtDateTime, fmtISTDateTime, formatAmount, statusBadge, transactionType
 import { ClientDepositDialog } from "./client-deposit-dialog";
 import { ClientWithdrawalDialog } from "./client-withdrawal-dialog";
 import { InternalTransferDialog } from "./internal-transfer-dialog";
+import { DirectToMt5Dialog } from "./direct-to-mt5-dialog";
 import { TransactionDetailsDialog } from "./transaction-details-dialog";
 
 export function AdminTransactionContent() {
@@ -119,6 +121,7 @@ export function AdminTransactionContent() {
   const [depositDialogOpen, setDepositDialogOpen] = useState(false);
   const [withdrawalDialogOpen, setWithdrawalDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [directToMt5DialogOpen, setDirectToMt5DialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<AdminTransactionItem | null>(null);
 
@@ -190,6 +193,10 @@ export function AdminTransactionContent() {
   const handleTransferSuccess = useCallback((res: AdminInternalTransferData) => {
     const fromLabel = res.type === "direct_to_mt5" ? "Direct" : String(res.from_wallet_id);
     toast.success(`Transfer of $${formatAmount(res.amount)} from ${fromLabel} to ${res.to_wallet_id} completed successfully`);
+    void loadData();
+  }, [loadData]);
+
+  const handleDirectToMt5Success = useCallback(() => {
     void loadData();
   }, [loadData]);
 
@@ -413,6 +420,41 @@ export function AdminTransactionContent() {
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                New Transaction
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger >
+            <DropdownMenuContent align="end" className="w-[10rem]">
+              <DropdownMenuItem onClick={() => setDepositDialogOpen(true)} className="w-[10rem]">
+                <ArrowDownToLine className="mr-2 h-4 w-4" />
+                Wallet Deposit
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setWithdrawalDialogOpen(true)}>
+                <ArrowUpFromLine className="mr-2 h-4 w-4" />
+                Wallet Withdrawal
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setTransferDialogOpen(true);
+                }}
+              >
+                <TrendingUp className="mr-2 h-4 w-4" />
+                Internal Transfer
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => {
+                  setDirectToMt5DialogOpen(true);
+                }}
+              >
+                <Wallet className="mr-2 h-4 w-4" />
+                Direct to MT5
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2">
                 <Download className="h-4 w-4" />
                 Export
@@ -428,18 +470,6 @@ export function AdminTransactionContent() {
               </DropdownMenuItem> */}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button onClick={() => setDepositDialogOpen(true)}>
-            <ArrowDownToLine className="mr-2 h-4 w-4" />
-            Wallet Deposit
-          </Button>
-          <Button onClick={() => setWithdrawalDialogOpen(true)}>
-            <ArrowUpFromLine className="mr-2 h-4 w-4" />
-            Wallet Withdrawal
-          </Button>
-          <Button onClick={() => setTransferDialogOpen(true)}>
-            <TrendingUp className="mr-2 h-4 w-4" />
-            Internal Transfer
-          </Button>
           <Button variant="outline" size="sm" onClick={loadData} disabled={loading}>
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
             Refresh
@@ -609,6 +639,12 @@ export function AdminTransactionContent() {
         onOpenChange={setTransferDialogOpen}
         token={token}
         onSuccess={handleTransferSuccess}
+      />
+      <DirectToMt5Dialog
+        open={directToMt5DialogOpen}
+        onOpenChange={setDirectToMt5DialogOpen}
+        token={token}
+        onSuccess={handleDirectToMt5Success}
       />
       <TransactionDetailsDialog
         open={detailsDialogOpen}

@@ -162,6 +162,7 @@ export interface AdminInternalTransferBody {
   from_account?: string;
   to_account: string;
   type: InternalTransferType;
+  comment?: string;
 }
 
 export interface AdminInternalTransferData {

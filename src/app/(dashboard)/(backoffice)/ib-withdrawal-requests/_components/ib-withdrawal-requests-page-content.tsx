@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
@@ -12,6 +12,7 @@ import { ApiErrorState } from "@/components/errors/api-error-state";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -41,9 +42,13 @@ import {
   RefreshCw,
   TrendingDown,
   AlertCircle,
+  Plus,
+  Search,
+  X,
 } from "lucide-react";
 
-import { adminWithdrawalApi, type AdminWithdrawalRequest } from "@/lib/api";
+import { adminIbWithdrawalApi, type AdminIbWithdrawalRequest, adminUsersApi, type PendingUser, adminBankDetailsApi, type AdminBankDetailItem } from "@/lib/api";
+import { adminMT5AccountsApi, type AdminMT5Account } from "@/lib/api-trading-ib";
 import { useAuth } from "@/contexts/auth-context";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import {
@@ -52,7 +57,8 @@ import {
   useModuleCapabilities,
 } from "@/hooks/use-permission-capabilities";
 import {
-  WITHDRAWAL_STATUS_OPTIONS,
+  IB_WITHDRAWAL_STATUS_OPTIONS,
+  IB_WITHDRAWAL_DESTINATION_OPTIONS,
   fmtDateTime,
   formatAmount,
   statusBadge,
@@ -60,7 +66,7 @@ import {
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 /* ---------------- Page ---------------- */
-export function WithdrawalRequestsPageContent() {
+export function IbWithdrawalRequestsPageContent() {
   const authCtx = useAuth?.();
   const ctxToken = authCtx?.token;
   const token =
@@ -73,7 +79,7 @@ export function WithdrawalRequestsPageContent() {
   const { isAdmin, isManager, can } = useModuleCapabilities("transaction");
 
   const withdrawalStatusFeatureOptions = useMemo(
-    () => filterFeatureOptions("transaction", WITHDRAWAL_STATUS_OPTIONS),
+    () => filterFeatureOptions("transaction", IB_WITHDRAWAL_STATUS_OPTIONS),
     [filterFeatureOptions],
   );
 
@@ -102,7 +108,7 @@ export function WithdrawalRequestsPageContent() {
   );
 
   const [withdrawalRows, setWithdrawalRows] = useState<
-    AdminWithdrawalRequest[]
+    AdminIbWithdrawalRequest[]
   >([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
@@ -118,16 +124,44 @@ export function WithdrawalRequestsPageContent() {
     "status",
     parseAsString.withDefault("all"),
   );
+  const [destinationFilter, setDestinationFilter] = useQueryState(
+    "destination",
+    parseAsString.withDefault("all"),
+  );
 
   // View details dialog state
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [viewingWithdrawalRequest, setViewingWithdrawalRequest] =
-    useState<AdminWithdrawalRequest | null>(null);
+    useState<AdminIbWithdrawalRequest | null>(null);
   const [verifyDecision, setVerifyDecision] = useState<"approve" | "reject">(
     "approve",
   );
   const [adminNotes, setAdminNotes] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  // Create IB withdrawal dialog state
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [createSubmitting, setCreateSubmitting] = useState(false);
+  const [createDestination, setCreateDestination] = useState<"bank" | "mt5">("bank");
+  const [createAmount, setCreateAmount] = useState("");
+  const [createComment, setCreateComment] = useState("");
+  const [createBankDetailId, setCreateBankDetailId] = useState("");
+  const [createMt5AccountId, setCreateMt5AccountId] = useState("");
+
+  // MT5 accounts and bank details for dropdowns
+  const [mt5Accounts, setMt5Accounts] = useState<AdminMT5Account[]>([]);
+  const [loadingMt5Accounts, setLoadingMt5Accounts] = useState(false);
+  const [bankDetails, setBankDetails] = useState<AdminBankDetailItem[]>([]);
+  const [loadingBankDetails, setLoadingBankDetails] = useState(false);
+
+  // User search for create dialog
+  const [createSearchQuery, setCreateSearchQuery] = useState("");
+  const [createUsers, setCreateUsers] = useState<PendingUser[]>([]);
+  const [createSearching, setCreateSearching] = useState(false);
+  const [createSelectedUser, setCreateSelectedUser] = useState<PendingUser | null>(null);
+  const [createShowResults, setCreateShowResults] = useState(false);
+  const createSearchRef = useRef<HTMLDivElement>(null);
+  const createSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadWithdrawals = useCallback(async () => {
     if (!token) return;
@@ -137,14 +171,16 @@ export function WithdrawalRequestsPageContent() {
         statusFilter !== "all" && statusFilter !== "none"
           ? statusFilter
           : undefined;
+      const destination =
+        destinationFilter !== "all" && destinationFilter !== "none"
+          ? destinationFilter
+          : undefined;
       const searchTerm = search && search.length >= 3 ? search : undefined;
-      const res = (await adminWithdrawalApi.listAll(
-        page,
-        perPage,
-        token,
+      const res = (await adminIbWithdrawalApi.listAll(page, perPage, token, {
         status,
-        searchTerm,
-      )) as {
+        search: searchTerm,
+        destination,
+      })) as {
         data?:
           | unknown[]
           | {
@@ -158,18 +194,18 @@ export function WithdrawalRequestsPageContent() {
         withdrawals?: unknown[];
         requests?: unknown[];
       };
-      let withdrawals: AdminWithdrawalRequest[] = [];
+      let withdrawals: AdminIbWithdrawalRequest[] = [];
       if (Array.isArray(res?.data)) {
-        withdrawals = res.data as AdminWithdrawalRequest[];
+        withdrawals = res.data as AdminIbWithdrawalRequest[];
       } else if (res?.data && typeof res.data === "object") {
         withdrawals = (res.data.withdrawals ??
           res.data.data ??
           res.data.requests ??
-          []) as AdminWithdrawalRequest[];
+          []) as AdminIbWithdrawalRequest[];
       } else {
         withdrawals = (res?.withdrawals ??
           res?.requests ??
-          []) as AdminWithdrawalRequest[];
+          []) as AdminIbWithdrawalRequest[];
       }
       setWithdrawalRows(withdrawals);
 
@@ -198,13 +234,13 @@ export function WithdrawalRequestsPageContent() {
       setLoadError(e);
       toast.error(
         getAdminFriendlyErrorMessage(e, {
-          resource: "withdrawal requests",
+          resource: "IB withdrawal requests",
           action: "load",
         }),
       );
       setWithdrawalRows([]);
     }
-  }, [token, page, perPage, statusFilter, search]);
+  }, [token, page, perPage, statusFilter, search, destinationFilter]);
 
   const loadList = useCallback(async () => {
     if (!token) return;
@@ -259,7 +295,7 @@ export function WithdrawalRequestsPageContent() {
   ]);
 
   const filteredRows = useMemo(() => {
-    let nextRows: AdminWithdrawalRequest[] = withdrawalRows;
+    let nextRows: AdminIbWithdrawalRequest[] = withdrawalRows;
 
     if (isAdmin || !isManager) {
       if (["pending", "approved", "rejected"].includes(statusFilter)) {
@@ -300,7 +336,7 @@ export function WithdrawalRequestsPageContent() {
     isAdmin || !isManager || withdrawalStatusFeatureOptions.length > 1;
 
   const handleViewDetails = useCallback(
-    (request: AdminWithdrawalRequest) => {
+    (request: AdminIbWithdrawalRequest) => {
       if (
         !assertCan(
           canViewStatus(request.status),
@@ -339,10 +375,12 @@ export function WithdrawalRequestsPageContent() {
 
     try {
       setSubmitting(true);
-      const res = await adminWithdrawalApi.decision(
+      const res = await adminIbWithdrawalApi.decision(
         viewingWithdrawalRequest.id,
         {
+          decision: verifyDecision,
           action: verifyDecision,
+          admin_notes: adminNotes.trim() || undefined,
           remarks: adminNotes.trim() || undefined,
         },
         token,
@@ -350,7 +388,7 @@ export function WithdrawalRequestsPageContent() {
 
       toast.success(
         res?.message ||
-          `Withdrawal request ${verifyDecision === "approve" ? "approved" : "rejected"} successfully`,
+          `IB withdrawal request ${verifyDecision === "approve" ? "approved" : "rejected"} successfully`,
       );
 
       await loadList();
@@ -362,7 +400,7 @@ export function WithdrawalRequestsPageContent() {
       console.error(e);
       toast.error(
         getAdminFriendlyErrorMessage(e, {
-          resource: "withdrawal requests",
+          resource: "IB withdrawal requests",
           action: "update",
         }),
       );
@@ -371,12 +409,211 @@ export function WithdrawalRequestsPageContent() {
     }
   };
 
+  // Create IB withdrawal - user search
+  const searchCreateUsers = useCallback(async (query: string) => {
+    const trimmed = query.trim();
+    if (!token || trimmed.length < 3) {
+      setCreateUsers([]);
+      return;
+    }
+    try {
+      setCreateSearching(true);
+      const res = await adminUsersApi.list({ token, search: trimmed, limit: 10 });
+      const list = (res.data as { users?: PendingUser[] })?.users ?? [];
+      setCreateUsers(list);
+      setCreateShowResults(true);
+    } catch {
+      setCreateUsers([]);
+    } finally {
+      setCreateSearching(false);
+    }
+  }, [token]);
+
+  const handleCreateSearchChange = (value: string) => {
+    setCreateSearchQuery(value);
+    setCreateSelectedUser(null);
+    if (createSearchTimerRef.current !== null) clearTimeout(createSearchTimerRef.current);
+    if (value.trim().length >= 3) {
+      createSearchTimerRef.current = setTimeout(() => searchCreateUsers(value), 300);
+    } else {
+      setCreateUsers([]);
+      setCreateShowResults(false);
+    }
+  };
+
+  const handleCreateSelectUser = (user: PendingUser) => {
+    setCreateSelectedUser(user);
+    setCreateSearchQuery(user.name || user.first_name || user.email || String(user.id));
+    setCreateShowResults(false);
+    setCreateUsers([]);
+  };
+
+  const handleCreateClearUser = () => {
+    setCreateSelectedUser(null);
+    setCreateSearchQuery("");
+    setCreateShowResults(false);
+    setCreateUsers([]);
+  };
+
+  // Click outside to close search results
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (createSearchRef.current && !createSearchRef.current.contains(e.target as Node)) {
+        setCreateShowResults(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // Reset create dialog on close
+  useEffect(() => {
+    if (!createDialogOpen) {
+      setCreateSelectedUser(null);
+      setCreateSearchQuery("");
+      setCreateUsers([]);
+      setCreateShowResults(false);
+      setCreateDestination("bank");
+      setCreateAmount("");
+      setCreateComment("");
+      setCreateBankDetailId("");
+      setCreateMt5AccountId("");
+      setCreateSubmitting(false);
+    }
+  }, [createDialogOpen]);
+
+  // Fetch MT5 accounts when user is selected and destination is MT5
+  useEffect(() => {
+    if (!createSelectedUser || createDestination !== "mt5" || !token) {
+      setMt5Accounts([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingMt5Accounts(true);
+    adminMT5AccountsApi
+      .list({ token, user_id: createSelectedUser.id, limit: 100 })
+      .then((res) => {
+        if (cancelled) return;
+        const responseData = res.data as Record<string, unknown> | AdminMT5Account[] | undefined;
+        let accounts: AdminMT5Account[] = [];
+        if (Array.isArray(responseData)) {
+          accounts = responseData;
+        } else if (responseData && typeof responseData === "object") {
+          const obj = responseData as Record<string, unknown>;
+          accounts =
+            (obj.accounts as AdminMT5Account[]) ??
+            (obj.items as AdminMT5Account[]) ??
+            (obj.data as AdminMT5Account[]) ??
+            (obj.mt5_accounts as AdminMT5Account[]) ??
+            [];
+        }
+        setMt5Accounts(accounts);
+      })
+      .catch(() => {
+        if (!cancelled) setMt5Accounts([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingMt5Accounts(false);
+      });
+    return () => { cancelled = true; };
+  }, [createSelectedUser, createDestination, token]);
+
+  // Fetch bank details when user is selected and destination is bank
+  useEffect(() => {
+    if (!createSelectedUser || createDestination !== "bank" || !token) {
+      setBankDetails([]);
+      return;
+    }
+    let cancelled = false;
+    setLoadingBankDetails(true);
+    adminBankDetailsApi
+      .list(token, null, 1, 100)
+      .then((res) => {
+        if (cancelled) return;
+        const responseData = res.data;
+        const rows = responseData?.rows ?? [];
+        const userBanks = rows.filter(
+          (b: AdminBankDetailItem) => b.user_id === createSelectedUser?.id,
+        );
+        setBankDetails(userBanks);
+      })
+      .catch(() => {
+        if (!cancelled) setBankDetails([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingBankDetails(false);
+      });
+    return () => { cancelled = true; };
+  }, [createSelectedUser, createDestination, token]);
+
+  const submitCreateAction = async () => {
+    if (!token) return;
+    if (!createSelectedUser) {
+      toast.error("Please select a user");
+      return;
+    }
+    const numAmount = parseFloat(createAmount);
+    if (!createAmount || isNaN(numAmount) || numAmount <= 0) {
+      toast.error("Please enter a valid amount");
+      return;
+    }
+    if (createDestination === "bank" && !createBankDetailId) {
+      toast.error("Please enter a bank detail ID");
+      return;
+    }
+    if (createDestination === "mt5" && !createMt5AccountId) {
+      toast.error("Please enter an MT5 account ID");
+      return;
+    }
+
+    try {
+      setCreateSubmitting(true);
+      const payload: {
+        user_id: number;
+        amount: number;
+        destination: "bank" | "mt5";
+        bank_detail_id?: number;
+        mt5_account_id?: string;
+        comment?: string;
+      } = {
+        user_id: createSelectedUser.id,
+        amount: numAmount,
+        destination: createDestination,
+      };
+
+      if (createDestination === "bank") {
+        payload.bank_detail_id = parseInt(createBankDetailId, 10);
+      } else {
+        payload.mt5_account_id = createMt5AccountId;
+      }
+
+      if (createComment.trim()) {
+        payload.comment = createComment.trim();
+      }
+
+      const res = await adminIbWithdrawalApi.create(payload, token);
+      toast.success(res?.message || "IB withdrawal created successfully");
+      setCreateDialogOpen(false);
+      await loadList();
+    } catch (e: unknown) {
+      console.error(e);
+      toast.error(
+        getAdminFriendlyErrorMessage(e, {
+          resource: "IB withdrawal",
+          action: "create",
+        }),
+      );
+    } finally {
+      setCreateSubmitting(false);
+    }
+  };
+
   const formatDateTime = (dateString: string | null | undefined): string => {
     if (!dateString) return "—";
     return fmtDateTime(dateString);
   };
 
-  const withdrawalColumns: ColumnDef<AdminWithdrawalRequest>[] = useMemo(
+  const withdrawalColumns: ColumnDef<AdminIbWithdrawalRequest>[] = useMemo(
     () => [
       {
         id: "id",
@@ -416,19 +653,19 @@ export function WithdrawalRequestsPageContent() {
         },
       },
       {
-        id: "source",
-        header: "Source",
-        accessorKey: "source",
+        id: "destination",
+        header: "Destination",
+        accessorKey: "destination",
         cell: ({ row }) => {
-          const source = row.original.source;
-          if (source === "mt5") {
+          const dest = row.original.destination;
+          if (dest === "mt5") {
             return (
               <span className="font-medium">
                 MT5 — {row.original.mt5_account?.mt5_login ?? "—"}
               </span>
             );
           }
-          return <span className="font-medium">Main Wallet</span>;
+          return <span className="font-medium">Bank</span>;
         },
       },
       {
@@ -442,12 +679,12 @@ export function WithdrawalRequestsPageContent() {
         ),
       },
       {
-        id: "payment_method",
-        header: "Payment Type",
-        accessorKey: "payment_method",
+        id: "initiated_by",
+        header: "Initiated By",
+        accessorKey: "initiated_by",
         cell: ({ row }) => (
-          <span className="font-medium">
-            {row.original.payment_method.name || "—"}
+          <span className="font-medium capitalize">
+            {row.original.initiated_by || "—"}
           </span>
         ),
       },
@@ -472,7 +709,7 @@ export function WithdrawalRequestsPageContent() {
           </div>
         ),
       },
-        {
+      {
         id: "admin_notes",
         header: "Admin Note",
         accessorKey: "admin_notes",
@@ -520,7 +757,7 @@ export function WithdrawalRequestsPageContent() {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
         <p className="text-muted-foreground">
-          You do not have permission to view USDT withdrawal transactions.
+          You do not have permission to view IB withdrawal requests.
         </p>
       </div>
     );
@@ -544,7 +781,7 @@ export function WithdrawalRequestsPageContent() {
           error={loadError}
           audience="admin"
           variant="panel"
-          resource="withdrawal requests"
+          resource="IB withdrawal requests"
           action="load"
           onRetry={() => {
             void loadList();
@@ -560,13 +797,17 @@ export function WithdrawalRequestsPageContent() {
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
             <TrendingDown className="h-6 w-6 text-primary" />
-            Withdrawal List
+            IB Withdrawal List
           </h1>
           <p className="text-sm text-muted-foreground">
-            Manage and review all withdrawal requests
+            Manage and review all IB withdrawal requests
           </p>
         </div>
         <div className="flex gap-2">
+          <Button onClick={() => setCreateDialogOpen(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Create IB Withdrawal
+          </Button>
           <Button variant="outline" onClick={loadList} disabled={loading}>
             <RefreshCw
               className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
@@ -615,9 +856,34 @@ export function WithdrawalRequestsPageContent() {
               </Select>
             </div>
           )}
+
+          <div className="flex items-center gap-2">
+            <label
+              htmlFor="destination-filter"
+              className="text-sm font-medium"
+            >
+              Filter by Destination:
+            </label>
+            <Select
+              value={destinationFilter === "all" ? undefined : destinationFilter}
+              onValueChange={(v) => setDestinationFilter(v || "all")}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select destination" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                {IB_WITHDRAWAL_DESTINATION_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        <AppDataTable<AdminWithdrawalRequest>
+        <AppDataTable<AdminIbWithdrawalRequest>
           data={filteredRows}
           columns={withdrawalColumns}
           pageCount={totalPages}
@@ -637,9 +903,9 @@ export function WithdrawalRequestsPageContent() {
       >
         <DialogContent className="sm:max-w-4xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Withdrawal Request Details</DialogTitle>
+            <DialogTitle>IB Withdrawal Request Details</DialogTitle>
             <DialogDescription>
-              View complete details of the withdrawal request
+              View complete details of the IB withdrawal request
             </DialogDescription>
           </DialogHeader>
 
@@ -665,13 +931,31 @@ export function WithdrawalRequestsPageContent() {
                       </span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Source: </span>
+                      <span className="text-muted-foreground">
+                        Destination:{" "}
+                      </span>
                       <span className="font-medium">
-                        {viewingWithdrawalRequest.source === "mt5"
+                        {viewingWithdrawalRequest.destination === "mt5"
                           ? `MT5 — ${viewingWithdrawalRequest.mt5_account?.mt5_login ?? "—"}`
-                          : "Main Wallet"}
+                          : "Bank"}
                       </span>
                     </div>
+                    <div>
+                      <span className="text-muted-foreground">
+                        Initiated By:{" "}
+                      </span>
+                      <span className="font-medium capitalize">
+                        {viewingWithdrawalRequest.initiated_by || "—"}
+                      </span>
+                    </div>
+                    {viewingWithdrawalRequest.note && (
+                      <div>
+                        <span className="text-muted-foreground">Note: </span>
+                        <span className="font-medium">
+                          {viewingWithdrawalRequest.note}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -714,32 +998,14 @@ export function WithdrawalRequestsPageContent() {
                 <div className="space-y-2 text-sm">
                   <div>
                     <span className="text-muted-foreground">
-                      Payment Method:{" "}
+                      Destination:{" "}
                     </span>
-                    <span className="font-medium">
-                      {viewingWithdrawalRequest.payment_method?.name || "—"}
+                    <span className="font-medium capitalize">
+                      {viewingWithdrawalRequest.destination}
                     </span>
                   </div>
-                  {viewingWithdrawalRequest.wallet_address ? (
-                    <>
-                      <div>
-                        <span className="text-muted-foreground">
-                          Wallet Address:{" "}
-                        </span>
-                        <span className="font-medium break-all font-mono text-xs">
-                          {viewingWithdrawalRequest.wallet_address}
-                        </span>
-                      </div>
-                      {viewingWithdrawalRequest.chain_id && (
-                        <div>
-                          <span className="text-muted-foreground">Chain: </span>
-                          <span className="font-medium">
-                            {viewingWithdrawalRequest.chain_id}
-                          </span>
-                        </div>
-                      )}
-                    </>
-                  ) : viewingWithdrawalRequest.bank_detail ? (
+                  {viewingWithdrawalRequest.destination === "bank" &&
+                  viewingWithdrawalRequest.bank_detail ? (
                     <>
                       <div>
                         <span className="text-muted-foreground">
@@ -810,6 +1076,26 @@ export function WithdrawalRequestsPageContent() {
                         </div>
                       )}
                     </>
+                  ) : viewingWithdrawalRequest.destination === "mt5" &&
+                    viewingWithdrawalRequest.mt5_account ? (
+                    <>
+                      <div>
+                        <span className="text-muted-foreground">
+                          MT5 Account ID:{" "}
+                        </span>
+                        <span className="font-medium font-mono">
+                          {viewingWithdrawalRequest.mt5_account.account_id}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground">
+                          MT5 Login:{" "}
+                        </span>
+                        <span className="font-medium">
+                          {viewingWithdrawalRequest.mt5_account.mt5_login}
+                        </span>
+                      </div>
+                    </>
                   ) : (
                     <span className="text-muted-foreground">
                       No payment details available
@@ -818,7 +1104,7 @@ export function WithdrawalRequestsPageContent() {
                 </div>
               </div>
 
-              {(viewingWithdrawalRequest.remarks ||
+              {(viewingWithdrawalRequest.admin_notes ||
                 viewingWithdrawalRequest.approved_by ||
                 viewingWithdrawalRequest.approved_at) && (
                 <div className="rounded-lg border p-4">
@@ -826,12 +1112,24 @@ export function WithdrawalRequestsPageContent() {
                     Admin Information
                   </p>
                   <div className="space-y-2 text-sm">
-                    {viewingWithdrawalRequest.remarks && (
+                    {viewingWithdrawalRequest.admin_notes && (
                       <div>
-                        <span className="text-muted-foreground">Remarks: </span>
+                        <span className="text-muted-foreground">
+                          Admin Notes:{" "}
+                        </span>
                         <div className="mt-1 p-2 bg-muted rounded-md">
-                          {viewingWithdrawalRequest.remarks}
+                          {viewingWithdrawalRequest.admin_notes}
                         </div>
+                      </div>
+                    )}
+                    {viewingWithdrawalRequest.approved_by && (
+                      <div>
+                        <span className="text-muted-foreground">
+                          Approved By:{" "}
+                        </span>
+                        <span className="font-medium">
+                          {viewingWithdrawalRequest.approved_by}
+                        </span>
                       </div>
                     )}
                     {viewingWithdrawalRequest.approved_at && (
@@ -859,19 +1157,13 @@ export function WithdrawalRequestsPageContent() {
                       {fmtDateTime(viewingWithdrawalRequest.created_at)}
                     </span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">Updated: </span>
-                    <span>
-                      {fmtDateTime(viewingWithdrawalRequest.updated_at)}
-                    </span>
-                  </div>
                 </div>
               </div>
 
               {(() => {
                 const isPending = viewingWithdrawalRequest.status === "pending";
-                const isApproved = viewingWithdrawalRequest.status === "approved";
+                const isApproved =
+                  viewingWithdrawalRequest.status === "approved";
                 const canVerify =
                   canTakeWithdrawalAction &&
                   isPending &&
@@ -880,7 +1172,7 @@ export function WithdrawalRequestsPageContent() {
                   canTakeWithdrawalAction &&
                   isApproved &&
                   canViewStatus("approved");
-                
+
                 if (!canVerify && !canRejectApproved) return null;
 
                 return (
@@ -892,15 +1184,23 @@ export function WithdrawalRequestsPageContent() {
                           <div className="flex items-start gap-2">
                             <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
                             <div>
-                              <p className="font-semibold">One-time Reversal</p>
-                              <p className="text-xs mt-1">This withdrawal was already approved. You can reject it once in case of accidental approval. This action cannot be undone.</p>
+                              <p className="font-semibold">
+                                One-time Reversal
+                              </p>
+                              <p className="text-xs mt-1">
+                                This withdrawal was already approved. You can
+                                reject it once in case of accidental approval.
+                                This action cannot be undone.
+                              </p>
                             </div>
                           </div>
                         </div>
                       )}
                       <div className="space-y-2">
                         <Label className="text-sm font-semibold">
-                          {viewingWithdrawalRequest.status === "approved" ? "Reversal Decision" : "Verification Decision"}
+                          {viewingWithdrawalRequest.status === "approved"
+                            ? "Reversal Decision"
+                            : "Verification Decision"}
                         </Label>
                         <Tabs
                           value={verifyDecision}
@@ -911,16 +1211,26 @@ export function WithdrawalRequestsPageContent() {
                           }}
                           className="w-full"
                         >
-                          <TabsList className={`grid h-auto w-full ${viewingWithdrawalRequest.status === "approved" ? 'grid-cols-1' : 'grid-cols-2'} rounded-2xl bg-muted/50 p-1`}>
+                          <TabsList
+                            className={`grid h-auto w-full ${viewingWithdrawalRequest.status === "approved" ? "grid-cols-1" : "grid-cols-2"} rounded-2xl bg-muted/50 p-1`}
+                          >
                             {viewingWithdrawalRequest.status !== "approved" && (
-                              <TabsTrigger value="approve" className="rounded-xl">
+                              <TabsTrigger
+                                value="approve"
+                                className="rounded-xl"
+                              >
                                 <CheckCircle2 className="mr-2 h-4 w-4" />
                                 Approve
                               </TabsTrigger>
                             )}
-                            <TabsTrigger value="reject" className="rounded-xl">
+                            <TabsTrigger
+                              value="reject"
+                              className="rounded-xl"
+                            >
                               <XCircle className="mr-2 h-4 w-4" />
-                              {viewingWithdrawalRequest.status === "approved" ? "Reject (Reverse Approval)" : "Reject"}
+                              {viewingWithdrawalRequest.status === "approved"
+                                ? "Reject (Reverse Approval)"
+                                : "Reject"}
                             </TabsTrigger>
                           </TabsList>
                         </Tabs>
@@ -951,8 +1261,8 @@ export function WithdrawalRequestsPageContent() {
                         />
                         {verifyDecision === "reject" && (
                           <p className="text-xs text-muted-foreground">
-                            {viewingWithdrawalRequest.status === "approved" 
-                              ? "Reversal reason is required and will be logged" 
+                            {viewingWithdrawalRequest.status === "approved"
+                              ? "Reversal reason is required and will be logged"
                               : "Rejection reason is required"}
                           </p>
                         )}
@@ -976,8 +1286,10 @@ export function WithdrawalRequestsPageContent() {
             </Button>
             {viewingWithdrawalRequest &&
               canTakeWithdrawalAction &&
-              ((viewingWithdrawalRequest.status === "pending" && canViewStatus("pending")) ||
-               (viewingWithdrawalRequest.status === "approved" && canViewStatus("approved"))) && (
+              ((viewingWithdrawalRequest.status === "pending" &&
+                canViewStatus("pending")) ||
+                (viewingWithdrawalRequest.status === "approved" &&
+                  canViewStatus("approved"))) && (
                 <Button
                   type="button"
                   onClick={submitAction}
@@ -1004,11 +1316,249 @@ export function WithdrawalRequestsPageContent() {
                   ) : (
                     <>
                       <XCircle className="mr-2 h-4 w-4" />
-                      {viewingWithdrawalRequest.status === "approved" ? "Reject (Reverse)" : "Reject"}
+                      {viewingWithdrawalRequest.status === "approved"
+                        ? "Reject (Reverse)"
+                        : "Reject"}
                     </>
                   )}
                 </Button>
               )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create IB Withdrawal Dialog */}
+      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create IB Withdrawal</DialogTitle>
+            <DialogDescription>
+              Initiate a new IB withdrawal request for a user
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            {/* User Search */}
+            <div className="space-y-2">
+              <Label htmlFor="create-user-search">User *</Label>
+              <div className="relative" ref={createSearchRef}>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="create-user-search"
+                    placeholder="Search by name or email..."
+                    value={createSearchQuery}
+                    onChange={(e) => handleCreateSearchChange(e.target.value)}
+                    className="pl-10"
+                    disabled={!!createSelectedUser}
+                  />
+                  {createSelectedUser && (
+                    <button
+                      type="button"
+                      onClick={handleCreateClearUser}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  )}
+                  {createSearching && (
+                    <div className="absolute right-10 top-1/2 transform -translate-y-1/2">
+                      <Spinner className="h-4 w-4" />
+                    </div>
+                  )}
+                </div>
+                {createShowResults && createUsers.length > 0 && (
+                  <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-auto">
+                    {createUsers.map((user) => (
+                      <button
+                        key={user.id}
+                        type="button"
+                        className="w-full px-4 py-2 text-left hover:bg-muted flex flex-col"
+                        onClick={() => handleCreateSelectUser(user)}
+                      >
+                        <span className="font-medium">
+                          {user.first_name || user.last_name
+                            ? `${user.first_name || ""} ${user.last_name || ""}`.trim()
+                            : "—"}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {user.email}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {createShowResults && createUsers.length === 0 && !createSearching && (
+                  <div className="absolute z-50 w-full mt-1 bg-background border rounded-md shadow-lg p-4 text-center text-muted-foreground">
+                    No users found
+                  </div>
+                )}
+              </div>
+              {createSelectedUser && (
+                <div className="text-sm text-muted-foreground">
+                  Selected: <span className="font-medium text-foreground">{createSelectedUser.email}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Destination */}
+            <div className="space-y-2">
+              <Label>Destination *</Label>
+              <Select
+                value={createDestination}
+                onValueChange={(v) => {
+                  setCreateDestination(v as "bank" | "mt5");
+                  setCreateBankDetailId("");
+                  setCreateMt5AccountId("");
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select destination" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="bank">Bank</SelectItem>
+                  <SelectItem value="mt5">MT5</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Bank Detail ID or MT5 Account ID */}
+            {createDestination === "bank" ? (
+              <div className="space-y-2">
+                <Label>Bank Detail *</Label>
+                <Select
+                  value={createBankDetailId}
+                  onValueChange={setCreateBankDetailId}
+                  disabled={!createSelectedUser || loadingBankDetails}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        loadingBankDetails
+                          ? "Loading bank details..."
+                          : !createSelectedUser
+                            ? "Select a user first"
+                            : "Select bank detail"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {bankDetails.length === 0 && !loadingBankDetails && (
+                      <SelectItem value="__none" disabled>
+                        No bank details found
+                      </SelectItem>
+                    )}
+                    {bankDetails.map((bank) => (
+                      <SelectItem key={bank.id} value={String(bank.id)}>
+                        {bank.bank_name} — {bank.account_number}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {bankDetails.length === 0 && !loadingBankDetails && createSelectedUser && (
+                  <p className="text-xs text-muted-foreground">
+                    No bank details found for this user
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <Label>MT5 Account *</Label>
+                <Select
+                  value={createMt5AccountId}
+                  onValueChange={setCreateMt5AccountId}
+                  disabled={!createSelectedUser || loadingMt5Accounts}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={
+                        loadingMt5Accounts
+                          ? "Loading MT5 accounts..."
+                          : !createSelectedUser
+                            ? "Select a user first"
+                            : "Select MT5 account"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {mt5Accounts.length === 0 && !loadingMt5Accounts && (
+                      <SelectItem value="__none" disabled>
+                        No MT5 accounts found
+                      </SelectItem>
+                    )}
+                    {mt5Accounts.map((account) => (
+                      <SelectItem
+                        key={account.id ?? account.account_id}
+                        value={String(account.account_id ?? account.id ?? account.mt5_id)}
+                      >
+                        {account.account_id ?? account.mt5_id} — {account.name || account.first_name || "Account"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {mt5Accounts.length === 0 && !loadingMt5Accounts && createSelectedUser && (
+                  <p className="text-xs text-muted-foreground">
+                    No MT5 accounts found for this user
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* Amount */}
+            <div className="space-y-2">
+              <Label htmlFor="create-amount">Amount (USD) *</Label>
+              <Input
+                id="create-amount"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="Enter amount"
+                value={createAmount}
+                onChange={(e) => setCreateAmount(e.target.value)}
+              />
+            </div>
+
+            {/* Comment */}
+            <div className="space-y-2">
+              <Label htmlFor="create-comment">Comment</Label>
+              <Textarea
+                id="create-comment"
+                placeholder="Optional comment for this withdrawal"
+                value={createComment}
+                onChange={(e) => setCreateComment(e.target.value)}
+                className="min-h-[80px]"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col gap-2 sm:flex-row">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCreateDialogOpen(false)}
+              disabled={createSubmitting}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={submitCreateAction}
+              disabled={createSubmitting || !createSelectedUser}
+              className="w-full sm:w-auto"
+            >
+              {createSubmitting ? (
+                <>
+                  <Spinner className="mr-2 h-4 w-4" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Create Withdrawal
+                </>
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -648,7 +648,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "transaction-management",
-    navLabel: "Wallet Deposit List",
+    navLabel: "Deposit List",
     managerCategories: ["Transaction"],
   },
   {
@@ -656,7 +656,15 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "transaction-management",
-    navLabel: "Wallet Withdrawal List",
+    navLabel: "Withdrawal List",
+    managerCategories: ["Transaction"],
+  },
+  {
+    path: "/ib-withdrawal-requests",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "transaction-management",
+    navLabel: "IB Withdrawal List",
     managerCategories: ["Transaction"],
   },
   {

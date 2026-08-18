@@ -218,6 +218,14 @@ export function AdminDashboardView({
       ibVariant: "ib-portal-surface-amber",
       href: "/withdrawal-requests?status=pending",
     },
+    {
+      title: "IB Pending Withdrawals",
+      value: kpis?.pending_withdraw ?? 0,
+      description: "Awaiting processing",
+      icon: Clock,
+      ibVariant: "ib-portal-surface-amber",
+      href: "/withdrawal-requests?status=pending",
+    },
     // Row 3
     {
       title: "Pending IB Request",

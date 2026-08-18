@@ -56,6 +56,7 @@ import { useAuth } from "@/contexts/auth-context";
 import {
   adminUsersApi,
   adminAllUsersReportApi,
+  adminIbPlansCrudApi,
   type AdminUserDetailApiData,
   type AdminUserUpdateBody,
   type AdminUsersListApiData,
@@ -404,6 +405,9 @@ export default function NewUsersPage() {
   const [promoteTargetUser, setPromoteTargetUser] =
     useState<PendingUser | null>(null);
   const [promoteSubmitting, setPromoteSubmitting] = useState(false);
+  const [selectedIbPlanId, setSelectedIbPlanId] = useState("");
+  const [ibPlans, setIbPlans] = useState<{ id: string; name: string }[]>([]);
+  const [loadingIbPlans, setLoadingIbPlans] = useState(false);
   const [manageSponsorDialogOpen, setManageSponsorDialogOpen] = useState(false);
   const [manageSponsorTargetUser, setManageSponsorTargetUser] =
     useState<PendingUser | null>(null);
@@ -418,6 +422,31 @@ export default function NewUsersPage() {
     SponsorOption[]
   >([]);
   const [sponsorSearching, setSponsorSearching] = useState(false);
+
+  useEffect(() => {
+    if (!promoteDialogOpen || !token) {
+      return;
+    }
+    let cancelled = false;
+    setLoadingIbPlans(true);
+    adminIbPlansCrudApi
+      .list(token)
+      .then((res) => {
+        if (cancelled) return;
+        const raw = (res.data ?? null) as { ibPlans?: Array<{ id: number | string; name?: string }> } | null;
+        const plans = (raw?.ibPlans ?? [])
+          .filter((p) => p.id != null)
+          .map((p) => ({ id: String(p.id), name: String(p.name ?? `Plan ${p.id}`) }));
+        setIbPlans(plans);
+      })
+      .catch(() => {
+        if (!cancelled) setIbPlans([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingIbPlans(false);
+      });
+    return () => { cancelled = true; };
+  }, [promoteDialogOpen, token]);
 
   const handleSponsorSearch = useCallback(
     async (query: string) => {
@@ -794,6 +823,7 @@ export default function NewUsersPage() {
     }
 
     setPromoteTargetUser(user);
+    setSelectedIbPlanId("");
     setPromoteDialogOpen(true);
   }, []);
 
@@ -822,6 +852,7 @@ export default function NewUsersPage() {
         {
           client_id: promoteTargetUser.id,
           ib_name: ibName,
+          ...(selectedIbPlanId && { ib_plan_id: Number(selectedIbPlanId) }),
         },
         token,
       );
@@ -851,7 +882,7 @@ export default function NewUsersPage() {
         return next;
       });
     }
-  }, [token, promoteTargetUser, loadUsers]);
+  }, [token, promoteTargetUser, selectedIbPlanId, loadUsers]);
 
   const handleManageSponsorOpen = useCallback((user: PendingUser) => {
     setManageSponsorTargetUser(user);
@@ -1404,6 +1435,7 @@ export default function NewUsersPage() {
             setPromoteDialogOpen(open);
             if (!open) {
               setPromoteTargetUser(null);
+              setSelectedIbPlanId("");
             }
           }}
         >
@@ -1432,9 +1464,9 @@ export default function NewUsersPage() {
                 />
               </div>
 
-              {/* <div className="space-y-2">
+              <div className="space-y-2">
                 <Label htmlFor="ib-plan-id">IB Plan</Label>
-                <Select value={selectedIbPlanId} onValueChange={setSelectedIbPlanId} disabled={loadingIbPlans || ibPlans.length === 0}>
+                <Select value={selectedIbPlanId} onValueChange={setSelectedIbPlanId} disabled={loadingIbPlans}>
                   <SelectTrigger id="ib-plan-id">
                     <SelectValue placeholder={loadingIbPlans ? "Loading plans..." : "Select IB plan"} />
                   </SelectTrigger>
@@ -1449,7 +1481,7 @@ export default function NewUsersPage() {
                 {!loadingIbPlans && ibPlans.length === 0 ? (
                   <p className="text-xs text-muted-foreground">No IB plans available.</p>
                 ) : null}
-              </div> */}
+              </div>
             </div>
 
             <DialogFooter>

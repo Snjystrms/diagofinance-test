@@ -643,7 +643,7 @@ export interface IbInternalTransferToMainRequest {
 export interface IbInternalTransferToMt5Request {
   amount: number;
   destination: "mt5";
-  mt5_account_id: string | number;
+  mt5_account_id: string;
   note?: string;
 }
 

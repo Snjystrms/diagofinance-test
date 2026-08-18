@@ -1,0 +1,65 @@
+import { Badge } from "@/components/ui/badge";
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
+
+export type TransactionStatusOption = {
+  value: string;
+  label: string;
+  featureKey: string;
+  statuses: string[];
+};
+
+export const IB_WITHDRAWAL_STATUS_OPTIONS: TransactionStatusOption[] = [
+  { value: "pending", label: "Pending", featureKey: "pendingIbWithdrawalList", statuses: ["pending"] },
+  { value: "approved", label: "Approved", featureKey: "approveIbWithdrawalList", statuses: ["approved"] },
+  { value: "rejected", label: "Rejected", featureKey: "rejectIbWithdrawalList", statuses: ["rejected"] },
+];
+
+export const IB_WITHDRAWAL_DESTINATION_OPTIONS = [
+  { value: "bank", label: "Bank" },
+  { value: "mt5", label: "MT5" },
+] as const;
+
+export const fmtDateTime = (s?: string | null) => {
+  if (!s) return "—";
+  try {
+    return formatApiDateTimeAsIST(s);
+  } catch {
+    return s;
+  }
+};
+
+export const formatAmount = (amount: string | number) => {
+  try {
+    const num = typeof amount === "number" ? amount : parseFloat(amount);
+    return num.toLocaleString("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 8,
+    });
+  } catch {
+    return amount;
+  }
+};
+
+export const statusBadge = (status: string) => {
+  switch (status) {
+    case "approved":
+      return (
+        <Badge className="bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300">
+          Approved
+        </Badge>
+      );
+    case "rejected":
+      return (
+        <Badge className="bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300">
+          Rejected
+        </Badge>
+      );
+    case "pending":
+    default:
+      return (
+        <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300">
+          Pending
+        </Badge>
+      );
+  }
+};

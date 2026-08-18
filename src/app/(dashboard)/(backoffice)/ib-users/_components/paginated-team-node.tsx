@@ -32,7 +32,7 @@ export interface PaginatedTeamNodeData extends Record<string, unknown> {
 }
 
 const formatLevelLabel = (level: string) => {
-  if (level === "Level-IB" || level === "IB") return "Level-Partner";
+  if (level === "Level-IB" || level === "IB") return "Level-IB";
   return level;
 };
 
@@ -100,7 +100,7 @@ const PaginatedTeamNode = ({ data }: NodeProps<Node<PaginatedTeamNodeData>>) => 
         <div
           className="h-10 w-10 rounded-full flex items-center justify-center text-white text-xs font-semibold shadow flex-shrink-0"
           style={{ backgroundColor: color }}
-          title={data.isRoot ? "Root Partner" : data.isIb ? "Partner" : "Client"}
+          title={data.isRoot ? "Root IB" : data.isIb ? "IB" : "Client"}
         >
           <UserIcon className="h-4 w-4 opacity-90" />
         </div>
@@ -157,14 +157,14 @@ const PaginatedTeamNode = ({ data }: NodeProps<Node<PaginatedTeamNodeData>>) => 
             <div className="flex flex-wrap items-center gap-1">
               <Badge className="text-[9px] h-4 px-1 py-0 bg-sky-100 dark:bg-sky-900/50 text-sky-700 dark:text-sky-300 border-sky-300 dark:border-sky-700">
                 <CheckCircle2 className="h-3 w-3 mr-1" />
-                Partner
+                IB
               </Badge>
             </div>
           ) : (
             <div className="flex flex-wrap items-center gap-1">
               {data.isIb ? (
                 <Badge variant="outline" className="text-[9px] h-4 px-1 py-0 bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800">
-                  Partner
+                  IB
                 </Badge>
               ) : (
                 <Badge variant="outline" className="text-[9px] h-4 px-1 py-0">

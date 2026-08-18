@@ -43,7 +43,6 @@ const TRANSFER_TYPE_OPTIONS: { value: InternalTransferType; label: string }[] =
     { value: "main_to_mt5", label: "Main Wallet to MT5" },
     { value: "mt5_to_main", label: "MT5 to Main Wallet" },
     { value: "ib_to_main", label: "IB Wallet to Main Wallet" },
-    { value: "direct_to_mt5", label: "Direct to MT5" },
   ];
 
 interface InternalTransferDialogProps {
@@ -51,6 +50,7 @@ interface InternalTransferDialogProps {
   onOpenChange: (open: boolean) => void;
   token: string;
   onSuccess: (data: AdminInternalTransferData) => void;
+  initialTransferType?: InternalTransferType;
 }
 
 function extractMt5Accounts(res: unknown): AdminMT5Account[] {
@@ -121,9 +121,10 @@ export function InternalTransferDialog({
   onOpenChange,
   token,
   onSuccess,
+  initialTransferType,
 }: InternalTransferDialogProps) {
   const [transferType, setTransferType] =
-    useState<InternalTransferType>("mt5_to_mt5");
+    useState<InternalTransferType>(initialTransferType ?? "mt5_to_mt5");
   const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null);
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [userSearchResults, setUserSearchResults] = useState<PendingUser[]>([]);
@@ -341,7 +342,7 @@ export function InternalTransferDialog({
 
   useEffect(() => {
     if (!open) {
-      setTransferType("mt5_to_mt5");
+      setTransferType(initialTransferType ?? "mt5_to_mt5");
       setSelectedUser(null);
       setUserSearchQuery("");
       setUserSearchResults([]);
@@ -354,7 +355,7 @@ export function InternalTransferDialog({
       setMt5AccountsWithWalletIds(new Map());
       setMt5LiveBalances(new Map());
     }
-  }, [open]);
+  }, [open, initialTransferType]);
 
   useEffect(() => {
     setSelectedUser(null);
@@ -524,6 +525,7 @@ export function InternalTransferDialog({
           ...(transferType !== "direct_to_mt5" && { from_account: String(fromAccountId) }),
           to_account: String(toAccountId),
           type: transferType,
+          comment: "Internal transfer",
         },
         token,
       );

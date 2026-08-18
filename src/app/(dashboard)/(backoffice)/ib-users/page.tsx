@@ -440,7 +440,7 @@ export default function IbUsersPage() {
       },
       {
         id: "partner_wallet",
-        header: "Partner Wallet",
+        header: "IB Wallet",
         cell: ({ row }) => {
           const user = row.original;
           const partnerWallet = derivePartnerWallet(user);
@@ -474,7 +474,7 @@ export default function IbUsersPage() {
       },
       {
         id: "referral_code",
-        header: "Partner ID",
+        header: "IB ID",
         cell: ({ row }) => {
           const user = row.original;
           const ibName = deriveIbName(user);
@@ -773,10 +773,10 @@ export default function IbUsersPage() {
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
               <Users className="h-6 w-6 text-primary" />
-              Partner Users
+              IB Users
             </h1>
             <p className="text-sm text-muted-foreground">
-              View and manage all Partner users in the system.
+              View and manage all IB users in the system.
             </p>
           </div>
          <div className="flex items-center gap-2">
