@@ -191,7 +191,7 @@ export function ProfileStepper({
         return (
           <Badge
             variant="default"
-            className="bg-gradient-to-br from-green-100 to-green-50 text-green-700 border border-green-200/50 shadow-sm dark:from-green-950/40 dark:to-green-950/20 dark:text-green-400 dark:border-green-800/50"
+            className="text-[11px] px-2 py-0.5 bg-gradient-to-br from-green-100 to-green-50 text-green-700 border border-green-200/50 shadow-sm dark:from-green-950/40 dark:to-green-950/20 dark:text-green-400 dark:border-green-800/50"
           >
             <CheckCircle2 className="mr-1 h-3 w-3" />
             Done
@@ -201,7 +201,7 @@ export function ProfileStepper({
         return (
           <Badge
             variant="default"
-            className="bg-gradient-to-br from-blue-100 to-blue-50 text-blue-700 border border-blue-200/50 shadow-sm dark:from-blue-950/40 dark:to-blue-950/20 dark:text-blue-400 dark:border-blue-800/50"
+            className="text-[11px] px-2 py-0.5 bg-gradient-to-br from-blue-100 to-blue-50 text-blue-700 border border-blue-200/50 shadow-sm dark:from-blue-950/40 dark:to-blue-950/20 dark:text-blue-400 dark:border-blue-800/50"
           >
             <Clock className="mr-1 h-3 w-3" />
             Active
@@ -211,7 +211,7 @@ export function ProfileStepper({
         return (
           <Badge
             variant="outline"
-            className="bg-gradient-to-br from-amber-100 to-amber-50 text-amber-700 border border-amber-200/50 shadow-sm dark:from-amber-950/40 dark:to-amber-950/20 dark:text-amber-400 dark:border-amber-800/50"
+            className="text-[11px] px-2 py-0.5 bg-gradient-to-br from-amber-100 to-amber-50 text-amber-700 border border-amber-200/50 shadow-sm dark:from-amber-950/40 dark:to-amber-950/20 dark:text-amber-400 dark:border-amber-800/50"
           >
             <Clock className="mr-1 h-3 w-3" />
             Pending
@@ -221,7 +221,7 @@ export function ProfileStepper({
         return (
           <Badge
             variant="destructive"
-            className="bg-gradient-to-br from-red-100 to-red-50 text-red-700 border border-red-200/50 shadow-sm dark:from-red-950/40 dark:to-red-950/20 dark:text-red-400 dark:border-red-800/50"
+            className="text-[11px] px-2 py-0.5 bg-gradient-to-br from-red-100 to-red-50 text-red-700 border border-red-200/50 shadow-sm dark:from-red-950/40 dark:to-red-950/20 dark:text-red-400 dark:border-red-800/50"
           >
             <AlertCircle className="mr-1 h-3 w-3" />
             Action Needed
@@ -237,36 +237,36 @@ export function ProfileStepper({
   if (!dashboardData) return null;
 
   return (
-    <Card className="relative overflow-hidden rounded-[28px] shadow-sm backdrop-blur-sm ib-portal-surface ib-portal-surface-primary h-full hover:shadow-lg transition-all duration-300">
-      <CardHeader className="relative z-10 pb-3 pt-5 px-4 sm:px-5 border-b border-border/50">
+    <Card className="relative overflow-hidden rounded-[28px] shadow-sm backdrop-blur-sm ib-portal-surface ib-portal-surface-primary h-full flex flex-col hover:shadow-lg transition-all duration-300">
+      <CardHeader className="relative z-10 pb-2 pt-4 px-4 sm:px-5 border-b border-border/50">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl border border-border/60 bg-muted text-foreground shadow-sm backdrop-blur-sm">
-              <FileCheck className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-8 w-8 sm:h-9 sm:w-9 shrink-0 items-center justify-center rounded-lg sm:rounded-xl border border-border/60 bg-muted text-foreground shadow-sm backdrop-blur-sm">
+              <FileCheck className="h-4 w-4 sm:h-[18px] sm:w-[18px] text-primary" />
             </div>
             <div>
-              <CardTitle className="text-base sm:text-lg font-bold">
+              <CardTitle className="text-sm sm:text-base font-bold">
                 Getting Started
               </CardTitle>
-              <p className="text-xs text-muted-foreground mt-0.5">
+              <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5">
                 {completedSteps} of {totalSteps} required steps completed
               </p>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-lg sm:text-xl font-bold text-foreground">
+            <div className="text-base sm:text-lg font-bold text-foreground">
               {progressPercentage.toFixed(0)}%
             </div>
           </div>
         </div>
-        <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-muted/50 backdrop-blur-sm">
+        <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted/50 backdrop-blur-sm">
           <div
             className="h-full bg-gradient-to-r from-primary via-primary/90 to-primary transition-all duration-500 shadow-sm"
             style={{ width: `${progressPercentage}%` }}
           />
         </div>
       </CardHeader>
-      <CardContent className="relative z-10 px-4 sm:px-5 pb-5 pt-4">
+      <CardContent className="relative z-10 px-4 sm:px-5 pb-4 pt-3 flex flex-1 flex-col">
         <Stepper
           value={activeStep}
           onValueChange={setActiveStep}
@@ -280,7 +280,7 @@ export function ProfileStepper({
               completed={step.status === "completed"}
               className="w-full"
             >
-              <div className="flex items-start gap-3 w-full">
+              <div className="flex items-start gap-2.5 w-full">
                 <div className="flex flex-col items-center">
                   <StepperTrigger
                     onClick={() => handleStepClick(step)}
@@ -295,16 +295,16 @@ export function ProfileStepper({
                   {index < steps.length - 1 && <StepperSeparator />}
                 </div>
                 <div
-                  className="flex-1 pb-6 cursor-pointer hover:bg-gradient-to-r hover:from-muted/40 hover:to-muted/20 rounded-xl p-2.5 pt-0 -ml-2 transition-all duration-200 group border border-transparent hover:border-border/30 hover:shadow-sm"
+                  className="flex-1 pb-3 cursor-pointer hover:bg-gradient-to-r hover:from-muted/40 hover:to-muted/20 rounded-xl p-2 pt-0 -ml-2 transition-all duration-200 group border border-transparent hover:border-border/30 hover:shadow-sm"
                   onClick={() => handleStepClick(step)}
                 >
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <StepperTitle className="text-sm font-semibold group-hover:text-primary group-hover:translate-x-0.5 transition-all duration-200">
+                  <div className="flex items-center justify-between gap-2 mb-0.5">
+                    <StepperTitle className="text-[13px] font-semibold group-hover:text-primary group-hover:translate-x-0.5 transition-all duration-200">
                       {step.title}
                     </StepperTitle>
                     {getStatusBadge(step.status)}
                   </div>
-                  <StepperDescription className="text-xs">
+                  <StepperDescription className="text-[11px] sm:text-xs">
                     {step.description}
                   </StepperDescription>
                 </div>
@@ -314,7 +314,7 @@ export function ProfileStepper({
         </Stepper>
 
         {/* Optional Action - MetaTrader Installation */}
-<div className="mt-6 pt-5 border-t border-border/50">
+<div className="mt-auto pt-3 border-t border-border/50">
   <div
     className="cursor-pointer overflow-hidden rounded-xl border border-border/30 bg-muted/10 transition-all duration-200 hover:border-border/50 hover:shadow-sm"
     onClick={() => window.open(optionalAction.route, "_blank")}
@@ -322,7 +322,7 @@ export function ProfileStepper({
     <img
       src="/install_mt5.png"
       alt="Install MetaTrader 5"
-      className="w-full h-auto object-contain"
+      className="w-full h-auto object-contain max-h-16"
     />
   </div>
 </div>

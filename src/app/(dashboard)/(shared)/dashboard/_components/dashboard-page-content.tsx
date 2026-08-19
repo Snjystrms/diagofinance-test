@@ -1781,7 +1781,7 @@ export function DashboardPageContent() {
                   {/* Header + Key Metrics (75%) and Stepper (25%) - Side by Side */}
                   <div className="grid grid-cols-1 xl:grid-cols-4 gap-6">
                     {/* Left Side: Header + Key Metrics (75%) */}
-                    <div className="xl:col-span-3 space-y-6">
+                    <div className="xl:col-span-3 space-y-6 flex flex-col">
                       {/* Header Section */}
                       <div className="ib-portal-hero rounded-[28px] border px-6 py-6 sm:px-7">
                         {dashboardThemeArtwork && (
@@ -1835,11 +1835,11 @@ export function DashboardPageContent() {
                         <Link
                           href="/funds/my_deposit"
                           aria-label="View deposits"
-                          className="block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          className="block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-full"
                         >
-                          <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary">
+                          <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary flex flex-col h-full">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/8 to-blue-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
-                            <CardContent className="relative z-10 pt-6 pb-6 px-6">
+                            <CardContent className="relative z-10 pt-6 pb-6 px-6 flex flex-col h-full">
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex-1">
                                   <div className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
@@ -1865,7 +1865,7 @@ export function DashboardPageContent() {
                                   />
                                 </div>
                               </div>
-                              <div className="pt-3 border-t border-border/100">
+                              <div className="pt-3 border-t border-border/100 mt-auto">
                                 <p className="text-xs text-[#8B7355]">
                                   All time deposits
                                 </p>
@@ -1878,11 +1878,11 @@ export function DashboardPageContent() {
                         <Link
                           href="/funds/withdraw"
                           aria-label="View withdrawals"
-                          className="block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          className="block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-full"
                         >
-                          <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-amber">
+                          <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-amber flex flex-col h-full">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-amber-500/8 to-orange-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
-                            <CardContent className="relative z-10 pt-6 pb-6 px-6">
+                            <CardContent className="relative z-10 pt-6 pb-6 px-6 flex flex-col h-full">
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex-1">
                                   <div className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
@@ -1908,7 +1908,7 @@ export function DashboardPageContent() {
                                   />
                                 </div>
                               </div>
-                              <div className="pt-3 border-t border-border/100">
+                              <div className="pt-3 border-t border-border/100 mt-auto">
                                 <p className="text-xs text-[#8B7355]">
                                   All time withdrawals
                                 </p>
@@ -1921,11 +1921,11 @@ export function DashboardPageContent() {
                         <Link
                           href="/my_accounts/accounts-overview"
                           aria-label="View trading accounts"
-                          className="block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                          className="block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 h-full"
                         >
-                          <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-emerald">
+                          <Card className="relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-emerald flex flex-col h-full">
                             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-violet-500/8 to-purple-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
-                            <CardContent className="relative z-10 pt-6 pb-6 px-6">
+                            <CardContent className="relative z-10 pt-6 pb-6 px-6 flex flex-col h-full">
                               <div className="flex items-center justify-between mb-4">
                                 <div className="flex-1">
                                   <div className="text-xs font-semibold text-foreground uppercase tracking-wider mb-2 flex items-center gap-2">
@@ -1951,7 +1951,7 @@ export function DashboardPageContent() {
                                   />
                                 </div>
                               </div>
-                              <div className="pt-3 border-t border-border/100">
+                              <div className="pt-3 border-t border-border/100 mt-auto">
                                 <p className="text-xs text-[#8B7355]">
                                   Active MT5 accounts
                                 </p>
@@ -1962,12 +1962,12 @@ export function DashboardPageContent() {
                       </div>
 
                       {/* Top Cards Row - Wallet, IB Wallet, Profile Progress */}
-                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 flex-1">
                         {/* Wallet Balance Card - Enhanced */}
                         <Card
                           ref={walletCardRef}
                           // onClick={() => router.push("/my-wallet/wallet-overview")}
-                          className={`sm:col-span-1 lg:col-span-1 relative overflow-hidden shadow-2xl rounded-3xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group ${usesDashboardThemeArtwork ? "bg-card text-zinc-50 ib-portal-surface ib-portal-surface-primary" : "text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent border-none"}`}
+                          className={`sm:col-span-1 lg:col-span-1 h-full relative overflow-hidden shadow-2xl rounded-3xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group ${usesDashboardThemeArtwork ? "bg-card text-zinc-50 ib-portal-surface ib-portal-surface-primary" : "text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent border-none"}`}
                         >
                           {usesDashboardThemeArtwork ? (
                             <div
@@ -2168,7 +2168,7 @@ export function DashboardPageContent() {
                           dashboardData.wallet.balance === 0) && (
                           <Card
                             onClick={() => router.push("/funds/deposit")}
-                            className="sm:col-span-1 lg:col-span-1 relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary cursor-pointer"
+                            className="sm:col-span-1 lg:col-span-1 h-full relative overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ib-portal-surface-primary cursor-pointer"
                           >
                             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-primary/8 to-purple-500/8 rounded-full blur-3xl opacity-40 group-hover:opacity-60 transition-opacity" />
                             <CardContent className="pt-6 pb-6 px-6 relative z-10">

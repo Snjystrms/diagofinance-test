@@ -14,6 +14,7 @@ interface TransactionBalanceCellProps {
     balance?: number | null;
     mt5_account_id?: string | null;
     wallet_currency?: string;
+    wallet_balance?: number | null;
   };
 }
 
@@ -56,7 +57,7 @@ export function TransactionBalanceCell({
   if (!isMt5) {
     return (
       <span className="tabular-nums text-sm text-muted-foreground whitespace-nowrap">
-        {formatAmount(transaction.balance)} {transaction.wallet_currency}
+         {transaction.wallet_balance} {transaction.wallet_currency}
       </span>
     );
   }

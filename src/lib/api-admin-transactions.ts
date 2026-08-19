@@ -277,7 +277,7 @@ export const adminTransactionsApi = {
       formData.append("transaction_proof", body.transaction_proof);
     }
 
-    return apiCall<AdminClientDepositData>(`/admin/transaction/client-deposit`, {
+    return apiCall<AdminClientDepositData>(`/admin/transaction/wallet-deposit`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,
@@ -289,7 +289,7 @@ export const adminTransactionsApi = {
       throw new Error("Token is required to process client withdrawal");
     }
 
-    return apiCall<AdminClientWithdrawalData>(`/admin/transaction/client-withdrawal`, {
+    return apiCall<AdminClientWithdrawalData>(`/admin/transaction/wallet-withdrawal`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,

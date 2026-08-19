@@ -321,6 +321,7 @@ export function ClientDepositDialog({ open, onOpenChange, token, onSuccess }: Cl
               placeholder="0.00"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
+              onWheel={(e) => e.currentTarget.blur()}
             />
           </div>
 
