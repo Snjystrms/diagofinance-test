@@ -70,8 +70,8 @@ export function Header() {
     (canCustomizeTheme || canCustomizeSidebar || canCustomizeDashboard);
   const isDashboardRoute = pathname === "/dashboard";
   const isClientUser = user?.type === "user";
-  const isAdminLike = user?.type === "admin" || user?.type === "subadmin";
-  const isManagerUser = user?.type === "manager";
+  const isAdminLike = user?.type === "admin";
+  const isManagerUser = user?.type === "manager" || user?.type === "subadmin";
 
   const managerQuickLinks = useMemo(
     () =>
@@ -103,10 +103,10 @@ export function Header() {
         if (!user?.id || !token) return false;
 
         try {
-          const isAdminLike = user.type === "admin" || user.type === "subadmin";
-          const isManager = user.type === "manager";
+          const isAdmin = user.type === "admin";
+          const isManager = user.type === "manager" || user.type === "subadmin";
 
-          const response = isAdminLike
+          const response = isAdmin
             ? await admin2FAApi.getTwoFactorStatus(user.id, token)
             : isManager
               ? await manager2FAApi.getTwoFactorStatus(user.id, token)

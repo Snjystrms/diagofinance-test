@@ -98,8 +98,8 @@ export function TwoFactorModal({
     
     try {
       // Use appropriate API based on user type
-      const isAdmin = user.type === 'admin' || user.type === 'subadmin';
-      const isManager = user.type === 'manager';
+      const isAdmin = user.type === 'admin';
+      const isManager = user.type === 'manager' || user.type === 'subadmin';
       let response;
       
       if (isAdmin) {
@@ -136,8 +136,8 @@ export function TwoFactorModal({
     
     try {
       // Use appropriate API based on user type
-      const isAdmin = user.type === 'admin' || user.type === 'subadmin';
-      const isManager = user.type === 'manager';
+      const isAdmin = user.type === 'admin';
+      const isManager = user.type === 'manager' || user.type === 'subadmin';
       let response;
       
       if (isAdmin) {
@@ -189,8 +189,8 @@ export function TwoFactorModal({
     
     try {
       // Use appropriate API based on user type
-      const isAdmin = user.type === 'admin' || user.type === 'subadmin';
-      const isManager = user.type === 'manager';
+      const isAdmin = user.type === 'admin';
+      const isManager = user.type === 'manager' || user.type === 'subadmin';
       let response;
       
       if (isAdmin) {

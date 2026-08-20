@@ -312,16 +312,27 @@ export default function AllManagersPage() {
       try {
         setActionLoadingId(id);
 
+        // ✅ Optimistic update so the switch flips immediately in the UI
+        queryClient.setQueryData<ManagerRow[]>(["managers", token], (old) =>
+          (old ?? []).map((m) => (m.id === id ? { ...m, status: desiredStatus } : m))
+        );
+
         const res = await adminManagersApi.patchStatus(id, desiredStatus, token);
 
-        if (!res.success || !res.data?.manager) {
-          throw new Error(res.message || "Invalid response from server");
+        // The backend may return { manager } or { subadmin } or no data at all.
+        // Only a failed response (success === false / HTTP error) should be treated as an error.
+        if (!res || res.success === false) {
+          throw new Error(res?.message || "Invalid response from server");
         }
 
         queryClient.invalidateQueries({ queryKey: ["managers", token] });
         toast.success("Manager status updated successfully");
       } catch (e: unknown) {
         console.error("[Toggle] Error:", e);
+        // Roll back the optimistic update so the UI matches the server state
+        queryClient.setQueryData<ManagerRow[]>(["managers", token], (old) =>
+          (old ?? []).map((m) => (m.id === id ? { ...m, status: !desiredStatus } : m))
+        );
         toast.error(
           getAdminFriendlyErrorMessage(e, { resource: "sub-admin status", action: "update" })
         );
@@ -329,7 +340,7 @@ export default function AllManagersPage() {
         setActionLoadingId(null);
       }
     },
-    [token]
+    [token, queryClient]
   );
 
   // DELETE
@@ -539,26 +550,28 @@ export default function AllManagersPage() {
             />
           </div>
 
-          <PermissionAwareCrudDataTable<ManagerRow>
-            data={filteredManagers}
-            initialData={filteredManagers}
-            columns={columns}
-            formComponent={ManagerFormComponent}
-            title=""
-            description=""
-            requiredModule="manager"
-            hideAddButton={true}
-            onAdd={async (partial) => {
-              const partialRow = partial as Partial<ManagerRow>;
-              const { id: _i, uuid: _u, created_at: _c1, updated_at: _c2, ...rest } = partialRow;
-              return handleAdd(rest as Omit<ManagerRow, 'id' | 'uuid' | 'created_at' | 'updated_at'>);
-            }}
-            onUpdate={handleUpdate}
-            onDelete={handleDelete}
-            onView={(row) => handleViewManager(row.id)}
-            rowIsReadOnly={() => false}
-            onFetchItem={fetchManagerDetail}
-          />
+                    <div className="[&_table]:w-full [&_table]:min-w-0 [&_th]:h-9 [&_th]:px-2 [&_td]:p-1.5">
+            <PermissionAwareCrudDataTable<ManagerRow>
+              data={filteredManagers}
+              initialData={filteredManagers}
+              columns={columns}
+              formComponent={ManagerFormComponent}
+              title=""
+              description=""
+              requiredModule="manager"
+              hideAddButton={true}
+              onAdd={async (partial) => {
+                const partialRow = partial as Partial<ManagerRow>;
+                const { id: _i, uuid: _u, created_at: _c1, updated_at: _c2, ...rest } = partialRow;
+                return handleAdd(rest as Omit<ManagerRow, 'id' | 'uuid' | 'created_at' | 'updated_at'>);
+              }}
+              onUpdate={handleUpdate}
+              onDelete={handleDelete}
+              onView={(row) => handleViewManager(row.id)}
+              rowIsReadOnly={() => false}
+              onFetchItem={fetchManagerDetail}
+            />
+          </div>
 
           {/* External Create Dialog */}
           <ManagerForm

@@ -2470,6 +2470,32 @@ export const managerDashboardApi = {
   },
 };
 
+export interface SubadminDashboardData {
+  subadmin?: ManagerInfo;
+  permissions?: string[];
+  stats?: ManagerStats;
+}
+
+export const subadminDashboardApi = {
+  getDashboard: (params: AdminDashboardParams) => {
+    const { token, start_date, end_date } = params;
+    if (!token) {
+      throw new Error("Token is required to fetch subadmin dashboard");
+    }
+
+    const qs = new URLSearchParams();
+    if (start_date) qs.set("start_date", start_date);
+    if (end_date) qs.set("end_date", end_date);
+
+    const endpoint = `/subadmin/dashboard${qs.toString() ? `?${qs.toString()}` : ""}`;
+
+    return apiCall<SubadminDashboardData>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+};
+
 export interface DailySummaryReportItem {
   date: string;
   total_deposits: number;

@@ -19,6 +19,7 @@ interface User {
   type: 'admin' | 'user' | 'subadmin' | 'manager';
   mobile?: string;
   status?: boolean;
+  total_client?: number;
   requires_usdt_transaction?: boolean;
   sponsor_id?: string;
   role?: string;

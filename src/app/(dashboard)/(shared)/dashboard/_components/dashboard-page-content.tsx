@@ -98,6 +98,7 @@ import {
   ibRequestsApi,
   adminDashboardApi,
   managerDashboardApi,
+  subadminDashboardApi,
   adminNotificationApi,
   userMT5AccountsApi,
   type TradingAccountSummaryItem,
@@ -106,6 +107,7 @@ import {
   type IbWalletData,
   type AdminDashboardData,
   type ManagerDashboardData,
+  type SubadminDashboardData,
   type UserMT5DemoDepositData,
 } from "@/lib/api";
 import { mt5SdkApi } from "@/lib/api-trading-ib";
@@ -215,9 +217,10 @@ export function DashboardPageContent() {
   >([]);
 
   const isUser = user?.type === "user";
-  const isManager = user?.type === "manager";
+  const isManager = user?.type === "manager" || user?.type === "subadmin";
   const isAdmin =
-    user?.type === "admin" || user?.type === "subadmin" || isManager;
+    user?.type === "admin";
+  const isSubadmin = user?.type === "subadmin";
 
   // Dashboard-only poller for admin/manager unread count.
   // Header reads this value from React Query cache without fetching.
@@ -258,6 +261,8 @@ export function DashboardPageContent() {
     useState<AdminDashboardData | null>(null);
   const [managerDashboardData, setManagerDashboardData] =
     useState<ManagerDashboardData | null>(null);
+  const [subadminDashboardData, setSubadminDashboardData] =
+    useState<SubadminDashboardData | null>(null);
   const [tradingSummary, setTradingSummary] =
     useState<TradingAccountsSummaryResponse | null>(null);
   const [ibWalletData, setIbWalletData] = useState<IbWalletData | null>(null);
@@ -699,9 +704,9 @@ export function DashboardPageContent() {
     };
   }, [isUser, token, isAdmin]);
 
-  // Admin / Manager dashboard data load
+  // Admin / Manager / Subadmin dashboard data load
   useEffect(() => {
-    if (!isAdmin || !token) {
+    if ((!isAdmin && !isManager) || !token) {
       return;
     }
 
@@ -710,7 +715,18 @@ export function DashboardPageContent() {
       setIsDashboardLoading(true);
       setDashboardError(null);
       try {
-        if (isManager) {
+        if (isSubadmin) {
+          const response = await subadminDashboardApi.getDashboard({
+            token,
+            ...dateRange,
+          });
+          if (!isMounted) return;
+          if (response.success && response.data) {
+            setSubadminDashboardData(response.data);
+          } else {
+            setDashboardError("Unable to load subadmin dashboard");
+          }
+        } else if (isManager) {
           const response = await managerDashboardApi.getDashboard({
             token,
             ...dateRange,
@@ -748,7 +764,7 @@ export function DashboardPageContent() {
     return () => {
       isMounted = false;
     };
-  }, [isAdmin, isManager, token, dateRange.start_date, dateRange.end_date]);
+  }, [isAdmin, isManager, isSubadmin, token, dateRange.start_date, dateRange.end_date]);
 
   // Separate effects for statistics so each chart can manage its own period independently.
   useEffect(() => {
@@ -2933,6 +2949,7 @@ export function DashboardPageContent() {
           ) : isManager ? (
             <ManagerDashboardView
               managerDashboardData={managerDashboardData}
+              subadminDashboardData={subadminDashboardData}
               userName={user?.name}
             />
           ) : (

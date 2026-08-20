@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Spinner } from "@/components/ui/spinner";
 import {
   Select,
@@ -23,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { adminTransactionsApi } from "@/lib/api-admin-transactions";
+import { adminTransactionsApi, type AdminClientWithdrawalToMt5Data } from "@/lib/api-admin-transactions";
 import { adminMT5AccountsApi, type AdminMT5Account } from "@/lib/api";
 import { mt5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
 import { adminUsersApi, type PendingUser } from "@/lib/api-auth-admin";
@@ -83,25 +84,32 @@ const getMt5AccountBalance = (
   return account.self_wallet ?? 0;
 };
 
-interface DirectToMt5DialogProps {
+/** ✅ Build the API-expected `mt5_account` value (e.g. "MT111898") */
+const toMt5AccountId = (login: string | number | undefined) => {
+  const raw = String(login ?? "").trim();
+  if (!raw) return "";
+  return /^MT/i.test(raw) ? raw : `MT${raw}`;
+};
+
+interface ClientWithdrawToMt5DialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   token: string;
-  onSuccess: () => void;
+  onSuccess: (data: AdminClientWithdrawalToMt5Data) => void;
 }
 
-export function DirectToMt5Dialog({
+export function ClientWithdrawToMt5Dialog({
   open,
   onOpenChange,
   token,
   onSuccess,
-}: DirectToMt5DialogProps) {
+}: ClientWithdrawToMt5DialogProps) {
   const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null);
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [userSearchResults, setUserSearchResults] = useState<PendingUser[]>([]);
   const [searchingUsers, setSearchingUsers] = useState(false);
   const [showUserResults, setShowUserResults] = useState(false);
-  const [toMt5Account, setToMt5Account] = useState("");
+  const [fromMt5Account, setFromMt5Account] = useState("");
   const [userMt5Accounts, setUserMt5Accounts] = useState<AdminMT5Account[]>([]);
   const [loadingMt5Accounts, setLoadingMt5Accounts] = useState(false);
   const [amount, setAmount] = useState("");
@@ -114,9 +122,9 @@ export function DirectToMt5Dialog({
   const userSearchRef = useRef<HTMLDivElement>(null);
   const userSearchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const selectedToMt5Account = userMt5Accounts.find(
+  const selectedFromMt5Account = userMt5Accounts.find(
     (acc) =>
-      String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "") === toMt5Account,
+      String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "") === fromMt5Account,
   );
 
   const searchUsers = useCallback(
@@ -165,7 +173,7 @@ export function DirectToMt5Dialog({
     );
     setShowUserResults(false);
     setUserSearchResults([]);
-    setToMt5Account("");
+    setFromMt5Account("");
     fetchUserMt5Accounts(user.id);
   };
 
@@ -173,7 +181,7 @@ export function DirectToMt5Dialog({
     setSelectedUser(null);
     setUserSearchQuery("");
     setUserSearchResults([]);
-    setToMt5Account("");
+    setFromMt5Account("");
     setUserMt5Accounts([]);
     setMt5LiveBalances(new Map());
   };
@@ -240,7 +248,7 @@ export function DirectToMt5Dialog({
       setSelectedUser(null);
       setUserSearchQuery("");
       setUserSearchResults([]);
-      setToMt5Account("");
+      setFromMt5Account("");
       setUserMt5Accounts([]);
       setAmount("");
       setComment("");
@@ -272,7 +280,7 @@ export function DirectToMt5Dialog({
       toast.error("Please select a user");
       return;
     }
-    if (!toMt5Account.trim()) {
+    if (!fromMt5Account.trim()) {
       toast.error("Please select the MT5 account");
       return;
     }
@@ -280,42 +288,44 @@ export function DirectToMt5Dialog({
     try {
       setSubmitting(true);
 
-      const selectedToAccount = userMt5Accounts.find(
+      const selectedFromAccount = userMt5Accounts.find(
         (acc) =>
-          String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "") === toMt5Account,
+          String(acc.account_id ?? acc.mt5_id ?? acc.id ?? "") === fromMt5Account,
       );
 
-      if (!selectedToAccount) {
+      if (!selectedFromAccount) {
         toast.error("Unable to find selected MT5 account");
         return;
       }
 
       const mt5Login =
-        selectedToAccount.mt5_id ??
-        selectedToAccount.account_id ??
-        selectedToAccount.id;
+        selectedFromAccount.mt5_id ??
+        selectedFromAccount.account_id ??
+        selectedFromAccount.id;
       if (!mt5Login) {
         toast.error("MT5 account login not found");
         return;
       }
 
-      await adminTransactionsApi.internalTransfer(
+      const mt5Account = toMt5AccountId(mt5Login);
+
+      const res = await adminTransactionsApi.clientWithdrawalToMt5(
         {
+          client_id: selectedUser.id,
           amount: numAmount,
-          to_account: String(mt5Login),
-          type: "direct_to_mt5",
-          comment,
+          comment: comment || undefined,
+          mt5_account: mt5Account,
         },
         token,
       );
 
-      toast.success("Direct to MT5 transfer processed successfully");
-      onSuccess();
+      if (res.data) onSuccess(res.data);
+      toast.success("Client withdrawal processed successfully");
       onOpenChange(false);
     } catch (error: unknown) {
       toast.error(
         getAdminFriendlyErrorMessage(error, {
-          resource: "direct to MT5 transfer",
+          resource: "client withdrawal",
           action: "process",
         }),
       );
@@ -395,15 +405,15 @@ export function DirectToMt5Dialog({
     }
 
     return (
-      <Select value={toMt5Account} onValueChange={setToMt5Account}>
+      <Select value={fromMt5Account} onValueChange={setFromMt5Account}>
         <SelectTrigger className="h-auto min-h-9">
           <SelectValue placeholder="Select MT5 Account">
-            {toMt5Account &&
+            {fromMt5Account &&
               (() => {
                 const acc = userMt5Accounts.find(
                   (a) =>
                     String(a.account_id ?? a.mt5_id ?? a.id ?? "") ===
-                    toMt5Account,
+                    fromMt5Account,
                 );
                 if (!acc) return null;
                 const accId = String(
@@ -465,9 +475,10 @@ export function DirectToMt5Dialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="!max-h-[calc(100vh-2rem)] sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>Client Deposit</DialogTitle>
+          <DialogTitle>Client Withdraw</DialogTitle>
           <DialogDescription>
-            Make a direct deposit to a user's MT5 account. Please ensure that the user and MT5 account are correct before proceeding.
+            Withdraw funds from a user's MT5 account. Please ensure that the
+            user and MT5 account are correct before proceeding.
           </DialogDescription>
         </DialogHeader>
 
@@ -533,16 +544,22 @@ export function DirectToMt5Dialog({
 
           {selectedUser && (
             <div className="space-y-2">
-              <Label>To MT5 Account</Label>
+              <Label>From MT5 Account</Label>
               {renderMt5AccountSelect()}
+              {loadingBalances && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Spinner className="h-4 w-4" size="sm" />
+                  Loading balances...
+                </div>
+              )}
             </div>
           )}
 
           {selectedUser && (
             <div className="space-y-2">
-              <Label htmlFor="transfer-amount">Amount (USD)</Label>
+              <Label htmlFor="withdraw-amount">Amount (USD)</Label>
               <Input
-                id="transfer-amount"
+                id="withdraw-amount"
                 type="number"
                 step="0.01"
                 min="0"
@@ -550,7 +567,7 @@ export function DirectToMt5Dialog({
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />
-              {amount && Number(amount) > 0 && isCentMt5Account(selectedToMt5Account) && (
+              {amount && Number(amount) > 0 && isCentMt5Account(selectedFromMt5Account) && (
                 <div className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-2">
                   <p className="text-xs text-muted-foreground">Conversion</p>
                   <p className="text-sm font-semibold text-foreground mt-0.5">
@@ -572,13 +589,13 @@ export function DirectToMt5Dialog({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="transfer-comment">Comment</Label>
-          <textarea
-            id="transfer-comment"
-            className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            placeholder="Enter a comment for this transfer..."
+          <Label htmlFor="withdraw-comment">Comment</Label>
+          <Textarea
+            id="withdraw-comment"
+            placeholder="Enter a comment for this withdrawal..."
             value={comment}
             onChange={(e) => setComment(e.target.value)}
+            rows={3}
           />
         </div>
 
@@ -590,13 +607,16 @@ export function DirectToMt5Dialog({
           >
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={submitting || !selectedUser}>
+          <Button
+            onClick={handleSubmit}
+            disabled={submitting || !selectedUser}
+          >
             {submitting ? (
               <>
                 <Spinner className="mr-2 h-4 w-4" /> Processing...
               </>
             ) : (
-              "Fund Account"
+              "Process Withdrawal"
             )}
           </Button>
         </DialogFooter>

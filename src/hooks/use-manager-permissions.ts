@@ -15,7 +15,7 @@ export function useManagerPermissions() {
 
   const userType = user?.type ?? "user";
   const isAdmin = userType === "admin";
-  const isManager = userType === "manager";
+  const isManager = userType === "manager" || userType === "subadmin";
 
   const permissionNameSet = useMemo(() => {
     if (!isManager) return new Set<string>();

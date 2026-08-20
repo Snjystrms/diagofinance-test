@@ -19,6 +19,7 @@ import type {
   ManagerClientsStats,
   ManagerDepositsStats,
   ManagerWithdrawalsStats,
+  SubadminDashboardData,
 } from "@/lib/api";
 import { useClientCustomization } from "@/contexts/client-customization-context"
 import { getDashboardThemeArtwork } from "@/components/theme-customizer"
@@ -26,6 +27,7 @@ import { ThemePill } from "@/components/ui/theme-pill";
 
 interface ManagerDashboardViewProps {
   managerDashboardData: ManagerDashboardData | null;
+  subadminDashboardData?: SubadminDashboardData | null;
   userName?: string;
 }
 
@@ -164,14 +166,18 @@ function WithdrawalsSection({ withdrawals }: { withdrawals: ManagerWithdrawalsSt
   );
 }
 
-export function ManagerDashboardView({ managerDashboardData, userName }: ManagerDashboardViewProps) {
+export function ManagerDashboardView({ managerDashboardData, subadminDashboardData, userName }: ManagerDashboardViewProps) {
   const { themePairId, themeMode } = useClientCustomization();
   const dashboardThemeArtwork = getDashboardThemeArtwork(themePairId, themeMode);
-  const manager = managerDashboardData?.manager;
-  const permissions = managerDashboardData?.permissions;
-  const clients = managerDashboardData?.stats?.clients;
-  const deposits = managerDashboardData?.stats?.transactions?.deposits;
-  const withdrawals = managerDashboardData?.stats?.transactions?.withdrawals;
+  const data = managerDashboardData ?? subadminDashboardData ?? null;
+  const managerInfo =
+    (data as ManagerDashboardData | null)?.manager ??
+    (data as SubadminDashboardData | null)?.subadmin;
+  const manager = managerInfo;
+  const permissions = data?.permissions;
+  const clients = data?.stats?.clients;
+  const deposits = data?.stats?.transactions?.deposits;
+  const withdrawals = data?.stats?.transactions?.withdrawals;
   const canViewTransactions = permissions?.some((permission) => permission?.toLowerCase() === "transaction");
 
   const greeting = (() => {

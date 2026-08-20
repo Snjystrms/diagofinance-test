@@ -5,7 +5,6 @@ import * as React from "react"
 import { NavMain } from "@/components/nav-main"
 import { TeamSwitcher } from "@/components/team-switcher"
 import { useAuth } from "@/contexts/auth-context"
-import { generateSubadminNavigation } from "@/lib/permission-nav-mapper"
 import {
   getSectionLabelForRole,
   getSidebarNavigation,
@@ -24,10 +23,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth();
 
   const navItems = React.useMemo(() => {
-    if (user?.type === "subadmin") {
-      return generateSubadminNavigation(user.permissions || []);
-    }
-
     return getSidebarNavigation({
       type: user?.type,
       isIbUser: user?.is_ib_user,

@@ -45,8 +45,9 @@ export function LoginClient() {
     password: string;
     adminId?: string | number;
     managerId?: string | number;
+    subadminId?: string | number;
     userId?: string | number;
-    userType?: 'admin' | 'user' | 'manager';
+    userType?: 'admin' | 'user' | 'manager' | 'subadmin';
   } | null>(null);
   const [isVerifying2FA, setIsVerifying2FA] = useState(false);
 
@@ -88,6 +89,11 @@ export function LoginClient() {
             (nestedDataObj?.manager_id as string | number | undefined) ||
             ((nestedDataObj?.manager as Record<string, unknown>)?.id as string | number | undefined) ||
             ((nestedDataObj?.user as Record<string, unknown>)?.id as string | number | undefined);
+        } else if (userType === 'subadmin') {
+          userId =
+            (nestedDataObj?.subadmin_id as string | number | undefined) ||
+            ((nestedDataObj?.subadmin as Record<string, unknown>)?.id as string | number | undefined) ||
+            ((nestedDataObj?.user as Record<string, unknown>)?.id as string | number | undefined);
         } else {
           userId =
             (nestedDataObj?.user_id as string | number | undefined) ||
@@ -102,8 +108,10 @@ export function LoginClient() {
               ? { adminId: userId }
               : userType === 'manager'
               ? { managerId: userId }
+              : userType === 'subadmin'
+              ? { subadminId: userId }
               : { userId }),
-            userType: userType as 'admin' | 'user' | 'manager',
+            userType: userType as 'admin' | 'user' | 'manager' | 'subadmin',
           });
           setShow2FA(true);
           toast.success('Please enter your 2FA code to complete login');
@@ -130,9 +138,11 @@ export function LoginClient() {
           admin_id: pendingLoginData.adminId,
           verify_otp: twoFACode,
         });
-      } else if (pendingLoginData.userType === 'manager' && pendingLoginData.managerId) {
+      } else if (pendingLoginData.userType === 'manager' || pendingLoginData.userType === 'subadmin') {
+        const managerId = pendingLoginData.managerId ?? pendingLoginData.subadminId;
+        if (!managerId) throw new Error('Invalid login data');
         response = await manager2FAApi.verifyLogin2FA({
-          manager_id: pendingLoginData.managerId,
+          manager_id: managerId,
           verify_otp: twoFACode,
         });
       } else if (pendingLoginData.userType === 'user' && pendingLoginData.userId) {
@@ -149,12 +159,14 @@ export function LoginClient() {
         const responseData = (loginResponse.data as Record<string, unknown>) || loginResponse;
         const token = (responseData.token as string) || (loginResponse.token as string);
         const userData =
+          (responseData.subadmin as Record<string, unknown>) ||
           (responseData.admin as Record<string, unknown>) ||
           (responseData.manager as Record<string, unknown>) ||
           (responseData.user as Record<string, unknown>) ||
           (loginResponse.user as Record<string, unknown>) ||
           (loginResponse.admin as Record<string, unknown>) ||
-          (loginResponse.manager as Record<string, unknown>);
+          (loginResponse.manager as Record<string, unknown>) ||
+          (loginResponse.subadmin as Record<string, unknown>);
 
         if (token && userData) {
           const userType = (userData.type as string) || pendingLoginData.userType || 'user';
@@ -172,8 +184,9 @@ export function LoginClient() {
             sponsor_id: (userData.sponsor_id as string) || undefined,
             role: (userData.role as string) || undefined,
             managerPermissions:
+              (responseData.permissions as GroupedPermissions[] | undefined) ||
               (loginResponse.permissions as GroupedPermissions[] | undefined) ||
-              (userType === 'manager' ? [] : undefined),
+              (userType === 'manager' || userType === 'subadmin' ? [] : undefined),
             is_ib_user:
               typeof userData.is_ib_user === 'number'
                 ? Boolean(userData.is_ib_user)

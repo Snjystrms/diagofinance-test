@@ -11,7 +11,9 @@ import {
   Wallet,
   ArrowDownToLine,
   ArrowUpFromLine,
-  TrendingUp,
+  ArrowDownCircle,
+  ArrowUpCircle,
+  ArrowRightLeft,
   Banknote,
   Eye,
   Download,
@@ -57,6 +59,7 @@ import {
   type AdminTransactionStatistics,
   type AdminClientDepositData,
   type AdminClientWithdrawalData,
+  type AdminClientWithdrawalToMt5Data,
   type AdminInternalTransferData,
 } from "@/lib/api-admin-transactions";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
@@ -66,6 +69,7 @@ import { ManualSortHeader } from "@/components/data-table/manual-sort-header";
 import { fmtDateTime, fmtISTDateTime, formatAmount, statusBadge, transactionTypeLabel } from "../_lib/transaction-format";
 import { ClientDepositDialog } from "./client-deposit-dialog";
 import { ClientWithdrawalDialog } from "./client-withdrawal-dialog";
+import { ClientWithdrawToMt5Dialog } from "./client-withdraw-to-mt5-dialog";
 import { InternalTransferDialog } from "./internal-transfer-dialog";
 import { DirectToMt5Dialog } from "./direct-to-mt5-dialog";
 import { TransactionDetailsDialog } from "./transaction-details-dialog";
@@ -123,6 +127,7 @@ export function AdminTransactionContent() {
   const [withdrawalDialogOpen, setWithdrawalDialogOpen] = useState(false);
   const [transferDialogOpen, setTransferDialogOpen] = useState(false);
   const [directToMt5DialogOpen, setDirectToMt5DialogOpen] = useState(false);
+  const [clientWithdrawToMt5DialogOpen, setClientWithdrawToMt5DialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [selectedTransaction, setSelectedTransaction] = useState<AdminTransactionItem | null>(null);
 
@@ -200,6 +205,18 @@ export function AdminTransactionContent() {
   const handleDirectToMt5Success = useCallback(() => {
     void loadData();
   }, [loadData]);
+
+  const handleClientWithdrawToMt5Success = useCallback(
+    (res: AdminClientWithdrawalToMt5Data) => {
+      toast.success(
+        `Withdrawal of $${formatAmount(res.amount)} processed from MT5 account ${
+          res.mt5_account || ""
+        } for client #${res.client_id}`,
+      );
+      void loadData();
+    },
+    [loadData],
+  );
 
   const handleExport = useCallback(async (formatType: "xlsx" | "csv") => {
     if (!canView) {
@@ -408,41 +425,52 @@ export function AdminTransactionContent() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button>
-                <Plus className="mr-2 h-4 w-4" />
-                New Transaction
-                <ChevronDown className="ml-2 h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger >
-            <DropdownMenuContent align="end" className="w-[10rem]">
-              <DropdownMenuItem onClick={() => setDepositDialogOpen(true)} className="w-[10rem]">
-                <ArrowDownToLine className="mr-2 h-4 w-4" />
-                Wallet Deposit
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setWithdrawalDialogOpen(true)}>
-                <ArrowUpFromLine className="mr-2 h-4 w-4" />
-                Wallet Withdrawal
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setTransferDialogOpen(true);
-                }}
-              >
-                <TrendingUp className="mr-2 h-4 w-4" />
-                Internal Transfer
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => {
-                  setDirectToMt5DialogOpen(true);
-                }}
-              >
-                <Wallet className="mr-2 h-4 w-4" />
-                Direct to MT5
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+        <DropdownMenu>
+  <DropdownMenuTrigger asChild>
+    <Button>
+      <Plus className="mr-2 h-4 w-4" />
+      New Transaction
+      <ChevronDown className="ml-2 h-4 w-4" />
+    </Button>
+  </DropdownMenuTrigger>
+  <DropdownMenuContent
+    align="end"
+    className="w-[var(--radix-dropdown-menu-trigger-width)]"
+  >
+    <DropdownMenuItem onClick={() => setDepositDialogOpen(true)}>
+      <ArrowDownToLine className="mr-2 h-4 w-4" />
+      Wallet Deposit
+    </DropdownMenuItem>
+    <DropdownMenuItem onClick={() => setWithdrawalDialogOpen(true)}>
+      <ArrowUpFromLine className="mr-2 h-4 w-4" />
+      Wallet Withdrawal
+    </DropdownMenuItem>
+    <DropdownMenuItem
+      onClick={() => {
+        setTransferDialogOpen(true);
+      }}
+    >
+      <ArrowRightLeft className="mr-2 h-4 w-4" />
+      Internal Transfer
+    </DropdownMenuItem>
+    <DropdownMenuItem
+      onClick={() => {
+        setDirectToMt5DialogOpen(true);
+      }}
+    >
+      <ArrowDownCircle className="mr-2 h-4 w-4" />
+      Client Deposit
+    </DropdownMenuItem>
+    <DropdownMenuItem
+      onClick={() => {
+        setClientWithdrawToMt5DialogOpen(true);
+      }}
+    >
+      <ArrowUpCircle className="mr-2 h-4 w-4" />
+      Client Withdraw
+    </DropdownMenuItem>
+  </DropdownMenuContent>
+</DropdownMenu>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2">
@@ -635,6 +663,12 @@ export function AdminTransactionContent() {
         onOpenChange={setDirectToMt5DialogOpen}
         token={token}
         onSuccess={handleDirectToMt5Success}
+      />
+      <ClientWithdrawToMt5Dialog
+        open={clientWithdrawToMt5DialogOpen}
+        onOpenChange={setClientWithdrawToMt5DialogOpen}
+        token={token}
+        onSuccess={handleClientWithdrawToMt5Success}
       />
       <TransactionDetailsDialog
         open={detailsDialogOpen}

@@ -57,7 +57,6 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/contexts/auth-context"
-import { generateSubadminNavigation } from "@/lib/permission-nav-mapper"
 import { getSidebarNavigation } from "@/lib/app-route-registry"
 import type { NavItem } from "@/types/permissions"
 import { useUnreadNotificationCount } from "@/hooks/use-unread-notification-count"
@@ -198,10 +197,6 @@ export function AppSidebarV2({ ...props }: React.ComponentProps<typeof Sidebar>)
       is_ib_user: user?.is_ib_user,
       user: user
     });
-
-    if (user?.type === "subadmin") {
-      return generateSubadminNavigation(user.permissions || []);
-    }
 
     return getSidebarNavigation({
       type: user?.type,

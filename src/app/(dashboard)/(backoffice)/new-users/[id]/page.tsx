@@ -1699,7 +1699,7 @@ export default function NewUserDetailPage() {
 
   if (profileError && !crudUser) {
     const isManagerPermissionDenied =
-      user?.type === "manager" && getErrorHttpStatus(profileError) === 401;
+      (user?.type === "manager" || user?.type === "subadmin") && getErrorHttpStatus(profileError) === 401;
 
     return (
       <ProtectedRoute>
@@ -2169,13 +2169,13 @@ export default function NewUserDetailPage() {
                   action="load"
                   onRetry={() => setProfileReloadToken((value) => value + 1)}
                   title={
-                    user?.type === "manager" &&
+                    (user?.type === "manager" || user?.type === "subadmin") &&
                     getErrorHttpStatus(mt5AccountsState.error) === 401
                       ? "Insufficient permissions"
                       : undefined
                   }
                   unauthorizedMessage={
-                    user?.type === "manager" &&
+                    (user?.type === "manager" || user?.type === "subadmin") &&
                     getErrorHttpStatus(mt5AccountsState.error) === 401
                       ? "Your manager role does not include access to MT5 totals for this user. Ask an administrator if you need it."
                       : undefined
@@ -2533,13 +2533,13 @@ export default function NewUserDetailPage() {
                           action="load"
                           onRetry={() => void loadReferral()}
                           title={
-                            user?.type === "manager" &&
+                            (user?.type === "manager" || user?.type === "subadmin") &&
                             getErrorHttpStatus(referralError) === 401
                               ? "Insufficient permissions"
                               : undefined
                           }
                           unauthorizedMessage={
-                            user?.type === "manager" &&
+                            (user?.type === "manager" || user?.type === "subadmin") &&
                             getErrorHttpStatus(referralError) === 401
                               ? "Your manager role does not include access to referral details. Ask an administrator if you need it."
                               : undefined

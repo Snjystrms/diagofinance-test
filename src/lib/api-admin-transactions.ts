@@ -163,6 +163,21 @@ export interface AdminClientWithdrawalData {
   comment: string | null;
 }
 
+export interface AdminClientWithdrawalToMt5Body {
+  client_id: number;
+  amount: number;
+  comment?: string | null;
+  mt5_account: string;
+}
+
+export interface AdminClientWithdrawalToMt5Data {
+  client_id: number;
+  amount: number;
+  mt5_account?: string;
+  comment?: string | null;
+  transaction_id?: string | null;
+}
+
 export interface AdminInternalTransferBody {
   amount: number;
   from_account?: string;
@@ -299,6 +314,26 @@ export const adminTransactionsApi = {
         client_id: body.client_id,
         amount: body.amount,
         ...(body.comment !== undefined && { comment: body.comment }),
+      }),
+    });
+  },
+
+  clientWithdrawalToMt5: (body: AdminClientWithdrawalToMt5Body, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to process client withdrawal");
+    }
+
+    return apiCall<AdminClientWithdrawalToMt5Data>(`/admin/transaction/client-withdrawal`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        client_id: body.client_id,
+        amount: body.amount,
+        comment: body.comment ?? "",
+        mt5_account: body.mt5_account,
       }),
     });
   },

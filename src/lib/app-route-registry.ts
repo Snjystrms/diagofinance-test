@@ -648,7 +648,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "transaction-management",
-    navLabel: "Deposit List",
+    navLabel: "Pending Deposit",
     managerCategories: ["Transaction"],
   },
   {
@@ -656,7 +656,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "transaction-management",
-    navLabel: "Withdrawal List",
+    navLabel: "Pending Withdrawal",
     managerCategories: ["Transaction"],
   },
   {
@@ -664,7 +664,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "transaction-management",
-    navLabel: "IB Withdrawal List",
+    navLabel: "Pending IB Withdrawal",
     managerCategories: ["Transaction"],
   },
   {
@@ -1350,6 +1350,12 @@ export function getManagerNavigation(
       return false;
     }
 
+    // Management Dashboard is admin-portal only; never show it to
+    // managers/subadmins.
+    if (section.id === "managementdashboard") {
+      return false;
+    }
+
     if (section.id === "account-management") {
       return hasManagerFeature(
         permissionNames,
@@ -1454,6 +1460,7 @@ export function getSidebarNavigation(
     case "admin":
       return getAdminNavigation();
     case "manager":
+    case "subadmin":
       return getManagerNavigation(user.managerPermissions);
     case "user":
       return getUserNavigation(user.isIbUser);
@@ -1480,19 +1487,24 @@ export function isRouteAllowedForRole(
     return role === "admin";
   }
 
-  if (!matchingRoute.roles.includes(role)) {
-    if (role === "subadmin") {
-      return matchingRoute.audience !== "client";
-    }
+  // Subadmins are equivalent to managers: the same permission model and
+  // routes apply, so treat them identically for route gating.
+  const effectiveRole: UserType =
+    role === "subadmin" ? "manager" : role;
 
+  if (!matchingRoute.roles.includes(effectiveRole)) {
     return false;
   }
 
-  if (role === "subadmin") {
-    return matchingRoute.audience !== "client";
+  // Management Dashboard is admin-portal only.
+  if (
+    effectiveRole === "manager" &&
+    matchingRoute.sidebarSection === "managementdashboard"
+  ) {
+    return false;
   }
 
-  if (role !== "manager") {
+  if (effectiveRole !== "manager") {
     return true;
   }
 

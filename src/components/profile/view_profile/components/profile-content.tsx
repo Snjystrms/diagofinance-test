@@ -1017,7 +1017,7 @@ export default function ProfileContent() {
     try {
       // Use appropriate API based on user type
       const isAdmin = user.type === 'admin';
-      const isManager = user.type === 'manager';
+      const isManager = user.type === 'manager' || user.type === 'subadmin';
       let response;
       
       if (isAdmin) {

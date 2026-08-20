@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CenteredLoadingSurface } from '@/components/loading/page-loading-skeleton';
 import { useAuth } from '@/contexts/auth-context';
-import { canAccessRoute } from '@/lib/permission-nav-mapper';
+import { useManagerPermissions } from '@/hooks/use-manager-permissions';
 
 interface PermissionProtectedRouteProps {
   children: React.ReactNode;
@@ -21,6 +21,7 @@ export function PermissionProtectedRoute({
 }: PermissionProtectedRouteProps) {
   const { user, isAuthenticated } = useAuth();
   const router = useRouter();
+  const { hasPermissionName } = useManagerPermissions();
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -28,33 +29,23 @@ export function PermissionProtectedRoute({
       return;
     }
 
+    // Subadmins use the same grouped-permission system as managers. Gate them
+    // by grouped permission names when module/action details are provided.
     if (user?.type === 'subadmin') {
-      const permissions = user.permissions || [];
-      
-      // Check route-based permission if route is provided
-      if (route && !canAccessRoute(permissions, route)) {
-        router.push('/dashboard');
-        return;
-      }
-      
-      // Check module/action permission if provided
-      if (requiredModule && requiredAction) {
-        const hasPermission = permissions.some(p => 
-          p.module === requiredModule && 
-          p.action === requiredAction && 
-          p.AdminPermission.status === true
-        );
-        
-        if (!hasPermission) {
+      if (route || requiredModule) {
+        const permissionName = requiredAction
+          ? `${requiredModule} ${requiredAction}`
+          : requiredModule;
+        if (permissionName && !hasPermissionName(permissionName)) {
           router.push('/dashboard');
           return;
         }
       }
     }
-  }, [isAuthenticated, user, router, requiredModule, requiredAction, route]);
+  }, [isAuthenticated, user, router, requiredModule, requiredAction, route, hasPermissionName]);
 
   // Show loading state while checking permissions
-  if (!isAuthenticated || (user?.type === 'subadmin' && !user.permissions)) {
+  if (!isAuthenticated || (user?.type === 'subadmin' && !user.managerPermissions)) {
     return (
       <CenteredLoadingSurface
         minHeightClassName="min-h-screen"

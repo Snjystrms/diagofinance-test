@@ -45,35 +45,26 @@ export const getAllowedModules = (permissions: Permission[]): string[] => {
 // Hook for component-level permission checking
 export const usePermissions = () => {
   const { user } = useAuth();
-  
-  const checkPermission = (module: string, action: string): boolean => {
-    // Admin and regular users have full access by default
-    if (user?.type !== 'subadmin') {
-      return true;
-    }
-    
-    const permissions = user.permissions || [];
-    return hasPermission(permissions, module, action);
+
+  const checkPermission = (_module: string, _action: string): boolean => {
+    // Subadmins use the same grouped-permission system as managers. Their
+    // access is gated via useManagerPermissions/useModuleCapabilities at the
+    // page level, so legacy flat-permission helpers no longer restrict them.
+    return true;
   };
-  
-  const getModuleActions = (module: string): string[] => {
-    // Admin and regular users have all actions
-    if (user?.type !== 'subadmin') {
-      return ['read', 'write', 'delete', 'create', 'update'];
-    }
-    
-    const permissions = user.permissions || [];
-    return getModulePermissions(permissions, module);
+
+  const getModuleActions = (_module: string): string[] => {
+    return ['read', 'write', 'delete', 'create', 'update'];
   };
-  
-  const canWrite = (module: string): boolean => {
-    return checkPermission(module, 'write');
+
+  const canWrite = (_module: string): boolean => {
+    return checkPermission(_module, 'write');
   };
-  
-  const canRead = (module: string): boolean => {
-    return checkPermission(module, 'read');
+
+  const canRead = (_module: string): boolean => {
+    return checkPermission(_module, 'read');
   };
-  
+
   return {
     checkPermission,
     getModuleActions,

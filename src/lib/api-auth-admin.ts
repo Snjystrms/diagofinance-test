@@ -95,6 +95,7 @@ export interface LoginResponse {
     type?: "admin" | "user" | "subadmin" | "manager";
     mobile?: string;
     status?: boolean | number;
+    total_client?: number;
     requires_usdt_transaction?: boolean;
     sponsor_id?: string;
     role?: string;
@@ -110,6 +111,8 @@ export interface LoginResponse {
     user?: LoginResponse["user"];
     admin?: LoginResponse["user"];
     manager?: LoginResponse["user"];
+    subadmin?: LoginResponse["user"];
+    permissions?: GroupedPermissions[];
   };
   permissions?: GroupedPermissions[];
 }
