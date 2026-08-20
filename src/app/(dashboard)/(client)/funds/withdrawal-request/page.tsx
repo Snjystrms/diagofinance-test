@@ -697,6 +697,158 @@ function WithdrawalRequestContent() {
     );
   }
 
+  const renderAmountField = () => (
+    <div className="space-y-3">
+      <Label
+        htmlFor="amount"
+        className="text-sm font-semibold text-foreground"
+      >
+        Amount <span className="text-destructive">*</span>
+        <span className="ml-2 text-xs font-normal text-muted-foreground">
+          (Min: ${formatAmount(minimumAmount)} USD)
+        </span>
+      </Label>
+      <div className="relative">
+        <DollarSign className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
+        <Input
+          id="amount"
+          type="number"
+          step="1"
+          min={minimumAmount}
+          value={amount}
+          onWheel={(e) => (e.target as HTMLInputElement).blur()}
+          onChange={(event) => setAmount(event.target.value)}
+          className="h-12 rounded-xl border-2 border-border bg-background pl-10 focus:border-primary"
+          placeholder={`${minimumAmount.toFixed(2)}`}
+        />
+      </div>
+      {amount.trim() !== "" && !isNaN(amountNum) && amountNum > 0 && amountNum < minimumAmount && (
+        <div className="flex items-start gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-3 py-2.5 text-xs text-destructive">
+          <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+          <p>
+            Minimum withdrawal amount is ${formatAmount(minimumAmount)} USD. Please enter at least ${formatAmount(minimumAmount)} USD to proceed.
+          </p>
+        </div>
+      )}
+      {(!amount.trim() || isNaN(amountNum) || amountNum === 0) && (
+        <p className="text-xs text-muted-foreground">
+          Enter an amount between ${formatAmount(minimumAmount)} USD and ${formatAmount(mainWalletBalance)} USD
+        </p>
+      )}
+      {amount.trim() !== "" && !isNaN(amountNum) && amountNum >= minimumAmount && (
+        <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+          <CheckCircle className="h-3 w-3" />
+          Valid withdrawal amount
+        </p>
+      )}
+    </div>
+  );
+
+  const renderSourceField = () => (
+    <div className="space-y-3">
+      <Label htmlFor="withdrawal-source" className="text-sm font-semibold text-foreground">
+        Withdrawal Source <span className="text-destructive">*</span>
+      </Label>
+      <Select value={source} onValueChange={(val) => setSource(val as "wallet" | "mt5")}>
+        <SelectTrigger id="withdrawal-source" className="h-10 w-full rounded-xl border-2 border-border bg-background focus:border-primary">
+          <SelectValue placeholder="Select source" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="wallet">
+            <div className="flex items-center gap-2">
+              <Wallet className="h-4 w-4" />
+              <span>Main Wallet (USD)</span>
+            </div>
+          </SelectItem>
+          <SelectItem value="mt5">
+            <div className="flex items-center gap-2">
+              <TrendingDown className="h-4 w-4" />
+              <span>MT5 Account</span>
+            </div>
+          </SelectItem>
+        </SelectContent>
+      </Select>
+      {source === "mt5" && (
+        <div className="space-y-2">
+          <Label htmlFor="mt5-account" className="text-sm font-semibold text-foreground">
+            MT5 Account <span className="text-destructive">*</span>
+          </Label>
+          {mt5AccountsLoading ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+              <Clock className="h-4 w-4 animate-spin" />
+              Loading MT5 accounts...
+            </div>
+          ) : mt5Accounts.length === 0 ? (
+            <p className="text-sm text-destructive">
+              No live MT5 accounts found. Please add an MT5 account first.
+            </p>
+          ) : (
+            <Select value={selectedMt5Account} onValueChange={setSelectedMt5Account}>
+              <SelectTrigger id="mt5-account" className="h-10 w-full rounded-xl border-2 border-border bg-background focus:border-primary">
+                <SelectValue placeholder="Select MT5 account" />
+              </SelectTrigger>
+              <SelectContent>
+                {mt5Accounts.map((acc) => (
+                  <SelectItem key={acc.account_id} value={acc.account_id}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{acc.account_id}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {acc.account_mode} • {acc.mt5_id}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+      )}
+    </div>
+  );
+
+  const renderCurrencyField = () => (
+    <div className="space-y-3">
+      <Label
+        htmlFor="withdrawal-currency"
+        className="text-sm font-semibold text-foreground"
+      >
+        Withdrawal Currency
+      </Label>
+      <select
+        id="withdrawal-currency"
+        value={withdrawalCurrency}
+        onChange={(e) => setWithdrawalCurrency(e.target.value)}
+        className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      >
+        {availableWithdrawalCurrencies.length === 0 ? (
+          <option value="INR">No currencies available</option>
+        ) : (
+          availableWithdrawalCurrencies.map((code) => (
+            <option key={code} value={code}>
+              {code}
+            </option>
+          ))
+        )}
+      </select>
+      <p className="text-xs text-muted-foreground">
+        {selectedWithdrawalRate > 0
+          ? `Rate: 1 USD = ${selectedWithdrawalRate.toFixed(2)} ${withdrawalCurrency.toUpperCase()}`
+          : "Withdrawal conversion rate is currently unavailable for this currency."}
+      </p>
+      {amount.trim() !== "" &&
+        !isNaN(amountNumeric) &&
+        amountNumeric > 0 &&
+        convertedBankAmount !== null && (
+          <p className="text-xs font-medium text-foreground">
+            {isBankWithdrawal
+              ? "Estimated bank credit:"
+              : "Estimated cash amount:"}{" "}
+            {formatAmount(convertedBankAmount.toFixed(2))} {withdrawalCurrency.toUpperCase()}
+          </p>
+        )}
+    </div>
+  );
+
   return (
     <div className="min-h-screen w-full bg-background px-4 py-6 lg:px-6 xl:px-8">
       <div className="mx-auto max-w-7xl space-y-8">
@@ -792,151 +944,17 @@ function WithdrawalRequestContent() {
                   )}
 
                   <div className="space-y-3">
-                    <Label
-                      htmlFor="amount"
-                      className="text-sm font-semibold text-foreground"
-                    >
-                      Amount <span className="text-destructive">*</span>
-                      <span className="ml-2 text-xs font-normal text-muted-foreground">
-                        (Min: ${formatAmount(minimumAmount)} USD)
-                      </span>
-                    </Label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
-                      <Input
-                        id="amount"
-                        type="number"
-                        step="1"
-                        min={minimumAmount}
-                        value={amount}
-                        onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                        onChange={(event) => setAmount(event.target.value)}
-                        className="h-12 rounded-xl border-2 border-border bg-background pl-10 focus:border-primary"
-                        placeholder={`${minimumAmount.toFixed(2)}`}
-                      />
-                    </div>
-                    {amount.trim() !== "" && !isNaN(amountNum) && amountNum > 0 && amountNum < minimumAmount && (
-                      <div className="flex items-start gap-2 rounded-xl border border-destructive/50 bg-destructive/10 px-3 py-2.5 text-xs text-destructive">
-                        <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-                        <p>
-                          Minimum withdrawal amount is ${formatAmount(minimumAmount)} USD. Please enter at least ${formatAmount(minimumAmount)} USD to proceed.
-                        </p>
-                      </div>
-                    )}
-                    {(!amount.trim() || isNaN(amountNum) || amountNum === 0) && (
-                      <p className="text-xs text-muted-foreground">
-                        Enter an amount between ${formatAmount(minimumAmount)} USD and ${formatAmount(mainWalletBalance)} USD
-                      </p>
-                    )}
-                    {amount.trim() !== "" && !isNaN(amountNum) && amountNum >= minimumAmount && (
-                      <p className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                        <CheckCircle className="h-3 w-3" />
-                        Valid withdrawal amount
-                      </p>
-                    )}
-
-                    {/* Source Selection (Wallet vs MT5) */}
-                    <div className="space-y-3">
-                      <Label htmlFor="withdrawal-source" className="text-sm font-semibold text-foreground">
-                        Withdrawal Source <span className="text-destructive">*</span>
-                      </Label>
-                      <Select value={source} onValueChange={(val) => setSource(val as "wallet" | "mt5")}>
-                        <SelectTrigger id="withdrawal-source" className="h-10 w-full rounded-xl border-2 border-border bg-background focus:border-primary">
-                          <SelectValue placeholder="Select source" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="wallet">
-                            <div className="flex items-center gap-2">
-                              <Wallet className="h-4 w-4" />
-                              <span>Main Wallet (USD)</span>
-                            </div>
-                          </SelectItem>
-                          <SelectItem value="mt5">
-                            <div className="flex items-center gap-2">
-                              <TrendingDown className="h-4 w-4" />
-                              <span>MT5 Account</span>
-                            </div>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                      {source === "mt5" && (
-                        <div className="space-y-2">
-                          <Label htmlFor="mt5-account" className="text-sm font-semibold text-foreground">
-                            MT5 Account <span className="text-destructive">*</span>
-                          </Label>
-                          {mt5AccountsLoading ? (
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
-                              <Clock className="h-4 w-4 animate-spin" />
-                              Loading MT5 accounts...
-                            </div>
-                          ) : mt5Accounts.length === 0 ? (
-                            <p className="text-sm text-destructive">
-                              No live MT5 accounts found. Please add an MT5 account first.
-                            </p>
-                          ) : (
-                            <Select value={selectedMt5Account} onValueChange={setSelectedMt5Account}>
-                              <SelectTrigger id="mt5-account" className="h-10 w-full rounded-xl border-2 border-border bg-background focus:border-primary">
-                                <SelectValue placeholder="Select MT5 account" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {mt5Accounts.map((acc) => (
-                                  <SelectItem key={acc.account_id} value={acc.account_id}>
-                                    <div className="flex flex-col">
-                                      <span className="font-medium">{acc.account_id}</span>
-                                      <span className="text-xs text-muted-foreground">
-                                        {acc.account_mode} • {acc.mt5_id}
-                                      </span>
-                                    </div>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          )}
-                        </div>
-                      )}
-                    </div>
-
-                    {(isBankWithdrawal || isCashWithdrawal) && (
-                      <div className="space-y-3">
-                        <Label
-                          htmlFor="withdrawal-currency"
-                          className="text-sm font-semibold text-foreground"
-                        >
-                          Withdrawal Currency
-                        </Label>
-                        <select
-                          id="withdrawal-currency"
-                          value={withdrawalCurrency}
-                          onChange={(e) => setWithdrawalCurrency(e.target.value)}
-                          className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                        >
-                          {availableWithdrawalCurrencies.length === 0 ? (
-                            <option value="INR">No currencies available</option>
-                          ) : (
-                            availableWithdrawalCurrencies.map((code) => (
-                              <option key={code} value={code}>
-                                {code}
-                              </option>
-                            ))
-                          )}
-                        </select>
-                        <p className="text-xs text-muted-foreground">
-                          {selectedWithdrawalRate > 0
-                            ? `Rate: 1 USD = ${selectedWithdrawalRate.toFixed(2)} ${withdrawalCurrency.toUpperCase()}`
-                            : "Withdrawal conversion rate is currently unavailable for this currency."}
-                        </p>
-                        {amount.trim() !== "" &&
-                          !isNaN(amountNumeric) &&
-                          amountNumeric > 0 &&
-                          convertedBankAmount !== null && (
-                            <p className="text-xs font-medium text-foreground">
-                              {isBankWithdrawal
-                                ? "Estimated bank credit:"
-                                : "Estimated cash amount:"}{" "}
-                              {formatAmount(convertedBankAmount.toFixed(2))} {withdrawalCurrency.toUpperCase()}
-                            </p>
-                          )}
-                      </div>
+                    {isBankWithdrawal || isCashWithdrawal ? (
+                      <>
+                        {renderSourceField()}
+                        {renderCurrencyField()}
+                        {renderAmountField()}
+                      </>
+                    ) : (
+                      <>
+                        {renderAmountField()}
+                        {renderSourceField()}
+                      </>
                     )}
                   </div>
 

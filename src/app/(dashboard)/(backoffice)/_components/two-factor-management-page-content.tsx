@@ -367,7 +367,7 @@ export function TwoFactorManagementPageContent({
 
       if (mode === "manager") {
         const response = await adminManagersApi.list(token);
-        const managers = (response?.data?.managers || []) as ManagerItem[];
+        const managers = (response?.data?.subadmins || []) as ManagerItem[];
         const normalizedManagers = managers
           .map(normalizeManagerRow)
           .filter((manager) => {

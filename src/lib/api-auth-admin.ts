@@ -3273,8 +3273,8 @@ export const adminKycApi = {
 
 export const adminManagersApi = {
   list: (token: string) =>
-    apiCall<{ managers: ManagerItem[]; pagination?: PaginationMeta }>(
-      `/admin/manager/list`,
+    apiCall<{ subadmins: ManagerItem[]; pagination?: PaginationMeta }>(
+      `/admin/subadmin/list`,
       {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },
@@ -3282,7 +3282,7 @@ export const adminManagersApi = {
     ),
 
   create: (body: ManagerCreateBody, token: string) =>
-    apiCall<{ manager: ManagerItem }>(`/admin/manager/create`, {
+    apiCall<{ manager: ManagerItem }>(`/admin/subadmin/create`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -3298,7 +3298,7 @@ export const adminManagersApi = {
     }),
 
   patchStatus: (id: number | string, status: boolean, token: string) =>
-    apiCall<{ manager: ManagerItem }>(`/admin/manager/${id}`, {
+    apiCall<{ manager: ManagerItem }>(`/admin/subadmin/${id}`, {
       method: "PATCH",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -3309,7 +3309,7 @@ export const adminManagersApi = {
     }),
 
   update: (id: number | string, body: ManagerUpdateBody, token: string) =>
-    apiCall<{ manager: ManagerItem }>(`/admin/manager/${id}`, {
+    apiCall<{ manager: ManagerItem }>(`/admin/subadmin/${id}`, {
       method: "PUT",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -3324,13 +3324,13 @@ export const adminManagersApi = {
     }),
 
   detail: (id: number | string, token: string) =>
-    apiCall<{ manager: ManagerItem }>(`/admin/manager/${id}`, {
+    apiCall<{ subadmin: ManagerItem }>(`/admin/subadmin/${id}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),
 
   delete: (id: number | string, token: string) =>
-    apiCall(`/admin/manager/${id}`, {
+    apiCall(`/admin/subadmin/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     }),
@@ -4141,10 +4141,24 @@ export const adminCommissionGroupsApi = {
   },
 };
 
+export type ModulePermissionItem = {
+  id: number;
+  name: string;
+  category: string;
+  created_at?: string;
+  updated_at?: string;
+};
+
+export type ModulePermissions = {
+  module: string;
+  permissions: ModulePermissionItem[];
+  count: number;
+};
+
 export const permissionsApi = {
   listAll: (token: string) =>
-    apiCall<{ permissions: GroupedPermissions[]; total?: number }>(
-      `/permissions/permissions`,
+    apiCall<{ modules: ModulePermissions[]; total?: number }>(
+      `/admin/permissions/module-wise`,
       {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` },

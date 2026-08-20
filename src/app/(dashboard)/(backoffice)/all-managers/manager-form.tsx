@@ -344,240 +344,255 @@ export function ManagerForm({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-3xl">
-        <form onSubmit={submit}>
-          <DialogHeader>
+      {/*
+        KEY FIX: DialogContent is now a flex column with a fixed max-height.
+        - Header and footer are non-shrinking flex children ("shrink-0").
+        - Only the middle body section scrolls ("flex-1 overflow-y-auto min-h-0").
+        Previously, `max-h-[90vh] overflow-y-auto` sat on the outer grid container
+        that also held the header + footer, so the whole dialog (including the
+        footer) lived inside one scrollable area. When the permissions list
+        expanded/collapsed, that grid could compute extra height that the actual
+        content no longer needed, leaving dead space below the Cancel/Create
+        buttons that you could still scroll into. Splitting header/body/footer
+        into distinct flex regions means the footer always sits directly under
+        the real content, and only the body scrolls.
+      */}
+      <DialogContent className="flex max-h-[90vh] flex-col overflow-hidden p-0 sm:max-w-3xl">
+        <form onSubmit={submit} className="flex min-h-0 flex-1 flex-col">
+          <DialogHeader className="shrink-0 border-b px-6 py-4">
             <DialogTitle>{isEdit ? (readOnly ? "View Sub-Admin" : "Edit Sub-Admin") : "Create Sub-Admin"}</DialogTitle>
           </DialogHeader>
 
-          <div className="grid grid-cols-1 gap-4 py-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                value={form.name}
-                onChange={handleNameChange}
-                onBlur={() => validateField("name", form.name)}
-                placeholder="John Manager"
-                disabled={readOnly}
-                maxLength={80}
-                required
-              />
-              {errors.name ? <p className="text-sm text-destructive">{errors.name}</p> : null}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={form.email}
-                onChange={handleEmailChange}
-                onBlur={() => validateField("email", form.email)}
-                placeholder="john.manager@example.com"
-                disabled={readOnly}
-                required
-              />
-              {errors.email ? <p className="text-sm text-destructive">{errors.email}</p> : null}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="mobile">Mobile</Label>
-              <Input
-                id="mobile"
-                type="tel"
-                value={form.mobile}
-                onChange={handleMobileChange}
-                onBlur={() => validateField("mobile", form.mobile)}
-                placeholder="1234567890"
-                disabled={readOnly}
-                maxLength={10}
-                required
-              />
-              {errors.mobile ? <p className="text-sm text-destructive">{errors.mobile}</p> : null}
-            </div>
-
-            {!isEdit ? (
+          <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={form.password}
-                    onChange={handlePasswordChange}
-                    onBlur={() => {
-                      if (form.password) {
-                        validateField("password", form.password);
-                      }
-                    }}
-                    placeholder="SecurePass123!"
-                    required
-                    className="pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
-                </div>
-                {errors.password ? <p className="text-sm text-destructive">{errors.password}</p> : null}
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  value={form.name}
+                  onChange={handleNameChange}
+                  onBlur={() => validateField("name", form.name)}
+                  placeholder="John Manager"
+                  disabled={readOnly}
+                  maxLength={80}
+                  required
+                />
+                {errors.name ? <p className="text-sm text-destructive">{errors.name}</p> : null}
               </div>
-            ) : (
+
               <div className="space-y-2">
-                <Label htmlFor="new-password">New Password</Label>
-                <div className="relative">
-                  <Input
-                    id="new-password"
-                    type={showNewPassword ? "text" : "password"}
-                    value={form.password ?? ""}
-                    onChange={handlePasswordChange}
-                    onBlur={() => {
-                      if (form.password) {
-                        validateField("password", form.password);
-                      }
-                    }}
-                    placeholder="Leave blank to keep current password"
-                    disabled={readOnly}
-                    className="pr-10"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                    onClick={() => setShowNewPassword(!showNewPassword)}
-                    aria-label={showNewPassword ? "Hide password" : "Show password"}
-                    disabled={readOnly}
-                  >
-                    {showNewPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
-                    )}
-                  </Button>
-                </div>
-                {errors.password ? <p className="text-sm text-destructive">{errors.password}</p> : null}
-                <p className="text-xs text-muted-foreground">Leave blank to keep the existing password.</p>
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={form.email}
+                  onChange={handleEmailChange}
+                  onBlur={() => validateField("email", form.email)}
+                  placeholder="john.manager@example.com"
+                  disabled={readOnly}
+                  required
+                />
+                {errors.email ? <p className="text-sm text-destructive">{errors.email}</p> : null}
               </div>
-            )}
 
-            {isEdit ? (
               <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <div className="flex items-center gap-2">
-                  <Checkbox
-                    id="status"
-                    checked={!!form.status}
-                    onCheckedChange={(value) => setForm({ ...form, status: !!value })}
-                    disabled={readOnly}
-                  />
-                  <span className="text-sm text-muted-foreground">Active</span>
+                <Label htmlFor="mobile">Mobile</Label>
+                <Input
+                  id="mobile"
+                  type="tel"
+                  value={form.mobile}
+                  onChange={handleMobileChange}
+                  onBlur={() => validateField("mobile", form.mobile)}
+                  placeholder="1234567890"
+                  disabled={readOnly}
+                  maxLength={10}
+                  required
+                />
+                {errors.mobile ? <p className="text-sm text-destructive">{errors.mobile}</p> : null}
+              </div>
+
+              {!isEdit ? (
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="password"
+                      type={showPassword ? "text" : "password"}
+                      value={form.password}
+                      onChange={handlePasswordChange}
+                      onBlur={() => {
+                        if (form.password) {
+                          validateField("password", form.password);
+                        }
+                      }}
+                      placeholder="SecurePass123!"
+                      required
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowPassword(!showPassword)}
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
+                  {errors.password ? <p className="text-sm text-destructive">{errors.password}</p> : null}
                 </div>
-              </div>
-            ) : null}
+              ) : (
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <div className="relative">
+                    <Input
+                      id="new-password"
+                      type={showNewPassword ? "text" : "password"}
+                      value={form.password ?? ""}
+                      onChange={handlePasswordChange}
+                      onBlur={() => {
+                        if (form.password) {
+                          validateField("password", form.password);
+                        }
+                      }}
+                      placeholder="Leave blank to keep current password"
+                      disabled={readOnly}
+                      className="pr-10"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      aria-label={showNewPassword ? "Hide password" : "Show password"}
+                      disabled={readOnly}
+                    >
+                      {showNewPassword ? (
+                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                  </div>
+                  {errors.password ? <p className="text-sm text-destructive">{errors.password}</p> : null}
+                  <p className="text-xs text-muted-foreground">Leave blank to keep the existing password.</p>
+                </div>
+              )}
 
-            <div className="md:col-span-2 space-y-3 rounded-md border p-4">
-              <div className="flex items-center justify-between">
-                <Label>Permissions (by category)</Label>
-                {!readOnly ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onFetchPermissions?.()}
-                  >
-                    Refresh
-                  </Button>
-                ) : null}
-              </div>
+              {isEdit ? (
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="status"
+                      checked={!!form.status}
+                      onCheckedChange={(value) => setForm({ ...form, status: !!value })}
+                      disabled={readOnly}
+                    />
+                    <span className="text-sm text-muted-foreground">Active</span>
+                  </div>
+                </div>
+              ) : null}
 
-              <div className="max-h-72 space-y-4 overflow-y-auto pr-2">
-                {groupedPermissions.map((group) => {
-                  const totalPermissions = group.permissions.length;
-                  const checkedCount = group.permissions.filter((permission) =>
-                    selectedPermissions.has(permission.id)
-                  ).length;
-                  const isAllChecked = totalPermissions > 0 && checkedCount === totalPermissions;
-                  const isPartiallyChecked =
-                    checkedCount > 0 && checkedCount < totalPermissions;
-                  const isCollapsed = collapsedCategories[group.category] ?? false;
+              <div className="space-y-3 rounded-md border p-4 md:col-span-2">
+                <div className="flex items-center justify-between">
+                  <Label>Permissions (by category)</Label>
+                  {!readOnly ? (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onFetchPermissions?.()}
+                    >
+                      Refresh
+                    </Button>
+                  ) : null}
+                </div>
 
-                  return (
-                    <div key={group.category} className="rounded-lg border border-border/70 bg-muted/20">
-                      <div className="flex items-center gap-3 px-3 py-3">
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-8 px-2 text-muted-foreground hover:text-foreground"
-                          onClick={() => toggleCategoryCollapsed(group.category)}
-                          aria-label={isCollapsed ? `Expand ${group.category}` : `Collapse ${group.category}`}
-                        >
-                          {isCollapsed ? (
-                            <ChevronRight className="h-4 w-4" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4" />
-                          )}
-                        </Button>
+                <div className="space-y-4">
+                  {groupedPermissions.map((group) => {
+                    const totalPermissions = group.permissions.length;
+                    const checkedCount = group.permissions.filter((permission) =>
+                      selectedPermissions.has(permission.id)
+                    ).length;
+                    const isAllChecked = totalPermissions > 0 && checkedCount === totalPermissions;
+                    const isPartiallyChecked =
+                      checkedCount > 0 && checkedCount < totalPermissions;
+                    const isCollapsed = collapsedCategories[group.category] ?? false;
 
-                        <div className="flex min-w-0 flex-1 items-center gap-3">
-                          <Checkbox
-                            checked={isAllChecked ? true : isPartiallyChecked ? "indeterminate" : false}
-                            onCheckedChange={(value) =>
-                              toggleCategoryPermissions(group, value === true || value === "indeterminate")
-                            }
-                            disabled={readOnly || totalPermissions === 0}
-                          />
-                          <button
+                    return (
+                      <div key={group.category} className="rounded-lg border border-border/70 bg-muted/20">
+                        <div className="flex items-center gap-3 px-3 py-3">
+                          <Button
                             type="button"
-                            className="min-w-0 flex-1 text-left"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 px-2 text-muted-foreground hover:text-foreground"
                             onClick={() => toggleCategoryCollapsed(group.category)}
+                            aria-label={isCollapsed ? `Expand ${group.category}` : `Collapse ${group.category}`}
                           >
-                            <div className="truncate text-sm font-semibold text-foreground">
-                              {group.category}
-                            </div>
-                            <div className="text-xs text-muted-foreground">
-                              {checkedCount}/{totalPermissions} selected
-                            </div>
-                          </button>
-                        </div>
-                      </div>
+                            {isCollapsed ? (
+                              <ChevronRight className="h-4 w-4" />
+                            ) : (
+                              <ChevronDown className="h-4 w-4" />
+                            )}
+                          </Button>
 
-                      {!isCollapsed ? (
-                        <div className="grid grid-cols-1 gap-3 border-t border-border/60 px-4 py-4 sm:grid-cols-2 md:grid-cols-3">
-                          {group.permissions.map((permission) => {
-                            const checked = selectedPermissions.has(permission.id);
-                            return (
-                              <label key={permission.id} className="flex items-center gap-2 text-sm">
-                                <Checkbox
-                                  checked={checked}
-                                  onCheckedChange={(value) => togglePermission(permission.id, !!value)}
-                                  disabled={readOnly}
-                                />
-                                <span className="text-muted-foreground">{permission.name}</span>
-                              </label>
-                            );
-                          })}
+                          <div className="flex min-w-0 flex-1 items-center gap-3">
+                            <Checkbox
+                              checked={isAllChecked ? true : isPartiallyChecked ? "indeterminate" : false}
+                              onCheckedChange={(value) =>
+                                toggleCategoryPermissions(group, value === true || value === "indeterminate")
+                              }
+                              disabled={readOnly || totalPermissions === 0}
+                            />
+                            <button
+                              type="button"
+                              className="min-w-0 flex-1 text-left"
+                              onClick={() => toggleCategoryCollapsed(group.category)}
+                            >
+                              <div className="truncate text-sm font-semibold text-foreground">
+                                {group.category}
+                              </div>
+                              <div className="text-xs text-muted-foreground">
+                                {checkedCount}/{totalPermissions} selected
+                              </div>
+                            </button>
+                          </div>
                         </div>
-                      ) : null}
-                    </div>
-                  );
-                })}
+
+                        {!isCollapsed ? (
+                          <div className="grid grid-cols-1 gap-3 border-t border-border/60 px-4 py-4 sm:grid-cols-2 md:grid-cols-3">
+                            {group.permissions.map((permission) => {
+                              const checked = selectedPermissions.has(permission.id);
+                              return (
+                                <label key={permission.id} className="flex items-center gap-2 text-sm">
+                                  <Checkbox
+                                    checked={checked}
+                                    onCheckedChange={(value) => togglePermission(permission.id, !!value)}
+                                    disabled={readOnly}
+                                  />
+                                  <span className="text-muted-foreground">{permission.name}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="shrink-0 border-t px-6 py-4">
             <Button
               type="button"
               variant="outline"

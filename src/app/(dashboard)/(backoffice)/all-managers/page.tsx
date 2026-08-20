@@ -22,6 +22,7 @@ import {
   type ManagerCreateBody,
   type ManagerUpdateBody,
   type GroupedPermissions,
+  type ModulePermissions,
 } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { ManagerForm } from "./manager-form";
@@ -156,7 +157,7 @@ export default function AllManagersPage() {
     async (id: string): Promise<ManagerRow> => {
       if (!token) throw new Error("Missing auth token");
       const res = await adminManagersApi.detail(id, token);
-      const manager = res?.data?.manager as ManagerItem | undefined;
+      const manager = res?.data?.subadmin as ManagerItem | undefined;
       if (!manager) {
         throw new Error("Manager details unavailable");
       }
@@ -175,7 +176,7 @@ export default function AllManagersPage() {
     queryKey: ["managers", token],
     queryFn: async () => {
       const res = await adminManagersApi.list(token!);
-      return ((res?.data?.managers || []) as ManagerItem[]).map(normalize);
+      return ((res?.data?.subadmins || []) as ManagerItem[]).map(normalize);
     },
     enabled: Boolean(token),
     staleTime: 60 * 1000,
@@ -198,8 +199,12 @@ export default function AllManagersPage() {
     queryKey: ["permissions", token],
     queryFn: async () => {
       const res = await permissionsApi.listAll(token!);
-      const pd = res?.data as { permissions?: GroupedPermissions[] } | undefined;
-      return (pd?.permissions || []) as GroupedPermissions[];
+      const pd = res?.data as { modules?: ModulePermissions[] } | undefined;
+      return (pd?.modules || []).map((m) => ({
+        category: m.module,
+        permissions: m.permissions,
+        count: m.count,
+      })) as GroupedPermissions[];
     },
     enabled: Boolean(token),
     staleTime: 5 * 60 * 1000,
