@@ -35,7 +35,6 @@ import {
 } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -651,87 +650,86 @@ export default function BonusManagementPage() {
             </div>
           </div>
 
-          <div>
-            <Card className="border-border/70">
-              <CardHeader className="gap-4 border-b border-border/60">
-                <div className="flex flex-row items-end gap-3 overflow-x-auto">
-                  <ApiSearchBar
-                    value={historySearch}
-                    onChange={setHistorySearch}
-                    onSearch={(value) => {
-                      // Only update if empty (clearing) or if 3+ characters
-                      if (!value || value.trim().length >= 3) {
-                        void setHistorySearch(value);
-                      }
-                    }}
-                    placeholder="Search account, user, email, comment"
-                    minimumLength={3}
-                    delay={500}
-                    className="min-w-[240px] shrink-0"
-                  />
+          {/* Filters */}
+          <div className="rounded-lg border bg-card p-5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:flex-wrap">
+              <ApiSearchBar
+                value={historySearch}
+                onChange={setHistorySearch}
+                onSearch={(value) => {
+                  // Only update if empty (clearing) or if 3+ characters
+                  if (!value || value.trim().length >= 3) {
+                    void setHistorySearch(value);
+                  }
+                }}
+                placeholder="Search account, user, email, comment"
+                minimumLength={3}
+                delay={500}
+                className="min-w-[240px] shrink-0"
+              />
 
-                  <Select
-                    value={typeFilter}
-                    onValueChange={(value) => {
-                      void setTypeFilter(value as "all" | "IN" | "OUT");
-                    }}
-                  >
-                    <SelectTrigger className="w-[180px] shrink-0">
-                      <SelectValue placeholder="Filter type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="IN">Given Bonus</SelectItem>
-                      <SelectItem value="OUT">Removed Bonus</SelectItem>
-                    </SelectContent>
-                  </Select>
+              <Select
+                value={typeFilter}
+                onValueChange={(value) => {
+                  void setTypeFilter(value as "all" | "IN" | "OUT");
+                }}
+              >
+                <SelectTrigger className="w-[180px] shrink-0">
+                  <SelectValue placeholder="Filter type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="IN">Given Bonus</SelectItem>
+                  <SelectItem value="OUT">Removed Bonus</SelectItem>
+                </SelectContent>
+              </Select>
 
-                  <DateRangePicker
-                    fromDate={fromDate}
-                    toDate={toDate}
-                    onFromDateChange={setFromDate}
-                    onToDateChange={setToDate}
-                    fromLabel="From"
-                    toLabel="To"
-                    className="w-auto shrink-0"
-                  />
-                </div>
-              </CardHeader>
-              <CardContent className="p-5">
-                {!canList ? (
-                  <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
-                    You do not have permission to view the bonus ledger.
-                  </div>
-                ) : isLoadingBonuses ? (
-                  <TableSectionSkeleton columnCount={6} rowCount={6} />
-                ) : isBonusListError ? (
-                  <ApiErrorState
-                    error={bonusListError}
-                    audience="admin"
-                    resource="bonus ledger"
-                    action="load"
-                  />
-                ) : allBonuses.length > 0 ? (
-                  <AppDataTable<AdminBonusLedgerItem>
-                    data={allBonuses}
-                    columns={columns}
-                    pageCount={pagination.total_pages}
-                    getRowId={(row) => String(row.id)}
-                  />
-                ) : (
-                  <div className="rounded-xl border border-dashed p-10 text-center">
-                    <Gift className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
-                    <h3 className="text-lg font-semibold text-foreground">
-                      No bonus records found
-                    </h3>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                      Try changing the filters or create a new bonus action for
-                      an MT5 account.
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              <DateRangePicker
+                fromDate={fromDate}
+                toDate={toDate}
+                onFromDateChange={setFromDate}
+                onToDateChange={setToDate}
+                fromLabel="From"
+                toLabel="To"
+                className="w-auto shrink-0"
+              />
+            </div>
+          </div>
+
+          {/* Table */}
+          <div className="rounded-lg border bg-card p-4 shadow-sm">
+            {!canList ? (
+              <div className="rounded-xl border border-dashed p-8 text-center text-sm text-muted-foreground">
+                You do not have permission to view the bonus ledger.
+              </div>
+            ) : isLoadingBonuses ? (
+              <TableSectionSkeleton columnCount={6} rowCount={6} />
+            ) : isBonusListError ? (
+              <ApiErrorState
+                error={bonusListError}
+                audience="admin"
+                resource="bonus ledger"
+                action="load"
+              />
+            ) : allBonuses.length > 0 ? (
+              <AppDataTable<AdminBonusLedgerItem>
+                data={allBonuses}
+                columns={columns}
+                pageCount={pagination.total_pages}
+                getRowId={(row) => String(row.id)}
+              />
+            ) : (
+              <div className="rounded-xl border border-dashed p-10 text-center">
+                <Gift className="mx-auto mb-3 h-10 w-10 text-muted-foreground" />
+                <h3 className="text-lg font-semibold text-foreground">
+                  No bonus records found
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Try changing the filters or create a new bonus action for
+                  an MT5 account.
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </div>

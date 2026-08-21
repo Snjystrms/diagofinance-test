@@ -495,67 +495,6 @@ export function AdminTransactionContent() {
         </div>
       </div>
 
-      {/* Stats Section */}
-      {stats && (
-        <div className="space-y-4">
-          {/* Main Stats Cards */}
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            <Card className="rounded-2xl border-border/60 shadow-sm">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Wallet Transactions</p>
-                    <div className="text-3xl font-bold tracking-tight">{stats.total_wallet_transactions}</div>
-                  </div>
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm">
-                    <Wallet className="h-4 w-4 text-foreground" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            {/* <Card className="rounded-2xl border-border/60 shadow-sm">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">USD Deposits</p>
-                    <div className="text-3xl font-bold tracking-tight">{stats.total_usdt_deposits}</div>
-                  </div>
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm">
-                    <Banknote className="h-4 w-4 text-foreground" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card> */}
-            {/* <Card className="rounded-2xl border-border/60 shadow-sm">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Withdrawals</p>
-                    <div className="text-3xl font-bold tracking-tight">{stats.total_withdrawals}</div>
-                  </div>
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm">
-                    <ArrowUpFromLine className="h-4 w-4 text-foreground" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card> */}
-            <Card className="rounded-2xl border-border/60 shadow-sm">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="space-y-1">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">All Transactions</p>
-                    <div className="text-3xl font-bold tracking-tight">{stats.total_all_transactions}</div>
-                  </div>
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm">
-                    <CircleDollarSign className="h-4 w-4 text-foreground" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
-
       {/* Filters */}
       <div className="rounded-lg border bg-card p-5">
         <div className="flex flex-wrap items-end gap-3">
@@ -623,6 +562,67 @@ export function AdminTransactionContent() {
           />
         </div>
       </div>
+      
+      {/* Stats Section */}
+      {stats && (
+        <div className="space-y-4">
+          {/* Main Stats Cards */}
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Card className="rounded-2xl border-border/60 shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Wallet Transactions</p>
+                    <div className="text-3xl font-bold tracking-tight">{stats.total_wallet_transactions}</div>
+                  </div>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm">
+                    <Wallet className="h-4 w-4 text-foreground" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            {/* <Card className="rounded-2xl border-border/60 shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">USD Deposits</p>
+                    <div className="text-3xl font-bold tracking-tight">{stats.total_usdt_deposits}</div>
+                  </div>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm">
+                    <Banknote className="h-4 w-4 text-foreground" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card> */}
+            {/* <Card className="rounded-2xl border-border/60 shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">Withdrawals</p>
+                    <div className="text-3xl font-bold tracking-tight">{stats.total_withdrawals}</div>
+                  </div>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm">
+                    <ArrowUpFromLine className="h-4 w-4 text-foreground" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card> */}
+            <Card className="rounded-2xl border-border/60 shadow-sm">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">All Transactions</p>
+                    <div className="text-3xl font-bold tracking-tight">{stats.total_all_transactions}</div>
+                  </div>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm">
+                    <CircleDollarSign className="h-4 w-4 text-foreground" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       <div className="rounded-lg border bg-card">

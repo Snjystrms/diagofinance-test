@@ -629,7 +629,7 @@ export default function AllUsersMT5AccountsPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="rounded-lg border bg-card p-5">
             {/* Search and Filters Row */}
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:flex-wrap">
               <ApiSearchBar
@@ -640,6 +640,7 @@ export default function AllUsersMT5AccountsPage() {
                   void setPage(1);
                 }}
                 placeholder="Search by name, email, mobile, account_id, or mt5_id"
+                className="min-w-[220px] flex-1 max-w-full"
                 minimumLength={3}
                 delay={300}
               />
@@ -736,11 +737,6 @@ export default function AllUsersMT5AccountsPage() {
                 />
               </div>
             </div> */}
-
-            <div className="text-sm text-muted-foreground">
-              Showing page {pagination.current_page} of {pagination.total_pages} -{" "}
-              {pagination.total} total accounts
-            </div>
           </div>
 
           <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-4">

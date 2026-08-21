@@ -2892,7 +2892,7 @@ export const adminClient2FAApi = {
 
 export const manager2FAApi = {
   getTwoFactorStatus: (managerId: string | number, token: string) =>
-    apiCall<TwoFactorStatusResponse>(`/manager/2fa/status/${managerId}`, {
+    apiCall<TwoFactorStatusResponse>(`/subadmin/2fa/status/${managerId}`, {
       method: "GET",
       headers: { Authorization: `Bearer ${token}` },
     }),
@@ -3336,6 +3336,14 @@ export const adminManagersApi = {
     apiCall(`/admin/subadmin/${id}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
+    }),
+
+  decryptPassword: (id: number | string, token: string) =>
+    apiCall<{ password: string }>(`/admin/subadmin/${id}/decrypt-password`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+      // Do NOT log out / redirect on 401 - surface the API message via toast instead
+      skipAuthRedirect: true,
     }),
 };
 

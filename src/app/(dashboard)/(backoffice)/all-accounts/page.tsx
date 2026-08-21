@@ -704,54 +704,54 @@ export default function AllAccountsPage() {
             </div>
           </div>
           {/* Filters */}
-          <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-            <div className="space-y-1">
-              <Label htmlFor="search">Search</Label>
-           <div className="flex items-center gap-2">
-  <Input
-    id="search"
-    placeholder="Type at least 3 characters..."
-    value={search}
-    onChange={(e) => setSearch(e.target.value)}
-  />
-  <Button
-    variant="outline"
-    onClick={() => fetchList()}   // explicit search
-    disabled={search.trim().length < 3} // <- hard block before 3 chars
-    title={search.trim().length < 3 ? "Type at least 3 characters to search" : "Search"}
-  >
-    Search
-  </Button>
-  <Button
-    variant="ghost"
-    onClick={() => {
-      setSearch("");
-      fetchList(); // explicit default reset (no search)
-    }}
-  >
-    Clear
-  </Button>
-</div>
+          <div className="mb-4 rounded-lg border bg-card p-5">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+              <div className="space-y-1">
+                <Label htmlFor="search">Search</Label>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="search"
+                    placeholder="Type at least 3 characters..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                  <Button
+                    variant="outline"
+                    onClick={() => fetchList()} // explicit search
+                    disabled={search.trim().length < 3} // <- hard block before 3 chars
+                    title={search.trim().length < 3 ? "Type at least 3 characters to search" : "Search"}
+                  >
+                    Search
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setSearch("");
+                      fetchList(); // explicit default reset (no search)
+                    }}
+                  >
+                    Clear
+                  </Button>
+                </div>
+              </div>
 
+              <div className="space-y-1 w-[60%]">
+                <Label>Status</Label>
+                <Select
+                  value={statusFilter}
+                  onValueChange={(v: "all" | "true" | "false") => setStatusFilter(v)}
+                >
+                  <SelectTrigger className="w-full min-w-[100px] max-w-[127px]">
+                    <SelectValue placeholder="All" />
+                  </SelectTrigger>
+                  <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="true">Active</SelectItem>
+                    <SelectItem value="false">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-
-        <div className="space-y-1 w-[60%]">
-  <Label>Status</Label>
-  <Select
-    value={statusFilter}
-    onValueChange={(v: "all" | "true" | "false") => setStatusFilter(v)}
-  >
-    <SelectTrigger className="w-full min-w-[100px] max-w-[127px]">
-      <SelectValue placeholder="All" />
-    </SelectTrigger>
-    <SelectContent className="w-[var(--radix-select-trigger-width)]">
-      <SelectItem value="all">All</SelectItem>
-      <SelectItem value="true">Active</SelectItem>
-      <SelectItem value="false">Inactive</SelectItem>
-    </SelectContent>
-  </Select>
-</div>
-
           </div>
 
           <PermissionAwareCrudDataTable<AccountTypeRow>

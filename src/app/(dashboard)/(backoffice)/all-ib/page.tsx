@@ -682,7 +682,7 @@ export default function IbManagementPage() {
             </Button>
           </div>
 
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="rounded-lg border bg-card p-5">
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
               <ApiSearchBar
                 value={searchInput}
@@ -693,6 +693,7 @@ export default function IbManagementPage() {
                   void setSearchQuery(trimmed.length === 0 || trimmed.length >= 3 ? trimmed || null : searchQuery);
                 }}
                 placeholder="Search by name, email, or phone"
+                className="min-w-[220px] flex-1 max-w-full"
                 minimumLength={3}
                 delay={300}
               />
@@ -715,11 +716,6 @@ export default function IbManagementPage() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="text-sm text-muted-foreground">
-              Showing page {pagination.current_page} of {pagination.total_pages} •{" "}
-              {pagination.total} total requests
             </div>
           </div>
 

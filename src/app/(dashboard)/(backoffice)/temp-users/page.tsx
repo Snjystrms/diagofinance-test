@@ -325,6 +325,22 @@ export default function TempUsersPage() {
           </Button>
         </div>
 
+        {/* Filters */}
+        <div className="rounded-lg border bg-card p-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end md:flex-wrap">
+            <ApiSearchBar
+              value={searchInput}
+              onChange={setSearchInput}
+              onSearch={(value) => {
+                void setSearch(value || null);
+                void setPage(1);
+              }}
+              placeholder="Search by name, email..."
+              // className="min-w-[220px] flex-1 max-w-full"
+            />
+          </div>
+        </div>
+
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           <Card>
@@ -341,43 +357,23 @@ export default function TempUsersPage() {
         </div>
 
         {/* Table Section */}
-        <Card className="flex-1">
-          <CardHeader>
-            <div className="flex flex-col gap-3 md:flex-row md:items-end md:flex-wrap">
-              <div className="flex-1 min-w-[200px]">
-                <Label htmlFor="search-users" className="mb-2 block">
-                  Search Users
-                </Label>
-                <ApiSearchBar
-                  value={searchInput}
-                  onChange={setSearchInput}
-                  onSearch={(value) => {
-                    void setSearch(value || null);
-                    void setPage(1);
-                  }}
-                  placeholder="Search by name, email..."
-                />
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <TableSectionSkeleton columnCount={6} />
-            ) : loadError ? (
-              <ApiErrorState
-                error={loadError}
-                onRetry={loadUsers}
-                resource="temporary users"
-              />
-            ) : (
-              <AppDataTable
-                columns={columns}
-                data={users}
-                pageCount={totalPages}
-              />
-            )}
-          </CardContent>
-        </Card>
+        <div className="rounded-lg border bg-card p-4 shadow-sm">
+          {loading ? (
+            <TableSectionSkeleton columnCount={6} />
+          ) : loadError ? (
+            <ApiErrorState
+              error={loadError}
+              onRetry={loadUsers}
+              resource="temporary users"
+            />
+          ) : (
+            <AppDataTable
+              columns={columns}
+              data={users}
+              pageCount={totalPages}
+            />
+          )}
+        </div>
 
         {/* Complete Registration Dialog */}
         <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>

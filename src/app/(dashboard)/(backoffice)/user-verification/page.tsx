@@ -1049,9 +1049,9 @@ const buildReviewPayload = () => {
         </div>
       </div>
 
-      <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-        {/* Search and Filter Controls */}
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center">
+      {/* Filters */}
+      <div className="rounded-lg border bg-card p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:flex-wrap">
           {/* Search Bar */}
           <ApiSearchBar
             value={searchInput}
@@ -1060,7 +1060,8 @@ const buildReviewPayload = () => {
               void setSearch(value || null);
               void setPage(1);
             }}
-            placeholder="Search by name, email, or user details"
+            placeholder="Search by name, email, or user details" 
+            className="min-w-[220px] flex-1 max-w-full"
             minimumLength={3}
             delay={300}
           />
@@ -1088,7 +1089,10 @@ const buildReviewPayload = () => {
             </Select>
           </div>
         </div>
-        
+      </div>
+
+      {/* Table */}
+      <div className="rounded-lg border bg-card p-4 shadow-sm">
         <AppDataTable<ListRow> data={filteredRows} columns={columns} pageCount={Math.max(1, paginationMeta?.total_pages ?? 1)} advanced />
       </div>
 

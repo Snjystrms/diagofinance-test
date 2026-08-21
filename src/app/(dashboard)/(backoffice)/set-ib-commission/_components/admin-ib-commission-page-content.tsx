@@ -17,7 +17,6 @@ import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -554,62 +553,62 @@ export function AdminIbCommissionPageContent() {
           </div>
         </div>
 
-        <Card>
-          <CardContent className="space-y-4">
-            {canList ? (
-              <>
-                <div className="flex flex-col flex-wrap items-stretch gap-3 pt-4 sm:flex-row sm:items-end">
-                  <div className="w-full sm:max-w-md sm:flex-1">
-                    <ApiSearchBar
-                      value={searchInput}
-                      onChange={setSearchInput}
-                      onSearch={(value) => {
-                        void setPage(1);
-                        void setSearch(value || null);
-                      }}
-                      placeholder="Search by user, email, IB plan..."
-                      minimumLength={3}
-                      delay={300}
-                    />
-                  </div>
-
-                  <DateRangePicker
-                    fromDate={fromDateObj}
-                    toDate={toDateObj}
-                    onFromDateChange={(date) => {
-                      setFromDateObj(date);
-                      void setDateFrom(date ? format(date, "yyyy-MM-dd") : null);
+        {canList ? (
+          <>
+            <div className="rounded-lg border bg-card p-5">
+              <div className="flex flex-col flex-wrap items-stretch gap-3 sm:flex-row sm:items-end">
+                <div className="w-full sm:max-w-md sm:flex-1">
+                  <ApiSearchBar
+                    value={searchInput}
+                    onChange={setSearchInput}
+                    onSearch={(value) => {
                       void setPage(1);
+                      void setSearch(value || null);
                     }}
-                    onToDateChange={(date) => {
-                      setToDateObj(date);
-                      void setDateTo(date ? format(date, "yyyy-MM-dd") : null);
-                      void setPage(1);
-                    }}
+                    placeholder="Search by user, email, IB plan..."
+                    minimumLength={3}
+                    delay={300}
                   />
                 </div>
 
-                {isLoading ? (
-                  <TableSectionSkeleton columnCount={8} rowCount={8} />
-                ) : (
-                  <AppDataTable<AdminIbCommissionItem>
-                    data={filteredRows}
-                    columns={columns}
-                    pageCount={ibCommissionsResponse?.pageCount ?? 1}
-                    getRowId={(row) =>
-                      row.user_uuid ?? `fallback-${row.id}-${row.plan_name}`
-                    }
-                  />
-                )}
-              </>
-            ) : (
-              <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-                You can assign IB commissions, but your account is not allowed
-                to view the existing list.
+                <DateRangePicker
+                  fromDate={fromDateObj}
+                  toDate={toDateObj}
+                  onFromDateChange={(date) => {
+                    setFromDateObj(date);
+                    void setDateFrom(date ? format(date, "yyyy-MM-dd") : null);
+                    void setPage(1);
+                  }}
+                  onToDateChange={(date) => {
+                    setToDateObj(date);
+                    void setDateTo(date ? format(date, "yyyy-MM-dd") : null);
+                    void setPage(1);
+                  }}
+                />
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+
+            <div className="rounded-lg border bg-card p-4 shadow-sm">
+              {isLoading ? (
+                <TableSectionSkeleton columnCount={8} rowCount={8} />
+              ) : (
+                <AppDataTable<AdminIbCommissionItem>
+                  data={filteredRows}
+                  columns={columns}
+                  pageCount={ibCommissionsResponse?.pageCount ?? 1}
+                  getRowId={(row) =>
+                    row.user_uuid ?? `fallback-${row.id}-${row.plan_name}`
+                  }
+                />
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+            You can assign IB commissions, but your account is not allowed
+            to view the existing list.
+          </div>
+        )}
 
         <IbCommissionFormDialog
           detail={selectedDetail}

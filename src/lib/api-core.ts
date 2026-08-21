@@ -58,6 +58,20 @@ const getStoredAuthToken = () => {
   );
 };
 
+const getStoredUserType = () => {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw =
+      sessionStorage.getItem(ADMIN_SESSION_USER_STORAGE_KEY) ||
+      localStorage.getItem(AUTH_USER_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as { type?: unknown };
+    return typeof parsed?.type === "string" ? parsed.type.toLowerCase() : null;
+  } catch {
+    return null;
+  }
+};
+
 const extractBearerToken = (authorization?: string | null) => {
   if (!authorization) return null;
   const match = authorization.match(/^Bearer\s+(.+)$/i);
@@ -172,6 +186,14 @@ export function handle401Redirect(
   hasAuth: boolean,
 ): boolean {
   if (response.status === 401 && hasAuth) {
+    // Sub-admins / managers must never be auto-logged-out on 401:
+    // the backend returns 401 for permission-restricted endpoints too
+    // (e.g. /admin/ib-plans/list). Let the caller surface the API error instead.
+    const userType = getStoredUserType();
+    if (userType === "subadmin" || userType === "manager") {
+      return false;
+    }
+
     if (typeof window !== "undefined") {
       if (isAdminSession()) {
         sessionStorage.removeItem(ADMIN_SESSION_TOKEN_STORAGE_KEY);

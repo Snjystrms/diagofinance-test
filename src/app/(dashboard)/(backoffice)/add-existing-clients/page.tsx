@@ -375,7 +375,7 @@ export default function AddExistingClientsPage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="rounded-lg border bg-card p-5">
             {/* Search and Filters Row */}
             <div className="flex flex-col gap-3 md:flex-row md:items-end md:flex-wrap">
               <ApiSearchBar
@@ -386,6 +386,7 @@ export default function AddExistingClientsPage() {
                   void setPage(1);
                 }}
                 placeholder="Search by client name/email or MT5 ID"
+                className="min-w-[220px] flex-1 max-w-full"
                 minimumLength={3}
                 delay={300}
               />
@@ -424,11 +425,6 @@ export default function AddExistingClientsPage() {
                   void setPage(1);
                 }}
               />
-            </div>
-
-            <div className="text-sm text-muted-foreground">
-              Showing page {pagination.current_page} of {pagination.total_pages} -{" "}
-              {pagination.total} total clients
             </div>
           </div>
 

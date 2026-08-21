@@ -1092,7 +1092,56 @@ export default function NewUsersPage() {
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-lg border bg-card p-5">
+              <div className="flex flex-col gap-3 md:flex-row md:items-end md:flex-wrap">
+                <ApiSearchBar
+                  value={searchInput}
+                  onChange={setSearchInput}
+                  onSearch={(value) => {
+                    void setSearch(value || null);
+                    void setPage(1);
+                  }}
+                  placeholder="Search by name, email, or mobile"
+                  className="min-w-[220px] flex-1 max-w-full"
+                  minimumLength={3}
+                  delay={300}
+                />
+                <Select
+                  value={statusFilter ?? "all"}
+                  onValueChange={(value) => {
+                    void setStatusFilter(value === "all" ? null : value);
+                    void setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="h-9 w-[180px] text-sm">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusFilters.map((option) => (
+                      <SelectItem key={option.value} value={option.value}>
+                        {option.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                <DateRangePicker
+                  fromDate={fromDateObj}
+                  toDate={toDateObj}
+                  onFromDateChange={(date) => {
+                    setFromDateObj(date);
+                    void setDateFrom(date ? format(date, "yyyy-MM-dd") : null);
+                    void setPage(1);
+                  }}
+                  onToDateChange={(date) => {
+                    setToDateObj(date);
+                    void setDateTo(date ? format(date, "yyyy-MM-dd") : null);
+                    void setPage(1);
+                  }}
+                />
+              </div>
+            </div>
+             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                   <CardTitle className="text-sm font-medium">
@@ -1137,61 +1186,6 @@ export default function NewUsersPage() {
                   <div className="text-2xl font-bold">{newTodayCount}</div>
                 </CardContent>
               </Card>
-            </div>
-
-            <div className="flex flex-col gap-3">
-              <div className="flex flex-col gap-3 md:flex-row md:items-end md:flex-wrap">
-                <ApiSearchBar
-                  value={searchInput}
-                  onChange={setSearchInput}
-                  onSearch={(value) => {
-                    void setSearch(value || null);
-                    void setPage(1);
-                  }}
-                  placeholder="Search by name, email, or mobile"
-                  minimumLength={3}
-                  delay={300}
-                />
-                <Select
-                  value={statusFilter ?? "all"}
-                  onValueChange={(value) => {
-                    void setStatusFilter(value === "all" ? null : value);
-                    void setPage(1);
-                  }}
-                >
-                  <SelectTrigger className="h-9 w-[180px] text-sm">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusFilters.map((option) => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-
-                <DateRangePicker
-                  fromDate={fromDateObj}
-                  toDate={toDateObj}
-                  onFromDateChange={(date) => {
-                    setFromDateObj(date);
-                    void setDateFrom(date ? format(date, "yyyy-MM-dd") : null);
-                    void setPage(1);
-                  }}
-                  onToDateChange={(date) => {
-                    setToDateObj(date);
-                    void setDateTo(date ? format(date, "yyyy-MM-dd") : null);
-                    void setPage(1);
-                  }}
-                />
-              </div>
-              <div className="text-sm text-muted-foreground">
-                Page{" "}
-                {paginationMeta?.current_page ?? paginationMeta?.page ?? page}{" "}
-                of {Math.max(1, totalPages)} - {perPage} users per page -{" "}
-                {totalUsers} total users
-              </div>
             </div>
 
             <div className="rounded-lg border bg-card p-4 shadow-sm">

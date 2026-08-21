@@ -299,7 +299,7 @@ export default function AllTransactionReportPage() {
       onRefresh={() => void loadReport()}
       isRefreshing={loading}
     >
-      <div className="space-y-4">
+      <div className="rounded-lg border bg-card p-5">
         <div className="flex flex-col gap-4 md:flex-row md:items-end">
           <div className="flex-1">
             <ApiSearchBar
@@ -310,6 +310,7 @@ export default function AllTransactionReportPage() {
                 setSearchQuery(value.trim() || null);
               }}
               placeholder="Search transactions..."
+              className="min-w-[220px] flex-1 max-w-full"
               minimumLength={3}
               delay={300}
             />
@@ -341,12 +342,6 @@ export default function AllTransactionReportPage() {
 
         <div className="rounded-lg border bg-card">
           <div className="p-5">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-base font-semibold">Results</h2>
-              <span className="text-xs text-muted-foreground">
-                Showing {rows.length} of {total} results
-              </span>
-            </div>
 
             <AppDataTable<TransactionReportItem> data={rows} columns={columns} pageCount={totalPages} />
           </div>

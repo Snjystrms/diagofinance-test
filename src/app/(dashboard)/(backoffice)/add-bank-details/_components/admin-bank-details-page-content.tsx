@@ -29,13 +29,6 @@ import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { useAuth } from "@/contexts/auth-context";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import {
@@ -663,101 +656,102 @@ export function AdminBankDetailsPageContent() {
           </div>
         </div>
 
-        <Card>
-          <CardContent className="space-y-4">
-            {canList ? (
-              <>
-        <div className="flex flex-col flex-wrap items-stretch gap-3 pt-4 sm:flex-row sm:items-end">
-  <div className="w-full sm:max-w-md sm:flex-1">
-    <ApiSearchBar
-      value={searchInput}
-      onChange={setSearchInput}
-      onSearch={(value) => {
-        void setPage(1);
-        void setSearch(value || null);
-      }}
-      placeholder="Search by user, account holder, bank name..."
-      minimumLength={3}
-      delay={300}
-    />
-  </div>
-
- <div className="w-full sm:w-[180px]">
-  <Select
-    value={statusFilter}
-    onValueChange={(value) => {
-      void setStatusFilter(value === "all" ? null : value);
-      void setPage(1);
-    }}
-  >
-    <SelectTrigger className="w-full">
-      <SelectValue placeholder="Filter status" />
-    </SelectTrigger>
-    <SelectContent>
-      <SelectItem value="all">All statuses</SelectItem>
-      <SelectItem value="pending">Pending</SelectItem>
-      <SelectItem value="approved">Approved</SelectItem>
-      <SelectItem value="rejected">Rejected</SelectItem>
-    </SelectContent>
-  </Select>
-</div>
-
-<div className="w-full sm:w-[140px]">
-  <Select
-    value={sortOrder}
-    onValueChange={(value) => {
-      void setSortOrder(value);
-      void setPage(1);
-    }}
-  >
-    <SelectTrigger className="w-full">
-      <SelectValue placeholder="Order" />
-    </SelectTrigger>
-    <SelectContent>
-      <SelectItem value="asc">Ascending</SelectItem>
-      <SelectItem value="desc">Descending</SelectItem>
-    </SelectContent>
-  </Select>
-</div>
-
-  <DateRangePicker
-    fromDate={fromDateObj}
-    toDate={toDateObj}
-    onFromDateChange={(date) => {
-      setFromDateObj(date);
-      void setDateFrom(date ? format(date, "yyyy-MM-dd") : null);
-      void setPage(1);
-    }}
-    onToDateChange={(date) => {
-      setToDateObj(date);
-      void setDateTo(date ? format(date, "yyyy-MM-dd") : null);
-      void setPage(1);
-    }}
-  />
-</div>
-
-                {isLoading ? (
-                  <TableSectionSkeleton columnCount={6} rowCount={8} />
-                ) : (
-                  <AppDataTable<AdminBankDetailItem>
-                    data={filteredRows}
-                    columns={columns}
-                    pageCount={bankDetailsResponse?.pageCount ?? 1}
-                    getRowId={(row) =>
-                      resolveBankDetailRouteId(row) ??
-                      `fallback-${row.user_id}-${row.account_number}-${row.bank_name}`
-                    }
+        {canList ? (
+          <>
+            <div className="rounded-lg border bg-card p-5">
+              <div className="flex flex-col flex-wrap items-stretch gap-3 sm:flex-row sm:items-end">
+                <div className="w-full sm:max-w-md sm:flex-1">
+                  <ApiSearchBar
+                    value={searchInput}
+                    onChange={setSearchInput}
+                    onSearch={(value) => {
+                      void setPage(1);
+                      void setSearch(value || null);
+                    }}
+                    placeholder="Search by user, account holder, bank name..."
+                     className="min-w-[220px] flex-1 max-w-full"
+                    minimumLength={3}
+                    delay={300}
                   />
-                )}
-              </>
-            ) : (
-              <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-                You can add bank details, but your account is not allowed to
-                view the existing list.
+                </div>
+
+                <div className="w-full sm:w-[180px]">
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(value) => {
+                      void setStatusFilter(value === "all" ? null : value);
+                      void setPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Filter status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All statuses</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="w-full sm:w-[140px]">
+                  <Select
+                    value={sortOrder}
+                    onValueChange={(value) => {
+                      void setSortOrder(value);
+                      void setPage(1);
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Order" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="asc">Ascending</SelectItem>
+                      <SelectItem value="desc">Descending</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <DateRangePicker
+                  fromDate={fromDateObj}
+                  toDate={toDateObj}
+                  onFromDateChange={(date) => {
+                    setFromDateObj(date);
+                    void setDateFrom(date ? format(date, "yyyy-MM-dd") : null);
+                    void setPage(1);
+                  }}
+                  onToDateChange={(date) => {
+                    setToDateObj(date);
+                    void setDateTo(date ? format(date, "yyyy-MM-dd") : null);
+                    void setPage(1);
+                  }}
+                />
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+
+            <div className="rounded-lg border bg-card p-4 shadow-sm">
+              {isLoading ? (
+                <TableSectionSkeleton columnCount={6} rowCount={8} />
+              ) : (
+                <AppDataTable<AdminBankDetailItem>
+                  data={filteredRows}
+                  columns={columns}
+                  pageCount={bankDetailsResponse?.pageCount ?? 1}
+                  getRowId={(row) =>
+                    resolveBankDetailRouteId(row) ??
+                    `fallback-${row.user_id}-${row.account_number}-${row.bank_name}`
+                  }
+                />
+              )}
+            </div>
+          </>
+        ) : (
+          <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
+            You can add bank details, but your account is not allowed to
+            view the existing list.
+          </div>
+        )}
 
         <BankDetailFormDialog
           detail={selectedDetail}

@@ -467,7 +467,7 @@ export function DirectToMt5Dialog({
         <DialogHeader>
           <DialogTitle>Client Deposit</DialogTitle>
           <DialogDescription>
-            Make a direct deposit to a user's MT5 account. Please ensure that the user and MT5 account are correct before proceeding.
+            Make a direct deposit to a user&apos;s MT5 account. Please ensure that the user and MT5 account are correct before proceeding.
           </DialogDescription>
         </DialogHeader>
 

@@ -505,46 +505,48 @@ export default function CommissionGroupPage() {
           </div>
         </div>
 
-        <div className="mb-4 grid grid-cols-1 gap-3 md:grid-cols-3">
-          <div className="space-y-1">
-            <Label htmlFor="search">Search</Label>
-            <Input
-              id="search"
-              placeholder="Search by plan, group, or ID..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-          </div>
+        <div className="mb-4 rounded-lg border bg-card p-5">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div className="space-y-1">
+              <Label htmlFor="search">Search</Label>
+              <Input
+                id="search"
+                placeholder="Search by plan, group, or ID..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+              />
+            </div>
 
-          <div className="space-y-1">
-            <Label>Status</Label>
-            <Select
-              value={statusFilter}
-              onValueChange={(value: "all" | "true" | "false") =>
-                setStatusFilter(value)
-              }
-            >
-              <SelectTrigger className="w-full max-w-[140px]">
-                <SelectValue placeholder="All" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All</SelectItem>
-                <SelectItem value="true">Active</SelectItem>
-                <SelectItem value="false">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="space-y-1">
+              <Label>Status</Label>
+              <Select
+                value={statusFilter}
+                onValueChange={(value: "all" | "true" | "false") =>
+                  setStatusFilter(value)
+                }
+              >
+                <SelectTrigger className="w-full max-w-[140px]">
+                  <SelectValue placeholder="All" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="true">Active</SelectItem>
+                  <SelectItem value="false">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="flex items-end">
-            <Button
-              variant="ghost"
-              onClick={() => {
-                setSearch("");
-                setStatusFilter("all");
-              }}
-            >
-              Clear Filters
-            </Button>
+            <div className="flex items-end">
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setSearch("");
+                  setStatusFilter("all");
+                }}
+              >
+                Clear Filters
+              </Button>
+            </div>
           </div>
         </div>
 

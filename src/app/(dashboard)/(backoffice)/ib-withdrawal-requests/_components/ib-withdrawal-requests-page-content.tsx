@@ -817,8 +817,9 @@ export function IbWithdrawalRequestsPageContent() {
         </div>
       </div>
 
-      <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
+      {/* Filters */}
+      <div className="rounded-lg border bg-card p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <ApiSearchBar
             value={searchInput}
             onChange={setSearchInput}
@@ -882,7 +883,10 @@ export function IbWithdrawalRequestsPageContent() {
             </Select>
           </div>
         </div>
+      </div>
 
+      {/* Table */}
+      <div className="rounded-lg border bg-card p-4 shadow-sm">
         <AppDataTable<AdminIbWithdrawalRequest>
           data={filteredRows}
           columns={withdrawalColumns}

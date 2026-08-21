@@ -835,50 +835,6 @@ export default function AdminTicketsPage() {
             </div>
           </div>
 
-          {/* Stats cards */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[
-              {
-                label: "Total Tickets",
-                value: stats.total,
-                icon: Ticket,
-                color: "text-primary",
-              },
-              {
-                label: "Open",
-                value: stats.open,
-                icon: AlertCircle,
-                color: "text-blue-500",
-              },
-              {
-                label: "In Progress",
-                value: stats.in_progress,
-                icon: MessageSquare,
-                color: "text-amber-500",
-              },
-              {
-                label: "Closed",
-                value: stats.closed,
-                icon: CheckCircle2,
-                color: "text-green-500",
-              },
-            ].map((card) => (
-              <Card key={card.label} className="border-muted bg-card">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {card.label}
-                  </CardTitle>
-                  <card.icon className={`h-4 w-4 ${card.color}`} />
-                </CardHeader>
-                <CardContent>
-                  <p className="text-3xl font-semibold">
-                    {statsLoading ? "—" : card.value}
-                  </p>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-
           {/* Filters */}
           <div className="rounded-lg border bg-card p-4 shadow-sm space-y-4">
             <div className="flex flex-col gap-3 md:flex-row md:items-center">
@@ -896,6 +852,7 @@ export default function AdminTicketsPage() {
                   );
                 }}
                 placeholder="Search tickets"
+               className="min-w-[220px] flex-1 max-w-full"
                 minimumLength={3}
                 delay={300}
               />
@@ -972,6 +929,50 @@ export default function AdminTicketsPage() {
                 Apply
               </Button> */}
             </div>
+          </div>
+
+          {/* Stats cards */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                label: "Total Tickets",
+                value: stats.total,
+                icon: Ticket,
+                color: "text-primary",
+              },
+              {
+                label: "Open",
+                value: stats.open,
+                icon: AlertCircle,
+                color: "text-blue-500",
+              },
+              {
+                label: "In Progress",
+                value: stats.in_progress,
+                icon: MessageSquare,
+                color: "text-amber-500",
+              },
+              {
+                label: "Closed",
+                value: stats.closed,
+                icon: CheckCircle2,
+                color: "text-green-500",
+              },
+            ].map((card) => (
+              <Card key={card.label} className="border-muted bg-card">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {card.label}
+                  </CardTitle>
+                  <card.icon className={`h-4 w-4 ${card.color}`} />
+                </CardHeader>
+                <CardContent>
+                  <p className="text-3xl font-semibold">
+                    {statsLoading ? "—" : card.value}
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
           <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-4">

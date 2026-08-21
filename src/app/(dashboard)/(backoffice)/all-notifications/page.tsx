@@ -397,38 +397,9 @@ export default function AllNotificationsPage() {
           </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-card p-4 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <Bell className="h-6 w-6 text-primary" />
-              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Total</p>
-            </div>
-            <p className="text-3xl font-semibold">{summary.total}</p>
-          </div>
-          <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-card p-4 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Unread</p>
-            </div>
-            <p className="text-3xl font-semibold">
-              {summary.unread}
-            </p>
-          </div>
-          <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-card p-4 shadow-sm">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
-              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Read</p>
-            </div>
-            <p className="text-3xl font-semibold">
-              {summary.read}
-            </p>
-          </div>
-        </div>
-
         {/* Filters and Actions */}
-        <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-6">
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="rounded-lg border bg-card p-5">
+          <div className="flex flex-col md:flex-row gap-4">
             
             {/* Search */}
             <div className="flex-1 flex items-center gap-2">
@@ -482,8 +453,39 @@ export default function AllNotificationsPage() {
               </Button>
             </div>
           </div>
+        </div>
 
-          {/* Data Table */}
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-card p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <Bell className="h-6 w-6 text-primary" />
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Total</p>
+            </div>
+            <p className="text-3xl font-semibold">{summary.total}</p>
+          </div>
+          <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-card p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <Clock className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Unread</p>
+            </div>
+            <p className="text-3xl font-semibold">
+              {summary.unread}
+            </p>
+          </div>
+          <div className="rounded-lg border-2 border-gray-200 dark:border-gray-700 bg-card p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle2 className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">Read</p>
+            </div>
+            <p className="text-3xl font-semibold">
+              {summary.read}
+            </p>
+          </div>
+        </div>
+
+        {/* Data Table */}
+        <div className="rounded-lg border bg-card p-4 shadow-sm">
           <AppDataTable<AdminNotificationItem>
             data={notifications}
             columns={columns}

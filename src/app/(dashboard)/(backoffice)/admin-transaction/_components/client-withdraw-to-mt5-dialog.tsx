@@ -477,7 +477,7 @@ export function ClientWithdrawToMt5Dialog({
         <DialogHeader>
           <DialogTitle>Client Withdraw</DialogTitle>
           <DialogDescription>
-            Withdraw funds from a user's MT5 account. Please ensure that the
+            Withdraw funds from a user&apos;s MT5 account. Please ensure that the
             user and MT5 account are correct before proceeding.
           </DialogDescription>
         </DialogHeader>

@@ -14,7 +14,7 @@ import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { ChevronDown, Download, Plus, RefreshCw, UserPlus } from "lucide-react";
 import * as XLSX from "xlsx";
-import { getColumns } from "./columns";
+import { getColumns, DecryptedPassword } from "./columns";
 import {
   adminManagersApi,
   permissionsApi,
@@ -439,8 +439,9 @@ export default function AllManagersPage() {
       getColumns({
         onToggleStatus: handleToggleStatus,
         actionLoadingId,
+        token,
       }),
-    [handleToggleStatus, actionLoadingId]
+    [handleToggleStatus, actionLoadingId, token]
   );
 
   const categorizedView: Record<string, PermissionLite[]> = useMemo(() => {
@@ -539,7 +540,7 @@ export default function AllManagersPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="rounded-lg border bg-card p-5">
             <ApiSearchBar
               value={managerSearch}
               onChange={(value) => setManagerSearch(value)}
@@ -633,6 +634,10 @@ export default function AllManagersPage() {
                   <div>
                     <div className="text-xs text-muted-foreground">Status</div>
                     <div className="font-medium">{viewItem.status ? "Active" : "Inactive"}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-muted-foreground">Password</div>
+                    <DecryptedPassword managerId={viewItem.id} token={token} />
                   </div>
                   <div>
                     <div className="text-xs text-muted-foreground">Created</div>
