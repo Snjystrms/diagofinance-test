@@ -28,6 +28,8 @@ export interface PermissionAwareCrudDataTableProps<T extends { id: string }> {
   hideAddButton?: boolean;
   onFetchItem?: (id: string) => Promise<T>;
   onView?: (item: T) => void;
+  /** Fit the table to container width instead of the default min-w-[1400px] horizontal scroll. */
+  fitToWidth?: boolean;
 }
 
 export function PermissionAwareCrudDataTable<T extends { id: string }>({
@@ -46,6 +48,7 @@ export function PermissionAwareCrudDataTable<T extends { id: string }>({
   hideAddButton = false,
   onFetchItem,
   onView,
+  fitToWidth = false,
 }: PermissionAwareCrudDataTableProps<T>) {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<T | null>(null);
@@ -244,6 +247,7 @@ export function PermissionAwareCrudDataTable<T extends { id: string }>({
           data={data}
           columns={enhancedColumns}
           pageCount={Math.ceil(data.length / 10)}
+          fitToWidth={fitToWidth}
         />
       </div>
 

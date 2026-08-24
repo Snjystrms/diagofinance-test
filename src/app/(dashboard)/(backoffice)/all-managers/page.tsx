@@ -551,9 +551,9 @@ export default function AllManagersPage() {
             />
           </div>
 
-                    <div className="[&_table]:w-full [&_table]:min-w-0 [&_th]:h-9 [&_th]:px-2 [&_td]:p-1.5">
             <PermissionAwareCrudDataTable<ManagerRow>
               data={filteredManagers}
+              fitToWidth
               initialData={filteredManagers}
               columns={columns}
               formComponent={ManagerFormComponent}
@@ -572,7 +572,6 @@ export default function AllManagersPage() {
               rowIsReadOnly={() => false}
               onFetchItem={fetchManagerDetail}
             />
-          </div>
 
           {/* External Create Dialog */}
           <ManagerForm

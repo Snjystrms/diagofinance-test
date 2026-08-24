@@ -19,11 +19,18 @@ import { cn } from "@/lib/utils";
 interface DataTableProps<TData> extends React.ComponentProps<"div"> {
   table: TanstackTable<TData>;
   actionBar?: React.ReactNode;
+  /**
+   * Fit the table to its container width (`w-full`, columns allowed to shrink)
+   * instead of the default `min-w-[1400px]` horizontal-scroll layout.
+   * Use for tables with few columns that shouldn't force a horizontal scrollbar.
+   */
+  fitToWidth?: boolean;
 }
 
 export function DataTable<TData>({
   table,
   actionBar,
+  fitToWidth = false,
   children,
   className,
   ...props
@@ -37,7 +44,9 @@ export function DataTable<TData>({
     >
       {children}
       <div className="rounded-md border overflow-x-auto min-w-0">
-        <Table className="w-auto min-w-[1400px]">
+        <Table
+          className={cn(fitToWidth ? "w-full min-w-0" : "w-auto min-w-[1400px]")}
+        >
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -50,6 +59,7 @@ export function DataTable<TData>({
                       key={header.id}
                       colSpan={header.colSpan}
 className={cn(
+                          "h-9 px-2",
                           isMobile && isFirstVisCol && "sticky left-0 z-10 bg-background",
                         )}
                       style={{
@@ -83,6 +93,7 @@ className={cn(
                       <TableCell
                         key={cell.id}
                         className={cn(
+                          "p-1.5",
                           isMobile && isFirstVisCol && "sticky left-0 z-10 bg-background",
                         )}
                         style={{

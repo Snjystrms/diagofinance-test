@@ -24,7 +24,7 @@ import { TeamTreeSkeleton } from '@/components/loading/backoffice-page-skeletons
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Info, Search } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
-import type { AdminIbUser } from '@/lib/api';
+import { type AdminIbUser, ApiRequestError } from '@/lib/api';
 import { fetchUsersByLevel, NODE_H, NODE_W, levelColor, levelToDepth, type UserByLevel, type DirectRate } from '@/lib/downline-tree';
 import { paginatedNodeTypes, type PaginatedTeamNodeData } from './paginated-team-node';
 import { IbDirectRatesDialog } from './ib-direct-rates-dialog';
@@ -112,7 +112,7 @@ export function PaginatedDownlineTree({
       setEdges([]);
 
       try {
-        const data = await fetchUsersByLevel(userId, token, { page: 1, page_size: 20 });
+        const data = await fetchUsersByLevel(userId, token, { page: 1, page_size: 20, throwOnError: true });
         
         if (!mounted || !data) {
           if (!data) {
@@ -628,21 +628,33 @@ export function PaginatedDownlineTree({
   }
 
   if (loadError && Object.keys(nodesById).length === 0) {
+    const isForbidden =
+      loadError instanceof ApiRequestError && loadError.status === 403;
     return (
       <div className="px-4 py-10 md:px-6 lg:px-8">
-        <ApiErrorState
-          error={loadError}
-          audience="admin"
-          variant="panel"
-          resource="downline tree"
-          action="load"
-          onRetry={() => {
-            setLoading(true);
-            setLoadError(null);
-            // Trigger reload by updating key
-            window.location.reload();
-          }}
-        />
+        {isForbidden ? (
+          <ApiErrorState
+            audience="admin"
+            variant="panel"
+            title="Access restricted"
+            message="Your account does not have permission to view the level / tree chart."
+          />
+        ) : (
+          <ApiErrorState
+            error={loadError}
+            audience="admin"
+            variant="panel"
+            resource="downline tree"
+            action="load"
+            showStatusCode
+            onRetry={() => {
+              setLoading(true);
+              setLoadError(null);
+              // Trigger reload by updating key
+              window.location.reload();
+            }}
+          />
+        )}
       </div>
     );
   }

@@ -37,7 +37,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { adminIbRequestsApi, type AdminIbRequest } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
-import { getStoredUserType } from "@/lib/api-core";
+import { useModuleCapabilities } from "@/hooks/use-permission-capabilities";
 
 const statusFilters = [
   { label: "All statuses", value: "all" },
@@ -231,7 +231,7 @@ export default function IbManagementPage() {
   const [selectedDecision, setSelectedDecision] = useState<"approve" | "reject">("approve");
   const [actionRequest, setActionRequest] = useState<AdminIbRequest | null>(null);
   const [actionComment, setActionComment] = useState("");
-  const userType = useMemo(() => getStoredUserType(), []);
+  const { can } = useModuleCapabilities("ibManagement");
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(20));
@@ -596,7 +596,7 @@ export default function IbManagementPage() {
   const currentStatusCode = actionRequest ? asStatusCode(actionRequest) : null;
   const isReviewMode = actionType === "review";
   const isApproveDecision = selectedDecision === "approve";
-  const canApproveReject = userType !== "subadmin" && userType !== "manager";
+  const canApproveReject = can("approveRejectRequest");
   const dialogTitle =
     isReviewMode
       ? currentStatusCode === 1

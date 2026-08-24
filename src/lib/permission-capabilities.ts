@@ -46,6 +46,8 @@ export const permissionCapabilities = {
     kycUpload: "uploadUserDocuments",
   },
   ibManagement: {
+    manageRequests: "ibRequests",
+    approveRejectRequest: "approveRejectIbRequest",
     promoteClientToIb: "moveClientToIb",
   },
   cryptoWalletManagement: {

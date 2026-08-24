@@ -12,6 +12,7 @@ type AppDataTableProps<TData> = {
   advanced?: boolean;             // toggle advanced toolbar
   actionBar?: React.ReactNode;    // e.g., bulk delete/export on selection
   getRowId?: (row: TData) => string; // Optional custom row ID getter
+  fitToWidth?: boolean;           // fit table to container width instead of min-w-[1400px] scroll
 };
 export function AppDataTable<TData>({
   data,
@@ -20,6 +21,7 @@ export function AppDataTable<TData>({
   advanced: _advanced = false,
   actionBar,
   getRowId,
+  fitToWidth = false,
 }: AppDataTableProps<TData>) {
   const { table } = useDataTable<TData>({
     data,
@@ -38,5 +40,5 @@ export function AppDataTable<TData>({
     }),
   });
 
-  return <DataTable table={table} actionBar={actionBar} />;
+  return <DataTable table={table} actionBar={actionBar} fitToWidth={fitToWidth} />;
 }
