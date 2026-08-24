@@ -179,8 +179,6 @@ export default function IbUsersPage() {
   );
   const [commissionDialogOpen, setCommissionDialogOpen] = useState(false);
   const [commissionTargetUser, setCommissionTargetUser] = useState<AdminIbUser | null>(null);
-  const [directRatesDialogOpen, setDirectRatesDialogOpen] = useState(false);
-  const [directRatesTargetUser, setDirectRatesTargetUser] = useState<AdminIbUser | null>(null);
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
@@ -665,18 +663,20 @@ export default function IbUsersPage() {
                 Teams
               </Button>
               <Button
+                asChild
                 size="sm"
                 variant="outline"
-                onClick={() => {
-                  setDirectRatesTargetUser(user);
-                  setDirectRatesDialogOpen(true);
-                }}
                 aria-label={`View Commissions for ${deriveFullName(user)}`}
                 title="View Commissions"
                 className="h-8 rounded-md border-slate-200 bg-background px-2.5 text-xs text-slate-600 shadow-sm transition-colors hover:bg-slate-100 hover:text-slate-900 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-300"
               >
-                <Landmark className="mr-1 h-3 w-3" />
-                Comm
+                <StatePreservingLink
+                  storageKey="ib-users"
+                  href={`/ib-users/${user.id ?? user.uuid ?? ""}?tab=commission`}
+                >
+                  <Landmark className="mr-1 h-3 w-3" />
+                  Comm
+                </StatePreservingLink>
               </Button>
             </div>
           );
@@ -844,15 +844,6 @@ export default function IbUsersPage() {
             if (!open) setCommissionTargetUser(null);
           }}
           user={commissionTargetUser}
-          token={token ?? ""}
-        />
-        <IbDirectRatesDialog
-          open={directRatesDialogOpen}
-          onOpenChange={(open) => {
-            setDirectRatesDialogOpen(open);
-            if (!open) setDirectRatesTargetUser(null);
-          }}
-          user={directRatesTargetUser}
           token={token ?? ""}
         />
         </div>

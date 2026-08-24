@@ -58,7 +58,7 @@ const getStoredAuthToken = () => {
   );
 };
 
-const getStoredUserType = () => {
+export const getStoredUserType = () => {
   if (typeof window === "undefined") return null;
   try {
     const raw =

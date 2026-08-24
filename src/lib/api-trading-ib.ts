@@ -1605,6 +1605,39 @@ export interface AdminIbSubIbsResponse {
   };
 }
 
+/* ------------------------------------------------------------------ */
+/*  Admin IB Commissions (commission tab — per-trade commission list)  */
+/* ------------------------------------------------------------------ */
+
+export interface AdminIbCommissionTrade {
+  id: number;
+  mt5_id: string;
+  date: string;
+  order: number;
+  symbol: string;
+  price: number;
+  profit: number;
+  volume: number;
+  my_commission: number;
+  type: string;
+}
+
+export interface AdminIbCommissionsResponse {
+  success: boolean;
+  message?: string;
+  data: AdminIbCommissionTrade[];
+  pagination: {
+    total: number;
+    per_page: number;
+    current_page: number;
+    last_page: number;
+  };
+  filters?: {
+    from_date?: string | null;
+    to_date?: string | null;
+  };
+}
+
 export const adminIbUsersApi = {
   list: ({
     token,
@@ -1750,6 +1783,31 @@ export const adminIbUsersApi = {
     if (dateTo) qs.append("date_to", dateTo);
     return apiCall<AdminIbSubIbsResponse>(
       `/admin/ib-management/ib-users/${encodeURIComponent(String(id))}/sub-ibs?${qs.toString()}`,
+      { method: "GET", headers: { Authorization: `Bearer ${token}` } },
+    );
+  },
+
+  commissions: (
+    id: number | string,
+    token: string,
+    page = 1,
+    perPage = 10,
+    search?: string,
+    dateFrom?: string,
+    dateTo?: string,
+  ) => {
+    if (!token) throw new Error("Token is required to fetch IB commissions");
+    if (id === null || id === undefined || `${id}`.trim() === "")
+      throw new Error("IB user ID is required");
+    const qs = new URLSearchParams({
+      page: String(page),
+      limit: String(perPage),
+    });
+    if (search) qs.append("search", search);
+    if (dateFrom) qs.append("from_date", dateFrom);
+    if (dateTo) qs.append("to_date", dateTo);
+    return apiCall<AdminIbCommissionsResponse>(
+      `/admin/ib-management/ib-users/${encodeURIComponent(String(id))}/commissions?${qs.toString()}`,
       { method: "GET", headers: { Authorization: `Bearer ${token}` } },
     );
   },

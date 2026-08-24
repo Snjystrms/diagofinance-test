@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/auth-context";
+import { parseAsString, useQueryState } from "nuqs";
 import toast from "react-hot-toast";
 import {
   ArrowDownRight,
@@ -17,7 +18,6 @@ import {
   ExternalLink,
   Eye,
   Gem,
-  Landmark,
   Link2,
   Network,
   RefreshCw,
@@ -42,6 +42,7 @@ import {
   type ColumnDef,
 } from "@/components/data-table";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -74,12 +75,9 @@ import {
   type AdminIbSubIb,
   type AdminIbWalletTransaction,
   type AdminIbNetworkBusinessBreakdown,
+  type AdminIbCommissionTrade,
+  type AdminIbCommissionsResponse,
 } from "@/lib/api";
-import {
-  adminIbCommissionReportApi,
-  type IbCommissionReportPayload,
-  type IbCommissionReportUser,
-} from "@/lib/api-trading-ib";
 import { formatCurrency } from "@/lib/format";
 import { formatAmount, formatDateTimeInIST } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
@@ -135,15 +133,14 @@ const Cell = dynamic(
   { ssr: false },
 );
 
-type TabKey = "overview" | "wallet" | "network" | "profile" ;
-//  | "commission";
+type TabKey = "overview" | "wallet" | "network" | "profile" | "commission";
 
 const TAB_LABELS: Record<TabKey, string> = {
   overview: "Overview",
   wallet: "Wallet",
   network: "Network",
   profile: "Profile",
-  // commission: "Commission",
+  commission: "Commission",
 };
 
 type PreviewUser = Pick<
@@ -1163,97 +1160,138 @@ function ProfileTab({ user, loading }: TabShellProps) {
   );
 }
 
-function CommissionTab({
-  user,
-  loading,
-  commissionPages,
-  onCommissionPageChange,
-  commissionPerPages,
-  onCommissionPerPageChange,
-}: TabShellProps & {
-  commissionPages: Record<number, number>;
-  onCommissionPageChange: (level: number, page: number) => void;
-  commissionPerPages: Record<number, number>;
-  onCommissionPerPageChange: (level: number, perPage: number) => void;
-}) {
+function CommissionTab({ user }: TabShellProps) {
   const { token } = useAuth();
+  const userId = user.user.id ?? user.user.uuid;
+
+  const [commissionData, setCommissionData] = useState<AdminIbCommissionsResponse | null>(null);
+  const [commissionLoading, setCommissionLoading] = useState(false);
+  const [commissionPage, setCommissionPage] = useState(1);
+  const [commissionPerPage, setCommissionPerPage] = useState(10);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
-  const [report, setReport] = useState<IbCommissionReportPayload | null>(null);
-  const [reportLoading, setReportLoading] = useState(false);
-  const [loadError, setLoadError] = useState<unknown | null>(null);
 
-  const userId = user.user.id ?? user.user.uuid;
-  const activeFilterCount = (fromDate ? 1 : 0) + (toDate ? 1 : 0);
-
-  const loadReport = useCallback(async () => {
+  const loadCommissions = useCallback(async () => {
     if (!token || !userId) return;
     try {
-      setReportLoading(true);
-      setLoadError(null);
-      const response = await adminIbCommissionReportApi.getCommissionLevelReport({
+      setCommissionLoading(true);
+      const res = await adminIbUsersApi.commissions(
+        userId,
         token,
-        user_id: String(userId),
-        date_from: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
-        date_to: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
+        commissionPage,
+        commissionPerPage,
+        searchQuery || undefined,
+        fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
+        toDate ? format(toDate, "yyyy-MM-dd") : undefined,
+      );
+      const raw = res as unknown as AdminIbCommissionsResponse;
+      setCommissionData({
+        ...raw,
+        data: raw.data ?? [],
+        pagination: raw.pagination ?? {
+          total: 0,
+          per_page: commissionPerPage,
+          current_page: commissionPage,
+          last_page: 1,
+        },
       });
-      const payload = response && typeof response === "object" && "data" in response
-        ? (response as { data?: IbCommissionReportPayload }).data ?? response
-        : response;
-      setReport(payload as IbCommissionReportPayload);
-    } catch (error) {
-      setReport(null);
-      setLoadError(error);
-      toast.error(getAdminFriendlyErrorMessage(error, { resource: "commission report", action: "load" }));
+    } catch (err: unknown) {
+      console.error("Failed to load commissions:", err);
+      toast.error(
+        getAdminFriendlyErrorMessage(err, {
+          resource: "commission data",
+          action: "load",
+        }),
+      );
+      setCommissionData(null);
     } finally {
-      setReportLoading(false);
+      setCommissionLoading(false);
     }
-  }, [token, userId, fromDate, toDate]);
+  }, [token, userId, commissionPage, commissionPerPage, searchQuery, fromDate, toDate]);
 
   useEffect(() => {
-    void loadReport();
-  }, [loadReport]);
+    void loadCommissions();
+  }, [loadCommissions]);
 
-  // Column definition for commission users
-  const commissionUsersColumns: ColumnDef<IbCommissionReportUser>[] = [
+  const activeFilterCount =
+    (searchQuery ? 1 : 0) + (fromDate ? 1 : 0) + (toDate ? 1 : 0);
+
+  const handleResetFilters = () => {
+    setSearchInput("");
+    setSearchQuery("");
+    setFromDate(undefined);
+    setToDate(undefined);
+    setCommissionPage(1);
+  };
+
+  const commissionColumns: ColumnDef<AdminIbCommissionTrade>[] = [
     {
-      header: "User",
-      key: "name",
-      render: (u) => (
-        <div>
-          <div className="font-medium">{u.name}</div>
-          <div className="text-xs text-muted-foreground">{u.email}</div>
-        </div>
+      header: "Date",
+      key: "date",
+      render: (t) => t.date || "—",
+    },
+    {
+      header: "MT5 ID",
+      key: "mt5_id",
+      render: (t) => t.mt5_id || "—",
+    },
+    {
+      header: "Order",
+      key: "order",
+      render: (t) => <span className="tabular-nums">{t.order}</span>,
+    },
+    {
+      header: "Symbol",
+      key: "symbol",
+      render: (t) => t.symbol || "—",
+    },
+    {
+      header: "Type",
+      key: "type",
+      render: (t) => (
+        <Badge
+          className={cn(
+            "border-0",
+            String(t.type).toLowerCase() === "buy"
+              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300"
+              : "bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-300",
+          )}
+        >
+          {t.type}
+        </Badge>
       ),
     },
     {
-      header: "Sponsor ID",
-      key: "sponsor_id",
-      render: (u) => u.sponsor_id || "—",
+      header: "Price",
+      key: "price",
+      align: "right",
+      render: (t) => <span className="tabular-nums">{formatAmount(t.price)}</span>,
     },
     {
       header: "Volume",
       key: "volume",
       align: "right",
-      render: (u) => <span className="tabular-nums">{formatAmount(u.volume)}</span>,
+      render: (t) => <span className="tabular-nums">{formatAmount(t.volume)}</span>,
     },
     {
-      header: "Commission",
-      key: "commission",
+      header: "Profit",
+      key: "profit",
       align: "right",
-      render: (u) => <span className="tabular-nums">{formatAmount(u.commission)}</span>,
+      render: (t) => (
+        <span className={cn("tabular-nums", t.profit < 0 && "text-destructive")}>
+          {formatAmount(t.profit)}
+        </span>
+      ),
     },
     {
-      header: "Trades",
-      key: "trade_count",
+      header: "My Commission",
+      key: "my_commission",
       align: "right",
-      render: (u) => <span className="tabular-nums">{u.trade_count}</span>,
-    },
-    {
-      header: "Trade Days",
-      key: "trade_days",
-      align: "right",
-      render: (u) => <span className="tabular-nums">{u.trade_days}</span>,
+      render: (t) => (
+        <span className="font-medium tabular-nums">{formatAmount(t.my_commission)}</span>
+      ),
     },
   ];
 
@@ -1261,115 +1299,76 @@ function CommissionTab({
     <>
       <IbPageHeader
         eyebrow="Commission"
-        title="Commission Structure"
-        description="Commission earned across your downline levels."
+        title="My Commissions"
+        description="Commission earned on trades placed by you and your downline."
       />
 
       <div className="space-y-4">
-        <IbSectionCard
-          title="Commission Filters"
-          description="Filter commission data by date range."
-          actions={
-            activeFilterCount > 0 ? (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => { setFromDate(undefined); setToDate(undefined); }}
-              >
+        {/* Filters */}
+        <div className="rounded-lg border bg-card p-5">
+          <div className="flex flex-col gap-3 md:flex-row md:items-end">
+            <ApiSearchBar
+              value={searchInput}
+              onChange={(value) => setSearchInput(value)}
+              onSearch={(value) => {
+                setCommissionPage(1);
+                const trimmed = value.trim();
+                setSearchQuery(trimmed.length === 0 || trimmed.length >= 3 ? trimmed : searchQuery);
+              }}
+              placeholder="Search by MT5 ID or symbol"
+              className="min-w-[220px] flex-1 max-w-full"
+              minimumLength={3}
+              delay={300}
+            />
+
+            <DateRangePicker
+              fromDate={fromDate}
+              toDate={toDate}
+              onFromDateChange={(date) => {
+                setFromDate(date);
+                setCommissionPage(1);
+              }}
+              onToDateChange={(date) => {
+                setToDate(date);
+                setCommissionPage(1);
+              }}
+            />
+
+            {activeFilterCount > 0 ? (
+              <Button variant="ghost" size="sm" onClick={handleResetFilters}>
                 Reset
               </Button>
-            ) : null
-          }
-        >
-          <DateRangePicker
-            fromDate={fromDate}
-            toDate={toDate}
-            onFromDateChange={setFromDate}
-            onToDateChange={setToDate}
+            ) : null}
+          </div>
+        </div>
+
+        {/* Commission table */}
+        <div className="rounded-lg border bg-card p-4 shadow-sm">
+          <ReusableDataTable
+            data={commissionData?.data ?? []}
+            columns={commissionColumns}
+            pagination={{
+              current_page: commissionData?.pagination?.current_page ?? commissionPage,
+              per_page: commissionData?.pagination?.per_page ?? commissionPerPage,
+              total: commissionData?.pagination?.total ?? 0,
+              total_pages: commissionData?.pagination?.last_page ?? 1,
+            }}
+            isLoading={commissionLoading}
+            showSerialNumber={true}
+            serialNumberStart={(commissionPage - 1) * commissionPerPage + 1}
+            onPageChange={setCommissionPage}
+            onPerPageChange={(perPage) => {
+              setCommissionPerPage(perPage);
+              setCommissionPage(1);
+            }}
+            emptyState={
+              <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
+                <TrendingUp className="h-6 w-6" />
+                No commission records found.
+              </div>
+            }
           />
-        </IbSectionCard>
-
-        {reportLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Skeleton className="h-6 w-6 rounded-full" />
-            <span className="ml-2 text-sm text-muted-foreground">Loading commission report…</span>
-          </div>
-        ) : loadError ? (
-          <div className="rounded-2xl border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-            Failed to load commission report. Please try again.
-          </div>
-        ) : report ? (
-          <>
-            <div className="grid gap-4 md:grid-cols-3">
-              <IbMetricCard
-                title="Total Commission"
-                value={formatAmount(report.summary.total_commission)}
-                description="Across all levels"
-                icon={<Landmark className="h-5 w-5" />}
-                accent="primary"
-              />
-              <IbMetricCard
-                title="Total Downline Users"
-                value={String(report.summary.total_downline_users)}
-                description="Users in your network"
-                icon={<Users className="h-5 w-5" />}
-                accent="emerald"
-              />
-              <IbMetricCard
-                title="Total Trades"
-                value={String(report.summary.total_trade_count)}
-                description="Trades across network"
-                icon={<TrendingUp className="h-5 w-5" />}
-                accent="amber"
-              />
-            </div>
-
-            {report.levels.map((level) => {
-              const currentPage = commissionPages[level.level] ?? 1;
-              const currentPerPage = commissionPerPages[level.level] ?? 10;
-              
-              const pagination = {
-                current_page: currentPage,
-                per_page: currentPerPage,
-                total: level.users.length,
-                total_pages: Math.ceil(level.users.length / currentPerPage),
-              };
-              
-              return (
-              <IbSectionCard
-                key={level.level}
-                title={level.level_label}
-                description={`Users: ${level.user_count} | Trades: ${level.trade_count} | Days: ${level.trade_days}`}
-                actions={
-                  <Badge variant="secondary" className="font-medium">
-                    {formatAmount(level.total_commission)}
-                  </Badge>
-                }
-              >
-                <ReusableDataTable
-                  data={level.users}
-                  columns={commissionUsersColumns}
-                  pagination={pagination}
-                  isLoading={false}
-                  showSerialNumber={true}
-                  serialNumberStart={(currentPage - 1) * currentPerPage + 1}
-                  onPageChange={(page) => onCommissionPageChange(level.level, page)}
-                  onPerPageChange={(perPage) => onCommissionPerPageChange(level.level, perPage)}
-                  emptyState={
-                    <div className="flex flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border/60 bg-muted/20 py-10 text-sm text-muted-foreground">
-                      <Users className="h-6 w-6" />
-                      No users at this level.
-                    </div>
-                  }
-                />
-              </IbSectionCard>
-            )})}
-          </>
-        ) : (
-          <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">
-            No commission data available for this user.
-          </div>
-        )}
+        </div>
       </div>
     </>
   );
@@ -1385,7 +1384,8 @@ export default function IbUserDetailPage() {
   const [user, setUser] = useState<AdminIbUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<unknown | null>(null);
-  const [activeTab, setActiveTab] = useState<TabKey>("overview");
+  const [activeTabParam, setActiveTab] = useQueryState("tab", parseAsString.withDefault("overview"));
+  const activeTab = (activeTabParam in TAB_LABELS ? (activeTabParam as TabKey) : "overview");
   const [ibPlans, setIbPlans] = useState<IbPlanOption[]>([]);
   const [loadingIbPlans, setLoadingIbPlans] = useState(false);
   const [selectedIbPlanId, setSelectedIbPlanId] = useState("");
@@ -1420,8 +1420,6 @@ export default function IbUserDetailPage() {
   const [businessPerPage, setBusinessPerPage] = useState(10);
   const [clientsPerPage, setClientsPerPage] = useState(10);
   const [subIbsPerPage, setSubIbsPerPage] = useState(10);
-  const [commissionPages, setCommissionPages] = useState<Record<number, number>>({});
-  const [commissionPerPages, setCommissionPerPages] = useState<Record<number, number>>({});
 
   // Date filter states for clients
   const [clientsDateFrom, setClientsDateFrom] = useState<Date | undefined>(undefined);
@@ -1992,19 +1990,7 @@ export default function IbUserDetailPage() {
 
               <TabsContent value="commission" className="space-y-6">
                 {previewData ? (
-                  <CommissionTab 
-                    user={previewData} 
-                    loading={loading}
-                    commissionPages={commissionPages}
-                    onCommissionPageChange={(level, page) => {
-                      setCommissionPages(prev => ({ ...prev, [level]: page }));
-                    }}
-                    commissionPerPages={commissionPerPages}
-                    onCommissionPerPageChange={(level, perPage) => {
-                      setCommissionPerPages(prev => ({ ...prev, [level]: perPage }));
-                      setCommissionPages(prev => ({ ...prev, [level]: 1 })); // Reset to page 1
-                    }}
-                  />
+                  <CommissionTab user={previewData} loading={loading} />
                 ) : null}
               </TabsContent>
             </Tabs>

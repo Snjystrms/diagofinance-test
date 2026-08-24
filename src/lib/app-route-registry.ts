@@ -181,7 +181,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
   },
   {
     id: "become-partner",
-    title: "Become Partner",
+    title: "Request to Become IB",
     url: "/become-partner",
     icon: UserPlus,
     audience: "client",
@@ -470,7 +470,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "client",
     roles: CLIENT_ROLES,
     sidebarSection: "become-partner",
-    navLabel: "Become Partner",
+    navLabel: "Request to Become IB",
   },
   {
     path: "/raise-ticket",
@@ -1277,7 +1277,7 @@ export function getUserNavigation(isIbUser = false): NavItem[] {
   }
 
   return items.map((item) =>
-    item.title === "Become Partner"
+    item.title === "Request to Become IB"
       ? {
           ...item,
           title: "Login to Partner Portal",

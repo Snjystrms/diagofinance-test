@@ -37,6 +37,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { adminIbRequestsApi, type AdminIbRequest } from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
+import { getStoredUserType } from "@/lib/api-core";
 
 const statusFilters = [
   { label: "All statuses", value: "all" },
@@ -230,6 +231,7 @@ export default function IbManagementPage() {
   const [selectedDecision, setSelectedDecision] = useState<"approve" | "reject">("approve");
   const [actionRequest, setActionRequest] = useState<AdminIbRequest | null>(null);
   const [actionComment, setActionComment] = useState("");
+  const userType = useMemo(() => getStoredUserType(), []);
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
   const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(20));
@@ -594,6 +596,7 @@ export default function IbManagementPage() {
   const currentStatusCode = actionRequest ? asStatusCode(actionRequest) : null;
   const isReviewMode = actionType === "review";
   const isApproveDecision = selectedDecision === "approve";
+  const canApproveReject = userType !== "subadmin" && userType !== "manager";
   const dialogTitle =
     isReviewMode
       ? currentStatusCode === 1
@@ -763,7 +766,7 @@ export default function IbManagementPage() {
                 </div>
               ) : null}
 
-              {currentStatusCode === 0 ? (
+              {canApproveReject && currentStatusCode === 0 ? (
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-foreground">Decision</label>
                   <Tabs
@@ -789,7 +792,7 @@ export default function IbManagementPage() {
                 </div>
               ) : null}
 
-              {currentStatusCode === 0 ? (
+              {canApproveReject && currentStatusCode === 0 ? (
                 <div className="space-y-2">
                   <label htmlFor="admin-comment" className="text-sm font-medium">
                     {isApproveDecision ? "Admin Comment (optional)" : "Rejection Comment (optional)"}
@@ -807,7 +810,7 @@ export default function IbManagementPage() {
                   />
                   {!isApproveDecision ? (
                     <p className="text-xs text-muted-foreground">
-                      Leave this empty if you do not want to send a rejection note.
+                      {/* Leave this empty if you do not want to send a rejection note. */}
                     </p>
                   ) : null}
                 </div>
@@ -819,31 +822,37 @@ export default function IbManagementPage() {
             <Button variant="outline" onClick={closeActionDialog} className="px-5">
               Cancel
             </Button>
-            {currentStatusCode === 0 ? (
-              <Button
-                variant={isApproveDecision ? "default" : "destructive"}
-                onClick={handleActionSubmit}
-                className="px-5"
-                disabled={processingId !== null}
-              >
-                {processingId !== null ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : isApproveDecision ? (
-                  <>
-                    <CheckCircle2 className="mr-2 h-4 w-4" />
-                    Save as Approved
-                  </>
-                ) : (
-                  <>
-                    <XCircle className="mr-2 h-4 w-4" />
-                    Save as Rejected
-                  </>
-                )}
-              </Button>
-            ) : null}
+            {canApproveReject ? (
+              currentStatusCode === 0 ? (
+                <Button
+                  variant={isApproveDecision ? "default" : "destructive"}
+                  onClick={handleActionSubmit}
+                  className="px-5"
+                  disabled={processingId !== null}
+                >
+                  {processingId !== null ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Processing...
+                    </>
+                  ) : isApproveDecision ? (
+                    <>
+                      <CheckCircle2 className="mr-2 h-4 w-4" />
+                      Save as Approved
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="mr-2 h-4 w-4" />
+                      Save as Rejected
+                    </>
+                  )}
+                </Button>
+              ) : null
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                You do not have permission to approve or reject IB requests.
+              </p>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>

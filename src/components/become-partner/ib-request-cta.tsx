@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import Link from "next/link";
-import { ArrowUpRight, CheckCircle2, Loader2, XCircle, Clock, ShieldCheck } from "lucide-react";
+import { ArrowRight, ArrowUpRight, CheckCircle2, Loader2, XCircle, Clock } from "lucide-react";
 import toast from "react-hot-toast";
 
 import { useAuth } from "@/contexts/auth-context";
@@ -52,7 +52,7 @@ export function BecomePartnerCta({ className, submitTriggerRef }: BecomePartnerC
 
   const handleSubmit = useCallback(async () => {
     if (!token) {
-      toast.error("You need to be signed in to submit a partner request.");
+      toast.error("You need to be signed in to submit an IB request.");
       return;
     }
 
@@ -62,7 +62,7 @@ export function BecomePartnerCta({ className, submitTriggerRef }: BecomePartnerC
         notes.trim() ? { notes: notes.trim() } : {},
         token
       );
-      toast.success("Your Partner request has been sent. Our team will contact you shortly.");
+      toast.success("Your IB request has been sent. Our team will contact you shortly.");
       setNotes("");
       await refreshStatus();
     } catch (error) {
@@ -123,9 +123,9 @@ export function BecomePartnerCta({ className, submitTriggerRef }: BecomePartnerC
 
   if (isCheckingStatus) {
     return (
-      <div className={cn("flex items-center gap-3 rounded-2xl border border-indigo-100 bg-white/60 backdrop-blur-md px-6 py-5 text-sm font-medium text-slate-600 shadow-sm max-w-xl", className)}>
-        <Loader2 className="h-5 w-5 animate-spin text-indigo-500" aria-hidden="true" />
-        Checking your partner request status...
+      <div className={cn("flex items-center gap-3 rounded-2xl border border-border bg-card px-6 py-5 text-sm font-medium text-muted-foreground shadow-sm", className)}>
+        <Loader2 className="h-5 w-5 animate-spin text-[#c8085a]" aria-hidden="true" />
+        Checking your IB request status...
       </div>
     );
   }
@@ -145,7 +145,7 @@ export function BecomePartnerCta({ className, submitTriggerRef }: BecomePartnerC
             <XCircle className="mt-0.5 h-6 w-6 flex-shrink-0 text-red-500" aria-hidden="true" />
             <div className="space-y-2">
               <h4 className="text-base font-bold text-red-800 tracking-tight">
-                Partner Request Declined
+                IB Request Declined
               </h4>
               <p className="text-sm text-red-700/90 leading-relaxed">
                 Status: <span className="font-semibold text-red-800 capitalize">{statusText}</span>
@@ -183,7 +183,7 @@ export function BecomePartnerCta({ className, submitTriggerRef }: BecomePartnerC
               )}
             </button>
             <Link
-              href="#partner-benefits"
+              href="#how-it-works"
               className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition duration-200 ease-in-out hover:border-slate-300 hover:text-slate-800 shadow-sm"
             >
               Review Benefits
@@ -200,7 +200,7 @@ export function BecomePartnerCta({ className, submitTriggerRef }: BecomePartnerC
             <CheckCircle2 className="mt-0.5 h-6 w-6 flex-shrink-0 text-emerald-500" aria-hidden="true" />
             <div className="space-y-2">
               <h4 className="text-base font-bold text-emerald-800 tracking-tight">
-                🎉 Partner Request Approved!
+                🎉 IB Request Approved!
               </h4>
               <p className="text-sm text-emerald-700/90 leading-relaxed">
                 Status: <span className="font-semibold text-emerald-800 capitalize">{statusText}</span>
@@ -213,7 +213,7 @@ export function BecomePartnerCta({ className, submitTriggerRef }: BecomePartnerC
                 </div>
               ) : null}
               <p className="text-sm text-slate-600 leading-relaxed pt-1">
-                Congratulations! You now have full access to your Partner dashboard where you can manage your clients, view analytics, and track your active earnings.
+                Congratulations! You now have full access to your IB dashboard where you can manage your clients, view analytics, and track your active earnings.
               </p>
             </div>
           </div>
@@ -222,11 +222,11 @@ export function BecomePartnerCta({ className, submitTriggerRef }: BecomePartnerC
               href="/ib-dashboard"
               className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-emerald-600/10 transition duration-200 ease-in-out hover:bg-emerald-500 transform hover:-translate-y-0.5 active:translate-y-0"
             >
-              Go to Partner Dashboard
+              Go to IB Dashboard
               <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
             </Link>
             <Link
-              href="#partner-benefits"
+              href="#how-it-works"
               className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-white px-5 py-3 text-sm font-semibold text-emerald-700 transition duration-200 ease-in-out hover:bg-emerald-50 hover:border-emerald-300 shadow-sm"
             >
               Review Benefits
@@ -238,38 +238,49 @@ export function BecomePartnerCta({ className, submitTriggerRef }: BecomePartnerC
 
     if (isPending) {
       return (
-        <div className="space-y-4 rounded-3xl border border-amber-200/60 bg-gradient-to-b from-amber-50/50 to-amber-50/20 backdrop-blur-md px-6 py-6 shadow-sm max-w-xl">
-          <div className="flex items-start gap-3.5">
-            <Clock className="mt-0.5 h-6 w-6 flex-shrink-0 text-amber-500" aria-hidden="true" />
+        <div className="space-y-5 rounded-3xl border border-amber-300/60 bg-amber-50 p-6 shadow-sm dark:border-amber-500/25 dark:bg-amber-500/10">
+          <div className="flex items-start gap-4">
+            <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/15 text-amber-600 dark:text-amber-400">
+              <Clock className="h-6 w-6" aria-hidden="true" />
+            </span>
             <div className="space-y-2">
-              <h4 className="text-base font-bold text-amber-800 tracking-tight">
-                Partner Application Pending
-              </h4>
-              <p className="text-sm text-amber-700/90 leading-relaxed">
-                Status: <span className="font-semibold text-amber-800 capitalize">{statusText}</span>
-                {createdLabel ? ` • Submitted on ${createdLabel}` : null}
-              </p>
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h4 className="text-lg font-bold tracking-tight text-amber-900 dark:text-amber-100">
+                  IB Application Pending
+                </h4>
+                <span className="inline-flex items-center rounded-full bg-amber-500/15 px-2.5 py-0.5 text-xs font-semibold capitalize text-amber-700 dark:text-amber-300">
+                  {statusText}
+                </span>
+              </div>
+              {createdLabel ? (
+                <p className="text-sm font-medium text-amber-700/80 dark:text-amber-300/80">
+                  Submitted on {createdLabel}
+                </p>
+              ) : null}
               {adminComment ? (
-                <div className="rounded-xl border border-amber-200/40 bg-white/80 px-4 py-3 text-sm text-amber-800 shadow-inner">
-                  <span className="font-semibold block text-xs uppercase tracking-wider text-amber-600 mb-1">Desk Note:</span> 
+                <div className="rounded-xl border border-amber-300/40 bg-background/70 px-4 py-3 text-sm text-foreground shadow-sm dark:border-amber-500/20">
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                    Desk Note
+                  </span>
                   {adminComment}
                 </div>
               ) : null}
-              <p className="text-sm text-slate-600 leading-relaxed pt-1">
-                Our onboarding desk is carefully reviewing your credentials. We will update you via email as soon as a validation decision is ready.
+              <p className="pt-1 text-sm leading-relaxed text-foreground/75">
+                Our onboarding desk is carefully reviewing your credentials.
+                We&apos;ll email you as soon as a decision is ready.
               </p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-3 pt-2">
+          <div className="flex flex-wrap items-center gap-3 pt-1">
             <Link
-              href="#partner-benefits"
-              className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-white px-5 py-2.5 text-sm font-semibold text-amber-700 transition duration-200 ease-in-out hover:bg-amber-50 hover:border-amber-300 shadow-sm"
+              href="#how-it-works"
+              className="inline-flex items-center gap-2 rounded-full border border-amber-300 px-5 py-2.5 text-sm font-semibold text-amber-700 transition hover:bg-amber-500/10 dark:border-amber-500/30 dark:text-amber-300"
             >
               Review Benefits
             </Link>
             <Link
               href="/"
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition duration-200 ease-in-out hover:border-slate-300 hover:text-slate-800 shadow-sm"
+              className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-sm font-semibold text-foreground transition hover:bg-muted"
             >
               Back to Dashboard
             </Link>
@@ -284,7 +295,7 @@ export function BecomePartnerCta({ className, submitTriggerRef }: BecomePartnerC
           <CheckCircle2 className="mt-0.5 h-6 w-6 flex-shrink-0 text-emerald-500" aria-hidden="true" />
           <div className="space-y-2">
             <h4 className="text-base font-bold text-emerald-800 tracking-tight">
-              Partner Request Received
+              IB Request Received
             </h4>
             <p className="text-sm text-emerald-700/90 leading-relaxed">
               Status: <span className="font-semibold text-emerald-800 capitalize">{statusText}</span>
@@ -319,59 +330,49 @@ export function BecomePartnerCta({ className, submitTriggerRef }: BecomePartnerC
   };
 
   return (
-    <div id="partner-cta-container" className={cn("space-y-5 max-w-xl", className)}>
+    <div id="partner-cta-container" className={cn("space-y-4", className)}>
       {hasSubmitted && submittedDetails ? (
         getStatusDisplay()
       ) : (
         <>
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             <label
               htmlFor="partner-notes"
-              className="text-sm font-semibold text-slate-700 flex items-center gap-1.5"
+              className="block text-sm font-semibold text-foreground"
             >
-              Optional notes for our partner desk
+              Notes for our IB desk{" "}
+              <span className="font-normal text-muted-foreground">(optional)</span>
             </label>
             <textarea
               id="partner-notes"
               value={notes}
               onChange={(event) => setNotes(event.target.value)}
-              placeholder="Share details about your network, business framework, or client handling patterns to help accelerate onboarding."
-              className="min-h-28 w-full resize-y rounded-2xl border border-slate-200 bg-white/80 backdrop-blur-md px-4 py-3.5 text-sm text-slate-800 placeholder-slate-400 shadow-inner transition duration-200 ease-in-out focus:border-indigo-400 focus:outline-none focus:ring-4 focus:ring-indigo-100"
+              placeholder="Your network, business model, or how you work with clients."
+              className="min-h-32 w-full resize-y rounded-2xl border border-border bg-background px-4 py-3.5 text-sm text-foreground placeholder:text-muted-foreground shadow-sm transition focus:border-[#c8085a] focus:outline-none focus:ring-4 focus:ring-[#c8085a]/15"
             />
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={isSubmitting}
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/10 transition duration-200 ease-in-out hover:bg-primary/90 transform hover:-translate-y-0.5 active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-                  Sending Application...
-                </>
-              ) : (
-                <>
-                  Become a Partner
-                  <ArrowUpRight className="h-4 w-4" aria-hidden="true" />
-                </>
-              )}
-            </button>
-            <Link
-              href="#partner-benefits"
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition duration-200 ease-in-out hover:border-slate-300 hover:text-slate-800 shadow-sm"
-            >
-              Explore Benefits
-            </Link>
-          </div>
-          <div className="flex items-start gap-2 rounded-2xl bg-slate-50 border border-slate-100/80 p-3.5">
-            <ShieldCheck className="h-4 w-4 text-slate-400 mt-0.5 flex-shrink-0" aria-hidden="true" />
-            <p className="text-xs text-slate-500 leading-normal">
-              Submitting registers an active Introducing Partner registration query with our compliance desk. 
-              Our service criteria standards evaluate profiles within one standard business day.
-            </p>
-          </div>
+          <button
+            type="button"
+            onClick={handleSubmit}
+            disabled={isSubmitting}
+            className="inline-flex items-center gap-2 rounded-full bg-[#c8085a] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#c8085a]/25 transition hover:bg-[#b00650] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#c8085a]/30"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                Submitting application...
+              </>
+            ) : (
+              <>
+                Submit application
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </>
+            )}
+          </button>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            Submitting registers an IB request with our
+            compliance desk.
+          </p>
         </>
       )}
     </div>
