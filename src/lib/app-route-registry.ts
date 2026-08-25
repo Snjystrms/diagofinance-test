@@ -247,7 +247,9 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     icon: Package,
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
-    managerCategories: ["Account Management"],
+    // UI label is "Group Management"; login response sends the category under
+    // either "Account Management" or "Group Management" — accept both.
+    managerCategories: ["Account Management", "Group Management"],
   },
   //  {
   //     id: "group-management",
@@ -600,7 +602,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "user-management",
-    navLabel: "Temporary Users",
+    navLabel: "Lead Management",
     managerCategories: ["User Management"],
   },
   {
@@ -747,7 +749,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     roles: BACKOFFICE_ROLES,
     sidebarSection: "account-management",
     navLabel: "All Groups",
-    managerCategories: ["Account Management"],
+    managerCategories: ["Account Management", "Group Management"],
   },
   {
     path: "/all-groups",

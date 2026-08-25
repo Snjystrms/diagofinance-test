@@ -76,7 +76,10 @@ export const managerPermissionConfig: Record<string, ModuleFeatureMap> = {
     withdrawReport: ["Withdraw Report"],
   },
   "account-types": {
-    accountTypesList: ["Account Types List"],
+    // "Group Management" in the UI maps to this account-types page (/all-accounts).
+    // Account types == groups in this product, and the login response may surface
+    // the list permission under either name, so accept both.
+    accountTypesList: ["Account Types List", "Group List"],
     createAccountType: ["Create Account Type"],
     editAccountType: ["Edit Account Type"],
     deleteAccountType: ["Delete Account Type"],

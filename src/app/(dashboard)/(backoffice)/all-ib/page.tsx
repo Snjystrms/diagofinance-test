@@ -34,7 +34,12 @@ import { Spinner } from "@/components/ui/spinner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/contexts/auth-context";
-import { adminIbRequestsApi, type AdminIbRequest } from "@/lib/api";
+import {
+  adminIbPlansCrudApi,
+  adminIbRequestsApi,
+  type AdminIbPlanCrudItem,
+  type AdminIbRequest,
+} from "@/lib/api";
 import { formatDateTimeInIST } from "@/lib/formatters";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 import { useModuleCapabilities } from "@/hooks/use-permission-capabilities";
@@ -231,6 +236,9 @@ export default function IbManagementPage() {
   const [selectedDecision, setSelectedDecision] = useState<"approve" | "reject">("approve");
   const [actionRequest, setActionRequest] = useState<AdminIbRequest | null>(null);
   const [actionComment, setActionComment] = useState("");
+  const [ibPlans, setIbPlans] = useState<AdminIbPlanCrudItem[]>([]);
+  const [ibPlansLoading, setIbPlansLoading] = useState(false);
+  const [selectedPlanId, setSelectedPlanId] = useState("");
   const { can } = useModuleCapabilities("ibManagement");
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
@@ -344,11 +352,32 @@ export default function IbManagementPage() {
     void loadRequests();
   }, [loadRequests]);
 
+  const loadIbPlans = useCallback(async () => {
+    if (!token || ibPlansLoading || ibPlans.length > 0) {
+      return;
+    }
+
+    try {
+      setIbPlansLoading(true);
+      const response = await adminIbPlansCrudApi.list(token);
+      setIbPlans(response?.data?.ibPlans ?? []);
+    } catch (error: unknown) {
+      console.error("Failed to load IB plans:", error);
+      toast.error(
+        getAdminFriendlyErrorMessage(error, { resource: "IB plans", action: "load" })
+      );
+    } finally {
+      setIbPlansLoading(false);
+    }
+  }, [token, ibPlansLoading, ibPlans.length]);
+
   const openActionDialog = useCallback(
     (request: AdminIbRequest, type: "approve" | "reject" | "review") => {
       setActionType(type);
       setActionRequest(request);
       setProcessingId(null);
+      setSelectedPlanId("");
+      void loadIbPlans();
 
       const statusCode = asStatusCode(request);
       const nextDecision = type === "review" ? (statusCode === 2 ? "reject" : "approve") : type;
@@ -361,13 +390,14 @@ export default function IbManagementPage() {
 
       setActionComment(deriveAdminComment(request) ?? "");
     },
-    [],
+    [loadIbPlans],
   );
 
   const closeActionDialog = useCallback(() => {
     setActionRequest(null);
     setSelectedDecision("approve");
     setActionComment("");
+    setSelectedPlanId("");
     setProcessingId(null);
   }, []);
 
@@ -387,6 +417,11 @@ export default function IbManagementPage() {
     const resolvedIbNameRaw = actionRequest.ib_name ?? deriveFullName(actionRequest);
     const ibName = resolvedIbNameRaw === "—" ? "" : String(resolvedIbNameRaw).trim();
 
+    if (nextAction === "approve" && !selectedPlanId) {
+      toast.error("Please select an IB plan before approving this request.");
+      return;
+    }
+
     try {
       setProcessingId(identifier);
 
@@ -395,6 +430,7 @@ export default function IbManagementPage() {
           ? {
               status: 1,
               ib_name: ibName,
+              ib_plan_id: Number(selectedPlanId),
               admin_comment: comment || undefined,
             }
           : {
@@ -428,6 +464,7 @@ export default function IbManagementPage() {
     token,
     actionRequest,
     actionComment,
+    selectedPlanId,
     closeActionDialog,
     loadRequests,
   ]);
@@ -789,6 +826,39 @@ export default function IbManagementPage() {
                       </TabsTrigger>
                     </TabsList>
                   </Tabs>
+                </div>
+              ) : null}
+
+              {canApproveReject && currentStatusCode === 0 && isApproveDecision ? (
+                <div className="space-y-2">
+                  <label htmlFor="ib-plan" className="text-sm font-medium">
+                    IB Plan <span className="text-red-500">*</span>
+                  </label>
+                  <Select
+                    value={selectedPlanId}
+                    onValueChange={(value) => setSelectedPlanId(value)}
+                    disabled={ibPlansLoading}
+                  >
+                    <SelectTrigger id="ib-plan" className="w-full">
+                      <SelectValue
+                        placeholder={
+                          ibPlansLoading ? "Loading plans..." : "Select an IB plan"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ibPlans.map((plan) => (
+                        <SelectItem key={String(plan.id)} value={String(plan.id)}>
+                          {plan.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {!ibPlansLoading && ibPlans.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">
+                      No active IB plans available.
+                    </p>
+                  ) : null}
                 </div>
               ) : null}
 

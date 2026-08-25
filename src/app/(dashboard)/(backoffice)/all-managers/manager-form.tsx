@@ -12,7 +12,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ChevronDown, ChevronRight, Eye, EyeOff, Loader2 } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronRight, Eye, EyeOff, Loader2, Plus } from "lucide-react";
+import {
+  computeMissingDependencies,
+  type ResolvedDependency,
+} from "@/lib/permission-dependencies";
 
 export type ManagerRow = {
   id: string;
@@ -79,6 +83,37 @@ export function ManagerForm({
     () => new Set(form.permissions ?? []),
     [form.permissions]
   );
+
+  // Permissions this selection depends on (cross-module API prerequisites) that
+  // are not yet enabled — e.g. Commission Group needs Group List + IB Plan to
+  // populate its dropdowns.
+  const missingDependencies = useMemo<ResolvedDependency[]>(() => {
+    if (readOnly) return [];
+    return computeMissingDependencies({
+      selectedIds: selectedPermissions,
+      grouped: groupedPermissions,
+    });
+  }, [readOnly, selectedPermissions, groupedPermissions]);
+
+  // Group the missing dependencies by their owning category for display.
+  const missingDependenciesByCategory = useMemo(() => {
+    const map = new Map<string, ResolvedDependency[]>();
+    missingDependencies.forEach((dependency) => {
+      const list = map.get(dependency.category) ?? [];
+      list.push(dependency);
+      map.set(dependency.category, list);
+    });
+    return Array.from(map.entries());
+  }, [missingDependencies]);
+
+  const addMissingDependencies = () => {
+    if (!missingDependencies.length) return;
+    setForm((prev) => {
+      const current = new Set(prev.permissions ?? []);
+      missingDependencies.forEach((dependency) => current.add(dependency.id));
+      return { ...prev, permissions: Array.from(current) };
+    });
+  };
 
   useEffect(() => {
     if (open && (!allPermissions.length || !groupedPermissions.length)) {
@@ -591,6 +626,48 @@ export function ManagerForm({
               </div>
             </div>
           </div>
+
+          {missingDependencies.length > 0 ? (
+            <div className="shrink-0 border-t border-amber-300 bg-amber-50 px-6 py-3 text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-200">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex min-w-0 items-start gap-3">
+                  <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+                  <div className="min-w-0 space-y-1">
+                    <p className="text-sm font-semibold">
+                      {missingDependencies.length} dependent permission
+                      {missingDependencies.length > 1 ? "s" : ""} not enabled
+                    </p>
+                    <p className="text-xs text-amber-800/90 dark:text-amber-300/80">
+                      Selected modules load data from other modules&apos; APIs — without these,
+                      those screens show empty dropdowns or fail.
+                    </p>
+                    <div className="max-h-24 space-y-1 overflow-y-auto pr-2">
+                      {missingDependenciesByCategory.map(([category, dependencies]) => (
+                        <div key={category} className="text-xs leading-relaxed">
+                          <span className="font-medium">{category}:</span>{" "}
+                          <span className="text-amber-800/80 dark:text-amber-300/70">
+                            {dependencies.map((dependency) => dependency.name).join(", ")}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                {!readOnly ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={addMissingDependencies}
+                    className="shrink-0 border-amber-400 bg-amber-100/60 text-amber-900 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-900/30 dark:text-amber-100 dark:hover:bg-amber-900/50"
+                  >
+                    <Plus className="mr-1 h-4 w-4" />
+                    Add required permission{missingDependencies.length > 1 ? "s" : ""}
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          ) : null}
 
           <DialogFooter className="shrink-0 border-t px-6 py-4">
             <Button

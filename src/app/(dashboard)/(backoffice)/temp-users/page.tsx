@@ -201,7 +201,7 @@ export default function TempUsersPage() {
       setLoadError(err);
       toast.error(
         getAdminFriendlyErrorMessage(err, {
-          resource: "temporary users",
+          resource: "lead management",
           action: "load",
         }),
       );
@@ -294,7 +294,7 @@ export default function TempUsersPage() {
         <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
           <ApiErrorState
             title="Access Denied"
-            message="You do not have permission to view temporary users"
+            message="You do not have permission to view Lead Management. Please contact your administrator if you believe this is an error."
           />
         </div>
       </ProtectedRoute>
@@ -309,10 +309,10 @@ export default function TempUsersPage() {
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-semibold tracking-tight">
               <Users className="h-6 w-6 text-primary" />
-              Temporary Users
+              Lead Management
             </h1>
             <p className="text-muted-foreground">
-              Manage incomplete user registrations
+              Manage prospective leads and incomplete registrations
             </p>
           </div>
           <Button
@@ -346,7 +346,7 @@ export default function TempUsersPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                Total Temporary Users
+                Total Leads
               </CardTitle>
               <Users className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
@@ -364,7 +364,7 @@ export default function TempUsersPage() {
             <ApiErrorState
               error={loadError}
               onRetry={loadUsers}
-              resource="temporary users"
+              resource="lead management"
             />
           ) : (
             <AppDataTable

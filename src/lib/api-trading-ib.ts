@@ -1278,6 +1278,7 @@ export interface AdminIbRequestListData {
 export interface AdminIbRequestUpdateBody {
   status: number;
   ib_name?: string;
+  ib_plan_id?: number;
   admin_comment?: string;
 }
 
