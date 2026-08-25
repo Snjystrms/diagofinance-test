@@ -29,6 +29,7 @@ import { ThemeCustomizer } from "@/components/theme-customizer";
 import { SidebarSelector } from "@/components/sidebar-selector";
 import { showDevThemeTools } from "@/components/theme-provider";
 import { useAuth } from "@/contexts/auth-context";
+import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import { useSessionLogout } from "@/hooks/use-session-logout";
 import { usePathname, useRouter } from "next/navigation";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -72,6 +73,15 @@ export function Header() {
   const isClientUser = user?.type === "user";
   const isAdminLike = user?.type === "admin";
   const isManagerUser = user?.type === "manager" || user?.type === "subadmin";
+
+  // Hide the notification bell (and skip its unread-count calls) for
+  // managers/subadmins whose permission set has no Notification module.
+  const { isManager: isPermissionManager, hasPermissionName } =
+    useManagerPermissions();
+  const canUseNotifications =
+    !isPermissionManager ||
+    hasPermissionName("Unread Notification") ||
+    hasPermissionName("Read Notification");
 
   const managerQuickLinks = useMemo(
     () =>
@@ -304,7 +314,7 @@ export function Header() {
           )}
 
           {/* Notifications */}
-          {user ? (
+          {user && canUseNotifications ? (
             <NotificationInbox
               mode={user.type === "user" ? "user" : "admin"}
               shouldFetchUnreadCount={isDashboardRoute}

@@ -3,11 +3,19 @@
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import { adminNotificationApi, notificationApi } from "@/lib/api";
+import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 
 type NotificationMode = "admin" | "user";
 
 export function useUnreadNotificationCount(mode: NotificationMode) {
   const { token } = useAuth();
+  // Managers/subadmins without any Notification permission must never hit
+  // /admin/notifications/unread-count (they'd just get 403s).
+  const { isManager, hasPermissionName } = useManagerPermissions();
+  const canViewNotifications =
+    !isManager ||
+    hasPermissionName("Unread Notification") ||
+    hasPermissionName("Read Notification");
 
   const { data: unreadCount = 0 } = useQuery({
     queryKey: ["sidebarUnreadNotifications", mode, token],
@@ -25,7 +33,7 @@ export function useUnreadNotificationCount(mode: NotificationMode) {
         return 0;
       }
     },
-    enabled: Boolean(token),
+    enabled: Boolean(token) && canViewNotifications,
     staleTime: 30 * 1000,
     refetchInterval: 60 * 1000,
     retry: false,

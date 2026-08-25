@@ -1008,6 +1008,9 @@ export default function NewUserDetailPage() {
   const { can: canIbCapability } = useModuleCapabilities("ibManagement");
   const canPromoteToIb = canIbCapability("promoteClientToIb");
 
+  const { can: canUserCapability } = useModuleCapabilities("userManagement");
+  const canResendVerificationMail = canUserCapability("resendVerificationMail");
+
   const [depositsState, setDepositsState] = useState(() =>
     createPaginatedState<AdminUserTransactionItem>(),
   );
@@ -1812,19 +1815,21 @@ export default function NewUserDetailPage() {
                   Login to Client Portal
                 </Button>
               </div>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={handleResendWelcomeEmail}
-                disabled={sendingWelcomeEmail || loadingProfile || !crudUser}
-              >
-                {sendingWelcomeEmail ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Mail className="mr-2 h-4 w-4" />
-                )}
-                {sendingWelcomeEmail ? "Sending..." : "Resend Welcome Email"}
-              </Button>
+              {canResendVerificationMail ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={handleResendWelcomeEmail}
+                  disabled={sendingWelcomeEmail || loadingProfile || !crudUser}
+                >
+                  {sendingWelcomeEmail ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Mail className="mr-2 h-4 w-4" />
+                  )}
+                  {sendingWelcomeEmail ? "Sending..." : "Resend Welcome Email"}
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 variant="outline"

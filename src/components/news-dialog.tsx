@@ -31,9 +31,9 @@ export function NewsDialog({ open, onOpenChange, newsItems }: NewsDialogProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl p-0 overflow-hidden border-0 shadow-2xl gap-0">
         {/* ── Header ── */}
-        <div className="relative overflow-hidden bg-[#0B1220] px-6 pt-6 pb-5">
+        <div className="relative overflow-hidden bg-muted/50 px-6 pt-6 pb-5">
           {/* Decorative ticker lines */}
-          <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-[#FFB401] to-transparent opacity-80" />
+          <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-primary/60 to-transparent opacity-80" />
           <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
             {/* Subtle grid lines */}
             <svg
@@ -50,7 +50,7 @@ export function NewsDialog({ open, onOpenChange, newsItems }: NewsDialogProps) {
                   <path
                     d="M 40 0 L 0 0 0 40"
                     fill="none"
-                    stroke="white"
+                    stroke="currentColor"
                     strokeWidth="1"
                   />
                 </pattern>
@@ -58,36 +58,36 @@ export function NewsDialog({ open, onOpenChange, newsItems }: NewsDialogProps) {
               <rect width="100%" height="100%" fill="url(#news-grid)" />
             </svg>
             {/* Glowing orb */}
-            <div className="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-[#FFB401]/10 blur-2xl" />
+            <div className="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-primary/10 blur-2xl" />
           </div>
 
           <div className="relative flex items-start gap-4">
             {/* Live badge + icon */}
             <div className="flex-shrink-0 mt-0.5">
-              <div className="relative flex items-center justify-center w-11 h-11 rounded-xl bg-[#FFB401]/15 border border-[#FFB401]/30">
-                <Radio className="h-5 w-5 text-[#FFB401]" />
+              <div className="relative flex items-center justify-center w-11 h-11 rounded-xl bg-primary/15 border border-primary/30">
+                <Radio className="h-5 w-5 text-primary" />
                 {/* Live pulse dot */}
                 <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FFB401] opacity-60" />
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-[#FFB401]" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-primary" />
                 </span>
               </div>
             </div>
 
             <div>
               <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#FFB401]">
+                <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-primary">
                   Breaking
                 </span>
-                <span className="w-1 h-1 rounded-full bg-[#FFB401]/50" />
-                <span className="text-[10px] tracking-widest uppercase text-white/40">
+                <span className="w-1 h-1 rounded-full bg-primary/50" />
+                <span className="text-[10px] tracking-widest uppercase text-muted-foreground">
                   Diago Finance
                 </span>
               </div>
-              <h2 className="text-xl font-bold text-white tracking-tight">
+              <h2 className="text-xl font-bold text-foreground tracking-tight">
                 Latest News
               </h2>
-              <p className="text-sm text-white/50 mt-0.5">
+              <p className="text-sm text-muted-foreground mt-0.5">
                 Stay ahead with real-time updates &amp; announcements.
               </p>
             </div>
@@ -97,15 +97,15 @@ export function NewsDialog({ open, onOpenChange, newsItems }: NewsDialogProps) {
         {/* ── News Items ── */}
         <div
           className="bg-background px-4 py-4 space-y-3 max-h-[380px] overflow-y-auto
-          [scrollbar-width:thin] [scrollbar-color:#FFB401_transparent]
-          [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-[#FFB401]/40 [&::-webkit-scrollbar-thumb]:rounded-full"
+          [scrollbar-width:thin] [scrollbar-color:hsl(var(--border))_transparent]
+          [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-border [&::-webkit-scrollbar-thumb]:rounded-full"
         >
           {newsItems.map((item, idx) => (
             <div
               key={item.id}
               onClick={() => handleViewItem(item.id)}
               className="group relative flex items-start gap-3 rounded-xl border border-border/60 bg-card p-3.5 cursor-pointer
-                hover:border-[#FFB401]/40 hover:bg-[#FFB401]/[0.03] transition-all duration-200"
+                hover:border-primary/40 hover:bg-primary/[0.04] transition-all duration-200"
             >
               {/* Issue number */}
               <span className="absolute top-3 right-3.5 text-[10px] font-mono text-muted-foreground/40 select-none">
@@ -126,7 +126,7 @@ export function NewsDialog({ open, onOpenChange, newsItems }: NewsDialogProps) {
                       const img = e.currentTarget;
                       img.style.display = "none";
                       if (img.parentElement) {
-                        img.parentElement.innerHTML = `<div class="absolute inset-0 flex items-center justify-center bg-[#FFB401]/10 text-[#FFB401]">
+                        img.parentElement.innerHTML = `<div class="absolute inset-0 flex items-center justify-center bg-primary/10 text-primary">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg>
                       </div>`;
                       }
@@ -134,18 +134,18 @@ export function NewsDialog({ open, onOpenChange, newsItems }: NewsDialogProps) {
                   />
                 </div>
               ) : (
-                <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-[#FFB401]/8 border border-[#FFB401]/20 flex items-center justify-center">
+                <div className="flex-shrink-0 w-16 h-16 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"
                     height="20"
                     viewBox="0 0 24 24"
                     fill="none"
-                    stroke="#FFB401"
+                    stroke="currentColor"
                     strokeWidth="1.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="opacity-70"
+                    className="opacity-70 text-primary"
                   >
                     <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
                     <path d="M18 14h-8" />
@@ -158,8 +158,8 @@ export function NewsDialog({ open, onOpenChange, newsItems }: NewsDialogProps) {
               <div className="flex-1 min-w-0 pr-6">
                 {/* Category pill (if exists) or default */}
                 <div className="flex items-center gap-1.5 mb-1">
-                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#FFB401]" />
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#FFB401]">
+                  <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">
                     {(item as NewsItem & { category?: string }).category ||
                       "Update"}
                   </span>
@@ -181,7 +181,7 @@ export function NewsDialog({ open, onOpenChange, newsItems }: NewsDialogProps) {
               </div>
 
               {/* Hover arrow */}
-              <ArrowRight className="absolute right-3 bottom-3.5 h-3.5 w-3.5 text-[#FFB401] opacity-0 group-hover:opacity-100 translate-x-[-4px] group-hover:translate-x-0 transition-all duration-200" />
+              <ArrowRight className="absolute right-3 bottom-3.5 h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-100 translate-x-[-4px] group-hover:translate-x-0 transition-all duration-200" />
             </div>
           ))}
         </div>
@@ -197,7 +197,7 @@ export function NewsDialog({ open, onOpenChange, newsItems }: NewsDialogProps) {
           </Button>
           <Button
             onClick={handleViewAll}
-            className="bg-[#FFB401] hover:bg-[#FFB401]/90 text-black font-semibold text-sm gap-2"
+            className="font-semibold text-sm gap-2"
           >
             View All News
             <ArrowRight className="h-3.5 w-3.5" />

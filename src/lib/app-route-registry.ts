@@ -73,6 +73,13 @@ export interface AppRouteDefinition {
   navLabel?: string;
   icon?: LucideIcon;
   managerCategories?: string[];
+  /**
+   * Concrete permission names (ANY-of) required for a manager/subadmin to see
+   * this route in the sidebar or open it directly. When set, it takes
+   * precedence over the legacy per-path feature checks. Names are matched
+   * case-insensitively against the permissions returned by the API.
+   */
+  managerPermissions?: string[];
   activeMatch?: string[];
 }
 
@@ -267,7 +274,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     icon: UserPlus,
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
-    managerCategories: ["Sub Admin"],
+    managerCategories: ["Sub Admin", "Subadmin Management"],
   },
   {
     id: "bonus-management",
@@ -340,7 +347,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     icon: Gift,
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
-    managerCategories: ["Promotion Management"],
+    managerCategories: ["Promotion Management", "Promotion Mgmt"],
   },
   {
     id: "settings",
@@ -587,7 +594,6 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     roles: BACKOFFICE_ROLES,
     sidebarSection: "managementdashboard",
     navLabel: "Management Dashboard",
-    managerCategories: ["Report Management"],
   },
   {
     path: "/new-users",
@@ -596,6 +602,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "user-management",
     navLabel: "All Users",
     managerCategories: ["User Management"],
+    managerPermissions: [
+      "User List",
+      "Add User",
+      "Edit User",
+      "View User",
+      "Delete User",
+      "Move Client to IB",
+    ],
   },
   {
     path: "/temp-users",
@@ -604,6 +618,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "user-management",
     navLabel: "Lead Management",
     managerCategories: ["User Management"],
+    managerPermissions: ["Temp Users List"],
   },
   {
     path: "/all-users-mt5-accounts",
@@ -612,6 +627,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "user-management",
     navLabel: "MT5 Accounts",
     managerCategories: ["User Management"],
+    managerPermissions: [
+      "MT5 User List",
+      "Create MT5 Account",
+      "Update MT5 Leverage",
+      "Delete MT5 account",
+      "Change MT5 Password",
+      "Resend MT5 Data Mail",
+    ],
   },
   {
     path: "/user-verification",
@@ -620,6 +643,13 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "user-management",
     navLabel: "User KYC",
     managerCategories: ["User Management"],
+    managerPermissions: [
+      "Pending Documents List",
+      "Approve Document List",
+      "Reject Document List",
+      "Approve/Reject KYC",
+      "Upload User Documents",
+    ],
   },
   {
     path: "/add-bank-details",
@@ -628,6 +658,13 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "user-management",
     navLabel: "User Bank Details",
     managerCategories: ["User Management"],
+    managerPermissions: [
+      "Bank Details List",
+      "Add Bank Details",
+      "Update Bank Details",
+      "Delete Bank details",
+      "Verify Bank Details",
+    ],
   },
   {
     path: "/add-existing-clients",
@@ -636,6 +673,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "user-management",
     navLabel: "Add Existing Clients",
     managerCategories: ["User Management"],
+    managerPermissions: ["Add Existing Client"],
   },
   {
     path: "/admin-transaction",
@@ -644,6 +682,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "transaction-management",
     navLabel: "Admin Transaction",
     managerCategories: ["Transaction"],
+    managerPermissions: [
+      "Deposit List",
+      "Withdrawal List",
+      "Approve/Reject Deposit",
+      "Approve/Reject Withdrawal",
+      "IB Withdrawal List",
+      "Approve/Reject IB Withdrawal",
+    ],
   },
   {
     path: "/usdt-transactions",
@@ -652,6 +698,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "transaction-management",
     navLabel: "Pending Deposit",
     managerCategories: ["Transaction"],
+    managerPermissions: ["Deposit List", "Approve/Reject Deposit"],
   },
   {
     path: "/withdrawal-requests",
@@ -660,6 +707,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "transaction-management",
     navLabel: "Pending Withdrawal",
     managerCategories: ["Transaction"],
+    managerPermissions: ["Withdrawal List", "Approve/Reject Withdrawal"],
   },
   {
     path: "/ib-withdrawal-requests",
@@ -668,6 +716,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "transaction-management",
     navLabel: "Pending IB Withdrawal",
     managerCategories: ["Transaction"],
+    managerPermissions: ["IB Withdrawal List", "Approve/Reject IB Withdrawal"],
   },
   {
     path: "/bonus-management",
@@ -676,6 +725,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "bonus-management",
     navLabel: "Manage Bonus",
     managerCategories: ["Bonus"],
+    managerPermissions: ["Bonus List", "Give Bonus", "Remove Bonus"],
   },
   {
     path: "/all-managers",
@@ -683,7 +733,13 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     roles: BACKOFFICE_ROLES,
     sidebarSection: "manager-management",
     navLabel: "Sub-Admin List",
-    managerCategories: ["Sub Admin"],
+    managerCategories: ["Sub Admin", "Subadmin Management"],
+    managerPermissions: [
+      "Subadmin List",
+      "Create Subadmin",
+      "Add Subadmin Permission",
+      "Edit Subadmin Permission",
+    ],
   },
   {
     path: "/email-management",
@@ -692,6 +748,13 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "email-management",
     navLabel: "Manage E-Mail",
     managerCategories: ["E-Mail Management", "Email Management"],
+    managerPermissions: [
+      "Get Client Emails",
+      "Send Email",
+      "Create Broadcast Email",
+      "Broadcast Email History",
+      "Manage Email Exclusions",
+    ],
   },
   {
     path: "/all-ib",
@@ -700,6 +763,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "ib-management",
     navLabel: "IB Request",
     managerCategories: ["IB Management"],
+    managerPermissions: ["IB Requests", "Approve/Reject IB Req"],
   },
   {
     path: "/ib-users",
@@ -708,6 +772,12 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "ib-management",
     navLabel: "IB List",
     managerCategories: ["IB Management"],
+    managerPermissions: [
+      "IB Users",
+      "View Commission",
+      "Edit IB Commission",
+      "View Level / Tree chart",
+    ],
   },
    {
     path: "/ib-plans",
@@ -716,6 +786,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "ib-management",
     navLabel: "IB Plans",
     managerCategories: ["IB Management"],
+    managerPermissions: ["IB Plan", "Add IB Plan"],
   },
    {
     path: "/commission-group",
@@ -724,6 +795,13 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "ib-management",
     navLabel: "Commission Group",
     managerCategories: ["IB Management"],
+    managerPermissions: [
+      "Commission Group",
+      "Add Commission Group",
+      "Edit Commission Group",
+      "View / Create Commission Group",
+      "Edit / Delete Commission Group",
+    ],
   },
   {
     path: "/set-ib-commission",
@@ -732,6 +810,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "ib-management",
     navLabel: "Set IB Commission",
     managerCategories: ["IB Management"],
+    managerPermissions: ["Set IB Commission", "Add IB Commission", "Edit IB Commission"],
     activeMatch: ["/set-ib-commission"],
   },
   {
@@ -740,7 +819,8 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     roles: BACKOFFICE_ROLES,
     sidebarSection: "ib-plans-management",
     navLabel: "IB Plans",
-    managerCategories: ["IB Plans Management"],
+    managerCategories: ["IB Plans Management", "IB Management"],
+    managerPermissions: ["View / Create IB Plan", "Edit / Delete IB Plan"],
     activeMatch: ["/ib-plans-management"],
   },
   {
@@ -750,6 +830,13 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "account-management",
     navLabel: "All Groups",
     managerCategories: ["Account Management", "Group Management"],
+    managerPermissions: [
+      "Account Types List",
+      "Group List",
+      "Add Group",
+      "Edit Group",
+      "Delete Group",
+    ],
   },
   {
     path: "/all-groups",
@@ -758,6 +845,13 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "group-management",
     navLabel: "All Groups",
     managerCategories: ["Group Management"],
+    managerPermissions: [
+      "Group List",
+      "Add Group",
+      "Edit Group",
+      "Delete Group",
+      "Account Types List",
+    ],
   },
   {
     path: "/all-tickets",
@@ -766,6 +860,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "support",
     navLabel: "All Tickets",
     managerCategories: ["Ticket Management"],
+    managerPermissions: ["Tickets"],
   },
   {
     path: "/all-notifications",
@@ -773,6 +868,8 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     roles: BACKOFFICE_ROLES,
     sidebarSection: "notification",
     navLabel: "All Notifications",
+    managerCategories: ["Notification"],
+    managerPermissions: ["Unread Notification", "Read Notification"],
   },
   {
     path: "/report-management/all-transaction-report",
@@ -781,6 +878,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "reports",
     navLabel: "All Transaction Report",
     managerCategories: ["Report Management"],
+    managerPermissions: ["All Transaction Report"],
   },
   {
     path: "/report-management/daily-summary-report",
@@ -789,6 +887,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "reports",
     navLabel: "Daily Summary Report",
     managerCategories: ["Report Management"],
+    managerPermissions: ["Daily Summary Report"],
   },
   {
     path: "/report-management/wallet-history-report",
@@ -797,6 +896,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "reports",
     navLabel: "Wallet History Report",
     managerCategories: ["Report Management"],
+    managerPermissions: ["Wallet History Report", "Main Wallet History Report"],
   },
   {
     path: "/report-management/all-partners-report",
@@ -805,6 +905,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "reports",
     navLabel: "Partner Users Report",
     managerCategories: ["Report Management"],
+    managerPermissions: ["Partner Users Report", "IB Users Report"],
   },
   {
     path: "/report-management/deposit-report",
@@ -813,6 +914,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "reports",
     navLabel: "Deposit Report",
     managerCategories: ["Report Management"],
+    managerPermissions: ["Deposit Report"],
   },
   {
     path: "/report-management/withdrawal-report",
@@ -821,6 +923,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "reports",
     navLabel: "Withdrawal Report",
     managerCategories: ["Report Management"],
+    managerPermissions: ["Withdraw Report"],
   },
   // {
   //   path: "/report-management/ib-withdrawal-report",
@@ -837,6 +940,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "reports",
     navLabel: "IB Commission Report",
     managerCategories: ["Report Management"],
+    managerPermissions: ["Partner Commission Report", "Commission Report"],
   },
   {
     path: "/report-management/internal-transfer-report",
@@ -845,6 +949,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "reports",
     navLabel: "Internal Transfer Report",
     managerCategories: ["Report Management"],
+    managerPermissions: ["Internal Transfer Report"],
   },
   {
     path: "/report-management/login-activity-report",
@@ -853,6 +958,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "reports",
     navLabel: "Login Activity Report",
     managerCategories: ["Report Management"],
+    managerPermissions: ["Login Activity"],
   },
   {
     path: "/report-management/trading-history-report",
@@ -861,6 +967,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "reports",
     navLabel: "Trading History Report",
     managerCategories: ["Report Management"],
+    managerPermissions: ["Trading History Report", "History Report"],
   },
   // {
   //   path: "/marketing-management",
@@ -877,6 +984,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "news-management",
     navLabel: "Manage News",
     managerCategories: ["News Management"],
+    managerPermissions: ["News List", "Add News", "Edit News", "Delete News"],
   },
   {
     path: "/promotion-management",
@@ -884,7 +992,8 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     roles: BACKOFFICE_ROLES,
     sidebarSection: "promotion-management",
     navLabel: "Manage Promotion",
-    managerCategories: ["Promotion Management"],
+    managerCategories: ["Promotion Management", "Promotion Mgmt"],
+    managerPermissions: ["Manager Promotion", "Promotion List"],
   },
   {
     path: "/user-2fa",
@@ -893,6 +1002,11 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "settings",
     navLabel: "User 2FA",
     managerCategories: ["Settings", "Setting Management"],
+    managerPermissions: [
+      "User 2FA",
+      "User 2FA List",
+      "Enabled/Disabled User 2FA",
+    ],
   },
   // {
   //   path: "/manager-2fa",
@@ -909,6 +1023,12 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "settings",
     navLabel: "PSP Setting",
     managerCategories: ["Settings", "PSP Setting", "Setting Management"],
+    managerPermissions: [
+      "PSP Setting",
+      "Payment Method List",
+      "Edit Payment Methods",
+      "Delete Payment Methods",
+    ],
   },
   {
     path: "/audit-logs",
@@ -917,6 +1037,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     sidebarSection: "settings",
     navLabel: "Audit Logs",
     managerCategories: ["Settings", "Audit Logs", "Setting Management"],
+    managerPermissions: ["Audit Logs"],
   },
   {
     path: "/currency-management",
@@ -929,6 +1050,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
       "Currency Management",
       "Setting Management",
     ],
+    managerPermissions: ["Currency Management"],
   },
    {
     path: "/default-settings",
@@ -953,6 +1075,13 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
       "Deposit Bank Details",
       "Setting Management",
     ],
+    managerPermissions: [
+      "Deposit Bank Details",
+      "Broker Deposit Account List",
+      "Create Broker Deposit Account",
+      "Edit Broker Deposit Account",
+      "Delete Broker Deposit Account",
+    ],
   },
   {
     path: "/deposit-crypto-details",
@@ -965,13 +1094,21 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
       "Deposit Crypto Details",
       "Setting Management",
     ],
+    managerPermissions: [
+      "Deposit Crypto Details",
+      "Broker Crypto Wallet List",
+      "Create Broker Crypto Wallet",
+      "Edit Broker Crypto Wallet",
+      "Delete Broker Crypto Wallet",
+    ],
   },
-  {
+   {
     path: "/ib-plans",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     navLabel: "Partner Plans",
     managerCategories: ["IB Management"],
+    managerPermissions: ["IB Plan", "Add IB Plan"],
   },
   {
     path: "/user-accounts",
@@ -1012,6 +1149,24 @@ function isManagerCategoryAllowed(
   }
 
   return requiredCategories.some((category) => categories.has(category));
+}
+
+/**
+ * Route-level permission gate: the manager needs AT LEAST ONE of the listed
+ * permission names for the route to be visible/reachable. This is what hides
+ * e.g. "Lead Management" from managers without "Temp Users List".
+ */
+function hasAnyManagerPermission(
+  permissionNames: Set<string>,
+  required?: string[],
+) {
+  if (!required || required.length === 0) {
+    return true;
+  }
+
+  return required.some((name) =>
+    permissionNames.has(normalizeManagerPermissionName(name)),
+  );
 }
 
 function getManagerCategorySet(groupedPermissions?: GroupedPermissions[]) {
@@ -1065,7 +1220,42 @@ function hasAnyReportFeature(permissionNames: Set<string>) {
       "internalTransferReport",
     ) ||
     hasManagerFeature(permissionNames, "reportManagement", "loginActivity") ||
-    hasManagerFeature(permissionNames, "reportManagement", "historyReport")
+    hasManagerFeature(permissionNames, "reportManagement", "historyReport") ||
+    hasManagerFeature(
+      permissionNames,
+      "reportManagement",
+      "tradingHistoryReport",
+    ) ||
+    hasManagerFeature(
+      permissionNames,
+      "reportManagement",
+      "walletHistoryReport",
+    ) ||
+    hasManagerFeature(
+      permissionNames,
+      "reportManagement",
+      "mainWalletHistoryReport",
+    ) ||
+    hasManagerFeature(
+      permissionNames,
+      "reportManagement",
+      "positionReport",
+    ) ||
+    hasManagerFeature(
+      permissionNames,
+      "reportManagement",
+      "ibCommissionWithdrawReport",
+    ) ||
+    hasManagerFeature(
+      permissionNames,
+      "reportManagement",
+      "allTransactionReport",
+    ) ||
+    hasManagerFeature(
+      permissionNames,
+      "reportManagement",
+      "dailySummaryReport",
+    )
   );
 }
 
@@ -1379,6 +1569,13 @@ export function getManagerNavigation(
         return false;
       }
 
+      if (route.managerPermissions?.length) {
+        return hasAnyManagerPermission(
+          permissionNames,
+          route.managerPermissions,
+        );
+      }
+
       if (!isManagerRouteFeatureAllowed(route.path, permissionNames)) {
         return false;
       }
@@ -1388,6 +1585,9 @@ export function getManagerNavigation(
 
     if (section.id === "reports") {
       sectionRoutes = sectionRoutes.filter((route) => {
+        // Routes with explicit permission lists are already fully decided
+        // above; only legacy feature-map routes need this extra check.
+        if (route.managerPermissions?.length) return true;
         const match = reportRouteFeatureMap.find(
           (entry) => entry.path === route.path,
         );
@@ -1513,7 +1713,18 @@ export function isRouteAllowedForRole(
   const permissionNames = getManagerPermissionNameSet(
     options?.managerPermissions,
   );
-  if (!isManagerRouteFeatureAllowed(matchingRoute.path, permissionNames)) {
+  if (matchingRoute.managerPermissions?.length) {
+    if (
+      !hasAnyManagerPermission(
+        permissionNames,
+        matchingRoute.managerPermissions,
+      )
+    ) {
+      return false;
+    }
+  } else if (
+    !isManagerRouteFeatureAllowed(matchingRoute.path, permissionNames)
+  ) {
     return false;
   }
 

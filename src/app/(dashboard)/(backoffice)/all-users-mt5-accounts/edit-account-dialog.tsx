@@ -60,6 +60,21 @@ export function EditAccountDialog({
   const [showPassword, setShowPassword] = useState(false);
   const [showInvestorPassword, setShowInvestorPassword] = useState(false);
 
+  const selectedAccountType = accountTypes.find(
+    (type) => String(type.id) === String(formData.account_type_id),
+  );
+
+  const getGroupNames = (type: AccountTypeItem) => {
+    const names = [
+      type.groups?.live?.mt5_group_name,
+      type.groups?.demo?.mt5_group_name,
+      type.group?.mt5_group_name,
+    ]
+      .map((name) => name?.trim())
+      .filter((name): name is string => Boolean(name));
+    return Array.from(new Set(names));
+  };
+
   useEffect(() => {
     if (!open || !token) return;
 
@@ -132,7 +147,7 @@ export function EditAccountDialog({
     const leverage = Number(formData.leverage);
 
     if (!Number.isFinite(accountTypeId) || accountTypeId <= 0) {
-      toast.error("Please select a valid account type");
+      toast.error("Please select a valid group type");
       return;
     }
 
@@ -214,23 +229,42 @@ export function EditAccountDialog({
 
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
-                <Label htmlFor="account_type_id">Account Type</Label>
+                <Label htmlFor="account_type_id">Group Type</Label>
                 <Select
                   value={formData.account_type_id}
                   onValueChange={(value) => setFormData({ ...formData, account_type_id: value })}
                   disabled={loadingAccountTypes || accountTypes.length === 0}
                 >
                   <SelectTrigger id="account_type_id" className="w-full">
+                    {/* Custom children keep the selected value a clean single
+                        line; the rich multi-line rows stay in the dropdown. */}
                     <SelectValue
-                      placeholder={loadingAccountTypes ? "Loading types..." : "Select account type..."}
-                    />
+                      placeholder={loadingAccountTypes ? "Loading group types..." : "Select group type..."}
+                    >
+                      {selectedAccountType ? (
+                        <span className="block truncate">{selectedAccountType.name}</span>
+                      ) : undefined}
+                    </SelectValue>
                   </SelectTrigger>
-                  <SelectContent>
-                    {accountTypes.map((type) => (
-                      <SelectItem key={type.id} value={String(type.id)}>
-                        {type.name}
-                      </SelectItem>
-                    ))}
+                  <SelectContent className="max-w-[320px]">
+                    {accountTypes.map((type) => {
+                      const groupNames = getGroupNames(type);
+                      return (
+                        <SelectItem key={type.id} value={String(type.id)} className="py-2">
+                          <div className="min-w-0 max-w-[280px]">
+                            <div className="truncate text-sm font-medium">
+                              {type.name}
+                            </div>
+                            {/* <div className="truncate text-xs text-muted-foreground">
+                              Group: {groupNames.length ? groupNames.join(", ") : "-"}
+                            </div> */}
+                            <div className="text-xs text-muted-foreground">
+                              Leverage: {type.maximum_leverage ?? "-"}
+                            </div>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>

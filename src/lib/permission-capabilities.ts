@@ -44,6 +44,10 @@ export const permissionCapabilities = {
     mt5Delete: "deleteMt5Account",
     kycReview: "approveRejectKyc",
     kycUpload: "uploadUserDocuments",
+    tempUsersList: "tempUsersList",
+    addExistingClient: "addExistingClient",
+    resendVerificationMail: "resendVerificationMail",
+    resendMt5DataMail: "resendMt5DataMail",
   },
   ibManagement: {
     manageRequests: "ibRequests",

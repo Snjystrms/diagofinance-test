@@ -30,6 +30,7 @@ import {
   type MT5AccountBalance,
 } from "@/lib/api-trading-ib";
 import { useAuth } from "@/contexts/auth-context";
+import { useModuleCapabilities } from "@/hooks/use-permission-capabilities";
 import { formatApiDateTimeAsIST } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 
@@ -224,6 +225,8 @@ export function AccountDetailsDialog({
   loading = false,
 }: AccountDetailsDialogProps) {
   const { token } = useAuth();
+  const { can: canUserCapability } = useModuleCapabilities("userManagement");
+  const canResendMt5DataMail = canUserCapability("resendMt5DataMail");
   const [liveBalance, setLiveBalance] = useState<number | null>(null);
   const [loadingBalance, setLoadingBalance] = useState(false);
   const [balanceFetchFailed, setBalanceFetchFailed] = useState(false);
@@ -312,7 +315,7 @@ export function AccountDetailsDialog({
               </DialogDescription>
             </div>
 
-            {!loading && account && (
+            {!loading && account && canResendMt5DataMail && (
               <Button
                 type="button"
                 variant="outline"
@@ -381,7 +384,7 @@ export function AccountDetailsDialog({
                 />
                 <DetailItem label="Server" value={account.server} />
                 <DetailItem
-                  label="Account Type"
+                  label="Group Type"
                   value={getAccountTypeName(account)}
                 />
                 <DetailItem

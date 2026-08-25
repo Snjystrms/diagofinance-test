@@ -64,8 +64,8 @@ const extractItems = (data: unknown): IBExistingClient[] => {
 export default function AddExistingClientsPage() {
   const { token } = useAuth();
   const { can } = useModuleCapabilities("userManagement");
-  const canViewList = can("mt5List");
-  const canCreate = can("mt5Add");
+  const canViewList = can("mt5List") || can("addExistingClient");
+  const canCreate = can("addExistingClient");
 
   const [clients, setClients] = useState<IBExistingClient[]>([]);
   const [loading, setLoading] = useState(true);

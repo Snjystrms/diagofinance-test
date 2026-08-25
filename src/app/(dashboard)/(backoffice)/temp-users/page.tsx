@@ -92,7 +92,7 @@ export default function TempUsersPage() {
     canViewList: canViewTempUsers,
     canEdit: canCompleteTempUsers,
   } = useCrudCapabilities("userManagement", {
-    list: "list",
+    list: "tempUsersList",
     add: "add",
     edit: "edit",
     delete: "delete",

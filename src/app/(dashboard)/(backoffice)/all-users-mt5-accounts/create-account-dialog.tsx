@@ -56,6 +56,17 @@ export function CreateAccountDialog({
   const selectedAccountType = accountTypes.find((type) => String(type.id) === String(formData.account_type_id));
   const balanceCurrency = selectedAccountType?.name?.trim().toLowerCase() === "cent" ? "USD" : "USD";
 
+  const getGroupNames = (type: AccountTypeItem) => {
+    const names = [
+      type.groups?.live?.mt5_group_name,
+      type.groups?.demo?.mt5_group_name,
+      type.group?.mt5_group_name,
+    ]
+      .map((name) => name?.trim())
+      .filter((name): name is string => Boolean(name));
+    return Array.from(new Set(names));
+  };
+
   useEffect(() => {
     if (open && token) {
       void loadAccountTypes();
@@ -157,7 +168,7 @@ export function CreateAccountDialog({
     event.preventDefault();
 
     if (!formData.account_type_id || formData.account_type_id === 0) {
-      toast.error("Please select an account type");
+      toast.error("Please select a group type");
       return;
     }
 
@@ -260,7 +271,7 @@ export function CreateAccountDialog({
               />
 
               <div className="space-y-2">
-                <Label>Account Type *</Label>
+                <Label>Group Type *</Label>
                 <Select
                   value={formData.account_type_id ? String(formData.account_type_id) : ""}
                   onValueChange={(value) => {
@@ -272,25 +283,41 @@ export function CreateAccountDialog({
                   disabled={loadingAccountTypes || accountTypes.length === 0}
                 >
                   <SelectTrigger className="w-full">
+                    {/* Custom children keep the selected value a clean single
+                        line; the rich multi-line rows stay in the dropdown. */}
                     <SelectValue
                       placeholder={
                         loadingAccountTypes
-                          ? "Loading account types..."
-                          : "Select account type..."
+                          ? "Loading group types..."
+                          : "Select group type..."
                       }
-                    />
+                    >
+                      {selectedAccountType ? (
+                        <span className="block truncate">
+                          {selectedAccountType.name}
+                        </span>
+                      ) : undefined}
+                    </SelectValue>
                   </SelectTrigger>
-                  <SelectContent>
-                    {accountTypes.map((type) => (
-                      <SelectItem key={type.id} value={String(type.id)}>
-                        <div className="flex flex-col">
-                          <span>{type.name}</span>
-                          <span className="text-xs text-muted-foreground">
-                            Leverage: {type.maximum_leverage}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
+                  <SelectContent className="max-w-[320px]">
+                    {accountTypes.map((type) => {
+                      const groupNames = getGroupNames(type);
+                      return (
+                        <SelectItem key={type.id} value={String(type.id)} className="py-2">
+                          <div className="min-w-0 max-w-[280px]">
+                            <div className="truncate text-sm font-medium">
+                              {type.name}
+                            </div>
+                            {/* <div className="truncate text-xs text-muted-foreground">
+                              Group: {groupNames.length ? groupNames.join(", ") : "-"}
+                            </div> */}
+                            <div className="text-xs text-muted-foreground">
+                              Leverage: {type.maximum_leverage ?? "-"}
+                            </div>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
                 </Select>
               </div>

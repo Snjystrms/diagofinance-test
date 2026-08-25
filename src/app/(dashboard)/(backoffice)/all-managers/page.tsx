@@ -211,6 +211,9 @@ export default function AllManagersPage() {
   });
 
   const groupedPerms = permissionsResult ?? [];
+  const refetchPermissions = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["permissions", token] });
+  }, [queryClient, token]);
   const permIndex = useMemo(() => buildIndex(groupedPerms), [groupedPerms]);
   const allPerms: PermissionLite[] = useMemo(
     () => groupedPerms.flatMap((g) => (g.permissions || []).map((p) => ({ id: p.id, name: p.name }))),
@@ -232,10 +235,10 @@ export default function AllManagersPage() {
         readOnly={props.readOnly}
         allPermissions={allPerms}
         groupedPermissions={groupedPerms}
-        onFetchPermissions={undefined}
+        onFetchPermissions={refetchPermissions}
       />
     ),
-    [allPerms, groupedPerms]
+    [allPerms, groupedPerms, refetchPermissions]
   );
 
   const fetchList = useCallback(() => {
@@ -580,7 +583,7 @@ export default function AllManagersPage() {
             initialData={null}
             allPermissions={allPerms}
             groupedPermissions={groupedPerms}
-            onFetchPermissions={undefined}
+            onFetchPermissions={refetchPermissions}
             onSubmit={(form) => {
               return handleAdd({
                 name: form.name,

@@ -83,6 +83,7 @@ export const PERMISSION_REQUIREMENTS: Record<string, PermissionRequirement[]> = 
   // Admin transaction dialogs — /admin/user-management/crud/users (+ MT5 list)
   "Client Deposit": [{ anyOf: ["User List"], reason: "loads the user search" }],
   "Client Withdraw": [{ anyOf: ["User List"], reason: "loads the user search" }],
+  "Client Withdrawal": [{ anyOf: ["User List"], reason: "loads the user search" }],
   "Internal Transfer": [
     { anyOf: ["User List"], reason: "loads the user search" },
     { anyOf: ["MT5 User List"], reason: "loads the MT5 account dropdown" },
@@ -92,6 +93,10 @@ export const PERMISSION_REQUIREMENTS: Record<string, PermissionRequirement[]> = 
     { anyOf: ["MT5 User List"], reason: "loads the MT5 account dropdown" },
   ],
   "Wallet Withdraw": [
+    { anyOf: ["User List"], reason: "loads the user search" },
+    { anyOf: ["MT5 User List"], reason: "loads the MT5 account dropdown" },
+  ],
+  "Wallet Withdrawal": [
     { anyOf: ["User List"], reason: "loads the user search" },
     { anyOf: ["MT5 User List"], reason: "loads the MT5 account dropdown" },
   ],
