@@ -18,8 +18,10 @@ export const permissionCapabilities = {
   transaction: {
     viewDeposits: "depositList",
     viewWithdrawals: "withdrawalList",
+    viewIbWithdrawals: "ibWithdrawalList",
     approveDeposit: "approveRejectDeposit",
     approveWithdrawal: "approveRejectWithdrawal",
+    approveIbWithdrawal: "approveRejectIbWithdrawal",
   },
   "account-types": {
     list: "accountTypesList",

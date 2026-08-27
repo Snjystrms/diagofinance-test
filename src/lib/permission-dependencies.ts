@@ -48,11 +48,11 @@ const ACCOUNT_TYPES_OR_GROUP = ["Account Types List", "Group List"];
  */
 export const PERMISSION_REQUIREMENTS: Record<string, PermissionRequirement[]> = {
   // Commission Group form — /admin/groups + /admin/ib-plans/list
-  "View / Create Commission Group": [
+  "Add Commission Group": [
     { anyOf: ["Group List"], reason: "loads the Group dropdown" },
     { anyOf: ["IB Plan", "View / Create IB Plan"], reason: "loads the IB Plan dropdown" },
   ],
-  "Edit / Delete Commission Group": [
+  "Edit Commission Group": [
     { anyOf: ["Group List"], reason: "loads the Group dropdown" },
     { anyOf: ["IB Plan", "View / Create IB Plan"], reason: "loads the IB Plan dropdown" },
   ],
@@ -64,7 +64,7 @@ export const PERMISSION_REQUIREMENTS: Record<string, PermissionRequirement[]> = 
     { anyOf: ACCOUNT_TYPES_OR_GROUP, reason: "loads the Account Type / Group dropdown" },
     { anyOf: ["User List"], reason: "loads the user search" },
   ],
-  "Update MT5 Leverage": [
+  "Update MT5 Details": [
     { anyOf: ACCOUNT_TYPES_OR_GROUP, reason: "loads the Account Type / Group dropdown" },
   ],
 

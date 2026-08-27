@@ -29,6 +29,7 @@ import {
   type AccountTypeUpsertBody,
 } from "@/lib/api";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
+import { useModuleCapabilities } from "@/hooks/use-permission-capabilities";
 
 export type AccountTypeCommissionRow = {
   id?: string;
@@ -386,6 +387,12 @@ const useDebouncedValue = <T,>(value: T, delay = 400) => {
 export default function AllAccountsPage() {
   const { token } = useAuth();
   const queryClient = useQueryClient();
+  // Manager/subadmin capabilities: Group List / Add Group / Edit Group /
+  // Delete Group. Admins get everything.
+  const { can: canAccountTypeCapability } = useModuleCapabilities("account-types");
+  const canAdd = canAccountTypeCapability("add");
+  const canEdit = canAccountTypeCapability("edit");
+  const canDelete = canAccountTypeCapability("delete");
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [viewOpen, setViewOpen] = useState(false);
   const [viewItem, setViewItem] = useState<AccountTypeRow | null>(null);
@@ -625,8 +632,13 @@ export default function AllAccountsPage() {
   }, [data]);
 
   const columns = useMemo(
-    () => getColumns({ onToggleStatus: handleToggleStatus, actionLoadingId }),
-    [handleToggleStatus, actionLoadingId]
+    () =>
+      getColumns({
+        onToggleStatus: handleToggleStatus,
+        actionLoadingId,
+        canToggleStatus: canEdit,
+      }),
+    [handleToggleStatus, actionLoadingId, canEdit]
   );
 
   if (isError && data.length === 0) {
@@ -693,10 +705,12 @@ export default function AllAccountsPage() {
                   </DropdownMenuItem> */}
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button onClick={() => setIsCreateDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add New
-              </Button>
+              {canAdd ? (
+                <Button onClick={() => setIsCreateDialogOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add New
+                </Button>
+              ) : null}
               <Button variant="outline" onClick={() => void fetchList()} disabled={loading}>
                 <RefreshCw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
                 Refresh
@@ -763,6 +777,8 @@ export default function AllAccountsPage() {
             description=""
             requiredModule="account-types"
             hideAddButton={true}
+            canEditItem={canEdit}
+            canDeleteItem={canDelete}
             onAdd={async (partial) => {
               const { id: _ignore, ...rest } = partial as Partial<AccountTypeRow>;
               return handleAdd(rest as Omit<AccountTypeRow, "id">);

@@ -13,6 +13,8 @@ const fmtDate = (s?: string) => (s ? formatDateTimeInIST(s) : "-");
 export const getColumns = (opts: {
   onToggleStatus: (id: string) => void;
   actionLoadingId?: string | null;
+  /** Status toggling hits the update API — only enabled with Edit Group permission. */
+  canToggleStatus?: boolean;
 }): ColumnDef<AccountTypeRow>[] => [
   {
     id: "sr_no",
@@ -84,12 +86,22 @@ export const getColumns = (opts: {
     header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
     cell: ({ row }) => (
       <div className="inline-flex items-center gap-2">
-        <Switch
-          checked={row.original.status}
-          onCheckedChange={() => opts.onToggleStatus(row.original.id)}
-          aria-label="Toggle status"
-          disabled={opts.actionLoadingId === row.original.id}
-        />
+        {opts.canToggleStatus === false ? (
+          <span
+            className={`text-xs font-medium ${
+              row.original.status ? "text-emerald-600" : "text-muted-foreground"
+            }`}
+          >
+            {row.original.status ? "Active" : "Inactive"}
+          </span>
+        ) : (
+          <Switch
+            checked={row.original.status}
+            onCheckedChange={() => opts.onToggleStatus(row.original.id)}
+            aria-label="Toggle status"
+            disabled={opts.actionLoadingId === row.original.id}
+          />
+        )}
       </div>
     ),
      enableColumnFilter: false,

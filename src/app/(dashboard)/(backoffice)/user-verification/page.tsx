@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback, type ChangeEvent } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef, type ChangeEvent } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
@@ -553,28 +553,45 @@ export default function UserVerificationPage() {
     [isAdmin, isManager, allowedKycStatusesSet]
   );
 
+  // Guards against firing /kyc/pending?status=0 before the manager's allowed
+  // tabs are known, and against stale responses racing newer ones.
+  const loadSeqRef = useRef(0);
+
   const loadList = useCallback(async () => {
     if (!token) return;
+    // Managers may only call the endpoint for statuses their permissions
+    // allow — otherwise the API 403s and the page shows Access Restricted.
+    if (isManager && !allowedStatusValues.includes(statusFilter)) {
+      setRows([]);
+      setPaginationMeta(null);
+      setLoadError(null);
+      return;
+    }
+    const sequence = ++loadSeqRef.current;
     try {
       setLoading(true);
       setLoadError(null);
       const searchTerm = search && search.length >= 3 ? search : undefined;
       const res = await adminKycApi.listPending(Number(statusFilter), token, searchTerm, page, perPage);
+      if (sequence !== loadSeqRef.current) return;
       const data = res?.data as { items?: ListRow[]; pagination?: { current_page: number; per_page: number; total: number; total_pages: number } } | undefined;
       const items = data?.items ?? [];
       setRows(items);
       setPaginationMeta(data?.pagination ?? null);
     } catch (e: unknown) {
       console.error(e);
+      if (sequence !== loadSeqRef.current) return;
       setLoadError(e);
       toast.error(
         getAdminFriendlyErrorMessage(e, { resource: "KYC submissions", action: "load" })
       );
       setRows([]);
     } finally {
-      setLoading(false);
+      if (sequence === loadSeqRef.current) {
+        setLoading(false);
+      }
     }
-  }, [token, statusFilter, search, page, perPage]);
+  }, [token, statusFilter, search, page, perPage, isManager, allowedStatusValues]);
 
   useEffect(() => {
     loadList();
@@ -802,8 +819,13 @@ export default function UserVerificationPage() {
         header: "Actions",
         enableSorting: false,
         cell: ({ row }) => {
-          const canView = canReview && canViewKycStatus(row.original.kyc_status);
-          if (!canReview) return null;
+          // Anyone who can see a KYC list tab may open the documents in a
+          // read-only dialog; only Approve/Reject KYC holders get review
+          // controls inside it.
+          const canOpenDetail =
+            isAdmin || !isManager || statusFeatureOptions.length > 0;
+          if (!canOpenDetail) return null;
+          const canView = canViewKycStatus(row.original.kyc_status);
           return (
             <Button
               variant="ghost"
@@ -821,7 +843,7 @@ export default function UserVerificationPage() {
         },
       },
     ],
-    [openDetail, canViewKycStatus, canReview]
+    [openDetail, canViewKycStatus, isAdmin, isManager, statusFeatureOptions]
   );
 
   const refreshRowInList = (user_uuid: string, next?: Partial<ListRow>) => {

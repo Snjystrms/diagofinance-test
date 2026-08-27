@@ -96,8 +96,8 @@ export function IbWithdrawalRequestsPageContent() {
     return set;
   }, [withdrawalStatusFeatureOptions]);
 
-  const canTakeWithdrawalAction = can("approveWithdrawal");
-  const canViewWithdrawals = can("viewWithdrawals");
+  const canTakeWithdrawalAction = can("approveIbWithdrawal");
+  const canViewWithdrawals = can("viewIbWithdrawals");
 
   const canViewStatus = useCallback(
     (status: string) => {

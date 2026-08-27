@@ -630,9 +630,8 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     managerPermissions: [
       "MT5 User List",
       "Create MT5 Account",
-      "Update MT5 Leverage",
+      "Update MT5 Details",
       "Delete MT5 account",
-      "Change MT5 Password",
       "Resend MT5 Data Mail",
     ],
   },
@@ -689,6 +688,11 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
       "Approve/Reject Withdrawal",
       "IB Withdrawal List",
       "Approve/Reject IB Withdrawal",
+      "Client Deposit",
+      "Client Withdrawal",
+      "Internal Transfer",
+      "Wallet Deposit",
+      "Wallet Withdrawal",
     ],
   },
   {
@@ -799,8 +803,6 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
       "Commission Group",
       "Add Commission Group",
       "Edit Commission Group",
-      "View / Create Commission Group",
-      "Edit / Delete Commission Group",
     ],
   },
   {

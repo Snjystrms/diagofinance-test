@@ -80,7 +80,18 @@ export function AdminTransactionContent() {
   const ctxToken = authCtx?.token;
   const token = ctxToken || (typeof window !== "undefined" ? localStorage.getItem("auth_token") || "" : "");
   const { isManager, hasFeature } = useManagerPermissions();
-  const canView = !isManager || hasFeature("reportManagement", "allTransactionReport");
+  const canView = !isManager || hasFeature("transaction", "anyTransactionAccess");
+  const canWalletDeposit = !isManager || hasFeature("transaction", "walletDeposit");
+  const canWalletWithdraw = !isManager || hasFeature("transaction", "walletWithdraw");
+  const canInternalTransfer = !isManager || hasFeature("transaction", "internalTransfer");
+  const canClientDeposit = !isManager || hasFeature("transaction", "clientDeposit");
+  const canClientWithdraw = !isManager || hasFeature("transaction", "clientWithdraw");
+  const canCreateTransaction =
+    canWalletDeposit ||
+    canWalletWithdraw ||
+    canInternalTransfer ||
+    canClientDeposit ||
+    canClientWithdraw;
 
   const [rows, setRows] = useState<AdminTransactionItem[]>([]);
   const [stats, setStats] = useState<AdminTransactionStatistics | null>(null);
@@ -425,52 +436,64 @@ export function AdminTransactionContent() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-        <DropdownMenu>
-  <DropdownMenuTrigger asChild>
-    <Button>
-      <Plus className="mr-2 h-4 w-4" />
-      New Transaction
-      <ChevronDown className="ml-2 h-4 w-4" />
-    </Button>
-  </DropdownMenuTrigger>
-  <DropdownMenuContent
-    align="end"
-    className="w-[var(--radix-dropdown-menu-trigger-width)]"
-  >
-    <DropdownMenuItem onClick={() => setDepositDialogOpen(true)}>
-      <ArrowDownToLine className="mr-2 h-4 w-4" />
-      Wallet Deposit
-    </DropdownMenuItem>
-    <DropdownMenuItem onClick={() => setWithdrawalDialogOpen(true)}>
-      <ArrowUpFromLine className="mr-2 h-4 w-4" />
-      Wallet Withdrawal
-    </DropdownMenuItem>
-    <DropdownMenuItem
-      onClick={() => {
-        setTransferDialogOpen(true);
-      }}
-    >
-      <ArrowRightLeft className="mr-2 h-4 w-4" />
-      Internal Transfer
-    </DropdownMenuItem>
-    <DropdownMenuItem
-      onClick={() => {
-        setDirectToMt5DialogOpen(true);
-      }}
-    >
-      <ArrowDownCircle className="mr-2 h-4 w-4" />
-      Client Deposit
-    </DropdownMenuItem>
-    <DropdownMenuItem
-      onClick={() => {
-        setClientWithdrawToMt5DialogOpen(true);
-      }}
-    >
-      <ArrowUpCircle className="mr-2 h-4 w-4" />
-      Client Withdraw
-    </DropdownMenuItem>
-  </DropdownMenuContent>
-</DropdownMenu>
+        {canCreateTransaction && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button>
+                <Plus className="mr-2 h-4 w-4" />
+                New Transaction
+                <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="end"
+              className="w-[var(--radix-dropdown-menu-trigger-width)]"
+            >
+              {canWalletDeposit && (
+                <DropdownMenuItem onClick={() => setDepositDialogOpen(true)}>
+                  <ArrowDownToLine className="mr-2 h-4 w-4" />
+                  Wallet Deposit
+                </DropdownMenuItem>
+              )}
+              {canWalletWithdraw && (
+                <DropdownMenuItem onClick={() => setWithdrawalDialogOpen(true)}>
+                  <ArrowUpFromLine className="mr-2 h-4 w-4" />
+                  Wallet Withdrawal
+                </DropdownMenuItem>
+              )}
+              {canInternalTransfer && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    setTransferDialogOpen(true);
+                  }}
+                >
+                  <ArrowRightLeft className="mr-2 h-4 w-4" />
+                  Internal Transfer
+                </DropdownMenuItem>
+              )}
+              {canClientDeposit && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    setDirectToMt5DialogOpen(true);
+                  }}
+                >
+                  <ArrowDownCircle className="mr-2 h-4 w-4" />
+                  Client Deposit
+                </DropdownMenuItem>
+              )}
+              {canClientWithdraw && (
+                <DropdownMenuItem
+                  onClick={() => {
+                    setClientWithdrawToMt5DialogOpen(true);
+                  }}
+                >
+                  <ArrowUpCircle className="mr-2 h-4 w-4" />
+                  Client Withdraw
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="gap-2">
