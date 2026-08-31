@@ -199,11 +199,11 @@ const normalizeManagerRow = (manager: ManagerItem): TwoFactorRow => ({
 const getPageCopy = (mode: TwoFactorManagementMode) => {
   if (mode === "manager") {
     return {
-      title: "Manager 2FA",
-      description: "Enable or disable Google 2FA for manager accounts.",
-      searchPlaceholder: "Search managers by name, email, or mobile",
-      emptyLabel: "No managers found.",
-      typeLabel: "Manager",
+      title: "Sub-admin 2FA",
+      description: "Enable or disable Google 2FA for sub-admin accounts.",
+      searchPlaceholder: "Search sub-admins by name, email, or mobile",
+      emptyLabel: "No sub-admins found.",
+      typeLabel: "Sub-admin",
     };
   }
 
@@ -323,13 +323,13 @@ export function TwoFactorManagementPageContent({
     !isManager ||
     (mode === "user"
       ? hasFeature("settingsManagement", "user2faList")
-      : hasFeature("settingsManagement", "manager2faList"));
+      : hasFeature("settingsManagement", "subadmin2faList"));
 
   const canToggleExternal2fa =
     !isManager ||
     (mode === "user"
       ? hasFeature("settingsManagement", "enabledDisabledUser2fa")
-      : hasFeature("settingsManagement", "enabledDisabledManager2fa"));
+      : hasFeature("settingsManagement", "enabledDisabledSubadmin2fa"));
 
   const [rows, setRows] = useState<TwoFactorRow[]>([]);
   const [loading, setLoading] = useState(true);

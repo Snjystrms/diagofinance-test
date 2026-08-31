@@ -359,6 +359,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     managerCategories: [
       "Settings",
       "Manager 2fa",
+      "Sub-admin 2FA",
       "Deposit Bank Details",
       "Deposit Crypto Details",
       "Setting Management",
@@ -1010,14 +1011,19 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
       "Enabled/Disabled User 2FA",
     ],
   },
-  // {
-  //   path: "/manager-2fa",
-  //   audience: "backoffice",
-  //   roles: BACKOFFICE_ROLES,
-  //   sidebarSection: "settings",
-  //   navLabel: "Manager 2FA",
-  //   managerCategories: ["Settings", "Manager 2fa", "Setting Management"],
-  // },
+  {
+    path: "/manager-2fa",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "settings",
+    navLabel: "Sub-admin 2FA",
+    managerCategories: ["Settings", "Manager 2fa", "Setting Management"],
+    managerPermissions: [
+      "Sub-admin 2FA",
+      "Subadmin 2FA List",
+      "Enabled/Disabled Subadmin 2FA",
+    ],
+  },
   {
     path: "/psp-setting",
     audience: "backoffice",

@@ -346,6 +346,13 @@
     box-shadow: 0 30px 70px -54px rgba(0, 0, 0, 0.72);
   }
 
+  /* ib-portal-hero: drop the ambient bottom shadow across all themes. */
+  :root .ib-portal-hero,
+  :root[data-theme-id="diagofinance-dark"] .ib-portal-hero,
+  :root[data-theme-id="diagofinance-bright"] .ib-portal-hero {
+    box-shadow: none;
+  }
+
   :root[data-theme-id="diagofinance-dark"] .ib-theme-pill {
     border: 1px solid transparent;
     background:

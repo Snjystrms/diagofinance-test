@@ -139,6 +139,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useClientCustomization } from "@/contexts/client-customization-context";
 import { getDashboardThemeArtwork } from "@/components/theme-customizer";
 import { ThemePill } from "@/components/ui/theme-pill";
+import { PremiumDarkLayers } from "@/components/ui/premium-dark-card";
 
 import { formatCurrency } from "@/lib/formatters";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
@@ -1799,47 +1800,90 @@ export function DashboardPageContent() {
                     {/* Left Side: Header + Key Metrics (75%) */}
                     <div className="xl:col-span-3 space-y-6 flex flex-col">
                       {/* Header Section */}
-                      <div className="ib-portal-hero rounded-[28px] border px-6 py-6 sm:px-7">
-                        {dashboardThemeArtwork && (
-                          <div
-                            className={`dashboard-theme-overlay dashboard-theme-welcome-overlay theme-art-${dashboardThemeArtwork}`}
-                          />
-                        )}
-                        <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                          <div className="space-y-2">
-                            <ThemePill
-                              icon={<Sparkles className="h-3.5 w-3.5" />}
-                              className={`rounded-full text-xs font-semibold uppercase tracking-[0.22em] ${dashboardThemeArtwork ? artworkPillClass : ""}`}
-                            >
-                              Client Portal
-                            </ThemePill>
-                            <div className="space-y-1">
-                              <h1
-                                className={`text-3xl font-semibold tracking-tight sm:text-[2.15rem] ${dashboardThemeArtwork ? artworkForegroundClass : "text-foreground"}`}
+                      {/* Desktop: original with theme images */}
+                      <div className="hidden xl:block">
+                        <div className="ib-portal-hero rounded-[28px] border px-6 py-6 sm:px-7">
+                          {dashboardThemeArtwork && (
+                            <div
+                              className={`dashboard-theme-overlay dashboard-theme-welcome-overlay theme-art-${dashboardThemeArtwork}`}
+                            />
+                          )}
+                          <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                            <div className="space-y-2">
+                              <ThemePill
+                                icon={<Sparkles className="h-3.5 w-3.5" />}
+                                className={`rounded-full text-xs font-semibold uppercase tracking-[0.22em] ${dashboardThemeArtwork ? artworkPillClass : ""}`}
                               >
-                                {(() => {
-                                  const h = new Date().getHours();
-                                  const greeting =
-                                    h < 12
-                                      ? "Good morning"
-                                      : h < 17
-                                        ? "Good afternoon"
-                                        : "Good evening";
-                                  const fullName = utilityFunctions.formatName(
-                                    user?.name,
-                                  );
-                                  const firstName = fullName?.split(" ")[0];
-                                  return firstName
-                                    ? `${greeting}, ${firstName}`
-                                    : greeting;
-                                })()}
-                              </h1>
-                              <p
-                                className={`max-w-3xl text-sm sm:text-base ${dashboardThemeArtwork ? artworkMutedForegroundClass : "text-muted-foreground"}`}
+                                Client Portal
+                              </ThemePill>
+                              <div className="space-y-1">
+                                <h1
+                                  className={`text-3xl font-semibold tracking-tight sm:text-[2.15rem] ${dashboardThemeArtwork ? artworkForegroundClass : "text-foreground"}`}
+                                >
+                                  {(() => {
+                                    const h = new Date().getHours();
+                                    const greeting =
+                                      h < 12
+                                        ? "Good morning"
+                                        : h < 17
+                                          ? "Good afternoon"
+                                          : "Good evening";
+                                    const fullName = utilityFunctions.formatName(
+                                      user?.name,
+                                    );
+                                    const firstName = fullName?.split(" ")[0];
+                                    return firstName
+                                      ? `${greeting}, ${firstName}`
+                                      : greeting;
+                                  })()}
+                                </h1>
+                                <p
+                                  className={`max-w-3xl text-sm sm:text-base ${dashboardThemeArtwork ? artworkMutedForegroundClass : "text-muted-foreground"}`}
+                                >
+                                  Welcome back! Here&apos;s what&apos;s happening
+                                  with your account today.
+                                </p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      {/* Mobile fallback: dark premium — shows when viewport is reduced (below xl, matching grid breakpoint). No box shadow. */}
+                      <div className="block xl:hidden">
+                        <div className="group relative overflow-hidden rounded-[28px] border border-white/5 bg-[#050505] px-6 py-6 sm:px-7">
+                          <PremiumDarkLayers />
+                          <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                            <div className="space-y-2">
+                              <ThemePill
+                                icon={<Sparkles className="h-3.5 w-3.5" />}
+                                className="rounded-full border border-white/10 bg-white/5 text-xs font-semibold uppercase tracking-[0.22em] text-white/80 backdrop-blur-[6px]"
                               >
-                                Welcome back! Here&apos;s what&apos;s happening
-                                with your account today.
-                              </p>
+                                Client Portal
+                              </ThemePill>
+                              <div className="space-y-1">
+                                <h1 className="text-3xl font-bold tracking-[-0.01em] text-white sm:text-[2.15rem]">
+                                  {(() => {
+                                    const h = new Date().getHours();
+                                    const greeting =
+                                      h < 12
+                                        ? "Good morning"
+                                        : h < 17
+                                          ? "Good afternoon"
+                                          : "Good evening";
+                                    const fullName = utilityFunctions.formatName(
+                                      user?.name,
+                                    );
+                                    const firstName = fullName?.split(" ")[0];
+                                    return firstName
+                                      ? `${greeting}, ${firstName}`
+                                      : greeting;
+                                  })()}
+                                </h1>
+                                <p className="max-w-3xl text-sm text-white/45 sm:text-base">
+                                  Welcome back! Here&apos;s what&apos;s happening
+                                  with your account today.
+                                </p>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -1980,121 +2024,136 @@ export function DashboardPageContent() {
                       {/* Top Cards Row - Wallet, IB Wallet, Profile Progress */}
                       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 flex-1">
                         {/* Wallet Balance Card - Enhanced */}
-                        <Card
-                          ref={walletCardRef}
-                          // onClick={() => router.push("/my-wallet/wallet-overview")}
-                          className={`sm:col-span-1 lg:col-span-1 h-full relative overflow-hidden shadow-2xl rounded-3xl hover:shadow-3xl hover:scale-[1.02] transition-all duration-500 group ${usesDashboardThemeArtwork ? "bg-card text-zinc-50 ib-portal-surface ib-portal-surface-primary" : "text-primary-foreground bg-gradient-to-br from-primary via-secondary to-accent border-none"}`}
-                        >
-                          {usesDashboardThemeArtwork ? (
-                            <div
-                              className={`dashboard-theme-overlay dashboard-theme-wallet-overlay theme-art-${effectiveThemeArtwork}`}
-                            />
-                          ) : (
-                            <>
-                              <div className="absolute inset-0 opacity-60">
-                                <div className="absolute -left-20 -top-20 w-60 h-60 bg-primary-foreground/20 rounded-full blur-3xl animate-pulse" />
-                                <div className="absolute right-10 top-10 w-40 h-40 bg-primary-foreground/15 rounded-full blur-3xl" />
-                                <div className="absolute bottom-0 left-1/2 w-48 h-48 bg-accent/20 rounded-full blur-3xl" />
-                              </div>
-                              <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
-                            </>
-                          )}
-                          <CardHeader className="relative z-10 pb-3 px-6 pt-6">
-                            <div className="flex items-center justify-between mb-2">
-                              <ThemePill
-                                icon={<Wallet className="h-3.5 w-3.5" />}
-                                tone={
-                                  usesDashboardThemeArtwork
-                                    ? "subtle"
-                                    : "default"
-                                }
-                                className={`rounded-full text-[11px] font-semibold uppercase tracking-[0.18em] ${usesDashboardThemeArtwork ? artworkPillClass : "text-primary-foreground"}`}
-                              >
-                                Wallet Balance
-                              </ThemePill>
-                              {/* <div
-                            className={`p-1.5 rounded-lg backdrop-blur-sm border ${usesDashboardThemeArtwork ? "bg-muted/70 border-border/100" : "bg-primary-foreground/10 border-primary-foreground/20"}`}
+                        {/* Desktop: original with theme images — primary view; fallback when narrow uses dark premium */}
+                        <div className="hidden xl:block sm:col-span-1 lg:col-span-1">
+                          <Card
+                            ref={walletCardRef}
+                            // onClick={() => router.push("/my-wallet/wallet-overview")}
+                            className={`h-full relative overflow-hidden rounded-[28px] border transition-all duration-500 group ${usesDashboardThemeArtwork ? "bg-card text-zinc-50 ib-portal-surface ib-portal-surface-primary border-border/100" : "border-white/5 bg-[#050505]"}`}
                           >
-                            <Shield
-                              className={`h-4 w-4 ${usesDashboardThemeArtwork ? "text-foreground" : "text-primary-foreground"}`}
-                            />
-                          </div> */}
-                            </div>
-                            <div className="flex items-baseline gap-2 mt-2">
-                              <span
-                                className={`text-2xl font-bold leading-tight ${usesDashboardThemeArtwork ? artworkForegroundClass : "drop-shadow-lg"}`}
-                              >
-                                {formatCurrency(
-                                  dashboardData?.wallet?.balance,
-                                  walletCurrency,
-                                )}
-                              </span>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="relative z-10 pt-4 pb-6 px-6">
-                            <div className="flex items-start justify-between gap-4">
-                              <div className="flex-1 space-y-3">
-                                <div className="space-y-2">
-                                  <h3
-                                    className={`text-lg font-bold ${usesDashboardThemeArtwork ? artworkForegroundClass : "text-primary-foreground"}`}
-                                  >
-                                    Your Main Wallet
-                                  </h3>
-                                  <p
-                                    className={`text-[14px] font-normal leading-[19.5px] tracking-normal font-sans ${usesDashboardThemeArtwork ? artworkMutedForegroundClass : "text-primary-foreground/80"}`}
-                                    style={{
-                                      fontFamily:
-                                        '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
-                                    }}
-                                  >
-                                    Securely manage balances across deposits and
-                                    transfers.
-                                  </p>
-                                </div>
-                                {/* <div
-                              className={`flex items-center gap-2 text-xs px-3 py-1.5 rounded-lg backdrop-blur-sm border ${usesDashboardThemeArtwork ? "text-muted-foreground bg-muted/70 border-border/100" : "text-primary-foreground/90 bg-primary-foreground/10 border-primary-foreground/20"}`}
-                            >
-                              <Sparkles className="h-3.5 w-3.5 animate-pulse" />
-                              <span className="font-medium">
-                                Instant transfers available
-                              </span>
-                            </div> */}
-                                <Link
-                                  href="/funds/internal-transfer"
-                                  className="inline-block mt-2"
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <Button
-                                    variant={
-                                      usesDashboardThemeArtwork
-                                        ? "outline"
-                                        : "ghost"
-                                    }
-                                    size="default"
-                                    className={`h-11 px-6 text-sm font-bold backdrop-blur-sm transition-all duration-300 hover:scale-105 cursor-pointer ${usesDashboardThemeArtwork ? artworkActionClass : "text-primary-foreground hover:text-primary-foreground hover:bg-primary-foreground/20 border border-primary-foreground/30"}`}
-                                  >
-                                    <ArrowLeftRight className="h-4 w-4 mr-2" />
-                                    Transfer Funds
-                                  </Button>
-                                </Link>
-                              </div>
-                              {/* <div className="flex flex-col items-center gap-2 flex-shrink-0">
-                            <div
-                              className={`p-4 rounded-2xl backdrop-blur-md shadow-lg group-hover:scale-110 transition-transform duration-300 ${usesDashboardThemeArtwork ? "border border-border/100 bg-muted/70" : "border-2 border-primary-foreground/30 bg-primary-foreground/10"}`}
-                            >
-                              <Lock
-                                className={`h-8 w-8 ${usesDashboardThemeArtwork ? "text-foreground" : "text-primary-foreground"}`}
+                            {usesDashboardThemeArtwork ? (
+                              <div
+                                className={`dashboard-theme-overlay dashboard-theme-wallet-overlay theme-art-${effectiveThemeArtwork}`}
                               />
-                            </div>
-                            <span
-                              className={`text-[10px] font-semibold uppercase tracking-wider ${usesDashboardThemeArtwork ? "text-muted-foreground" : "text-primary-foreground/90"}`}
-                            >
-                              Protected
-                            </span>
-                          </div> */}
-                            </div>
-                          </CardContent>
-                        </Card>
+                            ) : (
+                              <PremiumDarkLayers />
+                            )}
+                            <CardHeader className="relative z-10 pb-3 px-6 pt-6">
+                              <div className="flex items-center justify-between mb-2">
+                                <ThemePill
+                                  icon={<Wallet className="h-3.5 w-3.5" />}
+                                  tone={
+                                    usesDashboardThemeArtwork
+                                      ? "subtle"
+                                      : "default"
+                                  }
+                                  className={`rounded-full text-[11px] font-semibold uppercase tracking-[0.18em] ${usesDashboardThemeArtwork ? artworkPillClass : "border border-white/10 bg-white/5 text-white/80 backdrop-blur-[6px]"}`}
+                                >
+                                  Wallet Balance
+                                </ThemePill>
+                              </div>
+                              <div className="flex items-baseline gap-2 mt-2">
+                                <span
+                                  className={`text-2xl font-bold leading-tight ${usesDashboardThemeArtwork ? artworkForegroundClass : "text-white drop-shadow-lg"}`}
+                                >
+                                  {formatCurrency(
+                                    dashboardData?.wallet?.balance,
+                                    walletCurrency,
+                                  )}
+                                </span>
+                              </div>
+                            </CardHeader>
+                            <CardContent className="relative z-10 pt-4 pb-6 px-6">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="flex-1 space-y-3">
+                                  <div className="space-y-2">
+                                    <h3
+                                      className={`text-lg font-bold ${usesDashboardThemeArtwork ? artworkForegroundClass : "text-white"}`}
+                                    >
+                                      Your Main Wallet
+                                    </h3>
+                                    <p
+                                      className={`text-[14px] font-normal leading-[19.5px] tracking-normal font-sans ${usesDashboardThemeArtwork ? artworkMutedForegroundClass : "text-white/45"}`}
+                                      style={{
+                                        fontFamily:
+                                          '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+                                      }}
+                                    >
+                                      Securely manage balances across deposits and
+                                      transfers.
+                                    </p>
+                                  </div>
+                                  <Link
+                                    href="/funds/internal-transfer"
+                                    className="inline-block mt-2"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Button
+                                      variant={
+                                        usesDashboardThemeArtwork
+                                          ? "outline"
+                                          : "ghost"
+                                      }
+                                      size="default"
+                                      className={`h-11 px-6 text-sm font-bold backdrop-blur-sm transition-all duration-300 hover:scale-105 cursor-pointer ${usesDashboardThemeArtwork ? artworkActionClass : "border border-white/20 bg-white/5 text-white hover:bg-white/10 hover:text-white"}`}
+                                    >
+                                      <ArrowLeftRight className="h-4 w-4 mr-2" />
+                                      Transfer Funds
+                                    </Button>
+                                  </Link>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                        {/* Mobile fallback: dark premium — shows when viewport is reduced (below xl) — no box shadow */}
+                        <div className="block xl:hidden sm:col-span-1 lg:col-span-1">
+                          <Card className="group relative h-full overflow-hidden rounded-[28px] border border-white/5 bg-[#050505] transition-all duration-300 hover:-translate-y-1">
+                            <PremiumDarkLayers />
+                            <CardContent className="relative z-10 flex h-full flex-col p-7">
+                              <div className="flex items-center justify-between">
+                                <ThemePill
+                                  icon={<Wallet className="h-3.5 w-3.5" />}
+                                  className="rounded-full border border-white/10 bg-white/5 text-[11px] font-semibold uppercase tracking-[0.18em] text-white/80 backdrop-blur-[6px]"
+                                >
+                                  Wallet Balance
+                                </ThemePill>
+                              </div>
+                              <div className="mt-4">
+                                <p className="text-[28px] font-bold tracking-[-0.02em] text-white tabular-nums">
+                                  {formatCurrency(
+                                    dashboardData?.wallet?.balance,
+                                    walletCurrency,
+                                  )}
+                                </p>
+                              </div>
+                              <div className="flex-1" />
+                              <div className="space-y-2">
+                                <h3 className="text-[18px] font-bold tracking-[-0.01em] text-white">
+                                  Your Main Wallet
+                                </h3>
+                                <p className="max-w-[260px] text-sm leading-6 text-white/45">
+                                  Securely manage balances across deposits and
+                                  transfers.
+                                </p>
+                              </div>
+                              <Link
+                                href="/funds/internal-transfer"
+                                className="mt-5 flex items-center justify-between rounded-2xl border border-white/10 px-5 py-2 text-[15px] font-medium text-white/90 backdrop-blur-[6px] transition-all duration-200 hover:border-white/15 hover:bg-white/10"
+                                style={{
+                                  background:
+                                    "linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,70,20,0.12))",
+                                }}
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                Transfer Funds
+                                <span className="inline-flex h-[22px] w-[22px] items-center justify-center">
+                                  <ArrowLeftRight className="h-4 w-4" />
+                                </span>
+                              </Link>
+                            </CardContent>
+                          </Card>
+                        </div>
 
                         {/* Partner Wallet Card - Enhanced */}
                         {hasIbWalletData && ibWalletData && (
@@ -2770,30 +2829,8 @@ export function DashboardPageContent() {
                         );
                       })}
 
-                      <Card className="group relative h-full overflow-hidden rounded-[28px] border border-white/5 shadow-[0_20px_60px_rgba(0,0,0,0.6)] transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
-                        <div
-                          className="pointer-events-none absolute inset-0"
-                          style={{
-                            background:
-                              "radial-gradient(140% 120% at 90% 105%, #ff4a1f 0%, #e8330f 10%, #8a1608 26%, #2b0803 44%, transparent 62%), #050505",
-                          }}
-                        />
-                        <div
-                          className="pointer-events-none absolute inset-0"
-                          style={{
-                            backgroundImage:
-                              "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='1.15' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncA type='linear' slope='1.4' intercept='0'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
-                            backgroundSize: "180px 180px",
-                            mixBlendMode: "screen",
-                            opacity: 0.22,
-                          }}
-                        />
-                        <div
-                          className="pointer-events-none absolute inset-0 rounded-[inherit]"
-                          style={{
-                            boxShadow: "inset 0 1px 0 rgba(255,255,255,0.08)",
-                          }}
-                        />
+                      <Card className="group relative h-full overflow-hidden rounded-[28px] border border-white/5 bg-[#050505] transition-all duration-300 hover:-translate-y-1">
+                        <PremiumDarkLayers />
                         <CardContent className="relative z-10 flex h-full flex-col p-7">
                           <div className="space-y-2">
                             <h3 className="text-[22px] font-bold tracking-[-0.01em] text-white">

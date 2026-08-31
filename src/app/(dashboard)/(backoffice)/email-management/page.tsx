@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useDeferredValue, useMemo } from "react";
+import { useState, useRef, useDeferredValue, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/contexts/auth-context";
 import {
@@ -31,6 +31,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
+import { getErrorParts } from "@/lib/friendly-errors";
 import { formatDateTime } from "@/lib/formatters";
 import toast from "react-hot-toast";
 
@@ -57,6 +58,30 @@ import {
   Eye,
 } from "lucide-react";
 
+function AccessRestrictedCard({
+  title,
+  message,
+}: {
+  title: string;
+  message: string;
+}) {
+  return (
+    <div className="flex items-center justify-center py-16">
+      <Card className="w-full max-w-md border rounded-2xl shadow-sm">
+        <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
+            <ShieldOff className="h-7 w-7 text-destructive" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
+            <p className="text-sm text-muted-foreground">{message}</p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export default function EmailManagementPage() {
   const { token } = useAuth();
   const { isManager, hasFeature } = useManagerPermissions();
@@ -64,6 +89,7 @@ export default function EmailManagementPage() {
 
   const canSendBroadcast =
     !isManager ||
+    hasFeature("emailManagement", "createBroadcastEmail") ||
     hasFeature("emailManagement", "broadcastEmail") ||
     hasFeature("emailManagement", "sendEmail");
 
@@ -76,6 +102,9 @@ export default function EmailManagementPage() {
   const [body, setBody] = useState("");
   const [attachments, setAttachments] = useState<(File | null)[]>([null, null, null]);
   const [visibleSlots, setVisibleSlots] = useState(1);
+
+  // 403 Forbidden state per tab
+  const [forbiddenTabs, setForbiddenTabs] = useState<Partial<Record<"broadcast" | "history" | "exclusions", boolean>>>({});
 
   // manual entry
   const [emailInput, setEmailInput] = useState("");
@@ -117,6 +146,7 @@ export default function EmailManagementPage() {
     },
     enabled: Boolean(token) && activeTab === "history",
     staleTime: 30 * 1000,
+    retry: false,
   });
 
   // Fetch all users only when user has typed at least 3 characters
@@ -124,15 +154,15 @@ export default function EmailManagementPage() {
     (!isBroadcastAll && userSearch.trim().length >= 3) || 
     (activeTab === "exclusions" && exclusionUserSearch.trim().length >= 3);
 
-  const { data: allUsers = [], isLoading: loadingUsers } = useQuery({
+const { data: allUsers = [], isLoading: loadingUsers, error: usersQueryError } = useQuery({
     queryKey: ["email-mgmt-users", token, userSearch.trim(), exclusionUserSearch.trim()],
     queryFn: async () => {
-      const searchQuery = activeTab === "exclusions" 
-        ? exclusionUserSearch.trim() 
+      const searchQuery = activeTab === "exclusions"
+        ? exclusionUserSearch.trim()
         : userSearch.trim();
-      const res = await adminUsersApi.list({ 
-        token: token!, 
-        page: 1, 
+      const res = await adminUsersApi.list({
+        token: token!,
+        page: 1,
         limit: 50,
         search: searchQuery
       });
@@ -148,6 +178,7 @@ export default function EmailManagementPage() {
       (!isManager || canSearchClientEmails) &&
       shouldFetchUsers,
     staleTime: 2 * 60 * 1000,
+    retry: false,
   });
 
   const filteredUsers = useMemo(() => {
@@ -165,6 +196,7 @@ export default function EmailManagementPage() {
     },
     enabled: Boolean(token),
     staleTime: 60 * 1000,
+    retry: false,
   });
 
   const exclusions = useMemo(
@@ -192,6 +224,52 @@ export default function EmailManagementPage() {
   const invalidateExclusions = () =>
     queryClient.invalidateQueries({ queryKey: ["email-exclusions", token] });
 
+  // Surface 403 (forbidden) responses from the queries as access-restricted UI.
+  useEffect(() => {
+    if (!historyQuery.error) return;
+    const parts = getErrorParts(historyQuery.error);
+    if (parts.status === 403) {
+      setForbiddenTabs((prev) => ({ ...prev, history: true }));
+      toast.error(
+        getAdminFriendlyErrorMessage(historyQuery.error, {
+          resource: "broadcast history",
+          action: "load",
+          forbiddenMessage: "You do not have permission to view broadcast history.",
+        })
+      );
+    }
+  }, [historyQuery.error]);
+
+  useEffect(() => {
+    if (!exclusionsQuery.error) return;
+    const parts = getErrorParts(exclusionsQuery.error);
+    if (parts.status === 403) {
+      setForbiddenTabs((prev) => ({ ...prev, exclusions: true }));
+      toast.error(
+        getAdminFriendlyErrorMessage(exclusionsQuery.error, {
+          resource: "email exclusions",
+          action: "load",
+          forbiddenMessage: "You do not have permission to view the email exclusion list.",
+        })
+      );
+    }
+  }, [exclusionsQuery.error]);
+
+  useEffect(() => {
+    if (!usersQueryError) return;
+    const parts = getErrorParts(usersQueryError);
+    if (parts.status === 403) {
+      setForbiddenTabs((prev) => ({ ...prev, [activeTab]: true }));
+      toast.error(
+        getAdminFriendlyErrorMessage(usersQueryError, {
+          resource: "client list",
+          action: "load",
+          forbiddenMessage: "You do not have permission to search clients.",
+        })
+      );
+    }
+  }, [usersQueryError, activeTab]);
+
   const addExclusionMutation = useMutation({
     mutationFn: (email: string) => adminEmailExclusionsApi.add(email, token!),
     onSuccess: (res) => {
@@ -200,13 +278,19 @@ export default function EmailManagementPage() {
       setExclusionUserSearch("");
       void invalidateExclusions();
     },
-    onError: (err) =>
+    onError: (err) => {
+      const parts = getErrorParts(err);
+      if (parts.status === 403) {
+        setForbiddenTabs((prev) => ({ ...prev, exclusions: true }));
+      }
       toast.error(
         getAdminFriendlyErrorMessage(err, {
           resource: "email exclusion",
           action: "add",
+          forbiddenMessage: "You do not have permission to add emails to the exclusion list.",
         })
-      ),
+      );
+    },
   });
 
   const removeExclusionMutation = useMutation({
@@ -216,13 +300,19 @@ export default function EmailManagementPage() {
       setDeleteTarget(null);
       void invalidateExclusions();
     },
-    onError: (err) =>
+    onError: (err) => {
+      const parts = getErrorParts(err);
+      if (parts.status === 403) {
+        setForbiddenTabs((prev) => ({ ...prev, exclusions: true }));
+      }
       toast.error(
         getAdminFriendlyErrorMessage(err, {
           resource: "email exclusion",
           action: "remove",
+          forbiddenMessage: "You do not have permission to remove emails from the exclusion list.",
         })
-      ),
+      );
+    },
   });
 
   const handleAddExclusion = () => {
@@ -356,8 +446,16 @@ export default function EmailManagementPage() {
       toast.success(responseData.message || `Chunk 1 sent. ${campaignData.remaining} emails remaining.`);
     } catch (error) {
       console.error("Campaign creation error:", error);
+      const parts = getErrorParts(error);
+      if (parts.status === 403) {
+        setForbiddenTabs((prev) => ({ ...prev, broadcast: true }));
+      }
       toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "broadcast campaign", action: "create" })
+        getAdminFriendlyErrorMessage(error, {
+          resource: "broadcast campaign",
+          action: "create",
+          forbiddenMessage: "You do not have permission to send broadcast emails.",
+        })
       );
     } finally {
       setLoading(false);
@@ -405,8 +503,16 @@ export default function EmailManagementPage() {
         );
       }
     } catch (error) {
+      const parts = getErrorParts(error);
+      if (parts.status === 403) {
+        setForbiddenTabs((prev) => ({ ...prev, broadcast: true }));
+      }
       toast.error(
-        getAdminFriendlyErrorMessage(error, { resource: "broadcast chunk", action: "send" })
+        getAdminFriendlyErrorMessage(error, {
+          resource: "broadcast chunk",
+          action: "send",
+          forbiddenMessage: "You do not have permission to continue sending this broadcast.",
+        })
       );
     } finally {
       setSendingChunk(false);
@@ -492,6 +598,12 @@ export default function EmailManagementPage() {
 </TabsList>
 
         <TabsContent value="broadcast" className="m-0">
+          {forbiddenTabs.broadcast || !canSendBroadcast ? (
+            <AccessRestrictedCard
+              title="Access restricted"
+              message="You do not have permission to send broadcast emails. Contact an administrator if you believe this is a mistake."
+            />
+          ) : (
           <div className="grid gap-6 lg:grid-cols-3">
         {/* ── Compose form ── */}
         <div className="lg:col-span-2 space-y-5">
@@ -856,10 +968,18 @@ export default function EmailManagementPage() {
           </Card>
         </div>
           </div>
+          )}
         </TabsContent>
 
         {/* ── History tab ── */}
         <TabsContent value="history" className="m-0">
+          {forbiddenTabs.history ? (
+            <AccessRestrictedCard
+              title="Access restricted"
+              message="You do not have permission to view broadcast history. Contact an administrator if you believe this is a mistake."
+            />
+          ) : (
+          <>
           <Card className="border rounded-2xl shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -973,9 +1093,17 @@ export default function EmailManagementPage() {
               </div>
             </div>
           )}
+          </>
+          )}
         </TabsContent>
 
         <TabsContent value="exclusions" className="m-0">
+          {forbiddenTabs.exclusions ? (
+            <AccessRestrictedCard
+              title="Access restricted"
+              message="You do not have permission to manage the email exclusion list. Contact an administrator if you believe this is a mistake."
+            />
+          ) : (
           <div className="grid gap-6 lg:grid-cols-3">
             {/* ── Add + list (main) ── */}
             <div className="lg:col-span-2 space-y-5">
@@ -1203,6 +1331,7 @@ export default function EmailManagementPage() {
               </Card>
             </div>
           </div>
+          )}
         </TabsContent>
       </Tabs>
 

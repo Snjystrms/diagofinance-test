@@ -2917,7 +2917,7 @@ export const manager2FAApi = {
     }),
 
   disableTwoFactor: (managerId: string | number, token: string) =>
-    apiCall<TwoFactorDisableResponse>(`/manager/2fa/disable/${managerId}`, {
+    apiCall<TwoFactorDisableResponse>(`/subadmin/2fa/disable/${managerId}`, {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     }),
@@ -2937,7 +2937,7 @@ export const adminManagedManager2FAApi = {
   enable: async (managerId: string | number, token: string) => {
     try {
       return await apiCall<AdminManagedTwoFactorSetupResponse>(
-        `/admin/manager/${managerId}/2fa/enable`,
+        `/admin/subadmin/${managerId}/2fa/enable`,
         {
           method: "PATCH",
           headers: {
@@ -2950,7 +2950,7 @@ export const adminManagedManager2FAApi = {
     } catch (err: unknown) {
       if (err instanceof ApiRequestError && err.status === 405) {
         return await apiCall<AdminManagedTwoFactorSetupResponse>(
-          `/admin/manager/${managerId}/2fa/enable`,
+          `/admin/subadmin/${managerId}/2fa/enable`,
           {
             method: "PATCH",
             headers: {
@@ -2968,7 +2968,7 @@ export const adminManagedManager2FAApi = {
   disable: async (managerId: string | number, token: string) => {
     try {
       return await apiCall<TwoFactorDisableResponse>(
-        `/admin/manager/${managerId}/2fa/disable`,
+        `/admin/subadmin/${managerId}/2fa/disable`,
         {
           method: "PATCH",
           headers: {
@@ -2981,7 +2981,7 @@ export const adminManagedManager2FAApi = {
     } catch (err: unknown) {
       if (err instanceof ApiRequestError && err.status === 405) {
         return await apiCall<TwoFactorDisableResponse>(
-          `/admin/manager/${managerId}/2fa/disable`,
+          `/admin/subadmin/${managerId}/2fa/disable`,
           {
             method: "PATCH",
             headers: {

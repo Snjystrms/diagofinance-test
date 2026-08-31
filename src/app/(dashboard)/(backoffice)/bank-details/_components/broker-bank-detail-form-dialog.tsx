@@ -410,10 +410,10 @@ export function BrokerBankDetailFormDialog({
             <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3 md:col-span-2">
               <div className="space-y-1">
                 <div className="text-sm font-medium">
-                  Active for client deposits
+                  Active for users deposits
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  When enabled, clients can use this bank account on the deposit
+                  When enabled, users can use this bank account on the deposit
                   page.
                 </div>
               </div>

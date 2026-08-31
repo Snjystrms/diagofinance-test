@@ -22,6 +22,7 @@ import {
   Landmark,
 } from "lucide-react";
 import type { UserDashboardData } from "@/lib/api";
+import { PremiumDarkLayers } from "@/components/ui/premium-dark-card";
 
 type StepStatus = "completed" | "active" | "pending" | "error";
 
@@ -313,19 +314,31 @@ export function ProfileStepper({
           ))}
         </Stepper>
 
-        {/* Optional Action - MetaTrader Installation */}
-<div className="mt-auto pt-3 border-t border-border/50">
-  <div
-    className="cursor-pointer overflow-hidden rounded-xl border border-border/30 bg-muted/10 transition-all duration-200 hover:border-border/50 hover:shadow-sm"
-    onClick={() => window.open(optionalAction.route, "_blank")}
-  >
-    <img
-      src="/install_mt5.png"
-      alt="Install MetaTrader 5"
-      className="w-full h-auto object-contain max-h-16"
-    />
-  </div>
-</div>
+        {/* Optional Action - MetaTrader Installation — now uses premium dark card */}
+  <div className="mt-auto pt-5">
+           <div
+            className="group relative flex items-center gap-3 cursor-pointer overflow-hidden rounded-2xl border border-white/5 bg-[#050505] px-3.5 py-3 transition-all duration-300 hover:-translate-y-0.5"
+            onClick={() => window.open(optionalAction.route, "_blank")}
+          >
+            <PremiumDarkLayers />
+            <div className="relative z-10 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/25 bg-white/10 text-white backdrop-blur-sm transition-transform duration-200 group-hover:scale-105">
+              {optionalAction.icon}
+            </div>
+            <div className="relative z-10 min-w-0 flex-1">
+              <div className="text-[13px] font-bold leading-snug text-white drop-shadow-sm">
+                {optionalAction.title}
+              </div>
+              <div className="text-[11px] leading-snug text-white/75">
+                {optionalAction.description}
+              </div>
+            </div>
+            <img
+              src="/mt5logo.png"
+              alt="MetaTrader 5"
+              className="relative z-10 h-9 w-auto shrink-0 object-contain drop-shadow-[0_4px_10px_rgba(0,0,0,0.35)]"
+            />
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
