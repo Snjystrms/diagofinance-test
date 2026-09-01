@@ -3359,7 +3359,7 @@ export interface UserWithdrawalReportItem {
   chain_id?: string | null;
 }
 
-export interface UserWithdrawalReportParams extends UserReportCommonParams {}
+export type UserWithdrawalReportParams = UserReportCommonParams;
 
 export interface UserWithdrawalReportPayload extends UserCommonReportPayload {
   data: UserWithdrawalReportItem[];
@@ -3380,7 +3380,7 @@ export interface UserInternalTransferReportItem {
   created_at: string;
 }
 
-export interface UserInternalTransferReportParams extends UserReportCommonParams {}
+export type UserInternalTransferReportParams = UserReportCommonParams;
 
 export interface UserInternalTransferReportPayload extends UserCommonReportPayload {
   data: UserInternalTransferReportItem[];
@@ -3431,9 +3431,9 @@ export interface UserDepositReportExportParams extends UserReportExportBase {
   source?: string;
 }
 
-export interface UserWithdrawalReportExportParams extends UserReportExportBase {}
+export type UserWithdrawalReportExportParams = UserReportExportBase;
 
-export interface UserInternalTransferReportExportParams extends UserReportExportBase {}
+export type UserInternalTransferReportExportParams = UserReportExportBase;
 
 export interface UserDealReportExportParams extends UserReportExportBase {
   login?: string;
