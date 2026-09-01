@@ -1,7 +1,10 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { Sparkles } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemePill } from "@/components/ui/theme-pill";
+import { PremiumDarkLayers } from "@/components/ui/premium-dark-card";
 import { cn } from "@/lib/utils";
 
 interface IbPageShellProps {
@@ -63,30 +66,60 @@ export function IbPageHeader({
   actions,
 }: IbPageHeaderProps) {
   return (
-    <section className="ib-portal-hero rounded-[20px] sm:rounded-[28px] border px-4 py-5 sm:px-7 sm:py-6">
-      <div className="dashboard-theme-overlay dashboard-theme-welcome-overlay theme-art-diagofinance" />
-      <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-2">
-          <ThemePill
-            icon={<Sparkles className="h-3.5 w-3.5" />}
-            className="rounded-full text-xs font-semibold uppercase tracking-[0.22em]"
-          >
-            {eyebrow}
-          </ThemePill>
-          <div className="space-y-1">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2.15rem]">{title}</h1>
-            {description ? (
-              <p className="max-w-3xl text-sm text-muted-foreground sm:text-base">{description}</p>
-            ) : null}
+    <>
+      {/* Desktop: original themed hero — visible from xl upward */}
+      <section className="hidden xl:block ib-portal-hero rounded-[20px] sm:rounded-[28px] border px-4 py-5 sm:px-7 sm:py-6">
+        <div className="dashboard-theme-overlay dashboard-theme-welcome-overlay theme-art-diagofinance" />
+        <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-2">
+            <ThemePill
+              icon={<Sparkles className="h-3.5 w-3.5" />}
+              className="rounded-full text-xs font-semibold uppercase tracking-[0.22em]"
+            >
+              {eyebrow}
+            </ThemePill>
+            <div className="space-y-1">
+              <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2.15rem]">
+                {title}
+              </h1>
+              {description ? (
+                <p className="max-w-3xl text-sm text-muted-foreground sm:text-base">{description}</p>
+              ) : null}
+            </div>
           </div>
+          {actions ? <div className="flex flex-wrap items-center gap-3">{actions}</div> : null}
         </div>
-        {actions ? (
-          <div className="flex flex-wrap items-center gap-3">
-            {actions}
+      </section>
+
+      {/* Mobile / narrow: premium dark backup — visible below xl, no box-shadow */}
+      {/* Mirrors dashboard-page-content.tsx header pattern (line ~1801): hidden xl:block + block xl:hidden */}
+      <section className="block xl:hidden group relative overflow-hidden rounded-[20px] sm:rounded-[28px] border border-white/5 bg-[#050505] px-4 py-5 sm:px-7 sm:py-6">
+        <PremiumDarkLayers />
+        <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="space-y-2">
+            <ThemePill
+              icon={<Sparkles className="h-3.5 w-3.5" />}
+              className="rounded-full border border-white/10 bg-white/5 text-xs font-semibold uppercase tracking-[0.22em] text-white/80 backdrop-blur-[6px]"
+            >
+              {eyebrow}
+            </ThemePill>
+            <div className="space-y-1">
+              <h1 className="text-3xl font-bold tracking-[-0.01em] text-white sm:text-[2.15rem]">
+                {title}
+              </h1>
+              {description ? (
+                <p className="max-w-3xl text-sm text-white/45 sm:text-base">{description}</p>
+              ) : null}
+            </div>
           </div>
-        ) : null}
-      </div>
-    </section>
+          {actions ? (
+            <div className="flex flex-wrap items-center gap-3 [&_button]:!border-white/15 [&_button]:!bg-white/[0.06] [&_button]:!text-white/90 [&_button]:backdrop-blur-[6px]">
+              {actions}
+            </div>
+          ) : null}
+        </div>
+      </section>
+    </>
   );
 }
 

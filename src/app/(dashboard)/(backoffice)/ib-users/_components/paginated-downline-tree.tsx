@@ -24,10 +24,9 @@ import { TeamTreeSkeleton } from '@/components/loading/backoffice-page-skeletons
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Info, Search } from 'lucide-react';
 import { useAuth } from '@/contexts/auth-context';
-import { type AdminIbUser, ApiRequestError } from '@/lib/api';
-import { fetchUsersByLevel, NODE_H, NODE_W, levelColor, levelToDepth, type UserByLevel, type DirectRate } from '@/lib/downline-tree';
+import { ApiRequestError } from '@/lib/api';
+import { fetchUsersByLevel, NODE_H, NODE_W, levelColor, levelToDepth, type UserByLevel } from '@/lib/downline-tree';
 import { paginatedNodeTypes, type PaginatedTeamNodeData } from './paginated-team-node';
-import { IbDirectRatesDialog } from './ib-direct-rates-dialog';
 
 type NodeRecord = {
   sponsorId: string;
@@ -40,7 +39,7 @@ type NodeRecord = {
   isRoot?: boolean;
   userId?: number;
   isIb?: boolean;
-  direct_rates?: DirectRate[];
+  planName?: string;
   currentPage?: number;
   totalPages?: number;
   hasMoreChildren?: boolean;
@@ -82,10 +81,6 @@ export function PaginatedDownlineTree({
   const [userName, setUserName] = useState<string>('');
   const [loadingChildren, setLoadingChildren] = useState<Record<number, boolean>>({});
   const [expandedNodes, setExpandedNodes] = useState<Set<number>>(new Set());
-  
-  // Direct rates dialog state
-  const [directRatesDialogOpen, setDirectRatesDialogOpen] = useState(false);
-  const [selectedDirectRateUser, setSelectedDirectRateUser] = useState<AdminIbUser | null>(null);
 
   const handleBack = useCallback(() => {
     if (onBack) {
@@ -94,11 +89,6 @@ export function PaginatedDownlineTree({
     }
     router.push('/ib-users');
   }, [onBack, router]);
-
-  const handleOpenDirectRates = useCallback((user: AdminIbUser) => {
-    setSelectedDirectRateUser(user);
-    setDirectRatesDialogOpen(true);
-  }, []);
 
   // Load initial user tree
   useEffect(() => {
@@ -148,7 +138,7 @@ export function PaginatedDownlineTree({
           isRoot: true,
           userId: ibUser.id,
           isIb: true,
-          direct_rates: ('direct_rates' in ibUser) ? ibUser.direct_rates : undefined,
+          planName: ('plan_name' in ibUser && ibUser.plan_name) ? ibUser.plan_name : undefined,
           currentPage: pagination?.page || 1,
           totalPages: pagination?.total_pages || 1,
         };
@@ -195,8 +185,8 @@ export function PaginatedDownlineTree({
               depth,
               isRoot: false,
               userId: user.id,
-              isIb: !!user.ib_name,
-              direct_rates: user.direct_rates,
+              isIb: !!user.plan_name,
+              planName: user.plan_name,
               currentPage: 1,
               totalPages: 1,
             };
@@ -235,8 +225,8 @@ export function PaginatedDownlineTree({
                     depth: parentDepth,
                     isRoot: false,
                     userId: parentUser.id,
-                    isIb: !!parentUser.ib_name,
-                    direct_rates: parentUser.direct_rates,
+                    isIb: !!parentUser.plan_name,
+                    planName: parentUser.plan_name,
                     currentPage: 0,
                     totalPages: 0,
                   };
@@ -358,8 +348,8 @@ export function PaginatedDownlineTree({
                 depth,
                 isRoot: false,
                 userId: user.id,
-                isIb: !!user.ib_name,
-                direct_rates: user.direct_rates,
+                isIb: !!user.plan_name,
+                planName: user.plan_name,
                 currentPage: 0,
                 totalPages: 0,
               }
@@ -441,20 +431,12 @@ export function PaginatedDownlineTree({
           highlighted: false,
           userId: n.userId,
           isIb: n.isIb,
-          direct_rates: n.direct_rates,
+          planName: n.planName,
           hasChildren: showButton,
           currentPage: n.currentPage,
           totalPages: n.totalPages,
           isLoadingChildren: n.userId ? (loadingChildren[n.userId] ?? false) : false,
           onLoadMore: handleLoadMoreChildren,
-          onViewRates: () => {
-            if (n.userId) {
-              handleOpenDirectRates({
-                id: n.userId,
-                name: n.username,
-              } as AdminIbUser);
-            }
-          },
         },
         style: { width: NODE_W, height: NODE_H + 40, pointerEvents: 'all' },
         sourcePosition: Position.Bottom,
@@ -691,13 +673,6 @@ export function PaginatedDownlineTree({
           </div>
         </div>
       </div>
-
-      <IbDirectRatesDialog
-        open={directRatesDialogOpen}
-        onOpenChange={setDirectRatesDialogOpen}
-        user={selectedDirectRateUser}
-        token={token ?? ''}
-      />
     </>
   );
 }

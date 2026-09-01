@@ -1,3 +1,3 @@
 export * from "./types";
 export * from "./graph-helpers";
-export { fetchUsersByLevel } from "./api";
+export { fetchUsersByLevel, fetchClientUsersByLevel } from "./api";

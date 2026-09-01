@@ -31,6 +31,7 @@ export function ProtectedRoute({
     if (!isAuthenticated) return false;
     return isRouteAllowedForRole(pathname, userRole, {
       managerPermissions: user?.managerPermissions,
+      isIbUser: user?.is_ib_user,
     });
   }, [
     requireAuth,
@@ -38,6 +39,7 @@ export function ProtectedRoute({
     userRole,
     pathname,
     user?.managerPermissions,
+    user?.is_ib_user,
   ]);
 
   useEffect(() => {

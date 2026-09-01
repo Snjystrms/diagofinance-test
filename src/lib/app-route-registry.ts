@@ -18,7 +18,8 @@ import {
   UserPlus,
   Users,
   Wallet,
-  LayoutDashboard
+  LayoutDashboard,
+  LayoutDashboardIcon
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -47,6 +48,7 @@ type SidebarSectionId =
   | "profile"
   | "become-partner"
   | "help-support"
+  | "user-reports"
   | "user-management"
   | "transaction-management"
   | "bonus-management"
@@ -81,6 +83,11 @@ export interface AppRouteDefinition {
    */
   managerPermissions?: string[];
   activeMatch?: string[];
+  /**
+   * When true, this route is only shown to (and only accessible by) IB users.
+   * Non-IB users won't see it in the sidebar nor be allowed to navigate to it.
+   */
+  isIbUserOnly?: boolean;
 }
 
 export interface AppBreadcrumbItem {
@@ -200,6 +207,14 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     title: "Help & Support",
     url: "/raise-ticket",
     icon: LifeBuoy,
+    audience: "client",
+    roles: CLIENT_ROLES,
+  },
+  {
+    id: "user-reports",
+    title: "My Reports",
+    url: "/user-reports",
+    icon: BarChart3,
     audience: "client",
     roles: CLIENT_ROLES,
   },
@@ -490,6 +505,42 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     navLabel: "Raise Ticket",
   },
   {
+    path: "/user-deposit-report",
+    audience: "client",
+    roles: CLIENT_ROLES,
+    sidebarSection: "user-reports",
+    navLabel: "Deposit Report",
+  },
+  {
+    path: "/user-withdraw-report",
+    audience: "client",
+    roles: CLIENT_ROLES,
+    sidebarSection: "user-reports",
+    navLabel: "Withdraw Report",
+  },
+  {
+    path: "/user-ib-withdraw-report",
+    audience: "client",
+    roles: CLIENT_ROLES,
+    sidebarSection: "user-reports",
+    navLabel: "IB Withdraw Report",
+    isIbUserOnly: true,
+  },
+  {
+    path: "/user-internal-transfer-report",
+    audience: "client",
+    roles: CLIENT_ROLES,
+    sidebarSection: "user-reports",
+    navLabel: "Internal Transfer Report",
+  },
+  {
+    path: "/user-deal-report",
+    audience: "client",
+    roles: CLIENT_ROLES,
+    sidebarSection: "user-reports",
+    navLabel: "Deal Report",
+  },
+  {
     path: "/user-news",
     audience: "client",
     roles: CLIENT_ROLES,
@@ -533,6 +584,12 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     audience: "client",
     roles: CLIENT_ROLES,
     navLabel: "Commissions Table",
+  },
+  {
+    path: "/ib-dashboard/team",
+    audience: "client",
+    roles: CLIENT_ROLES,
+    navLabel: "Team Tree",
   },
   {
     path: "/ticket-history",
@@ -928,14 +985,14 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     managerCategories: ["Report Management"],
     managerPermissions: ["Withdraw Report"],
   },
-  // {
-  //   path: "/report-management/ib-withdrawal-report",
-  //   audience: "backoffice",
-  //   roles: BACKOFFICE_ROLES,
-  //   sidebarSection: "reports",
-  //   navLabel: "Partner Withdrawal Report",
-  //   managerCategories: ["Report Management"],
-  // },
+  {
+    path: "/report-management/ib-withdrawal-report",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "reports",
+    navLabel: "Partner Withdrawal Report",
+    managerCategories: ["Report Management"],
+  },
   {
     path: "/report-management/ib-commission-report",
     audience: "backoffice",
@@ -971,6 +1028,42 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     navLabel: "Trading History Report",
     managerCategories: ["Report Management"],
     managerPermissions: ["Trading History Report", "History Report"],
+  },
+  {
+    path: "/report-management/ib-commission-withdrawal-report",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "reports",
+    navLabel: "IB Commission Withdrawal Report",
+    managerCategories: ["Report Management"],
+    managerPermissions: ["IB Commission Withdraw Report"],
+  },
+  {
+    path: "/report-management/main-wallet-history-report",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "reports",
+    navLabel: "Main Wallet History Report",
+    managerCategories: ["Report Management"],
+    managerPermissions: ["Main Wallet History Report"],
+  },
+  {
+    path: "/report-management/position-report",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "reports",
+    navLabel: "Position Report",
+    managerCategories: ["Report Management"],
+    managerPermissions: ["Position Report"],
+  },
+  {
+    path: "/report-management/history-report",
+    audience: "backoffice",
+    roles: BACKOFFICE_ROLES,
+    sidebarSection: "reports",
+    navLabel: "History Report",
+    managerCategories: ["Report Management"],
+    managerPermissions: ["History Report"],
   },
   // {
   //   path: "/marketing-management",
@@ -1473,16 +1566,32 @@ export function getUserNavigation(isIbUser = false): NavItem[] {
   console.log("[getUserNavigation] isIbUser:", isIbUser);
 
   if (!isIbUser) {
-    return items;
+    // Hide IB-only routes (e.g. IB Withdraw Report) from non-IB users.
+    const ibOnlyPaths = new Set(
+      ROUTE_DEFINITIONS.filter((route) => route.isIbUserOnly).map(
+        (route) => route.path,
+      ),
+    );
+    return items
+      .map((item) => {
+        if (item.items?.length) {
+          return {
+            ...item,
+            items: item.items.filter((child) => !ibOnlyPaths.has(child.url)),
+          };
+        }
+        return item;
+      })
+      .filter((item) => !ibOnlyPaths.has(item.url));
   }
 
   return items.map((item) =>
     item.title === "Request to Become IB"
       ? {
           ...item,
-          title: "Login to Partner Portal",
+          title: "Login to IB Portal",
           url: "/ib-dashboard",
-          icon: BarChart3,
+          icon: LayoutDashboardIcon,
         }
       : item,
   );
@@ -1686,7 +1795,7 @@ export function getRouteDefinitions() {
 export function isRouteAllowedForRole(
   pathname: string,
   role: UserType,
-  options?: Pick<SidebarContext, "managerPermissions">,
+  options?: Pick<SidebarContext, "managerPermissions" | "isIbUser">,
 ) {
   const matchingRoute = ROUTE_DEFINITIONS.find((route) => {
     const prefixes = [route.path, ...(route.activeMatch ?? [])];
@@ -1703,6 +1812,11 @@ export function isRouteAllowedForRole(
     role === "subadmin" ? "manager" : role;
 
   if (!matchingRoute.roles.includes(effectiveRole)) {
+    return false;
+  }
+
+  // IB-only routes require the user to actually be an IB user.
+  if (matchingRoute.isIbUserOnly && !options?.isIbUser) {
     return false;
   }
 

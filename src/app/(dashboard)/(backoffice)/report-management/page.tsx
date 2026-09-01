@@ -13,6 +13,9 @@ import {
   Receipt,
   Users,
   History,
+  Banknote,
+  CandlestickChart,
+  Coins,
 } from "lucide-react";
 
 const reports = [
@@ -75,6 +78,30 @@ const reports = [
     href: "/report-management/all-transaction-report",
     icon: Receipt,
     description: "View all transactions in one place",
+  },
+  {
+    title: "IB Commission Withdrawal Report",
+    href: "/report-management/ib-commission-withdrawal-report",
+    icon: Banknote,
+    description: "View IB commission withdrawals to bank or MT5",
+  },
+  {
+    title: "Main Wallet History Report",
+    href: "/report-management/main-wallet-history-report",
+    icon: Wallet,
+    description: "View main wallet deposit, withdrawal and transfer history",
+  },
+  {
+    title: "Position Report",
+    href: "/report-management/position-report",
+    icon: CandlestickChart,
+    description: "View live open positions for MT5 accounts",
+  },
+  {
+    title: "History Report",
+    href: "/report-management/history-report",
+    icon: Coins,
+    description: "Trading history with deposit, withdrawal, swap and commission summary",
   },
 ];
 

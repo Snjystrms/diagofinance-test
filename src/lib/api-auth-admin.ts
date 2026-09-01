@@ -4423,7 +4423,9 @@ export interface CoinsBuyDepositCreateResponse {
   success: boolean;
   message: string;
   data: {
-    deposit_uuid: string;
+    // backend may return either deposit_id (number) or deposit_uuid (string) – keep both optional for compatibility
+    deposit_id: number | string;
+    deposit_uuid?: string;
     coinsbuy_deposit_id: string;
     tracking_id: string;
     wallet_id: string;
@@ -4431,11 +4433,45 @@ export interface CoinsBuyDepositCreateResponse {
     label: string;
     confirmations_needed: number;
     status: number;
+    payment_url: string;
+    payment_page?: string;
     payment_page_redirect_url: string;
     callback_url: string;
+    created_at?: string;
   };
 }
 
+export interface CoinsBuyDepositStatusResponse {
+  success: boolean;
+  message?: string;
+  data: {
+    // keep legacy deposit_uuid for backwards compat
+    deposit_id: number | string;
+    deposit_uuid?: string;
+    coinsbuy_deposit_id: string;
+    deposit_status: number; // 0 = pending, 1 = credited — trustworthy DB state
+    coinsbuy_status: number;
+    amount: string | number;
+    amount_pending?: string | number;
+    currency?: string;
+    confirmations_needed: number;
+    tracking_id: string;
+    address?: string;
+    payment_page?: string;
+  };
+}
+
+export interface CoinsBuyDepositSuccessResponse {
+  success: boolean;
+  message: string;
+  data: {
+    deposit_id: string | number;
+    tracking_id: string;
+    redirect_url: string;
+  };
+}
+
+// @deprecated — server-to-server only, never call from frontend
 export interface CoinsBuyWebhookRequest {
   data: {
     type: string;
@@ -4448,22 +4484,9 @@ export interface CoinsBuyWebhookResponse {
   message: string;
 }
 
-export interface CoinsBuyDepositStatusResponse {
-  success: boolean;
-  message: string;
-  data: {
-    deposit_uuid: string;
-    coinsbuy_deposit_id: string;
-    deposit_status: number;
-    coinsbuy_status: number;
-    confirmations_needed: number;
-    tracking_id: string;
-  };
-}
-
 export const coinsbuyDepositApi = {
   create: (data: CoinsBuyDepositCreateRequest, token: string) =>
-    apiCall<CoinsBuyDepositCreateResponse>(`/user/deposit/coinsbuy/create`, {
+    apiCall<CoinsBuyDepositCreateResponse["data"]>(`/user/deposit/coinsbuy/create`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -4472,6 +4495,39 @@ export const coinsbuyDepositApi = {
       body: JSON.stringify(data),
     }),
 
+  getStatus: (depositId: string | number, token: string) =>
+    apiCall<CoinsBuyDepositStatusResponse["data"]>(
+      `/user/deposit/coinsbuy/status/${encodeURIComponent(String(depositId))}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      },
+    ),
+
+  getSuccess: (
+    params: { deposit_id: string | number; tracking_id: string },
+    token: string,
+  ) => {
+    const qs = new URLSearchParams({
+      deposit_id: String(params.deposit_id),
+      tracking_id: params.tracking_id,
+    });
+    return apiCall<CoinsBuyDepositSuccessResponse["data"]>(
+      `/user/deposit/coinsbuy/success?${qs.toString()}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          Accept: "application/json",
+        },
+      },
+    );
+  },
+
+  /** @deprecated server-to-server webhook — do not use from frontend */
   triggerWebhook: (data: CoinsBuyWebhookRequest, token: string) =>
     apiCall<CoinsBuyWebhookResponse>(`/webhook/coinsbuy`, {
       method: "POST",

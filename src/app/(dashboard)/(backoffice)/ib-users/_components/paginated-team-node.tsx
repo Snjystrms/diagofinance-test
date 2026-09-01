@@ -6,9 +6,8 @@ import Link from "next/link";
 import clsx from "clsx";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, ChevronDown, Landmark, Loader2, User as UserIcon, XCircle } from "lucide-react";
+import { CheckCircle2, ChevronDown, Gem, Loader2, User as UserIcon, XCircle } from "lucide-react";
 import { levelColor, levelToDepth } from "@/lib/downline-tree/graph-helpers";
-import type { DirectRate } from "@/lib/downline-tree/types";
 
 export interface PaginatedTeamNodeData extends Record<string, unknown> {
   sponsorId: string;
@@ -22,13 +21,12 @@ export interface PaginatedTeamNodeData extends Record<string, unknown> {
   highlighted?: boolean;
   userId?: number;
   isIb?: boolean;
-  direct_rates?: DirectRate[];
+  planName?: string;
   hasChildren?: boolean;
   isLoadingChildren?: boolean;
   currentPage?: number;
   totalPages?: number;
   onLoadMore?: (userId: number) => void;
-  onViewRates?: () => void;
 }
 
 const formatLevelLabel = (level: string) => {
@@ -58,10 +56,6 @@ const PaginatedTeamNode = ({ data }: NodeProps<Node<PaginatedTeamNodeData>>) => 
     return "text-foreground";
   };
 
-  const directRates = data.direct_rates ?? [];
-  const configuredRates = directRates.filter((r: DirectRate) => r.direct_rate > 0).length;
-  const totalRates = directRates.length;
-
   const showLoadMoreButton = data.hasChildren && data.currentPage && data.totalPages && data.currentPage < data.totalPages;
 
   // Show button for IB users that have children or might have children
@@ -71,13 +65,6 @@ const PaginatedTeamNode = ({ data }: NodeProps<Node<PaginatedTeamNodeData>>) => 
     e.stopPropagation();
     if (data.onLoadMore && data.userId) {
       data.onLoadMore(Number(data.userId));
-    }
-  };
-
-  const handleViewRates = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (data.onViewRates) {
-      data.onViewRates();
     }
   };
 
@@ -187,17 +174,16 @@ const PaginatedTeamNode = ({ data }: NodeProps<Node<PaginatedTeamNodeData>>) => 
             </div>
           )}
 
-          {/* View Rates Link */}
-          {totalRates > 0 && (
-            <button
-              onClick={handleViewRates}
-              className="mt-0.5 flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 hover:underline cursor-pointer"
-              style={{ pointerEvents: 'auto' }}
+          {/* IB Plan Label */}
+          {data.planName ? (
+            <div
+              className="mt-1 inline-flex w-fit max-w-full items-center gap-1.5 rounded-md bg-primary/10 px-1.5 py-0.5 text-[9.5px] font-semibold tracking-wide text-primary ring-1 ring-inset ring-primary/25"
+              title={data.planName}
             >
-              <Landmark className="h-2.5 w-2.5" />
-              <span>View Rates ({configuredRates}/{totalRates})</span>
-            </button>
-          )}
+              <Gem className="h-2.5 w-2.5 shrink-0 opacity-80" />
+              <span className="truncate">{data.planName}</span>
+            </div>
+          ) : null}
         </div>
       </div>
 

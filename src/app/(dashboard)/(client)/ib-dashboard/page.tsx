@@ -616,6 +616,9 @@ export default function IbDashboardPage() {
                 <Button asChild className="w-full sm:w-auto">
                   <Link href="/ib-dashboard/clients">Client summary</Link>
                 </Button>
+                <Button asChild variant="outline" className="w-full sm:w-auto">
+                  <Link href="/ib-dashboard/team">Team tree</Link>
+                </Button>
               </div>
             </div>
           </div>

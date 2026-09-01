@@ -11,7 +11,7 @@ export type IbUser = {
   name: string;
   email: string;
   sponsor_id?: string;
-  direct_rates?: DirectRate[];
+  plan_name?: string;
 };
 
 export type UserByLevel = {
@@ -24,7 +24,10 @@ export type UserByLevel = {
   sponsor_id?: string | null;
   sponsor_by?: string | null;
   ib_name?: string;
+  /** Present for IB users (the IB plan they are on). Presence marks a node as IB. */
+  plan_name?: string;
   level: string;
+  /** Deprecated with the new API: direct rates are no longer returned. */
   direct_rates?: DirectRate[];
   created_at: string;
 };
@@ -78,8 +81,8 @@ export interface TeamNodeData extends Record<string, unknown> {
   highlighted?: boolean;
   userId?: string | number;
   isIb?: boolean;
-  direct_rates?: DirectRate[];
-}
+  planName?: string;
+} 
 
 export type GraphNode = Node<TeamNodeData, "teamNode">;
 export type GraphEdge = Edge;
@@ -94,5 +97,5 @@ export type NodeRecord = {
   isRoot?: boolean;
   userId?: number;
   isIb?: boolean;
-  direct_rates?: DirectRate[];
+  planName?: string;
 };

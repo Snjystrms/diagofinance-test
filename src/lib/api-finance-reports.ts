@@ -2840,3 +2840,806 @@ export const adminAuditLogsApi = {
   },
 };
 
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  IB Commission Withdrawal Report — /admin/reports/ib-commission-withdrawal-report */
+/* ────────────────────────────────────────────────────────────────────────── */
+export interface IbCommissionWithdrawalReportItem {
+  id: number | string;
+  name_email: string;
+  name?: string;
+  email?: string;
+  destination: string;
+  withdraw_to: string;
+  amount: number | string;
+  note?: string | null;
+  comment?: string | null;
+  status: string;
+  created_at: string;
+  approved_by?: string | null;
+  approved_rejected_by?: string | null;
+}
+
+export interface IbCommissionWithdrawalReportListParams {
+  token: string;
+  page?: number;
+  per_page?: number;
+  from_date?: string;
+  to_date?: string;
+  status?: string;
+  destination?: string;
+  search?: string;
+  sort_column?: string;
+  sort_order?: "ASC" | "DESC";
+}
+
+export interface IbCommissionWithdrawalReportListPayload {
+  success: boolean;
+  message: string;
+  data: IbCommissionWithdrawalReportItem[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+    from: number;
+    to: number;
+  };
+  filters?: Record<string, string | null | undefined>;
+}
+
+export interface IbCommissionWithdrawalReportExportParams {
+  token: string;
+  format?: "xlsx" | "csv";
+  from_date?: string;
+  to_date?: string;
+  status?: string;
+  destination?: string;
+  search?: string;
+}
+
+export const adminIbCommissionWithdrawalReportApi = {
+  list: (params: IbCommissionWithdrawalReportListParams) => {
+    const { token, ...queryParams } = params;
+    if (!token) throw new Error("Token is required to fetch IB commission withdrawal report");
+    const qs = new URLSearchParams();
+    if (queryParams.page) qs.set("page", String(queryParams.page));
+    if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
+    if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
+    if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
+    if (queryParams.status && queryParams.status !== "all") qs.set("status", queryParams.status);
+    if (queryParams.destination && queryParams.destination !== "all") qs.set("destination", queryParams.destination);
+    if (queryParams.search && queryParams.search.trim()) qs.set("search", queryParams.search.trim());
+    if (queryParams.sort_column) qs.set("sort_column", queryParams.sort_column);
+    if (queryParams.sort_order) qs.set("sort_order", queryParams.sort_order);
+    const endpoint = `/admin/reports/ib-commission-withdrawal-report${qs.toString() ? `?${qs.toString()}` : ""}`;
+    return apiCall<IbCommissionWithdrawalReportListPayload>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+  export: async (params: IbCommissionWithdrawalReportExportParams) => {
+    const { token, format = "xlsx", ...queryParams } = params;
+    if (!token) throw new Error("Token is required to export IB commission withdrawal report");
+    if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    const qs = new URLSearchParams();
+    qs.set("format", format);
+    if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
+    if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
+    if (queryParams.status && queryParams.status !== "all") qs.set("status", queryParams.status);
+    if (queryParams.destination && queryParams.destination !== "all") qs.set("destination", queryParams.destination);
+    if (queryParams.search && queryParams.search.trim()) qs.set("search", queryParams.search.trim());
+    const endpoint = `/admin/reports/ib-commission-withdrawal-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (handle401Redirect(response, !!token)) return { blob: new Blob(), filename: "" };
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message: (payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string" ? payload.message : null) || `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+    const blob = await response.blob();
+    return { blob, filename: parseContentDispositionFilename(response.headers.get("content-disposition"), `ib-commission-withdrawal-report.${format === "csv" ? "csv" : "xlsx"}`) };
+  },
+};
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  Main Wallet History Report — /admin/reports/main-wallet-history-report  */
+/* ────────────────────────────────────────────────────────────────────────── */
+export interface MainWalletHistoryReportItem {
+  id: number | string;
+  name: string;
+  email: string;
+  name_email: string;
+  method: string;
+  amount: number | string;
+  note?: string | null;
+  comment?: string | null;
+  approved_by?: string | null;
+  date: string;
+  created_at: string;
+  marketing_name?: string | null;
+}
+
+export interface MainWalletHistoryReportListParams {
+  token: string;
+  page?: number;
+  per_page?: number;
+  method?: string;
+  from_date?: string;
+  to_date?: string;
+  search?: string;
+  sort_column?: string;
+  sort_order?: "ASC" | "DESC";
+}
+
+export interface MainWalletHistoryReportListPayload {
+  success: boolean;
+  message: string;
+  data: MainWalletHistoryReportItem[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+    from: number;
+    to: number;
+  };
+  filters?: Record<string, string | null | undefined>;
+}
+
+export interface MainWalletHistoryReportExportParams {
+  token: string;
+  format?: "xlsx" | "csv";
+  method?: string;
+  from_date?: string;
+  to_date?: string;
+  search?: string;
+}
+
+export const adminMainWalletHistoryReportApi = {
+  list: (params: MainWalletHistoryReportListParams) => {
+    const { token, ...queryParams } = params;
+    if (!token) throw new Error("Token is required to fetch main wallet history report");
+    const qs = new URLSearchParams();
+    if (queryParams.page) qs.set("page", String(queryParams.page));
+    if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
+    if (queryParams.method && queryParams.method !== "all") qs.set("method", queryParams.method);
+    if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
+    if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
+    if (queryParams.search && queryParams.search.trim()) qs.set("search", queryParams.search.trim());
+    if (queryParams.sort_column) qs.set("sort_column", queryParams.sort_column);
+    if (queryParams.sort_order) qs.set("sort_order", queryParams.sort_order);
+    const endpoint = `/admin/reports/main-wallet-history-report${qs.toString() ? `?${qs.toString()}` : ""}`;
+    return apiCall<MainWalletHistoryReportListPayload>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+  export: async (params: MainWalletHistoryReportExportParams) => {
+    const { token, format = "xlsx", ...queryParams } = params;
+    if (!token) throw new Error("Token is required to export main wallet history report");
+    if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    const qs = new URLSearchParams();
+    qs.set("format", format);
+    if (queryParams.method && queryParams.method !== "all") qs.set("method", queryParams.method);
+    if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
+    if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
+    if (queryParams.search && queryParams.search.trim()) qs.set("search", queryParams.search.trim());
+    const endpoint = `/admin/reports/main-wallet-history-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (handle401Redirect(response, !!token)) return { blob: new Blob(), filename: "" };
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message: (payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string" ? payload.message : null) || `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+    const blob = await response.blob();
+    return { blob, filename: parseContentDispositionFilename(response.headers.get("content-disposition"), `main-wallet-history-report.${format === "csv" ? "csv" : "xlsx"}`) };
+  },
+};
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  Position Report — /admin/reports/position-report                         */
+/* ────────────────────────────────────────────────────────────────────────── */
+export interface PositionReportItem {
+  login: number | string;
+  symbol: string;
+  ticket: number | string;
+  date: string;
+  type: string;
+  volume: number | string;
+  open_price: number | string;
+  sl?: number | string | null;
+  tp?: number | string | null;
+  current_price: number | string;
+  profit: number | string;
+}
+
+export interface PositionReportSummary {
+  balance: number;
+  equity: number;
+  profit: number;
+  free_margin: number;
+}
+
+export interface PositionReportListParams {
+  token: string;
+  mt5_id: string;
+  page?: number;
+  per_page?: number;
+  search?: string;
+  sort_column?: string;
+  sort_order?: "ASC" | "DESC";
+}
+
+export interface PositionReportListPayload {
+  success: boolean;
+  message: string;
+  summary: PositionReportSummary;
+  data: PositionReportItem[];
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+    from: number;
+    to: number;
+  };
+  filters?: Record<string, string | null | undefined>;
+}
+
+export interface PositionReportExportParams {
+  token: string;
+  format?: "xlsx" | "csv";
+  mt5_id: string;
+  search?: string;
+}
+
+export const adminPositionReportApi = {
+  list: (params: PositionReportListParams) => {
+    const { token, mt5_id, ...queryParams } = params;
+    if (!token) throw new Error("Token is required to fetch position report");
+    if (!mt5_id || !String(mt5_id).trim()) throw new Error("mt5_id is required to fetch position report");
+    const qs = new URLSearchParams();
+    qs.set("mt5_id", String(mt5_id).trim());
+    if (queryParams.page) qs.set("page", String(queryParams.page));
+    if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
+    if (queryParams.search && queryParams.search.trim()) qs.set("search", queryParams.search.trim());
+    if (queryParams.sort_column) qs.set("sort_column", queryParams.sort_column);
+    if (queryParams.sort_order) qs.set("sort_order", queryParams.sort_order);
+    const endpoint = `/admin/reports/position-report${qs.toString() ? `?${qs.toString()}` : ""}`;
+    return apiCall<PositionReportListPayload>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+  export: async (params: PositionReportExportParams) => {
+    const { token, format = "xlsx", mt5_id, search } = params;
+    if (!token) throw new Error("Token is required to export position report");
+    if (!mt5_id || !String(mt5_id).trim()) throw new Error("mt5_id is required to export position report");
+    if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    const qs = new URLSearchParams();
+    qs.set("format", format);
+    qs.set("mt5_id", String(mt5_id).trim());
+    if (search && search.trim()) qs.set("search", search.trim());
+    const endpoint = `/admin/reports/position-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (handle401Redirect(response, !!token)) return { blob: new Blob(), filename: "" };
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message: (payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string" ? payload.message : null) || `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+    const blob = await response.blob();
+    return { blob, filename: parseContentDispositionFilename(response.headers.get("content-disposition"), `position-report.${format === "csv" ? "csv" : "xlsx"}`) };
+  },
+};
+
+/* ────────────────────────────────────────────────────────────────────────── */
+/*  History Report — /admin/reports/history-report                             */
+/* ────────────────────────────────────────────────────────────────────────── */
+export interface HistoryReportSummary {
+  deposit: number;
+  withdrawal: number;
+  swap: number;
+  commission: number;
+}
+
+export interface HistoryReportListParams {
+  token: string;
+  page?: number;
+  per_page?: number;
+  search?: string;
+  from_date?: string;
+  to_date?: string;
+  sort_column?: string;
+  sort_order?: "ASC" | "DESC";
+}
+
+export interface HistoryReportListPayload {
+  success: boolean;
+  message: string;
+  data: unknown[];
+  summary: HistoryReportSummary;
+  pagination: {
+    current_page: number;
+    per_page: number;
+    total: number;
+    last_page: number;
+    from: number;
+    to: number;
+  };
+  note?: string;
+  filters?: Record<string, string | null | undefined>;
+}
+
+export interface HistoryReportExportParams {
+  token: string;
+  format?: "xlsx" | "csv";
+  search?: string;
+  from_date?: string;
+  to_date?: string;
+}
+
+export const adminHistoryReportApi = {
+  list: (params: HistoryReportListParams) => {
+    const { token, ...queryParams } = params;
+    if (!token) throw new Error("Token is required to fetch history report");
+    const qs = new URLSearchParams();
+    if (queryParams.page) qs.set("page", String(queryParams.page));
+    if (queryParams.per_page) qs.set("per_page", String(queryParams.per_page));
+    if (queryParams.search && queryParams.search.trim()) qs.set("search", queryParams.search.trim());
+    if (queryParams.from_date) qs.set("from_date", queryParams.from_date);
+    if (queryParams.to_date) qs.set("to_date", queryParams.to_date);
+    if (queryParams.sort_column) qs.set("sort_column", queryParams.sort_column);
+    if (queryParams.sort_order) qs.set("sort_order", queryParams.sort_order);
+    const endpoint = `/admin/reports/history-report${qs.toString() ? `?${qs.toString()}` : ""}`;
+    return apiCall<HistoryReportListPayload>(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+  },
+  export: async (params: HistoryReportExportParams) => {
+    const { token, format = "xlsx", search, from_date, to_date } = params;
+    if (!token) throw new Error("Token is required to export history report");
+    if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    const qs = new URLSearchParams();
+    qs.set("format", format);
+    if (search && search.trim()) qs.set("search", search.trim());
+    if (from_date) qs.set("from_date", from_date);
+    if (to_date) qs.set("to_date", to_date);
+    const endpoint = `/admin/reports/history-report/export${qs.toString() ? `?${qs.toString()}` : ""}`;
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (handle401Redirect(response, !!token)) return { blob: new Blob(), filename: "" };
+    if (!response.ok) {
+      const payload = await response.json().catch(() => null);
+      throw new ApiRequestError({
+        message: (payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string" ? payload.message : null) || `HTTP ${response.status}`,
+        status: response.status,
+        statusText: response.statusText,
+        endpoint,
+        payload,
+      });
+    }
+    const blob = await response.blob();
+    return { blob, filename: parseContentDispositionFilename(response.headers.get("content-disposition"), `history-report.${format === "csv" ? "csv" : "xlsx"}`) };
+  },
+};
+
+
+
+/* -------------------------------------------------------------------------- */
+/*  User Portal Reports � /user/reports/*  (logged-in user only)             */
+/* -------------------------------------------------------------------------- */
+export interface UserReportCommonParams {
+  token: string;
+  page?: number;
+  per_page?: number;
+  from_date?: string;
+  to_date?: string;
+  status?: string;
+  search?: string;
+  sort_column?: string;
+  sort_order?: "ASC" | "DESC";
+}
+
+export interface UserReportPagination {
+  current_page: number;
+  per_page: number;
+  total: number;
+  last_page: number;
+  from: number;
+  to: number;
+}
+
+export interface UserCommonReportPayload {
+  success: boolean;
+  message: string;
+  pagination: UserReportPagination;
+  filters?: Record<string, string | null | undefined>;
+}
+
+/* ---------------- IB Withdrawal Report ---------------- */
+export interface UserIbWithdrawalReportItem {
+  id: number | string;
+  name_email: string;
+  name?: string;
+  email?: string;
+  destination: string;
+  withdraw_to: string;
+  amount: number | string;
+  note?: string | null;
+  comment?: string | null;
+  status: string;
+  created_at: string;
+  approved_by?: string | null;
+  approved_rejected_by?: string | null;
+}
+
+export interface UserIbWithdrawalReportParams extends UserReportCommonParams {
+  destination?: string;
+}
+
+export interface UserIbWithdrawalReportPayload extends UserCommonReportPayload {
+  data: UserIbWithdrawalReportItem[];
+}
+
+/* ---------------- Deposit Report ---------------- */
+export interface UserDepositReportItem {
+  id: number | string;
+  source: string;
+  name_email: string;
+  name?: string;
+  email?: string;
+  amount: number | string;
+  payment_method: string;
+  payment_method_id: number | string | null;
+  reference?: string | null;
+  deposit_proof?: string | null;
+  comment?: string | null;
+  approved_by?: string | null;
+  status: number | string;
+  created_at: string;
+  deposit_target?: string;
+  mt5_account_id?: number | string | null;
+  mt5_login?: number | string | null;
+}
+
+export interface UserDepositReportParams extends UserReportCommonParams {
+  source?: string;
+}
+
+export interface UserDepositReportPayload extends UserCommonReportPayload {
+  data: UserDepositReportItem[];
+  total_amount?: number;
+}
+
+/* ---------------- Withdrawal Report ---------------- */
+export interface UserWithdrawalReportItem {
+  id: number | string;
+  name_email: string;
+  name?: string;
+  email?: string;
+  amount: number | string;
+  withdraw_to?: string | null;
+  payment_method: string;
+  payment_method_id?: number | string | null;
+  comment?: string | null;
+  status: string;
+  created_at: string;
+  approved_by?: string | null;
+  approved_rejected_by?: string | null;
+  transaction_hash?: string | null;
+  chain_id?: string | null;
+}
+
+export interface UserWithdrawalReportParams extends UserReportCommonParams {}
+
+export interface UserWithdrawalReportPayload extends UserCommonReportPayload {
+  data: UserWithdrawalReportItem[];
+}
+
+/* ---------------- Internal Transfer Report ---------------- */
+export interface UserInternalTransferReportItem {
+  id: number | string;
+  name: string;
+  email: string;
+  from_account?: string | null;
+  to_account?: string | null;
+  amount: number | string;
+  comment?: string | null;
+  approved_by?: string | null;
+  status: string;
+  date: string;
+  created_at: string;
+}
+
+export interface UserInternalTransferReportParams extends UserReportCommonParams {}
+
+export interface UserInternalTransferReportPayload extends UserCommonReportPayload {
+  data: UserInternalTransferReportItem[];
+}
+
+/* ---------------- Deal Report (Trading History) ---------------- */
+export interface UserDealReportItem {
+  id: number | string;
+  login: number | string;
+  name: string;
+  email: string;
+  account_id?: string;
+  record_type: string;
+  ticket: number | string;
+  symbol: string;
+  volume: number | string;
+  price: number | string;
+  profit: number | string;
+  comment?: string | null;
+  approved_by?: string | null;
+  trade_time_ist: string;
+  created_at: string;
+}
+
+export interface UserDealReportParams extends UserReportCommonParams {
+  login?: string;
+}
+
+export interface UserDealReportPayload extends UserCommonReportPayload {
+  data: UserDealReportItem[];
+}
+
+/* ---------------- User report export params ---------------- */
+export interface UserReportExportBase {
+  token: string;
+  format?: "xlsx" | "csv";
+  status?: string;
+  from_date?: string;
+  to_date?: string;
+  search?: string;
+}
+
+export interface UserIbWithdrawalReportExportParams extends UserReportExportBase {
+  destination?: string;
+}
+
+export interface UserDepositReportExportParams extends UserReportExportBase {
+  source?: string;
+}
+
+export interface UserWithdrawalReportExportParams extends UserReportExportBase {}
+
+export interface UserInternalTransferReportExportParams extends UserReportExportBase {}
+
+export interface UserDealReportExportParams extends UserReportExportBase {
+  login?: string;
+}
+
+export interface UserReportExportResult {
+  blob: Blob;
+  filename: string;
+}
+
+function buildUserExportUrl(
+  endpoint: string,
+  params: Omit<UserReportExportBase, "token">,
+  extra: (qs: URLSearchParams) => void,
+) {
+  const qs = new URLSearchParams();
+  const format = params.format || "xlsx";
+  qs.set("format", format);
+  if (params.status && params.status !== "all") qs.set("status", params.status);
+  if (params.from_date) qs.set("from_date", params.from_date);
+  if (params.to_date) qs.set("to_date", params.to_date);
+  if (params.search && params.search.trim()) qs.set("search", params.search.trim());
+  extra(qs);
+  return {
+    url: `${endpoint}${qs.toString() ? `?${qs.toString()}` : ""}`,
+    format,
+  };
+}
+
+async function runUserExport(
+  token: string,
+  params: Omit<UserReportExportBase, "token">,
+  endpoint: string,
+  extra: (qs: URLSearchParams) => void,
+  defaultBase: string,
+): Promise<UserReportExportResult> {
+  if (!API_BASE_URL) throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+  const { url, format } = buildUserExportUrl(endpoint, params, extra);
+  const response = await fetch(`${API_BASE_URL}${url}`, {
+    method: "GET",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (handle401Redirect(response, !!token)) return { blob: new Blob(), filename: "" };
+  if (!response.ok) {
+    const payload = await response.json().catch(() => null);
+    throw new ApiRequestError({
+      message:
+        (payload && typeof payload === "object" && "message" in payload && typeof payload.message === "string"
+          ? payload.message
+          : null) || `HTTP ${response.status}`,
+      status: response.status,
+      statusText: response.statusText,
+      endpoint: url,
+      payload,
+    });
+  }
+  const blob = await response.blob();
+  return {
+    blob,
+    filename: parseContentDispositionFilename(
+      response.headers.get("content-disposition"),
+      `${defaultBase}.${format === "csv" ? "csv" : "xlsx"}`,
+    ),
+  };
+}
+
+
+function buildUserReportUrl(
+  endpoint: string,
+  params: Omit<UserReportCommonParams, "token">,
+  extra: (qs: URLSearchParams) => void,
+) {
+  const qs = new URLSearchParams();
+  if (params.page) qs.set("page", String(params.page));
+  if (params.per_page) qs.set("per_page", String(params.per_page));
+  if (params.from_date) qs.set("from_date", params.from_date);
+  if (params.to_date) qs.set("to_date", params.to_date);
+  if (params.status && params.status !== "all") qs.set("status", params.status);
+  if (params.search && params.search.trim()) qs.set("search", params.search.trim());
+  if (params.sort_column) qs.set("sort_column", params.sort_column);
+  if (params.sort_order) qs.set("sort_order", params.sort_order);
+  extra(qs);
+  return `${endpoint}${qs.toString() ? `?${qs.toString()}` : ""}`;
+}
+
+export const userReportApi = {
+  ibWithdrawal: {
+    list: (params: UserIbWithdrawalReportParams) => {
+      const { token, ...rest } = params;
+      if (!token) throw new Error("Token is required to fetch IB withdrawal report");
+      const url = buildUserReportUrl("/user/reports/ib-withdrawal-report", rest, (qs) => {
+        if (rest.destination && rest.destination !== "all") qs.set("destination", rest.destination);
+      });
+      return apiCall<UserIbWithdrawalReportPayload>(url, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    },
+    export: (params: UserIbWithdrawalReportExportParams) => {
+      const { token, ...rest } = params;
+      if (!token) throw new Error("Token is required to export IB withdrawal report");
+      return runUserExport(
+        token,
+        rest,
+        "/user/reports/ib-withdrawal-report/export",
+        (qs) => {
+          if (rest.destination && rest.destination !== "all") qs.set("destination", rest.destination);
+        },
+        "ib-withdrawal-report",
+      );
+    },
+  },
+  deposit: {
+    list: (params: UserDepositReportParams) => {
+      const { token, ...rest } = params;
+      if (!token) throw new Error("Token is required to fetch deposit report");
+      const url = buildUserReportUrl("/user/reports/deposit-report", rest, (qs) => {
+        if (rest.source && rest.source !== "all") qs.set("source", rest.source);
+      });
+      return apiCall<UserDepositReportPayload>(url, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    },
+    export: (params: UserDepositReportExportParams) => {
+      const { token, ...rest } = params;
+      if (!token) throw new Error("Token is required to export deposit report");
+      return runUserExport(
+        token,
+        rest,
+        "/user/reports/deposit-report/export",
+        (qs) => {
+          if (rest.source && rest.source !== "all") qs.set("source", rest.source);
+        },
+        "deposit-report",
+      );
+    },
+  },
+  withdrawal: {
+    list: (params: UserWithdrawalReportParams) => {
+      const { token, ...rest } = params;
+      if (!token) throw new Error("Token is required to fetch withdrawal report");
+      const url = buildUserReportUrl("/user/reports/withdrawal-report", rest, () => {});
+      return apiCall<UserWithdrawalReportPayload>(url, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    },
+    export: (params: UserWithdrawalReportExportParams) => {
+      const { token, ...rest } = params;
+      if (!token) throw new Error("Token is required to export withdrawal report");
+      return runUserExport(
+        token,
+        rest,
+        "/user/reports/withdrawal-report/export",
+        () => {},
+        "withdrawal-report",
+      );
+    },
+  },
+  internalTransfer: {
+    list: (params: UserInternalTransferReportParams) => {
+      const { token, ...rest } = params;
+      if (!token) throw new Error("Token is required to fetch internal transfer report");
+      const url = buildUserReportUrl("/user/reports/internal-transfer-report", rest, () => {});
+      return apiCall<UserInternalTransferReportPayload>(url, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    },
+    export: (params: UserInternalTransferReportExportParams) => {
+      const { token, ...rest } = params;
+      if (!token) throw new Error("Token is required to export internal transfer report");
+      return runUserExport(
+        token,
+        rest,
+        "/user/reports/internal-transfer-report/export",
+        () => {},
+        "internal-transfer-report",
+      );
+    },
+  },
+  deal: {
+    list: (params: UserDealReportParams) => {
+      const { token, ...rest } = params;
+      if (!token) throw new Error("Token is required to fetch deal report");
+      const url = buildUserReportUrl("/user/reports/deal-report", rest, (qs) => {
+        if (rest.login && rest.login.trim()) qs.set("login", rest.login.trim());
+      });
+      return apiCall<UserDealReportPayload>(url, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    },
+    export: (params: UserDealReportExportParams) => {
+      const { token, ...rest } = params;
+      if (!token) throw new Error("Token is required to export deal report");
+      return runUserExport(
+        token,
+        rest,
+        "/user/reports/deal-report/export",
+        (qs) => {
+          if (rest.login && rest.login.trim()) qs.set("login", rest.login.trim());
+        },
+        "deal-report",
+      );
+    },
+  },
+};

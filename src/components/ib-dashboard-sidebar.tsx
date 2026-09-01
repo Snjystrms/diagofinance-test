@@ -15,6 +15,7 @@ import {
   ArrowLeftRight,
   ArrowLeft,
   Users,
+  Network,
   PieChart,
   Loader2,
   LogOut,
@@ -97,6 +98,7 @@ export function IbDashboardSidebar() {
       path: "/ib-dashboard/transfer",
     },
     { icon: Users, label: "Client Summary", path: "/ib-dashboard/clients" },
+    { icon: Network, label: "Team", path: "/ib-dashboard/team" },
     // { icon: PieChart,        label: "Commissions",       path: "/ib-dashboard/commissions" },
   ];
 
@@ -250,7 +252,7 @@ export function IbDashboardSidebar() {
               {userName}
             </p>
             <p className="text-[11px] text-sidebar-foreground/55 mt-0.5">
-              Partner&nbsp;
+              IB &nbsp;
               <span className="text-sidebar-primary font-medium">
                 {partnerId}
               </span>
