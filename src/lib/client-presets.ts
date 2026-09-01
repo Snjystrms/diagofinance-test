@@ -38,11 +38,11 @@ export const getDashboardHiddenStorageKey = (area: DashboardArea) =>
   `dashboard_grid_hidden_${getDashboardStorageKey(area)}`;
 
 export const defaultClientPreset: ClientPreset = {
-  id: "default",
-  name: "Default CRM Preset",
-  themeId: "golden-bull-dark",
-  themePairId: "golden-bull",
-  themeMode: "bright",
+  id: "diagofinance",
+  name: "Diagofinance Preset",
+  themeId: "diagofinance-dark",
+  themePairId: "diagofinance",
+  themeMode: "dark",
   sidebarId: "default",
   dashboards: {
     admin: {
@@ -90,34 +90,10 @@ const clientPresets: Record<string, ClientPreset> = {
       dashboardLayout: true,
     },
   },
-  diagofinance: {
-    id: "diagofinance",
-    name: "Diagofinance Preset",
-    themeId: "diagofinance-dark",
-    themePairId: "diagofinance",
-    themeMode: "dark",
-    sidebarId: "default",
-    dashboards: {
-      admin: {
-        mode: "normal",
-        layout: [],
-        hiddenWidgets: [],
-      },
-      client: {
-        mode: "normal",
-        layout: [],
-        hiddenWidgets: [],
-      },
-    },
-    locks: {
-      theme: false,
-      sidebar: true,
-      dashboardLayout: true,
-    },
-  },
+  diagofinance: defaultClientPreset,
 };
 
-export const getActiveClientPresetId = () => process.env.NEXT_PUBLIC_CLIENT_PRESET || "default";
+export const getActiveClientPresetId = () => process.env.NEXT_PUBLIC_CLIENT_PRESET || "diagofinance";
 
 export const getActiveClientPreset = () =>
   clientPresets[getActiveClientPresetId()] ?? defaultClientPreset;
