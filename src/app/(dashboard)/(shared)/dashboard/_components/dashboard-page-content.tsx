@@ -1802,7 +1802,9 @@ export function DashboardPageContent() {
                       {/* Header Section */}
                       {/* Desktop: original with theme images */}
                       <div className="hidden xl:block">
-                        <div className="ib-portal-hero rounded-[28px] border px-6 py-6 sm:px-7">
+                        <div
+                          className="ib-portal-hero ib-dash-artwork-surface rounded-[28px] border px-6 py-6 sm:px-7"
+                        >
                           {dashboardThemeArtwork && (
                             <div
                               className={`dashboard-theme-overlay dashboard-theme-welcome-overlay theme-art-${dashboardThemeArtwork}`}
@@ -2029,7 +2031,7 @@ export function DashboardPageContent() {
                           <Card
                             ref={walletCardRef}
                             // onClick={() => router.push("/my-wallet/wallet-overview")}
-                            className={`h-full relative overflow-hidden rounded-[28px] border transition-all duration-500 group ${usesDashboardThemeArtwork ? "bg-card text-zinc-50 ib-portal-surface ib-portal-surface-primary border-border/100" : "border-white/5 bg-[#050505]"}`}
+                            className={`h-full relative overflow-hidden rounded-[28px] border transition-all duration-500 group ${usesDashboardThemeArtwork ? "text-zinc-50 ib-portal-surface ib-portal-surface-primary ib-dash-artwork-surface border-border/100" : "border-white/5 bg-[#050505]"}`}
                           >
                             {usesDashboardThemeArtwork ? (
                               <div

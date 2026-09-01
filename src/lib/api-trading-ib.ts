@@ -2483,6 +2483,27 @@ export const adminMT5AccountsApi = {
     );
   },
 
+  setStatus: (id: string | number, enabled: boolean, token: string) => {
+    if (!token) {
+      throw new Error("Token is required to update MT5 account status");
+    }
+    if (id === undefined || id === null || `${id}`.trim() === "") {
+      throw new Error("MT5 account identifier is required to update status");
+    }
+
+    return apiCall<{ success: boolean; message: string }>(
+      `/admin/mt5-accounts/${id}/status`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ enabled }),
+      },
+    );
+  },
+
   delete: (id: string | number, token: string) => {
     if (!token) {
       throw new Error("Token is required to delete MT5 account");

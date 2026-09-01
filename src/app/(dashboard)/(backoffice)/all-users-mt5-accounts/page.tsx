@@ -78,6 +78,10 @@ const extractItems = (data: unknown): AdminMT5Account[] => {
   return [];
 };
 
+const deriveAccountId = (account: AdminMT5Account) => {
+  return account.account_id ?? account.mt5_id ?? account.id;
+};
+
 const extractAccountDetail = (data: unknown): AdminMT5Account | null => {
   if (!data || Array.isArray(data)) return null;
 
@@ -493,6 +497,39 @@ export default function AllUsersMT5AccountsPage() {
     }
   }, [token, accountToDelete, loadAccounts]);
 
+  // Toggle MT5 account enable/disable status
+  const handleToggleStatus = useCallback(
+    async (account: AdminMT5Account, enabled: boolean) => {
+      if (!token) return;
+
+      const accountId = deriveAccountId(account);
+      if (!accountId || accountId === "-") {
+        toast.error("Account ID not found");
+        return;
+      }
+
+      try {
+        await adminMT5AccountsApi.setStatus(accountId, enabled, token);
+        toast.success(
+          enabled
+            ? "MT5 account enabled successfully"
+            : "MT5 account disabled successfully",
+        );
+        void loadAccounts(); // Refresh the list
+      } catch (error: unknown) {
+        console.error("Failed to update MT5 account status:", error);
+        toast.error(
+          getAdminFriendlyErrorMessage(error, {
+            resource: "MT5 account",
+            action: "update status",
+          }),
+        );
+        throw error; // Let the cell reset its switch state
+      }
+    },
+    [token, loadAccounts],
+  );
+
   const columns: ColumnDef<AdminMT5Account>[] = useMemo(
     () =>
       getColumnsWithActions(handleViewDetails, handleEdit, handleDeleteClick, {
@@ -500,8 +537,8 @@ export default function AllUsersMT5AccountsPage() {
         canEdit: canEditMt5,
         canDelete: canDeleteMt5,
         showActionsColumn,
-      }),
-    [handleViewDetails, handleEdit, handleDeleteClick, canViewMt5List, canEditMt5, canDeleteMt5, showActionsColumn]
+      }, handleToggleStatus),
+    [handleViewDetails, handleEdit, handleDeleteClick, canViewMt5List, canEditMt5, canDeleteMt5, showActionsColumn, handleToggleStatus]
   );
 
   const visibleAccounts = useMemo(() => {

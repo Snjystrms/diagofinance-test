@@ -792,7 +792,7 @@
 
   .dashboard-theme-welcome-overlay {
     background-position: right center;
-    background-size: cover;
+    background-size: auto;
   }
 
   .dashboard-theme-wallet-overlay {
@@ -900,6 +900,24 @@ body.theme-loaded * {
     background-color 0.3s ease,
     border-color 0.3s ease,
     color 0.3s ease;
+}
+
+/* Dashboard artwork cards (header + wallet): force a solid #09090D fill while
+   keeping a bordered frame, for both diagofinance dark and bright modes. */
+:root[data-theme-id="diagofinance-dark"] .ib-dash-artwork-surface {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(#010000, #010000) padding-box,
+    linear-gradient(100.15deg, #606060 -5.5%, #b10430 56.77%, #606060 111.96%)
+      border-box !important;
+}
+
+:root[data-theme-id="diagofinance-bright"] .ib-dash-artwork-surface {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(#010000, #010000) padding-box,
+    linear-gradient(100.15deg, #fde8e8 -5.5%, #b10430 56.77%, #fde8e8 111.96%)
+      border-box !important;
 }
 
 /* 3D rotating logo cube */

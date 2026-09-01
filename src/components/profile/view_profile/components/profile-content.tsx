@@ -14,6 +14,7 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { PremiumDarkCard } from "@/components/ui/premium-dark-card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ProfileContentSkeleton } from "@/components/loading/client-page-skeletons";
@@ -1317,25 +1318,25 @@ export default function ProfileContent() {
     switch (status.toLowerCase()) {
       case "completed":
         return (
-          <Badge className="border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300">
+          <Badge className="border-emerald-500/30 bg-emerald-500/10 text-emerald-300">
             Completed
           </Badge>
         );
       case "pending":
         return (
-          <Badge className="border-amber-500/35 bg-amber-500/10 text-amber-700 dark:text-amber-300">
+          <Badge className="border-amber-500/35 bg-amber-500/10 text-amber-300">
             Pending
           </Badge>
         );
       case "rejected":
         return (
-          <Badge className="bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300 border-red-200 dark:border-red-800">
+          <Badge className="border-red-800/60 bg-red-950/40 text-red-300">
             Rejected
           </Badge>
         );
       default:
         return (
-          <Badge variant="outline">
+          <Badge variant="outline" className="text-white/90">
             {status}
           </Badge>
         );
@@ -1371,14 +1372,14 @@ export default function ProfileContent() {
   const getVerificationBadge = () => {
     if (overallStatus === "full-verified" || overallStatus === "approved") {
       return (
-        <Badge className="bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300 border-green-200 dark:border-green-800">
+        <Badge className="border-green-800/60 bg-green-950/40 text-green-300">
           Verified
         </Badge>
       );
     }
     if (overallStatus === "semi-verified") {
       return (
-        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+        <Badge className="border-blue-800/60 bg-blue-950/40 text-blue-300">
           Semi Verified
         </Badge>
       );
@@ -1391,33 +1392,33 @@ export default function ProfileContent() {
       );
     }
     return (
-      <Badge variant="outline">Pending</Badge>
+      <Badge variant="outline" className="text-white/90">Pending</Badge>
     );
   };
 
   return (
     <div className="space-y-6">
       {/* Profile Status Section */}
-      <div className="ib-portal-hero relative overflow-hidden rounded-[28px] border px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
+      <PremiumDarkCard innerClassName="px-4 py-5 sm:px-6 sm:py-6 lg:px-8 lg:py-7">
         <div className="pointer-events-none absolute -right-12 -top-14 h-52 w-52 rounded-full bg-primary/10 blur-3xl" />
         <div className="pointer-events-none absolute left-1/3 -bottom-10 h-40 w-40 rounded-full bg-primary/6 blur-2xl" />
-        <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/50 pb-4 sm:pb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/50 pb-4 sm:pb-5">
           <div className="min-w-0 flex-1">
-            <CardTitle className="flex flex-wrap items-center gap-2 text-base sm:text-lg tracking-tight">
+            <CardTitle className="flex flex-wrap items-center gap-2 text-base sm:text-lg tracking-tight text-white">
               <span className="whitespace-nowrap">Your Profile Status:</span>
               {getVerificationBadge()}
             </CardTitle>
           </div>
         </div>
-        <div className="relative pt-5 sm:pt-6">
+        <div className="pt-5 sm:pt-6">
           <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {/* Personal Information Status */}
             <Card className={`relative overflow-hidden rounded-2xl border shadow-sm ${
               verificationStatus.personal_information.status === "completed"
-                ? "border-emerald-500/35 bg-card/80 shadow-emerald-950/5 dark:border-emerald-500/35 dark:bg-black/20"
-                : "border-amber-500/40 bg-card/80 shadow-amber-950/5 dark:border-amber-500/35 dark:bg-black/20"
+                ? "border-emerald-500/35 bg-black/20 shadow-emerald-950/5"
+                : "border-amber-500/40 bg-black/20 shadow-amber-950/5"
             }`}>
-              <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-foreground/5 blur-2xl" />
+              <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/5 blur-2xl" />
               <CardContent className="p-3.5 sm:p-4">
                 <div className="flex items-start gap-2.5 sm:gap-3">
                   <div className={`shrink-0 rounded-xl border p-2 sm:p-2.5 shadow-sm ${
@@ -1427,13 +1428,13 @@ export default function ProfileContent() {
                   }`}>
                     <Scale className={`h-4 w-4 sm:h-5 sm:w-5 ${
                       verificationStatus.personal_information.status === "completed"
-                        ? "text-emerald-600 dark:text-emerald-300"
-                        : "text-amber-600 dark:text-amber-300"
+                        ? "text-emerald-300"
+                        : "text-amber-300"
                     }`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="mb-1 text-xs sm:text-sm font-semibold break-words">Personal Information</h4>
-                    <p className="text-[11px] sm:text-xs text-muted-foreground break-words line-clamp-2">
+                    <h4 className="mb-1 text-xs sm:text-sm font-semibold break-words text-white">Personal Information</h4>
+                    <p className="text-[11px] sm:text-xs text-white/70 break-words line-clamp-2">
                       {verificationStatus.personal_information.message}
                     </p>
                     <div className="mt-2">
@@ -1447,10 +1448,10 @@ export default function ProfileContent() {
             {/* Documents Verification Status */}
             <Card className={`relative overflow-hidden rounded-2xl border shadow-sm ${
               verificationStatus.documents_verification.status === "completed"
-                ? "border-emerald-500/35 bg-card/80 shadow-emerald-950/5 dark:border-emerald-500/35 dark:bg-black/20"
-                : "border-amber-500/40 bg-card/80 shadow-amber-950/5 dark:border-amber-500/35 dark:bg-black/20"
+                ? "border-emerald-500/35 bg-black/20 shadow-emerald-950/5"
+                : "border-amber-500/40 bg-black/20 shadow-amber-950/5"
             }`}>
-              <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-foreground/5 blur-2xl" />
+              <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/5 blur-2xl" />
               <CardContent className="p-3.5 sm:p-4">
                 <div className="flex items-start gap-2.5 sm:gap-3">
                   <div className={`shrink-0 rounded-xl border p-2 sm:p-2.5 shadow-sm ${
@@ -1460,13 +1461,13 @@ export default function ProfileContent() {
                   }`}>
                     <FileText className={`h-4 w-4 sm:h-5 sm:w-5 ${
                       verificationStatus.documents_verification.status === "completed"
-                        ? "text-emerald-600 dark:text-emerald-300"
-                        : "text-amber-600 dark:text-amber-300"
+                        ? "text-emerald-300"
+                        : "text-amber-300"
                     }`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h4 className="mb-1 text-xs sm:text-sm font-semibold break-words">Documents Verification</h4>
-                    <p className="text-[11px] sm:text-xs text-muted-foreground break-words line-clamp-2">
+                    <h4 className="mb-1 text-xs sm:text-sm font-semibold break-words text-white">Documents Verification</h4>
+                    <p className="text-[11px] sm:text-xs text-white/70 break-words line-clamp-2">
                       {verificationStatus.documents_verification.message}
                     </p>
                     <div className="mt-2">
@@ -1478,7 +1479,7 @@ export default function ProfileContent() {
             </Card>
           </div>
         </div>
-      </div>
+      </PremiumDarkCard>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="ib-portal-surface inline-flex h-auto w-full flex-wrap gap-1 rounded-2xl border p-1.5">

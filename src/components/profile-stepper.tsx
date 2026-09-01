@@ -24,6 +24,7 @@ import {
 import type { UserDashboardData } from "@/lib/api";
 import { PremiumDarkLayers } from "@/components/ui/premium-dark-card";
 import { useClientCustomization } from "@/contexts/client-customization-context";
+import clsx from "clsx";
 
 type StepStatus = "completed" | "active" | "pending" | "error";
 
@@ -70,6 +71,16 @@ export function ProfileStepper({
       (dashboardData.account_types?.total_accounts ?? 0) > 0 ||
       (dashboardData.mt5_users?.length ?? 0) > 0;
 
+    const firstPendingOrder = Math.min(
+      ...[
+        personalInfoComplete ? Infinity : 1,
+        kycComplete ? Infinity : 2,
+        hasMt5Account ? Infinity : 3,
+        hasDeposit ? Infinity : 4,
+        hasBankDetails ? Infinity : 5,
+      ],
+    );
+
     const stepsList: StepItem[] = [
       {
         id: "profile",
@@ -79,7 +90,7 @@ export function ProfileStepper({
         icon: (
           <img
             src={
-              !personalInfoComplete && isDark
+              personalInfoComplete || isDark || firstPendingOrder === 1
                 ? "/complete_profile_icon_unselected.svg"
                 : "/complete_profile_icon.svg"
             }
@@ -98,7 +109,7 @@ export function ProfileStepper({
         icon: (
           <img
             src={
-              !kycComplete && isDark
+              kycComplete || isDark || firstPendingOrder === 2
                 ? "/kyc_verification_icon_unselected.svg"
                 : "/kyc_verification_icon.svg"
             }
@@ -117,7 +128,7 @@ export function ProfileStepper({
         icon: (
           <img
             src={
-              !hasMt5Account && isDark
+              hasMt5Account || isDark || firstPendingOrder === 3
                 ? "/open_mt5_account_icon_unselected.svg"
                 : "/open_mt5_account_icon.svg"
             }
@@ -136,7 +147,7 @@ export function ProfileStepper({
         icon: (
           <img
             src={
-              !hasDeposit && isDark
+              hasDeposit || isDark || firstPendingOrder === 4
                 ? "/make_first_deposit_unselected.svg"
                 : "/make_first_deposit.svg"
             }
@@ -152,7 +163,14 @@ export function ProfileStepper({
         title: "Add Bank Details",
         description: "Set up your withdrawal method",
         status: hasBankDetails ? "completed" : "pending",
-        icon: <Landmark className="h-4 w-4 text-white" />,
+        icon: (
+          <Landmark
+            className={clsx(
+              "h-4 w-4",
+              hasBankDetails ? "text-white" : "text-muted-foreground",
+            )}
+          />
+        ),
         route: "/profile/view_profile?tab=bank",
         order: hasBankDetails ? 14 : 5,
       },

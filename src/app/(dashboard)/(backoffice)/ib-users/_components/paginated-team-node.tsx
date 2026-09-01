@@ -177,7 +177,7 @@ const PaginatedTeamNode = ({ data }: NodeProps<Node<PaginatedTeamNodeData>>) => 
           {/* IB Plan Label */}
           {data.planName ? (
             <div
-              className="mt-1 inline-flex w-fit max-w-full items-center gap-1.5 rounded-md bg-primary/10 px-1.5 py-0.5 text-[9.5px] font-semibold tracking-wide text-primary ring-1 ring-inset ring-primary/25"
+              className="mt-1 inline-flex w-fit max-w-full items-center gap-1.5 rounded-md bg-primary/10 px-1.5 py-0.5 text-[9.5px] font-semibold tracking-wide text-primary ring-1 ring-inset ring-primary/25 dark:bg-amber-500/15 dark:text-amber-300 dark:ring-amber-400/40"
               title={data.planName}
             >
               <Gem className="h-2.5 w-2.5 shrink-0 opacity-80" />

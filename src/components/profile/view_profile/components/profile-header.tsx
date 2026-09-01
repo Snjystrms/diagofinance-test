@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { ProfileHeaderSkeleton } from "@/components/loading/client-page-skeletons";
 import { Phone, MapPin, Shield, CheckCircle2, Copy, Check, Sparkles } from "lucide-react";
 import { ThemePill } from "@/components/ui/theme-pill";
+import { PremiumDarkCard } from "@/components/ui/premium-dark-card";
 import { useAuth } from "@/contexts/auth-context";
 import { authApi, type ProfileViewResponse } from "@/lib/api";
 import toast from "react-hot-toast";
@@ -107,12 +108,12 @@ export default function ProfileHeader() {
   const isPending = user.verification_status === "pending";
 
   return (
-    <div className="ib-portal-hero rounded-[28px] border px-6 py-6 sm:px-8 sm:py-7 relative overflow-hidden">
+    <PremiumDarkCard innerClassName="px-6 py-6 sm:px-8 sm:py-7">
       {/* Decorative blobs */}
       <div className="pointer-events-none absolute -right-12 -top-14 h-52 w-52 rounded-full bg-primary/10 blur-3xl" />
       <div className="pointer-events-none absolute left-1/3 -bottom-10 h-40 w-40 rounded-full bg-primary/6 blur-2xl" />
 
-      <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+      <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
         {/* Left: Avatar + Info */}
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
           {/* Avatar with ring */}
@@ -149,10 +150,10 @@ export default function ProfileHeader() {
             >
               Client Account
             </ThemePill>
-            <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-[1.8rem] leading-tight">
+            <h1 className="text-2xl font-semibold tracking-tight text-white sm:text-[1.8rem] leading-tight">
               {user.name || user.email}
             </h1>
-            <p className="text-sm text-muted-foreground">{user.email}</p>
+            <p className="text-sm text-white/70">{user.email}</p>
           </div>
         </div>
 
@@ -161,11 +162,11 @@ export default function ProfileHeader() {
 
           {/* Phone */}
           {user.mobile && (
-            <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/70 px-3 py-2 shadow-sm backdrop-blur-sm">
-              <div className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/10">
-                <Phone className="h-3 w-3 text-primary" />
+            <div className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 py-2 shadow-sm backdrop-blur-sm">
+              <div className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/20">
+                <Phone className="h-3 w-3 text-white" />
               </div>
-              <span className="text-sm text-foreground/80">
+              <span className="text-sm text-white/80">
                 {user.country_code} {user.mobile}
               </span>
             </div>
@@ -173,11 +174,11 @@ export default function ProfileHeader() {
 
           {/* Location */}
           {user.location && (
-            <div className="flex items-center gap-2 rounded-xl border border-border/60 bg-background/70 px-3 py-2 shadow-sm backdrop-blur-sm">
-              <div className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/10">
-                <MapPin className="h-3 w-3 text-primary" />
+            <div className="flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 py-2 shadow-sm backdrop-blur-sm">
+              <div className="flex h-5 w-5 items-center justify-center rounded-md bg-primary/20">
+                <MapPin className="h-3 w-3 text-white" />
               </div>
-              <span className="text-sm capitalize text-foreground/80">{user.location}</span>
+              <span className="text-sm capitalize text-white/80">{user.location}</span>
             </div>
           )}
 
@@ -186,24 +187,24 @@ export default function ProfileHeader() {
             className={cn(
               "flex items-center gap-2 rounded-xl border px-3 py-2 shadow-sm",
               is2FAEnabled
-                ? "border-emerald-200/80 bg-emerald-50/70 dark:border-emerald-800/60 dark:bg-emerald-950/30"
-                : "border-red-200/80 bg-red-50/70 dark:border-red-800/60 dark:bg-red-950/30"
+                ? "border-emerald-500/40 bg-emerald-950/30"
+                : "border-red-500/40 bg-red-950/30"
             )}
           >
             <div
               className={cn(
                 "flex h-5 w-5 items-center justify-center rounded-md",
                 is2FAEnabled
-                  ? "bg-emerald-100 dark:bg-emerald-900/50"
-                  : "bg-red-100 dark:bg-red-900/50"
+                  ? "bg-emerald-900/50"
+                  : "bg-red-900/50"
               )}
             >
               <Shield
                 className={cn(
                   "h-3 w-3",
                   is2FAEnabled
-                    ? "text-emerald-600 dark:text-emerald-400"
-                    : "text-red-500 dark:text-red-400"
+                    ? "text-emerald-400"
+                    : "text-red-400"
                 )}
               />
             </div>
@@ -215,8 +216,8 @@ export default function ProfileHeader() {
                 className={cn(
                   "text-xs font-semibold",
                   is2FAEnabled
-                    ? "text-emerald-700 dark:text-emerald-300"
-                    : "text-red-600 dark:text-red-400"
+                    ? "text-emerald-300"
+                    : "text-red-300"
                 )}
               >
                 {is2FAEnabled ? "2FA Active" : "2FA Off"}
@@ -225,6 +226,6 @@ export default function ProfileHeader() {
           </div>
         </div>
       </div>
-    </div>
+    </PremiumDarkCard>
   );
 }

@@ -13,6 +13,7 @@ import {
   User,
   Wallet,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 import { StatePreservingLink } from "@/components/state-preserving-link";
 
@@ -20,12 +21,14 @@ import { DataTableColumnHeader } from "@/components/data-table/data-table-column
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import type { AdminMT5Account } from "@/lib/api";
 import { mt5AccountsApi, type MT5AccountBalance } from "@/lib/api-trading-ib";
 import { formatApiDateTimeAsIST } from "@/lib/formatters";
 import { Spinner } from "@/components/ui/spinner";
 import { useAuth } from "@/contexts/auth-context";
 import { ManualSortHeader } from "../../../../components/data-table/manual-sort-header";
+import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
 
 const formatDateTime = (value?: string) => {
   if (!value) return "-";
@@ -204,6 +207,59 @@ const getStatusBadge = (status: AdminMT5Account["status"]) => {
   );
 };
 
+const isAccountEnabled = (account: AdminMT5Account) => {
+  const status = account.status;
+  return (
+    status === 1 ||
+    status === "1" ||
+    String(status ?? "").toLowerCase() === "active"
+  );
+};
+
+// Status enable/disable toggle cell
+function StatusToggleCell({
+  account,
+  onToggleStatus,
+  canToggle,
+}: {
+  account: AdminMT5Account;
+  onToggleStatus: (account: AdminMT5Account, enabled: boolean) => Promise<void>;
+  canToggle: boolean;
+}) {
+  const [isUpdating, setIsUpdating] = useState(false);
+  const isEnabled = isAccountEnabled(account);
+
+  return (
+    <div className="inline-flex items-center gap-2">
+      <Switch
+        checked={isEnabled}
+        disabled={!canToggle || isUpdating}
+        className="cursor-pointer"
+        onCheckedChange={async (checked) => {
+          setIsUpdating(true);
+          try {
+            await onToggleStatus(account, checked);
+          } catch (error) {
+            console.error("Failed to update MT5 account status:", error);
+            toast.error(
+              getAdminFriendlyErrorMessage(error, {
+                resource: "MT5 account",
+                action: "update status",
+              }),
+            );
+          } finally {
+            setIsUpdating(false);
+          }
+        }}
+        aria-label={`${isEnabled ? "Disable" : "Enable"} ${deriveAccountId(account)}`}
+      />
+      <span className="text-sm text-muted-foreground">
+        {isEnabled ? "Active" : "Inactive"}
+      </span>
+    </div>
+  );
+}
+
 const getModeBadge = (mode: AdminMT5Account["account_mode"]) => {
   const value = typeof mode === "string" ? mode.toLowerCase() : "";
 
@@ -341,16 +397,16 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
     enableColumnFilter: false,
     enableSorting: false,
   },
-  {
-    id: "status",
-    accessorKey: "status",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Status" />
-    ),
-    cell: ({ row }) => getStatusBadge(row.original.status),
-    enableColumnFilter: false,
-    enableSorting: false,
-  },
+  // {
+  //   id: "status",
+  //   accessorKey: "status",
+  //   header: ({ column }) => (
+  //     <DataTableColumnHeader column={column} title="Status" />
+  //   ),
+  //   cell: ({ row }) => getStatusBadge(row.original.status),
+  //   enableColumnFilter: false,
+  //   enableSorting: false,
+  // },
   {
     id: "created_at",
     accessorKey: "created_at",
@@ -447,8 +503,26 @@ export const getColumnsWithActions = (
     canDelete: boolean;
     showActionsColumn: boolean;
   },
+  onToggleStatus?: (account: AdminMT5Account, enabled: boolean) => Promise<void>,
 ): ColumnDef<AdminMT5Account>[] => [
   ...getColumns(),
+  ...(permissions?.canEdit && onToggleStatus
+    ? [
+        {
+          id: "enabled",
+          header: "Status",
+          cell: ({ row }: { row: { original: AdminMT5Account } }) => (
+            <StatusToggleCell
+              account={row.original}
+              onToggleStatus={onToggleStatus}
+              canToggle={Boolean(permissions?.canEdit)}
+            />
+          ),
+          enableColumnFilter: false,
+          enableSorting: false,
+        },
+      ]
+    : []),
   ...(permissions?.showActionsColumn
     ? [
         {
