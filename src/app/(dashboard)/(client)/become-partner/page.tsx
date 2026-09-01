@@ -189,7 +189,7 @@ export default function BecomePartnerPage() {
                 <button
                   type="button"
                   onClick={scrollToForm}
-                  className="inline-flex items-center gap-2 rounded-full bg-[#c8085a] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#c8085a]/25 transition hover:bg-[#b00650] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#c8085a]/30"
+                  className="inline-flex items-center gap-2 rounded-full bg-[#c8085a] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-[#c8085a]/25 transition hover:bg-[#b00650] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#c8085a]/30 cursor-pointer"
                 >
                   Apply it&apos;s free
                   <ArrowRight className="h-4 w-4" />
@@ -197,7 +197,7 @@ export default function BecomePartnerPage() {
                 <button
                   type="button"
                   onClick={scrollToHow}
-                  className="text-sm font-medium text-white underline decoration-white/40 underline-offset-4 transition hover:decoration-white"
+                  className="text-sm font-medium text-white underline decoration-white/40 underline-offset-4 transition hover:decoration-white cursor-pointer"
                 >
                   See how it works
                 </button>

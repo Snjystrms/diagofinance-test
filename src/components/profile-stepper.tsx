@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import type { UserDashboardData } from "@/lib/api";
 import { PremiumDarkLayers } from "@/components/ui/premium-dark-card";
+import { useClientCustomization } from "@/contexts/client-customization-context";
 
 type StepStatus = "completed" | "active" | "pending" | "error";
 
@@ -46,6 +47,8 @@ export function ProfileStepper({
   hasBankDetails,
 }: ProfileStepperProps) {
   const router = useRouter();
+  const { themeMode } = useClientCustomization();
+  const isDark = themeMode === "dark";
   const [activeStep, setActiveStep] = useState(0);
 
   // Debug logging
@@ -75,7 +78,11 @@ export function ProfileStepper({
         status: personalInfoComplete ? "completed" : "pending",
         icon: (
           <img
-            src="/complete_profile_icon.svg"
+            src={
+              !personalInfoComplete && isDark
+                ? "/complete_profile_icon_unselected.svg"
+                : "/complete_profile_icon.svg"
+            }
             alt="Complete Profile"
             className="h-5 w-5 object-contain"
           />
@@ -90,7 +97,11 @@ export function ProfileStepper({
         status: kycComplete ? "completed" : "pending",
         icon: (
           <img
-            src="/kyc_verification_icon.svg"
+            src={
+              !kycComplete && isDark
+                ? "/kyc_verification_icon_unselected.svg"
+                : "/kyc_verification_icon.svg"
+            }
             alt="KYC Verification"
             className="h-5 w-5 object-contain"
           />
@@ -105,7 +116,11 @@ export function ProfileStepper({
         status: hasMt5Account ? "completed" : "pending",
         icon: (
           <img
-            src="/open_mt5_account_icon.svg"
+            src={
+              !hasMt5Account && isDark
+                ? "/open_mt5_account_icon_unselected.svg"
+                : "/open_mt5_account_icon.svg"
+            }
             alt="Open MT5 Account"
             className="h-5 w-5 object-contain"
           />
@@ -120,7 +135,11 @@ export function ProfileStepper({
         status: hasDeposit ? "completed" : "pending",
         icon: (
           <img
-            src="/make_first_deposit.svg"
+            src={
+              !hasDeposit && isDark
+                ? "/make_first_deposit_unselected.svg"
+                : "/make_first_deposit.svg"
+            }
             alt="Make First Deposit"
             className="h-5 w-5 object-contain"
           />
@@ -154,7 +173,7 @@ export function ProfileStepper({
     });
 
     return sortedSteps;
-  }, [dashboardData, hasBankDetails]);
+  }, [dashboardData, hasBankDetails, isDark]);
 
   // Optional action (not counted in steps)
   const optionalAction = {

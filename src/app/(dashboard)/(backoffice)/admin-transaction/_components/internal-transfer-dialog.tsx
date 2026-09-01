@@ -121,10 +121,9 @@ export function InternalTransferDialog({
   onOpenChange,
   token,
   onSuccess,
-  initialTransferType,
 }: InternalTransferDialogProps) {
   const [transferType, setTransferType] =
-    useState<InternalTransferType>(initialTransferType ?? "mt5_to_mt5");
+    useState<InternalTransferType>("mt5_to_mt5");
   const [selectedUser, setSelectedUser] = useState<PendingUser | null>(null);
   const [userSearchQuery, setUserSearchQuery] = useState("");
   const [userSearchResults, setUserSearchResults] = useState<PendingUser[]>([]);
@@ -343,7 +342,7 @@ export function InternalTransferDialog({
 
   useEffect(() => {
     if (!open) {
-      setTransferType(initialTransferType ?? "mt5_to_mt5");
+      setTransferType("mt5_to_mt5");
       setSelectedUser(null);
       setUserSearchQuery("");
       setUserSearchResults([]);
@@ -357,7 +356,7 @@ export function InternalTransferDialog({
       setMt5AccountsWithWalletIds(new Map());
       setMt5LiveBalances(new Map());
     }
-  }, [open, initialTransferType]);
+  }, [open]);
 
   useEffect(() => {
     setSelectedUser(null);
@@ -722,26 +721,10 @@ export function InternalTransferDialog({
         <div className="space-y-5 py-2">
           <div className="space-y-2">
             <Label htmlFor="transfer-type">Transfer Type</Label>
-            <Select
-              value={transferType}
-              onValueChange={(v) => setTransferType(v as InternalTransferType)}
-            >
-              <SelectTrigger id="transfer-type">
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent
-                side="bottom"
-                align="start"
-                sideOffset={4}
-                avoidCollisions={false}
-              >
-                {TRANSFER_TYPE_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex h-9 w-full items-center rounded-md border border-input bg-muted/40 px-3 text-sm font-medium text-foreground">
+              {TRANSFER_TYPE_OPTIONS.find((o) => o.value === "mt5_to_mt5")
+                ?.label ?? "MT5 to MT5"}
+            </div>
           </div>
 
           <div className="space-y-2">

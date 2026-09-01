@@ -446,7 +446,7 @@ export function LoginClient() {
                     <button
                       type="button"
                       onClick={() => setShowForgotPassword(false)}
-                      className="font-sans font-medium text-[14px] leading-[150%] tracking-[-3%] text-primary hover:text-primary/80 transition-colors"
+                      className="font-sans font-medium text-[14px] leading-[150%] tracking-[-3%] text-primary hover:text-primary/80 transition-colors cursor-pointer"
                     >
                       ← Back to login
                     </button>
