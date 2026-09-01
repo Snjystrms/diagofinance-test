@@ -133,7 +133,7 @@ export default function BecomePartnerPage() {
     <div className="min-h-full bg-background px-4 py-8 md:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl space-y-5">
         {/* ── HERO (same UI in light & dark) ───────────────────────────────── */}
-        <section className="relative overflow-hidden rounded-[28px] border border-white/5 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
+        <section className="relative overflow-hidden rounded-[28px] border border-white/5">
           {/* red radial glow + black base */}
           <div
             className="pointer-events-none absolute inset-0"

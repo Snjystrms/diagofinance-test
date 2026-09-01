@@ -355,7 +355,7 @@ export function BecomePartnerCta({ className, submitTriggerRef }: BecomePartnerC
             type="button"
             onClick={handleSubmit}
             disabled={isSubmitting}
-            className="inline-flex items-center gap-2 rounded-full bg-[#c8085a] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#c8085a]/25 transition hover:bg-[#b00650] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#c8085a]/30"
+            className="inline-flex items-center gap-2 rounded-full bg-[#c8085a] px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-[#c8085a]/25 transition hover:bg-[#b00650] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#c8085a]/30 cursor-pointer"
           >
             {isSubmitting ? (
               <>

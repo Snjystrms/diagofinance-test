@@ -179,7 +179,7 @@ function NewsCard({ item, onView }: { item: NewsItem; onView: () => void }) {
     <div
       onClick={onView}
       className="group relative flex flex-col rounded-xl border border-border/60 bg-card cursor-pointer overflow-hidden
-        hover:border-[#FFB401]/40 hover:bg-[#FFB401]/[0.03] transition-all duration-200 shadow-sm hover:shadow-lg"
+        hover:border-primary/40 hover:bg-primary/[0.03] transition-all duration-200 shadow-sm hover:shadow-lg"
     >
       {/* Thumbnail or fallback */}
       {item.image_url || item.image ? (
@@ -199,18 +199,17 @@ function NewsCard({ item, onView }: { item: NewsItem; onView: () => void }) {
           <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
         </div>
       ) : (
-        <div className="flex h-44 w-full items-center justify-center bg-[#FFB401]/8 border-b border-[#FFB401]/20">
+        <div className="flex h-44 w-full items-center justify-center bg-primary/[0.06] border-b border-primary/20">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             width="40"
             height="40"
             viewBox="0 0 24 24"
             fill="none"
-            stroke="#FFB401"
+            className="stroke-primary opacity-70"
             strokeWidth="1.5"
             strokeLinecap="round"
             strokeLinejoin="round"
-            className="opacity-70"
           >
             <path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2" />
             <path d="M18 14h-8" />
@@ -224,8 +223,8 @@ function NewsCard({ item, onView }: { item: NewsItem; onView: () => void }) {
       <div className="p-4 space-y-3 flex-1 flex flex-col">
         {/* Category pill */}
         <div className="flex items-center gap-1.5">
-          <span className="inline-block h-1.5 w-1.5 rounded-full bg-[#FFB401]" />
-          <span className="text-[10px] font-semibold uppercase tracking-wider text-[#FFB401]">
+          <span className="inline-block h-1.5 w-1.5 rounded-full bg-primary" />
+          <span className="text-[10px] font-semibold uppercase tracking-wider text-primary">
             News Update
           </span>
         </div>
@@ -248,7 +247,7 @@ function NewsCard({ item, onView }: { item: NewsItem; onView: () => void }) {
               {fmtDate(item.updated_at || item.created_at)}
             </span>
           </div>
-          <ArrowRight className="h-3.5 w-3.5 text-[#FFB401] opacity-0 group-hover:opacity-100 translate-x-[-4px] group-hover:translate-x-0 transition-all duration-200" />
+          <ArrowRight className="h-3.5 w-3.5 text-primary opacity-0 group-hover:opacity-100 translate-x-[-4px] group-hover:translate-x-0 transition-all duration-200" />
         </div>
       </div>
     </div>
@@ -309,9 +308,9 @@ export default function UserNewsPage() {
     <ProtectedRoute>
       <div className="px-4 md:px-6 lg:px-8 py-10">
         {/* Header */}
-        <div className="mb-8 relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/60 via-white to-slate-50 dark:from-[#0B1220] dark:via-[#0B1220] dark:to-[#1a1f2e] p-6 border border-[#FFB401]/20">
+        <div className="mb-8 relative overflow-hidden rounded-2xl bg-card border border-primary/20 p-6">
           {/* Decorative elements */}
-          <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-[#FFB401] to-transparent opacity-80" />
+          <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-primary to-transparent opacity-80" />
           <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
             <svg
               className="absolute inset-0 w-full h-full opacity-[0.04]"
@@ -334,25 +333,25 @@ export default function UserNewsPage() {
               </defs>
               <rect width="100%" height="100%" fill="url(#news-grid-page)" />
             </svg>
-            <div className="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-[#FFB401]/10 blur-2xl" />
+            <div className="absolute -right-10 -top-10 w-44 h-44 rounded-full bg-primary/10 blur-2xl" />
           </div>
 
           <div className="relative flex items-start gap-4">
             <div className="flex-shrink-0">
-              <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-[#FFB401]/15 border border-[#FFB401]/30">
-                <Radio className="h-6 w-6 text-[#FFB401]" />
+              <div className="relative flex items-center justify-center w-12 h-12 rounded-xl bg-primary/15 border border-primary/30">
+                <Radio className="h-6 w-6 text-primary" />
                 <span className="absolute -top-1 -right-1 flex h-3 w-3">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#FFB401] opacity-60" />
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-[#FFB401]" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-60" />
+                  <span className="relative inline-flex rounded-full h-3 w-3 bg-primary" />
                 </span>
               </div>
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-[#FFB401]">
+                <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-primary">
                   Breaking
                 </span>
-                <span className="w-1 h-1 rounded-full bg-[#FFB401]/50" />
+                <span className="w-1 h-1 rounded-full bg-primary/50" />
                 <span className="text-[10px] tracking-widest uppercase text-muted-foreground">
                   Diago Finance
                 </span>

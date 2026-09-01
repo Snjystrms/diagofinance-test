@@ -255,7 +255,7 @@ export function CheckEmailClient() {
                 disabled={isVerifying || otp.length !== 6}
                 style={primaryButtonGradient}
                 className="
-                  w-full py-3.5 rounded-md font-sans font-bold text-[14px] leading-[150%] tracking-[-3%]
+                  w-full py-3.5 rounded-md font-sans font-normal text-[14px] leading-[150%] tracking-[-3%]
                   text-white
                   hover:opacity-90
                   disabled:opacity-40 disabled:cursor-not-allowed
