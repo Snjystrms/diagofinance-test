@@ -326,7 +326,7 @@ export function IbDashboardSidebar() {
                 className={cn(
                   "ib-sidebar-nav-card group relative flex flex-col items-center justify-center gap-2.5 rounded-[20px] border px-3 py-5 transition-all duration-200 text-center",
                   isLastOdd &&
-                    "col-span-2 flex-row gap-3 py-3.5 justify-start px-5",
+                    "col-span-2 flex-row gap-3 py-3.5 justify-center px-5",
                   active
                     ? "border-transparent"
                     : "border-transparent bg-sidebar-accent/35 hover:bg-sidebar-accent/65 text-sidebar-foreground/70 hover:text-sidebar-foreground",
