@@ -5,11 +5,11 @@ import { Edit, Loader2, Save, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/auth-context";
 import {
+  adminAccountTypesApi,
   adminCommissionGroupsApi,
-  adminGroupsApi,
   adminIbPlansCrudApi,
+  type AccountTypeItem,
   type AdminCommissionGroupRate,
-  type AdminGroupItem,
   type AdminIbPlanCrudItem,
 } from "@/lib/api";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
@@ -67,6 +67,13 @@ const buildRatesMap = (
   return result;
 };
 
+const getLiveGroupId = (type: AccountTypeItem): string | undefined => {
+  const liveId = type.groups?.live?.id;
+  return typeof liveId !== "undefined" && liveId !== null
+    ? String(liveId)
+    : undefined;
+};
+
 export function CommissionGroupForm({
   open,
   onOpenChange,
@@ -77,7 +84,7 @@ export function CommissionGroupForm({
   const { token } = useAuth();
   const [categories, setCategories] = useState<string[]>([]);
   const [ibPlans, setIbPlans] = useState<AdminIbPlanCrudItem[]>([]);
-  const [groups, setGroups] = useState<AdminGroupItem[]>([]);
+  const [accountTypes, setAccountTypes] = useState<AccountTypeItem[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState("");
   const [selectedGroupId, setSelectedGroupId] = useState("");
   const [status, setStatus] = useState(true);
@@ -107,8 +114,10 @@ export function CommissionGroupForm({
 
   const selectedGroup = useMemo(
     () =>
-      groups.find((group) => String(group.id) === String(initialData?.group_id)),
-    [groups, initialData],
+      accountTypes.find(
+        (type) => getLiveGroupId(type) === String(initialData?.group_id),
+      ),
+    [accountTypes, initialData],
   );
 
   useEffect(() => {
@@ -135,26 +144,21 @@ export function CommissionGroupForm({
     const run = async () => {
       setOptionsLoading(true);
       try {
-        const [categoriesRes, plansRes, groupsRes] = await Promise.all([
+        const [categoriesRes, plansRes, accountTypesRes] = await Promise.all([
           adminCommissionGroupsApi.getCategories(authToken),
           adminIbPlansCrudApi.list(authToken),
-          adminGroupsApi.list(authToken),
+          adminAccountTypesApi.list({ token: authToken }),
         ]);
 
         if (!mounted) return;
 
         const nextCategories = categoriesRes?.data?.categories ?? [];
         const nextPlans = plansRes?.data?.ibPlans ?? [];
-        const nextGroups = (
-          Array.isArray(groupsRes?.data) ? groupsRes.data : []
-        ).filter(
-          (group) =>
-            !group.mode || group.mode.toLowerCase() === "live",
-        );
+        const nextAccountTypes = accountTypesRes?.data?.accountTypes ?? [];
 
         setCategories(nextCategories);
         setIbPlans(nextPlans);
-        setGroups(nextGroups);
+        setAccountTypes(nextAccountTypes);
         setRates(
           buildRatesMap(
             nextCategories,
@@ -315,15 +319,11 @@ export function CommissionGroupForm({
                   {initialData ? (
                     <div className="flex min-h-9 flex-col justify-center rounded-md border bg-muted/40 px-3 py-1.5 text-sm">
                       <span className="font-medium">
-                        {selectedGroup?.account_type_name ||
-                          selectedGroup?.name ||
-                          initialData.group_name}
+                        {selectedGroup?.name || initialData.group_name}
                       </span>
-                      {selectedGroup?.mt5_group_name ||
-                      initialData.mt5_group_name ? (
+                      {initialData.mt5_group_name ? (
                         <span className="text-xs text-muted-foreground">
-                          {selectedGroup?.mt5_group_name ||
-                            initialData.mt5_group_name}
+                          {initialData.mt5_group_name}
                         </span>
                       ) : null}
                     </div>
@@ -336,21 +336,23 @@ export function CommissionGroupForm({
                       <SelectTrigger className="w-full">
                         <SelectValue placeholder="Select group" />
                       </SelectTrigger>
-                      <SelectContent>
-                        {groups.map((group) => (
-                          <SelectItem key={group.id} value={String(group.id)}>
-                            <div className="flex flex-col">
-                              <span className="font-medium">
-                                {group.account_type_name || group.name}
-                              </span>
-                              {group.mt5_group_name ? (
-                                <span className="text-xs text-muted-foreground">
-                                  {group.mt5_group_name}
-                                </span>
-                              ) : null}
-                            </div>
-                          </SelectItem>
-                        ))}
+                      <SelectContent className="max-w-[320px]">
+                        {accountTypes.map((type) => {
+                          const liveGroupId = getLiveGroupId(type);
+                          if (!liveGroupId) return null;
+                          return (
+                            <SelectItem key={liveGroupId} value={liveGroupId} className="py-2">
+                              <div className="min-w-0 max-w-[280px]">
+                                <div className="truncate text-sm font-medium">
+                                  {type.name}
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  Leverage: {type.maximum_leverage ?? "-"}
+                                </div>
+                              </div>
+                            </SelectItem>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                   )}

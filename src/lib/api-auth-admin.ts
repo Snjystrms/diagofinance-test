@@ -4908,7 +4908,7 @@ export const cashDepositApi = {
       success: boolean;
       message: string;
       data: CashDepositSubmitData;
-    }>(`/cash-deposit/submit`, {
+    }>(`/user/cash-deposit/submit`, {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
       body: formData,

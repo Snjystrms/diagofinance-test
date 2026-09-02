@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 import { AuthenticatedDocumentViewer } from "@/components/authenticated-document-viewer";
 import { formatApiDateTimeAsIST } from "@/lib/formatters";
 import type { BrokerBankDetailItem } from "@/lib/api";
@@ -138,6 +139,99 @@ export function UPIQRCodeDisplay({
       previewClassName="h-48 w-48"
       imageFit="contain"
     />
+  );
+}
+
+export type DepositInfoItem = {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  text: string;
+};
+
+export function DepositInfoPanel({
+  title,
+  tagline,
+  steps,
+  verifyTitle,
+  verify,
+}: {
+  title: string;
+  tagline: string;
+  steps: DepositInfoItem[];
+  verifyTitle?: string;
+  verify?: DepositInfoItem[];
+}) {
+  return (
+    <div className="space-y-6">
+      <Card className="overflow-hidden border border-border/60 bg-card shadow-sm">
+        <div className="h-1.5 bg-gradient-to-r from-primary/80 via-primary to-primary/30" />
+        <CardContent className="space-y-5 p-6">
+          <div className="space-y-1">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+              Transfer Flow
+            </p>
+            <h3 className="text-lg font-semibold text-foreground">{title}</h3>
+            <p className="text-sm leading-6 text-muted-foreground">{tagline}</p>
+          </div>
+
+          <div className="space-y-3">
+            {steps.map((step) => (
+              <div
+                key={step.title}
+                className="flex items-start gap-3 rounded-xl border border-border/50 bg-gradient-to-br from-background to-muted/30 px-4 py-3 transition-colors hover:border-primary/40"
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <step.icon className="h-4 w-4" />
+                </div>
+                <div className="space-y-0.5">
+                  <p className="text-sm font-medium text-foreground">
+                    {step.title}
+                  </p>
+                  <p className="text-xs leading-5 text-muted-foreground">
+                    {step.text}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {verify && verify.length > 0 && verifyTitle && (
+        <Card className="overflow-hidden border border-border/60 bg-card shadow-sm">
+          <div className="h-1.5 bg-gradient-to-r from-amber-400 via-orange-400 to-amber-300" />
+          <CardContent className="space-y-4 p-6">
+            <div className="space-y-1">
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                Request Signals
+              </p>
+              <h3 className="text-lg font-semibold text-foreground">
+                {verifyTitle}
+              </h3>
+            </div>
+
+            <div className="space-y-3 text-sm">
+              {verify.map((item) => (
+                <div
+                  key={item.title}
+                  className="flex items-start gap-3 rounded-xl border border-border/50 bg-background/80 px-4 py-3"
+                >
+                  <item.icon className="mt-0.5 h-4 w-4 shrink-0 text-amber-500" />
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      {item.title}
+                    </p>
+                    <p className="text-xs leading-5 text-muted-foreground">
+                      {item.text}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
   );
 }
 

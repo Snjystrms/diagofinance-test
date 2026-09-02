@@ -29,7 +29,9 @@ import {
   Banknote,
   Building2,
   CheckCircle,
+  Clock,
   Copy,
+  DollarSign,
   FileText,
   Hash,
   Loader2,
@@ -41,6 +43,7 @@ import {
   X,
 } from "lucide-react";
 import {
+  DepositInfoPanel,
   formatDateTime,
   isBrokerBankDetailActive,
   MINIMUM_DEPOSIT_AMOUNT,
@@ -634,25 +637,45 @@ export function BankDepositTab({ token }: { token: string | null }) {
                 </div>
               )}
 
-              <div className="rounded-xl border border-amber-300/60 bg-amber-50/80 p-4 dark:border-amber-800 dark:bg-amber-950/30">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-                  <div className="text-xs text-amber-800 dark:text-amber-200 space-y-1">
-                    <p className="font-semibold">Before transferring:</p>
-                    <ul className="space-y-0.5 list-none">
-                      <li>
-                        Keep a record of the Transaction / Reference ID
-                      </li>
-                      <li>
-                        Transfers typically reflect within 1-2 business days
-                      </li>
-                      <li>
-                        Minimum deposit: <strong>$10 USD</strong> equivalent
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
+              <DepositInfoPanel
+                title="Bank deposit flow"
+                tagline="Transfer to the approved account, then submit your payment details for review."
+                steps={[
+                  {
+                    icon: DollarSign,
+                    title: "Choose currency",
+                    text: "Pick your deposit currency and live USD rate.",
+                  },
+                  {
+                    icon: Banknote,
+                    title: "Transfer funds",
+                    text: "Send to the approved bank account or scan the UPI QR code.",
+                  },
+                  {
+                    icon: FileText,
+                    title: "Submit details",
+                    text: "Enter the Transaction ID and attach your payment proof.",
+                  },
+                ]}
+                verifyTitle="What to verify"
+                verify={[
+                  {
+                    icon: Hash,
+                    title: "Record",
+                    text: "Keep your Transaction / Reference ID safe.",
+                  },
+                  {
+                    icon: Clock,
+                    title: "Processing time",
+                    text: "Transfers typically reflect within 1-2 business days.",
+                  },
+                  {
+                    icon: Banknote,
+                    title: "Minimum deposit",
+                    text: `${MINIMUM_DEPOSIT_AMOUNT} USD equivalent is required.`,
+                  },
+                ]}
+              />
             </CardContent>
           </Card>
         </div>

@@ -12,7 +12,7 @@ import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { notifyWalletRefresh } from "@/lib/client-events";
 import toast from "react-hot-toast";
 import { AlertCircle, CheckCircle2, Clock, DollarSign, ExternalLink, ShieldCheck, Wallet, RefreshCw } from "lucide-react";
-import { MINIMUM_DEPOSIT_AMOUNT } from "./deposit-shared";
+import { DepositInfoPanel, MINIMUM_DEPOSIT_AMOUNT } from "./deposit-shared";
 
 type PendingDeposit = {
   coinsbuyDepositId: string;
@@ -391,67 +391,64 @@ export function CoinsBuyDepositTab({ token }: { token: string | null }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       {/* Left Column - CoinsBuy Info */}
-      <Card className="border border-border/60 bg-card shadow-sm">
-        <CardHeader className="text-center pb-6 relative z-10">
-          <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
-            <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500/10 to-indigo-600/10 border border-blue-500/20">
-              <Wallet className="h-5 w-5 text-primary" />
-            </div>
-            CoinsBuy
-          </CardTitle>
-          <CardDescription>Use CoinsBuy to start a guided checkout deposit flow.</CardDescription>
-        </CardHeader>
-
-        <CardContent className="space-y-6 relative z-10">
-          <div className="flex justify-center">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-2xl blur opacity-30 dark:opacity-20"></div>
-              <div className="relative bg-card rounded-2xl p-6 shadow-lg">
-                <div className="w-32 h-32 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex flex-col items-center justify-center gap-2">
-                  <Wallet className="h-8 w-8 text-white" />
-                  <span className="text-lg font-semibold text-white">CoinsBuy</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-            <div className="mb-2 text-xs font-medium text-muted-foreground">Processing Time</div>
-            <div className="font-semibold text-foreground">Within 1 Business Day</div>
-          </div>
-
-          <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-            <div className="mb-2 text-xs font-medium text-muted-foreground">Minimum Deposit</div>
-            <div className="font-semibold text-foreground">Provider dependent</div>
-          </div>
-
-          <div className="rounded-2xl border border-amber-300/40 bg-amber-50/70 p-4 dark:border-amber-800/50 dark:bg-amber-950/20">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
-              <div className="text-sm text-amber-900 dark:text-amber-100">
-                <p className="font-medium mb-1">Important Information:</p>
-                <p className="text-xs text-amber-800/90 dark:text-amber-200/90">
-                  After submitting your deposit request, you will be redirected to CoinsBuy to complete the payment.
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <DepositInfoPanel
+          title="CoinsBuy flow"
+          tagline="Use CoinsBuy to start a guided, secure checkout deposit flow."
+          steps={[
+            {
+              icon: DollarSign,
+              title: "Enter the amount",
+              text: "Choose how much you want to deposit.",
+            },
+            {
+              icon: Wallet,
+              title: "Start checkout",
+              text: "Create a deposit and get redirected to the CoinsBuy checkout.",
+            },
+            {
+              icon: ShieldCheck,
+              title: "Complete payment",
+              text: "Pay through the CoinsBuy hosted checkout, then track it here.",
+            },
+          ]}
+          verifyTitle="What to verify"
+          verify={[
+            {
+              icon: Clock,
+              title: "Processing time",
+              text: "Deposit is typically processed within 1 business day.",
+            },
+            {
+              icon: DollarSign,
+              title: "Minimum deposit",
+              text: "Minimum is provider-dependent.",
+            },
+            {
+              icon: CheckCircle2,
+              title: "Credit",
+              text: "Funds are credited once payment is confirmed.",
+            },
+          ]}
+        />
+      </div>
 
       {/* Right Column - CoinsBuy Deposit Form OR Waiting Screen */}
       {pendingDeposit && (isPolling || depositStatus !== null || pollError) ? (
         renderWaitingScreen()
       ) : (
-        <Card className="border border-border/60 bg-card shadow-sm">
+        <Card className="overflow-hidden border border-border/60 bg-card shadow-sm">
+          <div className="h-1.5 bg-gradient-to-r from-primary/80 via-primary to-primary/30" />
           <CardHeader className="relative z-10">
             <CardTitle className="text-2xl font-bold flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500/10 to-indigo-600/10 border border-blue-500/20">
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
                 <DollarSign className="h-5 w-5 text-primary" />
               </div>
               Create Deposit
             </CardTitle>
-            <CardDescription>Enter the amount you want to deposit via CoinsBuy</CardDescription>
+            <CardDescription>
+              Enter the amount you want to deposit via CoinsBuy
+            </CardDescription>
           </CardHeader>
 
           <CardContent className="space-y-6 relative z-10">
@@ -468,18 +465,40 @@ export function CoinsBuyDepositTab({ token }: { token: string | null }) {
             {pendingDeposit && !isPolling && (
               <div className="rounded-2xl border border-border/60 bg-muted/20 p-3 flex items-center justify-between">
                 <p className="text-xs text-muted-foreground">
-                  Previous deposit <span className="font-mono font-semibold text-foreground">{pendingDeposit.coinsbuyDepositId}</span> pending
+                  Previous deposit{" "}
+                  <span className="font-mono font-semibold text-foreground">
+                    {pendingDeposit.coinsbuyDepositId}
+                  </span>{" "}
+                  pending
                 </p>
-                <Button size="sm" variant="outline" onClick={handleResumePolling} className="h-8 rounded-lg">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleResumePolling}
+                  className="h-8 rounded-lg"
+                >
                   Resume
                 </Button>
               </div>
             )}
 
             <div className="space-y-3">
-              <Label htmlFor="coinsbuy-amount" className="text-sm font-semibold text-foreground">
-                Deposit Amount <span className="text-destructive">*</span>
-              </Label>
+              <div className="flex items-center justify-between">
+                <Label
+                  htmlFor="coinsbuy-amount"
+                  className="text-sm font-semibold text-foreground"
+                >
+                  Deposit Amount{" "}
+                  <span className="text-destructive">*</span>
+                </Label>
+                {coinsbuyAmount &&
+                  parseFloat(coinsbuyAmount) >= MINIMUM_DEPOSIT_AMOUNT && (
+                    <span className="flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Valid amount
+                    </span>
+                  )}
+              </div>
               <div className="relative">
                 <DollarSign className="absolute left-3 top-3 h-5 w-5 text-muted-foreground" />
                 <Input
@@ -494,12 +513,31 @@ export function CoinsBuyDepositTab({ token }: { token: string | null }) {
                   placeholder="100.00"
                 />
               </div>
-              <p className="text-xs text-muted-foreground">Enter the amount you want to deposit</p>
+              <p className="text-xs text-muted-foreground">
+                Enter the amount you want to deposit
+              </p>
             </div>
+
+            {coinsbuyAmount && parseFloat(coinsbuyAmount) > 0 && (
+              <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">
+                    You&apos;ll be credited
+                  </span>
+                  <span className="text-foreground font-semibold">
+                    ${parseFloat(coinsbuyAmount).toFixed(2)} USD
+                  </span>
+                </div>
+              </div>
+            )}
 
             <Button
               onClick={handleCoinsbuySubmit}
-              disabled={!coinsbuyAmount.trim() || parseFloat(coinsbuyAmount) < MINIMUM_DEPOSIT_AMOUNT || isSubmittingCoinsbuy}
+              disabled={
+                !coinsbuyAmount.trim() ||
+                parseFloat(coinsbuyAmount) < MINIMUM_DEPOSIT_AMOUNT ||
+                isSubmittingCoinsbuy
+              }
               className="h-12 w-full rounded-xl bg-primary text-lg font-semibold text-primary-foreground shadow-sm transition-all duration-200 hover:bg-primary/90 hover:shadow-md disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubmittingCoinsbuy ? (
@@ -514,9 +552,40 @@ export function CoinsBuyDepositTab({ token }: { token: string | null }) {
                 </>
               )}
             </Button>
-            {coinsbuyAmount && parseFloat(coinsbuyAmount) > 0 && parseFloat(coinsbuyAmount) < MINIMUM_DEPOSIT_AMOUNT && (
-              <p className="text-xs text-destructive font-medium">Minimum deposit amount is ${MINIMUM_DEPOSIT_AMOUNT} USD</p>
-            )}
+            {coinsbuyAmount &&
+              parseFloat(coinsbuyAmount) > 0 &&
+              parseFloat(coinsbuyAmount) < MINIMUM_DEPOSIT_AMOUNT && (
+                <p className="text-xs text-destructive font-medium">
+                  Minimum deposit amount is ${MINIMUM_DEPOSIT_AMOUNT} USD
+                </p>
+              )}
+
+            <div className="bg-muted/50 rounded-xl p-4 border border-border/50">
+              <h4 className="font-semibold text-foreground mb-3 text-sm flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-primary" />
+                Quick Steps
+              </h4>
+              <div className="space-y-2 text-xs text-muted-foreground">
+                <div className="flex items-start gap-2">
+                  <div className="w-5 h-5 bg-primary/10 rounded-full flex items-center justify-center mt-0.5 border border-primary/20">
+                    <span className="text-primary font-bold text-xs">1</span>
+                  </div>
+                  <span>Enter deposit amount</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-5 h-5 bg-primary/10 rounded-full flex items-center justify-center mt-0.5 border border-primary/20">
+                    <span className="text-primary font-bold text-xs">2</span>
+                  </div>
+                  <span>Complete payment on CoinsBuy checkout</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-5 h-5 bg-primary/10 rounded-full flex items-center justify-center mt-0.5 border border-primary/20">
+                    <span className="text-primary font-bold text-xs">3</span>
+                  </div>
+                  <span>Return to see your deposit credited</span>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       )}

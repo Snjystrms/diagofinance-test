@@ -920,6 +920,25 @@ body.theme-loaded * {
       border-box !important;
 }
 
+/* Premium dark fallback cards: reuse the same bordered frame as the dashboard
+   artwork cards (header + wallet) so the dark fallback keeps the visible
+   gradient border in both diagofinance dark and bright modes. */
+:root[data-theme-id="diagofinance-dark"] .premium-dark-border {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(#050505, #050505) padding-box,
+    linear-gradient(100.15deg, #606060 -5.5%, #b10430 56.77%, #606060 111.96%)
+      border-box !important;
+}
+
+:root[data-theme-id="diagofinance-bright"] .premium-dark-border {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(#050505, #050505) padding-box,
+    linear-gradient(100.15deg, #fde8e8 -5.5%, #b10430 56.77%, #fde8e8 111.96%)
+      border-box !important;
+}
+
 /* 3D rotating logo cube */
 @keyframes logo-cube-spin {
   from {

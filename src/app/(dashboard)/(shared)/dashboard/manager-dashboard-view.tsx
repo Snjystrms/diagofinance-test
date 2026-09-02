@@ -24,6 +24,10 @@ import type {
 import { useClientCustomization } from "@/contexts/client-customization-context"
 import { getDashboardThemeArtwork } from "@/components/theme-customizer"
 import { ThemePill } from "@/components/ui/theme-pill";
+import {
+  PremiumDarkCard,
+  PremiumDarkLayers,
+} from "@/components/ui/premium-dark-card";
 
 interface ManagerDashboardViewProps {
   managerDashboardData: ManagerDashboardData | null;
@@ -190,43 +194,72 @@ export function ManagerDashboardView({ managerDashboardData, subadminDashboardDa
   return (
     <div className="min-h-full w-full p-4 lg:p-6 xl:p-8">
       {/* Header */}
-      <div className="mb-6 ib-portal-hero rounded-[28px] border px-6 py-6 sm:px-7">
-        {dashboardThemeArtwork && (
-          <div
-            className={`dashboard-theme-overlay dashboard-theme-welcome-overlay theme-art-${dashboardThemeArtwork}`}
-          />
-        )}
-        <div className="relative z-10 space-y-2">
-          <ThemePill
-            icon={<Sparkles className="h-3.5 w-3.5" />}
-            className="rounded-full text-xs font-semibold uppercase tracking-[0.22em]"
-          >
-            Manager Portal
-          </ThemePill>
-          <div className="space-y-1">
-            <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2.15rem]">
-              {greeting}
-            </h1>
-            <p className="max-w-3xl text-sm text-muted-foreground sm:text-base">
-              Here&apos;s what&apos;s happening with your business today.
-            </p>
-          </div>
-          {manager && (
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              {/* <span className="text-sm text-muted-foreground">{manager.email}</span>
-              <span className="text-muted-foreground/40">•</span> */}
-              {/* <span className="text-sm text-muted-foreground">
-                {manager.total_client} client{manager.total_client !== 1 ? "s" : ""}
-              </span> */}
-              {/* <Badge
-                variant={manager.status === 1 ? "default" : "outline"}
-                className="text-xs"
-              >
-                {manager.status === 1 ? "Active" : "Inactive"}
-              </Badge> */}
-            </div>
+      {/* Desktop: original with theme images — falls back to dark premium when no artwork, so it shows correctly in bright and dark mode. */}
+      <div className="mb-6 hidden xl:block">
+        <div
+          className={`rounded-[28px] border px-6 py-6 sm:px-7 ${
+            dashboardThemeArtwork
+              ? "ib-portal-hero ib-dash-artwork-surface"
+              : "premium-dark-border group relative overflow-hidden border-white/5 bg-[#050505]"
+          }`}
+        >
+          {dashboardThemeArtwork ? (
+            <div
+              className={`dashboard-theme-overlay dashboard-theme-welcome-overlay theme-art-${dashboardThemeArtwork}`}
+            />
+          ) : (
+            <PremiumDarkLayers />
           )}
+          <div className="relative z-10 space-y-2">
+            <ThemePill
+              icon={<Sparkles className="h-3.5 w-3.5" />}
+              className={`rounded-full text-xs font-semibold uppercase tracking-[0.22em] ${
+                dashboardThemeArtwork
+                  ? ""
+                  : "border border-white/10 bg-white/5 text-white/80 backdrop-blur-[6px]"
+              }`}
+            >
+              Manager Portal
+            </ThemePill>
+            <div className="space-y-1">
+              <h1
+                className={`text-3xl font-semibold tracking-tight sm:text-[2.15rem] ${
+                  dashboardThemeArtwork ? "text-zinc-50" : "text-white"
+                }`}
+              >
+                {greeting}
+              </h1>
+              <p
+                className={`max-w-3xl text-sm sm:text-base ${
+                  dashboardThemeArtwork ? "text-zinc-50/80" : "text-white/45"
+                }`}
+              >
+                Here&apos;s what&apos;s happening with your business today.
+              </p>
+            </div>
+          </div>
         </div>
+      </div>
+      {/* Mobile fallback: dark premium — shows when viewport is reduced (below xl). */}
+      <div className="mb-6 block xl:hidden">
+        <PremiumDarkCard className="px-6 py-6 sm:px-7" aria-label="Manager portal">
+          <div className="relative z-10 space-y-2">
+            <ThemePill
+              icon={<Sparkles className="h-3.5 w-3.5" />}
+              className="rounded-full border border-white/10 bg-white/5 text-xs font-semibold uppercase tracking-[0.22em] text-white/80 backdrop-blur-[6px]"
+            >
+              Manager Portal
+            </ThemePill>
+            <div className="space-y-1">
+              <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-[2.15rem]">
+                {greeting}
+              </h1>
+              <p className="max-w-3xl text-sm text-white/45 sm:text-base">
+                Here&apos;s what&apos;s happening with your business today.
+              </p>
+            </div>
+          </div>
+        </PremiumDarkCard>
       </div>
 
       {/* Permissions */}

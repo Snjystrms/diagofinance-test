@@ -23,7 +23,7 @@ import {
   Shield,
   X,
 } from "lucide-react";
-import { formatDateTime, MINIMUM_DEPOSIT_AMOUNT } from "./deposit-shared";
+import { formatDateTime, DepositInfoPanel, MINIMUM_DEPOSIT_AMOUNT } from "./deposit-shared";
 
 interface CregisStatusInfo {
   label: string;
@@ -323,89 +323,47 @@ export function CregisDepositTab({ token }: { token: string | null }) {
     <div className="space-y-8">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Left Column - Cregis Info */}
-        <Card className="border border-border/60 bg-card shadow-sm">
-          <CardHeader className="text-center pb-6 relative z-10">
-            <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
-              <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
-                <Shield className="h-5 w-5 text-primary" />
-              </div>
-              Crypto Gateway
-            </CardTitle>
-            <CardDescription>
-              Fast, secure multi-blockchain payment solution
-            </CardDescription>
-          </CardHeader>
-
-          <CardContent className="space-y-6 relative z-10">
-            <div className="flex justify-center">
-              <div className="relative">
-                <div className="absolute inset-0 bg-primary/20 rounded-2xl blur opacity-30 dark:opacity-20"></div>
-                <div className="relative bg-card rounded-2xl p-6 shadow-lg border border-border/60">
-                  <div className="w-32 h-32 bg-gradient-to-br from-primary/20 to-primary/10 rounded-xl flex flex-col items-center justify-center gap-2 border border-primary/30">
-                    <Shield className="h-10 w-10 text-primary" />
-                    <span className="text-base font-semibold text-foreground text-center px-2">
-                      Crypto Pay
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-3">
-              <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-medium text-muted-foreground">
-                    Rate
-                  </div>
-                  <div className="font-semibold text-foreground">
-                    1USD = 1USDT
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                <div className="flex items-center justify-between">
-                  <div className="text-xs font-medium text-muted-foreground">
-                    Speed
-                  </div>
-                  <Badge
-                    variant="secondary"
-                    className="bg-primary/10 text-primary border-primary/20"
-                  >
-                    Instant
-                  </Badge>
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                <div className="text-xs font-medium text-muted-foreground mb-2">
-                  Networks
-                </div>
-                <div className="flex flex-wrap gap-1.5">
-                  <Badge variant="default" className="text-xs">BTC</Badge>
-                  <Badge variant="default" className="text-xs">ETH</Badge>
-                  <Badge variant="default" className="text-xs">BSC</Badge>
-                  <Badge variant="default" className="text-xs">TRX</Badge>
-                  <Badge variant="default" className="text-xs">+More</Badge>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
-              <div className="flex items-start gap-3">
-                <CheckCircle2 className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" />
-                <div className="text-sm text-foreground">
-                  <p className="font-medium mb-1">Why choose crypto?</p>
-                  <ul className="space-y-1 text-xs text-muted-foreground">
-                    <li>✓ Instant confirmation</li>
-                    <li>✓ Multiple blockchain options</li>
-                    <li>✓ Secure & transparent</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-6">
+          <DepositInfoPanel
+            title="Crypto gateway flow"
+            tagline="A fast, secure, multi-blockchain payment solution for your deposit."
+            steps={[
+              {
+                icon: DollarSign,
+                title: "Enter the amount",
+                text: "Choose how much you want to deposit in USD.",
+              },
+              {
+                icon: Shield,
+                title: "Complete payment",
+                text: "Pay on the hosted checkout using your preferred blockchain.",
+              },
+              {
+                icon: CheckCircle2,
+                title: "Instant credit",
+                text: "Your deposit is confirmed and credited once the payment is received.",
+              },
+            ]}
+            verifyTitle="What to verify"
+            verify={[
+              {
+                icon: DollarSign,
+                title: "Rate",
+                text: "1 USD = 1 USDT for every deposit.",
+              },
+              {
+                icon: Shield,
+                title: "Networks",
+                text: "BTC, ETH, BSC, TRX and more supported.",
+              },
+              {
+                icon: CheckCircle2,
+                title: "Speed",
+                text: "Instant confirmation with secure and transparent processing.",
+              },
+            ]}
+          />
+        </div>
 
         {/* Right Column - Cregis Deposit Form */}
         <Card className="border border-border/60 bg-card shadow-sm">

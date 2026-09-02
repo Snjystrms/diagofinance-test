@@ -46,7 +46,7 @@ export function PremiumDarkCard({
   return (
     <div
       className={cn(
-        "group relative overflow-hidden rounded-[28px] border border-white/5 bg-[#050505]",
+        "premium-dark-border group relative overflow-hidden rounded-[28px] border border-white/5 bg-[#050505]",
         className
       )}
       {...props}

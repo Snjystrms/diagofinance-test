@@ -20,9 +20,9 @@ import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { notifyWalletRefresh } from "@/lib/client-events";
 import toast from "react-hot-toast";
 import {
-  AlertCircle,
   Banknote,
   CheckCircle,
+  Clock,
   Eye,
   FileText,
   Loader2,
@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import {
   CashStatusBadge,
+  DepositInfoPanel,
   formatDateTime,
   MINIMUM_DEPOSIT_AMOUNT,
 } from "./deposit-shared";
@@ -263,72 +264,45 @@ export function CashDepositTab({ token }: { token: string | null }) {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         {/* Left — Cash deposit info */}
         <div className="space-y-6">
-          <Card className="border border-border/60 bg-card shadow-sm">
-            <CardHeader className="flex flex-row items-start justify-between gap-4">
-              <div className="space-y-1">
-                <CardTitle className="flex items-center gap-2 text-xl font-bold">
-                  <div className="rounded-lg border border-primary/20 bg-primary/10 p-1.5">
-                    <Banknote className="h-5 w-5 text-primary" />
-                  </div>
-                  Cash Deposit
-                </CardTitle>
-                <CardDescription>
-                  Deposit cash into your account. Submit the amount along with a
-                  cash receipt / voucher for review.
-                </CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                <div className="mb-2 text-xs font-medium text-muted-foreground">
-                  Where will the deposit be credited?
-                </div>
-                <div className="text-sm font-semibold text-foreground">
-                  Main wallet or a specific MT5 trading account
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                <div className="mb-2 text-xs font-medium text-muted-foreground">
-                  Processing Time
-                </div>
-                <div className="font-semibold text-foreground">
-                  Reviewed within 1-2 business days
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-                <div className="mb-2 text-xs font-medium text-muted-foreground">
-                  Minimum Deposit
-                </div>
-                <div className="font-semibold text-foreground">
-                  ${MINIMUM_DEPOSIT_AMOUNT} USD equivalent
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-amber-300/40 bg-amber-50/70 p-4 dark:border-amber-800/50 dark:bg-amber-950/20">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
-                  <div className="text-sm text-amber-900 dark:text-amber-100">
-                    <p className="font-medium mb-1">Before submitting:</p>
-                    <ul className="space-y-1 text-xs text-amber-800/90 dark:text-amber-200/90">
-                      <li>
-                        Keep the cash receipt / voucher reference for your
-                        records
-                      </li>
-                      <li>
-                        Attach a clear photo or document as proof of payment
-                      </li>
-                      <li>
-                        Funds will be credited once the admin team verifies the
-                        deposit
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <DepositInfoPanel
+            title="Cash deposit flow"
+            tagline="Deposit cash into your account and submit a receipt or voucher for review."
+            steps={[
+              {
+                icon: Wallet,
+                title: "Choose credit target",
+                text: "Credit to your main wallet or a specific MT5 trading account.",
+              },
+              {
+                icon: Banknote,
+                title: "Enter the amount",
+                text: `Minimum deposit of ${MINIMUM_DEPOSIT_AMOUNT} USD equivalent.`,
+              },
+              {
+                icon: Upload,
+                title: "Attach a receipt",
+                text: "Add a clear cash receipt or voucher as proof of payment.",
+              },
+            ]}
+            verifyTitle="What to verify"
+            verify={[
+              {
+                icon: Clock,
+                title: "Processing time",
+                text: "Your deposit is reviewed within 1-2 business days.",
+              },
+              {
+                icon: Banknote,
+                title: "Minimum deposit",
+                text: `${MINIMUM_DEPOSIT_AMOUNT} USD equivalent is required.`,
+              },
+              {
+                icon: ShieldCheck,
+                title: "Credit",
+                text: "Funds are credited after the admin team verifies your deposit.",
+              },
+            ]}
+          />
         </div>
 
         {/* Right — Submit form */}

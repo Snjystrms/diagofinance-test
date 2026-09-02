@@ -11,8 +11,8 @@ import { binanceDepositApi, type BinanceDepositCreateResponse } from "@/lib/api"
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { notifyWalletRefresh } from "@/lib/client-events";
 import toast from "react-hot-toast";
-import { AlertCircle, Clock, DollarSign, ShieldCheck, WalletMinimal } from "lucide-react";
-import { MINIMUM_DEPOSIT_AMOUNT } from "./deposit-shared";
+import { CheckCircle2, Clock, DollarSign, ShieldCheck, WalletMinimal } from "lucide-react";
+import { DepositInfoPanel, MINIMUM_DEPOSIT_AMOUNT } from "./deposit-shared";
 
 export function BinancePayDepositTab({ token }: { token: string | null }) {
   const [binanceAmount, setBinanceAmount] = useState("");
@@ -89,68 +89,47 @@ export function BinancePayDepositTab({ token }: { token: string | null }) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
       {/* Left Column - Binance Info */}
-      <Card className="border border-border/60 bg-card shadow-sm">
-        <CardHeader className="text-center pb-6 relative z-10">
-          <CardTitle className="text-2xl font-bold flex items-center justify-center gap-2">
-            <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500/10 to-indigo-600/10 border border-blue-500/20">
-              <WalletMinimal className="h-5 w-5 text-primary" />
-            </div>
-            Binance Pay
-          </CardTitle>
-          <CardDescription>
-            Use Binance Pay to complete a deposit from your preferred funding
-            source.
-          </CardDescription>
-        </CardHeader>
-
-        <CardContent className="space-y-6">
-          <div className="flex justify-center">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-yellow-500 to-orange-600 rounded-2xl blur opacity-30 dark:opacity-20"></div>
-              <div className="relative bg-card rounded-2xl p-6 shadow-lg">
-                <img
-                  src="https://play-lh.googleusercontent.com/T1_WHAGs5WZePQejNSqqrxZah4uhBvYr698nTCFhXMjMZo5oSCoko5yW2wtmeO1ClRU"
-                  alt="Binance Logo"
-                  className="w-32 h-32 object-contain bg-white rounded-xl"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src =
-                      'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="50">B</text></svg>';
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-            <div className="mb-2 text-xs font-medium text-muted-foreground">
-              Processing Time
-            </div>
-            <div className="font-semibold text-foreground">
-              Within 1 Business Day
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-border/60 bg-muted/20 p-4">
-            <div className="mb-2 text-xs font-medium text-muted-foreground">
-              Minimum Deposit
-            </div>
-            <div className="font-semibold text-foreground">Provider dependent</div>
-          </div>
-
-          <div className="rounded-2xl border border-amber-300/40 bg-amber-50/70 p-4 dark:border-amber-800/50 dark:bg-amber-950/20">
-            <div className="flex items-start gap-3">
-              <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
-              <div className="text-sm text-amber-900 dark:text-amber-100">
-                <p className="font-medium mb-1">Important Information:</p>
-                <p className="text-xs text-amber-800/90 dark:text-amber-200/90">
-                  After submitting your deposit request, you will be redirected
-                  to Binance Pay to complete the payment.
-                </p>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <DepositInfoPanel
+          title="Binance Pay flow"
+          tagline="Complete a deposit from your preferred funding source using Binance Pay."
+          steps={[
+            {
+              icon: DollarSign,
+              title: "Enter the amount",
+              text: "Choose how much you want to deposit.",
+            },
+            {
+              icon: WalletMinimal,
+              title: "Create a deposit request",
+              text: "Submit your amount to start the Binance Pay payment.",
+            },
+            {
+              icon: ShieldCheck,
+              title: "Complete payment",
+              text: "You'll be redirected to Binance Pay to finish securely.",
+            },
+          ]}
+          verifyTitle="What to verify"
+          verify={[
+            {
+              icon: Clock,
+              title: "Processing time",
+              text: "Deposit is typically processed within 1 business day.",
+            },
+            {
+              icon: DollarSign,
+              title: "Minimum deposit",
+              text: "Minimum is provider-dependent.",
+            },
+            {
+              icon: CheckCircle2,
+              title: "Credit",
+              text: "Funds are credited once the payment is confirmed.",
+            },
+          ]}
+        />
+      </div>
 
       {/* Right Column - Binance Deposit Form */}
       <Card className="border border-border/60 bg-card shadow-sm">

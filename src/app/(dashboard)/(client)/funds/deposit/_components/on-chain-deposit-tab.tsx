@@ -29,9 +29,9 @@ import {
   X,
 } from "lucide-react";
 import {
+  DepositInfoPanel,
   MINIMUM_DEPOSIT_AMOUNT,
   MINIMUM_DEPOSIT_AMOUNT_LABEL,
-  SETTLEMENT_LABEL,
   getExplorerTxUrl,
   useAuthImageUrl,
 } from "./deposit-shared";
@@ -377,26 +377,45 @@ export function OnChainDepositTab({ token }: { token: string | null }) {
                 )}
 
                 {/* Important Notes */}
-                <div className="rounded-2xl border border-amber-300/40 bg-amber-50/70 p-4 dark:border-amber-800/50 dark:bg-amber-950/20">
-                  <div className="flex items-start gap-3">
-                    <AlertCircle className="mt-0.5 h-5 w-5 flex-shrink-0 text-amber-600 dark:text-amber-400" />
-                    <div className="text-sm text-amber-900 dark:text-amber-100">
-                      <p className="font-medium mb-1">Important Notes:</p>
-                      <ul className="space-y-1 text-xs text-amber-800/90 dark:text-amber-200/90">
-                        <li>
-                          Only send supported assets on the selected network
-                        </li>
-                        <li>Minimum deposit: {MINIMUM_DEPOSIT_AMOUNT_LABEL}</li>
-                        <li>
-                          Confirmation time may vary depending on network traffic
-                        </li>
-                        <li>
-                          Double-check the address and network before sending
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
+                <DepositInfoPanel
+                  title="On-chain deposit flow"
+                  tagline="Send funds to the destination address, then submit your transfer details for review."
+                  steps={[
+                    {
+                      icon: QrCode,
+                      title: "Send funds",
+                      text: "Transfer to the destination address on the selected network.",
+                    },
+                    {
+                      icon: DollarSign,
+                      title: "Enter the amount",
+                      text: `Minimum deposit of ${MINIMUM_DEPOSIT_AMOUNT_LABEL}.`,
+                    },
+                    {
+                      icon: Hash,
+                      title: "Submit details",
+                      text: "Add the transaction hash and a payment proof for verification.",
+                    },
+                  ]}
+                  verifyTitle="What to verify"
+                  verify={[
+                    {
+                      icon: AlertCircle,
+                      title: "Network",
+                      text: "Only send supported assets on the selected network.",
+                    },
+                    {
+                      icon: ShieldCheck,
+                      title: "Confirm",
+                      text: "Double-check the address and network before sending.",
+                    },
+                    {
+                      icon: Clock,
+                      title: "Timing",
+                      text: "Confirmation time varies with network traffic.",
+                    },
+                  ]}
+                />
               </>
             )}
           </CardContent>

@@ -25,7 +25,7 @@ export function ClientDashboardSkeleton() {
           {/* Left Side: Header + Key Metrics (75%) */}
           <div className="xl:col-span-3 space-y-6">
             {/* Header Section */}
-            <div className="rounded-[28px] border px-6 py-6 sm:px-7">
+            <div className="rounded-[28px] border bg-card px-6 py-6 sm:px-7">
               <div className="space-y-2">
                 <Skeleton className="h-6 w-32 rounded-full" />
                 <Skeleton className="h-9 w-80 mb-2" />
@@ -218,7 +218,7 @@ export function AdminDashboardSkeleton() {
   return (
     <div className="min-h-full w-full p-4 lg:p-6 xl:p-8">
       {/* Header Section */}
-      <div className="mb-6 rounded-[28px] border px-6 py-6 sm:px-7">
+      <div className="mb-6 rounded-[28px] border bg-card px-6 py-6 sm:px-7">
         <div className="space-y-2">
           <Skeleton className="h-6 w-32 rounded-full" />
           <Skeleton className="h-9 w-80 mb-2" />

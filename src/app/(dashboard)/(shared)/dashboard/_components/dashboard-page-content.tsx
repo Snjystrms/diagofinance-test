@@ -139,7 +139,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useClientCustomization } from "@/contexts/client-customization-context";
 import { getDashboardThemeArtwork } from "@/components/theme-customizer";
 import { ThemePill } from "@/components/ui/theme-pill";
-import { PremiumDarkLayers } from "@/components/ui/premium-dark-card";
+import {
+  PremiumDarkCard,
+  PremiumDarkLayers,
+} from "@/components/ui/premium-dark-card";
 
 import { formatCurrency } from "@/lib/formatters";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
@@ -1800,27 +1803,29 @@ export function DashboardPageContent() {
                     {/* Left Side: Header + Key Metrics (75%) */}
                     <div className="xl:col-span-3 space-y-6 flex flex-col">
                       {/* Header Section */}
-                      {/* Desktop: original with theme images */}
+                      {/* Desktop: original with theme images — falls back to dark premium when no artwork (or when card is too narrow), matching the wallet card behavior so it shows correctly in bright and dark mode. */}
                       <div className="hidden xl:block">
                         <div
-                          className="ib-portal-hero ib-dash-artwork-surface rounded-[28px] border px-6 py-6 sm:px-7"
+                          className={`rounded-[28px] border px-6 py-6 sm:px-7 ${usesDashboardThemeArtwork ? "ib-portal-hero ib-dash-artwork-surface" : "premium-dark-border group relative overflow-hidden border-white/5 bg-[#050505]"}`}
                         >
-                          {dashboardThemeArtwork && (
+                          {usesDashboardThemeArtwork ? (
                             <div
-                              className={`dashboard-theme-overlay dashboard-theme-welcome-overlay theme-art-${dashboardThemeArtwork}`}
+                              className={`dashboard-theme-overlay dashboard-theme-welcome-overlay theme-art-${effectiveThemeArtwork}`}
                             />
+                          ) : (
+                            <PremiumDarkLayers />
                           )}
                           <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                             <div className="space-y-2">
                               <ThemePill
                                 icon={<Sparkles className="h-3.5 w-3.5" />}
-                                className={`rounded-full text-xs font-semibold uppercase tracking-[0.22em] ${dashboardThemeArtwork ? artworkPillClass : ""}`}
+                                className={`rounded-full text-xs font-semibold uppercase tracking-[0.22em] ${usesDashboardThemeArtwork ? artworkPillClass : "border border-white/10 bg-white/5 text-white/80 backdrop-blur-[6px]"}`}
                               >
                                 Client Portal
                               </ThemePill>
                               <div className="space-y-1">
                                 <h1
-                                  className={`text-3xl font-semibold tracking-tight sm:text-[2.15rem] ${dashboardThemeArtwork ? artworkForegroundClass : "text-foreground"}`}
+                                  className={`text-3xl font-semibold tracking-tight sm:text-[2.15rem] ${usesDashboardThemeArtwork ? artworkForegroundClass : "text-white"}`}
                                 >
                                   {(() => {
                                     const h = new Date().getHours();
@@ -1840,7 +1845,7 @@ export function DashboardPageContent() {
                                   })()}
                                 </h1>
                                 <p
-                                  className={`max-w-3xl text-sm sm:text-base ${dashboardThemeArtwork ? artworkMutedForegroundClass : "text-muted-foreground"}`}
+                                  className={`max-w-3xl text-sm sm:text-base ${usesDashboardThemeArtwork ? artworkMutedForegroundClass : "text-white/45"}`}
                                 >
                                   Welcome back! Here&apos;s what&apos;s happening
                                   with your account today.
@@ -1852,8 +1857,10 @@ export function DashboardPageContent() {
                       </div>
                       {/* Mobile fallback: dark premium — shows when viewport is reduced (below xl, matching grid breakpoint). No box shadow. */}
                       <div className="block xl:hidden">
-                        <div className="group relative overflow-hidden rounded-[28px] border border-white/5 bg-[#050505] px-6 py-6 sm:px-7">
-                          <PremiumDarkLayers />
+                        <PremiumDarkCard
+                          className="px-6 py-6 sm:px-7"
+                          aria-label="Client portal"
+                        >
                           <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                             <div className="space-y-2">
                               <ThemePill
@@ -1888,7 +1895,7 @@ export function DashboardPageContent() {
                               </div>
                             </div>
                           </div>
-                        </div>
+                        </PremiumDarkCard>
                       </div>
 
                       {/* Key Metrics Summary Row */}
@@ -2031,7 +2038,7 @@ export function DashboardPageContent() {
                           <Card
                             ref={walletCardRef}
                             // onClick={() => router.push("/my-wallet/wallet-overview")}
-                            className={`h-full relative overflow-hidden rounded-[28px] border transition-all duration-500 group ${usesDashboardThemeArtwork ? "text-zinc-50 ib-portal-surface ib-portal-surface-primary ib-dash-artwork-surface border-border/100" : "border-white/5 bg-[#050505]"}`}
+                            className={`h-full relative overflow-hidden rounded-[28px] border transition-all duration-500 group ${usesDashboardThemeArtwork ? "text-zinc-50 ib-portal-surface ib-portal-surface-primary ib-dash-artwork-surface border-border/100" : "premium-dark-border border-white/5 bg-[#050505]"}`}
                           >
                             {usesDashboardThemeArtwork ? (
                               <div
@@ -2110,7 +2117,7 @@ export function DashboardPageContent() {
                         </div>
                         {/* Mobile fallback: dark premium — shows when viewport is reduced (below xl) — no box shadow */}
                         <div className="block xl:hidden sm:col-span-1 lg:col-span-1">
-                          <Card className="group relative h-full overflow-hidden rounded-[28px] border border-white/5 bg-[#050505] transition-all duration-300 hover:-translate-y-1">
+                          <Card className="premium-dark-border group relative h-full overflow-hidden rounded-[28px] border border-white/5 bg-[#050505] transition-all duration-300 hover:-translate-y-1">
                             <PremiumDarkLayers />
                             <CardContent className="relative z-10 flex h-full flex-col p-7">
                               <div className="flex items-center justify-between">
@@ -2831,7 +2838,7 @@ export function DashboardPageContent() {
                         );
                       })}
 
-                      <Card className="group relative h-full overflow-hidden rounded-[28px] border border-white/5 bg-[#050505] transition-all duration-300 hover:-translate-y-1">
+                      <Card className="premium-dark-border group relative h-full overflow-hidden rounded-[28px] border border-white/5 bg-[#050505] transition-all duration-300 hover:-translate-y-1">
                         <PremiumDarkLayers />
                         <CardContent className="relative z-10 flex h-full flex-col p-7">
                           <div className="space-y-2">
