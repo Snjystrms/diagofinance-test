@@ -23,14 +23,24 @@ export function ManualSortHeader({ sortKey, title, className }: ManualSortHeader
   const isActive = sortBy === sortKey;
   const currentSortOrder = isActive ? sortOrder : null;
 
+  const resetPage = () => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      params.set("page", "1");
+      window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+    }
+  };
+
   const handleSort = async (order: "asc" | "desc") => {
     await setSortBy(sortKey);
     await setSortOrder(order);
+    resetPage();
   };
 
   const handleClearSort = async () => {
     await setSortBy(null);
     await setSortOrder(null);
+    resetPage();
   };
 
   return (

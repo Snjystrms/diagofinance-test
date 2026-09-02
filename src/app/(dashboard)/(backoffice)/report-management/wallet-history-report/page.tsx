@@ -376,6 +376,7 @@ export default function WalletHistoryReportPage() {
       isRefreshing={loading}
     >
       <div className="space-y-4">
+        <div className="rounded-lg border bg-card p-5">
         <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
           <div className="flex-1">
             <ApiSearchBar
@@ -413,6 +414,7 @@ export default function WalletHistoryReportPage() {
               Clear Filters
             </Button>
           ) : null}
+        </div>
         </div>
 
         {/* Results Section */}

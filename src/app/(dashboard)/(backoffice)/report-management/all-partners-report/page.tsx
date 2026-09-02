@@ -533,10 +533,10 @@ export default function AllPartnersReportPage() {
         <div>
           <h1 className="flex items-center gap-2 text-2xl font-semibold">
             <BarChart3 className="h-6 w-6 text-primary" />
-            All Partners Report
+            All IB Report
           </h1>
           <p className="text-sm text-muted-foreground mt-0.5">
-            Manage and view Partner (IB) metrics and transaction summaries
+            Manage and view IB metrics and transaction summaries
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -567,6 +567,7 @@ export default function AllPartnersReportPage() {
       </div>
 
       {/* Filters Section */}
+      <div className="rounded-lg border bg-card p-5">
       <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
         <div className="min-w-[240px] flex-1">
           <ApiSearchBar
@@ -624,6 +625,7 @@ export default function AllPartnersReportPage() {
             Clear Filters
           </Button>
         ) : null}
+      </div>
       </div>
 
       {/* Results Section */}

@@ -343,6 +343,7 @@ export default function InternalTransferReportPage() {
       isRefreshing={loading}
     >
       <div className="space-y-4">
+        <div className="rounded-lg border bg-card p-5">
         <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
           <div className="min-w-[240px] flex-1">
             <ApiSearchBar
@@ -380,6 +381,7 @@ export default function InternalTransferReportPage() {
               Clear Filters
             </Button>
           ) : null}
+        </div>
         </div>
 
         {/* Results Section */}

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
+import { SerialNumberCell, getSerialNumberFromRow } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
 import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
 import { format } from "date-fns";
@@ -115,13 +115,10 @@ export default function ReportManagementPage() {
   const [rows, setRows] = useState<DepositReportItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
-  const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
-  const [perPage, setPerPage] = useQueryState(
-    "perPage",
-    parseAsInteger.withDefault(10),
-  );
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPerPage, setCurrentPerPage] = useState(10);
 
   // Filters
   const [statusFilter, setStatusFilter] = useQueryState(
@@ -191,6 +188,17 @@ export default function ReportManagementPage() {
     }
   }, [toDate, setToDateStr]);
 
+  // Sync page and perPage from URL query params (single source of truth)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const page = parseInt(params.get("page") || "1", 10);
+      const perPage = parseInt(params.get("perPage") || "10", 10);
+      setCurrentPage(page);
+      setCurrentPerPage(perPage);
+    }
+  }, [statusFilter, paymentMethodFilter, sourceFilter, isIbFilter, fromDateStr, toDateStr, sortBy, sortOrder, searchQuery]);
+
   const requestIdRef = useRef(0);
 
   const loadReport = useCallback(async () => {
@@ -221,8 +229,8 @@ export default function ReportManagementPage() {
               : undefined,
         from_date: fromDate ? format(fromDate, "yyyy-MM-dd") : undefined,
         to_date: toDate ? format(toDate, "yyyy-MM-dd") : undefined,
-        page,
-        per_page: perPage,
+        page: currentPage,
+        per_page: currentPerPage,
         search: searchQuery || undefined,
         sort_column: sortBy || undefined,
         sort_order: sortOrder
@@ -239,7 +247,14 @@ export default function ReportManagementPage() {
       const payload = response as unknown as DepositReportListPayload;
       const reportItems = Array.isArray(payload?.data) ? payload.data : [];
 
-      setRows(reportItems);
+      // Client-side status filtering as fallback (in case backend doesn't filter properly)
+      let filteredItems = reportItems;
+      if (statusFilter && statusFilter !== "all") {
+        const targetStatus = Number(statusFilter);
+        filteredItems = reportItems.filter((item) => Number(item.status) === targetStatus);
+      }
+
+      setRows(filteredItems);
 
       const paginationData = payload?.pagination;
       if (paginationData) {
@@ -267,8 +282,8 @@ export default function ReportManagementPage() {
     }
   }, [
     token,
-    page,
-    perPage,
+    currentPage,
+    currentPerPage,
     statusFilter,
     paymentMethodFilter,
     fromDate,
@@ -306,7 +321,12 @@ export default function ReportManagementPage() {
     setSortOrder(null);
     setSearchInput("");
     setSearchQuery(null);
-    setPage(1);
+    // Reset page to 1 via URL
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      params.set("page", "1");
+      window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+    }
   }, [
     setStatusFilter,
     setPaymentMethodFilter,
@@ -315,7 +335,6 @@ export default function ReportManagementPage() {
     setSortBy,
     setSortOrder,
     setSearchQuery,
-    setPage,
   ]);
 
   const handleExport = useCallback(
@@ -423,16 +442,14 @@ export default function ReportManagementPage() {
   const columns: ColumnDef<DepositReportItem>[] = useMemo(
     () => [
       {
-        id: "id",
+        id: "sr_no",
         header: "Sr. No.",
         accessorKey: "id",
-        cell: ({ row, table }) => (
-          <SerialNumberCell
-            row={row}
-            table={table}
-            className="font-mono text-sm"
-          />
-        ),
+        cell: ({ row }) => {
+          const serialNumber = (currentPage - 1) * currentPerPage + row.index + 1;
+          return <SerialNumberCell serialNumber={serialNumber} className="font-mono text-sm" />;
+        },
+        enableSorting: false,
       },
       {
         id: "user",
@@ -614,14 +631,18 @@ export default function ReportManagementPage() {
           </Button>
         </div>
       </div>
-
+      <div className="rounded-lg border bg-card p-5">
       <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
         <div className="min-w-[240px] flex-1">
           <ApiSearchBar
             value={searchInput}
             onChange={(value) => setSearchInput(value)}
             onSearch={(value) => {
-              setPage(1);
+              if (typeof window !== "undefined") {
+                const params = new URLSearchParams(window.location.search);
+                params.set("page", "1");
+                window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+              }
               setSearchQuery(value.trim() || null);
             }}
             placeholder="Search by name, email..."
@@ -640,7 +661,11 @@ export default function ReportManagementPage() {
             value={statusFilter || "all"}
             onValueChange={(value) => {
               setStatusFilter(value === "all" ? null : value);
-              setPage(1);
+              if (typeof window !== "undefined") {
+                const params = new URLSearchParams(window.location.search);
+                params.set("page", "1");
+                window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+              }
             }}
           >
             <SelectTrigger id="status-filter" className="h-9 w-full">
@@ -665,7 +690,11 @@ export default function ReportManagementPage() {
             value={sourceFilter || "all"}
             onValueChange={(value) => {
               setSourceFilter(value === "all" ? null : value);
-              setPage(1);
+              if (typeof window !== "undefined") {
+                const params = new URLSearchParams(window.location.search);
+                params.set("page", "1");
+                window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+              }
             }}
           >
             <SelectTrigger id="source-filter" className="h-9 w-full">
@@ -690,7 +719,11 @@ export default function ReportManagementPage() {
             value={isIbFilter || "all"}
             onValueChange={(value) => {
               setIsIbFilter(value === "all" ? null : value);
-              setPage(1);
+              if (typeof window !== "undefined") {
+                const params = new URLSearchParams(window.location.search);
+                params.set("page", "1");
+                window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+              }
             }}
           >
             <SelectTrigger id="ib-filter" className="h-9 w-full">
@@ -709,11 +742,19 @@ export default function ReportManagementPage() {
           toDate={toDate}
           onFromDateChange={(date) => {
             handleDateChange(date, "from");
-            setPage(1);
+            if (typeof window !== "undefined") {
+              const params = new URLSearchParams(window.location.search);
+              params.set("page", "1");
+              window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+            }
           }}
           onToDateChange={(date) => {
             handleDateChange(date, "to");
-            setPage(1);
+            if (typeof window !== "undefined") {
+              const params = new URLSearchParams(window.location.search);
+              params.set("page", "1");
+              window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
+            }
           }}
         />
         {activeFilterCount > 0 ? (
@@ -727,6 +768,7 @@ export default function ReportManagementPage() {
             Clear Filters
           </Button>
         ) : null}
+      </div>
       </div>
 
       {/* Results Section */}

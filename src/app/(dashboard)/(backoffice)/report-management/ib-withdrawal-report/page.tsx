@@ -403,9 +403,9 @@ export default function IbWithdrawalReportPage() {
 
   return (
     <ReportPageWrapper
-      title="Partner Withdrawal Report"  
+      title="IB Withdrawal Report"  
       titleIcon={<Landmark className="h-6 w-6 text-primary" />}
-      description="Manage and view Partner withdrawal transactions"
+      description="Manage and view IB withdrawal transactions"
       isLoading={loading}
       isEmpty={rows.length === 0}
       error={loadError}
@@ -414,6 +414,7 @@ export default function IbWithdrawalReportPage() {
       isRefreshing={loading}
     >
       <div className="space-y-4">
+        <div className="rounded-lg border bg-card p-5">
        <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
     <div className="min-w-[240px] flex-1">
       <ApiSearchBar
@@ -451,6 +452,7 @@ export default function IbWithdrawalReportPage() {
         Clear Filters
       </Button>
     ) : null}
+  </div>
   </div>
 
         {/* Results Section */}

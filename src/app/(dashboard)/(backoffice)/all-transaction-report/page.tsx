@@ -3,17 +3,23 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
-import { ArrowLeftRight, CalendarIcon, X } from "lucide-react";
+import { ArrowLeftRight, CalendarIcon, ChevronDown, Download, RefreshCw, X } from "lucide-react";
 import toast from "react-hot-toast";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import { format } from "date-fns";
 
 import { AppDataTable } from "@/components/app-data-table";
-import { ReportPageWrapper } from "@/components/report-page-wrapper";
-import type { ReportExportFormat } from "@/components/report-page-wrapper";
+import { ApiErrorState } from "@/components/errors/api-error-state";
+import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/auth-context";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
@@ -125,12 +131,8 @@ export default function AllTransactionReportPage() {
     setPage(1);
   }, [setSearchQuery, setFromDateParam, setToDateParam, setPage]);
 
-  const hasActiveFilters = Boolean(
-    searchQuery || fromDateParam || toDateParam
-  );
-
   const handleExport = useCallback(
-    async (formatType: ReportExportFormat) => {
+    async (formatType: "xlsx" | "csv") => {
       if (!canViewReport) {
         toast.error("You do not have permission to export transaction report");
         return;
@@ -180,6 +182,14 @@ export default function AllTransactionReportPage() {
     },
     [canViewReport, searchQuery, fromDateParam, toDateParam, token]
   );
+
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (searchQuery) count++;
+    if (fromDateParam) count++;
+    if (toDateParam) count++;
+    return count;
+  }, [searchQuery, fromDateParam, toDateParam]);
 
   const columns: ColumnDef<TransactionReportItem>[] = useMemo(
     () => [
@@ -277,6 +287,34 @@ export default function AllTransactionReportPage() {
     []
   );
 
+  if (loading && rows.length === 0) {
+    return (
+      <ListPageSkeleton
+        actionCount={2}
+        columnCount={8}
+        rowCount={10}
+        filterPillCount={3}
+      />
+    );
+  }
+
+  if (loadError && rows.length === 0) {
+    return (
+      <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
+        <ApiErrorState
+          error={loadError}
+          audience="admin"
+          variant="panel"
+          resource="transaction report"
+          action="load"
+          onRetry={() => {
+            void loadReport();
+          }}
+        />
+      </div>
+    );
+  }
+
   if (!canViewReport) {
     return (
       <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
@@ -288,65 +326,104 @@ export default function AllTransactionReportPage() {
   }
 
   return (
-    <ReportPageWrapper
-      title="All Transaction Report"
-      titleIcon={<ArrowLeftRight className="h-6 w-6 text-primary" />}
-      description="Manage and view all transactions."
-      isLoading={loading}
-      isEmpty={rows.length === 0}
-      error={loadError}
-      onExport={handleExport}
-      onRefresh={() => void loadReport()}
-      isRefreshing={loading}
-    >
-      <div className="rounded-lg border bg-card p-5">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end">
-          <div className="flex-1">
-            <ApiSearchBar
-              value={searchInput}
-              onChange={(value) => setSearchInput(value)}
-              onSearch={(value) => {
-                setPage(1);
-                setSearchQuery(value.trim() || null);
-              }}
-              placeholder="Search transactions..."
-              className="min-w-[220px] flex-1 max-w-full"
-              minimumLength={3}
-              delay={300}
-            />
-          </div>
-          <DateRangePicker
-            fromDate={fromDate}
-            toDate={toDate}
-            onFromDateChange={(date) => {
-              handleDateChange(date, "from");
-              setPage(1);
-            }}
-            onToDateChange={(date) => {
-              handleDateChange(date, "to");
-              setPage(1);
-            }}
-          />
-          {hasActiveFilters ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleClearFilters}
-              className="h-9 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
-            >
-              <X className="h-4 w-4" />
-              Clear Filters
-            </Button>
-          ) : null}
+    <div className="container mx-auto p-6 space-y-6">
+      {/* Header Section */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="flex items-center gap-2 text-2xl font-semibold">
+            <ArrowLeftRight className="h-6 w-6 text-primary" />
+            All Transaction Report
+          </h1>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            View and manage all transactions
+          </p>
         </div>
+        <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Download className="h-4 w-4" />
+                Export
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => void handleExport("xlsx")}>Export Excel (.xlsx)</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
-        <div className="rounded-lg border bg-card">
-          <div className="p-5">
-
-            <AppDataTable<TransactionReportItem> data={rows} columns={columns} pageCount={totalPages} />
-          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void loadReport()}
+            disabled={loading}
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Refresh
+          </Button>
         </div>
       </div>
-    </ReportPageWrapper>
+
+      {/* Filters Section */}
+      <div className="rounded-lg border bg-card p-5">
+      <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
+        <div className="min-w-[240px] flex-1">
+          <ApiSearchBar
+            value={searchInput}
+            onChange={(value) => setSearchInput(value)}
+            onSearch={(value) => {
+              setPage(1);
+              setSearchQuery(value.trim() || null);
+            }}
+            placeholder="Search transactions..."
+            minimumLength={3}
+            delay={300}
+          />
+        </div>
+        <DateRangePicker
+          fromDate={fromDate}
+          toDate={toDate}
+          onFromDateChange={(date) => {
+            handleDateChange(date, "from");
+            setPage(1);
+          }}
+          onToDateChange={(date) => {
+            handleDateChange(date, "to");
+            setPage(1);
+          }}
+        />
+        {activeFilterCount > 0 ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleClearFilters}
+            className="h-9 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+            Clear Filters
+          </Button>
+        ) : null}
+      </div>
+      </div>
+
+      {/* Results Section */}
+      <div className="rounded-lg border bg-card">
+        <div className="p-5">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold">Results</h2>
+            <span className="text-xs text-muted-foreground">
+              Showing {rows.length} of {total} results
+            </span>
+          </div>
+
+          {/* Data Table */}
+          <AppDataTable<TransactionReportItem>
+            data={rows}
+            columns={columns}
+            pageCount={totalPages}
+          />
+        </div>
+      </div>
+    </div>
   );
 }

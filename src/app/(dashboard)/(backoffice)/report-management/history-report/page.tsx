@@ -344,32 +344,8 @@ export default function HistoryReportPage() {
           <span>{note}</span>
         </div>
       ) : null}
-
-      {summary ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {summaryCards.map((card) => {
-            const Icon = card.icon;
-            const value = summary[card.key];
-            const isWithdrawal = card.key === "withdrawal";
-            const num = typeof value === "string" ? parseFloat(value) : Number(value);
-            const sign = isWithdrawal && Number.isFinite(num) && num > 0 ? "-" : "";
-            return (
-              <Card key={card.key}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium text-muted-foreground">{card.label}</span>
-                    <Icon className={`h-4 w-4 ${card.className}`} />
-                  </div>
-                  <div className="mt-2 text-2xl font-semibold">
-                    {sign}{formatAmount(value)}
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      ) : null}
-
+      
+      <div className="rounded-lg border bg-card p-5">
       <div className="flex flex-col gap-4 md:flex-row md:flex-wrap md:items-end">
         <div className="min-w-[240px] flex-1">
           <ApiSearchBar
@@ -397,6 +373,32 @@ export default function HistoryReportPage() {
           </Button>
         ) : null}
       </div>
+      </div>
+
+      {summary ? (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {summaryCards.map((card) => {
+            const Icon = card.icon;
+            const value = summary[card.key];
+            const isWithdrawal = card.key === "withdrawal";
+            const num = typeof value === "string" ? parseFloat(value) : Number(value);
+            const sign = isWithdrawal && Number.isFinite(num) && num > 0 ? "-" : "";
+            return (
+              <Card key={card.key}>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-muted-foreground">{card.label}</span>
+                    <Icon className={`h-4 w-4 ${card.className}`} />
+                  </div>
+                  <div className="mt-2 text-2xl font-semibold">
+                    {sign}{formatAmount(value)}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      ) : null}
 
       <div className="rounded-lg border bg-card">
         <div className="p-5">
