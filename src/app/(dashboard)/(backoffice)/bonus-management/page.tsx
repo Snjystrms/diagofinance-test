@@ -463,6 +463,16 @@ export default function BonusManagementPage() {
         enableColumnFilter: false,
         enableSorting: false,
       },
+      {
+        id: "processed_by",
+        header: ({ column }) => (
+          <DataTableColumnHeader column={column} title="Processed By" />
+        ),
+        accessorFn: (row) => row.processed_by ?? "-",
+        cell: ({ row }) => row.original.processed_by ?? "-",
+        enableColumnFilter: false,
+        enableSorting: false,
+      },
       // {
       //   id: "equity",
       //   header: ({ column }) => <DataTableColumnHeader column={column} title="Equity Ref." />,

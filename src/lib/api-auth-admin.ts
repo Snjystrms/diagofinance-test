@@ -891,6 +891,7 @@ export interface AdminBonusLedgerItem {
   updated_at: string;
   mt5User?: AdminBonusLedgerMt5User | null;
   user?: AdminBonusLedgerUser | null;
+  processed_by: string;
 }
 
 export interface AdminBonusListPagination {

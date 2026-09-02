@@ -54,6 +54,8 @@ export function TransactionBalanceCell({
     }
   };
 
+  const canFetch = Boolean(token && mt5Login);
+
   if (!isMt5) {
     return (
       <span className="tabular-nums text-sm text-muted-foreground whitespace-nowrap">
@@ -74,7 +76,7 @@ export function TransactionBalanceCell({
           size="icon"
           className="h-6 w-6"
           onClick={() => void fetchBalance()}
-          disabled={isLoading}
+          disabled={isLoading || !canFetch}
         >
           <RefreshCw
             className={`h-3 w-3 ${isLoading ? "animate-spin" : ""}`}
@@ -90,7 +92,7 @@ export function TransactionBalanceCell({
         variant="outline"
         size="sm"
         onClick={() => void fetchBalance()}
-        disabled={isLoading}
+        disabled={isLoading || !canFetch}
         className="text-red-600"
       >
         {isLoading ? (
@@ -104,12 +106,12 @@ export function TransactionBalanceCell({
   }
 
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={() => void fetchBalance()}
-      disabled={isLoading}
-    >
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => void fetchBalance()}
+        disabled={isLoading || !canFetch}
+      >
       {isLoading ? (
         <>
           <Spinner className="h-3 w-3 mr-1" size="sm" />

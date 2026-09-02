@@ -314,7 +314,7 @@ export function AdminTransactionContent() {
       accessorKey: "transaction_type",
       header: "Transaction Type",
       cell: ({ row }) => (
-        <span className="text-sm capitalize">{transactionTypeLabel(row.original.transaction_label)}</span>
+        <span className="text-sm capitalize">{transactionTypeLabel(row.original.transaction_type)}</span>
       ),
     },
     {
