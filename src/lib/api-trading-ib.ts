@@ -1370,6 +1370,12 @@ export interface AdminIbUser {
     email?: string;
     ib_name?: string;
   };
+   ib_plan?: {
+    id?: number;
+    name?: string;
+    status?: string;
+    assignment_status?: string;
+  };
   created_at?: string;
   updated_at?: string;
   [key: string]: unknown;

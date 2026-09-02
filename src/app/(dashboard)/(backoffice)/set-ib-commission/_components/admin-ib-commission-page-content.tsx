@@ -127,7 +127,7 @@ export function AdminIbCommissionPageContent() {
   const [viewLoading, setViewLoading] = useState(false);
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
-  const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
+  const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(20));
 
   const deferredUserSearch = useDeferredValue(userSearch.trim());
   const queryKey = useMemo(

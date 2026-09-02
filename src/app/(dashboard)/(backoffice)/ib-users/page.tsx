@@ -94,6 +94,10 @@ const deriveReferredBy = (user: AdminIbUser) => {
   return user.referred_by;
 };
 
+const deriveIbPlan = (user: AdminIbUser) => {
+  return user.ib_plan ?? "-";
+};
+
 const getUserActionKey = (user: AdminIbUser) => {
   return String(user.id ?? user.uuid ?? user.email ?? user.name ?? "");
 };
@@ -433,6 +437,22 @@ export default function IbUsersPage() {
                 {derivePhone(user)}
               </div>
             </div>
+          );
+        },
+      },
+      {
+        id: "ib_plan",
+        header: "IB Plan",
+        cell: ({ row }) => {
+          const ref = deriveIbPlan(row.original);
+          if (!ref || ref === "-") {
+            return <div className="text-sm text-muted-foreground">-</div>;
+          }
+          return (
+            <Badge variant="outline" className="gap-1.5 font-medium">
+              <Landmark className="h-3 w-3 text-muted-foreground" />
+              {ref.name ?? "-"}
+            </Badge>
           );
         },
       },
