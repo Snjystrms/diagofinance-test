@@ -1413,11 +1413,14 @@ export default function ProfileContent() {
         <div className="pt-5 sm:pt-6">
           <div className="grid grid-cols-1 gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {/* Personal Information Status */}
-            <Card className={`relative overflow-hidden rounded-2xl border shadow-sm ${
-              verificationStatus.personal_information.status === "completed"
-                ? "border-emerald-500/35 bg-black/20 shadow-emerald-950/5"
-                : "border-amber-500/40 bg-black/20 shadow-amber-950/5"
-            }`}>
+            <Card
+              onClick={() => router.push("/profile/view_profile?tab=personal")}
+              className={`relative cursor-pointer overflow-hidden rounded-2xl border shadow-sm transition-colors hover:border-primary/50 ${
+                verificationStatus.personal_information.status === "completed"
+                  ? "border-emerald-500/35 bg-black/20 shadow-emerald-950/5"
+                  : "border-amber-500/40 bg-black/20 shadow-amber-950/5"
+              }`}
+            >
               <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/5 blur-2xl" />
               <CardContent className="p-3.5 sm:p-4">
                 <div className="flex items-start gap-2.5 sm:gap-3">
@@ -1446,11 +1449,14 @@ export default function ProfileContent() {
             </Card>
 
             {/* Documents Verification Status */}
-            <Card className={`relative overflow-hidden rounded-2xl border shadow-sm ${
-              verificationStatus.documents_verification.status === "completed"
-                ? "border-emerald-500/35 bg-black/20 shadow-emerald-950/5"
-                : "border-amber-500/40 bg-black/20 shadow-amber-950/5"
-            }`}>
+            <Card
+              onClick={() => router.push("/profile/kyc-verification")}
+              className={`relative cursor-pointer overflow-hidden rounded-2xl border shadow-sm transition-colors hover:border-primary/50 ${
+                verificationStatus.documents_verification.status === "completed"
+                  ? "border-emerald-500/35 bg-black/20 shadow-emerald-950/5"
+                  : "border-amber-500/40 bg-black/20 shadow-amber-950/5"
+              }`}
+            >
               <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-white/5 blur-2xl" />
               <CardContent className="p-3.5 sm:p-4">
                 <div className="flex items-start gap-2.5 sm:gap-3">
