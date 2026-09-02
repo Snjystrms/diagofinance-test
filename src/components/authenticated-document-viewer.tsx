@@ -303,7 +303,7 @@ export function AuthenticatedDocumentViewer({
               className="absolute right-2 top-2 h-8 w-8 shadow-sm"
               onClick={() => setOpen(true)}
             >
-              <Eye className="h-4 w-4" />
+              <Eye className="h-4 w-4 text-foreground/80" />
               <span className="sr-only">Open preview</span>
             </Button>
           ) : null}
