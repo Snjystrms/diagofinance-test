@@ -84,9 +84,9 @@ export const managerPermissionConfig: Record<string, ModuleFeatureMap> = {
     // Account types == groups in this product, and the login response may surface
     // the list permission under either name, so accept both.
     accountTypesList: ["Account Types List", "Group List"],
-    createAccountType: ["Create Account Type"],
-    editAccountType: ["Edit Account Type"],
-    deleteAccountType: ["Delete Account Type"],
+    createAccountType: ["Create Account Type", "Add Group"],
+    editAccountType: ["Edit Account Type", "Edit Group"],
+    deleteAccountType: ["Delete Account Type", "Delete Group"],
   },
   settingsManagement: {
     auditLogs: ["Audit Logs"],

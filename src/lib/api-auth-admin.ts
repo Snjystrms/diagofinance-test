@@ -216,10 +216,12 @@ export interface ManagementReportCountryChartItem {
 
 export interface ManagementReportRowItem {
   id?: number | string | null;
+  uuid?: string | null;
   name?: string | null;
   username?: string | null;
   email?: string | null;
   country?: string | null;
+  marketing_name?: string | null;
   total_deposit?: number | string | null;
   total_withdraw?: number | string | null;
   deposit?: number | string | null;
@@ -233,12 +235,25 @@ export interface ManagementReportRowItem {
 export interface ManagementReportResponse {
   summary?: ManagementReportSummary;
   country_wise_deposit?: ManagementReportCountryChartItem[];
+  country_wise_deposit_chart?: ManagementReportCountryChartItem[];
   chart_data?: ManagementReportCountryChartItem[];
   top_10_depositor?: ManagementReportRowItem[];
   top_10_withdrawals?: ManagementReportRowItem[];
   data?: {
+    filters?: {
+      country?: string | null;
+      from_date?: string | null;
+      to_date?: string | null;
+    };
     summary?: ManagementReportSummary;
+    total_clients?: number | string | null;
+    total_deposit?: number | string | null;
+    total_withdraw?: number | string | null;
+    net_deposit?: number | string | null;
+    total_lots?: number | string | null;
+    total_ib_commission?: number | string | null;
     country_wise_deposit?: ManagementReportCountryChartItem[];
+    country_wise_deposit_chart?: ManagementReportCountryChartItem[];
     chart_data?: ManagementReportCountryChartItem[];
     top_10_depositor?: ManagementReportRowItem[];
     top_10_withdrawals?: ManagementReportRowItem[];

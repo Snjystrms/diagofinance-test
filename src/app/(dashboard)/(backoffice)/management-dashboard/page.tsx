@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { format } from "date-fns";
 import toast from "react-hot-toast";
 import {
@@ -49,7 +50,7 @@ const currencyFormatter = new Intl.NumberFormat("en-US", {
 const formatCurrency = (value?: number | string | null) => {
   const num = typeof value === "number" ? value : Number(value ?? 0);
   if (!Number.isFinite(num)) return "—";
-  return currencyFormatter.format(num);
+  return `${currencyFormatter.format(num)} USD`;
 };
 
 const formatDateTime = (value?: string | null) => {
@@ -125,14 +126,26 @@ export default function ManagementDashboardPage() {
     void loadReport();
   }, [loadReport]);
 
-  const summary = useMemo(
-    () => data?.summary ?? data?.data?.summary ?? {},
-    [data],
-  );
+  const summary = useMemo(() => {
+    const d = data?.data;
+    return (
+      data?.summary ??
+      d?.summary ?? {
+        total_clients: d?.total_clients,
+        total_deposit: d?.total_deposit,
+        total_withdraw: d?.total_withdraw,
+        net_deposit: d?.net_deposit,
+        total_lots: d?.total_lots,
+        total_ib_commission: d?.total_ib_commission,
+      }
+    );
+  }, [data]);
   const chartRows = useMemo(
     () =>
+      data?.country_wise_deposit_chart ??
       data?.country_wise_deposit ??
       data?.chart_data ??
+      data?.data?.country_wise_deposit_chart ??
       data?.data?.country_wise_deposit ??
       data?.data?.chart_data ??
       [],
@@ -300,17 +313,12 @@ export default function ManagementDashboardPage() {
                           key={`${row.country ?? row.name ?? "row"}-${index}`}
                           className="flex items-center justify-between rounded-lg border border-border/70 px-3 py-2"
                         >
-                          <div>
-                            <p className="text-sm font-medium">
-                              {row.country ??
-                                row.name ??
-                                row.label ??
-                                "Unknown"}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {formatDateTime(undefined)}
-                            </p>
-                          </div>
+                          <p className="text-sm font-medium">
+                            {row.country ??
+                              row.name ??
+                              row.label ??
+                              "Unknown"}
+                          </p>
                           <div className="text-right">
                             <p className="text-sm font-semibold">
                               {formatCurrency(
@@ -353,11 +361,6 @@ export default function ManagementDashboardPage() {
                     value={formatCurrency(summary.total_ib_commission)}
                     icon={CreditCard}
                   />
-                  <MetricRow
-                    label="Last updated"
-                    value={formatDateTime(undefined)}
-                    icon={CalendarDays}
-                  />
                 </CardContent>
               </Card>
             </div>
@@ -372,21 +375,27 @@ export default function ManagementDashboardPage() {
                     <div className="space-y-3">
                       {topDepositors.map((row, index) => (
                         <div
-                          key={`depositor-${row.id ?? index}`}
+                          key={`depositor-${row.uuid ?? row.id ?? index}`}
                           className="flex items-center justify-between rounded-lg border border-border/70 px-3 py-2"
                         >
-                          <div>
-                            <p className="text-sm font-medium">
+                          <div className="min-w-0">
+                            <Link
+                              href={`/new-users/${row.id}`}
+                              className="text-sm font-medium text-foreground underline-offset-2 hover:underline"
+                            >
                               {row.name ??
+                                row.marketing_name ??
                                 row.username ??
-                                row.email ??
                                 `User ${index + 1}`}
+                            </Link>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {row.email ?? "—"}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {row.country ?? "—"}
                             </p>
                           </div>
-                          <p className="text-sm font-semibold">
+                          <p className="shrink-0 text-sm font-semibold">
                             {formatCurrency(
                               row.total_deposit ?? row.deposit ?? row.amount,
                             )}
@@ -411,21 +420,27 @@ export default function ManagementDashboardPage() {
                     <div className="space-y-3">
                       {topWithdrawals.map((row, index) => (
                         <div
-                          key={`withdrawal-${row.id ?? index}`}
+                          key={`withdrawal-${row.uuid ?? row.id ?? index}`}
                           className="flex items-center justify-between rounded-lg border border-border/70 px-3 py-2"
                         >
-                          <div>
-                            <p className="text-sm font-medium">
+                          <div className="min-w-0">
+                            <Link
+                              href={`/new-users/${row.id}`}
+                              className="text-sm font-medium text-foreground underline-offset-2 hover:underline"
+                            >
                               {row.name ??
+                                row.marketing_name ??
                                 row.username ??
-                                row.email ??
                                 `User ${index + 1}`}
+                            </Link>
+                            <p className="truncate text-xs text-muted-foreground">
+                              {row.email ?? "—"}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               {row.country ?? "—"}
                             </p>
                           </div>
-                          <p className="text-sm font-semibold">
+                          <p className="shrink-0 text-sm font-semibold">
                             {formatCurrency(
                               row.total_withdraw ?? row.withdraw ?? row.amount,
                             )}
