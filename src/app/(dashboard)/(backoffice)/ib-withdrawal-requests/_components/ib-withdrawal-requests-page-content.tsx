@@ -653,6 +653,16 @@ export function IbWithdrawalRequestsPageContent() {
         },
       },
       {
+        id: "amount",
+        header: "Amount (USD)",
+        accessorKey: "amount",
+        cell: ({ row }) => (
+          <span className="font-medium whitespace-nowrap">
+            {formatAmount(row.original.amount)}
+          </span>
+        ),
+      },
+      {
         id: "destination",
         header: "Destination",
         accessorKey: "destination",
@@ -667,16 +677,6 @@ export function IbWithdrawalRequestsPageContent() {
           }
           return <span className="font-medium">Bank</span>;
         },
-      },
-      {
-        id: "amount",
-        header: "Amount (USD)",
-        accessorKey: "amount",
-        cell: ({ row }) => (
-          <span className="font-medium whitespace-nowrap">
-            {formatAmount(row.original.amount)}
-          </span>
-        ),
       },
       {
         id: "initiated_by",
@@ -1221,7 +1221,7 @@ export function IbWithdrawalRequestsPageContent() {
                             {viewingWithdrawalRequest.status !== "approved" && (
                               <TabsTrigger
                                 value="approve"
-                                className="rounded-xl"
+                                className="rounded-xl data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:hover:bg-green-700 hover:bg-green-100 hover:text-green-800"
                               >
                                 <CheckCircle2 className="mr-2 h-4 w-4" />
                                 Approve
@@ -1229,7 +1229,7 @@ export function IbWithdrawalRequestsPageContent() {
                             )}
                             <TabsTrigger
                               value="reject"
-                              className="rounded-xl"
+                              className="rounded-xl data-[state=active]:bg-red-600 data-[state=active]:text-white data-[state=active]:hover:bg-red-700 hover:bg-red-100 hover:text-red-800"
                             >
                               <XCircle className="mr-2 h-4 w-4" />
                               {viewingWithdrawalRequest.status === "approved"

@@ -37,8 +37,8 @@ export interface AdminTransactionItem {
   processed_at: string;
   transaction_hash: string | null;
   transaction_proof: string | null;
-  fee: number;
-  net_amount: number;
+  fee?: number | null;
+  net_amount?: number | null;
   created_at: string;
   updated_at: string;
   user: AdminTransactionUser;
@@ -47,6 +47,14 @@ export interface AdminTransactionItem {
   original_model: string;
   admin_notes: string | null;
   wallet_currency: string;
+  wallet_address?: string | null;
+  chain_id?: string | null;
+  payment_method_id?: number | string | null;
+  bank_detail_id?: number | string | null;
+  source?: string | null;
+  mt5_user_id?: number | string | null;
+  approved_by?: string | null;
+  approved_at?: string | null;
 }
 
 export interface AdminTransactionPagination {

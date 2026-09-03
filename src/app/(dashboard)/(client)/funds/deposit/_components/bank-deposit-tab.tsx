@@ -8,6 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   bankDepositApi,
@@ -856,27 +863,35 @@ export function BankDepositTab({ token }: { token: string | null }) {
                       Deposit Currency{" "}
                       <span className="text-destructive">*</span>
                     </Label>
-                    <select
-                      id="bank-currency"
+                    <Select
                       value={bankCurrency}
-                      onChange={(e) => setBankCurrency(e.target.value)}
+                      onValueChange={setBankCurrency}
                       disabled={
                         isSubmittingBank ||
                         currencyRatesLoading ||
                         availableBankCurrencies.length === 0
                       }
-                      className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      {availableBankCurrencies.length === 0 ? (
-                        <option value="INR">No currencies available</option>
-                      ) : (
-                        availableBankCurrencies.map((code) => (
-                          <option key={code} value={code}>
-                            {code}
-                          </option>
-                        ))
-                      )}
-                    </select>
+                      <SelectTrigger
+                        id="bank-currency"
+                        className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm shadow-sm focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableBankCurrencies.length === 0 ? (
+                          <SelectItem value="INR">
+                            No currencies available
+                          </SelectItem>
+                        ) : (
+                          availableBankCurrencies.map((code) => (
+                            <SelectItem key={code} value={code}>
+                              {code}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-2">

@@ -50,6 +50,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
+import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/auth-context";
 import { useManagerPermissions } from "@/hooks/use-manager-permissions";
 import {
@@ -352,12 +353,38 @@ export function AdminTransactionContent() {
       ),
     },
      {
-      id: "transaction_hash",
-      header: "Transaction Hash",
-      accessorKey: "transaction_hash",
-      cell: ({ row }) => (
-        <span className="text-sm capitalize">{row.original.transaction_hash || "-"}</span>
-      ),
+      id: "channel",
+      header: "Channel",
+      cell: ({ row }) => {
+        const t = row.original;
+        const source = t.source || t.transaction_category;
+        const walletType = t.wallet_type;
+        const mt5Id = t.mt5_account_id;
+        const chain = t.chain_id;
+        const walletAddr = t.wallet_address;
+        return (
+          <div className="space-y-0.5 text-sm">
+            {source && (
+              <Badge variant="secondary" className="capitalize text-xs">
+                {source.replace(/_/g, " ")}
+              </Badge>
+            )}
+            {walletType && (
+              <div className="text-xs text-muted-foreground capitalize">{walletType.replace(/_/g, " ")}</div>
+            )}
+            {mt5Id && (
+              <div className="text-xs font-mono text-muted-foreground">{mt5Id}</div>
+            )}
+            {chain && (
+              <div className="text-xs font-mono text-muted-foreground">{chain}</div>
+            )}
+            {walletAddr && (
+              <div className="text-xs font-mono text-muted-foreground truncate max-w-[140px]" title={walletAddr}>{walletAddr}</div>
+            )}
+            {!source && !walletType && !mt5Id && !chain && <span className="text-muted-foreground">-</span>}
+          </div>
+        );
+      },
     },
     {
       id: "admin_notes",

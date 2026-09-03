@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,10 +15,18 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { cashDepositApi, type CashDepositRecord, type CashDepositTarget } from "@/lib/api";
+import { userCurrencyRatesApi, type CurrencyRateItem } from "@/lib/api-auth-admin";
 import { mt5AccountsApi, type MT5Account } from "@/lib/api-trading-ib";
 import { getFriendlyErrorMessage } from "@/lib/friendly-errors";
 import { notifyWalletRefresh } from "@/lib/client-events";
 import toast from "react-hot-toast";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Banknote,
   CheckCircle,
@@ -64,6 +72,9 @@ export function CashDepositTab({ token }: { token: string | null }) {
   const [statusFilter, setStatusFilter] = useState("all");
   const [mt5Accounts, setMt5Accounts] = useState<MT5Account[]>([]);
   const [mt5AccountsLoading, setMt5AccountsLoading] = useState(false);
+  const [currency, setCurrency] = useState("INR");
+  const [currencyRates, setCurrencyRates] = useState<CurrencyRateItem[]>([]);
+  const [currencyRatesLoading, setCurrencyRatesLoading] = useState(false);
 
   const [detailRequest, setDetailRequest] = useState<CashDepositRecord | null>(
     null,
@@ -76,6 +87,40 @@ export function CashDepositTab({ token }: { token: string | null }) {
   const selectedMt5Account = mt5Accounts.find(
     (acc) => String(acc.account_id) === accountRef,
   );
+  const availableCurrencies = useMemo(() => {
+    const activeRates = currencyRates.filter((rate) => {
+      const rawStatus = String(rate.status).toLowerCase();
+      return (
+        rate.from_currency?.toUpperCase() === "USD" &&
+        (rawStatus === "true" || rawStatus === "1" || rawStatus === "active")
+      );
+    });
+    const unique = Array.from(
+      new Set(
+        activeRates
+          .map((rate) => rate.to_currency?.toUpperCase())
+          .filter(Boolean),
+      ),
+    );
+    return unique.sort((a, b) => a.localeCompare(b));
+  }, [currencyRates]);
+  const selectedUsdToCurrencyRate = useMemo(() => {
+    return currencyRates.find((rate) => {
+      const rawStatus = String(rate.status).toLowerCase();
+      return (
+        rate.from_currency?.toUpperCase() === "USD" &&
+        rate.to_currency?.toUpperCase() === currency.toUpperCase() &&
+        (rawStatus === "true" || rawStatus === "1" || rawStatus === "active")
+      );
+    });
+  }, [currency, currencyRates]);
+  const selectedDepositRate = Number(
+    selectedUsdToCurrencyRate?.deposit_rate ?? 0,
+  );
+  const convertedUsdAmount =
+    !isNaN(amountNum) && amountNum > 0 && selectedDepositRate > 0
+      ? amountNum / selectedDepositRate
+      : null;
 
   const fetchRequests = useCallback(async () => {
     if (!token) return;
@@ -122,11 +167,43 @@ export function CashDepositTab({ token }: { token: string | null }) {
     }
   }, [token]);
 
+  const fetchCurrencyRates = useCallback(async () => {
+    if (!token) {
+      setCurrencyRates([]);
+      return;
+    }
+    try {
+      setCurrencyRatesLoading(true);
+      const response = await userCurrencyRatesApi.list({
+        token,
+        page: 1,
+        per_page: 500,
+      });
+      const rates = Array.isArray(response.data?.currencyRates)
+        ? response.data.currencyRates
+        : [];
+      setCurrencyRates(rates);
+    } catch (e) {
+      console.error("Failed to fetch currency rates:", e);
+      setCurrencyRates([]);
+    } finally {
+      setCurrencyRatesLoading(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     void fetchRequests();
     void fetchMt5Accounts();
+    void fetchCurrencyRates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
+
+  useEffect(() => {
+    if (availableCurrencies.length === 0) return;
+    if (!availableCurrencies.includes(currency.toUpperCase())) {
+      setCurrency(availableCurrencies[0]);
+    }
+  }, [availableCurrencies, currency]);
 
   const handleViewDetail = async (id: number) => {
     if (!token) return;
@@ -204,6 +281,12 @@ export function CashDepositTab({ token }: { token: string | null }) {
       setError("Authentication required");
       return;
     }
+    if (!convertedUsdAmount || convertedUsdAmount <= 0) {
+      setError(
+        "Deposit conversion rate is currently unavailable for this currency",
+      );
+      return;
+    }
 
     try {
       setIsSubmitting(true);
@@ -211,7 +294,7 @@ export function CashDepositTab({ token }: { token: string | null }) {
         {
           target,
           account_ref: target === "mt5" ? accountRef.trim() : undefined,
-          amount: amountNum,
+          amount: convertedUsdAmount,
           comment: comment.trim() || undefined,
           payment_proof: paymentProof || undefined,
         },
@@ -457,26 +540,72 @@ export function CashDepositTab({ token }: { token: string | null }) {
                     </div>
                   )}
 
+                  {/* Deposit Currency */}
+                  <div className="space-y-2">
+                    <Label htmlFor="cash-currency" className="text-sm font-semibold">
+                      Deposit Currency <span className="text-destructive">*</span>
+                    </Label>
+                    <Select
+                      value={currency}
+                      onValueChange={setCurrency}
+                      disabled={
+                        isSubmitting ||
+                        currencyRatesLoading ||
+                        availableCurrencies.length === 0
+                      }
+                    >
+                      <SelectTrigger
+                        id="cash-currency"
+                        className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm shadow-sm focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <SelectValue placeholder="Select currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableCurrencies.length === 0 ? (
+                          <SelectItem value="INR">
+                            No currencies available
+                          </SelectItem>
+                        ) : (
+                          availableCurrencies.map((code) => (
+                            <SelectItem key={code} value={code}>
+                              {code}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   {/* Amount */}
                   <div className="space-y-2">
                     <Label htmlFor="cash-amount" className="text-sm font-semibold">
-                      Amount (USD) <span className="text-destructive">*</span>
+                      Amount ({currency.toUpperCase()}) <span className="text-destructive">*</span>
                     </Label>
-                    <Input
-                      id="cash-amount"
-                      type="number"
-                      step="1"
-                      min="1"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                      onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                      className="h-11 rounded-xl pl-9"
-                      placeholder="100.00"
-                      disabled={isSubmitting}
-                    />
+                    <div className="relative">
+                      <Banknote className="absolute left-3 top-3.5 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="cash-amount"
+                        type="number"
+                        step="1"
+                        min="1"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                        className="h-11 rounded-xl pl-9"
+                        placeholder="100.00"
+                        disabled={isSubmitting}
+                      />
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      Enter the amount you are depositing in cash (USD).
+                      {selectedDepositRate > 0
+                        ? `Rate: 1 USD = ${selectedDepositRate.toFixed(2)} ${currency.toUpperCase()}`
+                        : "USD conversion rate is currently unavailable for this currency."}
                     </p>
+                    {convertedUsdAmount !== null && (
+                      <p className="text-xs font-medium text-foreground">
+                        USD equivalent: ${convertedUsdAmount.toFixed(2)}
+                      </p>
+                    )}
                   </div>
 
                   {/* Comment */}
@@ -571,6 +700,8 @@ export function CashDepositTab({ token }: { token: string | null }) {
                       !amount.trim() ||
                       isNaN(amountNum) ||
                       amountNum <= 0 ||
+                      !convertedUsdAmount ||
+                      convertedUsdAmount < MINIMUM_DEPOSIT_AMOUNT ||
                       (target === "mt5" && !accountRef.trim())
                     }
                     className="h-11 w-full rounded-xl text-base font-semibold"
@@ -587,12 +718,16 @@ export function CashDepositTab({ token }: { token: string | null }) {
                       </>
                     )}
                   </Button>
-                  {amount &&
-                    !isNaN(amountNum) &&
-                    amountNum > 0 &&
-                    amountNum < MINIMUM_DEPOSIT_AMOUNT && (
+                  {convertedUsdAmount !== null &&
+                    convertedUsdAmount > 0 &&
+                    convertedUsdAmount < MINIMUM_DEPOSIT_AMOUNT && (
                       <p className="text-xs text-destructive font-medium">
                         Minimum deposit amount is ${MINIMUM_DEPOSIT_AMOUNT} USD
+                        (equivalent:{" "}
+                        {(MINIMUM_DEPOSIT_AMOUNT * selectedDepositRate).toFixed(
+                          2,
+                        )}{" "}
+                        {currency.toUpperCase()})
                       </p>
                     )}
                 </>

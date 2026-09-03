@@ -99,12 +99,14 @@ export function TransactionDetailsDialog({
                   </span>
                 }
               />
+              {transaction.currency && transaction.currency !== transaction.wallet_currency && (
+                <InfoRow label="Original Currency" value={<span className="capitalize">{transaction.currency}</span>} />
+              )}
               <InfoRow
                 label="Balance"
                 icon={ArrowUpDown}
                 value={<TransactionBalanceCell transaction={transaction} />}
               />
-              {/* <InfoRow label="Currency" value={transaction.currency} /> */}
             </div>
           </div>
 
@@ -115,7 +117,31 @@ export function TransactionDetailsDialog({
               Wallet & Reference
             </h3>
             <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
-              {/* <InfoRow label="Wallet ID" icon={Wallet} value={`#${transaction.wallet_id}`} /> */}
+              {transaction.wallet_id && (
+                <InfoRow label="Wallet ID" icon={Wallet} value={`#${transaction.wallet_id}`} />
+              )}
+              {transaction.source && (
+                <InfoRow
+                  label="Source"
+                  value={
+                    <Badge variant="secondary" className="capitalize">
+                      {transaction.source.replace(/_/g, " ")}
+                    </Badge>
+                  }
+                />
+              )}
+              {transaction.wallet_type && (
+                <InfoRow label="Wallet Type" value={<span className="capitalize">{transaction.wallet_type.replace(/_/g, " ")}</span>} />
+              )}
+              {transaction.wallet_currency && (
+                <InfoRow label="Wallet Currency" value={transaction.wallet_currency} />
+              )}
+              {transaction.mt5_account_id && (
+                <InfoRow label="MT5 Account" value={<span className="font-mono">{transaction.mt5_account_id}</span>} />
+              )}
+              {transaction.mt5_user_id && (
+                <InfoRow label="MT5 User ID" value={<span className="font-mono">{transaction.mt5_user_id}</span>} />
+              )}
               <InfoRow
                 label="Reference Type"
                 value={
@@ -135,14 +161,40 @@ export function TransactionDetailsDialog({
             </div>
           </div>
 
-          {/* Transaction Hash & Proof */}
-          {(transaction.transaction_hash || transaction.transaction_proof) && (
+          {/* Crypto / Withdrawal Details */}
+          {(transaction.wallet_address || transaction.chain_id || transaction.payment_method_id) && (
             <div className="space-y-2">
               <h3 className="text-sm font-semibold flex items-center gap-2">
                 <Hash className="h-4 w-4" />
-                Hash & Proof
+                Crypto / Withdrawal Details
               </h3>
               <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+                {transaction.wallet_address && (
+                  <InfoRow
+                    label="Wallet Address"
+                    value={
+                      <span className="font-mono text-xs break-all max-w-md">
+                        {transaction.wallet_address}
+                      </span>
+                    }
+                  />
+                )}
+                {transaction.chain_id && (
+                  <InfoRow
+                    label="Chain"
+                    value={
+                      <Badge variant="secondary" className="font-mono">
+                        {transaction.chain_id}
+                      </Badge>
+                    }
+                  />
+                )}
+                {/* {transaction.payment_method_id && (
+                  <InfoRow label="Payment Method ID" value={<span className="font-mono">#{transaction.payment_method_id}</span>} />
+                )} */}
+                {transaction.bank_detail_id && (
+                  <InfoRow label="Bank Detail ID" value={<span className="font-mono">#{transaction.bank_detail_id}</span>} />
+                )}
                 {transaction.transaction_hash && (
                   <InfoRow
                     label="Transaction Hash"
@@ -150,21 +202,6 @@ export function TransactionDetailsDialog({
                       <span className="font-mono text-xs break-all max-w-md">
                         {transaction.transaction_hash}
                       </span>
-                    }
-                  />
-                )}
-                {transaction.transaction_proof && (
-                  <InfoRow
-                    label="Transaction Proof"
-                    value={
-                      <a
-                        href={transaction.transaction_proof}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline text-xs"
-                      >
-                        View Proof
-                      </a>
                     }
                   />
                 )}
@@ -185,8 +222,45 @@ export function TransactionDetailsDialog({
                 icon={Clock}
                 value={fmtISTDateTime(transaction.processed_at) || "—"}
               />
+              {transaction.approved_by && (
+                <InfoRow label="Approved By" value={transaction.approved_by} />
+              )}
+              {transaction.approved_at && (
+                <InfoRow label="Approved At" value={fmtISTDateTime(transaction.approved_at)} />
+              )}
+              {transaction.fee != null && transaction.fee !== 0 && (
+                <InfoRow label="Fee" value={<span className="font-mono">{formatAmount(transaction.fee)} {transaction.wallet_currency}</span>} />
+              )}
+              {transaction.net_amount != null && transaction.net_amount !== 0 && (
+                <InfoRow label="Net Amount" value={<span className="font-mono font-bold">{formatAmount(transaction.net_amount)} {transaction.wallet_currency}</span>} />
+              )}
             </div>
           </div>
+
+          {/* Transaction Proof */}
+          {transaction.transaction_proof && (
+            <div className="space-y-2">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Proof
+              </h3>
+              <div className="rounded-lg border bg-muted/30 p-4">
+                <InfoRow
+                  label="Transaction Proof"
+                  value={
+                    <a
+                      href={transaction.transaction_proof}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline text-xs"
+                    >
+                      View Proof
+                    </a>
+                  }
+                />
+              </div>
+            </div>
+          )}
 
           {/* Description & Notes */}
           {(transaction.description || transaction.admin_notes) && (

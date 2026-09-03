@@ -4204,6 +4204,8 @@ export interface AdminUSDTDepositRequest {
     last_name: string | null;
   };
   managerApprover?: unknown | null;
+  target: string | null;
+  mt5_login: number | null;
 }
 
 export interface AdminUSDTDepositListResponse {

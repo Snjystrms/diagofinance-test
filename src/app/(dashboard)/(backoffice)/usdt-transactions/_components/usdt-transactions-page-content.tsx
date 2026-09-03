@@ -417,6 +417,27 @@ export function USDTTransactionsPageContent() {
         ),
       },
       {
+        id: "target",
+        header: "Destination",
+        accessorKey: "target",
+        cell: ({ row }) => {
+          const target = row.original.target || "—";
+          const showMt5Login =
+            row.original.target?.toLowerCase() === "mt5" &&
+            row.original.mt5_login != null;
+          return (
+            <div className="space-y-0.5">
+              <span className="capitalize">{target}</span>
+              {showMt5Login && (
+                <div className="font-mono text-xs text-muted-foreground">
+                  {row.original.mt5_login}
+                </div>
+              )}
+            </div>
+          );
+        },
+      },
+      {
         id: "transaction_reference",
         header: "Reference",
         accessorKey: "transaction_reference",
@@ -854,12 +875,12 @@ export function USDTTransactionsPageContent() {
                         >
                           <TabsList className={`grid h-auto w-full ${isApproved ? 'grid-cols-1' : 'grid-cols-2'} rounded-2xl bg-muted/50 p-1`}>
                             {!isApproved && (
-                              <TabsTrigger value="approve" className="rounded-xl">
+                              <TabsTrigger value="approve" className="rounded-xl data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:hover:bg-green-700 hover:bg-green-100 hover:text-green-800">
                                 <CheckCircle2 className="mr-2 h-4 w-4" />
                                 Approve
                               </TabsTrigger>
                             )}
-                            <TabsTrigger value="reject" className="rounded-xl">
+                            <TabsTrigger value="reject" className="rounded-xl data-[state=active]:bg-red-600 data-[state=active]:text-white data-[state=active]:hover:bg-red-700 hover:bg-red-100 hover:text-red-800">
                               <XCircle className="mr-2 h-4 w-4" />
                               {isApproved ? "Reject (Reverse Approval)" : "Reject"}
                             </TabsTrigger>

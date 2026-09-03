@@ -27,6 +27,7 @@ import {
   ShieldCheck,
   Upload,
   X,
+  CheckCircle2
 } from "lucide-react";
 import {
   DepositInfoPanel,
@@ -691,37 +692,32 @@ export function OnChainDepositTab({ token }: { token: string | null }) {
             )}
 
             {depositStatus === "pending" && (
-              <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4">
-                <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 text-sm">
-                  How it works:
-                </h4>
-                <div className="space-y-2 text-xs text-gray-600 dark:text-gray-400">
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 bg-blue-100 dark:bg-blue-900/20 rounded-full flex items-center justify-center mt-0.5">
-                      <span className="text-blue-600 dark:text-blue-400 font-bold text-xs">
-                        1
-                      </span>
-                    </div>
-                    <span>Scan QR or copy the deposit address</span>
+              <div className="bg-muted/50 rounded-xl p-4 border border-border/50">
+              <h4 className="font-semibold text-foreground mb-3 text-sm flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-primary" />
+                How it works:
+              </h4>
+              <div className="space-y-2 text-xs text-muted-foreground">
+                <div className="flex items-start gap-2">
+                  <div className="w-5 h-5 bg-primary/10 rounded-full flex items-center justify-center mt-0.5 border border-primary/20">
+                    <span className="text-primary font-bold text-xs">1</span>
                   </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 bg-purple-100 dark:bg-purple-900/20 rounded-full flex items-center justify-center mt-0.5">
-                      <span className="text-blue-600 dark:text-blue-400 font-bold text-xs">
-                        2
-                      </span>
-                    </div>
-                    <span>Send funds using your preferred wallet</span>
+                  <span>Scan QR or copy the deposit address</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-5 h-5 bg-primary/10 rounded-full flex items-center justify-center mt-0.5 border border-primary/20">
+                    <span className="text-primary font-bold text-xs">2</span>
                   </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-5 h-5 bg-emerald-100 dark:bg-emerald-900/20 rounded-full flex items-center justify-center mt-0.5">
-                      <span className="text-blue-600 dark:text-blue-400 font-bold text-xs">
-                        3
-                      </span>
-                    </div>
-                    <span>Submit the transaction hash here</span>
+                  <span>Send funds using your preferred wallet</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <div className="w-5 h-5 bg-primary/10 rounded-full flex items-center justify-center mt-0.5 border border-primary/20">
+                    <span className="text-primary font-bold text-xs">3</span>
                   </div>
+                  <span>Submit the transaction hash here</span>
                 </div>
               </div>
+            </div>
             )}
           </CardContent>
         </Card>

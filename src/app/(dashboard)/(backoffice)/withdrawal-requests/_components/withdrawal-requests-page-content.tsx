@@ -917,12 +917,12 @@ export function WithdrawalRequestsPageContent() {
                         >
                           <TabsList className={`grid h-auto w-full ${viewingWithdrawalRequest.status === "approved" ? 'grid-cols-1' : 'grid-cols-2'} rounded-2xl bg-muted/50 p-1`}>
                             {viewingWithdrawalRequest.status !== "approved" && (
-                              <TabsTrigger value="approve" className="rounded-xl">
+                              <TabsTrigger value="approve" className="rounded-xl data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:hover:bg-green-700 hover:bg-green-100 hover:text-green-800">
                                 <CheckCircle2 className="mr-2 h-4 w-4" />
                                 Approve
                               </TabsTrigger>
                             )}
-                            <TabsTrigger value="reject" className="rounded-xl">
+                            <TabsTrigger value="reject" className="rounded-xl data-[state=active]:bg-red-600 data-[state=active]:text-white data-[state=active]:hover:bg-red-700 hover:bg-red-100 hover:text-red-800">
                               <XCircle className="mr-2 h-4 w-4" />
                               {viewingWithdrawalRequest.status === "approved" ? "Reject (Reverse Approval)" : "Reject"}
                             </TabsTrigger>

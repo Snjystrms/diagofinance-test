@@ -98,7 +98,7 @@ export function TransactionDetailDialog({
               <div>
                 <p className="text-xs text-muted-foreground">Fee</p>
                 <p className="font-medium">
-                  {transaction.fee > 0 ? `${formatAmount(transaction.fee)} ${transaction.currency}` : "—"}
+                  {transaction.fee != null && transaction.fee > 0 ? `${formatAmount(transaction.fee)} ${transaction.currency}` : "—"}
                 </p>
               </div>
               <div>

@@ -814,22 +814,29 @@ function WithdrawalRequestContent() {
       >
         Withdrawal Currency
       </Label>
-      <select
-        id="withdrawal-currency"
+      <Select
         value={withdrawalCurrency}
-        onChange={(e) => setWithdrawalCurrency(e.target.value)}
-        className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        onValueChange={setWithdrawalCurrency}
+        disabled={availableWithdrawalCurrencies.length === 0}
       >
-        {availableWithdrawalCurrencies.length === 0 ? (
-          <option value="INR">No currencies available</option>
-        ) : (
-          availableWithdrawalCurrencies.map((code) => (
-            <option key={code} value={code}>
-              {code}
-            </option>
-          ))
-        )}
-      </select>
+        <SelectTrigger
+          id="withdrawal-currency"
+          className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm shadow-sm focus-visible:ring-1 focus-visible:ring-ring"
+        >
+          <SelectValue placeholder="Select currency" />
+        </SelectTrigger>
+        <SelectContent>
+          {availableWithdrawalCurrencies.length === 0 ? (
+            <SelectItem value="INR">No currencies available</SelectItem>
+          ) : (
+            availableWithdrawalCurrencies.map((code) => (
+              <SelectItem key={code} value={code}>
+                {code}
+              </SelectItem>
+            ))
+          )}
+        </SelectContent>
+      </Select>
       <p className="text-xs text-muted-foreground">
         {selectedWithdrawalRate > 0
           ? `Rate: 1 USD = ${selectedWithdrawalRate.toFixed(2)} ${withdrawalCurrency.toUpperCase()}`
