@@ -829,6 +829,16 @@ function NetworkTab({
         </div>
       ),
     },
+    
+    {
+      header: "Level",
+      key: "level_label",
+      render: (sub) => (
+        <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-xs font-medium">
+          {sub.level_label}
+        </span>
+      ),
+    },
     {
       header: "Lots",
       key: "lots",
@@ -1013,10 +1023,10 @@ function NetworkTab({
         />
       </IbSectionCard>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="space-y-4">
         <IbSectionCard
-          title="Referred Users"
-          description="Clients registered via the IB's referral link."
+          title="Direct Clients (non-IB)"
+          description="Clients present in your downline who are not sub-IBs."
           actions={
             clientsActiveFilterCount > 0 ? (
               <Button

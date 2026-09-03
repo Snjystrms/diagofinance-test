@@ -1571,6 +1571,7 @@ export interface AdminIbClient {
   earned: number;
   pending: number;
   registered: string;
+  level_label: string;
 }
 
 export interface AdminIbClientsResponse {

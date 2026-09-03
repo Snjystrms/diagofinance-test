@@ -4,7 +4,9 @@ import type { ReactNode } from "react";
 import { Sparkles } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ThemePill } from "@/components/ui/theme-pill";
-import { PremiumDarkLayers } from "@/components/ui/premium-dark-card";
+import { PremiumDarkCard, PremiumDarkLayers } from "@/components/ui/premium-dark-card";
+import { getDashboardThemeArtwork } from "@/components/theme-customizer";
+import { useClientCustomization } from "@/contexts/client-customization-context";
 import { cn } from "@/lib/utils";
 
 interface IbPageShellProps {
@@ -65,25 +67,54 @@ export function IbPageHeader({
   description,
   actions,
 }: IbPageHeaderProps) {
+  const { themePairId, themeMode } = useClientCustomization();
+  const dashboardThemeArtwork = getDashboardThemeArtwork(themePairId, themeMode);
+
   return (
     <>
-      {/* Desktop: original themed hero — visible from xl upward */}
-      <section className="hidden xl:block ib-portal-hero rounded-[20px] sm:rounded-[28px] border px-4 py-5 sm:px-7 sm:py-6">
-        <div className="dashboard-theme-overlay dashboard-theme-welcome-overlay theme-art-diagofinance" />
+      {/* Desktop: original themed hero — falls back to dark premium when no artwork */}
+      <section
+        className={`hidden xl:block rounded-[20px] sm:rounded-[28px] border px-4 py-5 sm:px-7 sm:py-6 ${
+          dashboardThemeArtwork
+            ? "ib-portal-hero ib-dash-artwork-surface"
+            : "premium-dark-border group relative overflow-hidden border-white/5 bg-[#050505]"
+        }`}
+      >
+        {dashboardThemeArtwork ? (
+          <div
+            className={`dashboard-theme-overlay dashboard-theme-welcome-overlay theme-art-${dashboardThemeArtwork}`}
+          />
+        ) : (
+          <PremiumDarkLayers />
+        )}
         <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="space-y-2">
             <ThemePill
               icon={<Sparkles className="h-3.5 w-3.5" />}
-              className="rounded-full text-xs font-semibold uppercase tracking-[0.22em]"
+              className={`rounded-full text-xs font-semibold uppercase tracking-[0.22em] ${
+                dashboardThemeArtwork
+                  ? ""
+                  : "border border-white/10 bg-white/5 text-white/80 backdrop-blur-[6px]"
+              }`}
             >
               {eyebrow}
             </ThemePill>
             <div className="space-y-1">
-              <h1 className="text-3xl font-semibold tracking-tight text-foreground sm:text-[2.15rem]">
+              <h1
+                className={`text-3xl font-semibold tracking-tight sm:text-[2.15rem] ${
+                  dashboardThemeArtwork ? "text-zinc-50" : "text-white"
+                }`}
+              >
                 {title}
               </h1>
               {description ? (
-                <p className="max-w-3xl text-sm text-muted-foreground sm:text-base">{description}</p>
+                <p
+                  className={`max-w-3xl text-sm sm:text-base ${
+                    dashboardThemeArtwork ? "text-zinc-50/80" : "text-white/45"
+                  }`}
+                >
+                  {description}
+                </p>
               ) : null}
             </div>
           </div>
@@ -91,33 +122,37 @@ export function IbPageHeader({
         </div>
       </section>
 
-      {/* Mobile / narrow: premium dark backup — visible below xl, no box-shadow */}
-      {/* Mirrors dashboard-page-content.tsx header pattern (line ~1801): hidden xl:block + block xl:hidden */}
-      <section className="block xl:hidden group relative overflow-hidden rounded-[20px] sm:rounded-[28px] border border-white/5 bg-[#050505] px-4 py-5 sm:px-7 sm:py-6">
-        <PremiumDarkLayers />
-        <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="space-y-2">
-            <ThemePill
-              icon={<Sparkles className="h-3.5 w-3.5" />}
-              className="rounded-full border border-white/10 bg-white/5 text-xs font-semibold uppercase tracking-[0.22em] text-white/80 backdrop-blur-[6px]"
-            >
-              {eyebrow}
-            </ThemePill>
-            <div className="space-y-1">
-              <h1 className="text-3xl font-bold tracking-[-0.01em] text-white sm:text-[2.15rem]">
-                {title}
-              </h1>
-              {description ? (
-                <p className="max-w-3xl text-sm text-white/45 sm:text-base">{description}</p>
-              ) : null}
+      {/* Mobile / narrow: premium dark backup — visible below xl */}
+      {/* Mirrors dashboard-page-content.tsx header pattern: hidden xl:block + block xl:hidden */}
+      <section className="block xl:hidden">
+        <PremiumDarkCard
+          className="rounded-[20px] sm:rounded-[28px] px-4 py-5 sm:px-7 sm:py-6"
+          aria-label={eyebrow}
+        >
+          <div className="relative z-10 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2">
+              <ThemePill
+                icon={<Sparkles className="h-3.5 w-3.5" />}
+                className="rounded-full border border-white/10 bg-white/5 text-xs font-semibold uppercase tracking-[0.22em] text-white/80 backdrop-blur-[6px]"
+              >
+                {eyebrow}
+              </ThemePill>
+              <div className="space-y-1">
+                <h1 className="text-3xl font-bold tracking-[-0.01em] text-white sm:text-[2.15rem]">
+                  {title}
+                </h1>
+                {description ? (
+                  <p className="max-w-3xl text-sm text-white/45 sm:text-base">{description}</p>
+                ) : null}
+              </div>
             </div>
+            {actions ? (
+              <div className="flex flex-wrap items-center gap-3 [&_button]:!border-white/15 [&_button]:!bg-white/[0.06] [&_button]:!text-white/90 [&_button]:backdrop-blur-[6px]">
+                {actions}
+              </div>
+            ) : null}
           </div>
-          {actions ? (
-            <div className="flex flex-wrap items-center gap-3 [&_button]:!border-white/15 [&_button]:!bg-white/[0.06] [&_button]:!text-white/90 [&_button]:backdrop-blur-[6px]">
-              {actions}
-            </div>
-          ) : null}
-        </div>
+        </PremiumDarkCard>
       </section>
     </>
   );
@@ -136,9 +171,9 @@ export function IbMetricCard({
     <Card className={cn("overflow-hidden rounded-[20px] sm:rounded-[28px] border shadow-sm", accentStyles[accent], className)}>
       <CardContent className="flex h-full flex-col gap-4 p-4 sm:gap-5 sm:p-6">
         <div className="flex items-start justify-between gap-3 sm:gap-4">
-          <div className="space-y-1.5 sm:space-y-2">
+          <div className="min-w-0 space-y-1.5 sm:space-y-2">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">{title}</p>
-            <div className="text-xl font-semibold tracking-tight text-foreground sm:text-2xl lg:text-3xl">{value}</div>
+            <div className="break-all text-xl font-semibold tracking-tight text-foreground sm:text-2xl lg:text-3xl">{value}</div>
           </div>
           {icon ? (
             <div className="flex h-9 w-9 sm:h-11 sm:w-11 shrink-0 items-center justify-center rounded-xl sm:rounded-2xl border border-border/60 bg-background/80 text-foreground shadow-sm backdrop-blur-sm">

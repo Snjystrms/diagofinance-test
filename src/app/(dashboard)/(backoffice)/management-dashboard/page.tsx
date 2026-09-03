@@ -21,6 +21,7 @@ import { ApiErrorState } from "@/components/errors/api-error-state";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { IbPageHeader } from "@/components/ib/ib-page-primitives";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -163,31 +164,24 @@ export default function ManagementDashboardPage() {
   return (
     <ProtectedRoute>
       <div className="space-y-6 p-1">
-        <div className="flex flex-col gap-4 rounded-2xl border border-border/70 bg-card/80 p-5 shadow-sm sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-              Management overview
-            </p>
-            <h1 className="mt-2 text-2xl font-semibold text-foreground">
-              Management Dashboard
-            </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Monitor platform activity, deposits, withdrawals, and top
-              contributors for the selected period.
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => void loadReport()}
-            disabled={loading}
-          >
-            <RefreshCw
-              className={loading ? "mr-2 h-4 w-4 animate-spin" : "mr-2 h-4 w-4"}
-            />
-            Refresh
-          </Button>
-        </div>
+        <IbPageHeader
+          eyebrow="Management overview"
+          title="Management Dashboard"
+          description="Monitor platform activity, deposits, withdrawals, and top contributors for the selected period."
+          actions={
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void loadReport()}
+              disabled={loading}
+            >
+              <RefreshCw
+                className={loading ? "mr-2 h-4 w-4 animate-spin" : "mr-2 h-4 w-4"}
+              />
+              Refresh
+            </Button>
+          }
+        />
 
         <div className="flex flex-col gap-4 rounded-2xl border border-border/70 bg-card/80 p-4 shadow-sm lg:flex-row lg:items-end">
           <div className="grid flex-1 gap-4 md:grid-cols-3">
