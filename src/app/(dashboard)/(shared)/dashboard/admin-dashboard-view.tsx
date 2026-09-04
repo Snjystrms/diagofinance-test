@@ -228,7 +228,7 @@ export function AdminDashboardView({
       description: "Awaiting processing",
       icon: Clock,
       ibVariant: "ib-portal-surface-amber",
-      href: "/ib-withdrawal-requests",
+      href: "/ib-withdrawal-requests?status=pending",
     },
     // Row 3
     {
