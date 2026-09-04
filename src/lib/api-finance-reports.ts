@@ -940,6 +940,7 @@ export interface WithdrawalReportItem {
   remarks?: string | null;
   approved_by?: string | null;
   approved_at?: string | null;
+  source?: string | null;
 }
 
 export interface WithdrawalReportListParams {

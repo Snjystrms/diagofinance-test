@@ -391,6 +391,19 @@ export default function WithdrawalReportPage() {
         },
       },
       {
+        id: "source",
+        header: "Source",
+        accessorKey: "source",
+        cell: ({ row }) => {
+          const method = row.original.source;
+          return method ? (
+            <span className="text-sm">{method}</span>
+          ) : (
+            <span className="text-muted-foreground">—</span>
+          );
+        },
+      },
+      {
         id: "amount",
         header: () => (
           <ManualSortHeader sortKey="amount" title="Amount (USD)" />

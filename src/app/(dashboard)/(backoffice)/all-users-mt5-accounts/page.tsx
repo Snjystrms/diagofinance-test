@@ -14,6 +14,7 @@ import { format, parse } from "date-fns";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
+import { AccessDeniedPanel } from "@/components/errors/access-denied-panel";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
@@ -569,9 +570,7 @@ export default function AllUsersMT5AccountsPage() {
   if (!canViewMt5List && !canCreateMt5) {
     return (
       <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
-        <ApiErrorState
-          audience="admin"
-          variant="panel"
+        <AccessDeniedPanel
           title="Access restricted"
           message="Your account does not have permission to manage MT5 accounts."
         />

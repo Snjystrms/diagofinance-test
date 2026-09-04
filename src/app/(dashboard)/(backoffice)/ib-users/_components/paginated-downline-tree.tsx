@@ -20,6 +20,7 @@ import '@xyflow/react/dist/style.css';
 import dagre from '@dagrejs/dagre';
 import toast from 'react-hot-toast';
 import { ApiErrorState } from '@/components/errors/api-error-state';
+import { AccessDeniedPanel } from '@/components/errors/access-denied-panel';
 import { TeamTreeSkeleton } from '@/components/loading/backoffice-page-skeletons';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Info, Search } from 'lucide-react';
@@ -615,11 +616,10 @@ export function PaginatedDownlineTree({
     return (
       <div className="px-4 py-10 md:px-6 lg:px-8">
         {isForbidden ? (
-          <ApiErrorState
-            audience="admin"
-            variant="panel"
+          <AccessDeniedPanel
             title="Access restricted"
             message="Your account does not have permission to view the level / tree chart."
+            showBackButton={false}
           />
         ) : (
           <ApiErrorState

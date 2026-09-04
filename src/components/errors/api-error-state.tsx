@@ -1,5 +1,6 @@
 import { AlertCircle, LockKeyhole, RefreshCw, SearchX, WifiOff } from "lucide-react";
 
+import { AccessDeniedPanel } from "@/components/errors/access-denied-panel";
 import { Button } from "@/components/ui/button";
 import {
   getFriendlyError,
@@ -104,6 +105,17 @@ export function ApiErrorState({
 
   const displayTitle = title || normalizedError.title;
   const displayMessage = message || normalizedError.message;
+
+  if (normalizedError.status === 401 || normalizedError.status === 403) {
+    return (
+      <AccessDeniedPanel
+        title={displayTitle}
+        message={displayMessage}
+        showBackButton={false}
+      />
+    );
+  }
+
   const tone = getToneClasses(normalizedError);
   const Icon = getIcon(normalizedError);
 

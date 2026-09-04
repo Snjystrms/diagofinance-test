@@ -3,6 +3,7 @@
 import { useEffect, useMemo } from "react";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
+import { AccessDeniedPanel } from "@/components/errors/access-denied-panel";
 import { useAuth } from "@/contexts/auth-context";
 import { isRouteAllowedForRole } from "@/lib/app-route-registry";
 import { LogoCube } from "@/components/ui/logo-cube";
@@ -92,13 +93,10 @@ export function ProtectedRoute({
 
   if (requireAuth && isAuthenticated && !isAuthorized) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="mt-2 text-sm text-gray-600">
-            You do not have access to this page.
-          </p>
-        </div>
-      </div>
+      <AccessDeniedPanel
+        title="Access restricted"
+        message="Your account does not have permission to access this page."
+      />
     );
   }
 

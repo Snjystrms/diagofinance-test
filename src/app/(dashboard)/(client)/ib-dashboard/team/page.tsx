@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 
 import { ApiErrorState } from "@/components/errors/api-error-state";
+import { AccessDeniedPanel } from "@/components/errors/access-denied-panel";
 import { ClientTablePageSkeleton } from "@/components/loading/client-page-skeletons";
 import { Button } from "@/components/ui/button";
 import {
@@ -456,11 +457,10 @@ export default function IbTeamTreePage() {
       <IbPageShell>
         <IbSectionCard title="Team tree" description="Your downline team structure">
           {isForbidden ? (
-            <ApiErrorState
-              audience="client"
-              variant="panel"
+            <AccessDeniedPanel
               title="Access restricted"
               message="Your account does not have permission to view the level / tree chart."
+              showBackButton={false}
             />
           ) : (
             <ApiErrorState

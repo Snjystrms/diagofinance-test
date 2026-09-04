@@ -22,6 +22,7 @@ import { format, parse } from "date-fns";
 import { AppDataTable } from "@/components/app-data-table";
 import { DeleteDialog } from "@/components/dialogs/delete-dialog";
 import { ApiErrorState } from "@/components/errors/api-error-state";
+import { AccessDeniedPanel } from "@/components/errors/access-denied-panel";
 import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ProtectedRoute } from "@/components/protected-route";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
@@ -1004,9 +1005,7 @@ export default function NewUsersPage() {
     return (
       <ProtectedRoute>
         <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
-          <ApiErrorState
-            audience="admin"
-            variant="panel"
+          <AccessDeniedPanel
             title="Access restricted"
             message="Your account does not have permission to manage users."
           />

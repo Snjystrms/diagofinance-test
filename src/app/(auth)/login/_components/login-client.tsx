@@ -363,7 +363,7 @@ export function LoginClient() {
                   disabled={isVerifying2FA || twoFACode.length !== 6}
                   style={primaryButtonGradient}
                   className="
-                    px-5 py-2.5 rounded-md font-sans font-semibold text-[14px] leading-[150%] tracking-[-3%]
+                    px-5 py-2.5 rounded-md font-sans font-normal text-[14px] leading-[150%] tracking-[-3%]
                     text-white
                     hover:opacity-90
                     disabled:opacity-40 disabled:cursor-not-allowed

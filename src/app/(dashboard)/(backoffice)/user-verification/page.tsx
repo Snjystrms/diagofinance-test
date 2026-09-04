@@ -9,6 +9,7 @@ import toast from "react-hot-toast";
 import { AppDataTable } from "@/components/app-data-table";
 import { AuthenticatedDocumentViewer } from "@/components/authenticated-document-viewer";
 import { ApiErrorState } from "@/components/errors/api-error-state";
+import { AccessDeniedPanel } from "@/components/errors/access-denied-panel";
 import { BackofficeDetailDialogSkeleton } from "@/components/loading/backoffice-page-skeletons";
 import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { SearchSelectField } from "@/components/search-select-field";
@@ -985,9 +986,7 @@ const buildReviewPayload = () => {
   if (!isAdmin && isManager && !statusFeatureOptions.length) {
     return (
       <div className="px-4 py-10 md:px-6 lg:px-8">
-        <ApiErrorState
-          audience="admin"
-          variant="panel"
+        <AccessDeniedPanel
           title="Access restricted"
           message="Your account does not have permission to view KYC submissions."
         />

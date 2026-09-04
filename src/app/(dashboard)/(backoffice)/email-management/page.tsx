@@ -2,6 +2,7 @@
 
 import { useState, useRef, useDeferredValue, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { AccessDeniedPanel } from "@/components/errors/access-denied-panel";
 import { useAuth } from "@/contexts/auth-context";
 import {
   adminBroadcastEmailApi,
@@ -66,19 +67,7 @@ function AccessRestrictedCard({
   message: string;
 }) {
   return (
-    <div className="flex items-center justify-center py-16">
-      <Card className="w-full max-w-md border rounded-2xl shadow-sm">
-        <CardContent className="flex flex-col items-center gap-4 p-8 text-center">
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
-            <ShieldOff className="h-7 w-7 text-destructive" />
-          </div>
-          <div className="space-y-1">
-            <h3 className="text-lg font-semibold tracking-tight">{title}</h3>
-            <p className="text-sm text-muted-foreground">{message}</p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <AccessDeniedPanel title={title} message={message} showBackButton={false} />
   );
 }
 
