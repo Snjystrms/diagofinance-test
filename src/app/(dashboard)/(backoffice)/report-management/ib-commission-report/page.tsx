@@ -18,6 +18,7 @@ import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 
 import { ReportPageWrapper } from "@/components/report-page-wrapper";
+import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import type { ReportExportFormat } from "@/components/report-page-wrapper";
 import { Button } from "@/components/ui/button";
 import {
@@ -286,6 +287,9 @@ export default function IbCommissionReportPage() {
         </div>
         </div>
 
+        {loading && groups.length === 0 ? (
+          <TableSectionSkeleton columnCount={6} />
+        ) : (
         <div className="rounded-lg border bg-card">
           <div className="p-5">
             <div className="mb-4 flex items-center justify-between">
@@ -380,6 +384,7 @@ export default function IbCommissionReportPage() {
             )}
           </div>
         </div>
+        )}
       </div>
     </ReportPageWrapper>
   );

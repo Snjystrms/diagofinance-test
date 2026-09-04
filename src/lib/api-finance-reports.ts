@@ -2307,6 +2307,7 @@ export interface AdminDashboardKpis {
   active_traders: number;
   pending_ib_request: number;
   pending_bank_details_request: number;
+  pending_ib_withdrawal: number;
 }
 
 export interface AdminDashboardTransactionGraphData {

@@ -1,7 +1,6 @@
 "use client";
 
 import { ApiErrorState } from "@/components/errors/api-error-state";
-import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -59,18 +58,6 @@ export function ReportPageWrapper({
       </DropdownMenuContent>
     </DropdownMenu>
   ) : null;
-
-  if (isLoading && isEmpty) {
-    return (
-      <ListPageSkeleton
-        actionCount={(onRefresh ? 1 : 0) + (onExport ? 1 : 0)}
-        columnCount={7}
-        rowCount={10}
-        filterPillCount={3}
-        showFilterPanel
-      />
-    );
-  }
 
   if (error && isEmpty) {
     return (

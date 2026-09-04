@@ -9,7 +9,7 @@ import { format } from "date-fns";
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
-import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
+import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -61,9 +61,9 @@ const fmtDateTime = (s?: string | null) => {
 const formatAmount = (amount: string | number) => {
   try {
     const num = typeof amount === "string" ? parseFloat(amount) : amount;
-    return num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 8 });
+    return `${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 8 })} USD`;
   } catch {
-    return String(amount);
+    return `${String(amount)} USD`;
   }
 };
 
@@ -288,10 +288,6 @@ export default function HistoryReportPage() {
     return columns;
   }, [rows]);
 
-  if (loading && rows.length === 0) {
-    return <ListPageSkeleton actionCount={2} columnCount={6} rowCount={10} filterPillCount={3} />;
-  }
-
   if (loadError && rows.length === 0) {
     return (
       <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
@@ -391,7 +387,7 @@ export default function HistoryReportPage() {
                     <Icon className={`h-4 w-4 ${card.className}`} />
                   </div>
                   <div className="mt-2 text-2xl font-semibold">
-                    {sign}{formatAmount(value)}
+                    {sign}{typeof value === "number" ? formatAmount(value) : formatAmount(value ?? 0)}
                   </div>
                 </CardContent>
               </Card>
@@ -400,15 +396,19 @@ export default function HistoryReportPage() {
         </div>
       ) : null}
 
+      {loading && rows.length === 0 ? (
+        <TableSectionSkeleton columnCount={6} />
+      ) : (
       <div className="rounded-lg border bg-card">
         <div className="p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-semibold">Results</h2>
             {rows.length > 0 ? <span className="text-xs text-muted-foreground">Showing {rows.length} of {total} results</span> : null}
           </div>
-          <AppDataTable<HistoryRow> data={rows} columns={dynamicColumns} pageCount={totalPages} />
+          <AppDataTable<HistoryRow> data={rows} columns={dynamicColumns} pageCount={totalPages} getRowId={(row) => String(row.ticket ?? row.login ?? row.date ?? Math.random())} />
         </div>
       </div>
+      )}
     </div>
   );
 }

@@ -21,6 +21,7 @@ import {
 } from "@/lib/api";
 import { useAuth } from "@/contexts/auth-context";
 import { ReportPageWrapper } from "@/components/report-page-wrapper";
+import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import type { ReportExportFormat } from "@/components/report-page-wrapper";
 import { fmtDateTime, formatAmount } from "@/lib/formatters";
 import { getAdminFriendlyErrorMessage } from "@/lib/admin-friendly-errors";
@@ -456,6 +457,9 @@ export default function IbWithdrawalReportPage() {
   </div>
 
         {/* Results Section */}
+        {loading && rows.length === 0 ? (
+          <TableSectionSkeleton columnCount={8} />
+        ) : (
         <div className="rounded-lg border bg-card">
           <div className="p-5">
             <div className="flex items-center justify-between mb-4">
@@ -473,6 +477,7 @@ export default function IbWithdrawalReportPage() {
             />
           </div>
         </div>
+        )}
       </div>
     </ReportPageWrapper>
   );

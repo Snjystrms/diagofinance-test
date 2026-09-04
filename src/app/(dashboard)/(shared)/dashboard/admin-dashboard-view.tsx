@@ -224,7 +224,7 @@ export function AdminDashboardView({
     },
     {
       title: "IB Pending Withdrawals",
-      value: kpis?.pending_withdraw ?? 0,
+      value: kpis?.pending_ib_withdrawal ?? 0,
       description: "Awaiting processing",
       icon: Clock,
       ibVariant: "ib-portal-surface-amber",

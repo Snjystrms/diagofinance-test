@@ -45,7 +45,7 @@ export function DataTable<TData>({
       {children}
       <div className="rounded-md border overflow-x-auto min-w-0">
         <Table
-          className={cn(fitToWidth ? "w-full min-w-0" : "w-auto min-w-0")}
+          className={cn(fitToWidth ? "w-full min-w-0 table-fixed" : "min-w-full w-max")}
         >
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

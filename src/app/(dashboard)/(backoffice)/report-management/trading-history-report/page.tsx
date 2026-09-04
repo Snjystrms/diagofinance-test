@@ -13,6 +13,7 @@ import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { Button } from "@/components/ui/button";
 import { ReportPageWrapper } from "@/components/report-page-wrapper";
+import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import type { ReportExportFormat } from "@/components/report-page-wrapper";
 import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/auth-context";
@@ -385,6 +386,9 @@ export default function TradingHistoryReportPage() {
         </div>
          </div>
 
+        {loading && rows.length === 0 ? (
+          <TableSectionSkeleton columnCount={12} />
+        ) : (
         <div className="rounded-lg border bg-card">
           <div className="p-5">
             <div className="mb-4 flex items-center justify-between">
@@ -404,6 +408,7 @@ export default function TradingHistoryReportPage() {
             />
           </div>
         </div>
+        )}
       </div>
     </ReportPageWrapper>
   );

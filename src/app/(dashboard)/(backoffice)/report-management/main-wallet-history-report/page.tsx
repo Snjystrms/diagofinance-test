@@ -9,7 +9,7 @@ import { format } from "date-fns";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
-import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
+import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -281,12 +281,6 @@ export default function MainWalletHistoryReportPage() {
         },
       },
       {
-        id: "note",
-        header: "Note",
-        accessorKey: "note",
-        cell: ({ row }) => <ViewContentDialog content={row.original.note} title="Note" description="Full note" emptyLabel="—" />,
-      },
-      {
         id: "comment",
         header: "Comment",
         accessorKey: "comment",
@@ -318,10 +312,6 @@ export default function MainWalletHistoryReportPage() {
     ],
     []
   );
-
-  if (loading && rows.length === 0) {
-    return <ListPageSkeleton actionCount={2} columnCount={7} rowCount={10} filterPillCount={4} />;
-  }
 
   if (loadError && rows.length === 0) {
     return (
@@ -413,6 +403,9 @@ export default function MainWalletHistoryReportPage() {
       </div>
       </div>
 
+      {loading && rows.length === 0 ? (
+        <TableSectionSkeleton columnCount={7} />
+      ) : (
       <div className="rounded-lg border bg-card">
         <div className="p-5">
           <div className="flex items-center justify-between mb-4">
@@ -422,6 +415,7 @@ export default function MainWalletHistoryReportPage() {
           <AppDataTable<MainWalletHistoryReportItem> data={rows} columns={columns} pageCount={totalPages} />
         </div>
       </div>
+      )}
     </div>
   );
 }

@@ -9,7 +9,7 @@ import { format } from "date-fns";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
-import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
+import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { ApiSearchBar } from "@/components/ui/api-search-bar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -341,10 +341,6 @@ export default function IbCommissionWithdrawalReportPage() {
     []
   );
 
-  if (loading && rows.length === 0) {
-    return <ListPageSkeleton actionCount={2} columnCount={7} rowCount={10} filterPillCount={4} />;
-  }
-
   if (loadError && rows.length === 0) {
     return (
       <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
@@ -447,6 +443,9 @@ export default function IbCommissionWithdrawalReportPage() {
       </div>
       </div>
 
+      {loading && rows.length === 0 ? (
+        <TableSectionSkeleton columnCount={7} />
+      ) : (
       <div className="rounded-lg border bg-card">
         <div className="p-5">
           <div className="flex items-center justify-between mb-4">
@@ -456,6 +455,7 @@ export default function IbCommissionWithdrawalReportPage() {
           <AppDataTable<IbCommissionWithdrawalReportItem> data={rows} columns={columns} pageCount={totalPages} />
         </div>
       </div>
+      )}
     </div>
   );
 }

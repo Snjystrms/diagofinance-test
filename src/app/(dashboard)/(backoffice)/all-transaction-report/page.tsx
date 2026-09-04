@@ -10,7 +10,7 @@ import { format } from "date-fns";
 
 import { AppDataTable } from "@/components/app-data-table";
 import { ApiErrorState } from "@/components/errors/api-error-state";
-import { ListPageSkeleton } from "@/components/loading/page-loading-skeleton";
+import { TableSectionSkeleton } from "@/components/loading/page-loading-skeleton";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -287,17 +287,6 @@ export default function AllTransactionReportPage() {
     []
   );
 
-  if (loading && rows.length === 0) {
-    return (
-      <ListPageSkeleton
-        actionCount={2}
-        columnCount={8}
-        rowCount={10}
-        filterPillCount={3}
-      />
-    );
-  }
-
   if (loadError && rows.length === 0) {
     return (
       <div className="container mx-auto px-4 py-10 md:px-6 lg:px-8">
@@ -407,6 +396,9 @@ export default function AllTransactionReportPage() {
       </div>
 
       {/* Results Section */}
+      {loading && rows.length === 0 ? (
+        <TableSectionSkeleton columnCount={8} />
+      ) : (
       <div className="rounded-lg border bg-card">
         <div className="p-5">
           <div className="flex items-center justify-between mb-4">
@@ -424,6 +416,7 @@ export default function AllTransactionReportPage() {
           />
         </div>
       </div>
+      )}
     </div>
   );
 }
