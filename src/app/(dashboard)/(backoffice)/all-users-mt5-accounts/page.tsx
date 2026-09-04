@@ -779,9 +779,11 @@ export default function AllUsersMT5AccountsPage() {
             {canViewMt5List ? (
               renderTableSection()
             ) : (
-              <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-                You can create MT5 accounts, but your account is not allowed to view the MT5 account list.
-              </div>
+              <AccessDeniedPanel
+                variant="inline"
+                title="Access restricted"
+                message="You can create MT5 accounts, but your account is not allowed to view the MT5 account list."
+              />
             )}
           </div>
         </div>

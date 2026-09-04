@@ -295,9 +295,11 @@ export default function DepositCryptoDetailsPage() {
             {canViewList ? (
               renderTableSection()
             ) : (
-              <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-                You can create crypto wallets, but your account is not allowed to view the wallet list.
-              </div>
+              <AccessDeniedPanel
+                variant="inline"
+                title="Access restricted"
+                message="You can create crypto wallets, but your account is not allowed to view the wallet list."
+              />
             )}
           </div>
         </div>

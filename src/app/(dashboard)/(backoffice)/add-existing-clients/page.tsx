@@ -431,9 +431,11 @@ export default function AddExistingClientsPage() {
             {canViewList ? (
               renderTableSection()
             ) : (
-              <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-                You can add IB existing clients, but your account is not allowed to view the list.
-              </div>
+              <AccessDeniedPanel
+                variant="inline"
+                title="Access restricted"
+                message="You can add IB existing clients, but your account is not allowed to view the list."
+              />
             )}
           </div>
         </div>

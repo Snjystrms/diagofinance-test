@@ -1200,10 +1200,11 @@ export default function NewUsersPage() {
                   />
                 )
               ) : (
-                <div className="rounded-lg border border-dashed p-6 text-sm text-muted-foreground">
-                  You can add users, but your account is not allowed to view the
-                  user list.
-                </div>
+                <AccessDeniedPanel
+                  variant="inline"
+                  title="Access restricted"
+                  message="You can add users, but your account is not allowed to view the user list."
+                />
               )}
             </div>
           </div>

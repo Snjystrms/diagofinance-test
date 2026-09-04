@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 interface AccessDeniedPanelProps {
   title?: string;
   message?: string;
+  variant?: "default" | "inline";
   showBackButton?: boolean;
   backHref?: string;
   backLabel?: string;
@@ -16,10 +17,38 @@ interface AccessDeniedPanelProps {
 export function AccessDeniedPanel({
   title = "Access restricted",
   message = "Your account does not have permission to access this page or feature.",
+  variant = "default",
   showBackButton = true,
   backHref = "/dashboard",
   backLabel = "Go Back to Dashboard",
 }: AccessDeniedPanelProps) {
+  if (variant === "inline") {
+    return (
+      <div className="flex min-h-[30vh] w-full items-center justify-center px-4 py-6">
+        <div className="flex flex-col items-center space-y-3 text-center">
+          <div className="relative h-24 w-24">
+            <div className="pointer-events-none absolute inset-0 -z-10 rounded-full bg-gradient-to-br from-red-400/25 via-rose-400/20 to-amber-400/10 blur-xl" />
+            <Image
+              src="/service_unavailable.png"
+              alt="Access restricted"
+              fill
+              className="object-contain drop-shadow-md"
+              priority
+            />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-semibold tracking-tight text-foreground">
+              {title}
+            </h3>
+            <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+              {message}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex min-h-[50vh] w-full items-center justify-center px-4 py-8">
       <Card className="relative w-full max-w-sm overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-b from-card to-muted/30 shadow-lg">
