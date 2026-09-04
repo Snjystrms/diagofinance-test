@@ -261,6 +261,11 @@ export function BankDepositTab({ token }: { token: string | null }) {
     }
   }, [availableBankCurrencies, bankCurrency]);
 
+  useEffect(() => {
+    if (!token) return;
+    void fetchBankRequests();
+  }, [bankRequestStatusFilter, fetchBankRequests, token]);
+
   const handleBankPaymentProofChange = (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -1086,16 +1091,20 @@ export function BankDepositTab({ token }: { token: string | null }) {
             </CardDescription>
           </div>
           <div className="flex items-center gap-2">
-            <select
+            <Select
               value={bankRequestStatusFilter}
-              onChange={(e) => setBankRequestStatusFilter(e.target.value)}
-              className="h-8 rounded-lg border border-input bg-background px-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              onValueChange={setBankRequestStatusFilter}
             >
-              <option value="all">All statuses</option>
-              <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="rejected">Rejected</option>
-            </select>
+              <SelectTrigger className="h-8 w-[140px] rounded-lg px-2 text-xs">
+                <SelectValue placeholder="All statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All statuses</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
             <Button
               variant="outline"
               size="sm"

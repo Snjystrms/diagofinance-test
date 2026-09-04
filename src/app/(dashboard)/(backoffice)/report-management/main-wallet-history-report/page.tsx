@@ -271,7 +271,7 @@ export default function MainWalletHistoryReportPage() {
       },
       {
         id: "amount",
-        header: () => <ManualSortHeader sortKey="amount" title="Amount" />,
+        header: () => <ManualSortHeader sortKey="amount" title="Amount (USD)" />,
         accessorKey: "amount",
         cell: ({ row }) => {
           const v = row.original.amount;
