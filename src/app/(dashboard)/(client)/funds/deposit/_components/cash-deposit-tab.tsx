@@ -522,19 +522,25 @@ export function CashDepositTab({ token }: { token: string | null }) {
                           No MT5 accounts available right now.
                         </div>
                       ) : (
-                        <select
+                        <Select
                           value={accountRef}
-                          onChange={(e) => setAccountRef(e.target.value)}
+                          onValueChange={setAccountRef}
                           disabled={isSubmitting}
-                          className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          <option value="">Select an MT5 account</option>
-                          {mt5Accounts.map((acc) => (
-                            <option key={acc.id} value={acc.account_id}>
-                              {acc.account_id} · {acc.name}
-                            </option>
-                          ))}
-                        </select>
+                          <SelectTrigger
+                            id="cash-mt5-account"
+                            className="h-11 w-full rounded-xl border border-input bg-background px-3 text-sm shadow-sm focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                          >
+                            <SelectValue placeholder="Select an MT5 account" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {mt5Accounts.map((acc) => (
+                              <SelectItem key={acc.id} value={acc.account_id}>
+                                {acc.account_id} · {acc.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       )}
                       {selectedMt5Account && (
                         <p className="text-xs text-muted-foreground">

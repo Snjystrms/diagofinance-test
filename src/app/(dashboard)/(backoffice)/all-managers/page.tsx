@@ -556,7 +556,6 @@ export default function AllManagersPage() {
 
             <PermissionAwareCrudDataTable<ManagerRow>
               data={filteredManagers}
-              fitToWidth
               initialData={filteredManagers}
               columns={columns}
               formComponent={ManagerFormComponent}

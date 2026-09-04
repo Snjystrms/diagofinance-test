@@ -755,6 +755,9 @@ export interface DepositReportItem {
   transaction_hash?: string | null;
   merchant_trade_no?: string | null;
   coinsbuy_deposit_id?: string | null;
+  deposit_target?: string | null;
+  mt5_login?: number | null;
+  mt5_account_id?: string | null;
 }
 
 export interface DepositReportListParams {

@@ -527,6 +527,26 @@ export default function ReportManagementPage() {
         },
       },
       {
+        id: "target",
+        header: "Target",
+        accessorKey: "deposit_target",
+        cell: ({ row }) => {
+          const target = row.original.deposit_target;
+          if (target === "mt5") {
+            return (
+              <span className="font-mono text-sm">
+                {row.original.mt5_login || row.original.mt5_account_id || "—"}
+              </span>
+            );
+          }
+          return (
+            <Badge variant="outline" className="text-xs">
+              Wallet
+            </Badge>
+          );
+        },
+      },
+      {
         id: "status",
         header: () => <ManualSortHeader sortKey="status" title="Status" />,
         accessorKey: "status",

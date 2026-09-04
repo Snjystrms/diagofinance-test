@@ -1,6 +1,6 @@
 ﻿"use client";
 import Link from "next/link";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { ApiErrorState } from "@/components/errors/api-error-state";
 import { FeatureDisabledPanel } from "@/components/errors/feature-disabled-panel";
 import { Card, CardContent } from "@/components/ui/card";
@@ -143,6 +143,8 @@ function WithdrawalRequestContent() {
   const [cashPaymentMethodId, setCashPaymentMethodId] = useState<number | null>(null);
   const [currencyRates, setCurrencyRates] = useState<CurrencyRateItem[]>([]);
   const [withdrawalCurrency, setWithdrawalCurrency] = useState("INR");
+  const [mt5Balance, setMt5Balance] = useState<number | null>(null);
+  const [mt5BalanceLoading, setMt5BalanceLoading] = useState(false);
 
   const selectedChain = CHAIN_OPTIONS.find((chain) => chain.value === chainId);
 
@@ -315,6 +317,53 @@ function WithdrawalRequestContent() {
       );
     };
   }, [token]);
+
+  useEffect(() => {
+    const fetchMt5Balance = async () => {
+      if (!token || source !== "mt5" || !selectedMt5Account) {
+        setMt5Balance(null);
+        return;
+      }
+      const numericLogin = selectedMt5Account.replace(/^MT/i, "");
+      if (!numericLogin) {
+        setMt5Balance(null);
+        return;
+      }
+      try {
+        setMt5BalanceLoading(true);
+        const response = await mt5AccountsApi.getBalance(numericLogin, token);
+        const balanceData = (response as unknown as { success: boolean; data?: { equity?: number }; equity?: number });
+        const equity = balanceData.data?.equity ?? balanceData.equity;
+        if (balanceData.success && equity !== undefined) {
+          setMt5Balance(equity);
+        } else {
+          setMt5Balance(null);
+        }
+      } catch (err) {
+        console.error("Failed to fetch MT5 balance:", err);
+        setMt5Balance(null);
+      } finally {
+        setMt5BalanceLoading(false);
+      }
+    };
+    void fetchMt5Balance();
+  }, [token, source, selectedMt5Account]);
+
+  const refreshMt5Balance = useCallback(async () => {
+    if (!token || source !== "mt5" || !selectedMt5Account) return;
+    const numericLogin = selectedMt5Account.replace(/^MT/i, "");
+    if (!numericLogin) return;
+    try {
+      const response = await mt5AccountsApi.getBalance(numericLogin, token);
+      const balanceData = (response as unknown as { success: boolean; data?: { equity?: number }; equity?: number });
+      const equity = balanceData.data?.equity ?? balanceData.equity;
+      if (balanceData.success && equity !== undefined) {
+        setMt5Balance(equity);
+      }
+    } catch (err) {
+      console.error("Failed to refresh MT5 balance:", err);
+    }
+  }, [token, source, selectedMt5Account]);
 
   const withdrawalAmount = parseFloat(amount) || 0;
   const wallets = walletData ? Object.values(walletData.wallets) : [];
@@ -508,6 +557,7 @@ function WithdrawalRequestContent() {
       setSuccess(true);
       setIsSubmitting(false);
       void fetchWalletSummary();
+      void refreshMt5Balance();
       notifyWalletRefresh();
 
       setTimeout(() => {
@@ -732,7 +782,9 @@ function WithdrawalRequestContent() {
       )}
       {(!amount.trim() || isNaN(amountNum) || amountNum === 0) && (
         <p className="text-xs text-muted-foreground">
-          Enter an amount between ${formatAmount(minimumAmount)} USD and ${formatAmount(mainWalletBalance)} USD
+          {source === "mt5" && mt5Balance !== null
+            ? `Enter an amount between ${formatAmount(minimumAmount)} USD and ${formatAmount(mt5Balance)} USD`
+            : `Enter an amount between ${formatAmount(minimumAmount)} USD and ${formatAmount(mainWalletBalance)} USD`}
         </p>
       )}
       {amount.trim() !== "" && !isNaN(amountNum) && amountNum >= minimumAmount && (
@@ -927,14 +979,23 @@ function WithdrawalRequestContent() {
                     }
                     className="space-y-4"
                   >
-                    <TabsList className="grid h-auto w-full grid-cols-3 rounded-xl p-1">
-                      <TabsTrigger value="crypto" className="rounded-md py-2 px-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                    <TabsList className="grid h-auto w-full grid-cols-3 rounded-lg bg-muted/50 p-1">
+                      <TabsTrigger
+                        value="crypto"
+                        className="rounded-md px-2 py-2 text-sm transition-all duration-200 data-[state=active]:bg-[#C50435]! data-[state=active]:text-white!"
+                      >
                         Crypto Withdrawal
                       </TabsTrigger>
-                      <TabsTrigger value="bank" className="rounded-md py-2 px-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                      <TabsTrigger
+                        value="bank"
+                        className="rounded-md px-2 py-2 text-sm transition-all duration-200 data-[state=active]:bg-[#C50435]! data-[state=active]:text-white!"
+                      >
                         Bank Withdrawal
                       </TabsTrigger>
-                      <TabsTrigger value="cash" className="rounded-md py-2 px-2 text-sm data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                      <TabsTrigger
+                        value="cash"
+                        className="rounded-md px-2 py-2 text-sm transition-all duration-200 data-[state=active]:bg-[#C50435]! data-[state=active]:text-white!"
+                      >
                         Cash Withdrawal
                       </TabsTrigger>
                     </TabsList>
@@ -959,8 +1020,8 @@ function WithdrawalRequestContent() {
                       </>
                     ) : (
                       <>
-                        {renderAmountField()}
                         {renderSourceField()}
+                        {renderAmountField()}
                       </>
                     )}
                   </div>
