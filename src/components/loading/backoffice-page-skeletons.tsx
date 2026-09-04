@@ -72,9 +72,7 @@ export function BackofficeStatsGridSkeleton({
   );
 }
 
-interface TeamTreeSkeletonProps extends ComponentProps<"div"> {
-  nodeCount?: number;
-}
+interface TeamTreeSkeletonProps extends ComponentProps<"div"> {}
 
 function TreeNodeSkeleton({ level = 0 }: { level?: number }) {
   return (
@@ -93,7 +91,6 @@ function TreeNodeSkeleton({ level = 0 }: { level?: number }) {
 }
 
 export function TeamTreeSkeleton({
-  nodeCount = 7,
   className,
   ...props
 }: TeamTreeSkeletonProps) {

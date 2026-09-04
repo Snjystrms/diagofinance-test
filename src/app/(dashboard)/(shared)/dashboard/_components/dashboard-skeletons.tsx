@@ -151,7 +151,7 @@ export function ClientDashboardSkeleton() {
                 <Skeleton className="h-4 w-96" />
               </div>
               <div className="flex gap-3">
-                <Skeleton className="h-10 w-[320px] rounded-xl" />
+                <Skeleton className="h-10 w-56 rounded-xl" />
                 <Skeleton className="h-10 w-24 rounded-xl" />
               </div>
             </div>
@@ -244,8 +244,23 @@ export function AdminDashboardSkeleton() {
       </div>
 
       {/* Charts Section */}
-      <div className="mb-6">
-        <Skeleton className="h-[400px] w-full rounded-[28px]" />
+      <div className="mb-6 grid gap-6 xl:grid-cols-2">
+        {Array.from({ length: 2 }).map((_, i) => (
+          <Card key={i} className="relative rounded-2xl border-2 border-border/50 shadow-lg">
+            <CardHeader className="relative flex flex-col items-start gap-4.5 space-y-0 p-6 md:flex-row md:items-center md:justify-between md:gap-0">
+              <div className="flex items-center gap-2.5">
+                <Skeleton className="h-8 w-8 rounded-lg" />
+                <div>
+                  <Skeleton className="h-5 w-24 mb-1" />
+                  <Skeleton className="h-3 w-48" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="relative p-6">
+              <Skeleton className="h-[300px] w-full rounded-lg" />
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       {/* Summary Metrics Card */}
@@ -262,8 +277,8 @@ export function AdminDashboardSkeleton() {
                 <Skeleton className="h-6 w-40 rounded-full" />
               </div>
               <Skeleton className="h-3 w-64 mb-2" />
-              <div className="grid grid-cols-3 gap-2">
-                {Array.from({ length: 3 }).map((_, j) => (
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+                {Array.from({ length: 5 }).map((_, j) => (
                   <div key={j} className="p-3 rounded-lg bg-muted/50">
                     <Skeleton className="h-3 w-20 mb-2" />
                     <Skeleton className="h-4 w-24" />
@@ -279,8 +294,8 @@ export function AdminDashboardSkeleton() {
               <Skeleton className="h-6 w-40 rounded-full" />
             </div>
             <Skeleton className="h-3 w-64 mb-2" />
-            <div className="grid grid-cols-3 gap-2">
-              {Array.from({ length: 3 }).map((_, j) => (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+              {Array.from({ length: 5 }).map((_, j) => (
                 <div key={j} className="p-3 rounded-lg bg-primary/10 border border-primary/20">
                   <Skeleton className="h-3 w-20 mb-2" />
                   <Skeleton className="h-4 w-24" />

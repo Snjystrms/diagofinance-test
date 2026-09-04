@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function WithdrawalRequestsPage() {
   return (
-    <Suspense fallback={<ListPageSkeleton statsCount={4} columnCount={6} rowCount={8} />}>
+    <Suspense fallback={<ListPageSkeleton columnCount={10} rowCount={8} />}>
       <WithdrawalRequestsPageContent />
     </Suspense>
   );

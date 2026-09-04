@@ -678,7 +678,7 @@ export function AdminTransactionContent() {
       <div className="rounded-lg border bg-card">
         <div className="p-5 min-w-0">
           {loading && rows.length === 0 ? (
-            <TableSectionSkeleton columnCount={12} rowCount={10} />
+            <TableSectionSkeleton columnCount={11} rowCount={10} />
           ) : (
             <AppDataTable<AdminTransactionItem>
               data={rows}

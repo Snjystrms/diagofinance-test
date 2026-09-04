@@ -782,7 +782,14 @@ export default function ReportManagementPage() {
 
       {/* Results Section */}
       {loading && rows.length === 0 ? (
-        <TableSectionSkeleton columnCount={6} />
+        <div className="rounded-lg border bg-card">
+          <div className="p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold">Results</h2>
+            </div>
+            <TableSectionSkeleton columnCount={10} />
+          </div>
+        </div>
       ) : (
       <div className="rounded-lg border bg-card">
         <div className="p-5">

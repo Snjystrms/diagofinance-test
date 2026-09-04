@@ -644,7 +644,7 @@ export function PaginatedDownlineTree({
   if (loading && Object.keys(nodesById).length === 0) {
     return (
       <div className="p-8 flex items-center justify-center min-h-[70vh] bg-background">
-        <TeamTreeSkeleton nodeCount={7} className="w-full" />
+        <TeamTreeSkeleton className="w-full" />
       </div>
     );
   }

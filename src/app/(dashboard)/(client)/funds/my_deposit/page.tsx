@@ -4,7 +4,7 @@ import React, { useEffect, useState, useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { AppDataTable } from '@/components/app-data-table'
 import { ApiErrorState } from '@/components/errors/api-error-state'
-import { ClientTablePageSkeleton } from '@/components/loading/client-page-skeletons'
+import { MyDepositPageSkeleton } from './_components/my-deposit-page-skeleton'
 import { useAuth } from '@/contexts/auth-context'
 import { getUserDepositRequests } from '@/utils/operations'
 import { type DepositListItem } from '@/lib/api'
@@ -544,7 +544,7 @@ export default function MyDepositPage() {
 
   if (isLoading && deposits.length === 0) {
     return (
-      <ClientTablePageSkeleton columnCount={8} rowCount={8} />
+      <MyDepositPageSkeleton />
     )
   }
 

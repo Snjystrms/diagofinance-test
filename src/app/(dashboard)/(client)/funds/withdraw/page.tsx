@@ -816,9 +816,9 @@ export default function WithdrawPage() {
       
         <ListPageSkeleton
           actionCount={1}
-          columnCount={7}
+          columnCount={9}
           rowCount={8}
-          filterPillCount={3}
+          showFilterPanel={false}
         />
       
     )

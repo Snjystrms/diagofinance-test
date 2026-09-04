@@ -536,7 +536,7 @@ export default function RaiseTicketPage() {
 
   const renderTableSection = () => {
     if (loading && tickets.length === 0) {
-      return <TableSectionSkeleton columnCount={6} rowCount={9} />;
+      return <TableSectionSkeleton columnCount={8} rowCount={10} />;
     }
 
     if (loadError && tickets.length === 0) {

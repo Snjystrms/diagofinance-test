@@ -530,9 +530,9 @@ export function WithdrawalRequestsPageContent() {
     return (
       <ListPageSkeleton
         actionCount={1}
-        columnCount={6}
+        columnCount={10}
         rowCount={10}
-        filterPillCount={4}
+        filterPillCount={2}
       />
     );
   }

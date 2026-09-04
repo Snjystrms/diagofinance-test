@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 
 export default function AdminTransactionPage() {
   return (
-    <Suspense fallback={<ListPageSkeleton statsCount={4} columnCount={6} rowCount={8} />}>
+    <Suspense fallback={<ListPageSkeleton statsCount={2} columnCount={11} rowCount={8} />}>
       <AdminTransactionContent />
     </Suspense>
   );

@@ -1020,15 +1020,15 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     managerCategories: ["Report Management"],
     managerPermissions: ["Login Activity"],
   },
-  {
-    path: "/report-management/trading-history-report",
-    audience: "backoffice",
-    roles: BACKOFFICE_ROLES,
-    sidebarSection: "reports",
-    navLabel: "Trading History Report",
-    managerCategories: ["Report Management"],
-    managerPermissions: ["Trading History Report", "History Report"],
-  },
+  // {
+  //   path: "/report-management/trading-history-report",
+  //   audience: "backoffice",
+  //   roles: BACKOFFICE_ROLES,
+  //   sidebarSection: "reports",
+  //   navLabel: "Trading History Report",
+  //   managerCategories: ["Report Management"],
+  //   managerPermissions: ["Trading History Report", "History Report"],
+  // },
   // {
   //   path: "/report-management/ib-commission-withdrawal-report",
   //   audience: "backoffice",
@@ -1430,13 +1430,13 @@ function isManagerRouteFeatureAllowed(
       "loginActivity",
     );
   }
-  if (path === "/report-management/trading-history-report") {
-    return hasManagerFeature(
-      permissionNames,
-      "reportManagement",
-      "historyReport",
-    );
-  }
+  // if (path === "/report-management/trading-history-report") {
+  //   return hasManagerFeature(
+  //     permissionNames,
+  //     "reportManagement",
+  //     "historyReport",
+  //   );
+  // }
   return true;
 }
 
@@ -1648,10 +1648,10 @@ export function getManagerNavigation(
       path: "/report-management/login-activity-report",
       featureKey: "loginActivity",
     },
-    {
-      path: "/report-management/trading-history-report",
-      featureKey: "historyReport",
-    },
+    // {
+    //   path: "/report-management/trading-history-report",
+    //   featureKey: "historyReport",
+    // },
   ];
 
   return SIDEBAR_SECTIONS.filter((section) => {
