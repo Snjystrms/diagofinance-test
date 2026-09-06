@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import { SerialNumberCell, getSerialNumberFromRow } from "@/components/data-table/serial-number-cell";
+import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import toast from "react-hot-toast";
 import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
 import { format } from "date-fns";
@@ -442,10 +442,9 @@ export default function ReportManagementPage() {
         id: "sr_no",
         header: "Sr. No.",
         accessorKey: "id",
-        cell: ({ row }) => {
-          const serialNumber = (currentPage - 1) * currentPerPage + row.index + 1;
-          return <SerialNumberCell serialNumber={serialNumber} className="font-mono text-sm" />;
-        },
+        cell: ({ row, table }) => (
+          <SerialNumberCell row={row} table={table} className="font-mono text-sm" />
+        ),
         enableSorting: false,
       },
       {
