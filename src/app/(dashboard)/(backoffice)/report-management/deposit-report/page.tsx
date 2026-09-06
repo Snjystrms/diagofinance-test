@@ -441,7 +441,6 @@ export default function ReportManagementPage() {
       {
         id: "sr_no",
         header: "Sr. No.",
-        accessorKey: "id",
         cell: ({ row, table }) => (
           <SerialNumberCell row={row} table={table} className="font-mono text-sm" />
         ),
