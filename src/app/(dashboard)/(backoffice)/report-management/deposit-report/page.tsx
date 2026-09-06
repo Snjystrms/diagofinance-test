@@ -117,8 +117,16 @@ export default function ReportManagementPage() {
   const [loadError, setLoadError] = useState<unknown | null>(null);
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [currentPerPage, setCurrentPerPage] = useState(10);
+
+  // Get page and perPage from URL (managed by useDataTable)
+  const [currentPage, setCurrentPage] = useQueryState(
+    "page",
+    parseAsInteger.withDefault(1),
+  );
+  const [currentPerPage, setCurrentPerPage] = useQueryState(
+    "perPage",
+    parseAsInteger.withDefault(10),
+  );
 
   // Filters
   const [statusFilter, setStatusFilter] = useQueryState(
@@ -187,17 +195,6 @@ export default function ReportManagementPage() {
       setToDateStr(null);
     }
   }, [toDate, setToDateStr]);
-
-  // Sync page and perPage from URL query params (single source of truth)
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const page = parseInt(params.get("page") || "1", 10);
-      const perPage = parseInt(params.get("perPage") || "10", 10);
-      setCurrentPage(page);
-      setCurrentPerPage(perPage);
-    }
-  }, [statusFilter, paymentMethodFilter, sourceFilter, isIbFilter, fromDateStr, toDateStr, sortBy, sortOrder, searchQuery]);
 
   const requestIdRef = useRef(0);
 
