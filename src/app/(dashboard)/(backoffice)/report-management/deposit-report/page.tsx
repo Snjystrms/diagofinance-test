@@ -779,6 +779,12 @@ export default function ReportManagementPage() {
             data={rows}
             columns={columns}
             pageCount={totalPages}
+            // Backend deposit IDs are only unique per source (bank/online/usdt/manual
+            // each have their own sequence), so plain `id` collides across sources on
+            // the same page (e.g. two different rows both with id: 1). That collision
+            // breaks React/table row identity and causes ghost/duplicate rows and wrong
+            // counts when navigating pages. Disambiguate with source + id.
+            getRowId={(row) => `${row.source}-${row.id}-${row.created_at}`}
           />
         </div>
       </div>

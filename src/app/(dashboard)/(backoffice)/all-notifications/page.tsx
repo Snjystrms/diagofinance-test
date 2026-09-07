@@ -74,7 +74,7 @@ export default function AllNotificationsPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<unknown | null>(null);
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
-  const [perPage, setPerPage] = useQueryState("perPage", parseAsInteger.withDefault(20));
+  const [perPage, setPerPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [pagination, setPagination] = useState({

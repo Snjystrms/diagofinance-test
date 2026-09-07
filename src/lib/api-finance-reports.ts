@@ -758,6 +758,7 @@ export interface DepositReportItem {
   deposit_target?: string | null;
   mt5_login?: number | null;
   mt5_account_id?: string | null;
+  source?: string | null;
 }
 
 export interface DepositReportListParams {

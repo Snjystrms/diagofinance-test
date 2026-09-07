@@ -102,7 +102,7 @@ export function AdminTransactionContent() {
   const [totalRecords, setTotalRecords] = useState(0);
 
   const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
-  const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(20));
+  const [perPage] = useQueryState("perPage", parseAsInteger.withDefault(10));
   const [searchUser, setSearchUser] = useQueryState("search", parseAsString);
   const [searchInput, setSearchInput] = useState(searchUser || "");
   const [typeFilter, setTypeFilter] = useQueryState("type", parseAsString);
