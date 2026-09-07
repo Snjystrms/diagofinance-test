@@ -324,7 +324,7 @@ export function IbDashboardSidebar() {
                 }}
                 style={active ? activeCardStyle : undefined}
                 className={cn(
-                  "ib-sidebar-nav-card group relative flex flex-col items-center justify-center gap-2.5 rounded-[20px] border px-3 py-5 transition-all duration-200 text-center",
+                  "ib-sidebar-nav-card group relative flex flex-col items-center justify-center gap-2.5 rounded-[20px] border px-3 py-5 transition-all duration-200 text-center cursor-pointer",
                   isLastOdd &&
                     "col-span-2 flex-row gap-3 py-3.5 justify-center px-5",
                   active

@@ -2793,6 +2793,7 @@ export interface AuditLogItem {
   user_email: string;
   ip_address: string;
   created_at: string;
+  entity_email: string | null;
 }
 
 export interface AuditLogsResponse {

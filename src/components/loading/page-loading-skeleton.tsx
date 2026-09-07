@@ -1,5 +1,6 @@
 import { DataTableSkeleton } from "@/components/data-table/data-table-skeleton";
 import { Skeleton } from "@/components/ui/skeleton";
+import { LogoCube } from "@/components/ui/logo-cube";
 import { cn } from "@/lib/utils";
 
 interface ListPageSkeletonProps extends React.ComponentProps<"div"> {
@@ -22,6 +23,7 @@ interface CenteredLoadingSurfaceProps extends React.ComponentProps<"div"> {
   title?: string;
   description?: string;
   minHeightClassName?: string;
+  logoSrc?: string;
 }
 
 const panelStyle = {
@@ -161,6 +163,7 @@ export function CenteredLoadingSurface({
   title = "Loading",
   description,
   minHeightClassName = "min-h-[60vh]",
+  logoSrc = "/diagologo.svg",
   className,
   ...props
 }: CenteredLoadingSurfaceProps) {
@@ -176,11 +179,7 @@ export function CenteredLoadingSurface({
       <div
         className="w-full max-w-sm rounded-[26px] border border-border/80 bg-card/96 px-6 py-6 text-center shadow-[0_24px_70px_-36px_rgba(15,23,42,0.85)] backdrop-blur-sm"
       >
-        <div
-          className="mx-auto flex h-14 w-14 items-center justify-center rounded-[18px] border border-border/80 bg-background/80"
-        >
-          <Skeleton className="h-5 w-5 rounded-full" />
-        </div>
+        <LogoCube logoSrc={logoSrc} />
         <p className="mt-4 text-sm font-semibold tracking-[0.01em] text-foreground">{title}</p>
         {description ? (
           <p className="mt-1.5 text-sm leading-6 text-foreground/78">{description}</p>

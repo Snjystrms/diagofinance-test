@@ -37,9 +37,9 @@ export function AuthLayout({ children }: AuthLayoutProps) {
         {/* Footer */}
         <div className="flex flex-col-reverse items-center gap-2 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <span>© 2025. Diago Finance Ltd. All Rights Reserved.</span>
-          <Link href="/privacy-policy" className="hover:text-foreground transition-colors">
+          <span className="hover:text-foreground transition-colors">
             Privacy Policy
-          </Link>
+          </span>
         </div>
       </div>
 

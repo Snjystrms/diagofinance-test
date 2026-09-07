@@ -596,7 +596,7 @@ export default function TransferPage() {
                     type="button"
                     onClick={() => handleDestinationChange(option.value)}
                     className={cn(
-                      "flex flex-col items-start gap-1.5 rounded-2xl border p-3 text-left transition-colors",
+                      "flex flex-col items-start gap-1.5 rounded-2xl border p-3 text-left transition-colors cursor-pointer",
                       destination === option.value
                         ? "border-primary/60 bg-primary/5"
                         : "border-border/60 bg-transparent hover:bg-muted/40",

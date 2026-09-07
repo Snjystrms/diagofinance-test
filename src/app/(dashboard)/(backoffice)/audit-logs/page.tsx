@@ -388,12 +388,12 @@ export default function AuditLogsPage() {
         },
       },
       {
-        id: "user_email",
+        id: "entity_email",
         header: "User Email",
-        accessorKey: "user_email",
+        accessorKey: "entity_email",
         cell: ({ row }) => (
           <span className="font-medium text-sm">
-            {row.original.user_email || "—"}
+            {row.original.entity_email || "—"}
           </span>
         ),
       },

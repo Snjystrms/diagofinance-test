@@ -373,26 +373,26 @@ export default function AllPartnersReportPage() {
           <span className="font-medium whitespace-nowrap">${formatAmount(row.original.withdrawal)}</span>
         ),
       },
-      {
-        id: "direct_users_deposit",
-        header: () => <ManualSortHeader sortKey="direct_users_deposit" title="Direct Users Deposit" />,
-        accessorKey: "direct_users_deposit",
-        size: 170,
-        minSize: 160,
-        cell: ({ row }) => (
-          <span className="font-medium whitespace-nowrap">${formatAmount(row.original.direct_users_deposit)}</span>
-        ),
-      },
-      {
-        id: "direct_users_withdrawal",
-        header: () => <ManualSortHeader sortKey="direct_users_withdrawal" title="Direct Users Withdrawal" />,
-        accessorKey: "direct_users_withdrawal",
-        size: 180,
-        minSize: 170,
-        cell: ({ row }) => (
-          <span className="font-medium whitespace-nowrap">${formatAmount(row.original.direct_users_withdrawal)}</span>
-        ),
-      },
+      // {
+      //   id: "direct_users_deposit",
+      //   header: () => <ManualSortHeader sortKey="direct_users_deposit" title="Direct Users Deposit" />,
+      //   accessorKey: "direct_users_deposit",
+      //   size: 170,
+      //   minSize: 160,
+      //   cell: ({ row }) => (
+      //     <span className="font-medium whitespace-nowrap">${formatAmount(row.original.direct_users_deposit)}</span>
+      //   ),
+      // },
+      // {
+      //   id: "direct_users_withdrawal",
+      //   header: () => <ManualSortHeader sortKey="direct_users_withdrawal" title="Direct Users Withdrawal" />,
+      //   accessorKey: "direct_users_withdrawal",
+      //   size: 180,
+      //   minSize: 170,
+      //   cell: ({ row }) => (
+      //     <span className="font-medium whitespace-nowrap">${formatAmount(row.original.direct_users_withdrawal)}</span>
+      //   ),
+      // },
       {
         id: "team_deposit",
         header: () => <ManualSortHeader sortKey="team_deposit" title="Team Deposit" />,
@@ -413,16 +413,16 @@ export default function AllPartnersReportPage() {
           <span className="font-medium whitespace-nowrap">${formatAmount(row.original.team_withdrawal)}</span>
         ),
       },
-     {
-        id: "net_balance",
-        header: () => <ManualSortHeader sortKey="net_balance" title="Net Balance" />,
-        accessorKey: "net_balance",
-        size: 150,
-        minSize: 140,
-        cell: ({ row }) => (
-          <span className="font-medium whitespace-nowrap">${formatAmount(row.original.net_balance)}</span>
-        ),
-      },
+    //  {
+    //     id: "net_balance",
+    //     header: () => <ManualSortHeader sortKey="net_balance" title="Net Balance" />,
+    //     accessorKey: "net_balance",
+    //     size: 150,
+    //     minSize: 140,
+    //     cell: ({ row }) => (
+    //       <span className="font-medium whitespace-nowrap">${formatAmount(row.original.net_balance)}</span>
+    //     ),
+    //   },
       {
         id: "ib_commission",
         header: () => <ManualSortHeader sortKey="ib_commission" title="IB Commission" />,
