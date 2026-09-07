@@ -53,6 +53,12 @@ const formatCurrency = (value?: number | string | null) => {
   return `${currencyFormatter.format(num)} USD`;
 };
 
+const formatCount = (value?: number | string | null) => {
+  const num = typeof value === "number" ? value : Number(value ?? 0);
+  if (!Number.isFinite(num)) return "—";
+  return currencyFormatter.format(num);
+};
+
 const formatDateTime = (value?: string | null) => {
   if (!value) return "—";
   try {
@@ -269,7 +275,7 @@ export default function ManagementDashboardPage() {
               <SummaryCard
                 icon={Users}
                 title="Total Clients"
-                value={formatCurrency(summary.total_clients)}
+                value={formatCount(summary.total_clients)}
                 ibVariant="ib-portal-surface-primary"
               />
               <SummaryCard

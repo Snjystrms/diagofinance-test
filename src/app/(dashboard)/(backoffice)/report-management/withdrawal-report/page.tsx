@@ -417,11 +417,24 @@ export default function WithdrawalReportPage() {
       },
       {
         id: "comment",
-        header: "Comment",
+        header: "Admin Note",
         accessorKey: "comment",
         cell: ({ row }) => (
           <ViewContentDialog
             content={row.original.comment}
+            title="Withdrawal Comment"
+            description="Full comment for this withdrawal"
+            emptyLabel="—"
+          />
+        ),
+      },
+      {
+        id: "user_comment",
+        header: "User Note",
+        accessorKey: "user_comment",
+        cell: ({ row }) => (
+          <ViewContentDialog
+            content={row.original.user_comment}
             title="Withdrawal Comment"
             description="Full comment for this withdrawal"
             emptyLabel="—"

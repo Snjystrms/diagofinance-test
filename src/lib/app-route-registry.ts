@@ -694,7 +694,7 @@ const ROUTE_DEFINITIONS: AppRouteDefinition[] = [
     ],
   },
   {
-    path: "/user-verification",
+    path: "/user-verification?status=1",
     audience: "backoffice",
     roles: BACKOFFICE_ROLES,
     sidebarSection: "user-management",

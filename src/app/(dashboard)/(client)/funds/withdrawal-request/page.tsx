@@ -47,6 +47,7 @@ import {
   Hash,
   User,
 } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -145,6 +146,7 @@ function WithdrawalRequestContent() {
   const [withdrawalCurrency, setWithdrawalCurrency] = useState("INR");
   const [mt5Balance, setMt5Balance] = useState<number | null>(null);
   const [mt5BalanceLoading, setMt5BalanceLoading] = useState(false);
+  const [comment, setComment] = useState("");
 
   const selectedChain = CHAIN_OPTIONS.find((chain) => chain.value === chainId);
 
@@ -518,6 +520,10 @@ function WithdrawalRequestContent() {
         source,
       };
 
+      if (comment.trim()) {
+        payload.comment = comment.trim();
+      }
+
       if (source === "mt5") {
         payload.mt5_account_id = selectedMt5Account;
       }
@@ -563,6 +569,7 @@ function WithdrawalRequestContent() {
       setTimeout(() => {
         setAmount("");
         setWalletAddress("");
+        setComment("");
       }, 3000);
     } catch (err) {
       console.error("Error creating withdrawal request:", err);
@@ -962,7 +969,8 @@ function WithdrawalRequestContent() {
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-          <Card className="border border-border/60 bg-card/80 shadow-sm backdrop-blur-sm">
+          <Card className="overflow-hidden border border-border/60 bg-card/80 shadow-sm backdrop-blur-sm">
+          <div className="h-1.5 bg-gradient-to-r from-primary/80 via-primary to-primary/30" />
             <CardContent className="space-y-6 p-6 md:p-8">
               {!success ? (
                 <>
@@ -1232,6 +1240,22 @@ function WithdrawalRequestContent() {
                     </>
                   )}
 
+                  <div className="space-y-3">
+                    <Label
+                      htmlFor="comment"
+                      className="text-sm font-semibold text-foreground"
+                    >
+                      Comment
+                    </Label>
+                    <Textarea
+                      id="comment"
+                      value={comment}
+                      onChange={(event) => setComment(event.target.value)}
+                      className="rounded-xl border-2 border-border bg-background min-h-[80px] focus:border-primary"
+                      placeholder="Add any notes or comments for this withdrawal request (optional)"
+                    />
+                  </div>
+
                   <Button
                     onClick={handleSubmit}
                     disabled={!canSubmit}
@@ -1359,6 +1383,16 @@ function WithdrawalRequestContent() {
                             {withdrawalData.status || "Pending"}
                           </Badge>
                         </div>
+                        {(withdrawalData.user_comment || comment) && (
+                          <div className="flex items-start justify-between gap-4">
+                            <span className="shrink-0 text-sm text-muted-foreground">
+                              Comment:
+                            </span>
+                            <span className="break-words text-right text-sm font-medium text-emerald-800 dark:text-emerald-200">
+                              {withdrawalData.user_comment || comment}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   )}
@@ -1394,6 +1428,7 @@ function WithdrawalRequestContent() {
                         setSubmittedBankCurrency("");
                         setAmount("");
                         setWalletAddress("");
+                        setComment("");
                       }}
                     >
                       New Withdrawal

@@ -1113,7 +1113,7 @@ export default function WithdrawPage() {
                 Withdrawal Details
               </DialogTitle>
               <DialogDescription>
-                Request #{selectedWithdrawal?.id} • {selectedWithdrawal ? formatDateTime(selectedWithdrawal.created_at) : ''}
+                 • {selectedWithdrawal ? formatDateTime(selectedWithdrawal.created_at) : ''}
               </DialogDescription>
             </DialogHeader>
 
@@ -1150,9 +1150,9 @@ export default function WithdrawPage() {
                       paymentMethodType={selectedWithdrawal.payment_method_type}
                       paymentMethodName={selectedWithdrawal.payment_method_name}
                     />
-                    <span className="text-sm text-muted-foreground">
+                    {/* <span className="text-sm text-muted-foreground">
                       {selectedWithdrawal.payment_method_name || 'N/A'}
-                    </span>
+                    </span> */}
                   </div>
                   <div className="space-y-2.5">
                     {selectedWithdrawal.bank_detail_id ? (
@@ -1227,6 +1227,12 @@ export default function WithdrawPage() {
                       <DetailRow 
                         label="Transaction Hash"
                         value={<TransactionHashCell hash={selectedWithdrawal.transaction_hash} chainId={selectedWithdrawal.chain_id || 'TRC20'} />}
+                      />
+                    ) : null}
+                    {selectedWithdrawal.user_comment ? (
+                      <DetailRow 
+                        label="Comment"
+                        value={selectedWithdrawal.user_comment}
                       />
                     ) : null}
                   </div>

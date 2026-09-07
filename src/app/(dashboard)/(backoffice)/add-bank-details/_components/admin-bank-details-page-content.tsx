@@ -509,17 +509,14 @@ export function AdminBankDetailsPageContent() {
         accessorKey: "status",
         cell: ({ row }) => {
           const status = row.original.status || "pending";
+          const pillClass =
+            status === "approved"
+              ? "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300"
+              : status === "rejected"
+                ? "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300"
+                : "bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-300";
           return (
-            <Badge
-              variant={
-                status === "approved"
-                  ? "default"
-                  : status === "rejected"
-                    ? "destructive"
-                    : "secondary"
-              }
-              className="capitalize"
-            >
+            <Badge className={`capitalize ${pillClass}`}>
               {status}
             </Badge>
           );

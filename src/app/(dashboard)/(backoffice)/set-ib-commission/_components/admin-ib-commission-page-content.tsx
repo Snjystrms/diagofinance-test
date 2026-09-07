@@ -422,14 +422,20 @@ export function AdminIbCommissionPageContent() {
       {
         id: "status",
         header: "Status",
-        cell: ({ row }) => (
-          <Badge
-            variant={coerceBoolean(row.original.status) ? "default" : "secondary"}
-            className="capitalize"
-          >
-            {coerceBoolean(row.original.status) ? "Active" : "Inactive"}
-          </Badge>
-        ),
+        cell: ({ row }) => {
+          const active = coerceBoolean(row.original.status);
+          return (
+            <Badge
+              className={`capitalize ${
+                active
+                  ? "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-300"
+                  : "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300"
+              }`}
+            >
+              {active ? "Active" : "Inactive"}
+            </Badge>
+          );
+        },
       },
       {
         id: "assigned_by",

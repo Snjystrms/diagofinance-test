@@ -190,6 +190,7 @@ export interface WithdrawalRequest {
   bank_detail_id?: number;
   source?: "wallet" | "mt5";
   mt5_account_id?: string;
+  comment?: string;
 }
 
 export interface WithdrawalItem {
@@ -206,9 +207,10 @@ export interface WithdrawalItem {
   updated_at?: string;
   payment_method_name?: string | null;
   payment_method_type?: string | null;
-  source: string;
+source: string;
   mt5_user_id: number | null;
   mt5_id: number | null;
+  user_comment?: string | null;
 }
 
 export interface WithdrawalResponse {
@@ -937,6 +939,7 @@ export interface WithdrawalReportItem {
   date?: string;
   created_at: string;
   comment?: string | null;
+  user_comment?: string | null;
   updated_at?: string;
   remarks?: string | null;
   approved_by?: string | null;
