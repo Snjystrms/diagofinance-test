@@ -4303,6 +4303,15 @@ export const adminUSDTDepositApi = {
 
 export const depositProofUrl = (fileName?: string | null) => {
   if (!fileName) return "";
+  // Some backends return embedded HTML (e.g. <img src="...">) instead of a plain URL.
+  if (fileName.includes("<img")) {
+    const match = fileName.match(/src=["']([^"']+)["']/i);
+    const embedded = match?.[1] ?? "";
+    if (embedded) {
+      if (/^https?:\/\//i.test(embedded)) return embedded;
+      return `${API_BASE_URL}${embedded.startsWith("/") ? "" : "/"}${embedded}`;
+    }
+  }
   if (/^https?:\/\//i.test(fileName)) return fileName;
   return `${API_BASE_URL}${fileName.startsWith("/") ? "" : "/"}${fileName}`;
 };
