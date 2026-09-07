@@ -78,6 +78,7 @@ type ClientRow = {
   direct_users_deposit: number;
   direct_users_withdrawal: number;
   net_deposit: number;
+  level: number;
 };
 
 /** Sub-IB row — matches /user/ib-client-summary/sub-ibs */
@@ -220,6 +221,16 @@ const clientsColumns: ColumnDef<ClientRow>[] = [
       </div>
     ),
   },
+ {
+    key: "level",
+    header: "Level",
+    render: (row) => (
+      <span className="inline-flex rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-xs font-medium">
+        {row.level}
+      </span>
+    ),
+    hideOnMobile: true,
+  },
   {
     key: "lots_traded",
     header: "Lots Traded",
@@ -259,20 +270,20 @@ const clientsColumns: ColumnDef<ClientRow>[] = [
     render: (row) => formatCurrency(toNum(row.personal_withdrawal), "USD"),
     hideOnMobile: true,
   },
-  {
-    key: "direct_users_deposit",
-    header: "Direct Users Deposit",
-    align: "right",
-    render: (row) => formatCurrency(toNum(row.direct_users_deposit), "USD"),
-    hideOnMobile: true,
-  },
-  {
-    key: "direct_users_withdrawal",
-    header: "Direct Users Withdrawal",
-    align: "right",
-    render: (row) => formatCurrency(toNum(row.direct_users_withdrawal), "USD"),
-    hideOnMobile: true,
-  },
+  // {
+  //   key: "direct_users_deposit",
+  //   header: "Direct Users Deposit",
+  //   align: "right",
+  //   render: (row) => formatCurrency(toNum(row.direct_users_deposit), "USD"),
+  //   hideOnMobile: true,
+  // },
+  // {
+  //   key: "direct_users_withdrawal",
+  //   header: "Direct Users Withdrawal",
+  //   align: "right",
+  //   render: (row) => formatCurrency(toNum(row.direct_users_withdrawal), "USD"),
+  //   hideOnMobile: true,
+  // },
    {
     key: "team_deposit",
     header: "Team Deposit",
@@ -287,13 +298,13 @@ const clientsColumns: ColumnDef<ClientRow>[] = [
     render: (row) => formatCurrency(toNum(row.team_withdrawal), "USD"),
     hideOnMobile: true,
   },
-    {
-    key: "net_deposit",
-    header: "Net Balance (Team)",
-    align: "right",
-    render: (row) => formatCurrency(toNum(row.net_deposit), "USD"),
-    hideOnMobile: true,
-  },
+  //   {
+  //   key: "net_deposit",
+  //   header: "Net Balance (Team)",
+  //   align: "right",
+  //   render: (row) => formatCurrency(toNum(row.net_deposit), "USD"),
+  //   hideOnMobile: true,
+  // },
   {
     key: "main_wallet_balance",
     header: "Main Wallet Balance",
@@ -327,7 +338,7 @@ const subIbsColumns: ColumnDef<SubIbRow>[] = [
   },
   {
     key: "sub_ib_id",
-    header: "Partner/Client",
+    header: "Sub IB ID",
     render: (row) => (
       <span className="inline-flex rounded-full border border-border/60 bg-muted/30 px-2.5 py-1 text-xs font-medium">
         {row.sub_ib_id}
@@ -1076,7 +1087,7 @@ export default function IbClientsPage() {
           className="space-y-6"
         >
           <TabsList className="grid h-auto w-full grid-cols-1 sm:grid-cols-3 rounded-2xl bg-muted/40 p-1">
-            <TabsTrigger value="clients">Direct Users</TabsTrigger>
+            <TabsTrigger value="clients">Direct Clients (non-IB)</TabsTrigger>
             <TabsTrigger value="sub-ibs">Sub IBs</TabsTrigger>
             <TabsTrigger value="rebates">Rebates</TabsTrigger>
           </TabsList>
