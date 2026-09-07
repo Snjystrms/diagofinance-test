@@ -525,6 +525,7 @@ export interface AdminUserTransactionItem {
   admin_comment?: string | null;
   user_comment?: string | null;
   transaction_hash?: string | null;
+  deposit_target?: string | null;
   payment_method?: {
     id: number;
     type: string;

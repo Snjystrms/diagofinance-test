@@ -131,8 +131,6 @@ export function BankDetailViewDialog({
       return;
     }
     onVerify(verifyDecision, adminNotes.trim());
-    setAdminNotes("");
-    setVerifyDecision("approved");
   };
 
   if (loading) {
@@ -296,11 +294,11 @@ export function BankDetailViewDialog({
                       className="w-full"
                     >
                       <TabsList className="grid h-auto w-full grid-cols-2 rounded-2xl bg-muted/50 p-1">
-                        <TabsTrigger value="approved" className="rounded-xl">
+                        <TabsTrigger value="approved" className="rounded-xl data-[state=active]:bg-green-600 data-[state=active]:text-white data-[state=active]:hover:bg-green-700 hover:bg-green-100 hover:text-green-800 dark:data-[state=active]:bg-green-600 dark:data-[state=active]:text-white dark:data-[state=active]:hover:bg-green-700 dark:hover:bg-green-900/60 dark:hover:text-green-200">
                           <CheckCircle2 className="mr-2 h-4 w-4" />
                           Approve
                         </TabsTrigger>
-                        <TabsTrigger value="rejected" className="rounded-xl">
+                        <TabsTrigger value="rejected" className="rounded-xl data-[state=active]:bg-red-600 data-[state=active]:text-white data-[state=active]:hover:bg-red-700 hover:bg-red-100 hover:text-red-800 dark:data-[state=active]:bg-red-600 dark:data-[state=active]:text-white dark:data-[state=active]:hover:bg-red-700 dark:hover:bg-red-900/60 dark:hover:text-red-200">
                           <XCircle className="mr-2 h-4 w-4" />
                           Reject
                         </TabsTrigger>
@@ -352,10 +350,10 @@ export function BankDetailViewDialog({
                 type="button"
                 onClick={handleVerifySubmit}
                 disabled={verifying || (verifyDecision === "rejected" && !adminNotes.trim())}
-                className={`w-full sm:w-auto ${
+                className={`w-full sm:w-auto disabled:opacity-100 ${
                   verifyDecision === "approved"
-                    ? "bg-green-600 hover:bg-green-700"
-                    : "bg-red-600 hover:bg-red-700"
+                    ? "bg-green-600 hover:bg-green-700 dark:bg-green-600 dark:hover:bg-green-700"
+                    : "bg-red-600 hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700"
                 }`}
               >
                 {verifying ? (

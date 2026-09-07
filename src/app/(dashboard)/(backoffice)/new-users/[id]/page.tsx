@@ -483,6 +483,15 @@ const depositsColumns: ColumnDef<AdminUserTransactionItem>[] = [
     render: (item) => formatNumericValue(item.amount),
   },
   {
+    header: "Destination",
+    key: "deposit_target",
+    render: (item) => (
+      <span className="max-w-[220px] truncate block">
+        {item.deposit_target || "-"}
+      </span>
+    ),
+  },
+  {
     header: "Transaction Hash",
     key: "transaction_hash",
     render: (item) => (

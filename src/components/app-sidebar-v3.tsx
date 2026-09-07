@@ -57,7 +57,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { useAuth } from "@/contexts/auth-context"
-import { getSidebarNavigation } from "@/lib/app-route-registry"
+import { getSidebarNavigation, isNavItemActive } from "@/lib/app-route-registry"
 import type { NavItem } from "@/types/permissions"
 import { useUnreadNotificationCount } from "@/hooks/use-unread-notification-count"
 
@@ -214,7 +214,7 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
   // Auto-expand item if current path matches
   React.useEffect(() => {
     navItems.forEach((item) => {
-      if (item.items && item.items.some(subItem => pathname === subItem.url || pathname.startsWith(subItem.url + '/'))) {
+      if (item.items && item.items.some(subItem => isNavItemActive(pathname, subItem.url))) {
         setActiveItem(item.title);
         setExpandedItems(prev => new Set(prev).add(item.title));
       }
@@ -402,7 +402,7 @@ export function AppSidebarV3({ ...props }: React.ComponentProps<typeof Sidebar>)
                   <SidebarMenu>
                     {activeNavItem.items.map((subItem: { title: string; url: string }, index: number) => {
                       const SubIcon = getSubItemIcon(subItem.title);
-                      const isSubActive = pathname === subItem.url || pathname.startsWith(subItem.url + '/');
+                      const isSubActive = isNavItemActive(pathname, subItem.url);
                       
                       return (
                         <SidebarMenuItem key={`${subItem.title}-${index}`}>

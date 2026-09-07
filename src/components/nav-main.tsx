@@ -23,6 +23,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar"
 import { cn } from "@/lib/utils"
+import { isNavItemActive } from "@/lib/app-route-registry"
 import { useUnreadNotificationCount } from "@/hooks/use-unread-notification-count"
 import { useAuth } from "@/contexts/auth-context"
 
@@ -49,6 +50,7 @@ export function NavMain({
   const { state, isMobile, closeMobileSidebar } = useSidebar()
   const isCollapsed = state === "collapsed"
   const [isHydrated, setIsHydrated] = React.useState(false)
+  const [manualOpen, setManualOpen] = React.useState<Record<string, boolean>>({})
 
   React.useEffect(() => {
     setIsHydrated(true)
@@ -95,12 +97,13 @@ export function NavMain({
       </SidebarGroupLabel>
       <SidebarMenu className={cn(isEnterprise && "gap-1.5")}>
         {items.map((item) => {
-          const isDirectActive = isHydrated && (pathname === item.url || pathname.startsWith(item.url + '/'))
+          const isDirectActive = isHydrated && isNavItemActive(pathname, item.url)
           const hasSubItems = item.items && item.items.length > 0
           const hasActiveSubItem = isHydrated && (item.items?.some(
-            (subItem) => pathname === subItem.url || pathname.startsWith(subItem.url + "/")
+            (subItem) => isNavItemActive(pathname, subItem.url)
           ) ?? false)
           const isActive = isDirectActive || hasActiveSubItem
+          const isOpen = manualOpen[item.title] ?? hasActiveSubItem
           const topLevelButtonClass = isEnterprise
             ? cn(
                 "group h-11 rounded-xl px-3.5 text-[15px] font-medium tracking-[-0.01em] text-sidebar-foreground transition-all duration-300 [&>svg]:size-[18px] [&>svg]:shrink-0 [&>svg]:text-sidebar-foreground/55",
@@ -117,7 +120,10 @@ export function NavMain({
             <Collapsible
               key={item.title}
               asChild
-              defaultOpen={isHydrated && (isActive || (item.items?.some(subItem => pathname === subItem.url) ?? false))}
+              open={isOpen}
+              onOpenChange={(o) =>
+                setManualOpen((prev) => ({ ...prev, [item.title]: o }))
+              }
               className="group/collapsible"
             >
               <SidebarMenuItem>
@@ -216,7 +222,7 @@ export function NavMain({
                     >
                       {item.items?.map((subItem) => {
                         const isSubActive = isHydrated &&
-                          (pathname === subItem.url || pathname.startsWith(subItem.url + "/"))
+                          isNavItemActive(pathname, subItem.url)
                         return (
                           <SidebarMenuSubItem key={subItem.title}>
                             <SidebarMenuSubButton 

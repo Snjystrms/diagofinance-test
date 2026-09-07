@@ -1235,10 +1235,21 @@ function cloneNavItems(items: NavItem[]): NavItem[] {
   }));
 }
 
+export function normalizeNavPath(p: string) {
+  return p.split("?")[0];
+}
+
+export function isNavItemActive(pathname?: string, url?: string) {
+  if (!pathname || !url) return false;
+  const target = normalizeNavPath(url);
+  return pathname === target || pathname.startsWith(`${target}/`);
+}
+
 function matchesPrefix(pathname: string, prefixes: string[]) {
-  return prefixes.some(
-    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
-  );
+  return prefixes.some((prefix) => {
+    const target = normalizeNavPath(prefix);
+    return pathname === target || pathname.startsWith(`${target}/`);
+  });
 }
 
 function isManagerCategoryAllowed(
