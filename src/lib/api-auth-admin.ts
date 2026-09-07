@@ -2356,7 +2356,7 @@ export const adminBankDetailsApi = {
     });
   },
 
-   create: (body: AdminBankDetailCreateBody, token: string) => {
+  create: (body: AdminBankDetailCreateBody, token: string) => {
     if (!token) {
       throw new Error("Token is required to create bank details");
     }
@@ -2510,7 +2510,7 @@ export const adminBankDetailsApi = {
 
     return fetch(`${API_BASE_URL}${endpoint}`, {
       method: "GET",
-      headers: { 
+      headers: {
         Authorization: `Bearer ${token}`,
       },
     });
@@ -2555,7 +2555,9 @@ export const userBrokerCryptoWalletsApi = {
   },
 };
 
-const buildBrokerBankDetailFormData = (body: BrokerBankDetailPayload): FormData => {
+const buildBrokerBankDetailFormData = (
+  body: BrokerBankDetailPayload,
+): FormData => {
   const formData = new FormData();
   formData.append("account_holder_name", body.account_holder_name);
   formData.append("account_number", body.account_number);
@@ -2727,7 +2729,7 @@ export const adminBonusApi = {
     }
 
     if (!API_BASE_URL) {
-      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+      throw new Error("API_BASE_URL is not configured");
     }
 
     const qs = new URLSearchParams();
@@ -3237,7 +3239,7 @@ export const adminKycApi = {
     }
 
     if (!API_BASE_URL) {
-      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+      throw new Error("API_BASE_URL is not configured");
     }
 
     const qs = new URLSearchParams();
@@ -3751,18 +3753,18 @@ export const adminIbPlansCrudApi = {
   //   });
   // },
   list: (token: string) => {
-  if (!token) {
-    throw new Error("Token is required to fetch IB plans");
-  }
+    if (!token) {
+      throw new Error("Token is required to fetch IB plans");
+    }
 
-  return apiCall<AdminIbPlanCrudListData>(`/admin/ib-plans/list`, {
-    method: "GET",
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-    },
-  });
-},
+    return apiCall<AdminIbPlanCrudListData>(`/admin/ib-plans/list`, {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      },
+    });
+  },
 
   getById: (planId: number | string, token: string) => {
     if (!token) {
@@ -3945,7 +3947,9 @@ export const adminIbCommissionApi = {
 
   create: (body: AdminIbCommissionCreateBody, token: string) => {
     if (!token) {
-      throw new Error("Token is required to create an IB commission assignment");
+      throw new Error(
+        "Token is required to create an IB commission assignment",
+      );
     }
 
     const userUuid = String(body.user_uuid ?? "").trim();
@@ -3953,20 +3957,17 @@ export const adminIbCommissionApi = {
       throw new Error("IB commission user UUID is required");
     }
 
-    return apiCall<AdminIbCommissionItem>(
-      `/admin/ib-commission`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ib_plan_id: body.ib_plan_id,
-          user_uuid: userUuid,
-        }),
+    return apiCall<AdminIbCommissionItem>(`/admin/ib-commission`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
-    );
+      body: JSON.stringify({
+        ib_plan_id: body.ib_plan_id,
+        user_uuid: userUuid,
+      }),
+    });
   },
 
   update: (
@@ -3975,7 +3976,9 @@ export const adminIbCommissionApi = {
     token: string,
   ) => {
     if (!token) {
-      throw new Error("Token is required to update an IB commission assignment");
+      throw new Error(
+        "Token is required to update an IB commission assignment",
+      );
     }
 
     const id = String(userUuid ?? "").trim();
@@ -4504,14 +4507,17 @@ export interface CoinsBuyWebhookResponse {
 
 export const coinsbuyDepositApi = {
   create: (data: CoinsBuyDepositCreateRequest, token: string) =>
-    apiCall<CoinsBuyDepositCreateResponse["data"]>(`/user/deposit/coinsbuy/create`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+    apiCall<CoinsBuyDepositCreateResponse["data"]>(
+      `/user/deposit/coinsbuy/create`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
       },
-      body: JSON.stringify(data),
-    }),
+    ),
 
   getStatus: (depositId: string | number, token: string) =>
     apiCall<CoinsBuyDepositStatusResponse["data"]>(
@@ -5129,17 +5135,18 @@ export const adminIbWithdrawalApi = {
   },
 
   create: (data: AdminIbWithdrawalCreateRequest, token: string) =>
-    apiCall<{ success: boolean; message: string; data: AdminIbWithdrawalRequest }>(
-      `/admin/ib-withdrawals`,
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+    apiCall<{
+      success: boolean;
+      message: string;
+      data: AdminIbWithdrawalRequest;
+    }>(`/admin/ib-withdrawals`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
       },
-    ),
+      body: JSON.stringify(data),
+    }),
 
   decision: (
     id: string | number,

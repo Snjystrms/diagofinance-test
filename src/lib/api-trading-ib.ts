@@ -1078,7 +1078,7 @@ export const ibRequestsApi = {
     }
 
     if (!API_BASE_URL) {
-      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+      throw new Error("API_BASE_URL is not configured");
     }
 
     const queryParams = new URLSearchParams();
@@ -1138,7 +1138,7 @@ export const ibRequestsApi = {
     }
 
     if (!API_BASE_URL) {
-      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+      throw new Error("API_BASE_URL is not configured");
     }
 
     const queryParams = new URLSearchParams();
@@ -1370,7 +1370,7 @@ export interface AdminIbUser {
     email?: string;
     ib_name?: string;
   };
-   ib_plan?: {
+  ib_plan?: {
     id?: number;
     name?: string;
     status?: string;
@@ -2675,13 +2675,16 @@ export const adminIBExistingClientsApi = {
       throw new Error("Token is required to create IB existing client");
     }
 
-    return apiCall<CreateIBExistingClientResponse>(`/admin/ib-existing-clients`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+    return apiCall<CreateIBExistingClientResponse>(
+      `/admin/ib-existing-clients`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
       },
-      body: JSON.stringify(data),
-    });
+    );
   },
 };

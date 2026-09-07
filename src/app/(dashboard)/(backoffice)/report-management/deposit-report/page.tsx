@@ -118,14 +118,29 @@ export default function ReportManagementPage() {
   const [totalPages, setTotalPages] = useState(1);
   const [total, setTotal] = useState(0);
 
-  // Get page and perPage from URL (managed by useDataTable)
+  // IMPORTANT: useDataTable (inside AppDataTable) ALSO owns useQueryState
+  // calls for these exact same "page"/"perPage" URL keys, with these exact
+  // options (history/scroll/shallow/throttleMs/debounceMs). nuqs requires
+  // every useQueryState bound to the same key to share identical options,
+  // or the two instances can briefly disagree on the current page/pageSize
+  // (that's what caused the wrong Sr. No. + row count on page navigation).
+  const paginationQueryOptions = {
+    history: "replace" as const,
+    scroll: false,
+    shallow: true,
+    throttleMs: 50,
+    debounceMs: 300,
+    clearOnDefault: false,
+  };
+
+  // Get page and perPage from URL (kept in sync with useDataTable)
   const [currentPage, setCurrentPage] = useQueryState(
     "page",
-    parseAsInteger.withDefault(1),
+    parseAsInteger.withOptions(paginationQueryOptions).withDefault(1),
   );
   const [currentPerPage, setCurrentPerPage] = useQueryState(
     "perPage",
-    parseAsInteger.withDefault(10),
+    parseAsInteger.withOptions(paginationQueryOptions).withDefault(10),
   );
 
   // Filters

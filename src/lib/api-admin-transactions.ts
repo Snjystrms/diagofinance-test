@@ -1,10 +1,40 @@
-import { API_BASE_URL, ApiRequestError, ApiResponse, PaginationMeta, apiCall, handle401Redirect } from "./api-core";
+import {
+  API_BASE_URL,
+  ApiRequestError,
+  ApiResponse,
+  PaginationMeta,
+  apiCall,
+  handle401Redirect,
+} from "./api-core";
 
-export type TransactionType = "deposit" | "withdrawal" | "credit" | "debit" | "transfer_in" | "transfer_out" | "bonus" | "referral" | "bonus_removal";
-export type ReferenceType = "admin_deposit" | "admin_withdrawal" | "usdt_deposit";
-export type TransactionStatus = "pending" | "completed" | "failed" | "cancelled" | "approved" | "rejected";
+export type TransactionType =
+  | "deposit"
+  | "withdrawal"
+  | "credit"
+  | "debit"
+  | "transfer_in"
+  | "transfer_out"
+  | "bonus"
+  | "referral"
+  | "bonus_removal";
+export type ReferenceType =
+  | "admin_deposit"
+  | "admin_withdrawal"
+  | "usdt_deposit";
+export type TransactionStatus =
+  | "pending"
+  | "completed"
+  | "failed"
+  | "cancelled"
+  | "approved"
+  | "rejected";
 
-export type InternalTransferType = "mt5_to_mt5" | "main_to_mt5" | "ib_to_main" | "mt5_to_main" | "direct_to_mt5";
+export type InternalTransferType =
+  | "mt5_to_mt5"
+  | "main_to_mt5"
+  | "ib_to_main"
+  | "mt5_to_main"
+  | "direct_to_mt5";
 
 export interface AdminTransactionUser {
   id: number;
@@ -211,12 +241,17 @@ export interface AdminTransactionExportParams {
   to_date?: string | null;
 }
 
-const parseContentDispositionFilename = (contentDisposition: string | null, fallback: string) => {
+const parseContentDispositionFilename = (
+  contentDisposition: string | null,
+  fallback: string,
+) => {
   if (!contentDisposition) {
     return fallback;
   }
 
-  const utf8Match = contentDisposition.match(/filename\*\s*=\s*UTF-8''([^;]+)/i);
+  const utf8Match = contentDisposition.match(
+    /filename\*\s*=\s*UTF-8''([^;]+)/i,
+  );
   if (utf8Match?.[1]) {
     try {
       return decodeURIComponent(utf8Match[1]);
@@ -225,7 +260,9 @@ const parseContentDispositionFilename = (contentDisposition: string | null, fall
     }
   }
 
-  const filenameMatch = contentDisposition.match(/filename\s*=\s*"([^"]+)"|filename\s*=\s*([^;]+)/i);
+  const filenameMatch = contentDisposition.match(
+    /filename\s*=\s*"([^"]+)"|filename\s*=\s*([^;]+)/i,
+  );
   const filename = filenameMatch?.[1] ?? filenameMatch?.[2];
 
   if (!filename) {
@@ -248,18 +285,26 @@ export const adminTransactionsApi = {
     qs.set("sort_by", queryParams.sort_by ?? "created_at");
     qs.set("sort_order", queryParams.sort_order ?? "DESC");
 
-    if (queryParams.transaction_type) qs.set("transaction_type", queryParams.transaction_type);
-    if (queryParams.reference_type) qs.set("reference_type", queryParams.reference_type);
+    if (queryParams.transaction_type)
+      qs.set("transaction_type", queryParams.transaction_type);
+    if (queryParams.reference_type)
+      qs.set("reference_type", queryParams.reference_type);
     if (queryParams.status) qs.set("status", queryParams.status);
     if (queryParams.user_id !== undefined && queryParams.user_id !== null) {
       qs.set("user_id", String(queryParams.user_id));
     }
     if (queryParams.date_from) qs.set("date_from", queryParams.date_from);
     if (queryParams.date_to) qs.set("date_to", queryParams.date_to);
-    if (queryParams.amount_min !== undefined && queryParams.amount_min !== null) {
+    if (
+      queryParams.amount_min !== undefined &&
+      queryParams.amount_min !== null
+    ) {
       qs.set("amount_min", String(queryParams.amount_min));
     }
-    if (queryParams.amount_max !== undefined && queryParams.amount_max !== null) {
+    if (
+      queryParams.amount_max !== undefined &&
+      queryParams.amount_max !== null
+    ) {
       qs.set("amount_max", String(queryParams.amount_max));
     }
     if (queryParams.search) qs.set("search", queryParams.search);
@@ -283,7 +328,11 @@ export const adminTransactionsApi = {
     });
   },
 
-  clientDeposit: (body: AdminClientDepositBody, token: string, transactionProofFile?: File | null) => {
+  clientDeposit: (
+    body: AdminClientDepositBody,
+    token: string,
+    transactionProofFile?: File | null,
+  ) => {
     if (!token) {
       throw new Error("Token is required to process client deposit");
     }
@@ -292,7 +341,8 @@ export const adminTransactionsApi = {
     formData.append("client_id", String(body.client_id));
     formData.append("amount", String(body.amount));
     if (body.comment) formData.append("comment", body.comment);
-    if (body.transaction_id) formData.append("transaction_id", body.transaction_id);
+    if (body.transaction_id)
+      formData.append("transaction_id", body.transaction_id);
 
     if (transactionProofFile) {
       formData.append("transaction_proof", transactionProofFile);
@@ -300,11 +350,14 @@ export const adminTransactionsApi = {
       formData.append("transaction_proof", body.transaction_proof);
     }
 
-    return apiCall<AdminClientDepositData>(`/admin/transaction/wallet-deposit`, {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    });
+    return apiCall<AdminClientDepositData>(
+      `/admin/transaction/wallet-deposit`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      },
+    );
   },
 
   clientWithdrawal: (body: AdminClientWithdrawalBody, token: string) => {
@@ -312,38 +365,47 @@ export const adminTransactionsApi = {
       throw new Error("Token is required to process client withdrawal");
     }
 
-    return apiCall<AdminClientWithdrawalData>(`/admin/transaction/wallet-withdrawal`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+    return apiCall<AdminClientWithdrawalData>(
+      `/admin/transaction/wallet-withdrawal`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          client_id: body.client_id,
+          amount: body.amount,
+          ...(body.comment !== undefined && { comment: body.comment }),
+        }),
       },
-      body: JSON.stringify({
-        client_id: body.client_id,
-        amount: body.amount,
-        ...(body.comment !== undefined && { comment: body.comment }),
-      }),
-    });
+    );
   },
 
-  clientWithdrawalToMt5: (body: AdminClientWithdrawalToMt5Body, token: string) => {
+  clientWithdrawalToMt5: (
+    body: AdminClientWithdrawalToMt5Body,
+    token: string,
+  ) => {
     if (!token) {
       throw new Error("Token is required to process client withdrawal");
     }
 
-    return apiCall<AdminClientWithdrawalToMt5Data>(`/admin/transaction/client-withdrawal`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+    return apiCall<AdminClientWithdrawalToMt5Data>(
+      `/admin/transaction/client-withdrawal`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          client_id: body.client_id,
+          amount: body.amount,
+          comment: body.comment ?? "",
+          mt5_account: body.mt5_account,
+        }),
       },
-      body: JSON.stringify({
-        client_id: body.client_id,
-        amount: body.amount,
-        comment: body.comment ?? "",
-        mt5_account: body.mt5_account,
-      }),
-    });
+    );
   },
 
   internalTransfer: (body: AdminInternalTransferBody, token: string) => {
@@ -351,23 +413,34 @@ export const adminTransactionsApi = {
       throw new Error("Token is required to process internal transfer");
     }
 
-    return apiCall<AdminInternalTransferData>(`/admin/transaction/internal-transfer`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
+    return apiCall<AdminInternalTransferData>(
+      `/admin/transaction/internal-transfer`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
       },
-      body: JSON.stringify(body),
-    });
+    );
   },
 
-  export: async ({ token, format = "xlsx", search, transaction_type, status, from_date, to_date }: AdminTransactionExportParams) => {
+  export: async ({
+    token,
+    format = "xlsx",
+    search,
+    transaction_type,
+    status,
+    from_date,
+    to_date,
+  }: AdminTransactionExportParams) => {
     if (!token) {
       throw new Error("Token is required to export transactions");
     }
 
     if (!API_BASE_URL) {
-      throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+      throw new Error("API_BASE_URL is not configured");
     }
 
     const qs = new URLSearchParams();
@@ -401,8 +474,7 @@ export const adminTransactionsApi = {
           "message" in payload &&
           typeof payload.message === "string"
             ? payload.message
-            : null) ||
-          `HTTP ${response.status}`,
+            : null) || `HTTP ${response.status}`,
         status: response.status,
         statusText: response.statusText,
         endpoint,
@@ -415,7 +487,7 @@ export const adminTransactionsApi = {
       blob,
       filename: parseContentDispositionFilename(
         response.headers.get("content-disposition"),
-        `transactions.${format === "csv" ? "csv" : "xlsx"}`
+        `transactions.${format === "csv" ? "csv" : "xlsx"}`,
       ),
     };
   },

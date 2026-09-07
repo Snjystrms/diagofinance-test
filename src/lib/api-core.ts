@@ -21,9 +21,7 @@ const normalizeApiBaseUrl = (value: string) => {
     : `/${withoutTrailingSlash}`;
 };
 
-export const API_BASE_URL = normalizeApiBaseUrl(
-  process.env.NEXT_PUBLIC_API_BASE_URL || "",
-);
+export const API_BASE_URL = normalizeApiBaseUrl(process.env.API_BASE_URL || "");
 
 export interface ApiResponse<T = unknown> {
   success: boolean;
@@ -290,7 +288,7 @@ export async function apiCall<T>(
   options: ApiCallOptions = {},
 ): Promise<ApiResponse<T>> {
   if (!API_BASE_URL) {
-    throw new Error("NEXT_PUBLIC_API_BASE_URL is not configured");
+    throw new Error("API_BASE_URL is not configured");
   }
 
   const url = `${API_BASE_URL}${endpoint}`;

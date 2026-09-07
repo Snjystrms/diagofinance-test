@@ -1,37 +1,37 @@
-'use client'
+"use client";
 
-import React, { useEffect, useState, useMemo } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { AppDataTable } from '@/components/app-data-table'
-import { ApiErrorState } from '@/components/errors/api-error-state'
-import { MyDepositPageSkeleton } from './_components/my-deposit-page-skeleton'
-import { useAuth } from '@/contexts/auth-context'
-import { getUserDepositRequests } from '@/utils/operations'
-import { type DepositListItem } from '@/lib/api'
-import { CLIENT_WALLET_REFRESH_EVENT } from '@/lib/client-events'
-import { type ColumnDef } from '@tanstack/react-table'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { ApiSearchBar } from '@/components/ui/api-search-bar'
-import { DataTableColumnHeader } from '@/components/data-table/data-table-column-header'
-import { SerialNumberCell } from '@/components/data-table/serial-number-cell'
+import React, { useEffect, useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { AppDataTable } from "@/components/app-data-table";
+import { ApiErrorState } from "@/components/errors/api-error-state";
+import { MyDepositPageSkeleton } from "./_components/my-deposit-page-skeleton";
+import { useAuth } from "@/contexts/auth-context";
+import { getUserDepositRequests } from "@/utils/operations";
+import { type DepositListItem } from "@/lib/api";
+import { CLIENT_WALLET_REFRESH_EVENT } from "@/lib/client-events";
+import { type ColumnDef } from "@tanstack/react-table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ApiSearchBar } from "@/components/ui/api-search-bar";
+import { DataTableColumnHeader } from "@/components/data-table/data-table-column-header";
+import { SerialNumberCell } from "@/components/data-table/serial-number-cell";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select'
+} from "@/components/ui/select";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover'
-import { Calendar } from '@/components/ui/calendar'
-import { format } from 'date-fns'
-import { cn } from '@/lib/utils'
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import {
   Clock,
   CheckCircle,
@@ -43,9 +43,9 @@ import {
   FileText,
   Search,
   X,
-} from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { formatDateTimeInIST } from '@/lib/formatters'
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { formatDateTimeInIST } from "@/lib/formatters";
 import {
   Dialog,
   DialogContent,
@@ -53,10 +53,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog'
-import { Card, CardContent } from '@/components/ui/card'
-import { useQueryState, parseAsInteger, parseAsString } from 'nuqs'
-import {formatApiDateTimeAsIST} from "@/lib/formatters";
+} from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import { useQueryState, parseAsInteger, parseAsString } from "nuqs";
+import { formatApiDateTimeAsIST } from "@/lib/formatters";
 
 const formatDateTime = (value?: string | null): string => {
   if (!value) return "-";
@@ -68,28 +68,42 @@ const formatDateTime = (value?: string | null): string => {
 };
 // Status badge component
 const StatusBadge = ({ status }: { status: number }) => {
-  const statusMap: Record<number, string> = { 0: 'pending', 1: 'approved', 2: 'rejected' }
-  const statusText = statusMap[status] || 'pending'
+  const statusMap: Record<number, string> = {
+    0: "pending",
+    1: "approved",
+    2: "rejected",
+  };
+  const statusText = statusMap[status] || "pending";
 
-  const variants: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline', className: string, icon: React.ReactNode }> = {
+  const variants: Record<
+    string,
+    {
+      variant: "default" | "secondary" | "destructive" | "outline";
+      className: string;
+      icon: React.ReactNode;
+    }
+  > = {
     pending: {
-      variant: 'secondary',
-      className: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 border-yellow-300 dark:border-yellow-800',
-      icon: <Clock className="h-3 w-3 mr-1" />
+      variant: "secondary",
+      className:
+        "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 border-yellow-300 dark:border-yellow-800",
+      icon: <Clock className="h-3 w-3 mr-1" />,
     },
     approved: {
-      variant: 'default',
-      className: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-green-300 dark:border-green-800',
-      icon: <CheckCircle className="h-3 w-3 mr-1" />
+      variant: "default",
+      className:
+        "bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 border-green-300 dark:border-green-800",
+      icon: <CheckCircle className="h-3 w-3 mr-1" />,
     },
     rejected: {
-      variant: 'destructive',
-      className: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 border-red-300 dark:border-red-800',
-      icon: <XCircle className="h-3 w-3 mr-1" />
+      variant: "destructive",
+      className:
+        "bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 border-red-300 dark:border-red-800",
+      icon: <XCircle className="h-3 w-3 mr-1" />,
     },
-  }
+  };
 
-  const statusConfig = variants[statusText] || variants.pending
+  const statusConfig = variants[statusText] || variants.pending;
 
   return (
     <Badge
@@ -99,70 +113,78 @@ const StatusBadge = ({ status }: { status: number }) => {
       {statusConfig.icon}
       <span className="capitalize">{statusText}</span>
     </Badge>
-  )
-}
+  );
+};
 
 // Payment proof preview dialog
-const PaymentProofDialog = ({ paymentProofUrl }: { paymentProofUrl: string | null }) => {
-  const authCtx = useAuth?.()
-  const token = authCtx?.token || (typeof window !== 'undefined' ? localStorage.getItem('auth_token') || '' : '')
+const PaymentProofDialog = ({
+  paymentProofUrl,
+}: {
+  paymentProofUrl: string | null;
+}) => {
+  const authCtx = useAuth?.();
+  const token =
+    authCtx?.token ||
+    (typeof window !== "undefined"
+      ? localStorage.getItem("auth_token") || ""
+      : "");
 
-  const [open, setOpen] = React.useState(false)
-  const [blobUrl, setBlobUrl] = React.useState<string>('')
-  const [loading, setLoading] = React.useState(false)
-  const [error, setError] = React.useState(false)
+  const [open, setOpen] = React.useState(false);
+  const [blobUrl, setBlobUrl] = React.useState<string>("");
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState(false);
 
   useEffect(() => {
     if (!open || !paymentProofUrl || !token) {
-      setBlobUrl('')
-      setError(false)
-      return
+      setBlobUrl("");
+      setError(false);
+      return;
     }
 
-    const apiBaseUrl = (process.env.NEXT_PUBLIC_API_BASE_URL || '').replace(/\/+$/, '')
-    const fullUrl = paymentProofUrl.startsWith('http')
+    const apiBaseUrl = (process.env.API_BASE_URL || "").replace(/\/+$/, "");
+    const fullUrl = paymentProofUrl.startsWith("http")
       ? paymentProofUrl
       : apiBaseUrl
-        ? `${apiBaseUrl}${paymentProofUrl.startsWith('/') ? '' : '/'}${paymentProofUrl}`
-        : paymentProofUrl
+        ? `${apiBaseUrl}${paymentProofUrl.startsWith("/") ? "" : "/"}${paymentProofUrl}`
+        : paymentProofUrl;
 
-    let cancelled = false
-    setLoading(true)
-    setError(false)
+    let cancelled = false;
+    setLoading(true);
+    setError(false);
 
     fetch(fullUrl, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.blob()
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.blob();
       })
       .then((blob) => {
-        if (cancelled) return
-        setBlobUrl(URL.createObjectURL(blob))
+        if (cancelled) return;
+        setBlobUrl(URL.createObjectURL(blob));
       })
       .catch(() => {
-        if (cancelled) return
-        setError(true)
-        setBlobUrl('')
+        if (cancelled) return;
+        setError(true);
+        setBlobUrl("");
       })
       .finally(() => {
-        if (!cancelled) setLoading(false)
-      })
+        if (!cancelled) setLoading(false);
+      });
 
     return () => {
-      cancelled = true
-    }
-  }, [open, paymentProofUrl, token])
+      cancelled = true;
+    };
+  }, [open, paymentProofUrl, token]);
 
   useEffect(() => {
     return () => {
-      if (blobUrl) URL.revokeObjectURL(blobUrl)
-    }
-  }, [blobUrl])
+      if (blobUrl) URL.revokeObjectURL(blobUrl);
+    };
+  }, [blobUrl]);
 
   if (!paymentProofUrl) {
     return (
       <span className="text-muted-foreground text-sm">No proof uploaded</span>
-    )
+    );
   }
 
   return (
@@ -199,17 +221,23 @@ const PaymentProofDialog = ({ paymentProofUrl }: { paymentProofUrl: string | nul
         </div>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
 
 // Transaction hash cell with explorer link
 const TransactionHashCell = ({ hash }: { hash: string | null }) => {
   if (!hash) {
-    return <span className="text-muted-foreground text-sm">No hash provided</span>
+    return (
+      <span className="text-muted-foreground text-sm">No hash provided</span>
+    );
   }
 
-  const txExplorerBaseUrl = (process.env.NEXT_PUBLIC_TX_EXPLORER_BASE_URL || '').replace(/\/+$/, '')
-  const explorerUrl = txExplorerBaseUrl ? `${txExplorerBaseUrl}/tx/${hash}` : null
+  const txExplorerBaseUrl = (
+    process.env.NEXT_PUBLIC_TX_EXPLORER_BASE_URL || ""
+  ).replace(/\/+$/, "");
+  const explorerUrl = txExplorerBaseUrl
+    ? `${txExplorerBaseUrl}/tx/${hash}`
+    : null;
 
   return (
     <div className="flex items-center gap-2">
@@ -221,20 +249,20 @@ const TransactionHashCell = ({ hash }: { hash: string | null }) => {
           variant="ghost"
           size="sm"
           className="h-6 w-6 p-0"
-          onClick={() => window.open(explorerUrl, '_blank')}
+          onClick={() => window.open(explorerUrl, "_blank")}
           title="View transaction explorer"
         >
           <ExternalLink className="h-3 w-3" />
         </Button>
       ) : null}
     </div>
-  )
-}
+  );
+};
 
 // Admin notes cell with dialog
 const AdminNotesCell = ({ notes }: { notes: string | null }) => {
   if (!notes) {
-    return <span className="text-muted-foreground text-sm">-</span>
+    return <span className="text-muted-foreground text-sm">-</span>;
   }
 
   return (
@@ -257,8 +285,8 @@ const AdminNotesCell = ({ notes }: { notes: string | null }) => {
         </div>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
 
 // Define unified columns for all deposits
 const columns: ColumnDef<DepositListItem>[] = [
@@ -269,79 +297,89 @@ const columns: ColumnDef<DepositListItem>[] = [
     enableSorting: false,
   },
   {
-    id: 'amount',
-    accessorKey: 'amount',
+    id: "amount",
+    accessorKey: "amount",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Amount (USD)" />
     ),
     cell: ({ row }) => {
-      const pmType = row.original.paymentMethod?.type
-      const currencyLabel = pmType === 'usdt_transfer' ? 'USD' : 'USD'
+      const pmType = row.original.paymentMethod?.type;
+      const currencyLabel = pmType === "usdt_transfer" ? "USD" : "USD";
       return (
         <div className="flex items-center gap-2 font-semibold">
           <DollarSign className="h-4 w-4 text-green-600" />
-          <span>{row.original.amount.toLocaleString('en-US', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-          })} </span>
+          <span>
+            {row.original.amount.toLocaleString("en-US", {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            })}{" "}
+          </span>
         </div>
-      )
+      );
     },
     enableColumnFilter: false,
     enableSorting: false,
   },
   {
-    id: 'status',
-    accessorKey: 'status',
+    id: "status",
+    accessorKey: "status",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Status" />
     ),
     cell: ({ row }) => <StatusBadge status={row.original.status} />,
     filterFn: (row, id, value) => {
-      return value.includes(row.getValue(id))
+      return value.includes(row.getValue(id));
     },
     enableColumnFilter: false,
     enableSorting: false,
   },
   {
-    id: 'paymentMethod',
-    accessorKey: 'paymentMethod',
+    id: "paymentMethod",
+    accessorKey: "paymentMethod",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Payment Method" />
     ),
     cell: ({ row }) => (
-      <Badge variant="outline">{row.original.paymentMethod?.name || row.original.paymentMethod?.type || 'N/A'}</Badge>
+      <Badge variant="outline">
+        {row.original.paymentMethod?.name ||
+          row.original.paymentMethod?.type ||
+          "N/A"}
+      </Badge>
     ),
     enableColumnFilter: false,
     enableSorting: false,
   },
   {
-    id: 'source',
-    accessorKey: 'source',
+    id: "source",
+    accessorKey: "source",
     meta: { mobileHidden: true },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Source" />
     ),
     cell: ({ row }) => (
-      <span className="text-sm capitalize">{row.original.source?.replace(/_/g, ' ') || '-'}</span>
+      <span className="text-sm capitalize">
+        {row.original.source?.replace(/_/g, " ") || "-"}
+      </span>
     ),
     enableColumnFilter: false,
     enableSorting: false,
   },
   {
-    id: 'transaction_hash',
-    accessorKey: 'transaction_hash',
+    id: "transaction_hash",
+    accessorKey: "transaction_hash",
     meta: { mobileHidden: true },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Transaction Hash" />
     ),
-    cell: ({ row }) => <TransactionHashCell hash={row.original.transaction_hash} />,
+    cell: ({ row }) => (
+      <TransactionHashCell hash={row.original.transaction_hash} />
+    ),
     enableColumnFilter: false,
     enableSorting: false,
   },
   {
-    id: 'file',
-    accessorKey: 'file',
+    id: "file",
+    accessorKey: "file",
     meta: { mobileHidden: true },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Payment Proof" />
@@ -353,8 +391,8 @@ const columns: ColumnDef<DepositListItem>[] = [
     enableSorting: false,
   },
   {
-    id: 'admin_comment',
-    accessorKey: 'admin_comment',
+    id: "admin_comment",
+    accessorKey: "admin_comment",
     meta: { mobileHidden: true },
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Admin Notes" />
@@ -364,100 +402,109 @@ const columns: ColumnDef<DepositListItem>[] = [
     enableSorting: false,
   },
   {
-    id: 'created_at',
-    accessorKey: 'created_at',
+    id: "created_at",
+    accessorKey: "created_at",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Created At" />
     ),
     cell: ({ row }) => (
       <div className="flex items-center gap-2 text-sm whitespace-nowrap">
         <CalendarIcon className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-        <span>
-          {formatDateTime(row.original.created_at)}
-        </span>
+        <span>{formatDateTime(row.original.created_at)}</span>
       </div>
     ),
     enableColumnFilter: false,
     enableSorting: false,
   },
-]
+];
 
 export default function MyDepositPage() {
-  const { token } = useAuth()
-   const router = useRouter()
-  const [page, setPage] = useQueryState('page', parseAsInteger.withDefault(1))
-  const [perPage, setPerPage] = useQueryState('perPage', parseAsInteger.withDefault(10))
+  const { token } = useAuth();
+  const router = useRouter();
+  const [page, setPage] = useQueryState("page", parseAsInteger.withDefault(1));
+  const [perPage, setPerPage] = useQueryState(
+    "perPage",
+    parseAsInteger.withDefault(10),
+  );
 
   // Filters
-  const [searchQuery, setSearchQuery] = useQueryState('search', parseAsString)
-  const [searchInput, setSearchInput] = useState(searchQuery || '')
+  const [searchQuery, setSearchQuery] = useQueryState("search", parseAsString);
+  const [searchInput, setSearchInput] = useState(searchQuery || "");
 
   const [statusFilter, setStatusFilter] = useQueryState(
-    'status',
-    parseAsString
-  )
+    "status",
+    parseAsString,
+  );
   const [sourceFilter, setSourceFilter] = useQueryState(
-    'source',
-    parseAsString
-  )
+    "source",
+    parseAsString,
+  );
   const [paymentCategoryFilter, setPaymentCategoryFilter] = useQueryState(
-    'payment_category',
-    parseAsString
-  )
+    "payment_category",
+    parseAsString,
+  );
   const [paymentMethodIdFilter, setPaymentMethodIdFilter] = useQueryState(
-    'payment_method_id',
-    parseAsString
-  )
+    "payment_method_id",
+    parseAsString,
+  );
 
-  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined)
-  const [dateFromStr, setDateFromStr] = useQueryState('date_from', parseAsString)
-  const [dateTo, setDateTo] = useState<Date | undefined>(undefined)
-  const [dateToStr, setDateToStr] = useQueryState('date_to', parseAsString)
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
+  const [dateFromStr, setDateFromStr] = useQueryState(
+    "date_from",
+    parseAsString,
+  );
+  const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
+  const [dateToStr, setDateToStr] = useQueryState("date_to", parseAsString);
 
   // Sync date state with query params
   useEffect(() => {
     if (dateFromStr) {
-      const parsed = new Date(dateFromStr)
+      const parsed = new Date(dateFromStr);
       if (!isNaN(parsed.getTime())) {
-        setDateFrom(parsed)
+        setDateFrom(parsed);
       }
     }
-  }, [dateFromStr])
+  }, [dateFromStr]);
 
   useEffect(() => {
     if (dateToStr) {
-      const parsed = new Date(dateToStr)
+      const parsed = new Date(dateToStr);
       if (!isNaN(parsed.getTime())) {
-        setDateTo(parsed)
+        setDateTo(parsed);
       }
     }
-  }, [dateToStr])
+  }, [dateToStr]);
 
   // Update query params when dates change
   useEffect(() => {
     if (dateFrom) {
-      setDateFromStr(format(dateFrom, 'yyyy-MM-dd'))
+      setDateFromStr(format(dateFrom, "yyyy-MM-dd"));
     } else {
-      setDateFromStr(null)
+      setDateFromStr(null);
     }
-  }, [dateFrom, setDateFromStr])
+  }, [dateFrom, setDateFromStr]);
 
   useEffect(() => {
     if (dateTo) {
-      setDateToStr(format(dateTo, 'yyyy-MM-dd'))
+      setDateToStr(format(dateTo, "yyyy-MM-dd"));
     } else {
-      setDateToStr(null)
+      setDateToStr(null);
     }
-  }, [dateTo, setDateToStr])
+  }, [dateTo, setDateToStr]);
 
   // Sync search input with query param
   useEffect(() => {
-    setSearchInput(searchQuery || '')
-  }, [searchQuery])
+    setSearchInput(searchQuery || "");
+  }, [searchQuery]);
 
-  const { data: depositsData, isLoading, refetch, error } = useQuery({
+  const {
+    data: depositsData,
+    isLoading,
+    refetch,
+    error,
+  } = useQuery({
     queryKey: [
-      'myDeposits',
+      "myDeposits",
       token,
       page,
       perPage,
@@ -473,16 +520,14 @@ export default function MyDepositPage() {
       getUserDepositRequests(page, perPage, token!, {
         search: searchQuery || undefined,
         status:
-          statusFilter && statusFilter !== 'all'
-            ? Number(statusFilter)
-            : null,
-        source: sourceFilter && sourceFilter !== 'all' ? sourceFilter : null,
+          statusFilter && statusFilter !== "all" ? Number(statusFilter) : null,
+        source: sourceFilter && sourceFilter !== "all" ? sourceFilter : null,
         payment_category:
-          paymentCategoryFilter && paymentCategoryFilter !== 'all'
+          paymentCategoryFilter && paymentCategoryFilter !== "all"
             ? paymentCategoryFilter
             : null,
         payment_method_id:
-          paymentMethodIdFilter && paymentMethodIdFilter !== 'all'
+          paymentMethodIdFilter && paymentMethodIdFilter !== "all"
             ? Number(paymentMethodIdFilter)
             : null,
         date_from: dateFromStr || null,
@@ -491,47 +536,55 @@ export default function MyDepositPage() {
     enabled: Boolean(token),
     staleTime: 30 * 1000,
     placeholderData: (prev) => prev,
-  })
+  });
 
-  const deposits: DepositListItem[] = depositsData?.data ?? []
-  const totalPages = depositsData?.pagination?.last_page ?? 1
-  const total = depositsData?.pagination?.total ?? deposits.length
+  const deposits: DepositListItem[] = depositsData?.data ?? [];
+  const totalPages = depositsData?.pagination?.last_page ?? 1;
+  const total = depositsData?.pagination?.total ?? deposits.length;
 
-  const pageCount = totalPages > 0 ? totalPages : (total > 0 && perPage ? Math.ceil(total / perPage) : 1)
+  const pageCount =
+    totalPages > 0
+      ? totalPages
+      : total > 0 && perPage
+        ? Math.ceil(total / perPage)
+        : 1;
 
   useEffect(() => {
     const handleWalletRefresh = () => {
-      void refetch()
-    }
+      void refetch();
+    };
 
-    window.addEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh)
+    window.addEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh);
     return () => {
-      window.removeEventListener(CLIENT_WALLET_REFRESH_EVENT, handleWalletRefresh)
-    }
-  }, [refetch])
+      window.removeEventListener(
+        CLIENT_WALLET_REFRESH_EVENT,
+        handleWalletRefresh,
+      );
+    };
+  }, [refetch]);
 
   const handleResetFilters = () => {
-    setSearchQuery(null)
-    setSearchInput('')
-    setStatusFilter(null)
-    setSourceFilter(null)
-    setPaymentCategoryFilter(null)
-    setPaymentMethodIdFilter(null)
-    setDateFrom(undefined)
-    setDateTo(undefined)
-    setPage(1)
-  }
+    setSearchQuery(null);
+    setSearchInput("");
+    setStatusFilter(null);
+    setSourceFilter(null);
+    setPaymentCategoryFilter(null);
+    setPaymentMethodIdFilter(null);
+    setDateFrom(undefined);
+    setDateTo(undefined);
+    setPage(1);
+  };
 
   const activeFilterCount = useMemo(() => {
-    let count = 0
-    if (searchQuery) count++
-    if (statusFilter) count++
-    if (sourceFilter) count++
-    if (paymentCategoryFilter) count++
-    if (paymentMethodIdFilter) count++
-    if (dateFromStr) count++
-    if (dateToStr) count++
-    return count
+    let count = 0;
+    if (searchQuery) count++;
+    if (statusFilter) count++;
+    if (sourceFilter) count++;
+    if (paymentCategoryFilter) count++;
+    if (paymentMethodIdFilter) count++;
+    if (dateFromStr) count++;
+    if (dateToStr) count++;
+    return count;
   }, [
     searchQuery,
     statusFilter,
@@ -540,12 +593,10 @@ export default function MyDepositPage() {
     paymentMethodIdFilter,
     dateFromStr,
     dateToStr,
-  ])
+  ]);
 
   if (isLoading && deposits.length === 0) {
-    return (
-      <MyDepositPageSkeleton />
-    )
+    return <MyDepositPageSkeleton />;
   }
 
   if (error && deposits.length === 0) {
@@ -558,11 +609,11 @@ export default function MyDepositPage() {
           action="load"
           variant="panel"
           onRetry={() => {
-            void refetch()
+            void refetch();
           }}
         />
       </div>
-    )
+    );
   }
 
   return (
@@ -600,8 +651,8 @@ export default function MyDepositPage() {
               value={searchInput}
               onChange={(value) => setSearchInput(value)}
               onSearch={(value) => {
-                setPage(1)
-                setSearchQuery(value.trim() || null)
+                setPage(1);
+                setSearchQuery(value.trim() || null);
               }}
               placeholder="Search by amount, comment, or transaction hash"
               minimumLength={3}
@@ -612,12 +663,17 @@ export default function MyDepositPage() {
 
           <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 w-full">
             <div className="space-y-1.5">
-              <Label htmlFor="status-filter" className="text-xs font-medium text-muted-foreground">Status</Label>
+              <Label
+                htmlFor="status-filter"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Status
+              </Label>
               <Select
                 value={statusFilter || undefined}
                 onValueChange={(value) => {
-                  setStatusFilter(value === 'all' ? null : value)
-                  setPage(1)
+                  setStatusFilter(value === "all" ? null : value);
+                  setPage(1);
                 }}
               >
                 <SelectTrigger id="status-filter" className="h-9 w-full">
@@ -633,12 +689,17 @@ export default function MyDepositPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="source-filter" className="text-xs font-medium text-muted-foreground">Source</Label>
+              <Label
+                htmlFor="source-filter"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Source
+              </Label>
               <Select
                 value={sourceFilter || undefined}
                 onValueChange={(value) => {
-                  setSourceFilter(value === 'all' ? null : value)
-                  setPage(1)
+                  setSourceFilter(value === "all" ? null : value);
+                  setPage(1);
                 }}
               >
                 <SelectTrigger id="source-filter" className="h-9 w-full">
@@ -654,15 +715,23 @@ export default function MyDepositPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="payment-category-filter" className="text-xs font-medium text-muted-foreground">Payment Category</Label>
+              <Label
+                htmlFor="payment-category-filter"
+                className="text-xs font-medium text-muted-foreground"
+              >
+                Payment Category
+              </Label>
               <Select
                 value={paymentCategoryFilter || undefined}
                 onValueChange={(value) => {
-                  setPaymentCategoryFilter(value === 'all' ? null : value)
-                  setPage(1)
+                  setPaymentCategoryFilter(value === "all" ? null : value);
+                  setPage(1);
                 }}
               >
-                <SelectTrigger id="payment-category-filter" className="h-9 w-full">
+                <SelectTrigger
+                  id="payment-category-filter"
+                  className="h-9 w-full"
+                >
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
@@ -675,18 +744,24 @@ export default function MyDepositPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">From Date</Label>
+              <Label className="text-xs font-medium text-muted-foreground">
+                From Date
+              </Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      'w-full h-9 justify-start text-left font-normal',
-                      !dateFrom && 'text-muted-foreground'
+                      "w-full h-9 justify-start text-left font-normal",
+                      !dateFrom && "text-muted-foreground",
                     )}
                   >
                     <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                    {dateFrom ? format(dateFrom, 'MMM dd, yyyy') : <span>Select date</span>}
+                    {dateFrom ? (
+                      format(dateFrom, "MMM dd, yyyy")
+                    ) : (
+                      <span>Select date</span>
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -694,8 +769,8 @@ export default function MyDepositPage() {
                     mode="single"
                     selected={dateFrom}
                     onSelect={(date) => {
-                      setDateFrom(date)
-                      setPage(1)
+                      setDateFrom(date);
+                      setPage(1);
                     }}
                     initialFocus
                     captionLayout="dropdown"
@@ -705,18 +780,24 @@ export default function MyDepositPage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-xs font-medium text-muted-foreground">To Date</Label>
+              <Label className="text-xs font-medium text-muted-foreground">
+                To Date
+              </Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     variant="outline"
                     className={cn(
-                      'w-full h-9 justify-start text-left font-normal',
-                      !dateTo && 'text-muted-foreground'
+                      "w-full h-9 justify-start text-left font-normal",
+                      !dateTo && "text-muted-foreground",
                     )}
                   >
                     <CalendarIcon className="mr-2 h-3.5 w-3.5" />
-                    {dateTo ? format(dateTo, 'MMM dd, yyyy') : <span>Select date</span>}
+                    {dateTo ? (
+                      format(dateTo, "MMM dd, yyyy")
+                    ) : (
+                      <span>Select date</span>
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -724,8 +805,8 @@ export default function MyDepositPage() {
                     mode="single"
                     selected={dateTo}
                     onSelect={(date) => {
-                      setDateTo(date)
-                      setPage(1)
+                      setDateTo(date);
+                      setPage(1);
                     }}
                     initialFocus
                     captionLayout="dropdown"
@@ -741,11 +822,13 @@ export default function MyDepositPage() {
             <CardContent className="py-10">
               <div className="text-center">
                 <DollarSign className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">No Deposit Requests</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  No Deposit Requests
+                </h3>
                 <p className="text-muted-foreground mb-4">
                   You haven&apos;t submitted any deposit requests yet.
                 </p>
-                <Button onClick={() => router.push('/funds/deposit')}>
+                <Button onClick={() => router.push("/funds/deposit")}>
                   Make a Deposit
                 </Button>
               </div>
@@ -767,11 +850,11 @@ export default function MyDepositPage() {
             action="load"
             variant="inline"
             onRetry={() => {
-              void refetch()
+              void refetch();
             }}
           />
         )}
       </div>
     </div>
-  )
+  );
 }
