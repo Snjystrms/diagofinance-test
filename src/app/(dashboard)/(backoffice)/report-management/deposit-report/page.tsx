@@ -244,14 +244,7 @@ export default function ReportManagementPage() {
       const payload = response as unknown as DepositReportListPayload;
       const reportItems = Array.isArray(payload?.data) ? payload.data : [];
 
-      // Client-side status filtering as fallback (in case backend doesn't filter properly)
-      let filteredItems = reportItems;
-      if (statusFilter && statusFilter !== "all") {
-        const targetStatus = Number(statusFilter);
-        filteredItems = reportItems.filter((item) => Number(item.status) === targetStatus);
-      }
-
-      setRows(filteredItems);
+      setRows(reportItems);
 
       const paginationData = payload?.pagination;
       if (paginationData) {
@@ -318,12 +311,7 @@ export default function ReportManagementPage() {
     setSortOrder(null);
     setSearchInput("");
     setSearchQuery(null);
-    // Reset page to 1 via URL
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      params.set("page", "1");
-      window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
-    }
+    setCurrentPage(1);
   }, [
     setStatusFilter,
     setPaymentMethodFilter,
@@ -332,6 +320,7 @@ export default function ReportManagementPage() {
     setSortBy,
     setSortOrder,
     setSearchQuery,
+    setCurrentPage,
   ]);
 
   const handleExport = useCallback(
@@ -507,7 +496,6 @@ export default function ReportManagementPage() {
         header: "Transaction Hash",
         accessorKey: "transaction_hash",
         cell: ({ row }) => {
-          // const hash = row.original.transaction_hash;
           const reference = row.original.reference;
           if (!reference)
             return <span className="text-muted-foreground">—</span>;
@@ -642,11 +630,7 @@ export default function ReportManagementPage() {
             value={searchInput}
             onChange={(value) => setSearchInput(value)}
             onSearch={(value) => {
-              if (typeof window !== "undefined") {
-                const params = new URLSearchParams(window.location.search);
-                params.set("page", "1");
-                window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
-              }
+              setCurrentPage(1);
               setSearchQuery(value.trim() || null);
             }}
             placeholder="Search by name, email..."
@@ -665,11 +649,7 @@ export default function ReportManagementPage() {
             value={statusFilter || "all"}
             onValueChange={(value) => {
               setStatusFilter(value === "all" ? null : value);
-              if (typeof window !== "undefined") {
-                const params = new URLSearchParams(window.location.search);
-                params.set("page", "1");
-                window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
-              }
+              setCurrentPage(1);
             }}
           >
             <SelectTrigger id="status-filter" className="h-9 w-full">
@@ -694,11 +674,7 @@ export default function ReportManagementPage() {
             value={sourceFilter || "all"}
             onValueChange={(value) => {
               setSourceFilter(value === "all" ? null : value);
-              if (typeof window !== "undefined") {
-                const params = new URLSearchParams(window.location.search);
-                params.set("page", "1");
-                window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
-              }
+              setCurrentPage(1);
             }}
           >
             <SelectTrigger id="source-filter" className="h-9 w-full">
@@ -723,11 +699,7 @@ export default function ReportManagementPage() {
             value={isIbFilter || "all"}
             onValueChange={(value) => {
               setIsIbFilter(value === "all" ? null : value);
-              if (typeof window !== "undefined") {
-                const params = new URLSearchParams(window.location.search);
-                params.set("page", "1");
-                window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
-              }
+              setCurrentPage(1);
             }}
           >
             <SelectTrigger id="ib-filter" className="h-9 w-full">
@@ -746,19 +718,11 @@ export default function ReportManagementPage() {
           toDate={toDate}
           onFromDateChange={(date) => {
             handleDateChange(date, "from");
-            if (typeof window !== "undefined") {
-              const params = new URLSearchParams(window.location.search);
-              params.set("page", "1");
-              window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
-            }
+            setCurrentPage(1);
           }}
           onToDateChange={(date) => {
             handleDateChange(date, "to");
-            if (typeof window !== "undefined") {
-              const params = new URLSearchParams(window.location.search);
-              params.set("page", "1");
-              window.history.replaceState({}, "", `${window.location.pathname}?${params.toString()}`);
-            }
+            setCurrentPage(1);
           }}
         />
         {activeFilterCount > 0 ? (
