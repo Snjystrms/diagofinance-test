@@ -2005,6 +2005,7 @@ export interface DefaultSettingsItem {
   disable_mt5_to_wallet: boolean;
   disable_wallet_to_mt5: boolean;
   disable_ib_commission: boolean;
+  max_live_mt5_accounts: number;
   updated_by?: string | null;
   updated_at?: string | null;
 }
@@ -2019,6 +2020,7 @@ export type DefaultSettingsUpdateBody = Pick<
   | "disable_mt5_to_wallet"
   | "disable_wallet_to_mt5"
   | "disable_ib_commission"
+  | "max_live_mt5_accounts"
 >;
 
 export const adminDefaultSettingsApi = {

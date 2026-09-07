@@ -1046,6 +1046,7 @@ export const ibRequestsApi = {
       to_date?: string | null;
       sort_by?: string | null;
       sort_order?: string | null;
+      level?: number | null;
     },
   ) => {
     const queryParams = new URLSearchParams();
@@ -1056,6 +1057,7 @@ export const ibRequestsApi = {
     if (params?.to_date) queryParams.append("to_date", params.to_date);
     if (params?.sort_by) queryParams.append("sort_by", params.sort_by);
     if (params?.sort_order) queryParams.append("sort_order", params.sort_order);
+    if (params?.level) queryParams.append("level", String(params.level));
     const queryString = queryParams.toString();
     const url = `/user/ib-client-summary/clients${queryString ? `?${queryString}` : ""}`;
 
@@ -1069,6 +1071,7 @@ export const ibRequestsApi = {
     token: string,
     params?: {
       search?: string;
+      level?: number | null;
       from_date?: string | null;
       to_date?: string | null;
     },
@@ -1083,6 +1086,7 @@ export const ibRequestsApi = {
 
     const queryParams = new URLSearchParams();
     if (params?.search) queryParams.append("search", params.search);
+    if (params?.level) queryParams.append("level", String(params.level));
     if (params?.from_date) queryParams.append("from_date", params.from_date);
     if (params?.to_date) queryParams.append("to_date", params.to_date);
 

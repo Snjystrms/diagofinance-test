@@ -10,7 +10,9 @@ import {
   BadgePercent,
   HandCoins,
   Loader2,
+  MonitorCog,
   RefreshCw,
+  Save,
   Settings2,
   UserPlus,
   Users,
@@ -22,6 +24,7 @@ import { ProtectedRoute } from "@/components/protected-route";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
+import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatApiDateTimeAsIST } from "@/lib/formatters";
@@ -105,24 +108,40 @@ const SETTING_DEFINITIONS: SettingDefinition[] = [
 const buildUpdateBody = (
   settings: DefaultSettingsItem,
   key: SettingKey,
-  value: boolean,
+  value: boolean | number,
 ): DefaultSettingsUpdateBody => ({
   disable_account:
-    key === "disable_account" ? value : settings.disable_account,
+    key === "disable_account" ? (value as boolean) : settings.disable_account,
   disable_deposit:
-    key === "disable_deposit" ? value : settings.disable_deposit,
+    key === "disable_deposit" ? (value as boolean) : settings.disable_deposit,
   disable_withdraw:
-    key === "disable_withdraw" ? value : settings.disable_withdraw,
+    key === "disable_withdraw"
+      ? (value as boolean)
+      : settings.disable_withdraw,
   disable_transfer:
-    key === "disable_transfer" ? value : settings.disable_transfer,
+    key === "disable_transfer"
+      ? (value as boolean)
+      : settings.disable_transfer,
   disable_ib_withdraw:
-    key === "disable_ib_withdraw" ? value : settings.disable_ib_withdraw,
+    key === "disable_ib_withdraw"
+      ? (value as boolean)
+      : settings.disable_ib_withdraw,
   disable_mt5_to_wallet:
-    key === "disable_mt5_to_wallet" ? value : settings.disable_mt5_to_wallet,
+    key === "disable_mt5_to_wallet"
+      ? (value as boolean)
+      : settings.disable_mt5_to_wallet,
   disable_wallet_to_mt5:
-    key === "disable_wallet_to_mt5" ? value : settings.disable_wallet_to_mt5,
+    key === "disable_wallet_to_mt5"
+      ? (value as boolean)
+      : settings.disable_wallet_to_mt5,
   disable_ib_commission:
-    key === "disable_ib_commission" ? value : settings.disable_ib_commission,
+    key === "disable_ib_commission"
+      ? (value as boolean)
+      : settings.disable_ib_commission,
+  max_live_mt5_accounts:
+    key === "max_live_mt5_accounts"
+      ? (value as number)
+      : settings.max_live_mt5_accounts,
 });
 
 const normalizeSettings = (data: DefaultSettingsItem): DefaultSettingsItem => ({
@@ -134,6 +153,7 @@ const normalizeSettings = (data: DefaultSettingsItem): DefaultSettingsItem => ({
   disable_mt5_to_wallet: Boolean(data.disable_mt5_to_wallet),
   disable_wallet_to_mt5: Boolean(data.disable_wallet_to_mt5),
   disable_ib_commission: Boolean(data.disable_ib_commission),
+  max_live_mt5_accounts: Number(data.max_live_mt5_accounts) || 0,
   updated_by: data.updated_by ?? null,
   updated_at: data.updated_at ?? null,
 });
@@ -144,6 +164,8 @@ export default function DefaultSettingsPage() {
 
   const [settings, setSettings] = useState<DefaultSettingsItem | null>(null);
   const [pendingKey, setPendingKey] = useState<SettingKey | null>(null);
+  const [mt5Draft, setMt5Draft] = useState<string>("");
+  const [mt5Saving, setMt5Saving] = useState(false);
 
   const {
     data,
@@ -165,7 +187,10 @@ export default function DefaultSettingsPage() {
   });
 
   useEffect(() => {
-    if (data) setSettings(data);
+    if (data) {
+      setSettings(data);
+      setMt5Draft(String(data.max_live_mt5_accounts));
+    }
   }, [data]);
 
   const handleToggle = async (key: SettingKey) => {
@@ -198,6 +223,44 @@ export default function DefaultSettingsPage() {
       );
     } finally {
       setPendingKey(null);
+    }
+  };
+
+  const handleSaveMt5Accounts = async () => {
+    if (!token || !settings || mt5Saving) return;
+    const parsed = parseInt(mt5Draft, 10);
+    if (isNaN(parsed) || parsed < 0) {
+      toast.error("Please enter a valid non-negative number");
+      return;
+    }
+    if (parsed === settings.max_live_mt5_accounts) return;
+
+    const previous = settings;
+    setMt5Saving(true);
+
+    try {
+      const res = await adminDefaultSettingsApi.update(
+        buildUpdateBody(previous, "max_live_mt5_accounts", parsed),
+        token,
+      );
+      if (res?.data) {
+        setSettings(normalizeSettings(res.data));
+        setMt5Draft(String(normalizeSettings(res.data).max_live_mt5_accounts));
+      }
+      toast.success(res?.message || "Max live MT5 accounts updated");
+      void queryClient.invalidateQueries({
+        queryKey: ["default-settings", token],
+      });
+    } catch (error) {
+      setMt5Draft(String(previous.max_live_mt5_accounts));
+      toast.error(
+        getAdminFriendlyErrorMessage(error, {
+          resource: "default settings",
+          action: "update",
+        }),
+      );
+    } finally {
+      setMt5Saving(false);
     }
   };
 
@@ -324,6 +387,63 @@ export default function DefaultSettingsPage() {
                   </div>
                 );
               })}
+            </CardContent>
+          </Card>
+        )}
+
+        {!isLoading && settings && (
+          <Card className="mt-4 overflow-hidden">
+            <CardHeader className="border-b pb-4">
+              <CardTitle className="text-base font-semibold">
+                Trading Account Limits
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">
+                Configure numeric platform limits. Changes are saved on
+                confirmation.
+              </p>
+            </CardHeader>
+            <CardContent className="p-4">
+              <div className="flex items-start justify-between gap-4 rounded-2xl border bg-card p-4 shadow-sm transition-all duration-200 hover:shadow-md">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20">
+                    <MonitorCog className="h-5 w-5" />
+                  </div>
+                  <div className="space-y-0.5">
+                    <p className="text-sm font-semibold text-foreground">
+                      Max Live MT5 Accounts
+                    </p>
+                    <p className="text-xs leading-relaxed text-muted-foreground">
+                      Maximum number of live MT5 trading accounts a client can
+                      have simultaneously.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {mt5Saving && (
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  )}
+                  <Input
+                    type="number"
+                    min={0}
+                    className="h-9 w-20 text-center"
+                    value={mt5Draft}
+                    onChange={(e) => setMt5Draft(e.target.value)}
+                    disabled={mt5Saving}
+                  />
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="h-9 w-9"
+                    disabled={
+                      mt5Saving ||
+                      mt5Draft === String(settings.max_live_mt5_accounts)
+                    }
+                    onClick={() => void handleSaveMt5Accounts()}
+                  >
+                    <Save className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         )}

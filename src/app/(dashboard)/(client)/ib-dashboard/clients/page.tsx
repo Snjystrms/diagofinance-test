@@ -753,12 +753,22 @@ export default function IbClientsPage() {
         search: clientsSearch.query || undefined,
         from_date: fromDate || undefined,
         to_date: toDate || undefined,
+        level: levelFilter || undefined,
       });
       // apiCall returns raw JSON → { success, message, data: [...], pagination: {...} }
-      const raw = res as unknown as { data: ClientRow[]; pagination: unknown };
+      const raw = res as unknown as {
+        data: ClientRow[];
+        pagination: unknown;
+        level_count?: number;
+      };
       const rows: ClientRow[] = Array.isArray(raw.data) ? raw.data : [];
       setClients(rows);
       setClientsPagination(parsePagination(raw.pagination, rows.length));
+
+      // Update level count from API response
+      if (typeof raw.level_count === "number" && raw.level_count > 0) {
+        setLevelCount(raw.level_count);
+      }
     } catch (e) {
       console.error("fetchClients:", e);
       setClientsError(e);
@@ -766,7 +776,7 @@ export default function IbClientsPage() {
     } finally {
       setClientsLoading(false);
     }
-  }, [token, page, limit, clientsSearch.query, fromDate, toDate]);
+  }, [token, page, limit, clientsSearch.query, fromDate, toDate, levelFilter]);
 
   /* ── Fetch sub-IBs ─────────────────────────────────────────────────────── */
   const fetchSubIbs = useCallback(async () => {
@@ -900,6 +910,7 @@ export default function IbClientsPage() {
 
       const { blob, filename } = await ibRequestsApi.exportClients(token, {
         search: clientsSearch.query || undefined,
+        level: levelFilter || undefined,
         from_date: fromDate || undefined,
         to_date: toDate || undefined,
       });
@@ -935,7 +946,7 @@ export default function IbClientsPage() {
     } finally {
       setExportingClients(false);
     }
-  }, [token, clientsSearch.query, fromDate, toDate]);
+  }, [token, clientsSearch.query, levelFilter, fromDate, toDate]);
 
   const handleExportSubIbs = useCallback(async () => {
     if (!token) {
@@ -1124,6 +1135,27 @@ export default function IbClientsPage() {
               />
               {/* Date Filters */}
               <div className="flex flex-wrap items-end gap-3 lg:ml-auto">
+                <Select
+                  value={levelFilter?.toString() || "all"}
+                  onValueChange={(value) => {
+                    setLevelFilter(value === "all" ? null : parseInt(value));
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="All Levels" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Levels</SelectItem>
+                    {Array.from({ length: levelCount }, (_, i) => i + 1).map(
+                      (level) => (
+                        <SelectItem key={level} value={level.toString()}>
+                          Level {level}
+                        </SelectItem>
+                      ),
+                    )}
+                  </SelectContent>
+                </Select>
                 <DateRangePicker
                   fromDate={fromDateObj}
                   toDate={toDateObj}
@@ -1148,7 +1180,7 @@ export default function IbClientsPage() {
                   <Download className="mr-2 h-4 w-4" />
                   {exportingClients ? "Exporting..." : "Export"}
                 </Button>
-                {(fromDate || toDate) && (
+                {(fromDate || toDate || levelFilter) && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -1156,10 +1188,11 @@ export default function IbClientsPage() {
                       setPage(1);
                       setFromDate(null);
                       setToDate(null);
+                      setLevelFilter(null);
                     }}
                     className="h-9 text-muted-foreground hover:text-foreground text-xs font-medium"
                   >
-                    Clear Dates
+                    Clear Filters
                   </Button>
                 )}
               </div>
