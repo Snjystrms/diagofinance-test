@@ -723,7 +723,7 @@ export default function IbClientsPage() {
     useState<PaginationState>(emptyPagination);
   const [subIbsLoading, setSubIbsLoading] = useState(false);
   const [subIbsError, setSubIbsError] = useState<unknown | null>(null);
-  const [levelCount, setLevelCount] = useState<number>(5); // Track max levels from API
+  const [levelCount, setLevelCount] = useState<number>(7); // Track max levels from API
 
   // ── Rebates state ──
   const [rebates, setRebates] = useState<RebateDeal[]>([]);
@@ -1097,10 +1097,25 @@ export default function IbClientsPage() {
           onValueChange={(v) => setActiveTab(v as TabType)}
           className="space-y-6"
         >
-          <TabsList className="grid h-auto w-full grid-cols-1 sm:grid-cols-3 rounded-2xl bg-muted/40 p-1">
-            <TabsTrigger value="clients">Direct Clients (non-IB)</TabsTrigger>
-            <TabsTrigger value="sub-ibs">Sub IBs</TabsTrigger>
-            <TabsTrigger value="rebates">Rebates</TabsTrigger>
+          <TabsList className="grid h-auto w-full grid-cols-3 rounded-lg bg-muted/50 p-1">
+            <TabsTrigger
+              value="clients"
+              className="rounded-md px-2 py-2 text-sm transition-all duration-200 data-[state=active]:bg-[#C50435]! data-[state=active]:text-white!"
+            >
+              Direct Clients (non-IB)
+            </TabsTrigger>
+            <TabsTrigger
+              value="sub-ibs"
+              className="rounded-md px-2 py-2 text-sm transition-all duration-200 data-[state=active]:bg-[#C50435]! data-[state=active]:text-white!"
+            >
+              Sub IBs
+            </TabsTrigger>
+            <TabsTrigger
+              value="rebates"
+              className="rounded-md px-2 py-2 text-sm transition-all duration-200 data-[state=active]:bg-[#C50435]! data-[state=active]:text-white!"
+            >
+              Rebates
+            </TabsTrigger>
           </TabsList>
 
           {/* Error state */}
