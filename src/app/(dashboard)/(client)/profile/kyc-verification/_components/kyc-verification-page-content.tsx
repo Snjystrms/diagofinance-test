@@ -31,7 +31,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { AlertCircle, CheckCircle2, Upload, FileText } from 'lucide-react';
+import {
+  AlertCircle,
+  CheckCircle2,
+  Loader2,
+  RefreshCcw,
+  Upload,
+  FileText,
+  X,
+} from 'lucide-react';
 import { AuthenticatedDocumentViewer } from '@/components/authenticated-document-viewer';
 import { type KycPhase } from '../_lib/kyc-files';
 
@@ -325,43 +333,78 @@ export function KycVerificationPageContent() {
 
           {/* Allow re-upload for submitted documents - but NOT when overall KYC is approved or individual doc is approved */}
           {!isApproved && data.status !== 'not_submitted' && data.status !== 'approved' && (
-            <div className="mt-2 space-y-2">
-              <div className="flex items-center gap-3">
-                <label htmlFor={`reupload-${fieldKey}`}>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => document.getElementById(`reupload-${fieldKey}`)?.click()}
-                    disabled={reuploadingKey === fieldKey}
-                  >
-                    Choose File
-                  </Button>
-                </label>
-                <Input
-                  id={`reupload-${fieldKey}`}
-                  type="file"
-                  accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
-                  className="hidden"
-                  onChange={onPickRejected(fieldKey)}
-                  disabled={reuploadingKey === fieldKey}
-                />
-                <Button
-                  onClick={() => reuploadSingle(fieldKey)}
-                  disabled={!currentPicked || reuploadingKey === fieldKey}
-                >
-                  {reuploadingKey === fieldKey ? 'Uploading…' : data.status === 'rejected' ? 'Re-upload' : 'Upload'}
-                </Button>
-              </div>
-
-              {/* Selected file name + size before re-upload */}
-              {currentPicked && (
-                <div className="text-xs text-muted-foreground">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4" />
-                    <span className="truncate max-w-[220px]">{currentPicked.name}</span>
-                    <span>• {(currentPicked.size / 1024 / 1024).toFixed(2)} MB</span>
+            <div className="mt-2">
+              <Input
+                id={`reupload-${fieldKey}`}
+                type="file"
+                accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+                className="hidden"
+                onChange={onPickRejected(fieldKey)}
+                disabled={reuploadingKey === fieldKey}
+              />
+              {currentPicked ? (
+                <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 p-3">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <FileText className="h-4 w-4 shrink-0 text-primary" />
+                    <div className="min-w-0">
+                      <p className="truncate text-xs font-medium text-foreground">
+                        {currentPicked.name}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {(currentPicked.size / 1024 / 1024).toFixed(2)} MB selected
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-1.5">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      onClick={() =>
+                        setReuploadFiles((s) => ({ ...s, [fieldKey]: null }))
+                      }
+                      disabled={reuploadingKey === fieldKey}
+                      title="Cancel"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => reuploadSingle(fieldKey)}
+                      disabled={reuploadingKey === fieldKey}
+                    >
+                      {reuploadingKey === fieldKey ? (
+                        <>
+                          <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                          Uploading…
+                        </>
+                      ) : (
+                        <>
+                          <Upload className="mr-1.5 h-4 w-4" />
+                          Upload
+                        </>
+                      )}
+                    </Button>
                   </div>
                 </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() =>
+                    document.getElementById(`reupload-${fieldKey}`)?.click()
+                  }
+                  disabled={reuploadingKey === fieldKey}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-primary/40 bg-primary/5 px-4 py-3 text-sm font-medium text-primary transition-colors hover:border-primary/70 hover:bg-primary/10 disabled:pointer-events-none disabled:opacity-60"
+                >
+                  <RefreshCcw className="h-4 w-4" />
+                  {data.status === 'rejected'
+                    ? 'Click here to re-upload document'
+                    : 'Click here to update document'}
+                  <span className="text-xs font-normal text-muted-foreground">
+                    (JPG, PNG, PDF · max 15MB)
+                  </span>
+                </button>
               )}
             </div>
           )}
