@@ -198,8 +198,8 @@ const getStatusBadge = (status: AdminMT5Account["status"]) => {
     <Badge
       className={
         isActive
-          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
-          : "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-300"
+          ? "bg-emerald-100 text-emerald-800 font-medium dark:bg-emerald-950/40 dark:text-emerald-300"
+          : "bg-red-100 text-red-800 font-medium dark:bg-red-950/40 dark:text-red-300"
       }
     >
       {isActive ? "Active" : "Inactive"}
@@ -253,7 +253,7 @@ function StatusToggleCell({
         }}
         aria-label={`${isEnabled ? "Disable" : "Enable"} ${deriveAccountId(account)}`}
       />
-      <span className="text-sm text-muted-foreground">
+      <span className="text-sm text-muted-foreground font-medium">
         {isEnabled ? "Active" : "Inactive"}
       </span>
     </div>
@@ -274,7 +274,10 @@ const getModeBadge = (mode: AdminMT5Account["account_mode"]) => {
   return <Badge variant="outline">{emptyValue}</Badge>;
 };
 
-export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
+export const getColumns = (
+  onToggleStatus?: (account: AdminMT5Account, enabled: boolean) => Promise<void>,
+  canToggle?: boolean,
+): ColumnDef<AdminMT5Account>[] => [
   {
     id: "sr_no",
     header: "Sr. No.",
@@ -348,6 +351,23 @@ export const getColumns = (): ColumnDef<AdminMT5Account>[] => [
     enableColumnFilter: true,
     enableSorting: false,
   },
+  ...(onToggleStatus && canToggle
+    ? [
+        {
+          id: "enabled",
+          header: "Status",
+          cell: ({ row }: { row: { original: AdminMT5Account } }) => (
+            <StatusToggleCell
+              account={row.original}
+              onToggleStatus={onToggleStatus}
+              canToggle={canToggle}
+            />
+          ),
+          enableColumnFilter: false,
+          enableSorting: false,
+        },
+      ]
+    : []),
   {
     id: "account_mode",
     accessorKey: "account_mode",
@@ -505,24 +525,10 @@ export const getColumnsWithActions = (
   },
   onToggleStatus?: (account: AdminMT5Account, enabled: boolean) => Promise<void>,
 ): ColumnDef<AdminMT5Account>[] => [
-  ...getColumns(),
-  ...(permissions?.canEdit && onToggleStatus
-    ? [
-        {
-          id: "enabled",
-          header: "Status",
-          cell: ({ row }: { row: { original: AdminMT5Account } }) => (
-            <StatusToggleCell
-              account={row.original}
-              onToggleStatus={onToggleStatus}
-              canToggle={Boolean(permissions?.canEdit)}
-            />
-          ),
-          enableColumnFilter: false,
-          enableSorting: false,
-        },
-      ]
-    : []),
+  ...getColumns(
+    onToggleStatus,
+    Boolean(permissions?.canEdit && onToggleStatus),
+  ),
   ...(permissions?.showActionsColumn
     ? [
         {

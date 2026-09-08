@@ -406,7 +406,7 @@ export const getColumnsWithActions = (
       const isPromoting = promotingUserIds.has(user.id);
 
       return (
-        <div className="flex flex-col items-start gap-3">
+        <div className="flex flex-col items-center gap-3 w-full">
   {isIb && (
     <Badge 
       variant="default" 
@@ -417,7 +417,7 @@ export const getColumnsWithActions = (
   )}
   
   {!isIb && permissions?.canPromoteToIb && (
-    <div className="w-full sm:w-auto">
+    <div className="w-full justify-center flex">
       <Button
         type="button"
         size="sm"

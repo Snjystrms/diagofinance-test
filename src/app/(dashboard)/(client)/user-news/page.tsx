@@ -89,9 +89,6 @@ function NewsDetailDialog({
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
                 <div className="absolute bottom-4 left-5 right-5">
-                  <Badge className="bg-primary/90 text-primary-foreground border-0 text-[10px] font-semibold mb-2">
-                    News
-                  </Badge>
                   <DialogHeader>
                     <DialogTitle className="text-white text-base font-bold leading-snug line-clamp-2 drop-shadow">
                       {item.title}

@@ -498,7 +498,19 @@ export function ClientMt5AccountCard({
                       <SelectValue placeholder="Select leverage" />
                     </SelectTrigger>
                     <SelectContent align="end" className="max-h-60 z-50">
-                      {LEVERAGE_OPTIONS.map((opt) => (
+                      {LEVERAGE_OPTIONS.filter((opt) => {
+                        const optionMatch = opt.match(/(\d+)\s*$/);
+                        const optionNum = optionMatch
+                          ? Number(optionMatch[1])
+                          : 0;
+                        const currentLeverageNum =
+                          typeof currentLeverage === "number"
+                            ? currentLeverage
+                            : Number(
+                                String(currentLeverage ?? "").replace(/\D/g, ""),
+                              );
+                        return optionNum <= (currentLeverageNum || optionNum);
+                      }).map((opt) => (
                         <SelectItem
                           key={opt}
                           value={opt}

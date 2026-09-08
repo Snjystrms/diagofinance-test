@@ -35,6 +35,38 @@ export const getColumns = (opts: {
     enableSorting: false,
   },
   {
+    id: "status",
+    accessorKey: "status",
+    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
+    cell: ({ row }) => (
+      <div className="inline-flex items-center gap-2">
+        {opts.canToggleStatus === false ? (
+          <span
+            className={`text-xs font-medium ${
+              row.original.status ? "text-emerald-600" : "text-muted-foreground"
+            }`}
+          >
+            {row.original.status ? "Active" : "Inactive"}
+          </span>
+        ) : (
+          <>
+            <Switch
+              checked={row.original.status}
+              onCheckedChange={() => opts.onToggleStatus(row.original.id)}
+              aria-label="Toggle status"
+              disabled={opts.actionLoadingId === row.original.id}
+            />
+            <span className="text-sm text-muted-foreground font-medium">
+              {row.original.status ? "Active" : "Inactive"}
+            </span>
+          </>
+        )}
+      </div>
+    ),
+     enableColumnFilter: false,
+    enableSorting: false,
+  },
+  {
     id: "live_group",
     header: ({ column }) => <DataTableColumnHeader column={column} title="Live Group" />,
     cell: ({ row }) => (
@@ -78,33 +110,6 @@ export const getColumns = (opts: {
       </div>
     ),
     enableColumnFilter: false,
-    enableSorting: false,
-  },
-  {
-    id: "status",
-    accessorKey: "status",
-    header: ({ column }) => <DataTableColumnHeader column={column} title="Status" />,
-    cell: ({ row }) => (
-      <div className="inline-flex items-center gap-2">
-        {opts.canToggleStatus === false ? (
-          <span
-            className={`text-xs font-medium ${
-              row.original.status ? "text-emerald-600" : "text-muted-foreground"
-            }`}
-          >
-            {row.original.status ? "Active" : "Inactive"}
-          </span>
-        ) : (
-          <Switch
-            checked={row.original.status}
-            onCheckedChange={() => opts.onToggleStatus(row.original.id)}
-            aria-label="Toggle status"
-            disabled={opts.actionLoadingId === row.original.id}
-          />
-        )}
-      </div>
-    ),
-     enableColumnFilter: false,
     enableSorting: false,
   },
   {

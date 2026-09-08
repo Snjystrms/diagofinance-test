@@ -49,7 +49,7 @@ export const getColumns = (opts: {
           aria-label="Toggle status"
           disabled={opts.actionLoadingId === row.original.id}
         />
-        <span className="text-sm text-muted-foreground">
+        <span className="text-sm text-muted-foreground font-medium">
           {row.original.status ? "Active" : "Inactive"}
         </span>
       </div>

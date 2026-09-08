@@ -190,7 +190,7 @@ export const getColumns = (opts: {
             }}
             disabled={isBusy}
           />
-          <span className="ml-2 text-xs text-muted-foreground">
+          <span className="ml-2 text-xs text-muted-foreground font-medium">
             {row.original.status ? "Active" : "Inactive"}
           </span>
         </div>

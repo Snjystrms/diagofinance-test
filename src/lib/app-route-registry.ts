@@ -19,7 +19,8 @@ import {
   Users,
   Wallet,
   LayoutDashboard,
-  LayoutDashboardIcon
+  LayoutDashboardIcon,
+  CircleUser
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -189,7 +190,7 @@ const SIDEBAR_SECTIONS: SidebarSectionDefinition[] = [
     id: "profile",
     title: "My profile",
     url: "/profile/view_profile",
-    icon: Mail,
+    icon: CircleUser,
     audience: "client",
     roles: CLIENT_ROLES,
   },
