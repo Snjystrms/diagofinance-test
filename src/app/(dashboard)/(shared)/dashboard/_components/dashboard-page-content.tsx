@@ -2838,7 +2838,7 @@ export function DashboardPageContent() {
                         );
                       })}
 
-                      <Card className="premium-dark-border group relative h-full overflow-hidden rounded-[28px] border border-white/5 bg-[#050505] transition-all duration-300 hover:-translate-y-1">
+                      <Card className="premium-dark-border group relative h-full overflow-hidden rounded-[12px] border border-white/5 bg-[#050505] transition-all duration-300 hover:-translate-y-1">
                         <PremiumDarkLayers />
                         <CardContent className="relative z-10 flex h-full flex-col p-7">
                           <div className="space-y-2">
