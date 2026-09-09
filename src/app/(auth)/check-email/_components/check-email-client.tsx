@@ -1,14 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ProtectedRoute } from '@/components/protected-route';
 import Link from 'next/link';
-import { Mail, CheckCircle, ArrowLeft, RefreshCw, ShieldCheck, AlertCircle } from 'lucide-react';
+import { Mail, ArrowLeft, RefreshCw, ShieldCheck, AlertCircle } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { authApi } from '@/lib/api';
 import { ApiRequestError } from '@/lib/api-core';
 import confetti from 'canvas-confetti';
 import { AuthLayout } from '@/app/(auth)/_components/auth-layout';
+import Image from 'next/image';
+
+// how long the success screen stays up before redirecting to /login
+const SUCCESS_REDIRECT_DELAY_MS = 2600;
 
 export function CheckEmailClient() {
   const [otp, setOtp] = useState('');
@@ -20,6 +24,7 @@ export function CheckEmailClient() {
   const [email, setEmail] = useState<string | undefined>();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const redirectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const emailParam = searchParams.get('email');
@@ -35,20 +40,45 @@ export function CheckEmailClient() {
     }
   }, []);
 
+  // Fire confetti from the logo's actual on-screen position once the
+  // grow-reveal has settled, then redirect after the success screen has
+  // had time to actually be seen.
   useEffect(() => {
     if (!success) return;
 
-    const duration = 3000;
-    const end = Date.now() + duration;
+    const reduced = typeof window !== 'undefined'
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-    const frame = () => {
-      confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0, y: 0.7 } });
-      confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1, y: 0.7 } });
-      if (Date.now() < end) requestAnimationFrame(frame);
+    if (!reduced) {
+      const confettiTimer = setTimeout(() => {
+        const el = document.getElementById('success-logo-wrap');
+        if (el) {
+          const rect = el.getBoundingClientRect();
+          const originX = (rect.left + rect.width / 2) / window.innerWidth;
+          const originY = (rect.top + rect.height / 2) / window.innerHeight;
+          confetti({
+            particleCount: 55,
+            spread: 65,
+            startVelocity: 30,
+            gravity: 1.1,
+            scalar: 0.8,
+            origin: { x: originX, y: originY },
+            colors: ['#7a1010', '#a31c1c', '#d4a017', '#f0c94a'],
+          });
+        }
+      }, 950);
+      redirectTimerRef.current = confettiTimer;
+    }
+
+    const redirectTimer = setTimeout(() => {
+      router.push('/login');
+    }, SUCCESS_REDIRECT_DELAY_MS);
+
+    return () => {
+      if (redirectTimerRef.current) clearTimeout(redirectTimerRef.current);
+      clearTimeout(redirectTimer);
     };
-
-    frame();
-  }, [success]);
+  }, [success, router]);
 
   const handleOtpChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 6);
@@ -80,8 +110,9 @@ export function CheckEmailClient() {
         localStorage.removeItem('auth_token');
         localStorage.removeItem('auth_user');
 
+        // Don't navigate immediately — let the success screen show first.
+        // The redirect itself is handled by the useEffect above.
         setSuccess(true);
-        router.push('/login');
       } else {
         setError(result.message || 'OTP verification failed. Please try again.');
       }
@@ -137,15 +168,40 @@ export function CheckEmailClient() {
     return (
       <ProtectedRoute requireAuth={false}>
         <AuthLayout>
-          <div className="w-full max-w-md mx-auto text-center">
-            <div className="mx-auto flex items-center justify-center w-16 h-16 rounded-full mb-6 bg-green-500/10">
-              <CheckCircle className="h-8 w-8 text-green-500" />
+          <div className="relative flex flex-col items-center text-center px-6 w-full max-w-md mx-auto">
+            {/* Radial glow behind logo */}
+            <div
+              className="success-glow absolute -z-10 w-72 h-72 rounded-full blur-3xl"
+              style={{
+                background: 'radial-gradient(circle, rgba(212,160,23,0.35) 0%, rgba(122,16,16,0.25) 45%, transparent 70%)',
+              }}
+            />
+
+            {/* Logo with grow-reveal + shine */}
+            <div id="success-logo-wrap" className="relative w-32 h-32">
+              <Image
+                src="/diagologo.svg"
+                alt="Diago Finance"
+                width={128}
+                height={128}
+                className="success-logo"
+              />
+              <div className="success-shine" />
             </div>
-            <h1 className="font-sans font-medium text-[40px] leading-[100%] tracking-[-4%] text-foreground">
-              You&apos;re all set!
+
+            {/* Heading */}
+            <h1 className="success-t1 mt-8 text-2xl font-semibold text-foreground tracking-tight">
+              Welcome aboard, Diago Finance
             </h1>
-            <p className="mt-3 font-sans font-normal text-[16px] leading-[150%] tracking-[-3%] text-muted-foreground">
-              Your email has been verified successfully. Welcome aboard! Redirecting to login...
+
+            {/* Description */}
+            <p className="success-t2 mt-2 text-sm text-muted-foreground max-w-xs">
+              Your account is verified. Everything&apos;s set up and ready to go.
+            </p>
+
+            {/* Redirecting */}
+            <p className="success-btn mt-7 text-xs text-muted-foreground/50 animate-pulse">
+              Redirecting to login...
             </p>
           </div>
         </AuthLayout>
@@ -259,7 +315,7 @@ export function CheckEmailClient() {
                   text-white
                   hover:opacity-90
                   disabled:opacity-40 disabled:cursor-not-allowed
-                  transition-all flex items-center justify-center gap-2
+                  transition-all flex items-center justify-center gap-2 cursor-pointer
                 "
               >
                 {isVerifying ? (
