@@ -1,18 +1,30 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Users,
-  Clock,
-  TrendingDown,
+  Building2,
   TrendingUp,
-  Sparkles,
+  Clock,
+  CheckCircle2,
+  TrendingDown,
   UserCheck,
   UserX,
+  Landmark,
+  Sparkles,
   Activity,
   BarChart3,
   CalendarDays,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import Link from "next/link";
+import { EnhancedDashboardCharts } from "./_components/EnhancedDashboardCharts";
 import { formatCurrency } from "@/lib/formatters";
 import type {
   ManagerDashboardData,
@@ -21,8 +33,8 @@ import type {
   ManagerWithdrawalsStats,
   SubadminDashboardData,
 } from "@/lib/api";
-import { useClientCustomization } from "@/contexts/client-customization-context"
-import { getDashboardThemeArtwork } from "@/components/theme-customizer"
+import { useClientCustomization } from "@/contexts/client-customization-context";
+import { getDashboardThemeArtwork } from "@/components/theme-customizer";
 import { ThemePill } from "@/components/ui/theme-pill";
 import {
   PremiumDarkCard,
@@ -37,6 +49,21 @@ interface ManagerDashboardViewProps {
 
 type StatVariant = "primary" | "emerald" | "amber" | "default";
 type HighlightVariant = "amber" | "emerald" | "primary" | "red";
+type KpiCardItem = {
+  title: string;
+  value: number;
+  description: string;
+  icon: LucideIcon;
+  ibVariant: string;
+  href: string;
+};
+
+const SUMMARY_PERIOD_LABELS: Record<string, string> = {
+  daily: "Daily",
+  weekly: "Weekly",
+  monthly: "Monthly",
+  previous_month: "Previous Month",
+};
 
 function StatCard({
   title,
@@ -170,31 +197,420 @@ function WithdrawalsSection({ withdrawals }: { withdrawals: ManagerWithdrawalsSt
   );
 }
 
-export function ManagerDashboardView({ managerDashboardData, subadminDashboardData, userName }: ManagerDashboardViewProps) {
+function SubadminKpiGrid({ cards }: { cards: KpiCardItem[] }) {
+  return (
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 mb-6">
+      {cards.map((item) => {
+        const Icon = item.icon;
+        return (
+          <Link
+            key={item.title}
+            href={item.href}
+            aria-label={`Open ${item.title}`}
+            className="block cursor-pointer rounded-[28px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <Card
+              className={`relative h-full overflow-hidden border rounded-[28px] shadow-sm hover:shadow-lg backdrop-blur-sm transition-all duration-300 group ib-portal-surface ${item.ibVariant}`}
+            >
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-3 mb-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground leading-tight">
+                    {item.title}
+                  </p>
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm group-hover:scale-110 transition-transform duration-300">
+                    <Icon className="h-4 w-4 text-foreground" />
+                  </div>
+                </div>
+                <div className="text-2xl font-semibold tracking-tight text-foreground">
+                  {item.value}
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {item.description}
+                </p>
+              </CardContent>
+            </Card>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+export function ManagerDashboardView({
+  managerDashboardData,
+  subadminDashboardData,
+  userName,
+}: ManagerDashboardViewProps) {
   const { themePairId, themeMode } = useClientCustomization();
   const dashboardThemeArtwork = getDashboardThemeArtwork(themePairId, themeMode);
+
   const data = managerDashboardData ?? subadminDashboardData ?? null;
   const managerInfo =
     (data as ManagerDashboardData | null)?.manager ??
     (data as SubadminDashboardData | null)?.subadmin;
   const manager = managerInfo;
-  const permissions = data?.permissions;
-  const clients = data?.stats?.clients;
-  const deposits = data?.stats?.transactions?.deposits;
-  const withdrawals = data?.stats?.transactions?.withdrawals;
-  const canViewTransactions = permissions?.some((permission) => permission?.toLowerCase() === "transaction");
+
+  const subadminData = subadminDashboardData as SubadminDashboardData | null | undefined;
+  const hasSubadminKpis = Boolean(subadminData?.kpis);
 
   const greeting = (() => {
     const h = new Date().getHours();
-    const g = h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
+    const g =
+      h < 12 ? "Good morning" : h < 17 ? "Good afternoon" : "Good evening";
     const firstName = (userName ?? manager?.name)?.split(" ")[0];
     return firstName ? `${g}, ${firstName}` : g;
   })();
 
+  const formatSummaryDateRange = (
+    metric:
+      | { start_date?: string | null; end_date?: string | null }
+      | null
+      | undefined,
+  ) => {
+    if (!metric?.start_date && !metric?.end_date) return "No date range";
+
+    const formatDate = (value: string | null | undefined) => {
+      if (!value) return null;
+
+      const parsedDate = new Date(value);
+      if (Number.isNaN(parsedDate.getTime())) {
+        return value;
+      }
+
+      return parsedDate.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    };
+
+    const start = formatDate(metric.start_date);
+    const end = formatDate(metric.end_date);
+
+    if (start && end && start === end) return start;
+    if (start && end) return `${start} – ${end}`;
+    return start ?? end ?? "No date range";
+  };
+
+  if (hasSubadminKpis) {
+    const kpis = subadminData!.kpis!;
+    const transactionGraph = subadminData!.transaction_graph;
+    const clientsGraph = subadminData!.clients_graph;
+    const summaryMetrics = subadminData!.summary_metrics;
+
+    const allKpiCards = [
+      {
+        title: "Total Clients",
+        value: kpis.total_clients ?? 0,
+        description: "All registered clients",
+        icon: Users,
+        ibVariant: "ib-portal-surface-primary",
+        href: "/new-users",
+      },
+      {
+        title: "Total IBs",
+        value: kpis.total_ib ?? 0,
+        description: "Introducing Brokers",
+        icon: Building2,
+        ibVariant: "ib-portal-surface-primary",
+        href: "/ib-users",
+      },
+      {
+        title: "Approved Deposits",
+        value: kpis.approved_deposit ?? 0,
+        description: "Total approved",
+        icon: CheckCircle2,
+        ibVariant: "ib-portal-surface-emerald",
+        href: "/usdt-transactions?status=approved",
+      },
+      {
+        title: "Pending Deposits",
+        value: kpis.pending_deposit ?? 0,
+        description: "Awaiting approval",
+        icon: Clock,
+        ibVariant: "ib-portal-surface-amber",
+        href: "/usdt-transactions?status=pending",
+      },
+      {
+        title: "Pending IB Request",
+        value: kpis.pending_ib_request ?? 0,
+        description: "Pending IB requests",
+        icon: Clock,
+        ibVariant: "ib-portal-surface-primary",
+        href: "/all-ib?status=0",
+      },
+      {
+        title: "Pending KYC Clients",
+        value: kpis.pending_kyc_clients ?? 0,
+        description: "Awaiting approval",
+        icon: Clock,
+        ibVariant: "ib-portal-surface-amber",
+        href: "/user-verification?status=0",
+      },
+      {
+        title: "Pending Bank Details",
+        value: kpis.pending_bank_details_request ?? 0,
+        description: "Bank detail review queue",
+        icon: Landmark,
+        ibVariant: "ib-portal-surface-primary",
+        href: "/add-bank-details",
+      },
+      {
+        title: "IB Pending Withdrawals",
+        value: kpis.pending_ib_withdrawal ?? 0,
+        description: "Awaiting processing",
+        icon: Clock,
+        ibVariant: "ib-portal-surface-amber",
+        href: "/ib-withdrawal-requests?status=pending",
+      },
+    ] satisfies KpiCardItem[];
+
+    return (
+      <div className="min-h-full w-full p-4 lg:p-6 xl:p-8">
+        {/* Header */}
+        <div className="mb-6 hidden xl:block">
+          <div
+            className={`rounded-[28px] border px-6 py-6 sm:px-7 ${
+              dashboardThemeArtwork
+                ? "ib-portal-hero ib-dash-artwork-surface"
+                : "premium-dark-border group relative overflow-hidden border-white/5 bg-[#050505]"
+            }`}
+          >
+            {dashboardThemeArtwork ? (
+              <div
+                className={`dashboard-theme-overlay dashboard-theme-welcome-overlay theme-art-${dashboardThemeArtwork}`}
+              />
+            ) : (
+              <PremiumDarkLayers />
+            )}
+            <div className="relative z-10 space-y-2">
+              <ThemePill
+                icon={<Sparkles className="h-3.5 w-3.5" />}
+                className={`rounded-full text-xs font-semibold uppercase tracking-[0.22em] ${
+                  dashboardThemeArtwork
+                    ? ""
+                    : "border border-white/10 bg-white/5 text-white/80 backdrop-blur-[6px]"
+                }`}
+              >
+                Subadmin Portal
+              </ThemePill>
+              <div className="space-y-1">
+                <h1
+                  className={`text-3xl font-semibold tracking-tight sm:text-[2.15rem] ${
+                    dashboardThemeArtwork ? "text-zinc-50" : "text-white"
+                  }`}
+                >
+                  {greeting}
+                </h1>
+                <p
+                  className={`max-w-3xl text-sm sm:text-base ${
+                    dashboardThemeArtwork ? "text-zinc-50/80" : "text-white/45"
+                  }`}
+                >
+                  Here&apos;s what&apos;s happening with your business today.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div className="mb-6 block xl:hidden">
+          <PremiumDarkCard className="px-6 py-6 sm:px-7" aria-label="Subadmin portal">
+            <div className="relative z-10 space-y-2">
+              <ThemePill
+                icon={<Sparkles className="h-3.5 w-3.5" />}
+                className="rounded-full border border-white/10 bg-white/5 text-xs font-semibold uppercase tracking-[0.22em] text-white/80 backdrop-blur-[6px]"
+              >
+                Subadmin Portal
+              </ThemePill>
+              <div className="space-y-1">
+                <h1 className="text-3xl font-semibold tracking-tight text-white sm:text-[2.15rem]">
+                  {greeting}
+                </h1>
+                <p className="max-w-3xl text-sm text-white/45 sm:text-base">
+                  Here&apos;s what&apos;s happening with your business today.
+                </p>
+              </div>
+            </div>
+          </PremiumDarkCard>
+        </div>
+
+        {/* KPI Cards */}
+        <SubadminKpiGrid cards={allKpiCards} />
+
+        {/* Charts */}
+        {transactionGraph && clientsGraph && (
+          <EnhancedDashboardCharts
+            adminDashboardData={{
+              kpis,
+              transaction_graph: transactionGraph,
+              clients_graph: clientsGraph,
+              summary_metrics: summaryMetrics ?? {
+                daily: { start_date: null, end_date: null, deposit: 0, withdraw: 0, add_bonus: 0, remove_bonus: 0 },
+                weekly: { start_date: null, end_date: null, deposit: 0, withdraw: 0, add_bonus: 0, remove_bonus: 0 },
+                monthly: { start_date: null, end_date: null, deposit: 0, withdraw: 0, add_bonus: 0, remove_bonus: 0 },
+                total: { start_date: null, end_date: null, deposit: 0, withdraw: 0, add_bonus: 0, remove_bonus: 0 },
+              },
+            }}
+          />
+        )}
+
+        {/* Summary Metrics */}
+        {summaryMetrics && (
+          <Card className="relative overflow-hidden border rounded-[28px] shadow-lg backdrop-blur-sm ib-portal-surface">
+            <CardHeader>
+              <CardTitle className="text-lg font-bold">Summary Metrics</CardTitle>
+              <CardDescription>Financial overview by period</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {(["daily", "weekly", "monthly", "previous_month"] as const).map(
+                  (period) => {
+                    const metric = summaryMetrics[period];
+                    if (!metric) return null;
+                    const metricRange = formatSummaryDateRange(metric);
+
+                    return (
+                      <div key={period} className="space-y-2">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <h4 className="text-sm font-semibold text-muted-foreground">
+                            {SUMMARY_PERIOD_LABELS[period] ?? period}
+                          </h4>
+                          <span className="rounded-full border border-border/50 bg-background/80 px-2.5 py-1 text-[11px] font-medium text-muted-foreground backdrop-blur-sm">
+                            {metricRange}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                          Range: {metricRange}
+                        </p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                          <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
+                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <p className="relative text-xs text-muted-foreground mb-1">
+                              Deposit
+                            </p>
+                            <p className="relative text-sm font-bold">
+                              {formatCurrency(metric.deposit ?? 0)}
+                            </p>
+                          </div>
+                          <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
+                            <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <p className="relative text-xs text-muted-foreground mb-1">
+                              Withdraw
+                            </p>
+                            <p className="relative text-sm font-bold">
+                              {formatCurrency(metric.withdraw ?? 0)}
+                            </p>
+                          </div>
+                          <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
+                            <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <p className="relative text-xs text-muted-foreground mb-1">
+                              {period === "daily" ? "Pending Commission" : "IB Commission"}
+                            </p>
+                            <p className="relative text-sm font-bold">
+                              {formatCurrency(
+                                period === "daily"
+                                  ? (metric.pending_commission ?? 0)
+                                  : (metric.partner_commission ?? 0)
+                              )}
+                            </p>
+                          </div>
+                          <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
+                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <p className="relative text-xs text-muted-foreground mb-1">
+                              Bonus Given
+                            </p>
+                            <p className="relative text-sm font-bold">
+                              {formatCurrency(metric.add_bonus ?? 0)}
+                            </p>
+                          </div>
+                          <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
+                            <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                            <p className="relative text-xs text-muted-foreground mb-1">
+                              Bonus Removed
+                            </p>
+                            <p className="relative text-sm font-bold">
+                              {formatCurrency(metric.remove_bonus ?? 0)}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  },
+                )}
+                <div className="space-y-2 pt-2 border-t border-border/40">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h4 className="text-sm font-semibold">Total</h4>
+                    <span className="rounded-full border border-primary/30 bg-primary/5 px-2.5 py-1 text-[11px] font-medium text-primary backdrop-blur-sm">
+                      {formatSummaryDateRange(summaryMetrics.total)}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    Range: {formatSummaryDateRange(summaryMetrics.total)}
+                  </p>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                    <div className="group relative overflow-hidden p-3 rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-md backdrop-blur-sm hover:shadow-lg hover:border-primary/50 transition-all duration-300">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <p className="relative text-xs text-muted-foreground mb-1">Deposit</p>
+                      <p className="relative text-sm font-bold text-primary">
+                        {formatCurrency(summaryMetrics.total.deposit ?? 0)}
+                      </p>
+                    </div>
+                    <div className="group relative overflow-hidden p-3 rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-md backdrop-blur-sm hover:shadow-lg hover:border-primary/50 transition-all duration-300">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <p className="relative text-xs text-muted-foreground mb-1">Withdraw</p>
+                      <p className="relative text-sm font-bold text-primary">
+                        {formatCurrency(summaryMetrics.total.withdraw ?? 0)}
+                      </p>
+                    </div>
+                    <div className="group relative overflow-hidden p-3 rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-md backdrop-blur-sm hover:shadow-lg hover:border-primary/50 transition-all duration-300">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <p className="relative text-xs text-muted-foreground mb-1">
+                        IB Commission
+                      </p>
+                      <p className="relative text-sm font-bold text-primary">
+                        {formatCurrency(summaryMetrics.total.partner_commission ?? 0)}
+                      </p>
+                    </div>
+                    <div className="group relative overflow-hidden p-3 rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-md backdrop-blur-sm hover:shadow-lg hover:border-primary/50 transition-all duration-300">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <p className="relative text-xs text-muted-foreground mb-1">
+                        Bonus Given
+                      </p>
+                      <p className="relative text-sm font-bold text-primary">
+                        {formatCurrency(summaryMetrics.total.add_bonus ?? 0)}
+                      </p>
+                    </div>
+                    <div className="group relative overflow-hidden p-3 rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-md backdrop-blur-sm hover:shadow-lg hover:border-primary/50 transition-all duration-300">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      <p className="relative text-xs text-muted-foreground mb-1">
+                        Bonus Removed
+                      </p>
+                      <p className="relative text-sm font-bold text-primary">
+                        {formatCurrency(summaryMetrics.total.remove_bonus ?? 0)}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  }
+
+  // Manager fallback layout
+  const permissions = data?.permissions;
+  const clients = data?.stats?.clients;
+  const deposits = data?.stats?.transactions?.deposits;
+  const withdrawals = data?.stats?.transactions?.withdrawals;
+  const canViewTransactions = permissions?.some(
+    (permission) => permission?.toLowerCase() === "transaction",
+  );
+
   return (
     <div className="min-h-full w-full p-4 lg:p-6 xl:p-8">
       {/* Header */}
-      {/* Desktop: original with theme images — falls back to dark premium when no artwork, so it shows correctly in bright and dark mode. */}
       <div className="mb-6 hidden xl:block">
         <div
           className={`rounded-[28px] border px-6 py-6 sm:px-7 ${
@@ -240,7 +656,6 @@ export function ManagerDashboardView({ managerDashboardData, subadminDashboardDa
           </div>
         </div>
       </div>
-      {/* Mobile fallback: dark premium — shows when viewport is reduced (below xl). */}
       <div className="mb-6 block xl:hidden">
         <PremiumDarkCard className="px-6 py-6 sm:px-7" aria-label="Manager portal">
           <div className="relative z-10 space-y-2">
@@ -262,35 +677,15 @@ export function ManagerDashboardView({ managerDashboardData, subadminDashboardDa
         </PremiumDarkCard>
       </div>
 
-      {/* Permissions */}
-      {/* {permissions && permissions.length > 0 && (
-        <div className="mb-6">
-          <Card className="rounded-[28px] border shadow-sm">
-            <CardHeader className="pb-3 pt-5 px-5">
-              <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Assigned Permissions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-5 pb-5">
-              <div className="flex flex-wrap gap-2">
-                {permissions.map((perm) => (
-                  <Badge key={perm} variant="secondary" className="capitalize text-xs px-3 py-1">
-                    {perm}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )} */}
-
-      {/* Client Stats — only rendered when present in API response */}
+      {/* Client Stats */}
       {clients && <ClientStatsSection clients={clients} />}
 
-      {/* Transaction Stats — only rendered when present in API response */}
+      {/* Transaction Stats */}
       {canViewTransactions && (deposits ?? withdrawals) && (
         <div>
-          <h2 className="text-base font-semibold text-foreground mb-3">Transaction Overview</h2>
+          <h2 className="text-base font-semibold text-foreground mb-3">
+            Transaction Overview
+          </h2>
           <div className="grid gap-6 lg:grid-cols-2">
             {deposits && <DepositsSection deposits={deposits} />}
             {withdrawals && <WithdrawalsSection withdrawals={withdrawals} />}

@@ -2483,6 +2483,10 @@ export interface SubadminDashboardData {
   subadmin?: ManagerInfo;
   permissions?: string[];
   stats?: ManagerStats;
+  kpis?: AdminDashboardKpis;
+  transaction_graph?: AdminDashboardTransactionGraph;
+  clients_graph?: AdminDashboardClientsGraph;
+  summary_metrics?: AdminDashboardSummaryMetrics;
 }
 
 export const subadminDashboardApi = {

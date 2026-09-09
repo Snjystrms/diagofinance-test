@@ -10,7 +10,7 @@ import {
   Tooltip,
 } from "recharts";
 import { TrendingUp, TrendingDown, Users, Activity } from "lucide-react";
-import type { AdminDashboardData } from "@/lib/api";
+import type { AdminDashboardData, SubadminDashboardData } from "@/lib/api";
 import { formatCurrency } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 
@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/chart";
 
 interface EnhancedChartsProps {
-  adminDashboardData: AdminDashboardData | null;
+  adminDashboardData?: AdminDashboardData | SubadminDashboardData | null;
 }
 
 type TransactionChartPoint = {
