@@ -60,3 +60,5 @@ local
 graphify-out
 *.md
 .codex
+
+success_demo (1).html

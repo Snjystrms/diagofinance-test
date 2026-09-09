@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Card,
@@ -98,7 +98,9 @@ function StatCard({
             <Icon className="h-4 w-4 text-foreground" />
           </div>
         </div>
-        <div className="text-2xl font-semibold tracking-tight text-foreground">{value}</div>
+        <div className="text-2xl font-semibold tracking-tight text-foreground">
+          {value}
+        </div>
         <p className="text-xs text-muted-foreground mt-1">{description}</p>
       </CardContent>
     </Card>
@@ -141,18 +143,68 @@ function AmountStatCard({
 function ClientStatsSection({ clients }: { clients: ManagerClientsStats }) {
   return (
     <div className="mb-6">
-      <h2 className="text-base font-semibold text-foreground mb-3">Client Overview</h2>
+      <h2 className="text-base font-semibold text-foreground mb-3">
+        Client Overview
+      </h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 mb-4">
-        <StatCard title="Total Clients" value={clients.total} icon={Users} description="All registered clients" variant="primary" />
-        <StatCard title="New Today" value={clients.new_today} icon={Activity} description="Registered today" variant="emerald" />
-        <StatCard title="Pending Approval" value={clients.pending_approval} icon={Clock} description="Awaiting review" variant="amber" />
-        <StatCard title="FTD Count" value={clients.ftd_count} icon={UserCheck} description="First-time depositors" variant="emerald" />
+        <StatCard
+          title="Total Clients"
+          value={clients.total}
+          icon={Users}
+          description="All registered clients"
+          variant="primary"
+        />
+        <StatCard
+          title="New Today"
+          value={clients.new_today}
+          icon={Activity}
+          description="Registered today"
+          variant="emerald"
+        />
+        <StatCard
+          title="Pending Approval"
+          value={clients.pending_approval}
+          icon={Clock}
+          description="Awaiting review"
+          variant="amber"
+        />
+        <StatCard
+          title="FTD Count"
+          value={clients.ftd_count}
+          icon={UserCheck}
+          description="First-time depositors"
+          variant="emerald"
+        />
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard title="New This Week" value={clients.new_this_week} icon={CalendarDays} description="Registered this week" variant="primary" />
-        <StatCard title="New This Month" value={clients.new_this_month} icon={CalendarDays} description="Registered this month" variant="primary" />
-        <StatCard title="Non-FTD" value={clients.non_ftd_count} icon={UserX} description="No first deposit yet" variant="default" />
-        <StatCard title="Active (30d)" value={clients.active_last_30_days} icon={BarChart3} description="Active last 30 days" variant="emerald" />
+        <StatCard
+          title="New This Week"
+          value={clients.new_this_week}
+          icon={CalendarDays}
+          description="Registered this week"
+          variant="primary"
+        />
+        <StatCard
+          title="New This Month"
+          value={clients.new_this_month}
+          icon={CalendarDays}
+          description="Registered this month"
+          variant="primary"
+        />
+        <StatCard
+          title="Non-FTD"
+          value={clients.non_ftd_count}
+          icon={UserX}
+          description="No first deposit yet"
+          variant="default"
+        />
+        <StatCard
+          title="Active (30d)"
+          value={clients.active_last_30_days}
+          icon={BarChart3}
+          description="Active last 30 days"
+          variant="emerald"
+        />
       </div>
     </div>
   );
@@ -168,16 +220,40 @@ function DepositsSection({ deposits }: { deposits: ManagerDepositsStats }) {
         </div>
       </CardHeader>
       <CardContent className="p-5 grid grid-cols-2 gap-3">
-        <AmountStatCard label="Pending" count={deposits.pending_count} amount={deposits.pending_amount} highlight="amber" />
-        <AmountStatCard label="Approved Today" count={deposits.approved_today_count} amount={deposits.approved_today_amount} highlight="emerald" />
-        <AmountStatCard label="Approved This Month" count={deposits.approved_this_month_count} amount={deposits.approved_this_month_amount} highlight="emerald" />
-        <AmountStatCard label="Approved All Time" count={deposits.approved_all_time_count} amount={deposits.approved_all_time_amount} highlight="primary" />
+        <AmountStatCard
+          label="Pending"
+          count={deposits.pending_count}
+          amount={deposits.pending_amount}
+          highlight="amber"
+        />
+        <AmountStatCard
+          label="Approved Today"
+          count={deposits.approved_today_count}
+          amount={deposits.approved_today_amount}
+          highlight="emerald"
+        />
+        <AmountStatCard
+          label="Approved This Month"
+          count={deposits.approved_this_month_count}
+          amount={deposits.approved_this_month_amount}
+          highlight="emerald"
+        />
+        <AmountStatCard
+          label="Approved All Time"
+          count={deposits.approved_all_time_count}
+          amount={deposits.approved_all_time_amount}
+          highlight="primary"
+        />
       </CardContent>
     </Card>
   );
 }
 
-function WithdrawalsSection({ withdrawals }: { withdrawals: ManagerWithdrawalsStats }) {
+function WithdrawalsSection({
+  withdrawals,
+}: {
+  withdrawals: ManagerWithdrawalsStats;
+}) {
   return (
     <Card className="rounded-[28px] border shadow-sm">
       <CardHeader className="pb-3 pt-5 px-5 border-b">
@@ -187,11 +263,35 @@ function WithdrawalsSection({ withdrawals }: { withdrawals: ManagerWithdrawalsSt
         </div>
       </CardHeader>
       <CardContent className="p-5 grid grid-cols-2 gap-3">
-        <AmountStatCard label="Pending" count={withdrawals.pending_count} amount={withdrawals.pending_amount} highlight="amber" />
-        <AmountStatCard label="Approved Today" count={withdrawals.approved_today_count} amount={withdrawals.approved_today_amount} highlight="emerald" />
-        <AmountStatCard label="Approved This Month" count={withdrawals.approved_this_month_count} amount={withdrawals.approved_this_month_amount} highlight="emerald" />
-        <AmountStatCard label="Approved All Time" count={withdrawals.approved_all_time_count} amount={withdrawals.approved_all_time_amount} highlight="primary" />
-        <AmountStatCard label="Rejected This Month" count={withdrawals.rejected_this_month_count} highlight="red" />
+        <AmountStatCard
+          label="Pending"
+          count={withdrawals.pending_count}
+          amount={withdrawals.pending_amount}
+          highlight="amber"
+        />
+        <AmountStatCard
+          label="Approved Today"
+          count={withdrawals.approved_today_count}
+          amount={withdrawals.approved_today_amount}
+          highlight="emerald"
+        />
+        <AmountStatCard
+          label="Approved This Month"
+          count={withdrawals.approved_this_month_count}
+          amount={withdrawals.approved_this_month_amount}
+          highlight="emerald"
+        />
+        <AmountStatCard
+          label="Approved All Time"
+          count={withdrawals.approved_all_time_count}
+          amount={withdrawals.approved_all_time_amount}
+          highlight="primary"
+        />
+        <AmountStatCard
+          label="Rejected This Month"
+          count={withdrawals.rejected_this_month_count}
+          highlight="red"
+        />
       </CardContent>
     </Card>
   );
@@ -242,7 +342,10 @@ export function ManagerDashboardView({
   userName,
 }: ManagerDashboardViewProps) {
   const { themePairId, themeMode } = useClientCustomization();
-  const dashboardThemeArtwork = getDashboardThemeArtwork(themePairId, themeMode);
+  const dashboardThemeArtwork = getDashboardThemeArtwork(
+    themePairId,
+    themeMode,
+  );
 
   const data = managerDashboardData ?? subadminDashboardData ?? null;
   const managerInfo =
@@ -250,7 +353,10 @@ export function ManagerDashboardView({
     (data as SubadminDashboardData | null)?.subadmin;
   const manager = managerInfo;
 
-  const subadminData = subadminDashboardData as SubadminDashboardData | null | undefined;
+  const subadminData = subadminDashboardData as
+    | SubadminDashboardData
+    | null
+    | undefined;
   const hasSubadminKpis = Boolean(subadminData?.kpis);
 
   const greeting = (() => {
@@ -308,7 +414,7 @@ export function ManagerDashboardView({
         href: "/new-users",
       },
       {
-        title: "Total IBs",
+        title: "Total IB",
         value: kpis.total_ib ?? 0,
         description: "Introducing Brokers",
         icon: Building2,
@@ -330,6 +436,14 @@ export function ManagerDashboardView({
         icon: Clock,
         ibVariant: "ib-portal-surface-amber",
         href: "/usdt-transactions?status=pending",
+      },
+      {
+        title: "Pending Withdrawals",
+        value: kpis?.pending_withdraw ?? 0,
+        description: "Awaiting processing",
+        icon: Clock,
+        ibVariant: "ib-portal-surface-amber",
+        href: "/withdrawal-requests?status=pending",
       },
       {
         title: "Pending IB Request",
@@ -414,7 +528,10 @@ export function ManagerDashboardView({
           </div>
         </div>
         <div className="mb-6 block xl:hidden">
-          <PremiumDarkCard className="px-6 py-6 sm:px-7" aria-label="Subadmin portal">
+          <PremiumDarkCard
+            className="px-6 py-6 sm:px-7"
+            aria-label="Subadmin portal"
+          >
             <div className="relative z-10 space-y-2">
               <ThemePill
                 icon={<Sparkles className="h-3.5 w-3.5" />}
@@ -445,10 +562,38 @@ export function ManagerDashboardView({
               transaction_graph: transactionGraph,
               clients_graph: clientsGraph,
               summary_metrics: summaryMetrics ?? {
-                daily: { start_date: null, end_date: null, deposit: 0, withdraw: 0, add_bonus: 0, remove_bonus: 0 },
-                weekly: { start_date: null, end_date: null, deposit: 0, withdraw: 0, add_bonus: 0, remove_bonus: 0 },
-                monthly: { start_date: null, end_date: null, deposit: 0, withdraw: 0, add_bonus: 0, remove_bonus: 0 },
-                total: { start_date: null, end_date: null, deposit: 0, withdraw: 0, add_bonus: 0, remove_bonus: 0 },
+                daily: {
+                  start_date: null,
+                  end_date: null,
+                  deposit: 0,
+                  withdraw: 0,
+                  add_bonus: 0,
+                  remove_bonus: 0,
+                },
+                weekly: {
+                  start_date: null,
+                  end_date: null,
+                  deposit: 0,
+                  withdraw: 0,
+                  add_bonus: 0,
+                  remove_bonus: 0,
+                },
+                monthly: {
+                  start_date: null,
+                  end_date: null,
+                  deposit: 0,
+                  withdraw: 0,
+                  add_bonus: 0,
+                  remove_bonus: 0,
+                },
+                total: {
+                  start_date: null,
+                  end_date: null,
+                  deposit: 0,
+                  withdraw: 0,
+                  add_bonus: 0,
+                  remove_bonus: 0,
+                },
               },
             }}
           />
@@ -458,85 +603,89 @@ export function ManagerDashboardView({
         {summaryMetrics && (
           <Card className="relative overflow-hidden border rounded-[28px] shadow-lg backdrop-blur-sm ib-portal-surface">
             <CardHeader>
-              <CardTitle className="text-lg font-bold">Summary Metrics</CardTitle>
+              <CardTitle className="text-lg font-bold">
+                Summary Metrics
+              </CardTitle>
               <CardDescription>Financial overview by period</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {(["daily", "weekly", "monthly", "previous_month"] as const).map(
-                  (period) => {
-                    const metric = summaryMetrics[period];
-                    if (!metric) return null;
-                    const metricRange = formatSummaryDateRange(metric);
+                {(
+                  ["daily", "weekly", "monthly", "previous_month"] as const
+                ).map((period) => {
+                  const metric = summaryMetrics[period];
+                  if (!metric) return null;
+                  const metricRange = formatSummaryDateRange(metric);
 
-                    return (
-                      <div key={period} className="space-y-2">
-                        <div className="flex flex-wrap items-center justify-between gap-2">
-                          <h4 className="text-sm font-semibold text-muted-foreground">
-                            {SUMMARY_PERIOD_LABELS[period] ?? period}
-                          </h4>
-                          <span className="rounded-full border border-border/50 bg-background/80 px-2.5 py-1 text-[11px] font-medium text-muted-foreground backdrop-blur-sm">
-                            {metricRange}
-                          </span>
+                  return (
+                    <div key={period} className="space-y-2">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <h4 className="text-sm font-semibold text-muted-foreground">
+                          {SUMMARY_PERIOD_LABELS[period] ?? period}
+                        </h4>
+                        <span className="rounded-full border border-border/50 bg-background/80 px-2.5 py-1 text-[11px] font-medium text-muted-foreground backdrop-blur-sm">
+                          {metricRange}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Range: {metricRange}
+                      </p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
+                        <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
+                          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <p className="relative text-xs text-muted-foreground mb-1">
+                            Deposit
+                          </p>
+                          <p className="relative text-sm font-bold">
+                            {formatCurrency(metric.deposit ?? 0)}
+                          </p>
                         </div>
-                        <p className="text-[11px] text-muted-foreground">
-                          Range: {metricRange}
-                        </p>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
-                          <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
-                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                            <p className="relative text-xs text-muted-foreground mb-1">
-                              Deposit
-                            </p>
-                            <p className="relative text-sm font-bold">
-                              {formatCurrency(metric.deposit ?? 0)}
-                            </p>
-                          </div>
-                          <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
-                            <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                            <p className="relative text-xs text-muted-foreground mb-1">
-                              Withdraw
-                            </p>
-                            <p className="relative text-sm font-bold">
-                              {formatCurrency(metric.withdraw ?? 0)}
-                            </p>
-                          </div>
-                          <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
-                            <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                            <p className="relative text-xs text-muted-foreground mb-1">
-                              {period === "daily" ? "Pending Commission" : "IB Commission"}
-                            </p>
-                            <p className="relative text-sm font-bold">
-                              {formatCurrency(
-                                period === "daily"
-                                  ? (metric.pending_commission ?? 0)
-                                  : (metric.partner_commission ?? 0)
-                              )}
-                            </p>
-                          </div>
-                          <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
-                            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                            <p className="relative text-xs text-muted-foreground mb-1">
-                              Bonus Given
-                            </p>
-                            <p className="relative text-sm font-bold">
-                              {formatCurrency(metric.add_bonus ?? 0)}
-                            </p>
-                          </div>
-                          <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
-                            <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                            <p className="relative text-xs text-muted-foreground mb-1">
-                              Bonus Removed
-                            </p>
-                            <p className="relative text-sm font-bold">
-                              {formatCurrency(metric.remove_bonus ?? 0)}
-                            </p>
-                          </div>
+                        <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
+                          <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <p className="relative text-xs text-muted-foreground mb-1">
+                            Withdraw
+                          </p>
+                          <p className="relative text-sm font-bold">
+                            {formatCurrency(metric.withdraw ?? 0)}
+                          </p>
+                        </div>
+                        <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
+                          <div className="absolute inset-0 bg-gradient-to-br from-secondary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <p className="relative text-xs text-muted-foreground mb-1">
+                            {period === "daily"
+                              ? "Pending Commission"
+                              : "IB Commission"}
+                          </p>
+                          <p className="relative text-sm font-bold">
+                            {formatCurrency(
+                              period === "daily"
+                                ? (metric.pending_commission ?? 0)
+                                : (metric.partner_commission ?? 0),
+                            )}
+                          </p>
+                        </div>
+                        <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
+                          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <p className="relative text-xs text-muted-foreground mb-1">
+                            Bonus Given
+                          </p>
+                          <p className="relative text-sm font-bold">
+                            {formatCurrency(metric.add_bonus ?? 0)}
+                          </p>
+                        </div>
+                        <div className="group relative overflow-hidden p-3 rounded-2xl border border-border/60 bg-background/80 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-300">
+                          <div className="absolute inset-0 bg-gradient-to-br from-accent/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                          <p className="relative text-xs text-muted-foreground mb-1">
+                            Bonus Removed
+                          </p>
+                          <p className="relative text-sm font-bold">
+                            {formatCurrency(metric.remove_bonus ?? 0)}
+                          </p>
                         </div>
                       </div>
-                    );
-                  },
-                )}
+                    </div>
+                  );
+                })}
                 <div className="space-y-2 pt-2 border-t border-border/40">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h4 className="text-sm font-semibold">Total</h4>
@@ -550,14 +699,18 @@ export function ManagerDashboardView({
                   <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2">
                     <div className="group relative overflow-hidden p-3 rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-md backdrop-blur-sm hover:shadow-lg hover:border-primary/50 transition-all duration-300">
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      <p className="relative text-xs text-muted-foreground mb-1">Deposit</p>
+                      <p className="relative text-xs text-muted-foreground mb-1">
+                        Deposit
+                      </p>
                       <p className="relative text-sm font-bold text-primary">
                         {formatCurrency(summaryMetrics.total.deposit ?? 0)}
                       </p>
                     </div>
                     <div className="group relative overflow-hidden p-3 rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-md backdrop-blur-sm hover:shadow-lg hover:border-primary/50 transition-all duration-300">
                       <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      <p className="relative text-xs text-muted-foreground mb-1">Withdraw</p>
+                      <p className="relative text-xs text-muted-foreground mb-1">
+                        Withdraw
+                      </p>
                       <p className="relative text-sm font-bold text-primary">
                         {formatCurrency(summaryMetrics.total.withdraw ?? 0)}
                       </p>
@@ -568,7 +721,9 @@ export function ManagerDashboardView({
                         IB Commission
                       </p>
                       <p className="relative text-sm font-bold text-primary">
-                        {formatCurrency(summaryMetrics.total.partner_commission ?? 0)}
+                        {formatCurrency(
+                          summaryMetrics.total.partner_commission ?? 0,
+                        )}
                       </p>
                     </div>
                     <div className="group relative overflow-hidden p-3 rounded-2xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent shadow-md backdrop-blur-sm hover:shadow-lg hover:border-primary/50 transition-all duration-300">
@@ -657,7 +812,10 @@ export function ManagerDashboardView({
         </div>
       </div>
       <div className="mb-6 block xl:hidden">
-        <PremiumDarkCard className="px-6 py-6 sm:px-7" aria-label="Manager portal">
+        <PremiumDarkCard
+          className="px-6 py-6 sm:px-7"
+          aria-label="Manager portal"
+        >
           <div className="relative z-10 space-y-2">
             <ThemePill
               icon={<Sparkles className="h-3.5 w-3.5" />}

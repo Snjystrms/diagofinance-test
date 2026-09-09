@@ -182,7 +182,7 @@ export function AdminDashboardView({
       href: "/new-users",
     },
     {
-      title: "Total IBs",
+      title: "Total IB",
       value: kpis?.total_ib ?? 0,
       description: "Introducing Brokers",
       icon: Building2,
