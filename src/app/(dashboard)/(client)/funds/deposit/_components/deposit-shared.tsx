@@ -8,7 +8,7 @@ import { formatApiDateTimeAsIST } from "@/lib/formatters";
 import type { BrokerBankDetailItem } from "@/lib/api";
 import { Clock } from "lucide-react";
 
-export const MINIMUM_DEPOSIT_AMOUNT = 10; // $10 minimum deposit
+export const MINIMUM_DEPOSIT_AMOUNT = 1; // $10 minimum deposit
 export const MINIMUM_DEPOSIT_AMOUNT_LABEL = "$10 equivalent";
 export const SETTLEMENT_LABEL = "Supported digital asset";
 
