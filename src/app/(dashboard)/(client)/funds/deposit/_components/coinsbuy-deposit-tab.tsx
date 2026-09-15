@@ -71,7 +71,7 @@ export function CoinsBuyDepositTab({ token }: { token: string | null }) {
         setPollError(
           getFriendlyErrorMessage(err, {
             audience: "client",
-            resource: "CoinsBuy deposit status",
+            resource: "Crypto currency deposit status",
             action: "load",
           })
         );
@@ -192,7 +192,7 @@ export function CoinsBuyDepositTab({ token }: { token: string | null }) {
       );
 
       if (!response.success || !response.data) {
-        throw new Error(response.message || "Failed to create CoinsBuy deposit");
+        throw new Error(response.message || "Failed to create crypto currency deposit");
       }
 
       const depositData = response.data as unknown as CoinsBuyDepositCreateResponse["data"];
@@ -201,7 +201,7 @@ export function CoinsBuyDepositTab({ token }: { token: string | null }) {
       const depositId = (depositData?.deposit_id ?? (depositData as unknown as Record<string, unknown>)?.["deposit_uuid"] ?? coinsbuyDepositId) as string | number | undefined;
 
       if (!coinsbuyDepositId) {
-        throw new Error("CoinsBuy deposit ID not found in response");
+        throw new Error("Crypto currency deposit ID not found in response");
       }
 
       // payment_url is the hosted CoinsBuy checkout (QR / address). Fall back to legacy fields for compatibility.
@@ -213,7 +213,7 @@ export function CoinsBuyDepositTab({ token }: { token: string | null }) {
         (rawData["payment_page_redirect_url"] as string | undefined);
 
       if (!paymentUrl) {
-        throw new Error("Payment URL not returned by CoinsBuy");
+        throw new Error("Payment URL not returned by crypto currency");
       }
 
       const pending: PendingDeposit = {
@@ -226,7 +226,7 @@ export function CoinsBuyDepositTab({ token }: { token: string | null }) {
         sessionStorage.setItem(STORAGE_KEY, JSON.stringify(pending));
       } catch {}
 
-      toast.success(depositData ? "Redirecting to CoinsBuy checkout..." : "CoinsBuy deposit created successfully!");
+      toast.success(depositData ? "Redirecting to crypto currency checkout..." : "Crypto currency deposit created successfully!");
       // Frontend flow: redirect browser to CoinsBuy hosted checkout — they own the address/QR UI
       window.location.href = paymentUrl;
       // keep submitting true until redirect unloads; don't clear here
@@ -236,7 +236,7 @@ export function CoinsBuyDepositTab({ token }: { token: string | null }) {
       setError(
         getFriendlyErrorMessage(err, {
           audience: "client",
-          resource: "CoinsBuy deposit",
+          resource: "Crypto currency deposit",
           action: "create",
         }),
       );
@@ -277,13 +277,13 @@ export function CoinsBuyDepositTab({ token }: { token: string | null }) {
           <CardDescription>
             {isCredited
               ? "Your deposit has been credited to your wallet."
-              : "Polling CoinsBuy status — deposit_status is the source of truth."}
+              : "Polling crypto currency status — deposit_status is the source of truth."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4 relative z-10">
           <div className="rounded-2xl border border-border/60 bg-muted/20 p-4 space-y-2">
             <div className="flex justify-between text-xs">
-              <span className="text-muted-foreground">CoinsBuy Deposit ID</span>
+              <span className="text-muted-foreground">Crypto Currency Deposit ID</span>
               <span className="font-mono font-semibold text-foreground">{pendingDeposit.coinsbuyDepositId}</span>
             </div>
             {pendingDeposit.trackingId && (
@@ -312,7 +312,7 @@ export function CoinsBuyDepositTab({ token }: { token: string | null }) {
             </div>
             {statusData?.coinsbuy_status !== undefined && (
               <div className="flex justify-between text-xs">
-                <span className="text-muted-foreground">CoinsBuy Status</span>
+                <span className="text-muted-foreground">Crypto Currency Status</span>
                 <span className="font-semibold text-foreground">{String(statusData.coinsbuy_status)}</span>
               </div>
             )}
@@ -325,7 +325,7 @@ export function CoinsBuyDepositTab({ token }: { token: string | null }) {
           </div>
 
           {pollError && (
-            <ApiErrorState message={pollError} audience="client" resource="CoinsBuy deposit status" action="load" variant="inline" />
+            <ApiErrorState message={pollError} audience="client" resource="Crypto currency deposit status" action="load" variant="inline" />
           )}
 
           <div className="rounded-2xl border border-amber-300/40 bg-amber-50/70 p-4 dark:border-amber-800/50 dark:bg-amber-950/20">
@@ -334,7 +334,7 @@ export function CoinsBuyDepositTab({ token }: { token: string | null }) {
               <div className="text-sm text-amber-900 dark:text-amber-100">
                 <p className="font-medium mb-1">How it works</p>
                 <p className="text-xs text-amber-800/90 dark:text-amber-200/90">
-                  CoinsBuy status can stay at <span className="font-mono">2</span> even after funds are confirmed for open-address deposits.
+                  Crypto currency status can stay at <span className="font-mono">2</span> even after funds are confirmed for open-address deposits.
                   We poll <span className="font-mono">deposit_status</span> (0 pending → 1 credited) every {POLL_INTERVAL_MS / 1000}s.
                 </p>
               </div>
@@ -393,8 +393,8 @@ export function CoinsBuyDepositTab({ token }: { token: string | null }) {
       {/* Left Column - CoinsBuy Info */}
       <div className="space-y-6">
         <DepositInfoPanel
-          title="CoinsBuy flow"
-          tagline="Use CoinsBuy to start a guided, secure checkout deposit flow."
+          title="Crypto currency flow"
+          tagline="Use crypto currency to start a guided, secure checkout deposit flow."
           steps={[
             {
               icon: DollarSign,
@@ -404,12 +404,12 @@ export function CoinsBuyDepositTab({ token }: { token: string | null }) {
             {
               icon: Wallet,
               title: "Start checkout",
-              text: "Create a deposit and get redirected to the CoinsBuy checkout.",
+              text: "Create a deposit and get redirected to the crypto currency checkout.",
             },
             {
               icon: ShieldCheck,
               title: "Complete payment",
-              text: "Pay through the CoinsBuy hosted checkout, then track it here.",
+              text: "Pay through the crypto currency hosted checkout, then track it here.",
             },
           ]}
           verifyTitle="What to verify"
@@ -447,7 +447,7 @@ export function CoinsBuyDepositTab({ token }: { token: string | null }) {
               Create Deposit
             </CardTitle>
             <CardDescription>
-              Enter the amount you want to deposit via CoinsBuy
+              Enter the amount you want to deposit via crypto currency
             </CardDescription>
           </CardHeader>
 
@@ -456,7 +456,7 @@ export function CoinsBuyDepositTab({ token }: { token: string | null }) {
               <ApiErrorState
                 message={error}
                 audience="client"
-                resource="CoinsBuy deposit"
+                resource="Crypto currency deposit"
                 action="submit"
                 variant="inline"
               />
@@ -576,7 +576,7 @@ export function CoinsBuyDepositTab({ token }: { token: string | null }) {
                   <div className="w-5 h-5 bg-primary/10 rounded-full flex items-center justify-center mt-0.5 border border-primary/20">
                     <span className="text-primary font-bold text-xs">2</span>
                   </div>
-                  <span>Complete payment on CoinsBuy checkout</span>
+                  <span>Complete payment on crypto currency checkout</span>
                 </div>
                 <div className="flex items-start gap-2">
                   <div className="w-5 h-5 bg-primary/10 rounded-full flex items-center justify-center mt-0.5 border border-primary/20">

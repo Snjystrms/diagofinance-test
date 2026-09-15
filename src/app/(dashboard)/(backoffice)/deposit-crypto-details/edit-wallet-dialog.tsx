@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Upload, X } from "lucide-react";
 
 import { AuthImage } from "@/components/ui/auth-image";
@@ -35,6 +35,21 @@ const CURRENCY_OPTIONS = [
   { label: "BTC", value: "BTC" },
   { label: "ETH", value: "ETH" },
 ];
+
+// Ensures the wallet's existing value is always selectable, even if it
+// isn't one of the predefined options (e.g. a network/currency added
+// directly via the backend or a legacy record).
+const withCurrentValue = (
+  options: { label: string; value: string }[],
+  currentValue?: string | null,
+) => {
+  if (!currentValue) return options;
+  const exists = options.some(
+    (option) => option.value.toLowerCase() === currentValue.toLowerCase(),
+  );
+  if (exists) return options;
+  return [{ label: currentValue, value: currentValue }, ...options];
+};
 
 interface EditWalletDialogProps {
   open: boolean;
@@ -75,6 +90,16 @@ export function EditWalletDialog({ open, onOpenChange, wallet, onSubmit }: EditW
       setIsSubmitting(false);
     }
   }, [open]);
+
+  const networkOptions = useMemo(
+    () => withCurrentValue(NETWORK_OPTIONS, wallet?.network),
+    [wallet?.network],
+  );
+
+  const currencyOptions = useMemo(
+    () => withCurrentValue(CURRENCY_OPTIONS, wallet?.currency),
+    [wallet?.currency],
+  );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -130,11 +155,11 @@ export function EditWalletDialog({ open, onOpenChange, wallet, onSubmit }: EditW
           <div className="space-y-2">
             <Label htmlFor="edit-network">Network *</Label>
             <Select value={network} onValueChange={setNetwork}>
-              <SelectTrigger>
+              <SelectTrigger id="edit-network">
                 <SelectValue placeholder="Select network" />
               </SelectTrigger>
               <SelectContent>
-                {NETWORK_OPTIONS.map((option) => (
+                {networkOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>
@@ -146,11 +171,11 @@ export function EditWalletDialog({ open, onOpenChange, wallet, onSubmit }: EditW
           <div className="space-y-2">
             <Label htmlFor="edit-currency">Currency *</Label>
             <Select value={currency} onValueChange={setCurrency}>
-              <SelectTrigger>
+              <SelectTrigger id="edit-currency">
                 <SelectValue placeholder="Select currency" />
               </SelectTrigger>
               <SelectContent>
-                {CURRENCY_OPTIONS.map((option) => (
+                {currencyOptions.map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     {option.label}
                   </SelectItem>

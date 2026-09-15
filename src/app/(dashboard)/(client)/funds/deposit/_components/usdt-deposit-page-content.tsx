@@ -259,7 +259,7 @@ function USDTDepositContent() {
                     : activeTab === "binance_pay"
                       ? "Binance"
                       : activeTab === "coinsbuy"
-                        ? "CoinsBuy"
+                        ? "Crypto Currency"
                         : activeTab === "cregis"
                           ? "Crypto Currency"
                           : activeTab === "local"
@@ -308,7 +308,7 @@ function USDTDepositContent() {
                   value="coinsbuy"
                 >
                   <Wallet className="h-4 w-4 mr-2" />
-                  CoinsBuy
+                  Crypto Currency
                 </TabsTrigger>
               )}
               {hasCregis && (
@@ -386,7 +386,7 @@ function USDTDepositContent() {
                     )}
                     {hasCoinsbuy && (
                       <Badge className="rounded-full border-primary/20 bg-primary/15 text-primary hover:bg-primary/20">
-                        CoinsBuy
+                        Crypto Currency
                       </Badge>
                     )}
                     {hasCregis && (
